@@ -10,6 +10,8 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"regexp"
+	"strings"
 	"testing"
 	"time"
 )
@@ -838,5 +840,30 @@ func TestCompareOwnDriver(t *testing.T) {
 	}
 	if m := topOf(map[string]int{"Ana": 40, "": 3}); m != "Ana" {
 		t.Fatalf("who drove most: %q", m)
+	}
+}
+
+// every header/footer item the app offers for the relative and the standings is drawn by the native overlays too
+// (an item the agent did not know was dropped from the strip, though the settings' sample showed it)
+func TestNativeOverlayKnowsEveryItem(t *testing.T) {
+	b, err := os.ReadFile("web/dist/index.html")
+	if err != nil {
+		t.Fatal(err)
+	}
+	s := string(b)
+	i := strings.Index(s, "const ITEMS={")
+	if i < 0 {
+		t.Fatal("ITEMS not found")
+	}
+	blk := s[i : i+strings.Index(s[i:], "\n};")]
+	keys := regexp.MustCompile(`(?m)(?:^\s*|,)([a-z]+):\{n:`).FindAllStringSubmatch(blk, -1)
+	if len(keys) < 15 {
+		t.Fatalf("only %d items read", len(keys))
+	}
+	st := ovTestState(t, nil)
+	for _, k := range keys {
+		if l, _, _ := st.item(k[1]); l == "" {
+			t.Errorf("the overlays do not draw the item %q", k[1])
+		}
 	}
 }

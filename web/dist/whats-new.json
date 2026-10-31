@@ -1,6 +1,12 @@
 {
   "versions": [
     {
+      "v": "0.9.4",
+      "en": ["The coach knows ovals, with tips made for each oval corner.", "Lap compare has a new chart, with the delta on top and the values of both laps beside it.", "Fixes and improvements."],
+      "es": ["El coach conoce los óvalos, con consejos pensados para cada curva del óvalo.", "Comparar vueltas tiene un gráfico nuevo, con el delta arriba y los valores de las dos vueltas al lado.", "Arreglos y mejoras."],
+      "pt": ["O coach conhece os ovais, com dicas feitas para cada curva do oval.", "Comparar voltas tem um gráfico novo, com o delta em cima e os valores das duas voltas ao lado.", "Correções e melhorias."]
+    },
+    {
       "v": "0.9.3",
       "en": ["Lap compare in Telemetry draws the start of the lap again, with no gap and no jump in the delta.", "Every driver can use voice chat, so whoever watches you live can talk to you.", "Fixes and improvements."],
       "es": ["Comparar vueltas, en Telemetría, vuelve a dibujar el inicio de la vuelta, sin hueco y sin salto en el delta.", "Todos los pilotos pueden usar el chat de voz, así quien te ve en directo puede hablar contigo.", "Arreglos y mejoras."],

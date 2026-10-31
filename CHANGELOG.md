@@ -4,6 +4,12 @@ Pitlane HQ is in **beta**. Pitlane HQ Agent (the PC app), the web app and the ph
 number, `0.MINOR.PATCH`. A MINOR version brings a set of new features, and fixes go in as "Fixes and
 improvements". 1.0.0 comes when the beta ends. Newest first.
 
+## 0.9.4 beta
+
+- The coach knows ovals, with tips made for each oval corner.
+- Lap compare has a new chart, with the delta on top and the values of both laps beside it.
+- Fixes and improvements.
+
 ## 0.9.3 beta
 
 - Lap compare in Telemetry draws the start of the lap again, with no gap and no jump in the delta.

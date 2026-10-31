@@ -49,7 +49,7 @@ const plan = out.coach.plan;
 assert.equal(plan[0].k, "oval");
 assert.match(plan[0].t, /^Intermediate oval · lifts in 3 corners \(reference 2\)$/);
 assert.ok(plan.every((p) => !/[;]/.test(p.t + p.why + (p.how || ""))), "no semicolons");
-assert.match(plan.find((p) => p.k === "corner").why, /you lift 40 m earlier/);
+assert.match(plan.find((p) => p.k === "corner").why, /You lift 40 m earlier/);
 // Spanish and Portuguese too
 assert.equal(PW.analyse(A, R, { lang: "es", ...ctx }).corners[0].text, "Levantas 40 m antes que la referencia. Levanta más tarde");
 assert.equal(PW.analyse(A, R, { lang: "pt", ...ctx }).corners[0].text, "Você alivia 40 m antes da referência. Alivie mais tarde");

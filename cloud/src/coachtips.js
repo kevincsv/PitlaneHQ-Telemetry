@@ -7,6 +7,7 @@
 // through /community/coach/weights). The tips' texts never change here, and no lap is made of this.
 import { sessionAccount, isAdmin } from "./accounts.js";
 import { famId } from "./carfamily.js";
+import { MIN_PLAN_VOTES, STEP, planVotes, planWeights } from "./coachplan.js";
 
 export const MIN_CASES = 30;   // cases a bucket needs before it reorders anything
 const MIN_RATINGS = 20;        // ratings a kind needs before its thumbs count
@@ -137,11 +138,26 @@ export async function coachTipRoutes(req, env, p, m, body, game) {
     return json({ ok: true });
   }
 
+  // a thumb on one step of the coach's plan, or on the whole plan (1 up, -1 down, 0 takes it back)
+  if (p === "/coach/planrate" && m === "POST") {
+    const trackId = int(body.trackId), carId = int(body.carId) && (await famId(env, game, body.carId)), sid = str(body.sid, 120), started = int(body.started);
+    const step = typeof body.step === "string" && STEP.test(body.step) ? body.step : "";
+    if (!trackId || !carId || !sid || !started || !step) return err("trackId, carId, sid, started and step", 400);
+    const up = body.up === 1 ? 1 : body.up === -1 ? -1 : 0, id = step === "plan" ? "plan" : step.split("@")[0], k = KIND.test(body.k || "") ? body.k : id.split(":")[0];
+    const kind = KIND.test(body.kind || "") ? body.kind : "", turns = Array.isArray(body.turns) ? body.turns.filter((n) => int(n) && n < 1000).slice(0, 12).join(",") : "";
+    if (!up) await env.DB.prepare("DELETE FROM coach_plan_votes WHERE account=?1 AND session_id=?2 AND step=?3").bind(acc.id, sid, step).run();
+    else await env.DB.prepare(
+      `INSERT INTO coach_plan_votes (account, game, track_id, car_id, session_id, started, step, sid, k, kind, turns, up, created) VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13)
+       ON CONFLICT(account, session_id, step) DO UPDATE SET up=excluded.up, created=excluded.created`
+    ).bind(acc.id, game, trackId, carId, sid, started, step, id, k, kind, turns, up, Date.now()).run();
+    return json({ ok: true });
+  }
+
   // what the apps read to order the plan: the weight of every bucket (1 until it has MIN_CASES cases), the metres a braking
   // tip should ask for, the tips an admin turned off, and whether a tip may say how many drivers it helped
   if (p === "/coach/weights" && m === "GET") {
     const { buckets: b } = await buckets(env);
-    return json({ min: MIN_CASES, buckets: b.filter((x) => x.w !== 1 || x.ask || x.n >= MIN_CASES), off: await offList(env), confidence: await confidenceOn(env) }, 200, { "cache-control": "private, max-age=3600" });
+    return json({ min: MIN_CASES, buckets: b.filter((x) => x.w !== 1 || x.ask || x.n >= MIN_CASES), off: await offList(env), confidence: await confidenceOn(env), plan: planWeights(await planVotes(env)) }, 200, { "cache-control": "private, max-age=3600" });
   }
   // the driver's own memory: the kinds that repeat across their tracks (habits), and their own buckets' weights
   if (p === "/coach/me" && m === "GET") {
@@ -177,7 +193,8 @@ export async function coachTipRoutes(req, env, p, m, body, game) {
       `SELECT COUNT(*) AS tips, SUM(kind<>'') AS withTip, SUM(outcome IS NOT NULL) AS scored, SUM(rating<>0) AS rated, COUNT(DISTINCT account) AS drivers,
          COUNT(DISTINCT track_id||':'||car_id) AS combos, SUM(created>?1) AS week FROM coach_tips`).bind(Date.now() - 7 * 86400e3).first();
     const kinds = await env.DB.prepare("SELECT kind, COUNT(*) AS n, SUM(outcome IS NOT NULL) AS scored FROM coach_tips WHERE kind<>'' GROUP BY kind ORDER BY n DESC").all();
-    return json({ min: MIN_CASES, gain: GAIN_S, totals: tot || {}, buckets: b, ratings, kinds: kinds.results || [], off: await offList(env), confidence: await confidenceOn(env) });
+    const pv = await planVotes(env);
+    return json({ min: MIN_CASES, gain: GAIN_S, totals: tot || {}, buckets: b, ratings, kinds: kinds.results || [], off: await offList(env), confidence: await confidenceOn(env), plan: pv, planMin: MIN_PLAN_VOTES });
   }
   return null;
 }

@@ -83,6 +83,27 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   reference (how much flat out, its lifts and braking zones) and how that kind of oval is driven; on a superspeedway
   where both laps are flat out all lap it says the gap is the draft. The habit advice of the entry, the apex and the
   exit and the time outside the corners speak of the lift, the middle of the corner and the run to the wall.
+- The plan for the next session (`coachPlan`, the first five steps on every device, `PLAN_SHOW` on the web, the phones the
+  same) explains every step in three parts: what happened, measured and where (`what`: the time lost and in which phase,
+  where you brake or lift against the reference, the speeds at the slowest point, the throttle, the gear), why it costs
+  time (`cost`, said once per family of tip, `COST`/`FAMILY`, with the oval's own for lifts) and what to do instead (`how`,
+  with this corner's numbers, `howOf`); `why` is what and cost together for the phones of before. Every step carries its
+  points on the map (`marks`, metres from the line: `a` where you brake or lift, `b` the reference's, `apex`, `thr`/`thra`
+  where the reference and you pick up the throttle, `str` a straight) and the stretches it is about (`spans`). The coach's
+  map (`renderCmpMap(A, B, box, {plan})`, `drawPlanLayer`; `TrackMap` on Android, `TrackMapView` on iOS) shows every
+  step's number where it happens and, for the step chosen (the first with points, or the one pressed in the list or on
+  the map, "Show on the map"), its stretch, A, B, its corners and the throttle points; the "Plan" switch hides it (and the
+  coach rings give way to it). Besides the corners, the phase that repeats, the straights (now named, the two that cost
+  the most, "after T4"), the corners taken differently every lap, the habit and the oval's step, the plan has steps about
+  the whole lap and the session (`lapSteps`): trail braking over two or more braking corners (`trail`), a car that pushes
+  wide (more wheel than the reference and still slower at the apex, `rotate`) or steps out on exit (`loose`), each with
+  the setup that helps when it does it everywhere (wedge on an oval), the gears (`gears`), tyres that fade over a run (8
+  laps of lap A's session or more, the median of laps 2-4 against the last three, `tyres`) and the usual lap against the
+  best (5 laps or more, `pace`, how races are won and how to pass). Dirt has no rotate or loose step and a superspeedway
+  no trail step. Every step and the whole plan take 👍/👎 (web, PC and phones; POST `/community/coach/planrate`,
+  migration 0084 `coach_plan_votes`, keyed by the step's id and its corners, `planKey`/`PlanItem.key`); from 15 votes a
+  step's id, else its kind, weighs 0.8 to 1.2 in everyone's plan (`plan` in GET `/community/coach/weights`,
+  `cloud/src/coachplan.js`, `coachOf(ctx).plan`), and the admin panel's Coach tab lists the votes (`stepName`).
 - The coach learns from what happens after its tips (`cloud/src/coachtips.js`, migration 0051 `coach_tips`; never an LLM
   and never an outside API). Every tip has a kind (`kind` in `coachCompare`, the same names as the phones' `tip_*` keys:
   brake_later, trail, coast, apex_speed, line_apex…) and every corner a speed class (`cls`: slow, medium, fast at the

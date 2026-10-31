@@ -4,6 +4,15 @@ Pitlane HQ is in **beta**. Pitlane HQ Agent (the PC app), the web app and the ph
 number, `0.MINOR.PATCH`. A MINOR version brings a set of new features, and fixes go in as "Fixes and
 improvements". 1.0.0 comes when the beta ends. Newest first.
 
+## 0.9.5 beta
+
+- The coach's plan marks each point it talks about on the track map. Press a step to see where you brake, where the reference brakes and the corner.
+- Every step of the plan says what happened, why it costs time and what to do instead.
+- The plan has new steps for trail braking, a car that pushes wide or steps out (with setup hints), gears, tyres that fade over a run and your usual lap against your best.
+- You can vote each step of the plan and the whole plan with a thumbs up or down.
+- Voice chat has volume sliders for the other voice and your microphone, up to 300 %.
+- Fixes and improvements.
+
 ## 0.9.4 beta
 
 - The coach knows ovals, with tips made for each oval corner.

@@ -1,6 +1,12 @@
 {
   "versions": [
     {
+      "v": "0.9.5",
+      "en": ["The coach's plan marks each point it talks about on the track map. Press a step to see where you brake, where the reference brakes and the corner.", "Every step of the plan says what happened, why it costs time and what to do instead.", "The plan has new steps for trail braking, a car that pushes wide or steps out (with setup hints), gears, tyres that fade over a run and your usual lap against your best.", "You can vote each step of the plan and the whole plan with a thumbs up or down.", "Voice chat has volume sliders for the other voice and your microphone, up to 300 %.", "Fixes and improvements."],
+      "es": ["El plan del coach marca en el mapa del circuito cada punto del que habla. Pulsa un paso para ver dónde frenas, dónde frena la referencia y la curva.", "Cada paso del plan dice qué pasó, por qué cuesta tiempo y qué hacer en su lugar.", "El plan tiene pasos nuevos para el trail braking, un coche que se va de morro o de cola (con ideas de reglaje), las marchas, los neumáticos que caen en una tanda y tu vuelta habitual frente a la mejor.", "Puedes votar cada paso del plan y el plan entero con un pulgar arriba o abajo.", "El chat de voz tiene controles de volumen para la otra voz y tu micrófono, hasta el 300 %.", "Arreglos y mejoras."],
+      "pt": ["O plano do coach marca no mapa da pista cada ponto de que fala. Toque num passo para ver onde você freia, onde a referência freia e a curva.", "Cada passo do plano diz o que aconteceu, por que custa tempo e o que fazer no lugar.", "O plano tem passos novos para o trail braking, um carro que sai de frente ou de traseira (com dicas de acerto), as marchas, pneus que caem numa sequência e sua volta habitual contra a melhor.", "Você pode votar cada passo do plano e o plano inteiro com um polegar para cima ou para baixo.", "O chat de voz tem controles de volume para a outra voz e o seu microfone, até 300 %.", "Correções e melhorias."]
+    },
+    {
       "v": "0.9.4",
       "en": ["The coach knows ovals, with tips made for each oval corner.", "Lap compare has a new chart, with the delta on top and the values of both laps beside it.", "Fixes and improvements."],
       "es": ["El coach conoce los óvalos, con consejos pensados para cada curva del óvalo.", "Comparar vueltas tiene un gráfico nuevo, con el delta arriba y los valores de las dos vueltas al lado.", "Arreglos y mejoras."],

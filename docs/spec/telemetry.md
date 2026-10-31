@@ -35,7 +35,8 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   the official turns). Its chart and Full mode's traces (`drawLapRows`, the owner's design A) draw four rows, Delta (one
   line over its zero), Speed, Throttle · brake (throttle up and brake down from one axis) and Gear, B dashed, the corners
   as bands named T1… under the chart; on a wide screen a column on the left gives each row's name and its values at the
-  cursor (A / B). The page's own lap recorder (`recordLap`, behind the traces and the compare) starts a lap where
+  cursor (A / B). A hole in B's telemetry (a lap may miss up to a tenth) is crossed in a straight line for the deltas
+  (`lapTimed`), never with the time standing still, and the lap's clock now is the recorder's (`lapNowT`). The page's own lap recorder (`recordLap`, behind the traces and the compare) starts a lap where
   LapDistPct goes back to 0 and times it from SessionTime from there, like the agent's (`cloud.go`): iRacing counts the
   lap and restarts its lap clock a second or more after the line, so the first metres were missing and carried the lap
   before's clock (the delta jumped at the start). On the web, a hidden tab closes the live link (nobody watching), except

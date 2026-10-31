@@ -19,6 +19,7 @@ import { live } from "./live.js";
 import { seoPage, indexNow, notFound } from "./seo.js";
 import { discordInteraction, discordOAuth, discordWeekly } from "./discord.js";
 import { steamReturn } from "./steam.js";
+import { googleOAuth } from "./google.js";
 import { scanLeagues } from "./leaguescan.js";
 import { onlineRoute, prunePresence } from "./presence.js";
 import { usageRoute, pruneUsage } from "./usage.js";
@@ -634,6 +635,9 @@ async function handle(req, env, ctx) {
     if (url.pathname === "/discord/oauth" && req.method === "GET") return discordOAuth(req, env, url).catch(() => Response.redirect("https://pitlanehq.app/?discordLogin=0", 302));
     // "Sign in with Steam" and "Link Steam" in the apps: Steam's sign-in comes back here and the browser goes on to the web app
     if (url.pathname === "/steam/return" && req.method === "GET") return steamReturn(req, env, url).catch(() => Response.redirect("https://pitlanehq.app/?steamLogin=0", 302));
+    // "Continue with Google" in the apps: Google's sign-in comes back here and the browser goes on to the web app, the PC's
+    // agent or the phone app (google.js)
+    if (url.pathname === "/google/oauth" && req.method === "GET") return googleOAuth(req, env, url).catch(() => Response.redirect("https://pitlanehq.app/?googleLogin=0", 302));
     // Patreon tells the server about memberships: the supporter badge by itself
     if (url.pathname === "/patreon/webhook" && req.method === "POST") return patreonWebhook(req, env);
     // Lemon Squeezy tells the server about purchases: Pitlane HQ Pro on the account

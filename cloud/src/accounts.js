@@ -12,7 +12,8 @@ import { proOnRegister, proOf, proGate, proHere } from "./lemon.js";
 import { discordAccount, discordStart, useDiscordGrant, discordAccountId, discordLinkedAny, linkDiscordLogin, oauthReady as discordReady } from "./discord.js";
 import { steamAccount, steamStart, useSteamGrant, steamAccountId, linkSteam } from "./steam.js";
 import { notePresence } from "./presence.js";
-import { sealEscrow, escrowLogin } from "./escrow.js";
+import { sealEscrow, escrowLogin, escrowReady } from "./escrow.js";
+import { googleStart, googleReady, useGoogleGrant, googleAccountId, linkGoogle } from "./google.js";
 // the phone app calls the server directly (bearer tokens, no cookies), so any origin may ask
 const JSONH = { "content-type": "application/json; charset=utf-8", "cache-control": "no-store", "access-control-allow-origin": "*" };
 const json = (v, status = 200) => new Response(JSON.stringify(v), { status, headers: JSONH });
@@ -53,26 +54,28 @@ async function tooMany(env, keys, limits) {
 }
 const fail = (env, keys) => env.DB.batch(keys.map((k) => env.DB.prepare("INSERT INTO auth_fails (k, t) VALUES (?1, ?2)").bind(k, Date.now())));
 
-async function newSession(env, accountId, device) {
+async function newSession(env, accountId, device, gated) {
   const token = rid(32);
-  await env.DB.prepare("INSERT INTO account_sessions (id, account_id, token_hash, device, created, last_seen) VALUES (?1,?2,?3,?4,?5,?5)")
-    .bind(rid(8), accountId, await sha256(token), cleanName(device) || "PC", Date.now()).run();
+  await env.DB.prepare("INSERT INTO account_sessions (id, account_id, token_hash, device, created, last_seen, gated) VALUES (?1,?2,?3,?4,?5,?5,?6)")
+    .bind(rid(8), accountId, await sha256(token), cleanName(device) || "PC", Date.now(), gated ? 1 : 0).run();
   return token;
 }
 
-// the account behind a session token (also used by the community)
-export async function sessionAccount(req, env) {
+// the account behind a session token (also used by the community). A session given before the email was confirmed
+// (gated) stands for nobody anywhere but the account's own routes (gate), until the email is confirmed
+export async function sessionAccount(req, env, gate) {
   const h = req.headers.get("authorization") || "";
   const t = h.startsWith("Bearer ") ? h.slice(7).trim() : "";
   if (t.length < 40) return null;
   const s = await env.DB.prepare(
-    "SELECT s.id AS sid, s.last_seen, s.created AS session_created, s.device AS session_device, a.* FROM account_sessions s JOIN accounts a ON a.id=s.account_id WHERE s.token_hash=?1"
+    "SELECT s.id AS sid, s.last_seen, s.created AS session_created, s.device AS session_device, s.gated AS session_gated, a.* FROM account_sessions s JOIN accounts a ON a.id=s.account_id WHERE s.token_hash=?1"
   ).bind(await sha256(t)).first();
   if (!s) return null;
   if (Date.now() - s.last_seen > SESSION_IDLE || Date.now() - s.session_created > SESSION_MAX) {
     await env.DB.prepare("DELETE FROM account_sessions WHERE id=?1").bind(s.sid).run();
     return null;
   }
+  if (s.session_gated && !s.verified && !gate) return null;
   if (Date.now() - s.last_seen > 3600e3) await env.DB.prepare("UPDATE account_sessions SET last_seen=?2 WHERE id=?1").bind(s.sid, Date.now()).run();
   return s;
 }
@@ -122,6 +125,7 @@ const accountRows = (env, id) => [
   env.DB.prepare("DELETE FROM steam_links WHERE account_id=?1").bind(id),
   env.DB.prepare("DELETE FROM steam_oauth WHERE account_id=?1").bind(id),
   env.DB.prepare("DELETE FROM steam_grants WHERE account_id=?1").bind(id),
+  env.DB.prepare("DELETE FROM google_links WHERE account_id=?1").bind(id),
   env.DB.prepare("DELETE FROM usage_days WHERE account_id=?1").bind(id),
   env.DB.prepare("DELETE FROM feedback WHERE account_id=?1").bind(id),
   env.DB.prepare("DELETE FROM feedback_ask WHERE account_id=?1").bind(id),
@@ -192,6 +196,26 @@ export async function nameTaken(env, name, mine) {
   return !!(await env.DB.prepare("SELECT 1 FROM community_users WHERE lower(alias)=?1 AND id<>?2 AND (owner IS NULL OR owner<>?2) AND (token_hash LIKE 'acct:%' OR id LIKE 'guest-%') LIMIT 1").bind(n, mine || "").first());
 }
 // on a local server (LOCAL=1: one PC, its owner, tools/local.cmd) every account is an admin
+// an account made with Steam, Discord or Google alone has no password (auth_hash ''): those sign it in, the server keeps
+// its data key (escrow) and its session stands for the password where one is asked (passCheck), except for what only a
+// password does (changing it, the key wrapped with it, the authenticator)
+export const noPassword = (a) => !!a && !a.auth_hash;
+// the ways a passwordless account signs in: unlinking the last one is refused
+export async function signInWays(env, id) {
+  const n = async (sql) => ((await env.DB.prepare(sql).bind(id).first()) || {}).n || 0;
+  return (await n("SELECT COUNT(*) AS n FROM steam_links WHERE account_id=?1")) + (await n("SELECT COUNT(*) AS n FROM discord_links WHERE account_id=?1 AND login=1")) + (await n("SELECT COUNT(*) AS n FROM google_links WHERE account_id=?1"));
+}
+// a public name for an account made in one tap: the one Steam, Discord or Google gave, made free with a number when taken
+export async function freeName(env, want) {
+  const base = cleanName(want).replace(/\s+/g, " ").slice(0, 26) || "Driver";
+  if (!(await nameTaken(env, base, ""))) return base;
+  for (let i = 0; i < 12; i++) {
+    const n = i < 6 ? String(i + 2) : String(Math.floor(1000 + Math.random() * 9000));
+    const c = base + " " + n;
+    if (!(await nameTaken(env, c, ""))) return c;
+  }
+  return "Driver " + rid(3);
+}
 export const isAdmin = (env, id) => env.LOCAL === "1" || String(env.ADMINS || env.SEASON_UPLOADERS || "").split(",").map((x) => x.trim()).filter(Boolean).includes(id);
 
 export async function accounts(req, env, url) {
@@ -250,6 +274,7 @@ export async function accounts(req, env, url) {
 
   if (p === "/register" && m === "POST") {
     if (await tooMany(env, ["reg:" + ip], [5])) return err("too many new accounts from this network, try later", 429);
+    if (body.quick) return quickRegister(env, body, ip);
     if (typeof body.email !== "string" || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(body.email) || !isKey(body.auth) || !isB64(body.wrappedKey, 200)) return err("missing email, key or data key", 400);
     const display = cleanName(body.display);
     if (!display) return err("choose a public name", 400);
@@ -262,7 +287,7 @@ export async function accounts(req, env, url) {
     // created from the Steam sign-in (sid, the sign-up grant, with the code of the app that started): linked to that Steam
     // at once, so the link never waits for the email to be confirmed
     let steam = null, discord = null;
-    if (body.sid && body.discordSid) return err("sign up with one of the two", 400);
+    if ([body.sid, body.discordSid, body.googleSid].filter(Boolean).length > 1) return err("sign up with one of them", 400);
     if (body.sid) {
       steam = await useSteamGrant(env, body.sid, "signup", body.code);
       if (!steam) return err("this Steam sign-in is not valid any more, sign in with Steam again", 400);
@@ -274,6 +299,13 @@ export async function accounts(req, env, url) {
       if (!discord) return err("this Discord sign-in is not valid any more, sign in with Discord again", 400);
       if (await discordLinkedAny(env, discord.discord_id)) return json({ error: "this Discord account is already linked to another account", code: "taken" }, 409);
     }
+    // the same from Google's sign-in (googleSid): an account with this Google's verified email signs in with Google instead
+    let google = null;
+    if (body.googleSid) {
+      google = await useGoogleGrant(env, body.googleSid, "signup", body.code);
+      if (!google) return err("this Google sign-in is not valid any more, sign in with Google again", 400);
+      if (await googleAccountId(env, google.sub, null)) return json({ error: "this Google account is already linked to another account", code: "taken" }, 409);
+    }
     await fail(env, ["reg:" + ip]); // counts towards the hourly limit too
     const id = rid(), salt = rid(16);
     await env.DB.batch([
@@ -282,6 +314,7 @@ export async function accounts(req, env, url) {
       env.DB.prepare("INSERT INTO community_users (id, token_hash, alias, created) VALUES (?1,?2,?3,?4)").bind(id, "acct:" + id, display, Date.now()),
     ]);
     if (steam) await linkSteam(env, steam.steamid, id, steam.persona);
+    if (google) await linkGoogle(env, google.sub, id);
     // that Discord was linked to another account in the meantime: the account is made without it, and the page says so
     const taken = discord && (await linkDiscordLogin(env, discord, id)) === "taken" ? { discordTaken: true } : {};
     await patreonOnRegister(env, id, eh).catch(() => {}); // a patron already: the supporter badge
@@ -289,6 +322,12 @@ export async function accounts(req, env, url) {
     const mailed = await mailVerify(env, url, id, body.email.trim(), body.lang).catch(() => false);
     // the email went out: confirm it first, then sign in. If it could not be sent, the account
     // still works (signed in) so nobody is locked out while the email service is down.
+    // the new apps (gate) are signed in at once, on the screen that waits for the email (a gated session); the older ones
+    // confirm first, then sign in
+    if (mailed && body.gate) {
+      const token = await newSession(env, id, body.device, true);
+      return json({ id, token, display, nameKind: body.nameKind === "iracing" ? "iracing" : "nick", wrappedKey: body.wrappedKey, keyTag: await keyTag(body.wrappedKey), admin: isAdmin(env, id), verified: false, mailed: true, gated: true, escrow: false, ...taken });
+    }
     if (mailed) return json({ verifyFirst: true, mailed: true, error: "verify your email first: we sent you a link, open it and then sign in", code: "verify_first", ...taken }, 202);
     const token = await newSession(env, id, body.device);
     return json({ id, token, display, nameKind: body.nameKind === "iracing" ? "iracing" : "nick", wrappedKey: body.wrappedKey, keyTag: await keyTag(body.wrappedKey), admin: isAdmin(env, id), verified: false, mailed, escrow: false, ...taken });
@@ -296,7 +335,7 @@ export async function accounts(req, env, url) {
   // a sign-in with Steam or Discord (social) gets the session without the wrapped key: the data key the server keeps
   // (dataKey, escrow.js) when a device uploaded it, else needKey and the password once (POST /account/key). escrow says
   // whether the server keeps it, so a device that has the key uploads it once (POST /account/escrow)
-  const signedIn = async (a, token, social) => json({ id: a.id, token, display: a.display, nameKind: a.name_kind, anon: !!a.anon, wrappedKey: social ? undefined : a.wrapped_key, keyTag: await keyTag(a.wrapped_key), admin: isAdmin(env, a.id), verified: !!a.verified, twoFactor: !!a.totp_on, escrow: !!a.escrow, ...(social ? await escrowLogin(env, a) : {}) });
+  const signedIn = async (a, token, social) => json({ id: a.id, token, display: a.display, nameKind: a.name_kind, anon: !!a.anon, wrappedKey: social ? undefined : a.wrapped_key, keyTag: await keyTag(a.wrapped_key), admin: isAdmin(env, a.id), verified: !!a.verified, twoFactor: !!a.totp_on, escrow: !!a.escrow, noPassword: noPassword(a) || undefined, ...(social ? await escrowLogin(env, a) : {}) });
   // "Sign in with Steam" from the sign-in screen (no session yet): the address the browser opens, answered at /steam/return,
   // with the state and the code only this app keeps. The web gets the answer in the browser; the PC's browser goes on to
   // its agent (port)
@@ -316,6 +355,15 @@ export async function accounts(req, env, url) {
     const r = await discordStart(env, url, "login", null, q ? q.get("device") : body.device, q ? q.get("port") : body.port, body.app || url.searchParams.get("app"));
     return json(r, r.error ? 400 : 200);
   }
+  // "Continue with Google", the same: answered at /google/oauth (google.js)
+  if (p === "/google/login/start" && (m === "GET" || m === "POST")) {
+    if (!googleReady(env)) return err("Google sign-in is not set up on this server yet", 503);
+    if (await tooMany(env, ["google:" + ip], [30])) return err("too many tries: wait 15 minutes", 429);
+    await fail(env, ["google:" + ip]);
+    const q = m === "GET" ? url.searchParams : null;
+    const r = await googleStart(env, url, q ? q.get("device") : body.device, q ? q.get("port") : body.port, body.app || url.searchParams.get("app"));
+    return json(r, r.error ? 400 : 200);
+  }
   if (p === "/login" && m === "POST") {
     if (typeof body.email !== "string" || !isKey(body.auth)) return err("missing email or key", 400);
     const eh = await emailHash(env, body.email), keys = ["login:" + eh, ip];
@@ -326,6 +374,10 @@ export async function accounts(req, env, url) {
       await fail(env, [ip]);
       return json({ error: "there is no account with this email: create one", code: "no_account" }, 404);
     }
+    if (noPassword(a)) {
+      await fail(env, keys);
+      return json({ error: "this account signs in with Steam, Discord or Google", code: "social_only" }, 401);
+    }
     if (!same(await authHash(a.auth_salt, body.auth), a.auth_hash)) {
       await fail(env, keys);
       return err("wrong email or password", 401);
@@ -334,6 +386,8 @@ export async function accounts(req, env, url) {
       // the password is right but the email is not confirmed: a new link (at most one every 2 minutes)
       const recent = await env.DB.prepare("SELECT 1 FROM email_tokens WHERE account_id=?1 AND kind='verify' AND expires>?2").bind(a.id, Date.now() + 7 * 86400e3 - 120e3).first();
       if (!recent) await mailVerify(env, url, a.id, body.email.trim(), body.lang).catch(() => false);
+      // the new apps sign in to the screen that waits for the email
+      if (body.gate) return json({ ...(await (await signedIn(a, await newSession(env, a.id, body.device, true))).json()), gated: true });
       return json({ error: "verify your email first: we sent you a link, open it and then sign in", code: "verify_first" }, 403);
     }
     if (a.totp_on) {
@@ -353,19 +407,31 @@ export async function accounts(req, env, url) {
   // POST /account/key). The sign-in with Discord is
   // the same, with the grant /discord/oauth handed the app (POST /account/login/discord). Neither ever stands for the
   // password elsewhere (reauth, passCheck).
-  if ((p === "/login/steam" || p === "/login/discord") && m === "POST") {
+  // Google's (POST /account/login/google) also signs in to the account of its verified email, which it links then (and
+  // that email counts as confirmed)
+  if ((p === "/login/steam" || p === "/login/discord" || p === "/login/google") && m === "POST") {
     if (await tooMany(env, [ip], [30])) return err("too many tries: wait 15 minutes", 429);
-    const viaDiscord = p === "/login/discord";
-    const g = viaDiscord ? await useDiscordGrant(env, body.grant, "login", body.code) : await useSteamGrant(env, body.grant, "login", body.code);
-    const aid = g ? (viaDiscord ? await discordAccountId(env, g.discord_id) : await steamAccountId(env, g.steamid)) : null;
-    const a = aid ? await env.DB.prepare("SELECT * FROM accounts WHERE id=?1").bind(aid).first() : null;
+    const prov = p.slice(7), label = { steam: "Steam", discord: "Discord", google: "Google" }[prov];
+    const g = prov === "discord" ? await useDiscordGrant(env, body.grant, "login", body.code) : prov === "google" ? await useGoogleGrant(env, body.grant, "login", body.code) : await useSteamGrant(env, body.grant, "login", body.code);
+    const aid = g ? (prov === "discord" ? await discordAccountId(env, g.discord_id) : prov === "google" ? await googleAccountId(env, g.sub, g.email_hash) : await steamAccountId(env, g.steamid)) : null;
+    let a = aid ? await env.DB.prepare("SELECT * FROM accounts WHERE id=?1").bind(aid).first() : null;
+    if (a && prov === "google") {
+      if ((await linkGoogle(env, g.sub, a.id)) === "taken") a = null;
+      else if (!a.verified && g.email_hash && g.email_hash === a.email_hash) {
+        await env.DB.prepare("UPDATE accounts SET verified=1 WHERE id=?1").bind(a.id).run();
+        a.verified = 1;
+      }
+    }
     if (!a) {
       await fail(env, [ip]);
-      return err(viaDiscord ? "this Discord sign-in is not valid any more, sign in with Discord again" : "this Steam sign-in is not valid any more, sign in with Steam again", 401);
+      return err(`this ${label} sign-in is not valid any more, sign in with ${label} again`, 401);
     }
     // the email is not confirmed yet: the link already sent by email (or the password sign-in, which sends a new one)
-    if (mustVerify(env, a)) return json({ error: "verify your email first: we sent you a link, open it and then sign in", code: "verify_first" }, 403);
     const device = cleanName(body.device) || g.device || "PC";
+    if (mustVerify(env, a)) {
+      if (body.gate) return json({ ...(await (await signedIn(a, await newSession(env, a.id, device, true), true)).json()), gated: true });
+      return json({ error: "verify your email first: we sent you a link, open it and then sign in", code: "verify_first" }, 403);
+    }
     if (a.totp_on) {
       const t = rid(24);
       await env.DB.batch([
@@ -402,11 +468,20 @@ export async function accounts(req, env, url) {
     return signedIn(a, await newSession(env, a.id, pend.device), !!pend.steam);
   }
 
-  const a = await sessionAccount(req, env);
+  const a = await sessionAccount(req, env, true);
   if (!a) return err("signed out: sign in again", 401);
+  // a session waiting for the email reads the account, sends the link again, signs out or deletes the account (no password
+  // for that: "Wrong email?" starts again), nothing else until the email is confirmed
+  const gated = !!a.session_gated && !a.verified;
+  if (gated && !((p === "/me" && m === "GET") || p === "/verify/resend" || p === "/logout" || p === "/delete"))
+    return json({ error: "verify your email first: we sent you a link, open it and then sign in", code: "verify_first" }, 403);
   // the reads every app makes about once a minute say who is online and where (the admin page's Online tab)
   if (m === "GET" && (p === "/me" || p === "/sync" || p === "/sync/meta")) await notePresence(env, req, a);
-  const reauth = async () => isKey(body.auth) && same(await authHash(a.auth_salt, body.auth), a.auth_hash);
+  const reauth = async () => noPassword(a) || (isKey(body.auth) && same(await authHash(a.auth_salt, body.auth), a.auth_hash));
+  const SOCIAL_ONLY = () => json({ error: "this account signs in with Steam, Discord or Google", code: "social_only" }, 400);
+  // a passwordless account never unlinks the last way it signs in with
+  if (noPassword(a) && m === "POST" && (p === "/steam/unlink" || p === "/discord/unlink" || p === "/google/unlink") && (await signInWays(env, a.id)) <= 1)
+    return json({ error: "this is the only way you sign in to this account", code: "last_way" }, 409);
   // the password again (auth), with the sign-in's limit of wrong ones: the answer to give when it is not right
   const passCheck = async () => {
     if (await tooMany(env, ["login:" + a.email_hash], [5])) return err("too many wrong passwords: wait 15 minutes", 429);
@@ -418,10 +493,18 @@ export async function accounts(req, env, url) {
   if (p === "/steam" || p.startsWith("/steam/")) return steamAccount(env, a, p, m, body, url, passCheck);
   // Discord: the linked account (Account → Discord, Discord's sign-in) and the bot's /link confirmed in the web app; linking
   // and unlinking ask the password
+  if (p === "/google" && m === "GET") return json({ linked: !!(await env.DB.prepare("SELECT 1 FROM google_links WHERE account_id=?1").bind(a.id).first()), oauth: googleReady(env) });
+  if (p === "/google/unlink" && m === "POST") {
+    const no = await passCheck();
+    if (no) return no;
+    await env.DB.prepare("DELETE FROM google_links WHERE account_id=?1").bind(a.id).run();
+    return json({ ok: true });
+  }
   if (p === "/discord" || p.startsWith("/discord/")) return discordAccount(env, a, p, m, body, url, passCheck);
   // the data key, wrapped with the password, to a device that signed in with Steam or Discord: the password proves itself here
   // (never only on the device), with the sign-in's limit of wrong ones
   if (p === "/key" && m === "POST") {
+    if (noPassword(a)) return SOCIAL_ONLY();
     const no = await passCheck();
     if (no) return no;
     return json({ wrappedKey: a.wrapped_key, keyTag: await keyTag(a.wrapped_key) });
@@ -435,11 +518,12 @@ export async function accounts(req, env, url) {
     return json({ ok: true, escrow: true });
   }
 
-  if (p === "/me" && m === "GET") return json({ id: a.id, display: a.display, nameKind: a.name_kind, anon: !!a.anon, created: a.created, admin: isAdmin(env, a.id), supporter: !!a.supporter, supporterHidden: !!a.supporter_hidden, ...proOf(a), ...(await proHere(env, a, url.searchParams)), proGate: await proGate(env), verified: !!a.verified, mail: mailReady(env), twoFactor: !!a.totp_on, escrow: !!a.escrow, recoveryLeft: a.totp_on ? ((await env.DB.prepare("SELECT COUNT(*) AS n FROM recovery_codes WHERE account_id=?1").bind(a.id).first()) || {}).n || 0 : 0 });
+  if (p === "/me" && m === "GET") return json({ id: a.id, display: a.display, nameKind: a.name_kind, anon: !!a.anon, created: a.created, admin: isAdmin(env, a.id), supporter: !!a.supporter, supporterHidden: !!a.supporter_hidden, ...proOf(a), ...(await proHere(env, a, url.searchParams)), proGate: await proGate(env), verified: !!a.verified, mail: mailReady(env), twoFactor: !!a.totp_on, escrow: !!a.escrow, noPassword: noPassword(a) || undefined, gated: gated || undefined, google: !!(await env.DB.prepare("SELECT 1 FROM google_links WHERE account_id=?1").bind(a.id).first()), recoveryLeft: a.totp_on ? ((await env.DB.prepare("SELECT COUNT(*) AS n FROM recovery_codes WHERE account_id=?1").bind(a.id).first()) || {}).n || 0 : 0 });
   // two-step sign-in with an authenticator app (Google Authenticator, Authy, 1Password…):
   // setup gives the secret (and the QR address), enable confirms it with a first code and hands
   // out the recovery codes once; disable needs the password and a code
   if (p === "/2fa/setup" && m === "POST") {
+    if (noPassword(a)) return SOCIAL_ONLY();
     if (await tooMany(env, ["login:" + a.email_hash], [5])) return err("too many wrong passwords: wait 15 minutes", 429);
     if (!(await reauth())) {
       await fail(env, ["login:" + a.email_hash]);
@@ -532,6 +616,7 @@ export async function accounts(req, env, url) {
     return json({ ok: true });
   }
   if (p === "/password" && m === "POST") {
+    if (noPassword(a)) return SOCIAL_ONLY();
     if (await tooMany(env, ["login:" + a.email_hash], [5])) return err("too many wrong passwords: wait 15 minutes", 429);
     if (!(await reauth())) {
       await fail(env, ["login:" + a.email_hash]);
@@ -546,7 +631,7 @@ export async function accounts(req, env, url) {
     return json({ ok: true });
   }
   if (p === "/delete" && m === "POST") {
-    if (!(await reauth())) {
+    if (!gated && !(await reauth())) {
       await fail(env, ["login:" + a.email_hash]);
       return err("the password is wrong", 401);
     }
@@ -583,4 +668,55 @@ export async function accounts(req, env, url) {
     return json({ version: v });
   }
   return err("not found", 404);
+}
+
+// an account made in one tap from a Steam, Discord or Google sign-up grant (quick, with sid, discordSid or googleSid and the
+// code of the app that started): no form, no password and no email to confirm. The server makes the data key and keeps it
+// sealed (escrow), so DATA_KEY is needed; the public name is the one the sign-in gave (made free); Google's verified email
+// is the account's email, the others have none (a hash nobody's email has). It answers as a sign-in with Steam does
+// (signedIn, social: the session and the data key), plus created
+async function quickRegister(env, body, ip) {
+  if (!escrowReady(env)) return json({ error: "sign up with an email on this server", code: "no_quick" }, 503);
+  if ([body.sid, body.discordSid, body.googleSid].filter(Boolean).length !== 1) return err("sign up with one of them", 400);
+  let g = null, prov = "steam", name = "", email = "";
+  if (body.sid) {
+    g = await useSteamGrant(env, body.sid, "signup", body.code);
+    if (!g) return err("this Steam sign-in is not valid any more, sign in with Steam again", 400);
+    if (await steamAccountId(env, g.steamid)) return json({ error: "this Steam account is already linked to another account", code: "taken" }, 409);
+    name = g.persona;
+  } else if (body.discordSid) {
+    prov = "discord";
+    g = await useDiscordGrant(env, body.discordSid, "signup", body.code);
+    if (!g) return err("this Discord sign-in is not valid any more, sign in with Discord again", 400);
+    if (await discordLinkedAny(env, g.discord_id)) return json({ error: "this Discord account is already linked to another account", code: "taken" }, 409);
+    name = g.name || g.handle;
+  } else {
+    prov = "google";
+    g = await useGoogleGrant(env, body.googleSid, "signup", body.code);
+    if (!g) return err("this Google sign-in is not valid any more, sign in with Google again", 400);
+    if (await googleAccountId(env, g.sub, g.email_hash)) return json({ error: "this Google account already has an account, sign in with Google", code: "taken" }, 409);
+    name = g.name;
+    email = g.email && g.email_hash ? g.email : "";
+  }
+  await fail(env, ["reg:" + ip]); // counts towards the hourly limit too
+  const id = rid(), key = hex(crypto.getRandomValues(new Uint8Array(32)));
+  const eh = email ? await emailHash(env, email) : await sha256("pitlanehq-noemail:" + id + ":" + rid(16));
+  const sealed = await sealEscrow(env, key, email, async () => !!email);
+  if (sealed.error) return err(sealed.error, sealed.status);
+  const display = await freeName(env, cleanName(body.display) || name);
+  await env.DB.batch([
+    env.DB.prepare("INSERT INTO accounts (id, email_hash, auth_salt, auth_hash, wrapped_key, display, name_kind, created, verified, escrow) VALUES (?1,?2,'','','',?3,'nick',?4,1,?5)")
+      .bind(id, eh, display, Date.now(), sealed.value),
+    env.DB.prepare("INSERT INTO community_users (id, token_hash, alias, created) VALUES (?1,?2,?3,?4)").bind(id, "acct:" + id, display, Date.now()),
+  ]);
+  if (prov === "steam") await linkSteam(env, g.steamid, id, g.persona);
+  else if (prov === "discord") await linkDiscordLogin(env, g, id);
+  else await linkGoogle(env, g.sub, id);
+  if (email) {
+    await patreonOnRegister(env, id, eh).catch(() => {});
+    await proOnRegister(env, id, eh).catch(() => {});
+  }
+  const a = await env.DB.prepare("SELECT * FROM accounts WHERE id=?1").bind(id).first();
+  const token = await newSession(env, id, cleanName(body.device) || g.device || "PC");
+  return json({ id: a.id, token, display: a.display, nameKind: "nick", anon: false, keyTag: await keyTag(a.wrapped_key), admin: isAdmin(env, a.id), verified: true, twoFactor: false, escrow: true, noPassword: true, created: true, dataKey: key, email: email || undefined });
 }

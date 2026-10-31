@@ -3169,8 +3169,9 @@ function voiceUI(){let b=$("#voiceBar");const show=VOICE.pc||(COMPANION&&VOICE.a
   clearInterval(VOICE.tick);if(VOICE.at)VOICE.tick=setInterval(()=>{if(VOICE.pc&&VOICE.at)voiceUI()},1000)}
 
 if(COMPANION){
-  // nobody watching a hidden tab: the PC stops sending
-  document.addEventListener("visibilitychange",()=>{if(document.hidden){CPLIVE.paused=true;if(CPLIVE.ws)CPLIVE.ws.close()}else{CPLIVE.paused=false;cpLive()}})}
+  // nobody watching a hidden tab: the PC stops sending. Telemetry open is the exception: its lap recorder (the traces and
+  // Lap compare) keeps the laps driven meanwhile, so the link stays and only the drawing waits for the tab (frameTick)
+  document.addEventListener("visibilitychange",()=>{if(document.hidden){if(CUR_VIEW==="live")return;CPLIVE.paused=true;if(CPLIVE.ws)CPLIVE.ws.close()}else{CPLIVE.paused=false;cpLive()}})}
 
 /* the phone app without the PC only shows the settings that apply to the phone */
 function cpTrimSettings(){const sec=$("#v-settings");if(!sec)return;let keep=true;[...sec.children].forEach(el=>{if(el.classList.contains("sethead"))keep=el.id==="set-general"||el.id==="set-about";if(el.classList.contains("vhead")||el.id==="setAccount")return;if(el.id==="setNav"){el.hidden=true;return}el.hidden=!keep});
@@ -3365,6 +3366,7 @@ function relList(){
 function frameTick(){
   const now=performance.now(),view=CUR_VIEW;
   recordLap();mapSample();trackPits();
+  if(COMPANION&&document.hidden)return; // a hidden tab with Telemetry open: record, draw when shown
   hist.push([T.Throttle||0,T.Brake||0,1-(T.Clutch??1),Math.max(-1,Math.min(1,(T.SteeringWheelAngle||0)/(((S.DriverInfo||{}).DriverCarSteeringWheelAngleMax)||Math.PI*1.5))),T.BrakeABSactive?1:0]);if(hist.length>1800)hist.shift();
   const ovw=w=>OV.on&&OV.list.includes(w),lv=w=>OV.on?ovw(w):view==="live"&&LIVE_SHOWN.has(w);
   if(lv("inputs"))renderInputs();

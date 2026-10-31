@@ -31,7 +31,8 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   the official turns). The page's own lap recorder (`recordLap`, behind the traces and the compare) starts a lap where
   LapDistPct goes back to 0 and times it from SessionTime from there, like the agent's (`cloud.go`): iRacing counts the
   lap and restarts its lap clock a second or more after the line, so the first metres were missing and carried the lap
-  before's clock (the delta jumped at the start). Standings: gap to the leader or interval, the class filter only when several classes race, your
+  before's clock (the delta jumped at the start). On the web, a hidden tab closes the live link (nobody watching), except
+  with Telemetry open: the link stays so the laps driven meanwhile are recorded, and only the drawing waits for the tab. Standings: gap to the leader or interval, the class filter only when several classes race, your
   position lap by lap (`renderStandings`, `drawPosHistory`); Tyres show their wear. The rev beep page is a list of cars
   and the chosen car's mode as three cards (iRacing lights, My laps, My RPM with one number or one per gear) and its
   sound (early, pitch, volume, test). Overlays is one list (`renderOverlaysTab`, `.ov-row`): every overlay always (no switch for the

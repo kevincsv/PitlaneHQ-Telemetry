@@ -548,7 +548,9 @@ type ovSession struct {
 	Track    string
 	TrackID  int
 	MyIdx    int
-	Tyres    map[int]string // the car's tyre compounds (DriverTires): index → "Hard", "Wet"…
+	// what the oval coach reads (ovalKind): iRacing's Category, WeekendInfo's TrackType, the layout and your car
+	Cat, TrackType, TrackConfig, CarName string
+	Tyres                                map[int]string // the car's tyre compounds (DriverTires): index → "Hard", "Wet"…
 }
 
 type ovSess struct {
@@ -741,6 +743,10 @@ func parseOvSession(y string) *ovSession {
 	s.TrackID = atoi(yamlField(y, "TrackID"))
 	s.MyIdx = atoi(yamlField(y, "DriverCarIdx"))
 	s.TrackLen = trackLength(y)
+	s.Cat, s.TrackType, s.TrackConfig = yamlField(y, "Category"), yamlField(y, "TrackType"), yamlField(y, "TrackConfigName")
+	if d := driverBlock(y, yamlField(y, "DriverCarIdx")); d != "" {
+		s.CarName = yamlField(d, "CarScreenName")
+	}
 	s.IncLimit = atoi(strings.TrimPrefix(yamlField(y, "IncidentLimit"), "unlimited"))
 	if f := strings.Fields(yamlField(y, "TrackPitSpeedLimit")); len(f) >= 1 { // "60.00 kph"
 		if v, err := strconv.ParseFloat(f[0], 64); err == nil && v > 0 {

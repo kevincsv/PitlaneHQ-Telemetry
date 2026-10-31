@@ -1160,6 +1160,24 @@ type coachTip struct {
 // coachCue: the tip in two or three words, for the big style of the coach overlay (read in a glance, in VR too)
 func coachCue(en string) (string, string) {
 	has := func(x string) bool { return strings.Contains(en, x) }
+	switch { // the oval's tips first (ovalTip, dirtLineTip)
+	case has("stays flat out here"):
+		return "STAY FLAT", "A FONDO"
+	case has("only lifts here"):
+		return "LIFT, NO BRAKE", "LEVANTA, NO FRENES"
+	case strings.HasPrefix(en, "You lift ") && has("before the reference"):
+		return "LIFT LATER", "LEVANTA MÁS TARDE"
+	case strings.HasPrefix(en, "You lift ") && has("later than the reference"):
+		return "LIFT EARLIER", "LEVANTA ANTES"
+	case strings.HasPrefix(en, "You lift to "), en == ovalRollEn:
+		return "LIFT LESS", "LEVANTA MENOS"
+	case has("off full throttle"):
+		return "BACK TO FLAT", "VUELVE A FONDO"
+	case has("middle of the corner") && strings.HasPrefix(en, "Carry "):
+		return "MORE SPEED", "MÁS VELOCIDAD"
+	case has("groove"):
+		return "FIND THE GROOVE", "BUSCA LA LÍNEA"
+	}
 	switch {
 	case strings.HasPrefix(en, "You brake ") && has("later than the reference"), has("too late"):
 		return "BRAKE EARLIER", "FRENA ANTES"
@@ -1193,6 +1211,7 @@ type cornerZone struct {
 	v, vmin float64
 	turn    int  // the track's turn (0-based) it is, -1 when the track has no turns
 	lift    bool // taken without braking (a lift): no braking phase to speak of
+	flatB   bool // on an oval: lap A lifts here and the reference stays flat out (ovalFlatZones)
 }
 
 // cornerZones: the reference's corners, like the web's cornerZones (index.html) and the phones' (LapMath): its braking
@@ -1200,14 +1219,10 @@ type cornerZone struct {
 // two brake applications in one corner are one corner, plus the turns the reference takes without braking (a lift, a fast
 // corner) as corners of their own; without turns, the braking zones as they are. st.mu is held.
 func (st *ovState) cornerZones(sb []*lapPt, n int) []cornerZone {
-	zb := brakeZones(sb)
+	zb := lapZones(sb, st.oval() != "") // on an oval, its lifts too
 	t := st.ext.turns
 	if len(t) == 0 || n <= 0 {
-		out := make([]cornerZone, 0, len(zb))
-		for _, z := range zb {
-			out = append(out, cornerZone{z.i, z.imin, z.v, z.vmin, -1, false})
-		}
-		return out
+		return zb
 	}
 	ap := make([]int, 0, len(t))
 	for _, f := range t {
@@ -1232,17 +1247,20 @@ func (st *ovState) cornerZones(sb []*lapPt, n int) []cornerZone {
 	for _, z := range zb {
 		k := near(z.imin)
 		if k < 0 {
-			out = append(out, cornerZone{z.i, z.imin, z.v, z.vmin, -1, false})
+			out = append(out, z)
 			continue
 		}
 		if o := byTurn[k]; o != nil {
+			if !z.lift {
+				o.lift = false
+			}
 			if z.vmin < o.vmin {
 				o.vmin, o.imin = z.vmin, z.imin
 			}
 			o.i, o.v = min(o.i, z.i), math.Max(o.v, z.v)
 			continue
 		}
-		byTurn[k] = &cornerZone{z.i, z.imin, z.v, z.vmin, k, false}
+		byTurn[k] = &cornerZone{i: z.i, imin: z.imin, v: z.v, vmin: z.vmin, turn: k, lift: z.lift}
 	}
 	// a turn the reference takes without braking: from where it lifts (its last full throttle before the apex, or 100 m
 	// before) to its slowest point, when it really slows
@@ -1267,7 +1285,7 @@ func (st *ovState) cornerZones(sb []*lapPt, n int) []cornerZone {
 			}
 		}
 		if v := sb[i0][0]; v-vmin > 2 {
-			byTurn[k] = &cornerZone{i0, imin, v, vmin, k, true}
+			byTurn[k] = &cornerZone{i: i0, imin: imin, v: v, vmin: vmin, turn: k, lift: true}
 		}
 	}
 	for _, z := range byTurn {
@@ -1307,7 +1325,14 @@ func (st *ovState) compareLaps(A, R *ovLap, max int) []coachTip {
 	if len(sb) < n {
 		n = len(sb)
 	}
-	zb, za := st.cornerZones(sb, n), brakeZones(sa)
+	oval := st.oval()
+	if oval == "intermediate" && st.ses != nil && st.ses.TrackLen >= 3000 && fullShare(sb) >= .97 {
+		oval = "superspeedway" // flat out all lap on a long oval: a drafting track
+	}
+	zb, za := st.cornerZones(sb, n), lapZones(sa, oval != "")
+	if oval != "" {
+		zb = ovalFlatZones(zb, za, sb, n)
+	}
 	T := func(s []*lapPt, i int) float64 { return s[i][1] }
 	ok := func(s []*lapPt, i int) bool { return i >= 0 && i < len(s) && s[i] != nil }
 	seg := func(x, y int) float64 {
@@ -1561,16 +1586,28 @@ func (st *ovState) compareLaps(A, R *ovLap, max int) []coachTip {
 				en, es = fmt.Sprintf("Drop to gear %d for the apex like the reference (you stay in gear %d)", gB, gA), fmt.Sprintf("Baja a %dª en el vértice como la referencia (tú te quedas en %dª)", gB, gA)
 			case ph[0].k == "exit" && lA >= 2 && lA > lB+1:
 				en, es = fmt.Sprintf("Smoother throttle on exit. You lifted %d times after the apex (reference %d)", lA, lB), fmt.Sprintf("Acelera más progresivo a la salida. Levantaste %d veces tras el vértice (referencia %d)", lA, lB)
-			case hasA && hasB && rA >= 3 && rA > rB+2:
+			case oval != "dirt" && hasA && hasB && rA >= 3 && rA > rB+2: // on dirt the wheel corrects the slide all the time
 				en, es = fmt.Sprintf("%d steering corrections in this corner (reference %d). Turn in once, smoothly", rA, rB), fmt.Sprintf("%d correcciones de volante en esta curva (referencia %d). Gira una vez, suave", rA, rB)
 			}
 		}
+		// on an oval, a corner the reference takes with a lift hears about the lift, never about a brake it does not use
+		if oval != "" && (z.lift || z.flatB) {
+			roadish := generic || strings.Contains(en, "rake") || strings.Contains(en, "apex") || strings.Contains(en, "turn")
+			if oe, os := st.ovalTip(sa, sb, z, max0(z.i-30), i1, hasM, dd, dmin, roadish); oe != "" {
+				en, es = oe, os
+			}
+		}
 		// the line: where the car was across the track. A lap that brakes at the reference's point but on the wrong
-		// part of the track hears that first; otherwise it follows the tip of the phase
-		if lat != nil {
+		// part of the track hears that first; otherwise it follows the tip of the phase. On dirt it is the groove, on a
+		// superspeedway the pack decides the line
+		if lat != nil && oval != "superspeedway" {
 			if le, la, lx, okL := cornerLine(lat, R.x, R.y, z.i, z.imin); okL {
-				generic := coachGeneric(en)
-				if ln, ls := lineTip(le, la, lx, hasM && math.Abs(dd) <= 6); ln != "" {
+				generic := coachGeneric(en) || en == ovalRollEn
+				ln, ls := lineTip(le, la, lx, hasM && math.Abs(dd) <= 6)
+				if oval == "dirt" {
+					ln, ls = dirtLineTip(la)
+				}
+				if ln != "" {
 					if generic || (ph[0].k == "brake" && hasM && math.Abs(dd) <= 6) {
 						en, es = ln, ls
 					} else {

@@ -28,7 +28,7 @@ const NAMES = ["lapSeries", "serOf", "lapShape", "sameFrame", "lineOffsets", "co
   "tipWeight", "tipAsk", "tipOff", "coachPhasesHTML",
   // the new index.html: what builds the module's context and reads its texts (the line's and the corners' helpers above
   // live only in the module now)
-  "anaCtx", "tipTx", "PWA"];
+  "anaCtx", "anaTrack", "tipTx", "PWA"];
 function extract(src, optional) {
   const lines = src.split("\n"), out = [];
   for (const nm of NAMES) {
@@ -59,7 +59,7 @@ let COACH_W={at:0,w:{},b:{},off:new Set(),conf:false,min:30},COACH_ME={at:0,habi
 let CARDS=[];const hintOf=(cs,apex)=>{if(!cs||!cs.length||!(apex>=0))return null;let b=null;for(const c of cs){const g=Math.abs(c.apex-apex);if(g<=60&&(!b||g<Math.abs(b.apex-apex)))b=c}return b};
 window.PW_MODEL={cornerHint:(A,apex)=>hintOf(CARDS,apex)};
 const BOX={hidden:true,innerHTML:"",querySelectorAll:()=>[]};const $=s=>s==="#lapAnalyzer"?BOX:null;let CMP_HOVER=null;const drawCmp=()=>{};
-${extract(html, moduleSrc ? ["sameFrame", "cornerLine", "lineTip", "PHASES", "COACH_GEN", "cornerClass", "tipWeight", "tipAsk", "tipOff", "coachPhasesHTML"] : ["anaCtx", "tipTx", "PWA"])}
+${extract(html, moduleSrc ? ["sameFrame", "cornerLine", "lineTip", "PHASES", "COACH_GEN", "cornerClass", "tipWeight", "tipAsk", "tipOff", "coachPhasesHTML", "anaTrack"] : ["anaCtx", "anaTrack", "tipTx", "PWA"])}
 return{set(o){LANG=o.lang;UNITS=o.units;TURNS=o.turns;TURN_TID=null;COACH_W=o.w;COACH_ME=o.me;CARDS=o.cards},BOX,
   lapSeries,serOf,lineOffsets,lapDriving,renderLapAnalyzer,pairSecs,brakeZones,cornerZones,coachCompare,
   cornerConsistency,coachPlan,coachKindName,stepText,turnNo,PW_ANALYSIS:window.PW_ANALYSIS};`;

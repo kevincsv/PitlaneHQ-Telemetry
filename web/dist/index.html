@@ -6948,7 +6948,12 @@ function notesFor(id){return NOTES[String(id)]||null}
    phases (braking, entry, apex, exit), the tip about the phase where the time goes, the plan, the sectors, the line. The
    app hands it what it needs (anaCtx) and draws what it answers. */
 function anaCtx(A,B){const tid=A||B?(A&&A.trackId)||(B&&B.trackId)||TURN_TID:null,PM=window.PW_MODEL;
-  return{lang:LANG,units:UNITS,turns:tid?turnsFor(tid):null,weights:COACH_W,me:COACH_ME,hint:A&&PM&&PM.cornerHint?apex=>PM.cornerHint(A,apex):null,post:devWords}}
+  return{lang:LANG,units:UNITS,turns:tid?turnsFor(tid):null,weights:COACH_W,me:COACH_ME,hint:A&&PM&&PM.cornerHint?apex=>PM.cornerHint(A,apex):null,post:devWords,track:anaTrack(A,B)}}
+/* the track and car of the laps for the oval coach (ovalOf in the module): a session's laps carry them, a lap recorded
+   live takes the session the agent reads now */
+function anaTrack(A,B){const L=[A,B].find(l=>l&&l.track);if(L)return{cat:L.cat||"",track:L.track||"",track_config:L.track_config||"",car:L.car||""};
+  const wi=typeof S!=="undefined"&&S&&S.WeekendInfo||{};if(!(A||B)||!wi.TrackDisplayName)return null;
+  return{cat:wi.Category||"",trackType:wi.TrackType||"",track:wi.TrackDisplayName,track_config:wi.TrackConfigName||"",car:(myDriver()||{}).CarScreenName||"",len:trackLenM()}}
 /* a corner's tip in the app's language (the module writes it in English, Spanish and Portuguese) */
 const tipTx=c=>Tx(c.tip[0],c.tip[1],null,c.tip[2]);
 function brakeZones(s){return PWA.brakeZones(s)}
@@ -7069,7 +7074,7 @@ async function cloudSessionLaps(id){if(CLOUD_CACHE.has(id))return CLOUD_CACHE.ge
   if(ls.length&&!("trace" in ls[0])){// an older server: one call per lap, six at a time
     const out=[];for(let k=0;k<ls.length;k+=6)out.push(...await Promise.all(ls.slice(k,k+6).map(l=>cloudGet("/api/laps/"+encodeURIComponent(l.id).replace(/%3A/gi,":")).catch(()=>null))));ls=out.filter(Boolean)}
   const meta=j.session||(CLOUD.sessions||[]).find(x=>x.id===id)||{};
-  const res={laps:ls.filter(l=>l&&l.trace&&l.trace.d&&l.trace.d.length).map(l=>({n:l.n,time:l.time,valid:!!l.valid,pit:!!l.pit,inc:l.inc||0,incAt:Array.isArray(l.trace.inc)?l.trace.inc:[],incK:Array.isArray(l.trace.incK)?l.trace.incK:[],cloud:l.id,...(l.drv?{drv:l.drv}:{}),...(meta.other?{who:meta.who||""}:{}),sessionId:id,trackId:meta.trackId??meta.track_id??null,carId:meta.carId??meta.car_id??null,track:meta.track,track_config:meta.track_config,car:meta.car,game:meta.game,sectors:l.sectors||null,vmax:l.vmax||null,fuel:l.fuel??null,...traceBins(l.trace)})),any:ls.length};
+  const res={laps:ls.filter(l=>l&&l.trace&&l.trace.d&&l.trace.d.length).map(l=>({n:l.n,time:l.time,valid:!!l.valid,pit:!!l.pit,inc:l.inc||0,incAt:Array.isArray(l.trace.inc)?l.trace.inc:[],incK:Array.isArray(l.trace.incK)?l.trace.incK:[],cloud:l.id,...(l.drv?{drv:l.drv}:{}),...(meta.other?{who:meta.who||""}:{}),sessionId:id,trackId:meta.trackId??meta.track_id??null,carId:meta.carId??meta.car_id??null,track:meta.track,track_config:meta.track_config,car:meta.car,cat:meta.cat||"",game:meta.game,sectors:l.sectors||null,vmax:l.vmax||null,fuel:l.fuel??null,...traceBins(l.trace)})),any:ls.length};
   await mergeRaceIncidents(id,meta,res.laps);
   if(res.laps.length)CLOUD_CACHE.set(id,res);if(CLOUD_CACHE.size>6)CLOUD_CACHE.delete(CLOUD_CACHE.keys().next().value);return res}
 /* laps recorded before 0.5.1 have no incidents of their own: the race summary of the same session has them per lap

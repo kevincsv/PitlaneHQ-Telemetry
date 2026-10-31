@@ -63,6 +63,26 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   realistic laps and keeps every answer as it was (`analysis.fixture.json`; a change meant to change them writes it again
   with `--capture web/dist/index.html` and says why in the commit). The Go copies (`compareLaps`, `cornerZones` in
   ovnative4.go, racingline.go) still serve the overlays.
+- Ovals get their own coach (`ovalOf`, `liftZones`, the oval tips and `ovalStep` in pitwall-analysis.js; `ovalKind`,
+  `liftZones`, `ovalTip` in ovoval.go for the coach overlay and the SimHub plugin). The kind of oval comes from iRacing's
+  category (`cat` on the laps and `ctx.track`, which the web takes from the session or, for a lap recorded live, from the
+  session the agent reads with its TrackType and length; the phones from their session), never a road layout (Road
+  Course, Roval, Infield): "superspeedway" (Daytona, Talladega, or a long oval of 3 km or more the reference takes flat out
+  97 % of the lap), "short" (under 1450 m), "mile" (under 2100 m), "intermediate" (the rest) and "dirt" (Dirt
+  Oval, or a dirt car on a track with no category). On an oval the corners are the braking zones and the lifts (the
+  throttle under 90 % without the brake and the car slowing more than 1.5 m/s), and a corner where lap A lifts and the
+  reference stays flat out is a corner too (`flatB`). A corner the reference takes with a lift says what the lift does,
+  in this order: "stay flat out" (`oval_flat`), "lift instead of braking" (`oval_no_brake`), lift later (`oval_lift_later`,
+  10 m or more before the reference), lift a touch earlier when lifting later costs the middle of the corner
+  (`oval_lift_early`), a lighter lift (`oval_lift_less`, 15 points of throttle), back to flat out sooner
+  (`oval_back_flat`, 15 m), more speed through the middle of the corner (`oval_center`), and a road tip about the brake
+  or the apex becomes "one smooth, lighter lift" (`oval_roll`); a braking corner (short tracks, the miles) keeps the road's
+  tips. On dirt the steering corrections are never a tip (the wheel catches the slide) and the line is the groove the
+  reference runs through the middle of the corner (`dirt_groove`); on a superspeedway there is no line tip (the pack
+  decides it). The plan starts (after a habit) with the oval's own step: its kind with what the lap did against the
+  reference (how much flat out, its lifts and braking zones) and how that kind of oval is driven; on a superspeedway
+  where both laps are flat out all lap it says the gap is the draft. The habit advice of the entry, the apex and the
+  exit and the time outside the corners speak of the lift, the middle of the corner and the run to the wall.
 - The coach learns from what happens after its tips (`cloud/src/coachtips.js`, migration 0051 `coach_tips`; never an LLM
   and never an outside API). Every tip has a kind (`kind` in `coachCompare`, the same names as the phones' `tip_*` keys:
   brake_later, trail, coast, apex_speed, line_apex…) and every corner a speed class (`cls`: slow, medium, fast at the

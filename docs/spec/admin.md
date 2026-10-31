@@ -13,6 +13,12 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   never synced): `wipAllowed()` is an admin's account and admin mode on, while what is not "in development" keeps
   reading the account (`realAdminSigned`: DRINKS, the voice chat answering, the LMU data capture). About also has the
   switch. The phones have their own admin mode (off by default) in Settings.
+- Testers (the Tester level): the account ids in `TESTERS` (cloud/wrangler.toml, like `ADMINS`) use everything in
+  development on every device (the planner, the games and modes still being made, the SimHub plugin) and the voice chat,
+  always, with no admin mode and none of the admins' tools (the admin page, demo data, the .ibt import, deleting or
+  editing others' things). The server says `tester` in /account/me and every sign-in (`isTester` in accounts.js); the
+  page's `isTester()`/`wipOk()`, the agent's `plAcc.Tester`/`testerSigned()`/`wipOpen()` and `voiceOn()`, and the
+  phones' `tester` follow it. The admin page's Users list marks them "Tester".
 - Admins: the admin page (on the PC, the web and the phones; `admSecs`/`admParts`/`wireAdminProfile` in index.html) is
   sections as tabs, each with its line of explanation: Summary (the key numbers, then the analytics), Users (every
   account with what it uses in the last 30 days, its devices and when it was seen, a name opening its detail,

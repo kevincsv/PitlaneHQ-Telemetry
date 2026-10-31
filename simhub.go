@@ -100,7 +100,7 @@ func registerSimhubRoutes(mux *http.ServeMux) {
 			http.Error(w, "no key", 403)
 			return
 		}
-		if !wipAllowed() {
+		if !wipOpen() {
 			w.WriteHeader(409)
 			writeJSON(w, map[string]any{"v": simhubFeedVersion, "off": true})
 			return
@@ -125,7 +125,7 @@ func registerSimhubRoutes(mux *http.ServeMux) {
 				return
 			case <-tk.C:
 			}
-			if !wipAllowed() { // admin mode turned off: the plugin hears it and waits
+			if !wipOpen() { // admin mode turned off: the plugin hears it and waits
 				fmt.Fprint(w, "event: off\ndata: {}\n\n")
 				fl.Flush()
 				return

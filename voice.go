@@ -34,12 +34,12 @@ var (
 	}{rooms: map[string]string{}, calls: map[string]string{}, seen: map[string]time.Time{}}
 )
 
-// voiceOn: the voice chat is there only for an admin's account
+// voiceOn: the voice chat is there only for an admin's or a tester's account
 func voiceOn() bool {
 	loadPL()
 	plMu.Lock()
 	defer plMu.Unlock()
-	return plAcc.Admin && plAcc.Token != ""
+	return (plAcc.Admin || plAcc.Tester) && plAcc.Token != ""
 }
 
 func voicePush(list *[]voiceMsg, room string, data json.RawMessage) {

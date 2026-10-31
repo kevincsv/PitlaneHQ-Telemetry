@@ -60,6 +60,14 @@ func realAdminSigned() bool {
 	return plAcc.Admin && plAcc.Token != ""
 }
 
+// testerSigned: a tester of the server (TESTERS on the server) is signed in; they use what is in development
+func testerSigned() bool {
+	loadPL()
+	plMu.Lock()
+	defer plMu.Unlock()
+	return plAcc.Tester && plAcc.Token != ""
+}
+
 func registerAdminModeRoute(mux *http.ServeMux) {
 	mux.HandleFunc("/api/adminmode", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == http.MethodPost {

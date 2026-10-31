@@ -47,12 +47,18 @@ func wipAllowed() bool {
 	return realAdminSigned() && adminMode()
 }
 
+// wipOpen: what is in development opens for the admins in admin mode and for the testers (TESTERS on the server);
+// the admins' own tools (the .ibt import, a race's cut laps) stay wipAllowed
+func wipOpen() bool {
+	return wipAllowed() || testerSigned()
+}
+
 // gameLocked: a game in development, closed except for the admins of the server, who test it.
 func gameLocked(g string) bool {
 	if !gameWIP[g] {
 		return false
 	}
-	return !wipAllowed()
+	return !wipOpen()
 }
 
 func gamePref() string {

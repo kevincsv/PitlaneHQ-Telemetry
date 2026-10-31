@@ -57,6 +57,7 @@ type plAccount struct {
 	SyncErr      string    `json:"syncErr,omitempty"`
 	NoLaps       bool      `json:"noLaps,omitempty"`    // do not keep my laps on the server
 	Admin        bool      `json:"admin,omitempty"`     // an admin of the Pitlane HQ server (sees Connections)
+	Tester       bool      `json:"tester,omitempty"`    // a tester of the server: uses what is in development
 	Verified     bool      `json:"verified,omitempty"`  // the email was confirmed
 	Mail         bool      `json:"mail,omitempty"`      // the server can send emails
 	TwoFactor    bool      `json:"twoFactor,omitempty"` // signs in with an authenticator app too
@@ -655,7 +656,7 @@ func plAdopt() bool {
 type plLoginRes struct {
 	ID, Token, Display, NameKind, WrappedKey string
 	KeyTag                                   string // the server's short name of the wrapped key (never the key)
-	Admin, Verified, TwoFactor               bool
+	Admin, Tester, Verified, TwoFactor       bool
 	Mailed                                   *bool
 	Escrow                                   bool   // the server keeps a copy of the data key
 	DataKey, Email                           string // a sign-in with Steam or Discord: the server's copy of the data key (hex) and the account's email
@@ -713,7 +714,7 @@ func plSignedIn(r plLoginRes, email string, wrap []byte, newKey []byte) error {
 		key = k
 	}
 	plMu.Lock()
-	plAcc = plAccount{Email: normEmail(email), ID: r.ID, Token: r.Token, DataKey: hex.EncodeToString(key), KeyTag: r.KeyTag, Display: r.Display, NameKind: r.NameKind, Admin: r.Admin, Verified: r.Verified, Mail: r.Mailed != nil, TwoFactor: r.TwoFactor, Escrow: r.Escrow, Gated: r.Gated && !r.Verified, NoPassword: r.NoPassword}
+	plAcc = plAccount{Email: normEmail(email), ID: r.ID, Token: r.Token, DataKey: hex.EncodeToString(key), KeyTag: r.KeyTag, Display: r.Display, NameKind: r.NameKind, Admin: r.Admin, Tester: r.Tester, Verified: r.Verified, Mail: r.Mailed != nil, TwoFactor: r.TwoFactor, Escrow: r.Escrow, Gated: r.Gated && !r.Verified, NoPassword: r.NoPassword}
 	savePLLocked()
 	plMu.Unlock()
 	return nil
@@ -923,7 +924,7 @@ func plSteamLogin(b []byte) (needKey bool, err error) {
 	if plAcc.ID == res.ID && plAcc.DataKey != "" && plAcc.KeyTag != "" && plAcc.KeyTag == res.KeyTag {
 		// the server's copy is not this PC's key (still the account's): this one goes up after the next sync
 		escrow := res.Escrow && (res.DataKey == "" || strings.EqualFold(res.DataKey, plAcc.DataKey))
-		plAcc = plAccount{Email: plAcc.Email, ID: res.ID, Token: res.Token, DataKey: plAcc.DataKey, KeyTag: plAcc.KeyTag, Display: res.Display, NameKind: res.NameKind, Admin: res.Admin, Verified: res.Verified, Mail: res.Mailed != nil, TwoFactor: res.TwoFactor, Escrow: escrow, Gated: res.Gated && !res.Verified, NoPassword: res.NoPassword}
+		plAcc = plAccount{Email: plAcc.Email, ID: res.ID, Token: res.Token, DataKey: plAcc.DataKey, KeyTag: plAcc.KeyTag, Display: res.Display, NameKind: res.NameKind, Admin: res.Admin, Tester: res.Tester, Verified: res.Verified, Mail: res.Mailed != nil, TwoFactor: res.TwoFactor, Escrow: escrow, Gated: res.Gated && !res.Verified, NoPassword: res.NoPassword}
 		savePLLocked()
 		plMu.Unlock()
 		return false, nil
@@ -1067,7 +1068,7 @@ func plStatus() map[string]any {
 	defer plMu.Unlock()
 	a := plAcc
 	out := map[string]any{"ready": commBase() != "", "signedIn": a.Token != "", "id": a.ID, "email": a.Email, "display": a.Display, "nameKind": a.NameKind,
-		"lapsToAccount": !a.NoLaps, "admin": a.Admin, "supporter": a.Supporter, "supporterHidden": a.SupHidden, "pro": a.Pro, "proSrc": a.ProSrc, "proGate": a.ProGate, "proElsewhere": a.ProElsewhere, "verified": a.Verified, "mail": a.Mail, "twoFactor": a.TwoFactor, "gated": a.Gated, "noPassword": a.NoPassword, "recoveryLeft": plRecovery, "version": a.Version, "error": a.SyncErr, "ended": a.Ended}
+		"lapsToAccount": !a.NoLaps, "admin": a.Admin, "tester": a.Tester, "supporter": a.Supporter, "supporterHidden": a.SupHidden, "pro": a.Pro, "proSrc": a.ProSrc, "proGate": a.ProGate, "proElsewhere": a.ProElsewhere, "verified": a.Verified, "mail": a.Mail, "twoFactor": a.TwoFactor, "gated": a.Gated, "noPassword": a.NoPassword, "recoveryLeft": plRecovery, "version": a.Version, "error": a.SyncErr, "ended": a.Ended}
 	if !a.LastSync.IsZero() {
 		out["lastSync"] = a.LastSync.UnixMilli()
 	}
@@ -1726,6 +1727,7 @@ func plRefreshMe() {
 		NameKind     string `json:"nameKind"`
 		Anon         bool   `json:"anon"`
 		Admin        bool   `json:"admin"`
+		Tester       bool   `json:"tester"`
 		Supporter    bool   `json:"supporter"`
 		SupHidden    bool   `json:"supporterHidden"`
 		Pro          bool   `json:"pro"`
@@ -1752,10 +1754,10 @@ func plRefreshMe() {
 		plMu.Unlock()
 		return
 	}
-	if plAcc.Admin != me.Admin || plAcc.Verified != me.Verified || plAcc.Mail != me.Mail || plAcc.TwoFactor != me.TwoFactor || plAcc.Display != me.Display || plAcc.NameKind != me.NameKind || plAcc.Anon != me.Anon || plAcc.Supporter != me.Supporter || plAcc.SupHidden != me.SupHidden || plAcc.Pro != me.Pro || plAcc.ProSrc != me.ProSrc || plAcc.ProGate != me.ProGate || plAcc.ProElsewhere != elsewhere {
+	if plAcc.Admin != me.Admin || plAcc.Tester != me.Tester || plAcc.Verified != me.Verified || plAcc.Mail != me.Mail || plAcc.TwoFactor != me.TwoFactor || plAcc.Display != me.Display || plAcc.NameKind != me.NameKind || plAcc.Anon != me.Anon || plAcc.Supporter != me.Supporter || plAcc.SupHidden != me.SupHidden || plAcc.Pro != me.Pro || plAcc.ProSrc != me.ProSrc || plAcc.ProGate != me.ProGate || plAcc.ProElsewhere != elsewhere {
 		plAcc.Supporter, plAcc.SupHidden = me.Supporter, me.SupHidden
 		plAcc.Pro, plAcc.ProSrc, plAcc.ProGate, plAcc.ProElsewhere = me.Pro, me.ProSrc, me.ProGate, elsewhere
-		plAcc.Admin, plAcc.Verified, plAcc.Mail, plAcc.TwoFactor = me.Admin, me.Verified, me.Mail, me.TwoFactor
+		plAcc.Admin, plAcc.Tester, plAcc.Verified, plAcc.Mail, plAcc.TwoFactor = me.Admin, me.Tester, me.Verified, me.Mail, me.TwoFactor
 		plAcc.Display, plAcc.NameKind, plAcc.Anon = me.Display, me.NameKind, me.Anon
 		savePLLocked()
 	}

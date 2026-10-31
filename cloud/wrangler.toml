@@ -42,6 +42,8 @@ LEAGUES_OPEN = "1"
 SEASON_UPLOADERS = "3e224233fde0e11f670d2d97"
 # admin account id(s): they see Connections (iRacing, Garage 61, own site, Discord) in the app; empty = the SEASON_UPLOADERS
 ADMINS = "3e224233fde0e11f670d2d97"
+# tester account id(s): they use what is in development on every device, without the admins' tools
+TESTERS = "88407bb0034daced71a27d3f"
 
 # the full app (web/dist) is served at /app/ by the worker
 [assets]

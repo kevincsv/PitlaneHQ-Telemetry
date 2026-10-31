@@ -69,7 +69,7 @@ area you are changing before you change it, and update it in the same commit whe
 
 ## Feature status
 
-- In development (shown with "In development", usable only by admins with admin mode on, every device; `wipOk()`/
+- In development (shown with "In development", usable only by admins with admin mode on and by testers, every device; `wipOk()`/
   `wipView()` in index.html, `wipAllowed()` in Go): the Planner (until iRacing switches its data API back on), ACC,
   Assetto Corsa, NASCAR 26, team mode and the SimHub plugin.
 - Switched off for now: setups, per-car settings (`carProfilesOn` in carprofiles.go), the Data view and sharing race

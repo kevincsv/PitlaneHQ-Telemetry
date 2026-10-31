@@ -219,6 +219,9 @@ export async function freeName(env, want) {
   return "Driver " + rid(3);
 }
 export const isAdmin = (env, id) => env.LOCAL === "1" || String(env.ADMINS || env.SEASON_UPLOADERS || "").split(",").map((x) => x.trim()).filter(Boolean).includes(id);
+// testers of this server: the account ids in TESTERS; they use what is in development (the planner, the games and modes
+// still being made) on every device, with none of the admins' tools
+export const isTester = (env, id) => !!id && String(env.TESTERS || "").split(",").map((x) => x.trim()).filter(Boolean).includes(id);
 
 export async function accounts(req, env, url) {
   if (env.COMMUNITY !== "1") return err("accounts are not enabled on this server", 404);
@@ -328,16 +331,16 @@ export async function accounts(req, env, url) {
     // confirm first, then sign in
     if (mailed && body.gate) {
       const token = await newSession(env, id, body.device, true);
-      return json({ id, token, display, nameKind: body.nameKind === "iracing" ? "iracing" : "nick", wrappedKey: body.wrappedKey, keyTag: await keyTag(body.wrappedKey), admin: isAdmin(env, id), verified: false, mailed: true, gated: true, escrow: false, ...taken });
+      return json({ id, token, display, nameKind: body.nameKind === "iracing" ? "iracing" : "nick", wrappedKey: body.wrappedKey, keyTag: await keyTag(body.wrappedKey), admin: isAdmin(env, id), tester: isTester(env, id), verified: false, mailed: true, gated: true, escrow: false, ...taken });
     }
     if (mailed) return json({ verifyFirst: true, mailed: true, error: "verify your email first: we sent you a link, open it and then sign in", code: "verify_first", ...taken }, 202);
     const token = await newSession(env, id, body.device);
-    return json({ id, token, display, nameKind: body.nameKind === "iracing" ? "iracing" : "nick", wrappedKey: body.wrappedKey, keyTag: await keyTag(body.wrappedKey), admin: isAdmin(env, id), verified: false, mailed, escrow: false, ...taken });
+    return json({ id, token, display, nameKind: body.nameKind === "iracing" ? "iracing" : "nick", wrappedKey: body.wrappedKey, keyTag: await keyTag(body.wrappedKey), admin: isAdmin(env, id), tester: isTester(env, id), verified: false, mailed, escrow: false, ...taken });
   }
   // a sign-in with Steam or Discord (social) gets the session without the wrapped key: the data key the server keeps
   // (dataKey, escrow.js) when a device uploaded it, else needKey and the password once (POST /account/key). escrow says
   // whether the server keeps it, so a device that has the key uploads it once (POST /account/escrow)
-  const signedIn = async (a, token, social) => json({ id: a.id, token, display: a.display, nameKind: a.name_kind, anon: !!a.anon, wrappedKey: social ? undefined : a.wrapped_key, keyTag: await keyTag(a.wrapped_key), admin: isAdmin(env, a.id), verified: !!a.verified, twoFactor: !!a.totp_on, escrow: !!a.escrow, noPassword: noPassword(a) || undefined, ...(social ? await escrowLogin(env, a) : {}) });
+  const signedIn = async (a, token, social) => json({ id: a.id, token, display: a.display, nameKind: a.name_kind, anon: !!a.anon, wrappedKey: social ? undefined : a.wrapped_key, keyTag: await keyTag(a.wrapped_key), admin: isAdmin(env, a.id), tester: isTester(env, a.id), verified: !!a.verified, twoFactor: !!a.totp_on, escrow: !!a.escrow, noPassword: noPassword(a) || undefined, ...(social ? await escrowLogin(env, a) : {}) });
   // "Sign in with Steam" from the sign-in screen (no session yet): the address the browser opens, answered at /steam/return,
   // with the state and the code only this app keeps. The web gets the answer in the browser; the PC's browser goes on to
   // its agent (port)
@@ -520,7 +523,7 @@ export async function accounts(req, env, url) {
     return json({ ok: true, escrow: true });
   }
 
-  if (p === "/me" && m === "GET") return json({ id: a.id, display: a.display, nameKind: a.name_kind, anon: !!a.anon, created: a.created, admin: isAdmin(env, a.id), supporter: !!a.supporter, supporterHidden: !!a.supporter_hidden, ...proOf(a), ...(await proHere(env, a, url.searchParams)), proGate: await proGate(env), verified: !!a.verified, mail: mailReady(env), twoFactor: !!a.totp_on, escrow: !!a.escrow, noPassword: noPassword(a) || undefined, gated: gated || undefined, google: !!(await env.DB.prepare("SELECT 1 FROM google_links WHERE account_id=?1").bind(a.id).first()), recoveryLeft: a.totp_on ? ((await env.DB.prepare("SELECT COUNT(*) AS n FROM recovery_codes WHERE account_id=?1").bind(a.id).first()) || {}).n || 0 : 0 });
+  if (p === "/me" && m === "GET") return json({ id: a.id, display: a.display, nameKind: a.name_kind, anon: !!a.anon, created: a.created, admin: isAdmin(env, a.id), tester: isTester(env, a.id), supporter: !!a.supporter, supporterHidden: !!a.supporter_hidden, ...proOf(a), ...(await proHere(env, a, url.searchParams)), proGate: await proGate(env), verified: !!a.verified, mail: mailReady(env), twoFactor: !!a.totp_on, escrow: !!a.escrow, noPassword: noPassword(a) || undefined, gated: gated || undefined, google: !!(await env.DB.prepare("SELECT 1 FROM google_links WHERE account_id=?1").bind(a.id).first()), recoveryLeft: a.totp_on ? ((await env.DB.prepare("SELECT COUNT(*) AS n FROM recovery_codes WHERE account_id=?1").bind(a.id).first()) || {}).n || 0 : 0 });
   // two-step sign-in with an authenticator app (Google Authenticator, Authy, 1Password…):
   // setup gives the secret (and the QR address), enable confirms it with a first code and hands
   // out the recovery codes once; disable needs the password and a code
@@ -720,5 +723,5 @@ async function quickRegister(env, body, ip) {
   }
   const a = await env.DB.prepare("SELECT * FROM accounts WHERE id=?1").bind(id).first();
   const token = await newSession(env, id, cleanName(body.device) || g.device || "PC");
-  return json({ id: a.id, token, display: a.display, nameKind: "nick", anon: false, keyTag: await keyTag(a.wrapped_key), admin: isAdmin(env, a.id), verified: true, twoFactor: false, escrow: true, noPassword: true, created: true, dataKey: key, email: email || undefined });
+  return json({ id: a.id, token, display: a.display, nameKind: "nick", anon: false, keyTag: await keyTag(a.wrapped_key), admin: isAdmin(env, a.id), tester: isTester(env, a.id), verified: true, twoFactor: false, escrow: true, noPassword: true, created: true, dataKey: key, email: email || undefined });
 }

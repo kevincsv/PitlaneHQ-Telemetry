@@ -1092,7 +1092,11 @@ func registerPLRoutes(mux *http.ServeMux) {
 		var body any
 		if post { // the request's JSON goes through as it is
 			var in map[string]any
-			json.NewDecoder(io.LimitReader(r.Body, 1<<20)).Decode(&in)
+			limit := int64(1 << 20)
+			if p == "/community/admin/season" { // the season from the schedule PDF (the admin page's Season), over a megabyte
+				limit = 16 << 20
+			}
+			json.NewDecoder(io.LimitReader(r.Body, limit)).Decode(&in)
 			if in == nil {
 				in = map[string]any{}
 			}

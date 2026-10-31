@@ -115,7 +115,10 @@ iRacing only gives the season schedule to signed-in apps. So that the planner sh
 Everyone reads it from `GET /community/season`; if it is not there yet, the apps show the bundled sample season. The PCs also report when each official race they drive really started (`POST /community/season/seen`: subsession, season, series, track, the track and car names as the sim shows them and the minute, nothing about the driver; table `season_seen`, migration 0077). `GET /community/season` adds the last eight days of those starts under `seen`, and the planner moves a week's race times that miss them (or learns them when the schedule has none). A season imported from the schedule PDF has no iRacing ids, so it takes the starts of the iRacing season whose races were all at its week's track with one of its cars. Check that sharing the schedule this way fits iRacing's Data API terms before turning it on.
 
 **Without the iRacing API** (iRacing stopped giving out new API clients), the season comes from iRacing's quarterly
-schedule PDF instead: `node tools/season-import.mjs <schedule.pdf or its text> --check` reads it and lists the series
+schedule PDF instead. The easy way is the admin page's **Season**: choose the PDF (or its text), read the series it could
+not understand and press Publish for everyone (it reads the PDF in the browser with pdf.js, `web/dist/pitwall-pdf.js`,
+and the parser `web/dist/pitwall-season-import.js`, and posts to `POST /community/admin/season`; `GET
+/community/season/info` says what is published). From a terminal: `node tools/season-import.mjs <schedule.pdf or its text> --check` reads it and lists the series
 whose race times it did not understand (the ones with only "4 Timeslots Per Week" get no times, and the real starts the
 PCs report fill them in); `--out season.json` writes the season, and `PITLANE_TOKEN=<an uploader account's token>
 node tools/season-import.mjs <file> --publish` sends it to `POST /community/season` like the PC does. A PDF needs

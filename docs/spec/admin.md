@@ -52,3 +52,12 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   (`countingDB`, the route is the method and the path with ids left out, `routeKey`; the cron runs count as "cron 10
   min", "cron hourly" and "cron daily"), `first()` reads through `all()` to get D1's meta, and each Worker instance writes
   its counts about once a minute (`flushUsage`), so counting costs one write per route and minute.
+
+## Season
+
+The admin page's Season publishes the iRacing season the planner shows, from the schedule PDF iRacing posts each
+season (or its text). It reads the file in the browser (pdf.js in `pitwall-pdf.js`, the parser in
+`pitwall-season-import.js`, the same one `tools/season-import.mjs` uses), shows how many series, weeks, tracks and
+cars it found and the series whose race times it could not read, and Publish for everyone sends it to
+`POST /community/admin/season` (admins and `SEASON_UPLOADERS`). The race times are then corrected by the official
+races the PCs report (`seasonseen.js`). The PC app passes that post through `/api/sync/get` with a 16 MB limit.

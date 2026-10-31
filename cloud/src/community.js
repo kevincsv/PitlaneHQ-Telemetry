@@ -943,6 +943,12 @@ export async function community(req, env, url, ctx) {
   }
 
   // the current season schedule: public to read, uploaded by the accounts in SEASON_UPLOADERS
+  // the published season in a few numbers (the admin page's Season)
+  if (p === "/season/info" && m === "GET") {
+    const c = await env.DB.prepare("SELECT updated FROM season_cache WHERE k='current'").first();
+    const i = await env.DB.prepare("SELECT data FROM season_chunks WHERE k='info' AND idx=0").first();
+    return json({ updated: c ? c.updated : null, ...(i ? JSON.parse(i.data) : {}) });
+  }
   if (p === "/season" && m === "GET") {
     const c = await env.DB.prepare("SELECT updated, chunks FROM season_cache WHERE k='current'").first();
     if (!c) return err("no season schedule on this server yet", 404);
@@ -1036,9 +1042,10 @@ export async function community(req, env, url, ctx) {
     const r = await recordSeen(env, u.id, body);
     return r.error ? err(r.error, r.status) : json(r);
   }
-  if (p === "/season" && m === "POST") {
+  if ((p === "/season" || p === "/admin/season") && m === "POST") {
+    // the accounts in SEASON_UPLOADERS (the PC of the API days) and the admins (the admin page's Season, from the PDF)
     const allowed = String(env.SEASON_UPLOADERS || env.ADMINS || "").split(",").map((x) => x.trim()).filter(Boolean);
-    if (!u.account || !allowed.includes(u.id)) return err("this account cannot publish the season schedule", 403);
+    if (!u.account || !(allowed.includes(u.id) || isAdmin(env, u.id))) return err("this account cannot publish the season schedule", 403);
     const data = JSON.stringify(body.season || null);
     if (data.length < 100 || data.length > 12000000 || !Array.isArray(body.season.seasons)) return err("season schedule missing or too large", 400);
     const parts = [];
@@ -1047,6 +1054,8 @@ export async function community(req, env, url, ctx) {
       env.DB.prepare("DELETE FROM season_chunks WHERE k='current'"),
       ...parts.map((d, i) => env.DB.prepare("INSERT INTO season_chunks (k, idx, data) VALUES ('current',?1,?2)").bind(i, d)),
       env.DB.prepare("INSERT INTO season_cache (k, updated, chunks) VALUES ('current',?1,?2) ON CONFLICT(k) DO UPDATE SET updated=excluded.updated, chunks=excluded.chunks").bind(Date.now(), parts.length),
+      // what the admin page's Season says about it without reading the whole season
+      env.DB.prepare("INSERT INTO season_chunks (k, idx, data) VALUES ('info',0,?1) ON CONFLICT(k, idx) DO UPDATE SET data=excluded.data").bind(JSON.stringify(seasonInfo(body.season, u.id))),
     ]);
     return json({ published: true, size: data.length });
   }
@@ -1280,4 +1289,10 @@ export async function community(req, env, url, ctx) {
     return json({ shared: true });
   }
   return err("not found", 404);
+}
+
+// the published season in a few numbers: series, weeks, its first and last week, where it came from
+export function seasonInfo(season, by) {
+  const ss = (season && season.seasons) || [], ws = ss.flatMap((x) => x.schedules || []).map((w) => w.start_date).filter(Boolean).sort();
+  return { series: ss.length, weeks: ws.length, from: ws[0] || null, to: ws.at(-1) || null, source: (season && season.source) || "api", by };
 }

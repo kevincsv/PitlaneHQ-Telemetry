@@ -429,6 +429,7 @@ func driverKey(userID string) string {
 
 type raceReport struct {
 	Game        string       `json:"game,omitempty"` // empty: iRacing
+	kind        string       // the session's kind when it is not a race (practiceField): the rivals' laps go up with it
 	ID          string       `json:"id"`
 	When        int64        `json:"when"`
 	Track       string       `json:"track"`
@@ -1021,7 +1022,11 @@ func fieldTopLaps(r *raceReport) []map[string]any {
 		if fieldLapInvalid(x.carIdx, x.Best) {
 			continue // the watcher saw that lap leave the track, or the game refused it: never shared, nor the model's
 		}
-		b := map[string]any{"carId": x.CarID, "car": x.Car, "trackId": r.TrackID, "track": r.Track, "time": x.Best, "game": game, "other": x.key, "kind": "Race", "official": r.Official}
+		kind := r.kind
+		if kind == "" {
+			kind = "Race"
+		}
+		b := map[string]any{"carId": x.CarID, "car": x.Car, "trackId": r.TrackID, "track": r.Track, "time": x.Best, "game": game, "other": x.key, "kind": kind, "official": r.Official}
 		if r.AI {
 			b["ai"] = true
 		}

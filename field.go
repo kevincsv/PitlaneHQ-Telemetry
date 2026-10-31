@@ -353,6 +353,10 @@ func fieldWatcher() {
 	for range time.Tick(16 * time.Millisecond) { // the game's own rate
 		st := currentStatus()
 		if !st.connected() || (st.Demo && !cloudDemo) {
+			if ft.y != "" { // the PC left the game: the rivals of the practice it was in go up
+				sharePractice(ft.y, ft.sn)
+				ft = newFieldText()
+			}
 			continue
 		}
 		if !rd.read() || rd.vals[15] == nil {
@@ -365,6 +369,7 @@ func fieldWatcher() {
 		s.t, s.mat, s.wet = rd.vals[15][0], rd.vals[17], fat(rd.vals[18], 0, -1)
 		s.rain = max(fat(rd.vals[19], 0, 0), fat(rd.vals[20], 0, 0))
 		fieldStep(&s, ft.L, ft.key)
+		practiceTick(y, ft.sn, time.Now())
 	}
 }
 
@@ -374,6 +379,7 @@ type fieldText struct {
 	ver, sn       int
 	sub, trk, key string
 	L             float64
+	y             string // the text of the session being followed: its rivals go up when it ends (sharePractice)
 }
 
 func newFieldText() *fieldText { return &fieldText{ver: -1, sn: -1} }
@@ -386,11 +392,18 @@ func (f *fieldText) update(y string, v, n int) {
 		return
 	}
 	text := v != f.ver
+	old := fmt.Sprintf("%s-%d-%s", f.sub, f.sn, f.trk)
+	prevY, prevSn := f.y, f.sn
 	if text {
 		f.ver, f.sub, f.trk, f.L, f.key = v, yamlField(y, "SubSessionID"), yamlField(y, "TrackID"), trackLength(y), sessionKey(y)
 	}
-	f.sn = n
-	fieldSession(fmt.Sprintf("%s-%d-%s", f.sub, n, f.trk))
+	f.sn, f.y = n, y
+	id := fmt.Sprintf("%s-%d-%s", f.sub, n, f.trk)
+	if id != old && prevY != "" {
+		// a practice or qualifying that ends: its rivals go up while the field still holds its laps
+		sharePractice(prevY, prevSn)
+	}
+	fieldSession(id)
 	if text {
 		fieldDrivers(y)
 	}

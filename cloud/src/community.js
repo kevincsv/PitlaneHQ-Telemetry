@@ -45,11 +45,12 @@ const seesRivals = (req, env, who) => !!who && isAdmin(env, who.id) && req.heade
 export const shownName = (l, u, rivals) => `CASE WHEN ${l}.anon=1${rivals ? ` AND ${l}.user_id NOT LIKE 'o:%'` : ""} THEN 'Anonymous' WHEN ${l}.shown='iracing' AND COALESCE(${u}.iracing,'')<>'' THEN ${u}.iracing ELSE ${u}.alias END`;
 const CAR_RE = /^[A-Za-z0-9 _.\-]{1,80}$/;
 const cleanFile = (n) => (typeof n === "string" ? n : "").replace(/[^A-Za-z0-9 _\-()+.,]/g, "").replace(/^[ .]+|[ .]+$/g, "").slice(0, 60) || "setup";
-// at most 300 uploads a day per driver
+// at most 1500 uploads a day per driver (the race rivals' laps their PC shares count too, a whole field from every
+// race, practice and qualifying)
 async function countUpload(env, u) {
   const day = new Date().toISOString().slice(0, 10);
   const n = u.uploads_day === day ? u.uploads + 1 : 1;
-  if (n > 300) return false;
+  if (n > 1500) return false;
   await env.DB.prepare("UPDATE community_users SET uploads_day=?2, uploads=?3 WHERE id=?1").bind(u.id, day, n).run();
   return true;
 }

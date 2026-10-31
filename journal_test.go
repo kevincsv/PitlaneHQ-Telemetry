@@ -423,3 +423,37 @@ func TestLapClass(t *testing.T) {
 		}
 	}
 }
+
+// the rivals of a practice or qualifying go up like a race's, under the session's kind, each driver again only when
+// faster; a race or a test drive never goes from here
+func TestPracticeRivals(t *testing.T) {
+	y := strings.Replace(testRaceYAML, "   SessionType: Race", "   SessionType: Lone Qualify", 1)
+	r := practiceReport(y, 2)
+	if r == nil || r.kind != "Lone Qualify" || r.Best != 97.9 || r.TrackID != 515 || len(r.Results) != 3 {
+		t.Fatalf("qualifying report: %+v", r)
+	}
+	top := fieldTopLaps(r)
+	if len(top) != 2 || top[0]["kind"] != "Lone Qualify" || top[0]["time"] != 97.5 || top[1]["hidden"] != true {
+		t.Fatalf("qualifying rivals: %v", top)
+	}
+	pracSent = map[string]float64{}
+	if n := len(practiceNew("s", top)); n != 2 {
+		t.Fatalf("first time: %d laps", n)
+	}
+	if n := len(practiceNew("s", top)); n != 0 {
+		t.Fatalf("the same laps went again: %d", n)
+	}
+	top[0]["time"] = 97.1
+	if n := len(practiceNew("s", top)); n != 1 {
+		t.Fatalf("a faster lap goes again: %d", n)
+	}
+	if practiceReport(testRaceYAML, 2) != nil {
+		t.Fatal("a race goes with its report, not from here")
+	}
+	if practiceReport(strings.Replace(testRaceYAML, "   SessionType: Race", "   SessionType: Offline Testing", 1), 2) != nil || practiceKind("") {
+		t.Fatal("a test drive never goes")
+	}
+	if !practiceKind("Practice") || !practiceKind("Open Qualify") || !practiceKind("Warmup") || practiceKind("Heat Race") {
+		t.Fatal("kinds")
+	}
+}

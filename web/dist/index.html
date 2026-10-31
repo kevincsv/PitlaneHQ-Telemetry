@@ -5897,24 +5897,40 @@ function lcmpModel(){const PM=window.PW_MODEL,tid=S.WeekendInfo&&S.WeekendInfo.T
 function lcmpB(){const best=liveBest(),ok=LAPS.filter(l=>l.time>0);
   if(LCMP.b==="best")return best;if(LCMP.b==="last")return ok[ok.length-1]||null;if(LCMP.b==="level")return LCMP.mlevel;if(LCMP.b==="rec")return LCMP.mrec;
   return ok.find(l=>"n"+l.n===LCMP.b)||best}
-/* both laps drawn as rows: speed, throttle and brake, the delta A − B and the gear, against the lap's metres; A only up
-   to where the car is, the corners of B as faint bands, a cursor where the car is (or where you point) */
+/* both laps drawn as rows (design A of the redesign): the delta A − B as one line over its zero, the speed, the throttle up
+   and the brake down from one axis, the gear; against the lap's metres, A only up to where the car is, B dashed, the
+   corners as faint bands named under the chart, a cursor where the car is (or where you point). On a wide screen each
+   row's name and its values at the cursor sit in a column on the left; on a narrow one the name sits in the row */
 function drawLapRows(cv,B,upto,cur,bands){const[x,w,h]=fitCanvas(cv);if(!x)return;x.clearRect(0,0,w,h);
   const L=trackLenM(),A=rec&&rec.bins?rec.bins:[],nb=Math.max(2,Math.ceil(L/BIN)),bs=B?serOf(B):null,bCol=B&&B===liveBest()?"#c48cff":css("--muted");
-  const rows=[["v",.36],["p",.24],["d",.24],["g",.16]],X=i=>i/(nb-1)*w;let y0=0;
+  const G=w>=560?118:0,pw=w-G,ax=16,ph=h-ax,X=i=>G+i/(nb-1)*pw,nA=Math.min(A.length,upto+1),mono=css("--f-data"),fg=css("--fg"),mu=css("--muted");
+  const rows=[["d",.30],["v",.34],["p",.22],["g",.14]];let y0=0;
   const dAt=i=>{const a=A[i];if(!a||!bs)return null;const r=lapTimeAt(bs,i*BIN);return r==null?null:a[1]-r};
-  (bands||[]).forEach(f=>{x.fillStyle="rgba(255,255,255,.035)";x.fillRect(Math.max(0,(f-.03))*w,0,.06*w,h)});
-  rows.forEach(([k,frac])=>{const rh=h*frac,top=y0+3,hh=rh-6;y0+=rh;x.strokeStyle=css("--line");x.lineWidth=1;x.beginPath();x.moveTo(0,top+hh);x.lineTo(w,top+hh);x.stroke();
-    const Y=(v,lo,hi)=>top+hh-Math.max(0,Math.min(1,(v-lo)/(hi-lo)))*hh,line=(get,n,col,dash,wd)=>{x.strokeStyle=col;x.lineWidth=wd||1.6;x.setLineDash(dash?[5,4]:[]);x.beginPath();let on=false;
-      for(let i=0;i<n;i++){const v=get(i);if(v==null){on=false;continue}const yy=v;on?x.lineTo(X(i),yy):x.moveTo(X(i),yy);on=true}x.stroke();x.setLineDash([])};
-    const vmax=Math.max(60,...(bs||[]).filter(Boolean).map(b=>b[0]),...A.filter(Boolean).map(b=>b[0]));
-    if(k==="v"){if(bs)line(i=>bs[i]?Y(bs[i][0],0,vmax):null,bs.length,bCol,false,1.4);line(i=>A[i]?Y(A[i][0],0,vmax):null,Math.min(A.length,upto+1),css("--accent"),false,2)}
-    if(k==="p"){if(bs)line(i=>bs[i]?Y(bs[i][2],0,1):null,bs.length,bCol,true,1.2);line(i=>A[i]?Y(A[i][2],0,1):null,Math.min(A.length,upto+1),css("--good"));line(i=>A[i]?Y(A[i][3],0,1):null,Math.min(A.length,upto+1),css("--bad"))}
-    if(k==="d"){x.strokeStyle=css("--line");x.beginPath();x.moveTo(0,top+hh/2);x.lineTo(w,top+hh/2);x.stroke();const lim=Math.max(.5,...Array.from({length:Math.min(A.length,upto+1)},(_,i)=>Math.abs(dAt(i)||0)));
-      for(let i=1;i<Math.min(A.length,upto+1);i++){const a=dAt(i-1),b=dAt(i);if(a==null||b==null)continue;x.strokeStyle=b>0?css("--bad"):css("--good");x.lineWidth=2;x.beginPath();x.moveTo(X(i-1),top+hh/2-a/lim*hh/2);x.lineTo(X(i),top+hh/2-b/lim*hh/2);x.stroke()}}
-    if(k==="g"){if(bs)line(i=>bs[i]&&bs[i][4]>0?Y(bs[i][4],1,8):null,bs.length,bCol,true,1.2);line(i=>A[i]&&A[i][4]>0?Y(A[i][4],1,8):null,Math.min(A.length,upto+1),css("--blue"))}
-    x.fillStyle=css("--muted");x.font="11px "+css("--f-data");x.textAlign="left";x.fillText({v:Tx("Speed","Velocidad"),p:Tx("Throttle · brake","Gas · freno"),d:"Delta",g:Tx("Gear","Marcha")}[k],4,top+11)});
-  x.strokeStyle=css("--fg");x.lineWidth=1.5;x.beginPath();x.moveTo(X(cur),0);x.lineTo(X(cur),h);x.stroke();
+  (bands||[]).forEach(f=>{x.fillStyle="rgba(255,255,255,.035)";x.fillRect(G+Math.max(0,f-.03)*pw,0,.06*pw,ph)});
+  const line=(get,n,col,dash,wd)=>{x.strokeStyle=col;x.lineWidth=wd||1.6;x.setLineDash(dash?[5,4]:[]);x.lineJoin="round";x.beginPath();let on=false;
+    for(let i=0;i<n;i++){const v=get(i);if(v==null){on=false;continue}on?x.lineTo(X(i),v):x.moveTo(X(i),v);on=true}x.stroke();x.setLineDash([])};
+  const a=A[Math.min(cur,nA-1)]||null,b=bs?bs[cur]||null:null,dc=dAt(Math.min(cur,nA-1)),vmax=Math.max(60,...(bs||[]).filter(Boolean).map(r=>r[0]),...A.filter(Boolean).map(r=>r[0]));
+  const vals={d:[dc==null?"–":sgn(dc,3),dc==null?fg:dc>0?css("--bad"):css("--good"),""],v:[a?String(Math.round(spd(a[0]))):"–",fg,b?"/ "+Math.round(spd(b[0])):""],
+    p:[a?(a[3]>.02?Math.round(a[3]*100)+"% "+Tx("brake","freno"):Math.round(a[2]*100)+"%"):"–",a&&a[3]>.02?css("--bad"):fg,""],g:[a&&a[4]>0?String(a[4]):"–",fg,b&&b[4]>0?"/ "+b[4]:""]};
+  const names={d:"Delta",v:Tx("Speed","Velocidad"),p:Tx("Throttle · brake","Gas · freno"),g:Tx("Gear","Marcha")};
+  rows.forEach(([k,frac])=>{const rh=ph*frac,top=y0+4,hh=rh-8;y0+=rh;
+    x.strokeStyle=css("--line");x.lineWidth=1;x.beginPath();x.moveTo(G,top+hh+4);x.lineTo(w,top+hh+4);x.stroke();
+    const Y=(v,lo,hi)=>top+hh-Math.max(0,Math.min(1,(v-lo)/(hi-lo)))*hh,mid=top+hh/2;
+    if(k==="d"){x.strokeStyle=css("--line2");x.beginPath();x.moveTo(G,mid);x.lineTo(w,mid);x.stroke();
+      const lim=Math.max(.5,...Array.from({length:nA},(_,i)=>Math.abs(dAt(i)||0)));line(i=>{const d=dAt(i);return d==null?null:mid-d/lim*hh/2},nA,fg,false,2)}
+    if(k==="v"){if(bs)line(i=>bs[i]?Y(bs[i][0],0,vmax):null,bs.length,bCol,true,1.4);line(i=>A[i]?Y(A[i][0],0,vmax):null,nA,css("--accent"),false,2.2)}
+    if(k==="p"){x.strokeStyle=css("--line2");x.beginPath();x.moveTo(G,mid);x.lineTo(w,mid);x.stroke();
+      if(bs){line(i=>bs[i]?mid-bs[i][2]*hh/2:null,bs.length,bCol,true,1.2);line(i=>bs[i]?mid+bs[i][3]*hh/2:null,bs.length,"rgba(255,154,154,.7)",true,1.2)}
+      line(i=>A[i]?mid-A[i][2]*hh/2:null,nA,css("--good"),false,2);line(i=>A[i]?mid+A[i][3]*hh/2:null,nA,css("--bad"),false,2)}
+    if(k==="g"){if(bs)line(i=>bs[i]&&bs[i][4]>0?Y(bs[i][4],1,8):null,bs.length,bCol,true,1.2);line(i=>A[i]&&A[i][4]>0?Y(A[i][4],1,8):null,nA,css("--blue"),false,2)}
+    x.textAlign="left";x.textBaseline="alphabetic";
+    if(G){const cy=top+hh/2;x.fillStyle=mu;x.font="600 12px "+css("--f-display");x.fillText(names[k].toUpperCase(),0,cy-4);
+      const[v1,c1,v2]=vals[k];x.font="600 15px "+mono;x.fillStyle=c1;x.fillText(v1,0,cy+14);if(v2){const tw=x.measureText(v1+" ").width;x.font="12px "+mono;x.fillStyle=mu;x.fillText(v2,tw,cy+14)}}
+    else{x.fillStyle=mu;x.font="11px "+mono;x.fillText(names[k],4,top+11)}});
+  // under the chart: the start, the corners and the lap's length
+  x.font="11px "+mono;x.textBaseline="bottom";x.fillStyle=mu;x.textAlign="left";x.fillText("0 m",G,h);x.textAlign="right";x.fillText(Math.round(L)+" m",w,h);
+  x.textAlign="center";x.fillStyle=fg;(bands||[]).forEach((f,j)=>{const cx=G+f*pw;if(cx>G+30&&cx<w-50)x.fillText("T"+(j+1),cx,h)});x.textBaseline="alphabetic";
+  x.strokeStyle=fg;x.lineWidth=1.5;x.beginPath();x.moveTo(X(cur),0);x.lineTo(X(cur),ph);x.stroke();
   return{dAt}}
 function drawLiveTraces(){const cv=$("#trcC");if(!cv)return;const B=liveBest(),d=T.LapDist||0,i=Math.max(0,Math.floor(d/BIN));
   $("#trcTitle").textContent=Tx("Traces · this lap against your best","Trazas · esta vuelta frente a tu mejor");
@@ -5925,7 +5941,7 @@ function renderLiveCmp(){const box=$("#liveCmp");if(!box)return;lcmpModel();cons
   const others=ok.filter(l=>l!==best&&l!==last).slice(-6).map(l=>ch("n"+l.n,Tx("Lap","V")+" "+l.n+" · "+fmtT(l.time)));
   box.innerHTML=`<div class="panel lcmp-pick"><span class="label">${esc(Tx("Against","Contra"))}</span><div class="frow">${best?ch("best",Tx("My best","Mi mejor")+" · "+fmtT(best.time),"#c48cff"):""}${last&&last!==best?ch("last",Tx("Last","Última")+" · "+fmtT(last.time)):""}${others.join("")}${LCMP.mlevel?ch("level","▲ "+Tx("Next level","Siguiente nivel")+" · "+fmtT(LCMP.mlevel.time)):""}${LCMP.mrec?ch("rec","★ "+Tx("Record","Récord")+" · "+fmtT(LCMP.mrec.time)):""}</div>${ok.length?"":`<p class="note">${esc(Tx("The compare starts after your first full lap.","La comparación empieza tras tu primera vuelta completa."))}</p>`}</div>
     <div class="lcmp-keys" id="lcKeys"></div>
-    <div class="panel"><div class="trc-head"><span class="trc-leg" id="lcLeg"></span><span class="mono" id="lcAt"></span></div><canvas id="lcC" height="330" aria-label="Lap compare"></canvas>
+    <div class="panel"><div class="trc-head"><span class="trc-leg" id="lcLeg"></span><span class="mono" id="lcAt"></span></div><canvas id="lcC" height="380" aria-label="Lap compare"></canvas>
       <div class="frow" style="margin-top:8px;flex-wrap:nowrap"><input type="range" id="lcRange" min="0" max="1000" value="0" aria-label="${esc(Tx("Point of the lap","Punto de la vuelta"))}" style="flex:1"><button type="button" class="btn small" id="lcLive"></button></div></div>
     <div class="panel"><div class="label">${esc(Tx("Corner by corner","Curva a curva"))}</div><div class="lcmp-corners" id="lcCorners"></div></div>`;
   box.querySelectorAll("[data-lb]").forEach(b=>b.onclick=()=>{LCMP.b=b.dataset.lb;renderLiveCmp()});

@@ -3151,8 +3151,7 @@ function voiceIn(d){if(!d||typeof d!=="object")return;
     else if(d.t==="ice")voiceCand(d.c);
     else if(d.t==="busy"){toast(Tx("The driver is already talking to someone.","El piloto ya está hablando con alguien.","The driver is already talking to someone.","O piloto já está falando com alguém."));voiceEnd(false)}
     else if(d.t==="bye")voiceEnd(false);return}
-  if(!realAdmin())return;
-  if(d.t==="offer")voiceAnswer(d);
+  if(d.t==="offer")voiceAnswer(d); // the agent passes offers only when the voice chat is on (voiceOn in voice.go)
   else if(d.call===VOICE.call&&d.id===VOICE.peer){if(d.t==="ice")voiceCand(d.c);else if(d.t==="bye")voiceEnd(false)}}
 // the bar: "Talk to the driver" for the engineer while the PC is live, the call (who, time, mute, hang up) on both sides
 function voiceUI(){let b=$("#voiceBar");const show=VOICE.pc||(COMPANION&&VOICE.avail&&CPLIVE.on);

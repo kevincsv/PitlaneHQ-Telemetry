@@ -14,6 +14,24 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   server (DATA_KEY), which opens it to teach the model and share the fastest laps; live telemetry with a code is
   end-to-end. The analysis of your laps runs on your device.
 - Signing in with an email that has no account says so and offers to create it (`no_account`).
+- Steam, Discord and Google (the owner's choice, Oct 31): "Continue with …" on the sign-in screen of every device. When
+  that Steam, Discord or Google account has no Pitlane HQ account yet, it is made at once with no form (`quick` on POST
+  /account/register, `quickRegister` in `accounts.js`): no password (`auth_hash` ''), the public name the sign-in gave
+  (made free with a number, `freeName`), the server makes the data key and keeps it sealed (escrow, so DATA_KEY is
+  needed; without it the server answers `no_quick` and the form shows), and Google's verified email is the account's
+  email (Steam and Discord give none). Such an account (`noPassword`) signs in only with them: the email sign-in answers
+  `social_only`, Account shows no password or two-step card, deleting it and linking or unlinking Steam or Discord take
+  a yes instead of the password, and the last way it signs in with cannot be unlinked (`last_way`). "Continue with
+  Google" (`cloud/src/google.js`, migration 0083; secrets GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET, redirect
+  https://pitlanehq.app/google/oauth) also signs in to the account whose email is that Google's verified email, links
+  it and counts the email as confirmed.
+- Confirm your email (the owner's choice, Oct 31, design A): an account made with the form is signed in at once, but
+  every device shows only the "Confirm your email" screen (`emailGate` in index.html; the phones' own) until the link is
+  opened: Open Gmail (or the mail of that address), Send it again once a minute, Wrong email? (that account is deleted
+  and the form comes back), Sign out, and it goes on by itself (it asks every few seconds). The server gives these apps
+  (`gate` on the sign-up and sign-ins) a gated session that only reads /account/me, sends the link again, signs out or
+  deletes the account; elsewhere it stands for nobody, and the PC uploads nothing, until the email is confirmed. Older
+  apps keep the old answer (confirm first, then sign in).
 - Sync is automatic and covers everything in the account: every app reads the account when it starts,
   when it comes back to the screen and every minute (the PC also a few seconds after any change), and
   changes from several devices are merged (`syncmerge.go`), never a "which copy" question. The moment any device

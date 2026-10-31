@@ -69,6 +69,8 @@ type plAccount struct {
 	ProElsewhere bool      `json:"proElsewhere,omitempty"` // the account's Pro is on another PC
 	Ended        bool      `json:"ended,omitempty"`        // signed out by the server (see plSessionEnded); the email stays
 	Escrow       bool      `json:"escrow,omitempty"`       // the server keeps this key (Steam and Discord sign in without the password)
+	Gated        bool      `json:"gated,omitempty"`        // signed in before the email is confirmed: only the screen that waits for it
+	NoPassword   bool      `json:"noPassword,omitempty"`   // made with Steam, Discord or Google alone: no password
 }
 
 var (
@@ -581,12 +583,21 @@ func syncWatcher() {
 	for {
 		plMu.Lock()
 		signed := plAcc.Token != ""
-		on := signed // the sync is always on: nobody syncs by hand
+		on := signed && !plAcc.Gated // the sync is always on (nobody syncs by hand), once the email is confirmed
 		plMu.Unlock()
 		now := time.Now()
 		remoteDue := now.After(nextRemote) || kicked
 		if signed && remoteDue {
 			plRefreshMe()
+			plMu.Lock()
+			gated := plAcc.Gated
+			plMu.Unlock()
+			if gated {
+				nextRemote = now.Add(10 * time.Second)
+				kicked = false
+				time.Sleep(time.Second)
+				continue
+			}
 			if !adopted {
 				adopted = plAdopt()
 			}
@@ -648,6 +659,7 @@ type plLoginRes struct {
 	Mailed                                   *bool
 	Escrow                                   bool   // the server keeps a copy of the data key
 	DataKey, Email                           string // a sign-in with Steam or Discord: the server's copy of the data key (hex) and the account's email
+	Gated, NoPassword                        bool   // waiting for the email to be confirmed; an account with no password
 }
 
 // a sign-in that passed the password (or Steam or Discord, with no key yet: NoKey) and waits for the authenticator code
@@ -678,6 +690,9 @@ func plFinishLogin(b []byte, email string, wrap []byte) error {
 	if err := plSignedIn(res, email, wrap, nil); err != nil {
 		return err
 	}
+	if res.Gated && !res.Verified { // the email first: the sync starts once it is confirmed (plRefreshMe)
+		return nil
+	}
 	// this PC and the account merge by themselves (nothing saved yet: this PC goes up as it is)
 	clearSyncBase()
 	go func() {
@@ -698,7 +713,7 @@ func plSignedIn(r plLoginRes, email string, wrap []byte, newKey []byte) error {
 		key = k
 	}
 	plMu.Lock()
-	plAcc = plAccount{Email: normEmail(email), ID: r.ID, Token: r.Token, DataKey: hex.EncodeToString(key), KeyTag: r.KeyTag, Display: r.Display, NameKind: r.NameKind, Admin: r.Admin, Verified: r.Verified, Mail: r.Mailed != nil, TwoFactor: r.TwoFactor, Escrow: r.Escrow}
+	plAcc = plAccount{Email: normEmail(email), ID: r.ID, Token: r.Token, DataKey: hex.EncodeToString(key), KeyTag: r.KeyTag, Display: r.Display, NameKind: r.NameKind, Admin: r.Admin, Verified: r.Verified, Mail: r.Mailed != nil, TwoFactor: r.TwoFactor, Escrow: r.Escrow, Gated: r.Gated && !r.Verified, NoPassword: r.NoPassword}
 	savePLLocked()
 	plMu.Unlock()
 	return nil
@@ -814,12 +829,19 @@ type oauthProv struct {
 var (
 	steamProv   = oauthProv{Name: "steam", Label: "Steam", LoginStart: "/steam/login/start", Login: "/login/steam", LinkStart: "/steam/start", LinkUse: "/steam/link", Unlink: "/steam/unlink", LinkParam: "steamLink", URLOK: steamURLOK}
 	discordProv = oauthProv{Name: "discord", Label: "Discord", LoginStart: "/discord/login/start", Login: "/login/discord", LinkStart: "/discord/start", LinkUse: "/discord/link/grant", Unlink: "/discord/unlink", LinkParam: "discordLink", URLOK: discordURLOK}
+	// "Continue with Google" (google.js): a sign-in or a sign-up only, no link from Account
+	googleProv = oauthProv{Name: "google", Label: "Google", LoginStart: "/google/login/start", Login: "/login/google", Unlink: "/google/unlink", LinkParam: "googleLink", URLOK: googleURLOK}
 )
+
+// googleURLOK: the browser only ever opens Google's own sign-in page, whatever the server answered
+func googleURLOK(u string) bool {
+	return strings.HasPrefix(u, "https://accounts.google.com/o/oauth2/v2/auth?")
+}
 
 // oauthAction: which outside sign-in an action of the page is for, and what it asks ("steamLoginPoll" → Steam,
 // "LoginPoll"; "discordStart" → Discord, "Start"), or ok false
 func oauthAction(a string) (pv oauthProv, op string, ok bool) {
-	for _, p := range []oauthProv{steamProv, discordProv} {
+	for _, p := range []oauthProv{steamProv, discordProv, googleProv} {
 		if strings.HasPrefix(a, p.Name) {
 			return p, a[len(p.Name):], true
 		}
@@ -834,12 +856,18 @@ func (p oauthProv) wait() **steamWaitT {
 	if p.Name == "discord" {
 		return &discordWait
 	}
+	if p.Name == "google" {
+		return &googleWait
+	}
 	return &steamWait
 }
 
 func (p oauthProv) newGrant() *struct{ Sid, Code string } {
 	if p.Name == "discord" {
 		return &discordNew
+	}
+	if p.Name == "google" {
+		return &googleNew
 	}
 	return &steamNew
 }
@@ -865,6 +893,8 @@ var (
 	steamNew       struct{ Sid, Code string } // the sign-up grant and its code, for the account "register" creates
 	discordWait    *steamWaitT
 	discordNew     struct{ Sid, Code string }
+	googleWait     *steamWaitT
+	googleNew      struct{ Sid, Code string }
 	steamPending   *steamPendingT
 	steamPendingMu sync.Mutex
 )
@@ -893,7 +923,7 @@ func plSteamLogin(b []byte) (needKey bool, err error) {
 	if plAcc.ID == res.ID && plAcc.DataKey != "" && plAcc.KeyTag != "" && plAcc.KeyTag == res.KeyTag {
 		// the server's copy is not this PC's key (still the account's): this one goes up after the next sync
 		escrow := res.Escrow && (res.DataKey == "" || strings.EqualFold(res.DataKey, plAcc.DataKey))
-		plAcc = plAccount{Email: plAcc.Email, ID: res.ID, Token: res.Token, DataKey: plAcc.DataKey, KeyTag: plAcc.KeyTag, Display: res.Display, NameKind: res.NameKind, Admin: res.Admin, Verified: res.Verified, Mail: res.Mailed != nil, TwoFactor: res.TwoFactor, Escrow: escrow}
+		plAcc = plAccount{Email: plAcc.Email, ID: res.ID, Token: res.Token, DataKey: plAcc.DataKey, KeyTag: plAcc.KeyTag, Display: res.Display, NameKind: res.NameKind, Admin: res.Admin, Verified: res.Verified, Mail: res.Mailed != nil, TwoFactor: res.TwoFactor, Escrow: escrow, Gated: res.Gated && !res.Verified, NoPassword: res.NoPassword}
 		savePLLocked()
 		plMu.Unlock()
 		return false, nil
@@ -983,7 +1013,7 @@ func oauthAnswer(pv oauthProv, q url.Values) oauthRes {
 	}
 	if sid := steamStateClean(q.Get("sid")); q.Get("new") == "1" && sid != "" {
 		name := q.Get("persona")
-		if pv.Name == "discord" {
+		if pv.Name != "steam" {
 			name = q.Get("name")
 		}
 		return oauthRes{Sid: sid, Name: cleanText(strings.NewReplacer("<", "", ">", "", "\n", "").Replace(name), 32)}
@@ -1037,7 +1067,7 @@ func plStatus() map[string]any {
 	defer plMu.Unlock()
 	a := plAcc
 	out := map[string]any{"ready": commBase() != "", "signedIn": a.Token != "", "id": a.ID, "email": a.Email, "display": a.Display, "nameKind": a.NameKind,
-		"lapsToAccount": !a.NoLaps, "admin": a.Admin, "supporter": a.Supporter, "supporterHidden": a.SupHidden, "pro": a.Pro, "proSrc": a.ProSrc, "proGate": a.ProGate, "proElsewhere": a.ProElsewhere, "verified": a.Verified, "mail": a.Mail, "twoFactor": a.TwoFactor, "recoveryLeft": plRecovery, "version": a.Version, "error": a.SyncErr, "ended": a.Ended}
+		"lapsToAccount": !a.NoLaps, "admin": a.Admin, "supporter": a.Supporter, "supporterHidden": a.SupHidden, "pro": a.Pro, "proSrc": a.ProSrc, "proGate": a.ProGate, "proElsewhere": a.ProElsewhere, "verified": a.Verified, "mail": a.Mail, "twoFactor": a.TwoFactor, "gated": a.Gated, "noPassword": a.NoPassword, "recoveryLeft": plRecovery, "version": a.Version, "error": a.SyncErr, "ended": a.Ended}
 	if !a.LastSync.IsZero() {
 		out["lastSync"] = a.LastSync.UnixMilli()
 	}
@@ -1121,6 +1151,7 @@ func registerPLRoutes(mux *http.ServeMux) {
 	})
 	mux.HandleFunc("/steam/done", oauthDone(steamProv))
 	mux.HandleFunc("/discord/done", oauthDone(discordProv))
+	mux.HandleFunc("/google/done", oauthDone(googleProv))
 	mux.HandleFunc("/api/sync", func(w http.ResponseWriter, r *http.Request) {
 		loadPL()
 		fail := func(err error) {
@@ -1139,7 +1170,7 @@ func registerPLRoutes(mux *http.ServeMux) {
 		if r.Method == http.MethodPost {
 			var in struct {
 				Action, Email, Password, NewPassword, Nick, NameKind, ID, Lang, Code string
-				Device, State, Sid, DiscordSid                                       string // the sign-in with Steam or Discord: this device's name, its state, the sign-up grant of a new account
+				Device, State, Sid, DiscordSid, Prov                                 string // the sign-in with Steam or Discord: this device's name, its state, the sign-up grant of a new account (and its provider, quickSignup)
 				Anon                                                                 *bool  // share as "Anonymous" (kept with the account)
 				On                                                                   bool
 			}
@@ -1168,7 +1199,7 @@ func registerPLRoutes(mux *http.ServeMux) {
 				key := make([]byte, 32)
 				rand.Read(key)
 				wrapped, _ := sealAES(wrap, key)
-				reg := map[string]any{"email": normEmail(in.Email), "auth": auth, "wrappedKey": wrapped, "display": name, "nameKind": kind, "device": host, "lang": in.Lang}
+				reg := map[string]any{"email": normEmail(in.Email), "auth": auth, "wrappedKey": wrapped, "display": name, "nameKind": kind, "device": host, "lang": in.Lang, "gate": true}
 				if sid := steamStateClean(in.Sid); sid != "" { // created from the Steam sign-in: linked to that Steam at once
 					reg["sid"], reg["code"] = sid, steamProv.newCode(sid)
 				} else if sid := steamStateClean(in.DiscordSid); sid != "" { // the same from the Discord sign-in
@@ -1188,7 +1219,7 @@ func registerPLRoutes(mux *http.ServeMux) {
 					err = errors.New("verify your email first: we sent you a link, open it and then sign in")
 					break
 				}
-				if err = plSignedIn(res, in.Email, wrap, key); err == nil {
+				if err = plSignedIn(res, in.Email, wrap, key); err == nil && !res.Gated {
 					clearSyncBase()
 					go func() {
 						plBusy.Lock()
@@ -1202,7 +1233,7 @@ func registerPLRoutes(mux *http.ServeMux) {
 					err = e
 					break
 				}
-				b, e := commRequest("POST", "/account/login", map[string]any{"email": normEmail(in.Email), "auth": auth, "device": host, "lang": in.Lang}, "")
+				b, e := commRequest("POST", "/account/login", map[string]any{"email": normEmail(in.Email), "auth": auth, "device": host, "lang": in.Lang, "gate": true}, "")
 				if e != nil {
 					err = e
 					break
@@ -1251,7 +1282,7 @@ func registerPLRoutes(mux *http.ServeMux) {
 					break
 				}
 				err = plFinishLogin(b, pd.Email, pd.Wrap)
-			case "steamLoginStart", "discordLoginStart":
+			case "steamLoginStart", "discordLoginStart", "googleLoginStart":
 				// the sign-in screen: the server gives the address Steam (or Discord) signs in at (and the code only this PC
 				// keeps), this PC opens it in the browser, which comes back to /steam/done (/discord/done); the page asks how
 				// it goes (steamLoginPoll, discordLoginPoll)
@@ -1278,7 +1309,7 @@ func registerPLRoutes(mux *http.ServeMux) {
 				openExternal(st.URL)
 				writeJSON(w, map[string]any{"url": st.URL, "state": state, "opened": true})
 				return
-			case "steamLoginPoll", "discordLoginPoll":
+			case "steamLoginPoll", "discordLoginPoll", "googleLoginPoll":
 				// did the browser come back yet: pending, a new driver (the page creates the account, linked with sid), or the
 				// grant, which signs this PC in; then the authenticator code (login2fa) or the password for the key (needKey)
 				pv, _, _ := oauthAction(in.Action)
@@ -1304,8 +1335,8 @@ func registerPLRoutes(mux *http.ServeMux) {
 						steamPendingMu.Lock()
 						*pv.newGrant() = struct{ Sid, Code string }{res.Sid, sw.Code}
 						steamPendingMu.Unlock()
-						out := map[string]any{"status": "new", "new": true, "sid": res.Sid, pv.Name: true}
-						if pv.Name == "discord" {
+						out := map[string]any{"status": "new", "new": true, "sid": res.Sid, pv.Name: true, "prov": pv.Name}
+						if pv.Name != "steam" {
 							out["name"] = res.Name
 						} else {
 							out["persona"] = res.Name
@@ -1321,7 +1352,7 @@ func registerPLRoutes(mux *http.ServeMux) {
 					break
 				}
 				grant := res.Grant
-				b, e := commRequest("POST", "/account"+pv.Login, map[string]any{"grant": grant, "code": sw.Code, "device": host, "lang": in.Lang}, "")
+				b, e := commRequest("POST", "/account"+pv.Login, map[string]any{"grant": grant, "code": sw.Code, "device": host, "lang": in.Lang, "gate": true}, "")
 				if e != nil {
 					err = e
 					break
@@ -1348,7 +1379,51 @@ func registerPLRoutes(mux *http.ServeMux) {
 					return
 				}
 				plSteamFinish()
-			case "steamLoginCancel", "discordLoginCancel":
+			case "quickSignup":
+				// no account yet with that Steam, Discord or Google: it is made at once with no form (the server makes the data
+				// key and keeps it), with the sign-up grant this PC was given and its code; then signed in like a sign-in with Steam
+				pv, ok := oauthProv{}, false
+				for _, p := range []oauthProv{steamProv, discordProv, googleProv} {
+					if p.Name == in.Prov {
+						pv, ok = p, true
+					}
+				}
+				sid := steamStateClean(in.Sid)
+				if !ok || sid == "" {
+					err = errors.New("sign in again")
+					break
+				}
+				code := pv.newCode(sid)
+				if code == "" {
+					err = pv.again()
+					break
+				}
+				param := map[string]string{"steam": "sid", "discord": "discordSid", "google": "googleSid"}[pv.Name]
+				b, e := commRequest("POST", "/account/register", map[string]any{"quick": 1, param: sid, "code": code, "device": host, "lang": in.Lang}, "")
+				if e != nil {
+					err = e
+					break
+				}
+				steamPendingMu.Lock()
+				*pv.newGrant() = struct{ Sid, Code string }{}
+				steamPendingMu.Unlock()
+				needKey, e := plSteamLogin(b)
+				if e != nil || needKey {
+					err = pv.again()
+					break
+				}
+				plSteamFinish()
+			case "gateRestart":
+				// "Wrong email?" on the screen that waits for the email: that account goes (the server allows it with the session
+				// alone while it waits) and the form comes back
+				if _, err = plCall("POST", "/delete", map[string]any{}); err == nil {
+					plMu.Lock()
+					plAcc = plAccount{}
+					savePLLocked()
+					plMu.Unlock()
+					clearSyncBase()
+				}
+			case "steamLoginCancel", "discordLoginCancel", "googleLoginCancel":
 				// the password step closed without the password: the sign-in waits no more and its session is let go
 				steamPendingMu.Lock()
 				sp := steamPending
@@ -1362,7 +1437,7 @@ func registerPLRoutes(mux *http.ServeMux) {
 				if sp != nil {
 					go commRequest("POST", "/account/logout", nil, sp.Res.Token)
 				}
-			case "steamLoginKey", "loginSteamKey", "discordLoginKey", "loginDiscordKey":
+			case "steamLoginKey", "loginSteamKey", "discordLoginKey", "loginDiscordKey", "googleLoginKey":
 				// the password, once on this PC, for the data key of the account Steam (or Discord) signed in: the server checks it (with
 				// its limit of wrong ones) and answers with the wrapped key, which the password opens here
 				steamPendingMu.Lock()
@@ -1662,6 +1737,8 @@ func plRefreshMe() {
 		TwoFactor    bool   `json:"twoFactor"`
 		RecoveryLeft int    `json:"recoveryLeft"`
 		Escrow       *bool  `json:"escrow"`
+		Gated        bool   `json:"gated"`
+		NoPassword   bool   `json:"noPassword"`
 	}
 	if json.Unmarshal(b, &me) != nil || me.ID == "" {
 		return
@@ -1689,7 +1766,16 @@ func plRefreshMe() {
 		savePLLocked()
 	}
 	plRecovery = me.RecoveryLeft
+	confirmed := plAcc.Gated && !me.Gated // the email was just confirmed: the sync starts now
+	if plAcc.Gated != me.Gated || plAcc.NoPassword != me.NoPassword {
+		plAcc.Gated, plAcc.NoPassword = me.Gated, me.NoPassword
+		savePLLocked()
+	}
 	plMu.Unlock()
+	if confirmed {
+		clearSyncBase()
+		kickSync()
+	}
 	commMu.Lock()
 	if me.Display != "" && (commCfg.Alias != me.Display || commCfg.NameKind != me.NameKind || commCfg.Anonymous != me.Anon) {
 		commCfg.Alias, commCfg.NameKind, commCfg.Anonymous = me.Display, me.NameKind, me.Anon

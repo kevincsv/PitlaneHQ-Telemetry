@@ -1487,7 +1487,7 @@ func registerCloudRoutes(mux *http.ServeMux) {
 func accountCloud() cloudConfig {
 	loadPL()
 	plMu.Lock()
-	tok, off := plAcc.Token, plAcc.NoLaps
+	tok, off := plAcc.Token, plAcc.NoLaps || plAcc.Gated // nothing goes up before the email is confirmed
 	plMu.Unlock()
 	if tok == "" || off {
 		return cloudConfig{}

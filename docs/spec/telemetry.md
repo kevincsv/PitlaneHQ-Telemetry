@@ -20,7 +20,11 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   every window. Both PC windows let the app's own page use the microphone (Pitlane HQ Desktop's PermissionRequested for
   loopback; the agent's window through go-webview2, patched in vendor/ to read the permission's kind and allow the
   microphone: keep the patch if the library is vendored again). Settings → Phone & sharing has "Voice chat" with "Test the microphone"
-  for every signed-in driver, and a microphone that fails says why (`voiceMicError`: Windows' privacy switch, none found, in use). Web and PC only, phone browsers too (the owner's choice: the Android and iOS apps do not have it). Their braking
+  for every signed-in driver, and "Voice volume" and "Microphone" sliders, 0 to 300%, kept on each device (`VOICE_VOL`,
+  `pw.voice`; the owner asked for more than 100% because the game can drown the voice). The call's bar has the same two
+  behind its volume button, on both sides, and they change the call at once: up to 100% the <audio> plays the voice, above
+  it Web Audio boosts it through a limiter (`voiceOutApply`); the microphone goes through a gain and a limiter whenever it
+  is not at 100% (`voiceMicApply`, `replaceTrack`), and the microphone test shows it with that gain. A microphone that fails says why (`voiceMicError`: Windows' privacy switch, none found, in use). Web and PC only, phone browsers too (the owner's choice: the Android and iOS apps do not have it). Their braking
   points come from the model (the next level for your best lap of the session; your own best lap while the model has
   none or you are its fastest), each marker moves with your speed against that lap and with a car close ahead or
   alongside, and they name their corners by the official turns (`turnNo`, `turnName`), like the coach: "T7", never "C7".

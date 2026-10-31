@@ -307,6 +307,7 @@ table.plan td.sname{position:sticky;left:0;background:var(--surface);z-index:1;m
 .voicebar{position:fixed;right:16px;bottom:calc(16px + env(safe-area-inset-bottom,0px));z-index:101;display:flex;align-items:center;gap:8px;flex-wrap:wrap;max-width:calc(100% - 32px);background:var(--panel,#1a1f29);border:1px solid var(--line,#2a3140);border-radius:10px;padding:8px 10px;box-shadow:0 6px 24px rgba(0,0,0,.35)}
 .voicebar b{display:inline-flex;align-items:center;gap:5px}.voicebar svg{vertical-align:-3px}
 .vcmeter{height:8px;max-width:320px;border-radius:4px;background:var(--line,#2a3140);overflow:hidden}.vcmeter i{display:block;height:100%;width:0;background:#3ecf6e;transition:width .06s}
+.vcvols{display:flex;flex-direction:column;gap:6px;flex-basis:100%;min-width:220px}.vcvol{display:flex;align-items:center;gap:8px;margin:0}.vcvol>span{min-width:92px}.vcvol input{flex:1;min-width:110px;max-width:260px;accent-color:#3ecf6e}.vcvol output{min-width:44px;text-align:right;font-variant-numeric:tabular-nums}
 .vcdot{width:9px;height:9px;border-radius:50%;background:var(--muted,#888)}.vcdot.on{background:#3ecf6e;box-shadow:0 0 0 3px rgba(62,207,110,.2)}
 @media (max-width:640px){.voicebar{right:16px;left:16px;bottom:calc(72px + env(safe-area-inset-bottom,0px));justify-content:center}}
 .toast{position:fixed;left:50%;bottom:calc(84px + env(safe-area-inset-bottom,0px));transform:translateX(-50%) translateY(20px);background:var(--fg);color:var(--bg);padding:10px 14px;border-radius:6px;font-size:14px;opacity:0;pointer-events:none;transition:.2s;z-index:40;max-width:calc(100% - 32px)}
@@ -3084,7 +3085,16 @@ async function cpLive(){await cpReady;if(!COMPANION||!CP.server||CPLIVE.ws||CPLI
    you accepted, or anyone with your share code). The call's messages go through the live room sealed like the
    telemetry; the voice goes straight between the two. ---------- */
 const vRid=()=>[...crypto.getRandomValues(new Uint8Array(8))].map(b=>b.toString(16).padStart(2,"0")).join("");
-const VOICE={avail:false,pc:null,call:"",peer:"",name:"",mic:null,muted:false,state:"",audio:null,pend:[],at:0,page:vRid(),timer:0,tick:0};
+const VOICE={avail:false,pc:null,call:"",peer:"",name:"",mic:null,muted:false,state:"",audio:null,pend:[],at:0,page:vRid(),timer:0,tick:0,ctx:null,inStream:null,inSrc:null,outG:null,micG:null,micOut:null,showVol:false};
+// the call's volumes, kept on this device: the voice you hear and your microphone, 0 to 300% (above 100% so the voice
+// gets over a loud game); both change at once during a call
+const VOICE_VOL=Object.assign({vol:100,mic:100},store.get("pw.voice",{}));
+const vPct=v=>Math.max(0,Math.min(300,Math.round(+v||0)));
+function voiceCtx(){try{const C=window.AudioContext||window.webkitAudioContext;if(!VOICE.ctx||VOICE.ctx.state==="closed"){VOICE.ctx=new C({latencyHint:"interactive"});VOICE.outG=null}if(VOICE.ctx.state==="suspended")VOICE.ctx.resume().catch(()=>{});return VOICE.ctx}catch(e){return null}}
+// Web Audio, once it may make sound (it may while the microphone is open, or after a click), or null
+async function voiceCtxReady(){const c=voiceCtx();if(!c)return null;if(c.state!=="running")await Promise.race([c.resume().catch(()=>{}),new Promise(r=>setTimeout(r,400))]);return c.state==="running"?c:null}
+// a gain then a limiter, so a boosted voice does not crackle
+function voiceGain(c,v){const g=c.createGain(),l=c.createDynamicsCompressor();g.gain.value=v/100;l.threshold.value=-3;l.knee.value=0;l.ratio.value=20;l.attack.value=.002;l.release.value=.1;g.connect(l);return{g,l}}
 async function voiceIce(){try{const r=await fetch(COMPANION?CP.server+"/voice/ice":"/api/voice/ice",{cache:"no-store"});const j=await r.json();return Array.isArray(j.iceServers)?j.iceServers:[]}catch(e){return[]}}
 // the microphone for speech: echo and noise taken out, one channel
 const voiceMic=()=>navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true,channelCount:1}});
@@ -3097,7 +3107,7 @@ function voiceMicError(e){const n=e&&e.name,T=Tx;
   return T("The microphone could not be opened.","No se pudo abrir el micrófono.","The microphone could not be opened.","Não foi possível abrir o microfone.")+(e&&e.message?" ("+e.message+")":"")}
 // "Test the microphone": its level for a few seconds, so the driver knows it works before a race
 async function voiceTestMic(out){let st;try{st=await voiceMic()}catch(e){out.innerHTML=`<span class="bad">${esc(voiceMicError(e))}</span>`;return}
-  const ac=new (window.AudioContext||window.webkitAudioContext)(),an=ac.createAnalyser();an.fftSize=512;ac.createMediaStreamSource(st).connect(an);
+  const ac=new (window.AudioContext||window.webkitAudioContext)(),an=ac.createAnalyser(),g=ac.createGain();an.fftSize=512;g.gain.value=VOICE_VOL.mic/100;ac.createMediaStreamSource(st).connect(g);g.connect(an);VOICE.testG=g;
   const buf=new Uint8Array(an.fftSize),end=Date.now()+6000,lbl=esc((st.getAudioTracks()[0]||{}).label||"");
   out.innerHTML=`<div class="note" style="margin:0 0 4px">${esc(Tx("Speak now","Habla ahora","Speak now","Fale agora"))}${lbl?" · "+lbl:""}</div><div class="vcmeter"><i></i></div>`;const bar=out.querySelector("i");
   const step=()=>{an.getByteTimeDomainData(buf);let m=0;for(const v of buf)m=Math.max(m,Math.abs(v-128));bar.style.width=Math.min(100,m/64*100)+"%";
@@ -3108,7 +3118,26 @@ function voiceLowDelay(pc){pc.getReceivers().forEach(r=>{try{r.jitterBufferTarge
 // call relayed by TURN costs little; none of it adds delay
 function voiceSdp(sdp){const m=/a=rtpmap:(\d+) opus\/48000/i.exec(sdp);if(!m)return sdp;const pt=m[1];
   return sdp.replace(new RegExp("a=fmtp:"+pt+" ([^\\r\\n]*)"),(x,p)=>{const o={};p.split(";").forEach(kv=>{const[k,v]=kv.split("=");if(k)o[k.trim()]=v});Object.assign(o,{usedtx:"1",useinbandfec:"1",stereo:"0",maxaveragebitrate:"32000"});return"a=fmtp:"+pt+" "+Object.entries(o).map(([k,v])=>k+"="+v).join(";")})}
-function voicePlay(st){let a=VOICE.audio;if(!a){a=VOICE.audio=document.createElement("audio");a.autoplay=true;a.setAttribute("playsinline","");document.body.appendChild(a)}a.srcObject=st;a.play().catch(()=>{})}
+function voicePlay(st){let a=VOICE.audio;if(!a){a=VOICE.audio=document.createElement("audio");a.autoplay=true;a.setAttribute("playsinline","");document.body.appendChild(a)}a.srcObject=st;a.play().catch(()=>{});VOICE.inStream=st;voiceOutApply()}
+// up to 100% the <audio> plays the voice (as WebRTC expects, echo cancellation included); above, Web Audio boosts it and
+// the <audio> stays on, muted, because Chrome only feeds a call's sound to Web Audio while an element plays it
+async function voiceOutApply(){const a=VOICE.audio,st=VOICE.inStream,v=VOICE_VOL.vol;if(!a||!st)return;
+  const off=()=>{try{VOICE.inSrc&&VOICE.inSrc.disconnect()}catch(e){}VOICE.inSrc=null;a.muted=false;a.volume=Math.min(1,v/100)};
+  if(v<=100)return off();const c=await voiceCtxReady();if(VOICE.inStream!==st||VOICE_VOL.vol<=100)return;if(!c)return off();
+  if(!VOICE.outG){const n=voiceGain(c,VOICE_VOL.vol);n.l.connect(c.destination);VOICE.outG=n.g}
+  VOICE.outG.gain.setTargetAtTime(VOICE_VOL.vol/100,c.currentTime,.02);
+  if(!VOICE.inSrc){VOICE.inSrc=c.createMediaStreamSource(st);VOICE.inSrc.connect(VOICE.outG)}a.muted=true}
+// the microphone as sent: the raw track at 100%, through a gain otherwise (when Web Audio can run)
+async function voiceMicApply(){const pc=VOICE.pc,raw=VOICE.mic&&VOICE.mic.getAudioTracks()[0];if(!pc||!raw)return;
+  const snd=pc.getSenders().find(s=>s.track&&s.track.kind==="audio");if(!snd)return;let tr=raw;
+  if(VOICE_VOL.mic!==100){const c=await voiceCtxReady();if(c&&VOICE.pc===pc){if(!VOICE.micG){const n=voiceGain(c,VOICE_VOL.mic),d=c.createMediaStreamDestination();c.createMediaStreamSource(VOICE.mic).connect(n.g);n.l.connect(d);VOICE.micG=n.g;VOICE.micOut=d.stream.getAudioTracks()[0]}
+    VOICE.micG.gain.setTargetAtTime(VOICE_VOL.mic/100,c.currentTime,.02);tr=VOICE.micOut}}
+  if(snd.track!==tr)try{await snd.replaceTrack(tr)}catch(e){}}
+function voiceSetVol(k,v){VOICE_VOL[k]=vPct(v);store.set("pw.voice",VOICE_VOL);if(k==="vol")voiceOutApply();else{voiceMicApply();try{VOICE.testG&&(VOICE.testG.gain.value=VOICE_VOL.mic/100)}catch(e){}}}
+// the two sliders, in the call's bar and in Settings
+function voiceVolHTML(){const T=Tx,row=(k,l)=>`<label class="vcvol"><span>${esc(l)}</span><input type="range" min="0" max="300" step="5" value="${VOICE_VOL[k]}" data-vv="${k}"><output>${VOICE_VOL[k]}%</output></label>`;
+  return`<div class="vcvols">${row("vol",T("Voice volume","Volumen de la voz","Voice volume","Volume da voz"))}${row("mic",T("Microphone","Micrófono","Microphone","Microfone"))}</div>`}
+function voiceVolBind(root){root.querySelectorAll("input[data-vv]").forEach(i=>{i.oninput=()=>{voiceSetVol(i.dataset.vv,i.value);i.nextElementSibling.textContent=VOICE_VOL[i.dataset.vv]+"%"}})}
 // the engineer sends through the live room; the driver's page through the agent
 function voiceSend(d){if(COMPANION)return cpLiveSend("voice",Object.assign({id:LIVE_DEV.id},d));
   return fetch("/api/voice",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(Object.assign({to:VOICE.peer,page:VOICE.page},d))}).then(r=>r.ok)}
@@ -3125,12 +3154,13 @@ async function voiceCand(c){const pc=VOICE.pc;if(!pc||!c)return;if(!pc.remoteDes
 async function voiceFlush(){const l=VOICE.pend;VOICE.pend=[];for(const c of l)await voiceCand(c)}
 function voiceEnd(tell){if(tell&&VOICE.call)try{voiceSend({t:"bye",call:VOICE.call})}catch(e){}
   clearTimeout(VOICE.timer);try{VOICE.pc&&VOICE.pc.close()}catch(e){}if(VOICE.mic)VOICE.mic.getTracks().forEach(t=>t.stop());
-  if(VOICE.audio)VOICE.audio.srcObject=null;Object.assign(VOICE,{pc:null,mic:null,call:"",peer:"",name:"",state:"",muted:false,pend:[],at:0});voiceUI()}
+  if(VOICE.audio)VOICE.audio.srcObject=null;try{VOICE.inSrc&&VOICE.inSrc.disconnect()}catch(e){}if(VOICE.micOut)VOICE.micOut.stop();if(VOICE.micG)try{VOICE.micG.disconnect()}catch(e){}
+  Object.assign(VOICE,{pc:null,mic:null,call:"",peer:"",name:"",state:"",muted:false,pend:[],at:0,inStream:null,inSrc:null,micG:null,micOut:null,showVol:false});voiceUI()}
 function voiceMute(){VOICE.muted=!VOICE.muted;if(VOICE.mic)VOICE.mic.getAudioTracks().forEach(t=>t.enabled=!VOICE.muted);voiceUI()}
 // the engineer calls the driver
 async function voiceCall(){if(VOICE.pc||!COMPANION)return;VOICE.call=vRid();VOICE.state="calling";VOICE.name="";voiceUI();
   try{VOICE.mic=await voiceMic()}catch(e){toast(voiceMicError(e));voiceEnd(false);return}
-  const pc=VOICE.pc=voiceNew(await voiceIce());VOICE.mic.getTracks().forEach(t=>pc.addTrack(t,VOICE.mic));
+  const pc=VOICE.pc=voiceNew(await voiceIce());VOICE.mic.getTracks().forEach(t=>pc.addTrack(t,VOICE.mic));await voiceMicApply();
   const o=await pc.createOffer();o.sdp=voiceSdp(o.sdp);await pc.setLocalDescription(o);
   voiceSend({t:"offer",call:VOICE.call,name:(CP.acc&&CP.acc.display)||LIVE_DEV.name,sdp:o.sdp});
   VOICE.timer=setTimeout(()=>{if(VOICE.state==="calling"){toast(Tx("The driver's PC did not answer.","El PC del piloto no contestó.","The driver's PC did not answer.","O PC do piloto não atendeu."));voiceEnd(true)}},20000)}
@@ -3138,7 +3168,7 @@ async function voiceCall(){if(VOICE.pc||!COMPANION)return;VOICE.call=vRid();VOIC
 async function voiceAnswer(d){if(VOICE.pc){if(d.call!==VOICE.call)voiceSendTo(d.id,{t:"busy",call:d.call});return}
   VOICE.peer=d.id;VOICE.call=d.call;VOICE.name=String(d.name||"").slice(0,40);VOICE.state="calling";voiceUI();
   try{VOICE.mic=await voiceMic()}catch(e){toast(voiceMicError(e));voiceEnd(true);return}
-  const pc=VOICE.pc=voiceNew(await voiceIce());VOICE.mic.getTracks().forEach(t=>pc.addTrack(t,VOICE.mic));
+  const pc=VOICE.pc=voiceNew(await voiceIce());VOICE.mic.getTracks().forEach(t=>pc.addTrack(t,VOICE.mic));await voiceMicApply();
   try{await pc.setRemoteDescription({type:"offer",sdp:d.sdp});const a=await pc.createAnswer();a.sdp=voiceSdp(a.sdp);await pc.setLocalDescription(a);
     if(!await voiceSend({t:"answer",call:VOICE.call,sdp:a.sdp})){voiceEnd(false);return} // another window of this PC has the call
     await voiceFlush();toast(Tx(`Voice chat: ${VOICE.name||"your engineer"} is on.`,`Chat de voz: ${VOICE.name||"tu ingeniero"} está conectado.`,`Voice chat: ${VOICE.name||"your engineer"} is on.`,`Chat de voz: ${VOICE.name||"seu engenheiro"} está conectado.`))}catch(e){voiceEnd(true)}}
@@ -3159,13 +3189,17 @@ function voiceUI(){let b=$("#voiceBar");const show=VOICE.pc||(COMPANION&&VOICE.a
   if(!b){b=document.createElement("div");b.id="voiceBar";b.className="voicebar";b.setAttribute("role","region");b.setAttribute("aria-label",Tx("Voice chat","Chat de voz","Voice chat","Chat de voz"));document.body.appendChild(b)}
   const T=Tx,mic=`<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.92V21h2v-3.08A7 7 0 0 0 19 11h-2z"/></svg>`;
   if(!VOICE.pc){b.innerHTML=`<button type="button" class="btn primary" id="vcCall">${mic} ${esc(T("Talk to the driver","Hablar con el piloto","Talk to the driver","Falar com o piloto"))}</button>`;$("#vcCall").onclick=voiceCall;return}
-  const secs=VOICE.at?Math.floor((Date.now()-VOICE.at)/1000):0,tm=VOICE.at?` · ${Math.floor(secs/60)}:${String(secs%60).padStart(2,"0")}`:"";
+  const tm=()=>{const secs=VOICE.at?Math.floor((Date.now()-VOICE.at)/1000):0;return VOICE.at?` · ${Math.floor(secs/60)}:${String(secs%60).padStart(2,"0")}`:""};
   const who=COMPANION?T("Driver","Piloto","Driver","Piloto"):(VOICE.name||T("Engineer","Ingeniero","Engineer","Engenheiro"));
-  b.innerHTML=`<span class="vcdot${VOICE.state==="on"?" on":""}"></span><b>${mic} ${esc(who)}</b><span class="muted">${VOICE.state==="on"?esc(T("Voice chat","Chat de voz","Voice chat","Chat de voz"))+tm:esc(T("Connecting…","Conectando…","Connecting…","Conectando…"))}</span>
+  const spk=`<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M3 9v6h4l5 5V4L7 9H3zm13.5 3A4.5 4.5 0 0 0 14 7.97v8.05A4.5 4.5 0 0 0 16.5 12zM14 3.23v2.06a7 7 0 0 1 0 13.42v2.06a9 9 0 0 0 0-17.54z"/></svg>`;
+  b.innerHTML=`<span class="vcdot${VOICE.state==="on"?" on":""}"></span><b>${mic} ${esc(who)}</b><span class="muted" id="vcTime">${VOICE.state==="on"?esc(T("Voice chat","Chat de voz","Voice chat","Chat de voz"))+tm():esc(T("Connecting…","Conectando…","Connecting…","Conectando…"))}</span>
+    <button type="button" class="btn small" id="vcVol" aria-expanded="${VOICE.showVol}" aria-label="${esc(T("Volume","Volumen","Volume","Volume"))}">${spk} ${VOICE_VOL.vol}%</button>
     <button type="button" class="btn small" id="vcMute" aria-pressed="${VOICE.muted}">${esc(VOICE.muted?T("Unmute","Activar micro","Unmute","Ativar microfone"):T("Mute","Silenciar","Mute","Silenciar"))}</button>
-    <button type="button" class="btn small danger" id="vcEnd">${esc(T("Hang up","Colgar","Hang up","Desligar"))}</button>`;
-  $("#vcMute").onclick=voiceMute;$("#vcEnd").onclick=()=>voiceEnd(true);
-  clearInterval(VOICE.tick);if(VOICE.at)VOICE.tick=setInterval(()=>{if(VOICE.pc&&VOICE.at)voiceUI()},1000)}
+    <button type="button" class="btn small danger" id="vcEnd">${esc(T("Hang up","Colgar","Hang up","Desligar"))}</button>${VOICE.showVol?voiceVolHTML():""}`;
+  $("#vcMute").onclick=voiceMute;$("#vcEnd").onclick=()=>voiceEnd(true);$("#vcVol").onclick=()=>{VOICE.showVol=!VOICE.showVol;voiceUI()};voiceVolBind(b);
+  b.querySelectorAll('input[data-vv="vol"]').forEach(i=>i.addEventListener("input",()=>{const v=$("#vcVol");if(v)v.lastChild.textContent=" "+VOICE_VOL.vol+"%"}));
+  // the clock alone each second, so a slider being dragged is not drawn again under the finger
+  clearInterval(VOICE.tick);if(VOICE.at)VOICE.tick=setInterval(()=>{const e=$("#vcTime");if(VOICE.pc&&VOICE.at&&e&&VOICE.state==="on")e.textContent=T("Voice chat","Chat de voz","Voice chat","Chat de voz")+tm()},1000)}
 
 if(COMPANION){
   // nobody watching a hidden tab: the PC stops sending. Telemetry open is the exception: its lap recorder (the traces and
@@ -6056,8 +6090,8 @@ async function renderCodeShare(){const box=$("#codePanel");if(!box)return;if(MOD
     :`<button type="button" class="btn primary" id="codeOn">${esc(T("Get a code","Crear un código","Code erstellen","Criar um código"))}</button>`}`;
   if(signed)box.insertAdjacentHTML("beforeend",`<h2 style="margin-top:18px">${esc(T("Voice chat","Chat de voz","Voice chat","Chat de voz"))}</h2>
     <p class="note">${esc(T("Whoever watches you live (your devices, or with the code) can talk to you. This PC answers by itself. Test the microphone before you race.","Quien te vea en directo (tus dispositivos, o con el código) puede hablarte. Este PC contesta solo. Prueba el micrófono antes de correr.","Whoever watches you live (your devices, or with the code) can talk to you. This PC answers by itself. Test the microphone before you race.","Quem assiste você ao vivo (seus dispositivos, ou com o código) pode falar com você. Este PC atende sozinho. Teste o microfone antes de correr."))}</p>
-    <button type="button" class="btn small" id="vcTest">${esc(T("Test the microphone","Probar el micrófono","Test the microphone","Testar o microfone"))}</button><div id="vcTestOut" style="margin-top:8px"></div>`);
-  {const b=$("#vcTest");if(b)b.onclick=()=>voiceTestMic($("#vcTestOut"))}
+    <button type="button" class="btn small" id="vcTest">${esc(T("Test the microphone","Probar el micrófono","Test the microphone","Testar o microfone"))}</button><div id="vcTestOut" style="margin-top:8px"></div><div style="margin-top:12px;max-width:420px">${voiceVolHTML()}</div>`);
+  {const b=$("#vcTest");if(b)b.onclick=()=>voiceTestMic($("#vcTestOut"))}voiceVolBind(box);
   const post=b=>jpost("/api/live/share",b).then(renderCodeShare).catch(e=>toast(e.message));
   {const b=$("#codeOn");if(b)b.onclick=()=>post({on:true})}{const b=$("#codeNew");if(b)b.onclick=()=>post({on:true,new:true})}{const b=$("#codeOff");if(b)b.onclick=()=>post({on:false})}
   clearTimeout(renderCodeShare.t);if(st.shareCode)renderCodeShare.t=setTimeout(()=>{if(CUR_VIEW==="settings"||CUR_VIEW==="share")renderCodeShare()},5000)}

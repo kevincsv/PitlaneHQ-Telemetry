@@ -867,3 +867,27 @@ func TestNativeOverlayKnowsEveryItem(t *testing.T) {
 		}
 	}
 }
+
+// the tyre column: the compound's letter from the car's DriverTires (D dry, W wet…), its number without them
+func TestNativeOverlayTyreBadge(t *testing.T) {
+	s := parseOvSession("DriverInfo:\n DriverCarIdx: 0\n DriverTires:\n - TireIndex: 0\n   TireCompoundType: \"Hard\"\n - TireIndex: 1\n   TireCompoundType: \"Wet\"\n Drivers:\n - CarIdx: 0\n   UserName: A\n")
+	if s.Tyres[0] != "Hard" || s.Tyres[1] != "Wet" || s.Drivers[0] == nil {
+		t.Fatalf("tyres read wrong: %v", s.Tyres)
+	}
+	st := newOvState("en")
+	st.ses = s
+	if l, col := st.tyreBadge(1); l != "W" || col != colBlue {
+		t.Fatalf("wet: %q", l)
+	}
+	if l, _ := st.tyreBadge(0); l != "D" { // one dry compound: D, whatever iRacing calls it
+		t.Fatalf("dry: %q", l)
+	}
+	st.ses.Tyres = map[int]string{0: "Soft", 1: "Medium", 2: "Hard", 3: "Wet"}
+	if l, _ := st.tyreBadge(2); l != "H" {
+		t.Fatalf("hard: %q", l)
+	}
+	st.ses.Tyres = nil
+	if l, _ := st.tyreBadge(2); l != "2" {
+		t.Fatalf("no names: %q", l)
+	}
+}

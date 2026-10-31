@@ -548,6 +548,7 @@ type ovSession struct {
 	Track    string
 	TrackID  int
 	MyIdx    int
+	Tyres    map[int]string // the car's tyre compounds (DriverTires): index → "Hard", "Wet"…
 }
 
 type ovSess struct {
@@ -753,6 +754,7 @@ func parseOvSession(y string) *ovSession {
 	var drv *ovDriver
 	sesNum := -1
 	inResults := false
+	tyreIdx := -1
 	place := [3]int{-1, -1, -1} // position, class position, car of the result being read
 	flush := func(qual bool) {
 		if place[2] < 0 || place[0] < 0 {
@@ -790,6 +792,18 @@ func parseOvSession(y string) *ovSession {
 				}
 			}
 		case "DriverInfo":
+			if item && k == "TireIndex" { // DriverTires, before the drivers: the compounds the car can run
+				tyreIdx = atoi(v)
+				continue
+			}
+			if k == "TireCompoundType" && drv == nil && tyreIdx >= 0 {
+				if s.Tyres == nil {
+					s.Tyres = map[int]string{}
+				}
+				s.Tyres[tyreIdx] = v
+				tyreIdx = -1
+				continue
+			}
 			if item && k == "CarIdx" {
 				drv = &ovDriver{Idx: atoi(v)}
 				s.Drivers[drv.Idx] = drv
@@ -1618,6 +1632,7 @@ func drawTableOv(c *ovCanvas, st *ovState, z float64, rel bool) int {
 	pitW := textWT(pf, "PIT", 0.5*z) + 12*z
 	tagW := tagSize * z
 	licW := func(v string) float64 { return math.Max(textW(lf, v)+10*z, 19*z) }
+	const tyreW = 19.0 // the tyre badge's width, before the zoom
 	// each column's width: the widest of its title and its values
 	type colInfo struct {
 		key, title string
@@ -1644,6 +1659,9 @@ func drawTableOv(c *ovCanvas, st *ovState, z float64, rel bool) int {
 			w := textW(f, v)
 			if k == "lic" && v != "–" {
 				w = licW(v)
+			}
+			if k == "tyre" && v != "–" {
+				w = tyreW * z
 			}
 			if k == "ir" && th != nil && th.irPill && v != "–" {
 				w += 10 * z
@@ -1739,7 +1757,7 @@ func drawTableOv(c *ovCanvas, st *ovState, z float64, rel bool) int {
 			if mono {
 				f = mf
 			}
-			if mine && th != nil && th.meInk != 0 {
+			if mine && th != nil && th.meInk != 0 && ci.key != "tyre" { // the tyre badge keeps its compound's colour
 				col = th.meInk
 			}
 			cy := y + rowH/2
@@ -1758,6 +1776,12 @@ func drawTableOv(c *ovCanvas, st *ovState, z float64, rel bool) int {
 					nc = d.ClassCol
 				}
 				c.text(f, v, x, cy, nc, a, 0)
+			case ci.key == "tyre" && v != "–":
+				// the compound in a round badge: a dark disc ringed in its colour, the letter in white
+				r := tyreW * z / 2
+				c.disc(x+r, cy, r, 0x0b0d10, a*0.85)
+				c.ring(x+r, cy, r-1*z, 1.6*z, col, a)
+				c.text(lf, v, x+r, cy, 0xffffff, a, 2)
 			case ci.key == "lic" && v != "–":
 				// the app's licence badge: the class colour darkened, its border in the colour, white text
 				lc := licColor(v)
@@ -1888,6 +1912,43 @@ func (st *ovState) colTitle(k string) (string, bool) {
 	return "", false
 }
 
+// tyreBadge: the letter and colour of a tyre compound, like the game's own relative: D dry, W wet, and S, M, H for the
+// cars with several dry compounds (I the intermediates). With no names from the game, the compound's number
+func (st *ovState) tyreBadge(i int) (string, uint32) {
+	name := ""
+	if st.ses != nil {
+		name = strings.ToLower(st.ses.Tyres[i])
+	}
+	wet := func(n string) bool {
+		return strings.Contains(n, "wet") || strings.Contains(n, "rain") || strings.Contains(n, "inter")
+	}
+	dry := 0 // the car's dry compounds: with one, it is simply D (iRacing calls a GT3's dry tyre "Hard")
+	if st.ses != nil {
+		for _, n := range st.ses.Tyres {
+			if !wet(strings.ToLower(n)) {
+				dry++
+			}
+		}
+	}
+	switch {
+	case name == "":
+		return strconv.Itoa(i), colMuted
+	case strings.Contains(name, "inter"):
+		return "I", colGood
+	case wet(name):
+		return "W", colBlue
+	case dry <= 1:
+		return "D", colText
+	case strings.Contains(name, "soft"):
+		return "S", colBad
+	case strings.Contains(name, "medium"):
+		return "M", 0xffd24a
+	case strings.Contains(name, "hard"):
+		return "H", colText
+	}
+	return "D", colText
+}
+
 // cell: the text of a column for a row, its colour, and whether it is a number (drawn in the mono font)
 func (st *ovState) cell(k string, r ovRow, irc map[int]int) (string, uint32, bool) {
 	i := r.idx
@@ -1997,9 +2058,10 @@ func (st *ovState) cell(k string, r ovRow, irc map[int]int) (string, uint32, boo
 			}
 		}
 		return "–", colMuted, true
-	case "tyre":
+	case "tyre": // a letter in a round badge (tyreBadge), drawn by the table
 		if t := at("CarIdxTireCompound"); t >= 0 {
-			return fmt.Sprintf("#%d", int(t)), colText, true
+			l, col := st.tyreBadge(int(t))
+			return l, col, true
 		}
 		return "–", colMuted, true
 	case "inc":

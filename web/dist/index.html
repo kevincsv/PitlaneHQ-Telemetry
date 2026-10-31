@@ -216,6 +216,7 @@ input.num{font:500 14px var(--f-data);background:var(--surface);color:var(--fg);
 .chip{font:600 13px/1 var(--f-body);background:var(--surface);color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:7px 11px;cursor:pointer;display:inline-flex;gap:6px;align-items:center}
 .chip[aria-pressed="true"]{color:var(--accent-ink);background:var(--accent);border-color:var(--accent)}
 .chip .lic{font-size:10px}
+.tyb{display:inline-flex;align-items:center;justify-content:center;width:1.7em;height:1.7em;border-radius:50%;border:1.5px solid var(--tc);background:rgba(11,13,16,.85);color:#fff;font:800 11px/1 var(--f-data);vertical-align:middle;box-sizing:border-box}
 .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,340px),1fr));gap:10px}
 .scard{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:12px;min-width:0;display:grid;gap:8px;cursor:pointer;text-align:left;color:var(--fg);font:inherit}
 .scard:hover{border-color:var(--accent)}
@@ -3311,6 +3312,12 @@ const FLAGS=[[0x10000,"black","Black flag","Bandera negra"],[0x20000,"black","Di
 const FLAG_AT={last:0,on:{}}; // when each flag bit came on: a green shows its first seconds only, the start lights come in order
 function drivers(){return(S.DriverInfo&&S.DriverInfo.Drivers)||[]}
 function driverBy(idx){return drivers().find(d=>d.CarIdx===idx)}
+/* the tyre compound in a round badge, like the game's relative and the PC's overlays (tyreBadge in ovnative.go): D dry,
+   W wet, I intermediate, S M H when the car has several dry compounds; the compound's number without the game's names */
+function tyreBadge(i){const tl=((S.DriverInfo||{}).DriverTires||[]),nm=String((tl.find(t=>+t.TireIndex===+i)||{}).TireCompoundType||"").toLowerCase();
+  const wet=n=>/wet|rain|inter/.test(n),dry=tl.filter(t=>!wet(String(t.TireCompoundType||"").toLowerCase())).length;
+  const [l,c]=!nm?[String(i),"var(--muted)"]:/inter/.test(nm)?["I","var(--good)"]:wet(nm)?["W","#5c9dff"]:dry<=1?["D","var(--text)"]:/soft/.test(nm)?["S","#ff6363"]:/medium/.test(nm)?["M","#ffd24a"]:/hard/.test(nm)?["H","var(--text)"]:["D","var(--text)"];
+  return `<span class="tyb" style="--tc:${c}">${esc(l)}</span>`}
 function lic(s){if(!s)return"";const c=String(s).trim()[0];const cls="RDCBAP".includes(c)?c:"P";return `<span class="lic ${cls}">${esc(s)}</span>`}
 function estLap(){const di=S.DriverInfo||{};return di.DriverCarEstLapTime||T.LapBestLapTime||100}
 function relList(){
@@ -4032,7 +4039,7 @@ function renderTyres(){
   $("#tyreBalance").innerHTML=`<dt>${Lp("Front vs rear","Delante vs detrás",true)}</dt><dd>${d(A.LF!=null&&A.RF!=null?(A.LF+A.RF)/2:null,A.LR!=null&&A.RR!=null?(A.LR+A.RR)/2:null)}</dd>
     <dt>${Lp("Left vs right","Izquierda vs derecha",true)}</dt><dd>${d(A.LF!=null&&A.LR!=null?(A.LF+A.LR)/2:null,A.RF!=null&&A.RR!=null?(A.RF+A.RR)/2:null)}</dd>
     <dt>${Lp("Most worn","Más gastado",true)}</dt><dd>${(()=>{const w=CORNERS.map(c=>[c,wa(c)]).filter(x=>x[1]!=null).sort((a,b)=>a[1]-b[1])[0];return w?w[0]+" · "+Math.round(w[1]*100)+"%":"–"})()}</dd>
-    <dt>${Lp("Compound","Compuesto",true)}</dt><dd>${comp==null?"–":"#"+comp}</dd>
+    <dt>${Lp("Compound","Compuesto",true)}</dt><dd>${comp==null?"–":tyreBadge(comp)}</dd>
     <dt>${Lp("Tyre sets left","Juegos restantes",true)}</dt><dd>${sets==null?"–":sets>=255?Tx("Unlimited","Ilimitados"):sets}</dd>`;
   $("#brakeBars").innerHTML=CORNERS.map(c=>{const b=tyreVals(c).brake;return `<div class="bbar"><span>${c}</span><span class="tr"><b style="width:${b==null?0:Math.min(100,b/60*100)}%"></b></span><span style="text-align:right">${b==null?"–":b.toFixed(1)+" bar"}</span></div>`}).join("");
   const rows=tyreHist.slice().reverse().slice(0,20);const cell=v=>[v.L,v.M,v.R].some(x=>x==null)?"–":[v.L,v.M,v.R].map(x=>tmp(x).toFixed(0)).join(" / ");
@@ -4679,7 +4686,7 @@ const COLS={
   int:{n:["Interval to car ahead","Intervalo con el de delante"],h:"Int",c:"r mono",f:c=>c.int},
   pit:{n:["Pit stops","Paradas"],h:"Pit",c:"r mono",f:c=>c.pits?c.pits:"–"},
   pgain:{n:["Places gained","Posiciones ganadas"],h:"+/−",c:"r mono",f:c=>c.pgain==null?"–":c.pgain===0?"=":`<span class="${c.pgain>0?"good":"bad"}">${c.pgain>0?"▲":"▼"}${Math.abs(c.pgain)}</span>`},
-  tyre:{n:["Tyre compound","Compuesto"],h:["Tyre","Neum."],c:"mono",f:c=>c.tyre==null||c.tyre<0?"–":"#"+c.tyre},
+  tyre:{n:["Tyre compound","Compuesto"],h:["Tyre","Neum."],c:"mono",f:c=>c.tyre==null||c.tyre<0?"–":tyreBadge(c.tyre)},
   inc:{n:["Incidents","Incidentes"],h:"Inc",c:"r mono",f:c=>c.d.CurDriverIncidentCount!=null?c.d.CurDriverIncidentCount+"x":"–"},
   pace:{n:["Pace (their last lap vs yours)","Ritmo (su última vuelta vs la tuya)"],h:["Pace","Ritmo"],c:"r mono",f:c=>{const L=T.CarIdxLastLapTime||[],me=T.PlayerCarIdx,a=L[c.i],b=L[me];if(!(a>0&&b>0)||c.i===me)return"–";const d=a-b;return`<span class="${d<-.1?"bad":d>.1?"good":"muted"}">${sgn(d,1)}</span>`}},
 };

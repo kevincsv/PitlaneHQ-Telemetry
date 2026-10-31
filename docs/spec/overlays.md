@@ -88,7 +88,9 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   unset, everything draws exactly as before, `TestOverlayOptionDefaults`): relative (`ui.rel`: classHead, a band of the
   classes with their SOF; dimLapped; rowSize s/m/l; notes), standings (`ui.std`: classHead, each class under a header
   with its cars and SOF, the same class bands the Beta designs always draw, made in `tableRows`; irShort "1.8k"; fastMark; pitTag;
-  their header and footer items are the app's `ITEMS`, every one drawn by `item()` in ovnative.go, `TestNativeOverlayKnowsEveryItem`), delta bar (`ui.deltabar`: barOnly, trend), timing
+  their header and footer items are the app's `ITEMS`, every one drawn by `item()` in ovnative.go, `TestNativeOverlayKnowsEveryItem`;
+  the Tyre column is a round badge with the compound's letter, D dry, W wet (blue), I intermediate, S/M/H when the car has
+  several dry compounds, from the session's DriverTires, the number when the game names none: `tyreBadge` in ovnative.go and index.html), delta bar (`ui.deltabar`: barOnly, trend), timing
   (`ui.timing`: sectors, lastBest, flash), inputs (`ui.inp.lineW`), radar (`ui.radar`: carSize, trails, dist), coach
   ("text": the tip only, nothing between corners), pit (`ui.pit`: limTol, the margin over the pit limit in m/s, 0.4 by
   default; pitOnly), gaps (`ui.gaps.numbers`), track bar (`ui.trackbar`: lineOnly, height, near, sectors, myClass), dash

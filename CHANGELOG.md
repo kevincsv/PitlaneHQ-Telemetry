@@ -7,6 +7,7 @@ improvements". 1.0.0 comes when the beta ends. Newest first.
 ## 0.9.3 beta
 
 - Lap compare in Telemetry draws the start of the lap again, with no gap and no jump in the delta.
+- Every driver can use voice chat, so whoever watches you live can talk to you.
 - Fixes and improvements.
 
 ## 0.9.2 beta

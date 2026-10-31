@@ -2,9 +2,9 @@
   "versions": [
     {
       "v": "0.9.3",
-      "en": ["Lap compare in Telemetry draws the start of the lap again, with no gap and no jump in the delta.", "Fixes and improvements."],
-      "es": ["Comparar vueltas, en Telemetría, vuelve a dibujar el inicio de la vuelta, sin hueco y sin salto en el delta.", "Arreglos y mejoras."],
-      "pt": ["Comparar voltas, na Telemetria, volta a desenhar o início da volta, sem buraco e sem salto no delta.", "Correções e melhorias."]
+      "en": ["Lap compare in Telemetry draws the start of the lap again, with no gap and no jump in the delta.", "Every driver can use voice chat, so whoever watches you live can talk to you.", "Fixes and improvements."],
+      "es": ["Comparar vueltas, en Telemetría, vuelve a dibujar el inicio de la vuelta, sin hueco y sin salto en el delta.", "Todos los pilotos pueden usar el chat de voz, así quien te ve en directo puede hablar contigo.", "Arreglos y mejoras."],
+      "pt": ["Comparar voltas, na Telemetria, volta a desenhar o início da volta, sem buraco e sem salto no delta.", "Todos os pilotos podem usar o chat de voz, assim quem te assiste ao vivo pode falar com você.", "Correções e melhorias."]
     },
     {
       "v": "0.9.2",

@@ -528,13 +528,19 @@ export default {
   },
   async fetch(req, env, ctx) {
     // the rows each route reads and writes, for the admin page's Health (reports.js); about once a minute they are kept
-    if (!env.DB) return harden(await handle(req, env, ctx));
+    if (!env.DB) return harden(await handle(req, env, ctx).catch(gatedAnswer));
     const raw = env.DB, url = new URL(req.url);
-    try { return harden(await handle(req, { ...env, DB: countingDB(raw, routeKey(req.method, url.pathname)) }, ctx)); }
+    try { return harden(await handle(req, { ...env, DB: countingDB(raw, routeKey(req.method, url.pathname)) }, ctx).catch(gatedAnswer)); }
     finally { ctx.waitUntil(flushUsage(raw)); }
   },
 };
 
+// a session waiting for its email to be confirmed, used outside the account's own routes (sessionAccount threw): 403, never
+// the 401 that signs an app out
+function gatedAnswer(e) {
+  if (e && e.gated) return new Response(JSON.stringify({ error: e.message, code: "verify_first" }), { status: 403, headers: { "content-type": "application/json; charset=utf-8", "cache-control": "no-store", "access-control-allow-origin": "*" } });
+  throw e;
+}
 async function handle(req, env, ctx) {
     const url = new URL(req.url);
     // www.pitlanehq.app is the same site: one address for people and search engines (301 to pitlanehq.app)

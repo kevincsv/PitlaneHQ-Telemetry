@@ -120,7 +120,7 @@ assert.equal(me.gated, true); assert.equal(me.verified, false);
 assert.equal((await call("GET", "/sync", null, rui.j.token)).j.code, "verify_first", "nothing else until the email is confirmed");
 assert.equal((await call("POST", "/verify/resend", { email: "rui@example.com" }, rui.j.token)).status, 200);
 const { sessionAccount } = await import("../src/accounts.js");
-assert.equal(await sessionAccount(new Request("https://x/", { headers: { authorization: "Bearer " + rui.j.token } }), env), null, "the rest of the server sees nobody");
+await assert.rejects(sessionAccount(new Request("https://x/", { headers: { authorization: "Bearer " + rui.j.token } }), env), (e) => e.gated === true, "the rest of the server answers 403, never a 401 that signs the app out");
 // an older app gets the old answer: confirm first, then sign in
 const old = await call("POST", "/register", { ...form, email: "old@example.com", display: "Olde", gate: undefined });
 assert.equal(old.status, 202); assert.equal(old.j.token, undefined);

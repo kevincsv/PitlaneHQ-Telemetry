@@ -62,7 +62,9 @@ async function newSession(env, accountId, device, gated) {
 }
 
 // the account behind a session token (also used by the community). A session given before the email was confirmed
-// (gated) stands for nobody anywhere but the account's own routes (gate), until the email is confirmed
+// (gated) is good only on the account's own routes (gate) until the email is confirmed: anywhere else it throws
+// (gatedError), which the worker answers 403 verify_first, so an app never takes it for a signed-out session (401)
+export const gatedError = () => Object.assign(new Error("verify your email first: we sent you a link, open it and then sign in"), { gated: true });
 export async function sessionAccount(req, env, gate) {
   const h = req.headers.get("authorization") || "";
   const t = h.startsWith("Bearer ") ? h.slice(7).trim() : "";
@@ -75,7 +77,7 @@ export async function sessionAccount(req, env, gate) {
     await env.DB.prepare("DELETE FROM account_sessions WHERE id=?1").bind(s.sid).run();
     return null;
   }
-  if (s.session_gated && !s.verified && !gate) return null;
+  if (s.session_gated && !s.verified && !gate) throw gatedError();
   if (Date.now() - s.last_seen > 3600e3) await env.DB.prepare("UPDATE account_sessions SET last_seen=?2 WHERE id=?1").bind(s.sid, Date.now()).run();
   return s;
 }

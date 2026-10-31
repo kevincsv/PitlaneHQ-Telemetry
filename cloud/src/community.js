@@ -68,6 +68,7 @@ import { recordBeaten } from "./alerts.js";
 import { addFound, editFound, foundLeagues, leagueGame, scanLeagues } from "./leaguescan.js";
 import { catMap, catOf, licOf, CATS } from "./categories.js";
 import { lmuClass, wetOf, clsParam, classLaps } from "./lmuclass.js";
+import { sealedSectors } from "./lapsectors.js";
 
 // one shared lap per driver, car and track: a faster lap replaces the slower one, and a slower lap
 // replaces a faster one only when it brings the telemetry the faster one lacks
@@ -116,11 +117,13 @@ export async function keepBestLap(env, uid, x) {
   // sealed when the caller has them, else from the sealed trace itself (only here, when the lap is really kept)
   const cls = x.game === "lmu" ? lmuClass(x.cls, x.car) : null;
   const wet = x.wet !== undefined ? x.wet : await sealedWet(env, x.trace);
+  // a lap without its sectors takes them from its trace (a race rival's lap the PC did not time by thirds)
+  const sectors = x.sectors && x.sectors !== "[]" ? x.sectors : (await sealedSectors(env, x.trace, x.time)) || x.sectors || null;
   await env.DB.prepare(
     `INSERT INTO community_laps (id, user_id, car_id, car, track_id, track, time, sectors, trace, created, anon, game, shown, lic, cat, official, ai, cls, wet) VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14,?15,?16,?17,?18,?19)
      ON CONFLICT(user_id, car_id, track_id) DO UPDATE SET time=excluded.time, sectors=excluded.sectors, trace=excluded.trace, created=excluded.created, car=excluded.car, track=excluded.track, anon=excluded.anon, game=excluded.game, shown=excluded.shown,
        lic=COALESCE(excluded.lic, community_laps.lic), cat=COALESCE(excluded.cat, community_laps.cat), official=excluded.official, ai=excluded.ai, cls=COALESCE(excluded.cls, community_laps.cls), wet=excluded.wet`
-  ).bind(rid(), uid, x.carId, str(x.car), x.trackId, str(x.track), x.time, x.sectors || null, x.trace || null, Date.now(), x.anon ? 1 : 0, x.game, x.shown || "nick", licOf(x.lic), str(x.cat, 20), officialOf(x.official), x.ai ? 1 : null, cls, wet ?? null).run();
+  ).bind(rid(), uid, x.carId, str(x.car), x.trackId, str(x.track), x.time, sectors, x.trace || null, Date.now(), x.anon ? 1 : 0, x.game, x.shown || "nick", licOf(x.lic), str(x.cat, 20), officialOf(x.official), x.ai ? 1 : null, cls, wet ?? null).run();
   await markModel(env, x.game, x.trackId, x.carId);
   // improved: a faster lap than the one shared before (the Discord alerts), not only its telemetry added
   const improved = !old || old.game !== x.game || x.time < old.time;

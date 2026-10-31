@@ -14,6 +14,7 @@ import { gameOf } from "./games.js";
 import { noteCar } from "./carfamily.js";
 import VIEWER from "./viewer.html";
 import { community } from "./community.js";
+import { fillSectors } from "./lapsectors.js";
 import { accounts, sessionAccount } from "./accounts.js";
 import { live } from "./live.js";
 import { seoPage, indexNow, notFound } from "./seo.js";
@@ -522,7 +523,7 @@ export default {
     const all = [];
     const wait = ctx.waitUntil.bind(ctx); ctx = { ...ctx, waitUntil: (pr) => { all.push(pr); wait(pr); } };
     ctx.waitUntil(rebuildDirty(env, { daily })); ctx.waitUntil(indexNow(env).catch(() => {}));
-    if (hourly) { ctx.waitUntil(pruneUsage(env).catch(() => {})); ctx.waitUntil(pruneSeen(env).catch(() => {})); }
+    if (hourly) { ctx.waitUntil(fillSectors(env).catch(() => {})); ctx.waitUntil(pruneUsage(env).catch(() => {})); ctx.waitUntil(pruneSeen(env).catch(() => {})); }
     if (daily) { ctx.waitUntil(fixLapTimes(env).catch(() => {})); ctx.waitUntil(repairImpossibleShares(env).catch(() => {})); ctx.waitUntil(env.DB.prepare(ALL_SESSION_SUMS).run().catch(() => {})); } ctx.waitUntil(resharePending(env).catch(() => {})); ctx.waitUntil(rebuildTrackMaps(env).catch(() => {})); ctx.waitUntil(scanLeagues(env).catch(() => {})); ctx.waitUntil(prunePresence(env).catch(() => {}));
     wait(Promise.allSettled(all).then(() => flushUsage(raw, true)));
   },

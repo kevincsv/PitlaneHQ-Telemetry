@@ -4,6 +4,14 @@ Pitlane HQ is in **beta**. Pitlane HQ Agent (the PC app), the web app and the ph
 number, `0.MINOR.PATCH`. A MINOR version brings a set of new features, and fixes go in as "Fixes and
 improvements". 1.0.0 comes when the beta ends. Newest first.
 
+## 0.9.2 beta
+
+- Sign up with Steam or Discord in one tap.
+- When you sign up with an email and password, you confirm your email before you start.
+- Days you drove on Home opens as a calendar with each day's races and sessions.
+- The Tyre column of the overlays shows the compound as a round badge, D for dry and W for wet.
+- Fixes and improvements.
+
 ## 0.9.1 beta
 
 - The relative and standings overlays show the track surface and the sim time when you add them to the header or the footer.

@@ -1,6 +1,12 @@
 {
   "versions": [
     {
+      "v": "0.9.2",
+      "en": ["Sign up with Steam or Discord in one tap.", "When you sign up with an email and password, you confirm your email before you start.", "Days you drove on Home opens as a calendar with each day's races and sessions.", "The Tyre column of the overlays shows the compound as a round badge, D for dry and W for wet.", "Fixes and improvements."],
+      "es": ["Regístrate con Steam o Discord con un solo toque.", "Si te registras con email y contraseña, confirmas tu email antes de empezar.", "Días que has corrido, en Inicio, se abre como un calendario con las carreras y sesiones de cada día.", "La columna de neumáticos de los overlays muestra el compuesto como una insignia redonda, D para seco y W para mojado.", "Arreglos y mejoras."],
+      "pt": ["Cadastre-se com Steam ou Discord com um toque.", "Se você se cadastrar com email e senha, confirma seu email antes de começar.", "Dias em que correu, no Início, abre como um calendário com as corridas e sessões de cada dia.", "A coluna de pneus dos overlays mostra o composto como um selo redondo, D para seco e W para molhado.", "Correções e melhorias."]
+    },
+    {
       "v": "0.9.1",
       "en": ["The relative and standings overlays show the track surface and the sim time when you add them to the header or the footer.", "Fixes and improvements."],
       "es": ["Los overlays de relativo y clasificación muestran el estado de la pista y la hora en pista cuando los añades a la cabecera o al pie.", "Arreglos y mejoras."],

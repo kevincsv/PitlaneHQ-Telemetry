@@ -1,6 +1,12 @@
 {
   "versions": [
     {
+      "v": "0.9.3",
+      "en": ["Lap compare in Telemetry draws the start of the lap again, with no gap and no jump in the delta.", "Fixes and improvements."],
+      "es": ["Comparar vueltas, en Telemetría, vuelve a dibujar el inicio de la vuelta, sin hueco y sin salto en el delta.", "Arreglos y mejoras."],
+      "pt": ["Comparar voltas, na Telemetria, volta a desenhar o início da volta, sem buraco e sem salto no delta.", "Correções e melhorias."]
+    },
+    {
       "v": "0.9.2",
       "en": ["Sign up with Steam or Discord in one tap.", "When you sign up with an email and password, you confirm your email before you start.", "Days you drove on Home opens as a calendar with each day's races and sessions.", "The Tyre column of the overlays shows the compound as a round badge, D for dry and W for wet.", "Fixes and improvements."],
       "es": ["Regístrate con Steam o Discord con un solo toque.", "Si te registras con email y contraseña, confirmas tu email antes de empezar.", "Días que has corrido, en Inicio, se abre como un calendario con las carreras y sesiones de cada día.", "La columna de neumáticos de los overlays muestra el compuesto como una insignia redonda, D para seco y W para mojado.", "Arreglos y mejoras."],

@@ -28,7 +28,10 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   experimental ones too (not on a PC without Pro), and the lap's traces of speed, throttle/brake, delta and gear, `drawLiveTraces`)
   and Compare laps, live (`renderLiveCmp`/`tickLiveCmp`: the lap now against B, "My best" in purple, the last lap, other
   laps, and "▲ Next level" / "★ Record" only when the model has a full-telemetry lap of someone else, corner by corner by
-  the official turns). Standings: gap to the leader or interval, the class filter only when several classes race, your
+  the official turns). The page's own lap recorder (`recordLap`, behind the traces and the compare) starts a lap where
+  LapDistPct goes back to 0 and times it from SessionTime from there, like the agent's (`cloud.go`): iRacing counts the
+  lap and restarts its lap clock a second or more after the line, so the first metres were missing and carried the lap
+  before's clock (the delta jumped at the start). Standings: gap to the leader or interval, the class filter only when several classes race, your
   position lap by lap (`renderStandings`, `drawPosHistory`); Tyres show their wear. The rev beep page is a list of cars
   and the chosen car's mode as three cards (iRacing lights, My laps, My RPM with one number or one per gear) and its
   sound (early, pitch, volume, test). Overlays is one list (`renderOverlaysTab`, `.ov-row`): every overlay always (no switch for the

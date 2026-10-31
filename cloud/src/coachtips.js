@@ -8,6 +8,7 @@
 import { sessionAccount, isAdmin } from "./accounts.js";
 import { famId } from "./carfamily.js";
 import { MIN_PLAN_VOTES, STEP, planVotes, planWeights } from "./coachplan.js";
+import { calibrateRun } from "./coachcalib.js";
 
 export const MIN_CASES = 30;   // cases a bucket needs before it reorders anything
 const MIN_RATINGS = 20;        // ratings a kind needs before its thumbs count
@@ -159,6 +160,18 @@ export async function coachTipRoutes(req, env, p, m, body, game) {
     const { buckets: b } = await buckets(env);
     return json({ min: MIN_CASES, buckets: b.filter((x) => x.w !== 1 || x.ask || x.n >= MIN_CASES), off: await offList(env), confidence: await confidenceOn(env), plan: planWeights(await planVotes(env)) }, 200, { "cache-control": "private, max-age=3600" });
   }
+  // what the coach said in the driver's last session on this car and track before the one they look at now (before: its
+  // start): every corner with a tip, what that lap lost there and the time that session's best lap spent in it. The apps
+  // show how the lap they look at does where that plan asked for something (followUp in pitwall-analysis.js)
+  if (p === "/coach/last" && m === "GET") {
+    const u = new URL(req.url), trackId = +u.searchParams.get("trackId") || 0, carId = (+u.searchParams.get("carId") || 0) && (await famId(env, game, +u.searchParams.get("carId"))), before = +u.searchParams.get("before") || Date.now();
+    if (!trackId || !carId) return err("trackId and carId", 400);
+    const last = await env.DB.prepare(
+      `SELECT session_id, started FROM coach_tips WHERE account=?1 AND game=?2 AND track_id=?3 AND car_id=?4 AND started<?5 AND kind<>'' AND tbest IS NOT NULL ORDER BY started DESC LIMIT 1`).bind(acc.id, game, trackId, carId, before).first();
+    if (!last) return json({ tips: [] }, 200, { "cache-control": "private, max-age=300" });
+    const t = await env.DB.prepare("SELECT n, apex, kind, lost, tbest FROM coach_tips WHERE account=?1 AND session_id=?2 AND kind<>'' AND lost>0.05 AND tbest IS NOT NULL ORDER BY lost DESC LIMIT 12").bind(acc.id, last.session_id).all();
+    return json({ started: last.started, tips: (t.results || []).map((x) => ({ n: x.n, apex: x.apex, kind: x.kind, lost: r3(x.lost), tbest: r3(x.tbest) })) }, 200, { "cache-control": "private, max-age=300" });
+  }
   // the driver's own memory: the kinds that repeat across their tracks (habits), and their own buckets' weights
   if (p === "/coach/me" && m === "GET") {
     const h = await env.DB.prepare(
@@ -168,7 +181,12 @@ export async function coachTipRoutes(req, env, p, m, body, game) {
     const { buckets: mine } = await buckets(env, acc.id);
     const w = {};
     for (const x of mine) if (x.n >= MIN_PERSONAL && x.w !== 1) w[x.kind + "|" + x.cls] = x.w;
-    return json({ habits, w, minTracks: HABIT_TRACKS }, 200, { "cache-control": "private, max-age=600" });
+    // the corner types across their tracks: what they lose on average in slow, medium and fast corners against the
+    // next level or the record (the strengths and weaknesses the apps show)
+    const bc = await env.DB.prepare(
+      `SELECT cls, COUNT(*) AS n, AVG(CASE WHEN lost>0 THEN lost ELSE 0 END) AS avg FROM coach_tips WHERE account=?1 AND cls<>'' AND lost IS NOT NULL AND ref IN ('level','record') GROUP BY cls`).bind(acc.id).all().catch(() => ({ results: [] }));
+    const byCls = (bc.results || []).filter((x) => x.n >= 5).map((x) => ({ cls: x.cls, n: x.n, avg: r3(x.avg || 0) }));
+    return json({ habits, w, minTracks: HABIT_TRACKS, byCls }, 200, { "cache-control": "private, max-age=600" });
   }
 
   // the admin panel: a tip's kind on corners of one speed turned off (or back on), and whether the tips say how many drivers they helped
@@ -184,6 +202,11 @@ export async function coachTipRoutes(req, env, p, m, body, game) {
     if (!isAdmin(env, acc.id)) return err("only the admins of this server can do this", 403);
     await env.DB.prepare("INSERT INTO app_state (k, v, at) VALUES ('coach_confidence', ?1, ?2) ON CONFLICT(k) DO UPDATE SET v=excluded.v, at=excluded.at").bind(body.on ? "1" : "0", Date.now()).run();
     return json({ ok: true, confidence: !!body.on });
+  }
+  // the admin panel: how often each tip and step of the plan fires on real laps (coachcalib.js)
+  if (p === "/admin/coach/calibrate" && m === "GET") {
+    if (!isAdmin(env, acc.id)) return err("only the admins of this server can do this", 403);
+    return json(await calibrateRun(env));
   }
   // the admin panel: every bucket with its cases, how many gained, the average gain and the thumbs
   if (p === "/admin/coach" && m === "GET") {

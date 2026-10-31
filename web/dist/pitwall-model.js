@@ -24,7 +24,10 @@ function combos(){const g=game();if(COMBOS.list&&COMBOS.g===g)return Promise.res
 const cmpOf=lap=>{const f=((lap&&lap.flags)||[]).find(x=>/^cmp:\d+$/.test(x));return f?+f.slice(4):lap&&lap.cmp>0?lap.cmp|0:0};
 /* the car and track of a lap (and its compound, so the model gives the references of the same tyres), with what is
    already loaded (null while the list loads, or when unknown) */
-function comboSync(lap){const c=comboRaw(lap);return c?{...c,cmp:cmpOf(lap)}:null}
+function comboSync(lap){const c=comboRaw(lap);return c?{...c,cmp:cmpOf(lap),temp:tempOf(lap)}:null}
+/* the track temperature of a lap's session (its band picks the next level), null when unknown */
+function tempOf(lap){if(!lap)return null;if(typeof lap.temp==="number"&&isFinite(lap.temp))return lap.temp;const ses=lap.sessionId&&typeof CLOUD!=="undefined"?(CLOUD.sessions||[]).find(x=>x.id===lap.sessionId):null;const t=ses&&(ses.track_temp??ses.trackTemp);
+  if(typeof t==="number"&&isFinite(t))return t;if(!lap.cloud&&!lap.comm&&typeof S!=="undefined"&&S.WeekendInfo){const v=parseFloat(S.WeekendInfo.TrackSurfaceTemp);if(isFinite(v))return v}return null}
 function comboRaw(lap){
   if(!lap)return null;
   if(!lap.cloud&&!lap.comm&&typeof S!=="undefined"&&S.WeekendInfo&&S.WeekendInfo.TrackID&&typeof myDriver==="function"&&myDriver().CarID)return{trackId:S.WeekendInfo.TrackID,carId:myDriver().CarID};
@@ -34,7 +37,7 @@ function comboRaw(lap){
   const hit=list.find(c=>norm(c.car)===car&&norm(c.track)===full)||list.find(c=>norm(c.car)===car&&norm(c.track).startsWith(tr))||list.find(c=>norm(c.car)===car&&norm(c.track).split(" · ")[0]===tr);
   return hit?{trackId:hit.trackId,carId:hit.carId}:null}
 async function comboOf(lap){if(!lap)return null;await combos();return comboSync(lap)}
-const keyOf=c=>game()+":"+c.trackId+":"+c.carId+":"+(c.cmp||0);
+const keyOf=c=>game()+":"+c.trackId+":"+c.carId+":"+(c.cmp||0)+":"+(bandOf(c.temp)||"");
 
 /* ---------- the model of one car and track, as the server learnt it ---------- */
 /* the record lap, the next level at every pace (real laps, one bin in two) and the pace of every driver it knows */
@@ -47,10 +50,11 @@ function buildModel(c){
   MODEL.key=key;MODEL.busy=true;MODEL.err="";MODEL.data=null;MODEL.at=Date.now();
   MODEL.p=(async()=>{
     try{
-      const r=await cget(url(`/api/community/model?trackId=${c.trackId}&carId=${c.carId}&cmp=${c.cmp||0}`));
+      // with the track temperature of lap A's session: the next level of the drivers of a track like that one, when the model has it
+      const r=await cget(url(`/api/community/model?trackId=${c.trackId}&carId=${c.carId}&cmp=${c.cmp||0}${typeof c.temp==="number"&&isFinite(c.temp)?"&temp="+Math.round(c.temp*10)/10:""}`));
       if(r.car&&r.car.n){CARD.id=c.carId;CARD.data=r.car;CARD.busy=false;CARD.at=Date.now()} // the car card came with the model
       MODEL.data={key,trackId:c.trackId,carId:c.carId,cmp:typeof r.cmp==="number"?r.cmp:null,n:r.n||0,drivers:r.drivers||0,total:r.shared||0,fastShared:r.fastShared||null,M:r.M,nb:r.nb,pool:r.pool,idealTime:r.idealTime,built:r.built,
-        times:r.times||[],corners:withSpreadMax(Array.isArray(r.corners)?r.corners:[]),ideal:(r.ideal||[]).map(b=>[b[0],b[1],b[2],b[3],b[4],b[5],null]),idealXY:r.idealXY&&Array.isArray(r.idealXY.x)?r.idealXY:null,lineXY:r.lineXY&&Array.isArray(r.lineXY.x)?r.lineXY:null,ladder:(r.ladder||[]).map(x=>({time:x.time,n:x.n,upTo:x.upTo,seg:x.seg,bins:null,raw:x.bins,rx:x.x,ry:x.y,rg:x.g||null,step:Array.isArray(x.step)?x.step:null}))}}
+        times:r.times||[],corners:withSpreadMax(Array.isArray(r.corners)?r.corners:[]),ranks:Array.isArray(r.ranks)?r.ranks:[],improve:Array.isArray(r.improve)?r.improve:[],band:r.band||null,idealField:!!r.idealField,ideal:(r.ideal||[]).map(b=>[b[0],b[1],b[2],b[3],b[4],b[5],null]),idealXY:r.idealXY&&Array.isArray(r.idealXY.x)?r.idealXY:null,lineXY:r.lineXY&&Array.isArray(r.lineXY.x)?r.lineXY:null,ladder:(r.ladder||[]).map(x=>({time:x.time,n:x.n,upTo:x.upTo,seg:x.seg,field:!!x.field,bins:null,raw:x.bins,rx:x.x,ry:x.y,rg:x.g||null,step:Array.isArray(x.step)?x.step:null}))}}
     catch(e){MODEL.err=e.message}
     MODEL.busy=false;return MODEL.data})();
   return MODEL.p}
@@ -64,7 +68,7 @@ async function modelFor(lap){const c=await comboOf(lap);if(!c)return null;return
 
 /* the record lap (the fastest lap really driven) as a lap you can compare with */
 function idealLap(m){if(!m||!m.ideal||!m.ideal.length)return null;
-  return{n:"★ "+TX("Record","Récord","Rekord","Recorde"),alias:TX("Record (real lap)","Récord (vuelta real)","Rekord (echte Runde)","Recorde (volta real)"),name:TX("Record (real lap)","Récord (vuelta real)","Rekord (echte Runde)","Recorde (volta real)"),time:m.idealTime,bins:m.ideal,maxBin:m.ideal.length-1,xy:m.idealXY||m.lineXY,comm:true,model:"ideal"}}
+  return{n:"★ "+TX("Record","Récord","Rekord","Recorde"),alias:TX("Record (real lap)","Récord (vuelta real)","Rekord (echte Runde)","Recorde (volta real)"),name:TX("Record (real lap)","Récord (vuelta real)","Rekord (echte Runde)","Recorde (volta real)"),time:m.idealTime,bins:m.ideal,maxBin:m.ideal.length-1,xy:m.idealXY||m.lineXY,comm:true,model:"ideal",est:!!m.idealField}}
 /* where a lap time stands among the drivers the model knows: 1 = the fastest */
 function rankOf(m,t){const T=(m&&m.times)||[];if(!T.length||!(t>0))return null;return{pos:T.filter(x=>x<t).length+1,of:T.length+(T.some(x=>Math.abs(x-t)<0.002)?0:1)}}
 /* the next level for a lap time: the real lap of the driver just ahead (0.3–3 % faster) */
@@ -72,7 +76,7 @@ function refFor(m,t){const L=(m&&m.ladder)||[];if(!L.length)return null;let i=L.
   while(i>0&&!(L[i].time<t*0.997))i--; // the driver just ahead is really ahead (not this very lap)
   const x=L[i];if(!x.bins){x.bins=up(x.raw).slice(0,m.nb);x.xy=upXY(x.rx,x.ry,m.nb,x.rg)}return x}
 function levelLap(m,t){const x=refFor(m,t);if(!x)return null;
-  return{n:"▲ "+TX("Next level","Siguiente nivel","Nächstes Level","Próximo nível"),alias:TX("Next level (the driver just ahead)","Siguiente nivel (el piloto justo por delante)","Nächstes Level (der Fahrer knapp vor dir)","Próximo nível (o piloto logo à frente)"),name:TX("Next level (the driver just ahead)","Siguiente nivel (el piloto justo por delante)","Nächstes Level (der Fahrer knapp vor dir)","Próximo nível (o piloto logo à frente)"),time:x.time,bins:x.bins,maxBin:x.bins.length-1,xy:x.xy||m.lineXY||null,comm:true,model:"level",step:x.step||null}}
+  return{n:"▲ "+TX("Next level","Siguiente nivel","Nächstes Level","Próximo nível"),alias:TX("Next level (the driver just ahead)","Siguiente nivel (el piloto justo por delante)","Nächstes Level (der Fahrer knapp vor dir)","Próximo nível (o piloto logo à frente)"),name:TX("Next level (the driver just ahead)","Siguiente nivel (el piloto justo por delante)","Nächstes Level (der Fahrer knapp vor dir)","Próximo nível (o piloto logo à frente)"),time:x.time,bins:x.bins,maxBin:x.bins.length-1,xy:x.xy||m.lineXY||null,comm:true,model:"level",step:x.step||null,est:!!x.field}}
 /* the references of a lap: the record (unless this lap is it) and the next level (when someone is ahead) */
 function refsFor(m,A){if(!m||!A)return{rec:null,level:null};const rec=idealLap(m),lv=levelLap(m,A.time);
   return{rec:rec&&Math.abs(rec.time-A.time)>=0.002?rec:null,level:lv&&lv.time<A.time-0.001?lv:null}}
@@ -134,5 +138,5 @@ if(typeof origCoach==="function")window.renderCoach=function(){const r=origCoach
     // the car card the same way: once it is here, the coach renders once more
     cardFor(A).then(c=>{const k=(c?c.carId+":"+c.built:"none")+"|"+A.time;if(k===cardKey)return;cardKey=k;if(c)window.renderCoach()}).catch(()=>{})}catch(e){console.warn(e)}return r};
 const st=document.createElement("style");st.textContent=`.pb,.pb-t{color:var(--pb)!important;font-weight:700}tr.lap-invalid td{opacity:.5;text-decoration:line-through}tr.lap-invalid td:last-child .pill{text-decoration:none}`;document.head.appendChild(st);
-window.PW_MODEL={buildModel,modelFor,current,loading,error,idealLap,levelLap,refsFor,rankOf,comboOf,carCard,cardFor,lapFacts,cornerHint};
+window.PW_MODEL={buildModel,modelFor,current,loading,error,idealLap,levelLap,refsFor,rankOf,comboOf,carCard,cardFor,lapFacts,cornerHint,tempOf};
 })();

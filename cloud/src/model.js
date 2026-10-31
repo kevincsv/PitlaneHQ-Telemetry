@@ -14,7 +14,7 @@ import { openData } from "./crypt.js";
 import { pedalEnvelope, estimatePedals } from "./pedals.js";
 
 // raise it when the way the model learns changes: every model is rebuilt from its memory
-export const MODEL_VERSION = 11; // 4: real laps only — the record and the driver just ahead, no composites; 5: with their line; 6: the fastest line known; 7: clean traces, the next level with real pedals; 8: the corner card; 9: rivals' pedals from what the car really does (pedals.js); 10: wet laps left out, a rival's lap with the game's own pedals (src "real") is a real lap; 11: the references of every tyre compound apart (byCmp)
+export const MODEL_VERSION = 12; // 4: real laps only — the record and the driver just ahead, no composites; 5: with their line; 6: the fastest line known; 7: clean traces, the next level with real pedals; 8: the corner card; 9: rivals' pedals from what the car really does (pedals.js); 10: wet laps left out, a rival's lap with the game's own pedals (src "real") is a real lap; 11: the references of every tyre compound apart (byCmp); 12: the track guide (gears, ranks, the drivers who improved, the coach's usual tips) and the next level by track temperature (byBand)
 export const CARD_VERSION = 2;  // the car card (below); raise it when what it learns changes
 const SEG_M = 250;          // metres per micro-sector
 const MAX_LAPS = 80;        // laps the model reads per car and track
@@ -24,6 +24,11 @@ const LADDER_SPAN = 0.08;   // up to 8 % slower than the fastest lap
 const LEVEL_BIN = 2;        // the references keep one bin in two (10 m) to stay small
 const CMP_MIN = 5;          // laps a tyre compound needs before it gets references of its own
 const CMP_DRIVERS = 3;      // and drivers: one driver's laps alone would make their own lap the compound's next level
+const BAND_MIN = 5;         // laps a track temperature band needs before it gets a next level of its own
+const BAND_DRIVERS = 3;     // and drivers
+const IMPROVE_DRIVERS = 30; // drivers whose progress the model reads per build (their first lap here against their best)
+const IMPROVE_MIN = 3;      // drivers a corner needs before it says where the drivers who improved found time
+const RANK_Q = 41;          // the corner times kept per corner (all of them up to this many drivers, else as many quantiles)
 
 const median = (a) => { const v = a.filter((x) => x != null && isFinite(x)).sort((x, y) => x - y); if (!v.length) return null; const m = v.length >> 1; return v.length % 2 ? v[m] : (v[m - 1] + v[m]) / 2; };
 const r = (v, d) => (v == null || !isFinite(v) ? 0 : Math.round(v * d) / d);
@@ -205,12 +210,71 @@ export function compoundsOf(rows) {
   return [...n.entries()].filter(([c, k]) => k >= CMP_MIN && d.get(c).size >= CMP_DRIVERS).map(([c]) => c).sort((p, q) => p - q);
 }
 
+// the track temperature bands of the memory that get a next level of their own: only when its laps were driven in
+// several, each one with BAND_MIN laps from BAND_DRIVERS drivers or more (exported for the tests)
+export function bandsOf(rows) {
+  const n = new Map(), d = new Map();
+  for (const x of rows) {
+    const b = bandOf(x.temp);
+    if (!b) continue;
+    n.set(b, (n.get(b) || 0) + 1);
+    if (!d.has(b)) d.set(b, new Set());
+    d.get(b).add(x.drv);
+  }
+  if (n.size < 2) return [];
+  return BANDS.filter((b) => (n.get(b) || 0) >= BAND_MIN && d.get(b).size >= BAND_DRIVERS);
+}
+// the drivers who improved here (exported for the tests): for each driver with an older lap clearly slower than their
+// best (0.3 % or more, kept before it), that first lap and the best; the drivers who came furthest first, IMPROVE_DRIVERS at most
+export function progressPairs(rows) {
+  const per = new Map();
+  for (const x of rows) { if (!per.has(x.drv)) per.set(x.drv, []); per.get(x.drv).push(x); }
+  const out = [];
+  for (const l of per.values()) {
+    if (l.length < 2) continue;
+    const best = l.reduce((a, b) => (b.time < a.time ? b : a));
+    const older = l.filter((x) => x !== best && (x.created || 0) < (best.created || 0) && x.time > best.time * 1.003);
+    if (!older.length) continue;
+    const first = older.reduce((a, b) => ((b.created || 0) < (a.created || 0) ? b : a));
+    out.push([first, best, first.time - best.time]);
+  }
+  return out.sort((a, b) => b[2] - a[2]).slice(0, IMPROVE_DRIVERS).map(([a, b]) => [a, b]);
+}
+// where the drivers who improved found their time (exported for the tests): in each corner of the record (zones), the
+// median of what each driver's best lap gained there on their first lap, from IMPROVE_MIN drivers; the three biggest
+export function improveSteps(pairs, zones, n) {
+  const out = [];
+  for (const z of zones) {
+    const g = [];
+    for (const { old, now } of pairs) { const a = cornerTime(old.bins, z, Math.min(n, old.bins.length)), b = cornerTime(now.bins, z, Math.min(n, now.bins.length)); if (a != null && b != null) g.push(a - b); }
+    if (g.length < IMPROVE_MIN) continue;
+    g.sort((p, q) => p - q);
+    const gain = g[g.length >> 1];
+    if (gain > 0.02) out.push({ apex: z.imin * 5, gain: r(gain, 1000), n: g.length });
+  }
+  return out.sort((a, b) => b.gain - a.gain).slice(0, 3);
+}
+// every corner of the record with the corner times of the drivers' best laps here (one each), sorted (exported for the
+// tests): the apps tell where a lap stands in each corner among the drivers (cornerRanks in pitwall-analysis.js). The
+// window is the coach's, from 50 m before the braking to 150 m after the slowest point, in metres
+export function cornerRanksOf(sorted, zones, n) {
+  const best = [], seen = new Set();
+  for (const l of sorted) { if (seen.has(l.up)) continue; seen.add(l.up); best.push(l); }
+  if (best.length < 3) return [];
+  return zones.map((z) => {
+    const ts = best.map((l) => cornerTime(l.bins, z, n)).filter((t) => t != null && t > 0).sort((a, b) => a - b);
+    if (ts.length < 3) return null;
+    const q = ts.length <= RANK_Q ? ts : Array.from({ length: RANK_Q }, (_, k) => ts[Math.round((k * (ts.length - 1)) / (RANK_Q - 1))]);
+    return { apex: z.imin * 5, i0: Math.max(0, z.i - 10) * 5, i1: Math.min(n - 1, z.imin + 30) * 5, n: ts.length, q: q.map((t) => r(t, 1000)) };
+  }).filter(Boolean);
+}
+
 // what the model learns from: its memory, the best few laps of every driver; and the same of every tyre compound apart
 // when the laps were driven on several (byCmp: compound → its laps)
 async function candidates(env, game, trackId, carId) {
   await adoptOldSessions(env, game, trackId, carId);
   const learnt = await learnNewLaps(env, game, trackId, carId);
-  const rows = (await env.DB.prepare("SELECT drv, time, data, temp, cmp FROM model_laps WHERE game=?1 AND track_id=?2 AND car_id=?3 ORDER BY time LIMIT 5000").bind(game, trackId, carId).all()).results || [];
+  const rows = (await env.DB.prepare("SELECT drv, time, data, temp, cmp, created FROM model_laps WHERE game=?1 AND track_id=?2 AND car_id=?3 ORDER BY time LIMIT 5000").bind(game, trackId, carId).all()).results || [];
   const drivers = new Set(rows.map((x) => x.drv)).size;
   // every row is opened once, whichever sets it is in; a rival's lap gets its pedals and gears again from its speed and
   // what this car really does (pedals.js)
@@ -236,7 +300,13 @@ async function candidates(env, game, trackId, carId) {
   const laps = await lapsOf(pickLaps(rows));
   const byCmp = new Map();
   for (const c of compoundsOf(rows)) byCmp.set(c, await lapsOf(pickLaps(rows.filter((x) => x.cmp === c))));
-  return { laps, byCmp, drivers, more: learnt.more, added: learnt.added };
+  // the next level by track temperature: each band with enough laps and drivers, when the laps were driven in several
+  const byBand = new Map();
+  for (const b of bandsOf(rows)) byBand.set(b, await lapsOf(pickLaps(rows.filter((x) => bandOf(x.temp) === b))));
+  // the drivers who improved here: each one's first lap the memory kept against their best, later one
+  const pairs = [];
+  for (const [o, nw] of progressPairs(rows)) { const [a, b] = await lapsOf([o, nw]); if (a && b && a !== b) pairs.push({ old: a, now: b }); }
+  return { laps, byCmp, byBand, pairs, drivers, more: learnt.more, added: learnt.added };
 }
 
 // ---------- the corner card: where the fastest drivers here brake and how fast they take every corner ----------
@@ -288,6 +358,10 @@ export function cornerCard(sorted, fastest, n) {
     const all = range(pick.map(() => true), zones, z);
     if (!all) continue;
     const c = { d: z.i * 5, apex: z.imin * 5, ...all };
+    // the gear the fast drivers take the apex in (their real gears: a rival's are estimated from its speed)
+    const gs = [];
+    zones.forEach((q, k) => { const l = pick[k]; if (l.field) return; const mm = q.filter((x) => Math.abs(x.i - z.i) <= SAME_ZONE).sort((p, w) => Math.abs(p.i - z.i) - Math.abs(w.i - z.i))[0]; const g = mm && l.bins[mm.imin] ? Math.round(l.bins[mm.imin][4] || 0) : 0; if (g >= 1) gs.push(g); });
+    if (gs.length >= 2) { gs.sort((a, b) => a - b); c.g = [gs[Math.floor(gs.length * 0.2)], gs[Math.ceil(gs.length * 0.8) - 1]]; }
     // by track temperature, when a band has enough of the fast laps: the braking of a hot afternoon is not a cold morning's
     const bands = {};
     for (const b of BANDS) { const rg = range(pick.map((l) => bandOf(l.temp) === b), zones, z); if (rg) bands[b] = rg; }
@@ -428,7 +502,7 @@ export async function refsOf(laps, pathFor) {
     }
   }
   return {
-    n: laps.length, M, nb: n, pool: laps.length, idealTime: r(fastest.time, 1000), fastest: r(fastest.time, 1000), lineXY,
+    n: laps.length, M, nb: n, pool: laps.length, idealTime: r(fastest.time, 1000), fastest: r(fastest.time, 1000), lineXY, ranks: cornerRanksOf(sorted, zr, n),
     ideal: record, idealField: !!fastest.field, corners,
     idealXY: fp && fp.x.length >= n ? { x: fp.x.slice(0, n).map((v) => r(v, 10)), y: fp.y.slice(0, n).map((v) => r(v, 10)), ...(fp.g ? { g: fp.g } : {}) } : null,
     ladder: out,
@@ -436,7 +510,7 @@ export async function refsOf(laps, pathFor) {
 }
 export async function buildModel(env, game, trackId, carId) {
   carId = await famId(env, game, carId); // one model for a car under every badge (carfamily.js)
-  const { laps: raw, byCmp: rawCmp, drivers, more, added } = await candidates(env, game, trackId, carId);
+  const { laps: raw, byCmp: rawCmp, byBand: rawBand, pairs, drivers, more, added } = await candidates(env, game, trackId, carId);
   if (added) await markCar(env, game, carId); // its memory of this car grew: the car card learns again
   const shared = await env.DB.prepare(
     `SELECT COUNT(*) AS n, MIN(time) AS best FROM community_laps WHERE track_id=?1 AND car_id=?2 AND game=?3 AND COALESCE(shown,'')<>'model'`).bind(trackId, carId, game).first();
@@ -463,17 +537,45 @@ export async function buildModel(env, game, trackId, carId) {
     if (cl.length >= 2) cmps[c] = await refsOf(cl, pathFor);
   }
   if (Object.keys(cmps).length) model.byCmp = cmps;
+  // the next level of each track temperature band (no paths: the line stays the model's), for a lap driven on a track
+  // like that one (forCompound with its temperature)
+  const bands = {};
+  for (const [b, ls] of rawBand || []) {
+    const cl = cleanLaps(ls);
+    if (cl.length >= 2) { const x = await refsOf(cl, async () => null); bands[b] = { n: x.n, ladder: x.ladder.map(({ x: _x, y: _y, g: _g, ...e }) => e) }; }
+  }
+  if (Object.keys(bands).length) model.byBand = bands;
+  // the track guide: where the drivers who improved here found their time, and the coach's usual tip in every corner
+  const nb = model.nb || 0, fastest = laps.reduce((a, b) => (b.time < a.time ? b : a));
+  model.improve = improveSteps(pairs || [], brakeZones(fastest.bins, nb), nb);
+  await usualTips(env, game, trackId, carId, model.corners || []).catch(() => {});
   return model;
+}
+// the tip the coach gives most in each corner of the card (coach_tips: the drivers' laps against a reference here), when
+// MISTAKE_MIN drivers or more got it: what most drivers get wrong there
+const MISTAKE_MIN = 3;
+async function usualTips(env, game, trackId, carId, corners) {
+  if (!corners.length) return;
+  const rows = (await env.DB.prepare("SELECT apex, kind, account FROM coach_tips WHERE game=?1 AND track_id=?2 AND car_id=?3 AND kind<>'' AND lost>0.05 LIMIT 5000").bind(game, trackId, carId).all()).results || [];
+  for (const c of corners) {
+    const by = new Map();
+    for (const x of rows) { if (Math.abs(x.apex - c.apex) > 60) continue; if (!by.has(x.kind)) by.set(x.kind, new Set()); by.get(x.kind).add(x.account); }
+    const top = [...by.entries()].map(([kind, s]) => ({ kind, n: s.size })).sort((a, b) => b.n - a.n)[0];
+    if (top && top.n >= MISTAKE_MIN) c.mistake = top;
+  }
 }
 
 // the model as a client asks for it (exported for the tests): the references of the compound of its lap A when the
 // model has them apart (cmp, a number), else the model of every lap; cmps lists the compounds that have their own
-export function forCompound(md, cmp) {
+// with temp (the track temperature of lap A's session), the next level of that band when the model has it and lap A's
+// compound has no references of its own: a lap on a hot afternoon is measured against the drivers of hot afternoons
+export function forCompound(md, cmp, temp) {
   if (!md) return md;
-  const { byCmp, ...m } = md;
+  const { byCmp, byBand, ...m } = md;
   const list = byCmp ? Object.keys(byCmp).map(Number).sort((p, q) => p - q) : [];
   const one = byCmp && Number.isInteger(cmp) && cmp >= 0 ? byCmp[cmp] : null;
-  return { ...m, ...(list.length ? { cmps: list } : {}), ...(one ? { ...one, cmp } : {}) };
+  const b = bandOf(temp), bb = !one && b && byBand ? byBand[b] : null;
+  return { ...m, ...(list.length ? { cmps: list } : {}), ...(one ? { ...one, cmp } : {}), ...(bb ? { ladder: bb.ladder, band: b } : {}) };
 }
 
 // ---------- the car card: what a car does on every track it was driven on ----------
@@ -604,9 +706,10 @@ export async function reconcileIds(env, game, track, trackConfig, car, trackId, 
   await markModel(env, game, trackId, carId);
 }
 
-const gz = async (s) => new Uint8Array(await new Response(new Blob([s]).stream().pipeThrough(new CompressionStream("gzip"))).arrayBuffer());
+export { memTrace };
+export const gz = async (s) => new Uint8Array(await new Response(new Blob([s]).stream().pipeThrough(new CompressionStream("gzip"))).arrayBuffer());
 // D1 gives a BLOB back as an array of numbers
-const gunz = async (b) => await new Response(new Blob([b instanceof ArrayBuffer || ArrayBuffer.isView(b) ? b : new Uint8Array(b)]).stream().pipeThrough(new DecompressionStream("gzip"))).text();
+export const gunz = async (b) => await new Response(new Blob([b instanceof ArrayBuffer || ArrayBuffer.isView(b) ? b : new Uint8Array(b)]).stream().pipeThrough(new DecompressionStream("gzip"))).text();
 
 // a car and track got a new lap: the model has to learn it
 // the laps one driver taught the model, moved to another driver (a PC's community token merged into its

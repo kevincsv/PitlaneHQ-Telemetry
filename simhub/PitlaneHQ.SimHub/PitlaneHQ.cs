@@ -5,6 +5,10 @@ using System.Net;
 using System.Text;
 using System.Threading;
 using System.Web.Script.Serialization;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Media;
+using System.Windows.Threading;
 using GameReaderCommon;
 using SimHub.Plugins;
 
@@ -16,12 +20,17 @@ namespace PitlaneHQ.SimHub
     [PluginDescription("Pitlane HQ's delta, coach and lap validity as SimHub properties")]
     [PluginAuthor("Pitlane HQ")]
     [PluginName("Pitlane HQ")]
-    public class PitlaneHQ : IPlugin, IDataPlugin
+    public class PitlaneHQ : IPlugin, IDataPlugin, IWPFSettingsV2
     {
         // the frame's shape this plugin reads (simhubFeedVersion in the agent)
         const int FeedVersion = 1;
 
         public PluginManager PluginManager { get; set; }
+
+        // IWPFSettingsV2: a page of its own is what gives a plugin SimHub's "Show in left main menu" switch
+        public string LeftMenuTitle => "Pitlane HQ";
+        public ImageSource PictureIcon => null;
+        public Control GetWPFSettingsControl(PluginManager pluginManager) => new StatusPage(() => status);
 
         volatile Dictionary<string, object> frame = new Dictionary<string, object>();
         volatile string status = "no-agent";
@@ -152,6 +161,41 @@ namespace PitlaneHQ.SimHub
                 }
                 open = null;
                 if (status == "ok") status = "no-agent"; // the agent closed
+            }
+        }
+    }
+
+    // The plugin's page in SimHub: is it reading Pitlane HQ, and where its values are
+    class StatusPage : UserControl
+    {
+        public StatusPage(Func<string> status)
+        {
+            var state = new TextBlock { FontSize = 16, Margin = new Thickness(0, 0, 0, 12), TextWrapping = TextWrapping.Wrap };
+            var panel = new StackPanel { Margin = new Thickness(16) };
+            panel.Children.Add(new TextBlock { Text = "Pitlane HQ", FontSize = 22, Margin = new Thickness(0, 0, 0, 8) });
+            panel.Children.Add(state);
+            panel.Children.Add(new TextBlock
+            {
+                Text = "Use the PitlaneHQ.* properties on SimHub dashboards, overlays and LEDs: Delta, CoachCue, CoachTip, CoachTurn, LapValid and more.",
+                TextWrapping = TextWrapping.Wrap,
+            });
+            Content = panel;
+
+            var timer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
+            Action show = () => state.Text = Describe(status());
+            timer.Tick += (s, e) => show();
+            Loaded += (s, e) => { show(); timer.Start(); };
+            Unloaded += (s, e) => timer.Stop();
+        }
+
+        static string Describe(string status)
+        {
+            switch (status)
+            {
+                case "ok": return "Connected to Pitlane HQ.";
+                case "off": return "Pitlane HQ has this turned off.";
+                case "old": return "Pitlane HQ is newer than this plugin: update the plugin.";
+                default: return "Waiting for Pitlane HQ: is it running on this PC?";
             }
         }
     }

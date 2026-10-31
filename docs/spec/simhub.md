@@ -39,6 +39,11 @@ with admin mode on (`wipAllowed()`), and it is installed by hand.
 
 A value Pitlane HQ does not have now is null (a text is empty). Texts are in the app's language and units.
 
+## Its page in SimHub
+
+The plugin has a page of its own (`StatusPage`) saying whether it is reading Pitlane HQ. That page is what gives it SimHub's
+"Show in left main menu" switch in the plugin list.
+
 ## Building and installing
 
 - .NET Framework 4.8, built against SimHub's own `SimHub.Plugins.dll` and `GameReaderCommon.dll` from the SimHub

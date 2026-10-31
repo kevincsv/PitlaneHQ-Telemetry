@@ -1302,12 +1302,26 @@ func (st *ovState) item(k string) (string, string, uint32) {
 		return T("Time", "Hora"), time.Now().Format("15:04"), colText
 	case "airtemp":
 		if v, ok := st.num("AirTemp"); ok {
-			return T("Air", "Aire"), fmt.Sprintf("%.0f°C", v), colText
+			return T("Air", "Aire"), fmt.Sprintf("%.0f%s", st.tmp(v), st.tmpU()), colText
 		}
+		return T("Air", "Aire"), "–", colText
 	case "tracktemp":
 		if v, ok := st.num("TrackTempCrew"); ok {
-			return T("Track", "Pista"), fmt.Sprintf("%.0f°C", v), colText
+			return T("Track", "Pista"), fmt.Sprintf("%.0f%s", st.tmp(v), st.tmpU()), colText
 		}
+		return T("Track", "Pista"), "–", colText
+	case "wet": // the track's surface, as the app's item names it (iRacing's TrackWetness, the other games mapped onto it)
+		en := []string{"–", "Dry", "Mostly dry", "Very light wet", "Light wet", "Wet", "Very wet", "Extreme wet"}
+		es := []string{"–", "Seca", "Casi seca", "Muy poco mojada", "Poco mojada", "Mojada", "Muy mojada", "Extremadamente mojada"}
+		if v, ok := st.num("TrackWetness"); ok && int(v) > 0 && int(v) < len(en) {
+			return T("Track surface", "Pista"), T(en[int(v)], es[int(v)]), colText
+		}
+		return T("Track surface", "Pista"), "–", colText
+	case "simtime":
+		if v, ok := st.num("SessionTimeOfDay"); ok && v >= 0 {
+			return T("Sim time", "Hora en pista"), fmt.Sprintf("%02d:%02d", int(v)/3600%24, int(v)%3600/60), colText
+		}
+		return T("Sim time", "Hora en pista"), "–", colText
 	}
 	return "", "", 0
 }
@@ -2539,5 +2553,5 @@ func ovVars(name string, st *ovState) []string {
 	return append(base, "CarIdxLapDistPct", "CarIdxEstTime", "CarIdxLap", "CarIdxLapCompleted", "CarIdxPosition", "CarIdxClassPosition", "CarIdxF2Time",
 		"CarIdxLastLapTime", "CarIdxBestLapTime", "CarIdxOnPitRoad", "CarIdxTireCompound", "SessionTimeRemain", "SessionLapsRemainEx", "Lap",
 		"PlayerCarPosition", "PlayerCarClassPosition", "PlayerCarMyIncidentCount", "FuelLevel", "FuelUsePerLap", "LapBestLapTime", "LapLastLapTime",
-		"LapDeltaToBestLap", "LapDeltaToBestLap_OK", "AirTemp", "TrackTempCrew", "CarIdxSessionFlags", "CarIdxNumPenalties", "CarIdxTrackSurface")
+		"LapDeltaToBestLap", "LapDeltaToBestLap_OK", "AirTemp", "TrackTempCrew", "TrackWetness", "SessionTimeOfDay", "CarIdxSessionFlags", "CarIdxNumPenalties", "CarIdxTrackSurface")
 }

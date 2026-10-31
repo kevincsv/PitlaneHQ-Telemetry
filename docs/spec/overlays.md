@@ -87,7 +87,8 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   each overlay its own content options (`OV_OPTS` in index.html, the native overlays read the same keys, `ovsettings.go`;
   unset, everything draws exactly as before, `TestOverlayOptionDefaults`): relative (`ui.rel`: classHead, a band of the
   classes with their SOF; dimLapped; rowSize s/m/l; notes), standings (`ui.std`: classHead, each class under a header
-  with its cars and SOF, the same class bands the Beta designs always draw, made in `tableRows`; irShort "1.8k"; fastMark; pitTag), delta bar (`ui.deltabar`: barOnly, trend), timing
+  with its cars and SOF, the same class bands the Beta designs always draw, made in `tableRows`; irShort "1.8k"; fastMark; pitTag;
+  their header and footer items are the app's `ITEMS`, every one drawn by `item()` in ovnative.go, `TestNativeOverlayKnowsEveryItem`), delta bar (`ui.deltabar`: barOnly, trend), timing
   (`ui.timing`: sectors, lastBest, flash), inputs (`ui.inp.lineW`), radar (`ui.radar`: carSize, trails, dist), coach
   ("text": the tip only, nothing between corners), pit (`ui.pit`: limTol, the margin over the pit limit in m/s, 0.4 by
   default; pitOnly), gaps (`ui.gaps.numbers`), track bar (`ui.trackbar`: lineOnly, height, near, sectors, myClass), dash

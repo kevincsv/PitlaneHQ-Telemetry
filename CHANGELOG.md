@@ -4,6 +4,11 @@ Pitlane HQ is in **beta**. Pitlane HQ Agent (the PC app), the web app and the ph
 number, `0.MINOR.PATCH`. A MINOR version brings a set of new features, and fixes go in as "Fixes and
 improvements". 1.0.0 comes when the beta ends. Newest first.
 
+## 0.9.1 beta
+
+- The relative and standings overlays show the track surface and the sim time when you add them to the header or the footer.
+- Fixes and improvements.
+
 ## 0.9.0 beta
 
 - Turn on notifications on your phone to hear when another driver beats your record and to get a summary of your week.

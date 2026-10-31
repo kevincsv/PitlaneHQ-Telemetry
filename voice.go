@@ -1,10 +1,10 @@
 package main
 
-// The engineer's voice chat (admins only): a WebRTC call between the app's page on this PC (the driver) and a
+// The engineer's voice chat (every signed-in driver): a WebRTC call between the app's page on this PC (the driver) and a
 // browser watching it live (the engineer: one of your devices you accepted, or anyone with your share code). The
 // voice goes straight between the two (Opus, the lowest delay WebRTC gives); the agent only carries the call's
 // signalling (offer, answer, network candidates, hang up) through the live room, sealed like the telemetry, and
-// only while this account is an admin's.
+// only while an account is signed in on this PC.
 
 import (
 	"encoding/json"
@@ -34,12 +34,13 @@ var (
 	}{rooms: map[string]string{}, calls: map[string]string{}, seen: map[string]time.Time{}}
 )
 
-// voiceOn: the voice chat is there only for an admin's or a tester's account
+// voiceOn: the voice chat is there for every driver signed in on this PC (the owner's choice: anyone who watches
+// them live, their own devices or a share code, can talk to them)
 func voiceOn() bool {
 	loadPL()
 	plMu.Lock()
 	defer plMu.Unlock()
-	return (plAcc.Admin || plAcc.Tester) && plAcc.Token != ""
+	return plAcc.Token != ""
 }
 
 func voicePush(list *[]voiceMsg, room string, data json.RawMessage) {
@@ -137,7 +138,7 @@ func registerVoiceRoutes(mux *http.ServeMux) {
 			return
 		}
 		if !voiceOn() {
-			http.Error(w, "the voice chat is for admins", 403)
+			http.Error(w, "sign in to use the voice chat", 403)
 			return
 		}
 		b, _ := io.ReadAll(io.LimitReader(r.Body, 64<<10))

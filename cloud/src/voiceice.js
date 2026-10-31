@@ -1,4 +1,4 @@
-// GET /voice/ice: the servers a voice chat call (the engineer's, admins only) uses to get through the routers.
+// GET /voice/ice: the servers a voice chat call (anyone talking to a driver they watch live) uses to get through the routers.
 // STUN always; TURN (relayed, for networks where the two cannot reach each other) only when the server has
 // Cloudflare's TURN key (TURN_KEY_ID + TURN_KEY_TOKEN), with credentials that last a day.
 const STUN = [{ urls: ["stun:stun.cloudflare.com:3478", "stun:stun.l.google.com:19302"] }];

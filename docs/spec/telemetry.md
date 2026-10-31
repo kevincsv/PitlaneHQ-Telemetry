@@ -8,19 +8,19 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   a moment early for the reaction time, pitch and volume, "Beeps in this screen" (the PC by default). No braking beeps
   any more (they did not work well): the Braking markers widget and overlay only show where to brake. There is no voice
   engineer, spotter, radio or audio packs anywhere any more (the owner's choice): the PC never speaks and the only
-  sound it makes by itself is the rev beep. The one exception is the voice chat, for admins and testers only (`voice.go`, `VOICE`/
+  sound it makes by itself is the rev beep. The one exception is the voice chat, for every driver signed in (the owner's choice, Oct 31) (`voice.go`, `VOICE`/
   `voiceIn` in index.html, `/voice/ice` in voiceice.js): a person talking to the driver, never a computer voice. A WebRTC
   call (Opus at 32 kbps at most, nothing sent while nobody talks (DTX, `voiceSdp`), no extra jitter buffer, echo and
   noise cancelled; TURN only when the two cannot reach each other directly) between the driver's PC (the app's page; it answers by
   itself, the driver is driving) and whoever watches it live (a device of the account the PC accepted, or anyone with its
-  share code): "Talk to the driver" shows for them only while the PC is live and its account is an admin's. The call's
+  share code): "Talk to the driver" shows for them while the PC is live and signed in to any account (`voiceOn`), so anyone watching a driver live, with the driver's own devices or a share code, can talk to them. The call's
   messages go through the live room sealed like the telemetry (the agent passes them between the room and the page, and
   one window of the PC answers each call); the voice goes straight between the two. STUN by default, Cloudflare TURN
   when the server has TURN_KEY_ID and TURN_KEY_TOKEN; none in local mode. The bar (who, time, Mute, Hang up) stays above
   every window. Both PC windows let the app's own page use the microphone (Pitlane HQ Desktop's PermissionRequested for
   loopback; the agent's window through go-webview2, patched in vendor/ to read the permission's kind and allow the
-  microphone: keep the patch if the library is vendored again). Settings → Phone & sharing has "Test the microphone"
-  for admins and testers, and a microphone that fails says why (`voiceMicError`: Windows' privacy switch, none found, in use). Web and PC for now (phone browsers too). Their braking
+  microphone: keep the patch if the library is vendored again). Settings → Phone & sharing has "Voice chat" with "Test the microphone"
+  for every signed-in driver, and a microphone that fails says why (`voiceMicError`: Windows' privacy switch, none found, in use). Web and PC only, phone browsers too (the owner's choice: the Android and iOS apps do not have it). Their braking
   points come from the model (the next level for your best lap of the session; your own best lap while the model has
   none or you are its fastest), each marker moves with your speed against that lap and with a car close ahead or
   alongside, and they name their corners by the official turns (`turnNo`, `turnName`), like the coach: "T7", never "C7".

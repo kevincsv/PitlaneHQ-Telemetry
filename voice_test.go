@@ -36,13 +36,22 @@ func TestVoiceSignalling(t *testing.T) {
 	if v, _ := voiceSince("share", v0); len(v) != 0 {
 		t.Fatalf("share room got %d", len(v))
 	}
-	// not an admin: nothing goes through
+	// a normal account: the call goes through too
 	plMu.Lock()
 	plAcc.Admin = false
+	plMu.Unlock()
+	_, pn := voiceSince("", -1)
+	voiceFromViewer("share", json.RawMessage(`{"t":"offer","id":"devDDDD4","call":"call0004","sdp":"x"}`))
+	if got, _ := voiceSince("", pn); len(got) != 1 {
+		t.Fatal("voice did not go through for a normal account")
+	}
+	// signed out: nothing goes through
+	plMu.Lock()
+	plAcc.Token = ""
 	plMu.Unlock()
 	_, p1 := voiceSince("", -1)
 	voiceFromViewer("share", json.RawMessage(`{"t":"offer","id":"devCCCC3","call":"call0003","sdp":"x"}`))
 	if got, _ := voiceSince("", p1); len(got) != 0 {
-		t.Fatal("voice went through for a normal account")
+		t.Fatal("voice went through while signed out")
 	}
 }

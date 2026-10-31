@@ -5,7 +5,7 @@
 // of Le Mans Ultimate's leagues and records exist only while there is something to show. The app's "/" (index.html)
 // is checked too: its head, its JSON-LD and its <noscript> links in the body.
 import assert from "node:assert/strict";
-import { readFileSync, existsSync } from "node:fs";
+import { readFileSync, existsSync, readdirSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { seoPage } from "../src/seo.js";
 import { TOPICS } from "../src/seo-topics.js";
@@ -194,5 +194,13 @@ for (const [path, p] of pages) for (const href of new Set(p.links)) {
   const hrefs = [...ns.matchAll(/href="(\/[^"]*)"/g)].map((m) => m[1]);
   for (const set of [...STATIC]) assert.ok(hrefs.includes(set.en), `<noscript> links ${set.en}`);
   for (const href of hrefs) { if (OUTSIDE.test(href)) continue; const r = await get(env, href); assert.ok(r && r.status === 200, `<noscript> links ${href}`); }
+}
+// every file of the visitor's landing (web/dist/landing: the screenshots and the live telemetry's laps) is one the
+// worker serves, or the landing shows an empty window
+{
+  const src = readFileSync(fileURLToPath(new URL("../src/worker.js", import.meta.url)), "utf8");
+  const re = new RegExp(pick(src, /const isAppFile = \/(.+)\/\.test\(url\.pathname\);/));
+  const walk = (d, pre) => readdirSync(d, { withFileTypes: true }).flatMap((e) => e.isDirectory() ? walk(d + e.name + "/", pre + e.name + "/") : [pre + e.name]);
+  for (const f of walk(DIST + "landing/", "/landing/")) assert.ok(re.test(f), `the worker serves ${f}`);
 }
 console.log("seo ok:", pages.size, "pages,", locs.length, "addresses in the sitemap");

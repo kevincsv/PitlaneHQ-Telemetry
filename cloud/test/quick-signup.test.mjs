@@ -21,7 +21,7 @@ const stmt = (sql) => {
   return s;
 };
 const DB = { prepare: stmt, batch: async (list) => { for (const x of list) await x.run(); } };
-const env = { COMMUNITY: "1", DATA_KEY: "test-secret", DB, GOOGLE_CLIENT_ID: "cid.apps.googleusercontent.com", GOOGLE_CLIENT_SECRET: "sec", EMAIL_FROM: "Pitlane HQ <hi@pitlanehq.app>", RESEND_API_KEY: "re_x" };
+const env = { COMMUNITY: "1", DATA_KEY: "test-secret", DB, GOOGLE_CLIENT_ID: "cid.apps.googleusercontent.com", GOOGLE_CLIENT_SECRET: "sec", GOOGLE_ON: "1", EMAIL_FROM: "Pitlane HQ <hi@pitlanehq.app>", RESEND_API_KEY: "re_x" };
 
 // Google's token endpoint answers with an ID token for whoever "signs in" next; Resend accepts every email
 let who = null;

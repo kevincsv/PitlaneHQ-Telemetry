@@ -25,6 +25,9 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   Google" (`cloud/src/google.js`, migration 0083; secrets GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET, redirect
   https://pitlanehq.app/google/oauth) also signs in to the account whose email is that Google's verified email, links
   it and counts the email as confirmed.
+  Google is switched off for now (the owner's choice, Oct 31, so the owner's email is not on Google's sign-in screen):
+  no Google button on any device (`GOOG_OFF` in index.html, `GOOGLE_ON` in the phones' code) and the server answers 503
+  unless the worker has GOOGLE_ON="1". Steam and Discord one-tap accounts stay.
 - Confirm your email (the owner's choice, Oct 31, design A): an account made with the form is signed in at once, but
   every device shows only the "Confirm your email" screen (`emailGate` in index.html; the phones' own) until the link is
   opened: Open Gmail (or the mail of that address), Send it again once a minute, Wrong email? (that account is deleted

@@ -20,7 +20,8 @@ const isHex48 = (v) => typeof v === "string" && /^[0-9a-f]{48}$/.test(v);
 const portOf = (v) => (Number.isInteger(Number(v)) && Number(v) > 0 && Number(v) < 65536 ? Number(v) : null);
 const siteOf = (env, url) => (env.LOCAL === "1" && url ? url.origin : SITE);
 const back = (env, url) => siteOf(env, url) + "/google/oauth";
-export const googleReady = (env) => !!(env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET);
+// off for now (the owner's choice, Oct 31): GOOGLE_ON="1" on the worker brings it back with the two secrets
+export const googleReady = (env) => env.GOOGLE_ON === "1" && !!(env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET);
 
 // the address the browser opens, and what only the app that asked keeps (the state, 10 minutes, and the code its grant is
 // redeemed with); port the PC's agent, app the phone apps, one of the two at most

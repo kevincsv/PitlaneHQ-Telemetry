@@ -1222,8 +1222,9 @@ export async function community(req, env, url, ctx) {
       const short = driverName(body.name || body.short);
       await env.DB.prepare("INSERT INTO community_users (id, token_hash, alias, created, owner) VALUES (?1,?2,?5,?3,?4) ON CONFLICT(id) DO UPDATE SET alias=excluded.alias WHERE excluded.alias<>'Anonymous'")
         .bind(oid, "other:" + oid, Date.now(), u.id, short || "Anonymous").run();
-      // on the leaderboard only when the PC says so (faster than you, with their trace); the rest teach the model unseen
-      const r = await keepBestLap(env, oid, { game, carId, trackId, car: body.car, track: body.track, time, sectors, trace: await sealData(env, plain), cls: body.cls, wet: wetOf(body.trace && body.trace.f), anon: true, shown: body.hidden ? "model" : "nick", lic: body.lic, cat: body.cat, official: body.official, ai: body.ai === true, count: () => countUpload(env, u) });
+      // every rival's best lap is on the leaderboard (as Anonymous), whatever the PC says (older agents mark the slower
+      // ones "hidden"); a faster lap of theirs replaces it
+      const r = await keepBestLap(env, oid, { game, carId, trackId, car: body.car, track: body.track, time, sectors, trace: await sealData(env, plain), cls: body.cls, wet: wetOf(body.trace && body.trace.f), anon: true, shown: "nick", lic: body.lic, cat: body.cat, official: body.official, ai: body.ai === true, count: () => countUpload(env, u) });
       if (r.limit) return err("too many uploads today", 429);
       return json(r.kept ? { kept: "a faster lap of this driver is already shared" } : { shared: true });
     }

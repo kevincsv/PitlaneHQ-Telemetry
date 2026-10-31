@@ -49,7 +49,9 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
 - Rivals of practice and qualifying: the PC shares the other real drivers' best laps of every session that is not a
   race nor a test drive, as it does a race's (`fieldpractice.go`: every 3 minutes while the session runs and when it
   ends or the PC leaves the game, before the field watcher forgets it; a driver goes again only when faster). They are
-  race rivals like any other (below). Every driver has 1500 uploads a day (`countUpload`), the rivals' laps included.
+  race rivals like any other (below). Every rival's best lap is on the leaderboard, slower than you or not, with its trace
+  or without (the server ignores the agent's `hidden`; `shown` 'model' is no longer written for rivals), and a faster lap of
+  theirs replaces it. Every driver has 1500 uploads a day (`countUpload`), the rivals' laps included.
 - Race rivals (the other real drivers of your races, whose best laps your PC shares, in iRacing and in Le Mans Ultimate (LMU gives no driver id: `lmuDriverID`, a stable hash of the name the game shows, far above iRacing's ids, is the driver's `UserID` in the synthesized YAML); AI drivers and the pace car never,
   `CarIsAI`/`CarIsPaceCar`, `ai` in journal.go) show on the leaderboards as Anonymous,
   with no "rival" tag beside them, on the public pages too: they did not join Pitlane HQ, so they never agreed to be

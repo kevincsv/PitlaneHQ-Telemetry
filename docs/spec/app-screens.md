@@ -54,7 +54,11 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   start, its position lap by lap, the iRating, incidents and best lap; Race summary and Analyse my laps), the recent
   sessions (races and the other sessions together, tagged Race, Qualifying, Practice, Test drive, vs AI and DRINKS), the
   licence summary (each discipline with "iRating" over its numbers; the chosen one draws its iRating over your races)
-  and the days you drove. Each block of Home and Community sits on a card (the downloads' surface and border) for depth.
+  and the days you drove. Pressing the days you drove (anywhere on the squares) opens them as a calendar on every device
+  (`openDays`; the phones' Days you drove screen): one month in the same squares, bigger and numbered, brighter the more
+  sessions that day, from six months back (or the first day driven) to this month with arrows or a swipe; the day pressed
+  (else the last one driven) is outlined and its races and sessions are listed under the month, newest first, each
+  opening its summary. Each block of Home and Community sits on a card (the downloads' surface and border) for depth.
   The four numbers (`/api/sessions/summary`, sessionsum.js) and the session list (`/api/sessions`) read only the
   account's sessions (index `sessions_uploader_started`) and never their laps: each session keeps its lap count, best,
   time on track and friends' names (`SESSION_SUMS` on every change, all of them again once a day, migration 0078),

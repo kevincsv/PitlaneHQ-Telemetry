@@ -6618,16 +6618,18 @@ function fbFab(){let b=document.getElementById("fbFab"),on=false;try{on=!!usageD
     b.onclick=e=>{e.stopPropagation();usageCount("act:feedback_button");if(isAdmin()){supportOpen();return}fbMenu()};document.body.appendChild(b)}
   const l=supTitle();if(b.getAttribute("aria-label")!==l){b.setAttribute("aria-label",l);b.title=l}
   const n=isAdmin()?SUP.an:SUP.n,c=b.querySelector("b");c.hidden=!(n>0);c.textContent=n>9?"9+":String(n||"");b.hidden=false}
-/* the floating button's two ways: give feedback (stars and a text, as often as they like) or chat with Support */
+/* the floating button's ways: give feedback (stars and a text, as often as they like), chat with Support, or donate
+   (the Stripe link, PC and web only: never in the Steam build, and the phones have no donation link) */
 function fbMenu(){let m=document.getElementById("fbMenu");if(m){m.remove();return}
   m=document.createElement("div");m.id="fbMenu";m.className="fbmenu";m.setAttribute("role","menu");
   const n=SUP.n||0;
-  m.innerHTML=`<button type="button" role="menuitem" data-fbm="fb"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z"/></svg>${esc(Tx("Send feedback","Enviar tu opinión","Send feedback","Enviar sua opinião"))}</button><button type="button" role="menuitem" data-fbm="chat"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 15.5a2 2 0 0 1-2 2H8.5L4 21V6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2z"/></svg>${esc(Tx("Chat with support","Chat con soporte","Chat with support","Chat com o suporte"))}${n>0?`<b>${n>9?"9+":n}</b>`:""}</button>`;
+  m.innerHTML=`<button type="button" role="menuitem" data-fbm="fb"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z"/></svg>${esc(Tx("Send feedback","Enviar tu opinión","Send feedback","Enviar sua opinião"))}</button><button type="button" role="menuitem" data-fbm="chat"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 15.5a2 2 0 0 1-2 2H8.5L4 21V6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2z"/></svg>${esc(Tx("Chat with support","Chat con soporte","Chat with support","Chat com o suporte"))}${n>0?`<b>${n>9?"9+":n}</b>`:""}</button>${donateUrl()?`<button type="button" role="menuitem" data-fbm="don"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20.5s-7.5-4.6-7.5-10.2A4.3 4.3 0 0 1 12 7.6a4.3 4.3 0 0 1 7.5 2.7c0 5.6-7.5 10.2-7.5 10.2z"/></svg>${esc(Tx("Donate","Donar","Donate","Doar"))}</button>`:""}`;
   document.body.appendChild(m);
   const close=()=>{m.remove();document.removeEventListener("click",out,true);document.removeEventListener("keydown",esc_)},out=e=>{if(!m.contains(e.target))close()},esc_=e=>{if(e.key==="Escape")close()};
   setTimeout(()=>{document.addEventListener("click",out,true);document.addEventListener("keydown",esc_)},0);
   m.querySelector('[data-fbm="fb"]').onclick=()=>{close();FB.busy=false;feedbackAsk(false)};
   m.querySelector('[data-fbm="chat"]').onclick=()=>{close();supportOpen()};
+  const dn=m.querySelector('[data-fbm="don"]');if(dn)dn.onclick=()=>{close();usageCount("act:donate_menu");openOutside(donateUrl())};
   m.querySelector("button").focus()}
 setTimeout(fbFab,800);setInterval(fbFab,1500);
 /* The support chat (support.js): the driver's conversation with "Pitlane HQ Support" (what they wrote in the feedback

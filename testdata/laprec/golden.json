@@ -1,0 +1,884 @@
+{
+ "1x Off Track": [
+  {
+   "n": 1,
+   "valid": false,
+   "time": 14.903,
+   "points": 840,
+   "health": {
+    "gap": 3900,
+    "seen": 0.071,
+    "hz": 60
+   },
+   "flags": [
+    "cold"
+   ],
+   "path": false,
+   "hash": "e495ad7c0031"
+  },
+  {
+   "n": 2,
+   "valid": false,
+   "time": 82.979,
+   "points": 840,
+   "sectors": [
+    27.95,
+    28.951,
+    26.078
+   ],
+   "health": {
+    "gap": 0,
+    "seen": 1,
+    "hz": 60
+   },
+   "inc": [
+    1502,
+    1
+   ],
+   "incK": [
+    "off"
+   ],
+   "path": true,
+   "hash": "684c93736003"
+  },
+  {
+   "n": 3,
+   "valid": true,
+   "time": 83.96,
+   "points": 840,
+   "sectors": [
+    28.303,
+    29.293,
+    26.364
+   ],
+   "health": {
+    "gap": 0,
+    "seen": 1,
+    "hz": 60
+   },
+   "path": true,
+   "hash": "5d9ecc6ad341"
+  },
+  {
+   "n": 4,
+   "valid": true,
+   "time": 83.989,
+   "points": 840,
+   "sectors": [
+    28.309,
+    29.286,
+    26.394
+   ],
+   "health": {
+    "gap": 0,
+    "seen": 1,
+    "hz": 60
+   },
+   "path": true,
+   "hash": "9e6817d5649f"
+  }
+ ],
+ "2x Loss of Control on the track": [
+  {
+   "n": 1,
+   "valid": false,
+   "time": 14.903,
+   "points": 840,
+   "health": {
+    "gap": 3900,
+    "seen": 0.071,
+    "hz": 60
+   },
+   "flags": [
+    "cold"
+   ],
+   "path": false,
+   "hash": "e495ad7c0031"
+  },
+  {
+   "n": 2,
+   "valid": true,
+   "time": 82.979,
+   "points": 840,
+   "sectors": [
+    27.95,
+    28.951,
+    26.078
+   ],
+   "health": {
+    "gap": 0,
+    "seen": 1,
+    "hz": 60
+   },
+   "inc": [
+    1502,
+    2
+   ],
+   "incK": [
+    "loss"
+   ],
+   "path": true,
+   "hash": "684c93736003"
+  },
+  {
+   "n": 3,
+   "valid": true,
+   "time": 83.96,
+   "points": 840,
+   "sectors": [
+    28.303,
+    29.293,
+    26.364
+   ],
+   "health": {
+    "gap": 0,
+    "seen": 1,
+    "hz": 60
+   },
+   "path": true,
+   "hash": "5d9ecc6ad341"
+  },
+  {
+   "n": 4,
+   "valid": true,
+   "time": 83.989,
+   "points": 840,
+   "sectors": [
+    28.309,
+    29.286,
+    26.394
+   ],
+   "health": {
+    "gap": 0,
+    "seen": 1,
+    "hz": 60
+   },
+   "path": true,
+   "hash": "9e6817d5649f"
+  }
+ ],
+ "4x contact": [
+  {
+   "n": 1,
+   "valid": false,
+   "time": 14.903,
+   "points": 840,
+   "health": {
+    "gap": 3900,
+    "seen": 0.071,
+    "hz": 60
+   },
+   "flags": [
+    "cold"
+   ],
+   "path": false,
+   "hash": "e495ad7c0031"
+  },
+  {
+   "n": 2,
+   "valid": true,
+   "time": 82.979,
+   "points": 840,
+   "sectors": [
+    27.95,
+    28.951,
+    26.078
+   ],
+   "health": {
+    "gap": 0,
+    "seen": 1,
+    "hz": 60
+   },
+   "inc": [
+    1502,
+    4
+   ],
+   "incK": [
+    "contact"
+   ],
+   "path": true,
+   "hash": "684c93736003"
+  },
+  {
+   "n": 3,
+   "valid": true,
+   "time": 83.96,
+   "points": 840,
+   "sectors": [
+    28.303,
+    29.293,
+    26.364
+   ],
+   "health": {
+    "gap": 0,
+    "seen": 1,
+    "hz": 60
+   },
+   "path": true,
+   "hash": "5d9ecc6ad341"
+  },
+  {
+   "n": 4,
+   "valid": true,
+   "time": 83.989,
+   "points": 840,
+   "sectors": [
+    28.309,
+    29.286,
+    26.394
+   ],
+   "health": {
+    "gap": 0,
+    "seen": 1,
+    "hz": 60
+   },
+   "path": true,
+   "hash": "9e6817d5649f"
+  }
+ ],
+ "a quarter second on the grass at 30 Hz": [
+  {
+   "n": 1,
+   "valid": false,
+   "time": 14.906,
+   "points": 840,
+   "health": {
+    "gap": 3900,
+    "seen": 0.071,
+    "hz": 30
+   },
+   "flags": [
+    "cold"
+   ],
+   "path": false,
+   "hash": "7e31c38257ba"
+  },
+  {
+   "n": 2,
+   "valid": true,
+   "time": 82.978,
+   "points": 840,
+   "sectors": [
+    27.948,
+    28.951,
+    26.079
+   ],
+   "health": {
+    "gap": 0,
+    "seen": 1,
+    "hz": 30
+   },
+   "path": true,
+   "hash": "0f42997cb291"
+  },
+  {
+   "n": 3,
+   "valid": true,
+   "time": 83.96,
+   "points": 840,
+   "sectors": [
+    28.301,
+    29.293,
+    26.366
+   ],
+   "health": {
+    "gap": 0,
+    "seen": 1,
+    "hz": 30
+   },
+   "path": true,
+   "hash": "0620cf52ef15"
+  },
+  {
+   "n": 4,
+   "valid": true,
+   "time": 83.989,
+   "points": 840,
+   "sectors": [
+    28.307,
+    29.286,
+    26.396
+   ],
+   "health": {
+    "gap": 0,
+    "seen": 1,
+    "hz": 30
+   },
+   "path": true,
+   "hash": "79d710ce3933"
+  }
+ ],
+ "a quarter second on the grass at 60 Hz": [
+  {
+   "n": 1,
+   "valid": false,
+   "time": 14.903,
+   "points": 840,
+   "health": {
+    "gap": 3900,
+    "seen": 0.071,
+    "hz": 60
+   },
+   "flags": [
+    "cold"
+   ],
+   "path": false,
+   "hash": "e495ad7c0031"
+  },
+  {
+   "n": 2,
+   "valid": false,
+   "time": 82.979,
+   "points": 840,
+   "sectors": [
+    27.95,
+    28.951,
+    26.078
+   ],
+   "health": {
+    "gap": 0,
+    "seen": 1,
+    "hz": 60
+   },
+   "path": true,
+   "hash": "684c93736003"
+  },
+  {
+   "n": 3,
+   "valid": true,
+   "time": 83.96,
+   "points": 840,
+   "sectors": [
+    28.303,
+    29.293,
+    26.364
+   ],
+   "health": {
+    "gap": 0,
+    "seen": 1,
+    "hz": 60
+   },
+   "path": true,
+   "hash": "5d9ecc6ad341"
+  },
+  {
+   "n": 4,
+   "valid": true,
+   "time": 83.989,
+   "points": 840,
+   "sectors": [
+    28.309,
+    29.286,
+    26.394
+   ],
+   "health": {
+    "gap": 0,
+    "seen": 1,
+    "hz": 60
+   },
+   "path": true,
+   "hash": "9e6817d5649f"
+  }
+ ],
+ "clean at 30 Hz": [
+  {
+   "n": 1,
+   "valid": false,
+   "time": 14.906,
+   "points": 840,
+   "health": {
+    "gap": 3900,
+    "seen": 0.071,
+    "hz": 30
+   },
+   "flags": [
+    "cold"
+   ],
+   "path": false,
+   "hash": "7e31c38257ba"
+  },
+  {
+   "n": 2,
+   "valid": true,
+   "time": 82.978,
+   "points": 840,
+   "sectors": [
+    27.948,
+    28.951,
+    26.079
+   ],
+   "health": {
+    "gap": 0,
+    "seen": 1,
+    "hz": 30
+   },
+   "path": true,
+   "hash": "0f42997cb291"
+  },
+  {
+   "n": 3,
+   "valid": true,
+   "time": 83.96,
+   "points": 840,
+   "sectors": [
+    28.301,
+    29.293,
+    26.366
+   ],
+   "health": {
+    "gap": 0,
+    "seen": 1,
+    "hz": 30
+   },
+   "path": true,
+   "hash": "0620cf52ef15"
+  },
+  {
+   "n": 4,
+   "valid": true,
+   "time": 83.989,
+   "points": 840,
+   "sectors": [
+    28.307,
+    29.286,
+    26.396
+   ],
+   "health": {
+    "gap": 0,
+    "seen": 1,
+    "hz": 30
+   },
+   "path": true,
+   "hash": "79d710ce3933"
+  }
+ ],
+ "clean at 60 Hz": [
+  {
+   "n": 1,
+   "valid": false,
+   "time": 14.903,
+   "points": 840,
+   "health": {
+    "gap": 3900,
+    "seen": 0.071,
+    "hz": 60
+   },
+   "flags": [
+    "cold"
+   ],
+   "path": false,
+   "hash": "e495ad7c0031"
+  },
+  {
+   "n": 2,
+   "valid": true,
+   "time": 82.979,
+   "points": 840,
+   "sectors": [
+    27.95,
+    28.951,
+    26.078
+   ],
+   "health": {
+    "gap": 0,
+    "seen": 1,
+    "hz": 60
+   },
+   "path": true,
+   "hash": "684c93736003"
+  },
+  {
+   "n": 3,
+   "valid": true,
+   "time": 83.96,
+   "points": 840,
+   "sectors": [
+    28.303,
+    29.293,
+    26.364
+   ],
+   "health": {
+    "gap": 0,
+    "seen": 1,
+    "hz": 60
+   },
+   "path": true,
+   "hash": "5d9ecc6ad341"
+  },
+  {
+   "n": 4,
+   "valid": true,
+   "time": 83.989,
+   "points": 840,
+   "sectors": [
+    28.309,
+    29.286,
+    26.394
+   ],
+   "health": {
+    "gap": 0,
+    "seen": 1,
+    "hz": 60
+   },
+   "path": true,
+   "hash": "9e6817d5649f"
+  }
+ ],
+ "half a second on a kerb": [
+  {
+   "n": 1,
+   "valid": false,
+   "time": 14.903,
+   "points": 840,
+   "health": {
+    "gap": 3900,
+    "seen": 0.071,
+    "hz": 60
+   },
+   "flags": [
+    "cold"
+   ],
+   "path": false,
+   "hash": "e495ad7c0031"
+  },
+  {
+   "n": 2,
+   "valid": true,
+   "time": 82.979,
+   "points": 840,
+   "sectors": [
+    27.95,
+    28.951,
+    26.078
+   ],
+   "health": {
+    "gap": 0,
+    "seen": 1,
+    "hz": 60
+   },
+   "path": true,
+   "hash": "684c93736003"
+  },
+  {
+   "n": 3,
+   "valid": true,
+   "time": 83.96,
+   "points": 840,
+   "sectors": [
+    28.303,
+    29.293,
+    26.364
+   ],
+   "health": {
+    "gap": 0,
+    "seen": 1,
+    "hz": 60
+   },
+   "path": true,
+   "hash": "5d9ecc6ad341"
+  },
+  {
+   "n": 4,
+   "valid": true,
+   "time": 83.989,
+   "points": 840,
+   "sectors": [
+    28.309,
+    29.286,
+    26.394
+   ],
+   "health": {
+    "gap": 0,
+    "seen": 1,
+    "hz": 60
+   },
+   "path": true,
+   "hash": "9e6817d5649f"
+  }
+ ],
+ "half a second on the grass at 60 Hz": [
+  {
+   "n": 1,
+   "valid": false,
+   "time": 14.903,
+   "points": 840,
+   "health": {
+    "gap": 3900,
+    "seen": 0.071,
+    "hz": 60
+   },
+   "flags": [
+    "cold"
+   ],
+   "path": false,
+   "hash": "e495ad7c0031"
+  },
+  {
+   "n": 2,
+   "valid": false,
+   "time": 82.979,
+   "points": 840,
+   "sectors": [
+    27.95,
+    28.951,
+    26.078
+   ],
+   "health": {
+    "gap": 0,
+    "seen": 1,
+    "hz": 60
+   },
+   "path": true,
+   "hash": "684c93736003"
+  },
+  {
+   "n": 3,
+   "valid": true,
+   "time": 83.96,
+   "points": 840,
+   "sectors": [
+    28.303,
+    29.293,
+    26.364
+   ],
+   "health": {
+    "gap": 0,
+    "seen": 1,
+    "hz": 60
+   },
+   "path": true,
+   "hash": "5d9ecc6ad341"
+  },
+  {
+   "n": 4,
+   "valid": true,
+   "time": 83.989,
+   "points": 840,
+   "sectors": [
+    28.309,
+    29.286,
+    26.394
+   ],
+   "health": {
+    "gap": 0,
+    "seen": 1,
+    "hz": 60
+   },
+   "path": true,
+   "hash": "9e6817d5649f"
+  }
+ ],
+ "reset to a box behind": [
+  {
+   "n": 1,
+   "valid": false,
+   "time": 14.903,
+   "points": 840,
+   "health": {
+    "gap": 3900,
+    "seen": 0.071,
+    "hz": 60
+   },
+   "flags": [
+    "cold"
+   ],
+   "path": false,
+   "hash": "e495ad7c0031"
+  },
+  {
+   "n": 2,
+   "valid": false,
+   "time": 117.913,
+   "points": 840,
+   "sectors": [
+    27.95,
+    63.885,
+    26.078
+   ],
+   "health": {
+    "gap": 0,
+    "seen": 1,
+    "hz": 60
+   },
+   "path": false,
+   "hash": "1f8beb4c07db"
+  },
+  {
+   "n": 3,
+   "valid": true,
+   "time": 83.96,
+   "points": 840,
+   "sectors": [
+    28.303,
+    29.293,
+    26.364
+   ],
+   "health": {
+    "gap": 0,
+    "seen": 1,
+    "hz": 60
+   },
+   "path": true,
+   "hash": "de3489cf1201"
+  },
+  {
+   "n": 4,
+   "valid": true,
+   "time": 83.989,
+   "points": 840,
+   "sectors": [
+    28.309,
+    29.286,
+    26.394
+   ],
+   "health": {
+    "gap": 0,
+    "seen": 1,
+    "hz": 60
+   },
+   "path": true,
+   "hash": "93fd2608a201"
+  }
+ ],
+ "telemetry lost for a second and a half": [
+  {
+   "n": 1,
+   "valid": false,
+   "time": 14.903,
+   "points": 840,
+   "health": {
+    "gap": 3900,
+    "seen": 0.071,
+    "hz": 60
+   },
+   "flags": [
+    "cold"
+   ],
+   "path": false,
+   "hash": "e495ad7c0031"
+  },
+  {
+   "n": 2,
+   "valid": false,
+   "time": 82.979,
+   "points": 840,
+   "sectors": [
+    27.95,
+    28.951,
+    26.078
+   ],
+   "health": {
+    "gap": 95,
+    "seen": 0.977,
+    "hz": 57.6
+   },
+   "path": false,
+   "hash": "718f6f004b60"
+  },
+  {
+   "n": 3,
+   "valid": true,
+   "time": 83.96,
+   "points": 840,
+   "sectors": [
+    28.303,
+    29.293,
+    26.364
+   ],
+   "health": {
+    "gap": 0,
+    "seen": 1,
+    "hz": 60
+   },
+   "path": true,
+   "hash": "5d9ecc6ad341"
+  },
+  {
+   "n": 4,
+   "valid": true,
+   "time": 83.989,
+   "points": 840,
+   "sectors": [
+    28.309,
+    29.286,
+    26.394
+   ],
+   "health": {
+    "gap": 0,
+    "seen": 1,
+    "hz": 60
+   },
+   "path": true,
+   "hash": "9e6817d5649f"
+  }
+ ],
+ "the Nürburgring combined": [
+  {
+   "n": 1,
+   "valid": false,
+   "time": 0,
+   "points": 0,
+   "health": {
+    "gap": 0,
+    "seen": 0,
+    "hz": 0
+   },
+   "path": false,
+   "hash": "no lap"
+  },
+  {
+   "n": 2,
+   "valid": true,
+   "time": 380.515,
+   "points": 4001,
+   "sectors": [
+    100.515,
+    100.553,
+    179.446
+   ],
+   "health": {
+    "gap": 0,
+    "seen": 1,
+    "hz": 60
+   },
+   "path": false,
+   "hash": "58dd97ed384a"
+  },
+  {
+   "n": 3,
+   "valid": true,
+   "time": 382.413,
+   "points": 4001,
+   "sectors": [
+    101.013,
+    101.117,
+    180.284
+   ],
+   "health": {
+    "gap": 0,
+    "seen": 1,
+    "hz": 60
+   },
+   "path": false,
+   "hash": "fbf682db24ef"
+  },
+  {
+   "n": 4,
+   "valid": true,
+   "time": 382.425,
+   "points": 4001,
+   "sectors": [
+    101.002,
+    101.122,
+    180.301
+   ],
+   "health": {
+    "gap": 0,
+    "seen": 1,
+    "hz": 60
+   },
+   "path": false,
+   "hash": "16358238a74a"
+  }
+ ]
+}

@@ -95,7 +95,7 @@ jobs:
           if [ "$GITHUB_REF" != "refs/heads/master" ]; then echo "::error::pitlanehq.app comes only from master"; exit 1; fi
           if [ "${{ inputs.skip_testing }}" = "true" ]; then echo "::warning::Deployed without a test version (urgent fix)"; exit 0; fi
           git fetch -q --unshallow origin '+refs/heads/*:refs/remotes/origin/*' || git fetch -q origin '+refs/heads/*:refs/remotes/origin/*'
-          curl -fsSL https://pitlanehq.app/dl/beta/cloud.json -o beta.json || { echo "::error::There is no test version yet: run this workflow with channel beta first"; exit 1; }
+          curl -fsSL https://beta.pitlanehq.app/dl/beta/cloud.json -o beta.json || { echo "::error::There is no test version yet: run this workflow with channel beta first"; exit 1; }
           b=$(node -p 'require("./beta.json").build||""')
           git cat-file -e "$b^{commit}" 2>/dev/null || { echo "::error::The test version's commit $b is not in this repository any more"; exit 1; }
           # what testers ran must be this server and this web app (the inbox notices are the owner's, asked one by one)

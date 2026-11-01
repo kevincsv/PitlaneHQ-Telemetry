@@ -4653,7 +4653,7 @@ var fix = /* @__PURE__ */ __name((s) => {
 }, "fix");
 var slug = /* @__PURE__ */ __name((s) => String(s || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 80), "slug");
 var PRE = { en: "", es: "/es", pt: "/pt" };
-var recUrl = /* @__PURE__ */ __name((l, x) => `${SITE3}${PRE[l]}/records/${x.t}-${x.c}/${slug(fix(x.track) + " " + fix(x.car))}`, "recUrl");
+var recUrl = /* @__PURE__ */ __name((l, x, game) => `${SITE3}${PRE[l]}/records/${game === "lmu" ? "lmu/" : ""}${x.t}-${x.c}/${slug(fix(x.track) + " " + fix(x.car))}`, "recUrl");
 var md = /* @__PURE__ */ __name((s) => String(s || "").replace(/[\\*_~`|[\]]/g, (c) => "\\" + c), "md");
 var CAT = {
   en: { oval: "Oval", sports_car: "Sports Car", formula_car: "Formula Car", dirt_oval: "Dirt Oval", dirt_road: "Dirt Road" },
@@ -5281,6 +5281,61 @@ ${md(famName("iracing", v.c, fix(v.car)))} \xB7 ${md(fix(v.track))}`);
   return n;
 }
 __name(discordWeekly, "discordWeekly");
+async function discordChangelog(env) {
+  if (!env.DISCORD_BOT_TOKEN || !env.ASSETS) return 0;
+  const vs = await env.ASSETS.fetch(new Request(SITE3 + "/whats-new.json")).then((r4) => r4.json()).then((j) => j.versions || []).catch(() => []);
+  const v = vs[0];
+  if (!v || !v.v) return 0;
+  const was = await env.DB.prepare("SELECT v FROM app_state WHERE k='discord_changelog'").first().catch(() => null);
+  if (was && was.v === v.v) return 0;
+  const gs = (await env.DB.prepare("SELECT guild_id, lang FROM discord_guilds WHERE everyone=1").all().catch(() => ({ results: [] }))).results || [];
+  const H3 = { authorization: "Bot " + env.DISCORD_BOT_TOKEN };
+  let n = 0;
+  for (const g of gs) {
+    const cs = await fetch(`${API}/guilds/${g.guild_id}/channels`, { headers: H3 }).then((r4) => r4.ok ? r4.json() : []).catch(() => []);
+    const c = cs.find((x) => (x.type === 0 || x.type === 5) && /changelog/i.test(x.name));
+    if (!c) continue;
+    const l = ["es", "pt"].includes(g.lang) ? g.lang : "en", notes = v[l] || v.en || [];
+    if (await post(env, c.id, { embeds: [{
+      color: AMBER,
+      title: `Pitlane HQ ${v.v} beta`,
+      url: `${SITE3}/changelog`,
+      description: notes.map((x) => "\u2022 " + x).join("\n").slice(0, 3800) + "\n\n" + tr(l, "[Download Pitlane HQ](https://pitlanehq.app/downloads) \xB7 [Open the web app](https://pitlanehq.app/app)", "[Descargar Pitlane HQ](https://pitlanehq.app/downloads) \xB7 [Abrir la app web](https://pitlanehq.app/app)", "[Baixar o Pitlane HQ](https://pitlanehq.app/downloads) \xB7 [Abrir o app web](https://pitlanehq.app/app)")
+    }] })) n++;
+  }
+  if (n || !gs.length) await env.DB.prepare("INSERT INTO app_state (k, v, at) VALUES ('discord_changelog', ?1, ?2) ON CONFLICT(k) DO UPDATE SET v=excluded.v, at=excluded.at").bind(v.v, Date.now()).run();
+  return n;
+}
+__name(discordChangelog, "discordChangelog");
+async function discordRecords(env, guildId, from) {
+  const g = await env.DB.prepare("SELECT records_channel, alerts_channel, lang FROM discord_guilds WHERE guild_id=?1").bind(guildId).first();
+  const ch = g && (g.records_channel || g.alerts_channel);
+  if (!ch) return { error: "Run /setup in that server first to choose the records channel" };
+  const r4 = await env.DB.prepare(
+    `WITH rk AS (SELECT *, ROW_NUMBER() OVER (PARTITION BY game, track_id, car_id ORDER BY time) AS rk, COUNT(*) OVER (PARTITION BY game, track_id, car_id) AS n
+       FROM community_laps WHERE game IN ('iracing','lmu') AND COALESCE(shown,'')<>'model')
+     SELECT l.game, l.track_id AS t, l.car_id AS c, l.track, l.car, l.time, l.n, l.created,
+       CASE WHEN l.anon=1 OR l.user_id LIKE 'o:%' OR COALESCE(ac.anon,0)=1 THEN 'Anonymous' WHEN l.shown='iracing' AND COALESCE(u.iracing,'')<>'' THEN u.iracing ELSE u.alias END AS who
+     FROM rk l JOIN community_users u ON u.id=l.user_id LEFT JOIN accounts ac ON ac.id=l.user_id
+     WHERE l.rk=1 ORDER BY l.created ASC LIMIT 30 OFFSET ?1`
+  ).bind(Math.max(0, from | 0)).all();
+  const rows = r4.results || [];
+  const l = ["es", "pt"].includes(g.lang) ? g.lang : "en";
+  let posted = 0;
+  for (let i = 0; i < rows.length; i += 10) {
+    const embeds = rows.slice(i, i + 10).map((x) => ({
+      color: PURPLE,
+      url: recUrl(l, x, x.game),
+      title: (x.game === "lmu" ? "Le Mans Ultimate \xB7 " : "") + `\u{1F3C6} ${fix(x.track)}`.slice(0, 240),
+      description: `${md(x.game === "iracing" ? famName("iracing", x.c, fix(x.car)) : fix(x.car))}
+\`${fmt(x.time)}\` **${md(x.who)}** \xB7 ${x.n} ${tr(l, x.n === 1 ? "driver" : "drivers", x.n === 1 ? "piloto" : "pilotos", x.n === 1 ? "piloto" : "pilotos")}`
+    }));
+    if (!await post(env, ch, { embeds })) return { error: posted ? "Discord stopped answering, press it again in a minute" : "Discord did not take the post. Check the bot can write in the records channel.", posted, next: from + posted };
+    posted += embeds.length;
+  }
+  return { ok: true, posted, next: rows.length === 30 ? from + posted : null };
+}
+__name(discordRecords, "discordRecords");
 var FB_TAGS = { web: "web", pc: "windowsagent", android: "android", ios: "ios" };
 var FB_DEV = { web: "Web", pc: "Windows agent", android: "Android", ios: "iOS" };
 async function discordFeedback(env, f) {
@@ -5320,7 +5375,7 @@ async function post(env, channel, msg) {
 }
 __name(post, "post");
 async function discordLapAlert(env, accountId, lap) {
-  if (!env.DISCORD_BOT_TOKEN || !lap || !lap.improved || lap.game !== "iracing" || lap.anon || String(accountId).startsWith("o:")) return;
+  if (!env.DISCORD_BOT_TOKEN || !lap || !lap.improved || !["iracing", "lmu"].includes(lap.game) || lap.anon || String(accountId).startsWith("o:")) return;
   const a = await env.DB.prepare("SELECT a.anon, u.alias, u.iracing, dl.discord_id FROM accounts a JOIN community_users u ON u.id=a.id LEFT JOIN discord_links dl ON dl.account_id=a.id WHERE a.id=?1").bind(accountId).first();
   if (!a || a.anon) return;
   const mine = a.discord_id ? (await env.DB.prepare("SELECT g.guild_id, g.alerts_channel, g.records_channel, g.set_by, g.lang, g.everyone FROM discord_members m JOIN discord_guilds g ON g.guild_id=m.guild_id WHERE m.discord_id=?1 AND (g.alerts_channel IS NOT NULL OR g.records_channel IS NOT NULL)").bind(a.discord_id).all()).results || [] : [];
@@ -5328,9 +5383,9 @@ async function discordLapAlert(env, accountId, lap) {
   const gs = [...new Map([...mine, ...all].map((g) => [g.guild_id, g])).values()];
   if (!gs.length) return;
   const st = await env.DB.prepare(
-    `SELECT (SELECT COUNT(*) FROM community_laps l WHERE l.track_id=?1 AND l.car_id=?2 AND l.game='iracing' AND ${NOT_MODEL} AND l.time<?3)+1 AS pos,
-            (SELECT COUNT(*) FROM community_laps l WHERE l.track_id=?1 AND l.car_id=?2 AND l.game='iracing' AND ${NOT_MODEL}) AS total`
-  ).bind(lap.trackId, lap.carId, lap.time).first();
+    `SELECT (SELECT COUNT(*) FROM community_laps l WHERE l.track_id=?1 AND l.car_id=?2 AND l.game=?4 AND ${NOT_MODEL} AND l.time<?3)+1 AS pos,
+            (SELECT COUNT(*) FROM community_laps l WHERE l.track_id=?1 AND l.car_id=?2 AND l.game=?4 AND ${NOT_MODEL}) AS total`
+  ).bind(lap.trackId, lap.carId, lap.time, lap.game).first();
   const k = { t: lap.trackId, c: lap.carId, track: lap.track, car: lap.car };
   const name2 = lap.shown === "iracing" && a.iracing ? a.iracing : a.alias;
   for (const g of gs) {
@@ -5344,8 +5399,8 @@ async function discordLapAlert(env, accountId, lap) {
     await post(env, channel, {
       embeds: [{
         color: rec ? PURPLE : AMBER,
-        url: recUrl(l, k),
-        title: rec ? tr(l, "\u{1F3C6} New record", "\u{1F3C6} Nuevo r\xE9cord", "\u{1F3C6} Novo recorde") : tr(l, "\u23F1\uFE0F New best lap", "\u23F1\uFE0F Nueva mejor vuelta", "\u23F1\uFE0F Nova melhor volta"),
+        url: recUrl(l, k, lap.game),
+        title: (lap.game === "lmu" ? "Le Mans Ultimate \xB7 " : "") + (rec ? tr(l, "\u{1F3C6} New record", "\u{1F3C6} Nuevo r\xE9cord", "\u{1F3C6} Novo recorde") : tr(l, "\u23F1\uFE0F New best lap", "\u23F1\uFE0F Nueva mejor vuelta", "\u23F1\uFE0F Nova melhor volta")),
         description: `${a.discord_id ? `<@${a.discord_id}> ` : ""}**${md(name2)}**
 ${md(fix(lap.car))} \xB7 ${md(fix(lap.track))}`,
         fields
@@ -6615,6 +6670,10 @@ var LAYOUT = [
     { key: "lmu", name: "\u{1F3CE}\uFE0F\u30FBle-mans-ultimate", type: T2.text, topic: "Le Mans Ultimate talk, series and races." },
     { key: "showcase", name: "\u{1F4F8}\u30FBscreenshots-and-clips", type: T2.text, topic: "Your best moments on track." }
   ] },
+  { cat: "LANGUAGES", kind: "open", channels: [
+    { key: "es", name: "\u{1F1EA}\u{1F1F8}\u30FBespa\xF1ol", type: T2.text, topic: "Pitlane HQ y simracing en espa\xF1ol." },
+    { key: "pt", name: "\u{1F1E7}\u{1F1F7}\u30FBportugu\xEAs", type: T2.text, topic: "Pitlane HQ e simracing em portugu\xEAs." }
+  ] },
   { cat: "SUPPORTERS", kind: "supporters", channels: [{ key: "supporters", name: "\u2665\u30FBsupporters-lounge", type: T2.text, topic: "Thank you for keeping Pitlane HQ going." }] },
   { cat: "TESTERS", kind: "testers", channels: [{ key: "testers", name: "\u{1F9EA}\u30FBtester-chat", type: T2.text, topic: "Features in development, before everyone gets them." }] },
   { cat: "STAFF", kind: "staff", channels: [
@@ -6649,7 +6708,7 @@ var rulesText = /* @__PURE__ */ __name((ch) => [
   "**3.** No spam or ads. Leagues and streams are welcome in the right channel.",
   `**4.** Use the right channel. One bug per post in ${ch("bugs")}, one idea per post in ${ch("feedback")}.`,
   "**5.** Never post your password, codes or tokens, nor anyone else's private details. Staff will never ask for your password.",
-  "**6.** English is the main language here. Espa\xF1ol y portugu\xEAs tamb\xE9m s\xE3o bem-vindos.",
+  `**6.** English is the main language here. En espa\xF1ol en ${ch("es")}. Em portugu\xEAs em ${ch("pt")}.`,
   "**7.** Follow Discord's Terms of Service and Community Guidelines. Admins have the final word.",
   "",
   "Breaking the rules can get you a warning, a timeout or a ban."
@@ -6771,11 +6830,13 @@ async function buildServer({ token, guild: gid, step, apply, fetchFn = fetch, no
       else await act(`Update the forum #${c.name}`, () => api2("PATCH", `/channels/${C[c.key].id}`, { ...body, available_tags: void 0 }));
     }
     const ch = /* @__PURE__ */ __name((k) => `<#${C[k].id}>`, "ch");
-    const postOnce = /* @__PURE__ */ __name(async (key2, content) => {
+    const postOnce = /* @__PURE__ */ __name(async (key2, content, keep) => {
       if (apply && !C[key2].id.startsWith("new-")) {
         const msgs = await api2("GET", `/channels/${C[key2].id}/messages?limit=50`).catch(() => []);
-        if (msgs.some((m) => m.author && m.author.id === me2.id)) {
-          log.push(`#${key2} already has the bot's post, kept`);
+        const mine2 = msgs.find((m) => m.author && m.author.id === me2.id);
+        if (mine2) {
+          if (keep || mine2.content === content.slice(0, 1990)) log.push(`#${key2} already has the bot's post, kept`);
+          else await soft(`Update the ${key2} message`, () => api2("PATCH", `/channels/${C[key2].id}/messages/${mine2.id}`, { content: content.slice(0, 1990), allowed_mentions: { parse: [] } }));
           return;
         }
       }
@@ -6783,7 +6844,7 @@ async function buildServer({ token, guild: gid, step, apply, fetchFn = fetch, no
     }, "postOnce");
     await postOnce("welcome", welcomeText(ch));
     await postOnce("rules", rulesText(ch));
-    if (notes.length) await postOnce("changelog", notes.join("\n").slice(0, 1990));
+    if (notes.length) await postOnce("changelog", notes.join("\n").slice(0, 1990), true);
     let sf = BigInt(Date.now() - 14200704e5) << 22n;
     const nid = /* @__PURE__ */ __name(() => String(sf += 1n), "nid");
     await soft('Onboarding asks "What do you drive?" and gives Driver plus iRacing or Le Mans Ultimate', () => api2("PUT", `/guilds/${gid}/onboarding`, {
@@ -6822,6 +6883,10 @@ async function discordServerRoute(req, env, url) {
     }
     if (req.method !== "POST") return json17({ error: "method not allowed" }, 405);
     const body = await req.json().catch(() => ({}));
+    if (body.records === true) {
+      if (!/^\d{15,22}$/.test(String(body.guild || ""))) return json17({ error: "bad request" }, 400);
+      return json17(await discordRecords(env, String(body.guild), Number(body.from) || 0));
+    }
     if (typeof body.everyone === "boolean") {
       if (!/^\d{15,22}$/.test(String(body.guild || ""))) return json17({ error: "bad request" }, 400);
       await env.DB.prepare("INSERT INTO discord_guilds (guild_id, set_by, updated, everyone) VALUES (?1,?2,?3,?4) ON CONFLICT(guild_id) DO UPDATE SET everyone=excluded.everyone, updated=excluded.updated").bind(String(body.guild), acc.id, Date.now(), body.everyone ? 1 : 0).run();
@@ -6887,9 +6952,10 @@ async function downloads(req, env, url) {
   const p = url.pathname;
   if (!env.DL) return new Response(JSON.stringify({ error: "downloads are not set up on this server (R2 bucket DL)" }), { status: 404, headers: { "content-type": "application/json" } });
   if (p.startsWith("/dl/")) {
-    const name2 = decodeURIComponent(p.slice(4));
+    const key2 = decodeURIComponent(p.slice(4));
+    const beta = key2.startsWith("beta/"), name2 = beta ? key2.slice(5) : key2;
     if (!/^[A-Za-z0-9._-]{1,80}$/.test(name2)) return new Response("not found", { status: 404 });
-    const o = await env.DL.get(name2);
+    const o = await env.DL.get(key2);
     if (!o) return new Response("not found", { status: 404 });
     if (name2 === "version.json") return pcVersion(await o.text());
     const ext = name2.split(".").pop().toLowerCase();
@@ -6979,6 +7045,56 @@ async function latestBuild(env) {
   return buildCache.build;
 }
 __name(latestBuild, "latestBuild");
+
+// src/beta.js
+var isBeta = /* @__PURE__ */ __name((env) => env.BETA === "1", "isBeta");
+var PROD = "https://pitlanehq.app";
+var APP_FILE = /^\/(fonts\.css|pitwall-[a-z0-9-]+\.js|app-news\.json|whats-new\.json|server\.json|manifest\.webmanifest|favicon\.ico|favicon-32\.png|icon-\d+\.png|logo\.svg|robots\.txt)$/;
+async function betaGate(req, env, url) {
+  if (!isBeta(env)) return null;
+  const p = url.pathname;
+  if (p === "/robots.txt") return new Response("User-agent: *\nDisallow: /\n", { headers: { "content-type": "text/plain; charset=utf-8" } });
+  if (p === "/server.json") return new Response(JSON.stringify({ url: url.origin }), { headers: { "content-type": "application/json", "cache-control": "no-cache" } });
+  if (p === "/" || APP_FILE.test(p) || p === "/live" || p === "/voice/ice" || p.startsWith("/dl/")) return null;
+  if (p.startsWith("/account/") || p.startsWith("/community/")) {
+    let a = null;
+    try {
+      a = await sessionAccount(req, env, true);
+    } catch (e) {
+      a = null;
+    }
+    if (!a || isAdmin(env, a.id) || isTester(env, a.id, a)) return null;
+    return NO();
+  }
+  if (req.method === "GET" || req.method === "HEAD") return Response.redirect(PROD + p + url.search, 302);
+  return new Response("not found", { status: 404 });
+}
+__name(betaGate, "betaGate");
+var NO = /* @__PURE__ */ __name(() => new Response(JSON.stringify({ error: "Only testers can sign in to the test version.", code: "beta_only" }), { status: 403, headers: { "content-type": "application/json; charset=utf-8", "cache-control": "no-store", "access-control-allow-origin": "*" } }), "NO");
+async function betaSignIn(res, env) {
+  if (!isBeta(env) || !res || !res.ok || !(res.headers.get("content-type") || "").includes("json")) return res;
+  let j;
+  try {
+    j = await res.clone().json();
+  } catch (e) {
+    return res;
+  }
+  if (!j || typeof j.token !== "string" || !j.id) return res;
+  if (isAdmin(env, j.id) || j.tester || isTester(env, j.id, null)) return res;
+  try {
+    await env.DB.prepare("DELETE FROM account_sessions WHERE token_hash=?1").bind(await sha256(j.token)).run();
+  } catch (e) {
+  }
+  return NO();
+}
+__name(betaSignIn, "betaSignIn");
+function betaHeaders(r4, env) {
+  if (!isBeta(env) || r4.status === 101 || r4.webSocket) return r4;
+  const h = new Headers(r4.headers);
+  h.set("x-robots-tag", "noindex, nofollow");
+  return new Response(r4.body, { status: r4.status, statusText: r4.statusText, headers: h });
+}
+__name(betaHeaders, "betaHeaders");
 
 // src/coachplan.js
 var MIN_PLAN_VOTES = 15;
@@ -13755,6 +13871,7 @@ __name(harden, "harden");
 var worker_default = {
   // every 10 minutes: the models of the cars and tracks that got new laps
   async scheduled(ev, env, ctx) {
+    if (isBeta(env)) return;
     const at2 = new Date(ev.scheduledTime || Date.now()), hourly = at2.getUTCMinutes() < 10, daily = hourly && at2.getUTCHours() === 3;
     const raw = env.DB;
     env = { ...env, DB: countingDB(raw, daily ? "cron daily" : hourly ? "cron hourly" : "cron 10 min") };
@@ -13767,6 +13884,8 @@ var worker_default = {
     if (hourly && at2.getUTCDay() === 1 && at2.getUTCHours() >= 7) ctx.waitUntil(weeklyAlerts2(env, at2.getTime()).catch(() => {
     }));
     if (hourly && at2.getUTCDay() === 1 && at2.getUTCHours() >= 9) ctx.waitUntil(discordWeekly(env, at2.getTime()).catch(() => {
+    }));
+    ctx.waitUntil(discordChangelog(env).catch(() => {
     }));
     const all = [];
     const wait = ctx.waitUntil.bind(ctx);
@@ -13812,10 +13931,10 @@ var worker_default = {
     wait(Promise.allSettled(all).then(() => flushUsage(raw, true)));
   },
   async fetch(req, env, ctx) {
-    if (!env.DB) return harden(await handle(req, env, ctx).catch(gatedAnswer));
+    if (!env.DB) return betaHeaders(harden(await handle(req, env, ctx).catch(gatedAnswer)), env);
     const raw = env.DB, url = new URL(req.url);
     try {
-      return harden(await handle(req, { ...env, DB: countingDB(raw, routeKey(req.method, url.pathname)) }, ctx).catch(gatedAnswer));
+      return betaHeaders(harden(await handle(req, { ...env, DB: countingDB(raw, routeKey(req.method, url.pathname)) }, ctx).catch(gatedAnswer)), env);
     } finally {
       ctx.waitUntil(flushUsage(raw));
     }
@@ -13836,6 +13955,10 @@ async function handle(req, env, ctx) {
   if (url.hostname.startsWith("www.")) {
     url.hostname = url.hostname.slice(4);
     return Response.redirect(url.toString(), 301);
+  }
+  {
+    const b2 = await betaGate(req, env, url);
+    if (b2) return b2;
   }
   if (url.pathname === "/news") return news(req, env, ctx);
   {
@@ -13879,7 +14002,7 @@ async function handle(req, env, ctx) {
   if (url.pathname.startsWith("/account/")) {
     try {
       {
-        const res = await accounts(req, env, url);
+        const res = await betaSignIn(await accounts(req, env, url), env);
         if (res && url.pathname === "/account/sync/meta") {
           try {
             const b2 = await latestBuild(env);

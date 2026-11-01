@@ -56,3 +56,18 @@ export async function classLaps(env, trackId, cls, opts = {}) {
   ).bind(trackId, cls).all();
   return r.results || [];
 }
+
+// Le Mans Ultimate's game versions and when the admins' PCs first saw each (lmu_api), oldest first: the version a lap
+// was most likely driven in is the last one seen before it (records and boards say it, BoP and physics change with it)
+export async function lmuVersions(env) {
+  const r = await env.DB.prepare("SELECT game_version AS v, MIN(at) AS at FROM lmu_api WHERE game_version<>'' GROUP BY game_version ORDER BY at").all().catch(() => null);
+  return ((r && r.results) || []).map((x) => ({ v: shortVer(x.v), at: +x.at || 0 }));
+}
+// "1.2-fc78d7e6" (the version and its build) reads "1.2"
+export const shortVer = (v) => String(v || "").split(/[-\s]/)[0];
+// the version a lap set at this time (ms) was driven in, "" before the first one seen
+export function verAt(vs, at) {
+  let v = "";
+  for (const x of vs || []) { if (x.at <= at) v = x.v; else break; }
+  return v;
+}

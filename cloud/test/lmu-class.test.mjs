@@ -81,3 +81,17 @@ assert.equal(rows[1].wet, 2, "the board says the lap was wet");
 assert.equal(rows[0].prof, 1, "an account's profile opens");
 assert.deepEqual((await classLaps(env, 5, "Hypercar")).map((x) => x.alias), ["Carl"]);
 console.log("lmu-class: ok");
+
+// the game version a lap was driven in: the last one the admins' PCs saw before it
+{
+  const { lmuVersions, verAt, shortVer } = await import("../src/lmuclass.js");
+  db.exec("CREATE TABLE IF NOT EXISTS lmu_api (id INTEGER PRIMARY KEY, account_id TEXT, at INTEGER, game_version TEXT, path TEXT, status INTEGER, ctype TEXT, size INTEGER, ms INTEGER, body TEXT)");
+  db.exec("INSERT INTO lmu_api (account_id, at, game_version, path) VALUES ('a', 100, '1.1-aaa', '/x'), ('a', 150, '1.1-aaa', '/y'), ('a', 200, '1.2-fc78d7e6', '/x')");
+  const vs = await lmuVersions(env);
+  assert.deepEqual(vs, [{ v: "1.1", at: 100 }, { v: "1.2", at: 200 }]);
+  assert.equal(verAt(vs, 50), "");
+  assert.equal(verAt(vs, 120), "1.1");
+  assert.equal(verAt(vs, 250), "1.2");
+  assert.equal(shortVer("1.2 build 5"), "1.2");
+}
+console.log("lmu versions ok");

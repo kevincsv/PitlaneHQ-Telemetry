@@ -65,3 +65,7 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
 - **The wrong track or layout**: a lap more than 6 % longer or shorter than its track's layout (`fitsLayout`, the trace's
   points times its bin against the layout's points every 5 m) never goes into that track's model (`learnNewLaps`) nor
   onto its leaderboard (`keepBestLap` with `len`).
+- Turn names: an admin who placed a track's official turns can name them ("Turn names · Admin" beside "Official turns",
+  POST `/community/turns` with `names` alone, `track_turns.names`, migration 0096; "" a turn without one). `/turns`
+  serves them as `names` with official turns only, and the analysis heads a named turn's tips "T5 Tertre Rouge"
+  (`turnLab` and `ctx.turnNames` in pitwall-analysis.js; the phones note them when they read the turns).

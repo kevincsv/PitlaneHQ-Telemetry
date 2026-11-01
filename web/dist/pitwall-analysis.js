@@ -33,6 +33,8 @@
   const txOf = (ctx) => { const l = langOf(ctx), post = ctx && typeof ctx.post === "function" ? ctx.post : (s) => s; return (en, es, pt) => post(l === "es" ? es : l === "pt" ? (pt != null ? pt : en) : en); };
   const unitsOf = (ctx) => { const imp = !!(ctx && ctx.units === "imperial"); return { spd: (ms) => imp ? ms * 2.23694 : ms * 3.6, spdU: () => imp ? "mph" : "km/h" }; };
   const turnsOf = (ctx) => ctx && Array.isArray(ctx.turns) ? ctx.turns : null;
+  /* a turn as the tips head it: "T5", or "T5 Tertre Rouge" when an admin named the track's official turns (ctx.turnNames) */
+  const turnLab = (ctx, n) => { const nm = ctx && Array.isArray(ctx.turnNames) ? ctx.turnNames[n - 1] : ""; return nm ? `T${n} ${nm}` : `T${n}`; };
   const sgn = (d, n = 3) => d == null || isNaN(d) ? "–" : (d >= 0 ? "+" : "−") + Math.abs(d).toFixed(n);
   // what the coach learnt: the weight of a tip (everyone's and this driver's), the metres a braking tip asks for, the kinds turned off
   function coachOf(ctx) {
@@ -449,9 +451,9 @@
   }
   const cornerSpan = (c) => [Math.max(0, c.d - 50), c.apex + 150];
   /* a corner's step of the plan: the tip, what happened, why it costs time and what to do instead, and its points on the map */
-  function cornerStep(c, Tx, u, L, w) {
+  function cornerStep(c, Tx, u, L, w, ctx) {
     const f = familyOf(c.kind), what = whatOf(c, Tx, u), cf = c.oval && c.lift && COST[f + "_lift"] ? f + "_lift" : f, cost = Tx(...(COST[cf] || COST.speed)), how = howOf(f, c, Tx, u);
-    return { k: "corner", id: "corner:" + (c.kind || ""), kind: c.kind, turns: [c.n], gain: c.lost, w, t: `T${c.n} · ${Tx(c.tip[0], c.tip[1], c.tip[2])}`, what, cost, why: what + " " + cost, how, marks: cornerMarks(c, L), spans: [cornerSpan(c)] };
+    return { k: "corner", id: "corner:" + (c.kind || ""), kind: c.kind, turns: [c.n], gain: c.lost, w, t: `${turnLab(ctx, c.n)} · ${Tx(c.tip[0], c.tip[1], c.tip[2])}`, what, cost, why: what + " " + cost, how, marks: cornerMarks(c, L), spans: [cornerSpan(c)] };
   }
   // the corners a step is about, as marks at their slowest points and their stretches
   const turnMarks = (list) => list.map((c) => ({ d: c.apex, k: "apex", n: c.n }));
@@ -555,7 +557,7 @@
     const dif = (c) => { const h = cornerHint(c.apex); return h && h.spread > 0 && h.spreadMax > 0 ? 0.9 + 0.3 * Math.min(1, h.spread / h.spreadMax) : 1; };
     cs.forEach((c) => { const cz = cons.find((x) => x.n === c.n); if (cz && cz.sd > .08 && cz.sd > 2 * c.lost && /^brake/.test(c.kind || "")) { c.kind = "cons"; c.tip = ["Same braking point every lap, before anything else", "El mismo punto de frenada cada vuelta, antes que nada", "O mesmo ponto de frenagem em toda volta, antes de qualquer outra coisa"]; } });
     const P = [], r2 = (v) => Math.round(v * 100) / 100, L = n * BIN, T3 = (a) => Tx(a[0], a[1], a[2]);
-    cs.filter((c) => c.lost > .05).sort((a, b) => b.lost * tipWeight(b) * dif(b) - a.lost * tipWeight(a) * dif(a)).slice(0, 3).forEach((c) => P.push(cornerStep(c, Tx, spdU(), L, tipWeight(c) * dif(c))));
+    cs.filter((c) => c.lost > .05).sort((a, b) => b.lost * tipWeight(b) * dif(b) - a.lost * tipWeight(a) * dif(a)).slice(0, 3).forEach((c) => P.push(cornerStep(c, Tx, spdU(), L, tipWeight(c) * dif(c), ctx)));
     const worst = Object.entries(ph).sort((a, b) => b[1] - a[1])[0];
     // the habit's advice follows the data: where you brake against the reference on average, how fast you reach the apex and when you pick up the throttle
     const avg = (a) => a.length ? a.reduce((q, v) => q + v, 0) / a.length : null, mdd = avg(cs.filter((c) => c.dd != null).map((c) => c.dd)), mdmin = avg(cs.filter((c) => c.vmin != null).map((c) => c.vmin - c.vminr)), mlate = avg(cs.filter((c) => c.late != null).map((c) => c.late));
@@ -686,8 +688,8 @@
       const score = dif + (im ? Math.min(1, im.gain / .2) : 0) + (mk ? Math.min(.6, mk.n / 10) : 0);
       return { n, d: Math.round(c.d), apex: Math.round(c.apex), b: c.b0 != null ? [Math.round(c.b0), Math.round(c.b1)] : null, g, v: c.v0 != null ? [r(spd(c.v0)), r(spd(c.v1))] : null, dif: Math.round(dif * 100) / 100, level, levelText: level === "hard" ? Tx("Hard", "Difícil", "Difícil") : level === "medium" ? Tx("Medium", "Media", "Média") : Tx("Easy", "Fácil", "Fácil"), brake, gear, apexSpeed: apex, mistake, improve, lines, drivers: c.n || 0, score: Math.round(score * 100) / 100 };
     });
-    const brief = out.slice().sort((a, b) => b.score - a.score).slice(0, 3).filter((x) => x.score > 0).map((c) => ({ n: c.n, apex: c.apex, t: `T${c.n} · ${c.levelText}`, text: c.lines[0] || "" }));
-    return { corners: out, brief, drivers: Math.max(0, ...cs.map((c) => c.n || 0)), L: Math.round(L) };
+    const brief = out.slice().sort((a, b) => b.score - a.score).slice(0, 3).filter((x) => x.score > 0).map((c) => ({ n: c.n, apex: c.apex, t: `${turnLab(ctx, c.n)} · ${c.levelText}`, text: c.lines[0] || "" }));
+    return { corners: out.map((c) => ({ ...c, lab: turnLab(ctx, c.n) })), brief, drivers: Math.max(0, ...cs.map((c) => c.n || 0)), L: Math.round(L) };
   }
 
   /* ---------- where the driver stands in every corner ---------- */
@@ -911,7 +913,7 @@
   /* the track guide as plain rows: the corners that matter most first, then every corner in lap order */
   function guideItems(g) {
     const tone = (c) => (c.level === "hard" ? "bad" : c.level === "easy" ? "good" : "");
-    return g.corners.map((c) => ({ t: `T${c.n} · ${c.levelText}`, text: c.lines.join(" "), tone: tone(c) }));
+    return g.corners.map((c) => ({ t: `${c.lab || "T" + c.n} · ${c.levelText}`, text: c.lines.join(" "), tone: tone(c) }));
   }
 
   /* the analyzer's and the coach's answers for lap A against lap B as plain JSON (a string with opts.json): the gap, every
@@ -1145,7 +1147,7 @@
   const api = { VERSION, BIN, lapSeries, serOf, lapShape, sameFrame, lineOffsets, cornerLine, lineTip, brakeZones, PHASES, phaseName, turnNo, COACH_GEN, cornerClass, cornerZones,
     OVAL_KINDS, ovalOf, liftZones, ovalZones, dirtLineTip, coachCompare, cornerConsistency, pairSecs, lapDriving, kindName, stepName, tipMain, tipShort, tipTodo, coachPlan, stepText, analyzerFacts, analyse,
     estOf, failedOf, progressLines, followUp, trackGuide, cornerRanks, clsLines, racePace, edgeUse, notesOf, guideItems, likeOf, likeSteps, catGroup,
-    lapSpread, cornerSpread, offsExplained, ggOf, steerOf, understeer, tyreLaps, fuelUse, fuelPlan, insights };
+    turnLab, lapSpread, cornerSpread, offsExplained, ggOf, steerOf, understeer, tyreLaps, fuelUse, fuelPlan, insights };
   root.PW_ANALYSIS = api;
   if (typeof module !== "undefined" && module.exports) module.exports = api;
 })(typeof window !== "undefined" ? window : typeof globalThis !== "undefined" ? globalThis : this);

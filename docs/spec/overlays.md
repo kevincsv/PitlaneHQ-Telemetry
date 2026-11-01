@@ -158,41 +158,34 @@ after index.html's main script: `renderOverlaysTab`, the screen (`renderScreenEd
 and the presets all live there, with their own CSS (`#ovtCss`). Index.html keeps only the section (`#ovTab`), the
 overlay windows' code and the settings window (`openWidgetCfg`). The rules:
 
-- One set of controls in three layouts the driver switches with Screen, Gallery and List at the top (the owner asked
-  for all three; `pw.ovLayout`, kept on this PC, Screen by default). Every layout reads and writes the same settings,
-  so switching never changes anything.
-- The overlays in four groups, the same in every layout (`OVT_GROUPS`): Around you (relative, standings, radar, map,
-  track bar, flags, gap graph, incident log), Pace (timing, delta bar, coach, braking markers, mini-sectors, lap
-  compare), Car (dash, inputs, fuel, tyres, engine, pit, DRS & push-to-pass) and More (weather, g-force, driving stats,
-  telemetry, performance). A new overlay not listed there goes to More by itself.
-- At the top, on every layout: the layout switch, Place on the screen (`CFG.edit`: the real windows can be dragged on
-  the screen; Done placing locks them), Close all, Open now (opens the Auto overlays of the game running, or all of
-  them with no game), the presets and the design for all the overlays (`ui.ovstyle`, Lane by default; the Gallery shows
-  each design as a small swatch, the others as a menu). At the foot: Open my overlays when I get in the car, Close
-  them when the game closes and More settings (window engine, titles shown or hidden, frame rate, click-through).
+- One layout, the screen (the owner's choice after trying three; the Gallery and List layouts were dropped): the
+  overlay list on the left, your screen in the middle and the chosen overlay on the right.
+- At the top: the presets, then Place on the screen (`CFG.edit`: the real windows can be dragged on the screen; Done
+  placing locks them), Close all and Open now (opens the Auto overlays of the game running, or all of them with no
+  game). Above the screen: the design for all the overlays (`ui.ovstyle`, Lane by default), the legend (open solid,
+  closed dashed) and Reset positions. At the foot: Open my overlays when I get in the car, Close them when the game
+  closes and More settings (window engine, titles shown or hidden, frame rate, click-through).
+- The list: the overlays in four groups (`OVT_GROUPS`): Around you (relative, standings, radar, map, track bar, flags,
+  gap graph, incident log), Pace (timing, delta bar, coach, braking markers, mini-sectors, lap compare), Car (dash,
+  inputs, fuel, tyres, engine, pit, DRS & push-to-pass) and More (weather, g-force, driving stats, telemetry,
+  performance); a new overlay not listed there goes to More by itself. Each row: a dot (green while its window is
+  open), its name, "Auto" when it opens by itself, β for the experimental ones (not in `OV_BASIC`). A click chooses it
+  (`pw.ovSel`, kept on this PC; the first open one, else the first on Auto, else the relative).
+- The screen: every open or Auto overlay where it sits on the PC (open ones solid, closed ones dashed, the chosen one
+  in the accent): drag to move, the corner to resize, a click chooses it; the windows move as you drag
+  (`/api/overlay/move`), never smaller than `OV_MINW`/`OV_MINH`, and the screen follows the windows dragged on the
+  PC itself (`/api/overlay/list` every 1.5 s).
+- The chosen overlay: its name, "Experimental" when it is, open or closed, its live preview (the overlay page itself
+  with `preview=1`, scaled to the column, at its opacity; a small picture of it, `ovtThumb`, away from the PC), Open or
+  Close (its window; "Open here" in a browser on the PC's address; nothing on the web), All settings (`openWidgetCfg`),
+  When I get in the car per game (iRacing, LMU: `autoIn`/`setAutoIn`; a game that does not send what it needs is
+  dashed and says so on hover), its own design, opacity, text size, Hide by itself and Show the title (the same keys as
+  its settings window: `ui.<overlay>.style`, `alpha`, `textScale`, `hide`, `title`). The experimental ones ask for Pro
+  only when `proGated()`.
 - Presets: the four built in (Race, Qualifying, Endurance, Engineer) and your own (`CFG.ui.ovpresets`, so they go with
   the account; the old `pw.overlayPresets` of a browser is moved there once), names asked in the app's own dialog,
   deleted with their ×. A preset sets the Auto list (and clears the per-game exceptions, `ui.autoOff`), turns on Open
   when I get in the car and Close them when the game closes. The preset that matches the Auto list is lit.
-- Each overlay, wherever it shows: a dot (green while its window is open), its name, the "Experimental" pill for the
-  ones not in `OV_BASIC`, its Auto per game (iRacing, LMU: `autoIn`/`setAutoIn`; a game that does not send what it
-  needs is dashed and says so on hover), Open or Close (its window on the PC; "Open here" in a browser on the PC's
-  address; nothing on the web) and its settings (`openWidgetCfg`). The experimental ones ask for Pro only when
-  `proGated()`.
-- Screen: the list on the left (the chosen overlay lit, Auto marked, β for experimental), the screen in the middle with
-  every open or Auto overlay where it sits on the PC (open ones solid, closed ones dashed, the chosen one in the accent;
-  drag to move, the corner to resize, a click chooses it; the windows move as you drag, never smaller than
-  `OV_MINW`/`OV_MINH`) and Reset positions, and on the right the chosen overlay (`pw.ovSel`): its live preview (the
-  overlay page itself with `preview=1`, scaled to the column, at its opacity; its picture away from the PC), Open or
-  Close, All settings, Auto per game, its own design, opacity, text size, Hide by itself and Show the title (the same
-  keys as its settings window: `ui.<overlay>.style`, `alpha`, `textScale`, `hide`, `title`).
-- Gallery: a card per overlay with a small picture of what it shows (`ovtThumb`, drawn in CSS, never a live page per
-  card), an "Open" badge while open, the Auto switch (all its games at once; half lit when only some), Open or Close,
-  settings, and its Auto per game under it. Filters: All, each group, Open (on the PC) and Auto, with their counts, and
-  a search by name.
-- List: each group a panel you fold (`pw.ovFold`) with its counts, a row per overlay (dot, name, Auto per game, Open or
-  Close, settings) and the same search. With Place on the screen on, Gallery and List show the screen above.
 - The tab's subtitle is only the counts ("2 open · 9 on Auto"). The one note is the line that the overlay windows
   need Pitlane HQ Agent on Windows, shown only away from it. No other text explains the tab.
-- The tab redraws its parts, not its frame: the search box keeps its focus and the preview its page while settings
-  change; the open state is refreshed from the agent every 1.5 s (`/api/overlay/list`).
+- The tab redraws its parts, not its frame: the preview keeps its page while settings change.

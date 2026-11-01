@@ -77,8 +77,8 @@
   const estOf = (B, ctx) => !!((ctx && ctx.estB) || (B && (B.est || B.field)));
 
   /* ---------- a lap's points ---------- */
-  function lapSeries(l) { const out = []; let last = null; const lim = Math.min(l.bins.length, (l.maxBin || l.bins.length - 1) + 1); for (let i = 0; i < lim; i++) { const b = l.bins[i] || last; if (!l.bins[i] && !last) continue; out[i] = b; last = b; } const end = out.length; return { arr: out, end }; }
-  function serOf(l) { if (!l._ser || l._serN !== l.bins.length) { l._ser = lapSeries(l).arr; l._serN = l.bins.length; } return l._ser; }
+  function lapSeries(l) { const out = []; let last = null; if (!l || !Array.isArray(l.bins)) return { arr: out, end: 0 }; /* no lap, or a lap without its trace: no points */ const lim = Math.min(l.bins.length, (l.maxBin || l.bins.length - 1) + 1); for (let i = 0; i < lim; i++) { const b = l.bins[i] || last; if (!l.bins[i] && !last) continue; out[i] = b; last = b; } const end = out.length; return { arr: out, end }; }
+  function serOf(l) { if (!l || !Array.isArray(l.bins)) return []; if (!l._ser || l._serN !== l.bins.length) { l._ser = lapSeries(l).arr; l._serN = l.bins.length; } return l._ser; }
 
   /* ---------- the racing line ---------- */
   /* the shape of a lap Pitlane HQ recorded with the car's position */
@@ -166,8 +166,11 @@
   const lineTipOf = (c, sameBrake, oval) => oval === "dirt" ? dirtLineTip(c) : oval === "superspeedway" ? null : lineTip(c, sameBrake);
 
   /* ---------- corners ---------- */
-  /* the braking zones of a lap: where each starts, its entry and minimum speed */
-  function brakeZones(s) { const out = []; for (let i = 1; i < s.length; i++) { const a = s[i], b = s[i - 1]; if (!a || !b) continue; if (a[3] > .12 && b[3] <= .12) { let k = i, vmin = a[0], imin = i; while (k < s.length && k < i + 120 && s[k] && !(s[k][2] > .6 && s[k][3] < .05)) { if (s[k][0] < vmin) { vmin = s[k][0]; imin = k; } k++; } if (a[0] - vmin > 4) out.push({ i, v: a[0], vmin, imin }); i = k; } } return out; }
+  /* the braking zones of a lap: where each starts, its entry and minimum speed. A zone ends when the throttle is back
+     (over 60 %, off the brake) or when, the brake released, the car gains speed again and brakes once more: the next
+     corner (two corners close together, taken with a part throttle between them, are two zones, not one of up to 600 m
+     that hides the second braking point). ovnative4.go's brakeZones does the same */
+  function brakeZones(s) { const out = []; for (let i = 1; i < s.length; i++) { const a = s[i], b = s[i - 1]; if (!a || !b) continue; if (a[3] > .12 && b[3] <= .12) { let k = i, vmin = a[0], imin = i, rel = false, next = false; while (k < s.length && k < i + 120 && s[k] && !(s[k][2] > .6 && s[k][3] < .05)) { if (s[k][3] < .05) rel = true; else if (rel && s[k][3] > .12 && s[k][0] > vmin + 2) { next = true; break; } if (s[k][0] < vmin) { vmin = s[k][0]; imin = k; } k++; } if (a[0] - vmin > 4) out.push({ i, v: a[0], vmin, imin }); i = next ? k - 1 : k; } } return out; }
   /* each corner in four phases, as driver coaches read data: braking (brake point, how hard), entry (releasing the brake
      into the turn, trail braking; coasting), apex (minimum speed) and exit (when the throttle comes back) */
   const PHASES = [["brake", "Braking", "Frenada", "Frenagem"], ["entry", "Entry", "Entrada", "Entrada"], ["apex", "Apex", "Vértice", "Ápice"], ["exit", "Exit", "Salida", "Saída"]];
@@ -551,7 +554,7 @@
     // a corner whose phases swing more than a second each way is not the same corner on both laps: its phases are not counted
     const ph = { brake: 0, entry: 0, apex: 0, exit: 0 }, phN = { brake: 0, entry: 0, apex: 0, exit: 0 }; cs.forEach((c) => { if (Object.values(c.ph).some((v) => Math.abs(v) > 1)) return; Object.keys(ph).forEach((k) => { const v = c.ph[k] || 0; if (v > 0) { ph[k] += v; if (v > .02) phN[k]++; } }); });
     const secs = pairSecs(A, R, sa, sb, n).map(([a, b], k) => ({ n: k + 1, a, b, d: a - b }));
-    const driving = lapDriving(sa, sb, n, cx), cons = cornerConsistency((LP || []).filter((l) => l.valid !== false), R, turns, ov) || [];
+    const driving = lapDriving(sa, sb, n, cx), cons = cornerConsistency((LP || []).filter((l) => l && l.valid !== false && Array.isArray(l.bins)), R, turns, ov) || [];
     // a corner weighs what the coach learnt of its tip (tipWeight) and how hard the corner is for everyone (the model's spread of
     // times there); a corner you take differently every lap hears about consistency first
     const dif = (c) => { const h = cornerHint(c.apex); return h && h.spread > 0 && h.spreadMax > 0 ? 0.9 + 0.3 * Math.min(1, h.spread / h.spreadMax) : 1; };
@@ -921,6 +924,8 @@
      analyzer's key facts */
   function analyse(A, B, ctx, opts) {
     ctx = ctx || {};
+    // a lap missing (no reference yet, a lap not loaded) is compared with the other one: every answer keeps its shape, with nothing to say
+    if (!A && !B) A = B = { bins: [], time: 0 }; else if (!B) B = A; else if (!A) A = B;
     const Tx = txOf(ctx), withText = (c) => ({ ...c, text: c.tip[0] ? Tx(c.tip[0], c.tip[1], c.tip[2]) : "", todo: tipTodo(c, ctx) });
     const facts = analyzerFacts(A, B, ctx), plan = coachPlan(A, B, Array.isArray(ctx.laps) ? ctx.laps : [], ctx);
     const out = { v: VERSION, gap: A.time - B.time, corners: facts.corners.map(withText), facts: { ad: facts.ad, items: facts.items }, coach: { ...plan, cs: plan.cs.map(withText) } };

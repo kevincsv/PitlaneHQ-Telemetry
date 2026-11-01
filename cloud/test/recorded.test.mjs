@@ -55,7 +55,7 @@ const odd = {
   "a bad path": () => { const a = L(); a.xy = { x: [1, 2], y: [1] }; return [a, R()]; },
 };
 const oddCtx = [{}, { laps: [null, undefined, { time: 3 }, L(), R(), L()] }, { turns: [0.1, 1.2, -0.1, NaN] }, { oval: "dirt", laps: [L(), R(), L()] }];
-if (!process.env.NO_ODD) for (const [k, f] of Object.entries(odd)) oddCtx.forEach((c, i) => {
+for (const [k, f] of Object.entries(odd)) oddCtx.forEach((c, i) => {
   for (const fn of ["analyse", "insights"]) {
     const [A, B] = f();
     assert.doesNotThrow(() => P[fn](A, B, c), `${fn} on "${k}" (context ${i})`);
@@ -71,3 +71,7 @@ if (process.argv.includes("--capture")) {
   assert.deepEqual(diff, [], `answers changed on the recorder's laps: ${diff.slice(0, 8).join("; ")}${diff.length > 8 ? " …" : ""}`);
   console.log(`recorded: ${Object.keys(answers).length} answers as before on the recorder's laps, ${Object.keys(odd).length * oddCtx.length * 2} odd laps without an error`);
 }
+
+// two corners close together with a part throttle between them are two braking zones: every corner of the golden road
+// brakes, so every lap has all seven (the second of a pair was swallowed by the first before)
+for (const l of fresh().filter((x) => x.valid)) assert.equal(P.brakeZones(P.serOf(l)).length, turns.length, `lap ${l.n}: one braking zone a corner`);

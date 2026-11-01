@@ -66,7 +66,12 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   a change on every device at once: `cloud/test/analysis.test.mjs` runs index.html's own functions and the module over
   realistic laps and keeps every answer as it was (`analysis.fixture.json`; a change meant to change them writes it again
   with `--capture web/dist/index.html` and says why in the commit). The Go copies (`compareLaps`, `cornerZones` in
-  ovnative4.go, racingline.go) still serve the overlays.
+  ovnative4.go, racingline.go) still serve the overlays. `cloud/test/recorded.test.mjs` runs the module over laps the agent's own
+  recorder made (`testdata/laprec/laps.json`, written by `TestLapRecorderGolden`) and over laps it may meet in the wild
+  (no trace, holes, NaN, null laps in the session, no reference: none may throw; a missing lap is compared with the
+  other one). A braking zone (`brakeZones`, the same in pitwall-analysis.js, ovnative4.go and model.js's corner cards)
+  ends when the throttle is back over 60 % or when, the brake released, the car gains 2 m/s on its slowest and brakes
+  again: two corners close together with a part throttle between them are two corners, never one zone of up to 600 m.
 - Ovals get their own coach (`ovalOf`, `liftZones`, the oval tips and `ovalStep` in pitwall-analysis.js; `ovalKind`,
   `liftZones`, `ovalTip` in ovoval.go for the coach overlay). The kind of oval comes from iRacing's
   category (`cat` on the laps and `ctx.track`, which the web takes from the session or, for a lap recorded live, from the

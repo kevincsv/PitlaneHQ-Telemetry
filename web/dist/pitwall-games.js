@@ -14,7 +14,7 @@ window.PW_GAMES={
     "ac": ["ir", "lic", "inc", "engine"]
   },
   "needs": {
-    "widgets": {"radar": ["others"], "relative": ["others"], "standings": ["others", "names"], "gaps": ["others", "names"], "incidents": ["inc"], "trackbar": ["others"], "engine": ["engine"]},
+    "widgets": {"radar": ["others"], "relative": ["others"], "standings": ["others", "names"], "gaps": ["others", "names"], "incidents": ["inc"], "trackbar": ["others"], "spotter": ["others"], "engine": ["engine"]},
     "columns": {"ir": ["ir"], "irc": ["ir"], "lic": ["lic"], "inc": ["inc"], "laps": ["names"], "last": ["names"], "best": ["names"], "pit": ["names"]},
     "items": {"sof": ["ir"], "irc": ["ir"], "inc": ["inc"], "traffic": ["others", "names"]}
   }

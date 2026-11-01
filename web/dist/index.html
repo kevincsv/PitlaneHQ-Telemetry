@@ -875,6 +875,7 @@ nav.tabs button[data-g=more]{display:none}nav.tabs button[data-g=home]{order:-1}
 .hm-h{display:flex;align-items:baseline;justify-content:space-between;gap:10px;padding:0 2px}
 .hm-h h2{font:700 15px/1 var(--f-display);letter-spacing:.08em;text-transform:uppercase;margin:0;color:var(--muted)}
 .hm-h button{background:none;border:0;color:var(--accent);font:600 13px var(--f-body);cursor:pointer;padding:4px 0}
+.spot{display:flex;align-items:center;gap:12px;height:44px}.spot i{width:14px;align-self:stretch;border-radius:5px;background:var(--surface2,#222b37);border:1px solid var(--line)}.spot i.on1{background:var(--warn,#f2c94c)}.spot i.on2{background:var(--bad,#ff6363)}.spot b{flex:1;text-align:center;font:600 18px var(--disp,inherit);letter-spacing:.04em}
 .hm-card{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:14px}
 .cico{fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
 .hm-lics{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:7px}
@@ -2153,6 +2154,10 @@ html .hl-sec{padding:0 0 12px;border-radius:var(--radius);display:flex;flex-dire
       <div class="label" data-i18n="w.trackbar"></div>
       <canvas id="tbC" height="56" style="width:100%;height:56px;display:block"></canvas>
     </div>
+    <div class="panel s12 wpanel" data-w="spotter">
+      <div class="label" data-i18n="w.spotter"></div>
+      <div class="spot" id="spotBox"><i class="spot-l"></i><b id="spotTx">–</b><i class="spot-r"></i></div>
+    </div>
     <div class="panel s4 wpanel" data-w="system">
       <div class="label" data-i18n="w.system"></div>
       <div id="sysBox"></div>
@@ -3240,6 +3245,11 @@ function relList(){
     const lapDiff=(laps[i]+pct[i])-(laps[me]+pct[me]);out.push({d,i,g,lapDiff})});
   return out;
 }
+/* the spotter (ovspotter.go on the PC): CarLeftRight lights the side with a car, amber one, red two */
+function renderSpotter(){const b=$("#spotBox");if(!b)return;const v=Math.round(+T.CarLeftRight||0),L=v===2||v===4?1:v===5?2:0,R=v===3||v===4?1:v===6?2:0;
+  b.querySelector(".spot-l").className="spot-l"+(L?" on"+L:"");b.querySelector(".spot-r").className="spot-r"+(R?" on"+R:"");
+  const t=L&&R?Tx("CARS BOTH SIDES","COCHES A AMBOS LADOS",null,"CARROS DOS DOIS LADOS"):L>1?Tx("TWO CARS LEFT","DOS COCHES A LA IZQUIERDA",null,"DOIS CARROS À ESQUERDA"):R>1?Tx("TWO CARS RIGHT","DOS COCHES A LA DERECHA",null,"DOIS CARROS À DIREITA"):L?Tx("◀ CAR LEFT","◀ COCHE A LA IZQUIERDA",null,"◀ CARRO À ESQUERDA"):R?Tx("CAR RIGHT ▶","COCHE A LA DERECHA ▶",null,"CARRO À DIREITA ▶"):Tx("Clear","Libre",null,"Livre");
+  const e=$("#spotTx");if(e.textContent!==t){e.textContent=t;e.className=L>1||R>1||L&&R?"bad":L||R?"warn":"muted"}}
 function frameTick(){
   const now=performance.now(),view=CUR_VIEW;
   recordLap();mapSample();trackPits();
@@ -3251,7 +3261,7 @@ function frameTick(){
   if(now-lastSlow>200){lastSlow=now;if(lv("boost"))renderBoost();if(lv("telemetry"))renderTelemetry()}
   if(now-lastStd>(OV.on?250:500)){lastStd=now;if(lv("standings"))renderStandingsWidget()}
   if(now-lastCmp>100){lastCmp=now;if(lv("compare"))drawCompare();if(lv("trackbar"))drawTrackbar()}
-  trackStats();if(lv("deltabar"))renderDeltaBar();
+  trackStats();if(lv("deltabar"))renderDeltaBar();if(lv("spotter"))renderSpotter();
   if(now-lastGG>66){lastGG=now;if(lv("gg"))drawGG()}
   if(now-lastSt>250){lastSt=now;if(lv("stats"))renderStats()}
   trackSectors();trackIncidents();sampleGaps();shiftTick();estTick();brakeTick();focusTick();
@@ -4923,7 +4933,7 @@ function renderTelemetry(){const box=$("#telBox");if(!box||box.closest("[hidden]
 function toggleTelVar(n){const v=ui("tel").vars.slice();const k=v.indexOf(n);if(k>=0)v.splice(k,1);else v.push(n);setUI("tel",{vars:v});if(MODE==="bridge")connectBridge()}
 
 /* ===================== layout & overlays ===================== */
-const WIDGETS=["flag","dash","timing","deltabar","map","relative","compare","radar","boost","gg","stats","inputs","fuel","pit","sectors","gaps","incidents","coach","brakes","engine","tyres","standings","telemetry","weather","trackbar","system"];
+const WIDGETS=["flag","dash","timing","deltabar","map","relative","compare","radar","boost","gg","stats","inputs","fuel","pit","sectors","gaps","incidents","coach","brakes","engine","tyres","standings","telemetry","weather","trackbar","system","spotter"];
 const CONFIGURABLE={inputs:"inp",deltabar:"delta",timing:"delta",relative:"rel",standings:"std",radar:"radar",telemetry:"tel",boost:"boost",pit:"pit",gaps:"gaps",coach:"coach"};
 /* the Telemetry screen shows what matters while you drive, nothing more: the flags, where you are, the delta and the
    lap times, the cars around you, the map, the fuel and the incidents (the tyres and the standings have their own
@@ -5778,11 +5788,11 @@ function renderLock(){const b=$("#lockBtn");if(!b)return;const show=(MODE==="bri
 $("#lockBtn").onclick=()=>{CFG.edit=!CFG.edit;saveCfg();renderLock();toast(CFG.edit?Tx("Overlays unlocked: drag them on your screen.","Overlays desbloqueados: arrástralos por la pantalla."):Tx("Overlays locked.","Overlays bloqueados."))};
 
 /* ---------- screen editor: move overlay windows from the app or a phone ---------- */
-const OVSZ={flag:[520,90],dash:[560,230],timing:[440,190],map:[440,480],relative:[600,380],compare:[680,320],radar:[260,300],boost:[360,170],inputs:[560,210],fuel:[420,220],engine:[320,260],tyres:[420,260],standings:[720,640],telemetry:[420,300],gg:[280,300],deltabar:[520,90],stats:[420,220],pit:[440,260],sectors:[560,150],gaps:[560,260],incidents:[380,300],coach:[520,200],weather:[360,250],trackbar:[700,70],system:[320,230]};
+const OVSZ={flag:[520,90],dash:[560,230],timing:[440,190],map:[440,480],relative:[600,380],compare:[680,320],radar:[260,300],boost:[360,170],inputs:[560,210],fuel:[420,220],engine:[320,260],tyres:[420,260],standings:[720,640],telemetry:[420,300],gg:[280,300],deltabar:[520,90],stats:[420,220],pit:[440,260],sectors:[560,150],gaps:[560,260],incidents:[380,300],coach:[520,200],weather:[360,250],trackbar:[700,70],system:[320,230],spotter:[520,64]};
 let SCREEN=null,SCREEN_DRAG=false;
 async function screenInfo(){if(SCREEN)return SCREEN;try{if(MODE==="bridge"&&!REMOTE){SCREEN=await (await fetch("/api/overlay/screen")).json()}}catch(e){}if(!SCREEN)SCREEN={virtual:[0,0,1920,1080],primary:[0,0,1920,1080]};return SCREEN}
 /* the smallest each overlay may be (overlayMinSize in overlay.go: its default width; the map, the radar and the g-force their default height too) */
-const OV_MINW={flag:520,dash:560,timing:440,map:440,relative:600,fuel:420,engine:320,tyres:420,inputs:560,standings:720,radar:260,boost:360,telemetry:420,compare:680,gg:280,deltabar:520,stats:420,pit:440,sectors:560,gaps:560,incidents:380,coach:520,brakes:480,weather:360,trackbar:700,system:320},OV_MINH={map:480,radar:300,gg:300};
+const OV_MINW={flag:520,dash:560,timing:440,map:440,relative:600,fuel:420,engine:320,tyres:420,inputs:560,standings:720,radar:260,boost:360,telemetry:420,compare:680,gg:280,deltabar:520,stats:420,pit:440,sectors:560,gaps:560,incidents:380,coach:520,brakes:480,weather:360,trackbar:700,system:320,spotter:520},OV_MINH={map:480,radar:300,gg:300};
 /* overlay windows keep their look: each widget is drawn at its own width and scaled with the
    window, and the window's height follows the content (no scroll bars, nothing cut off).
    Resizing keeps the proportions, between half and two and a half times the normal size. */
@@ -5801,7 +5811,7 @@ if(OV.on&&OV.win){addEventListener("resize",()=>ovFit());setTimeout(ovFit,300);s
 /* which overlays are open on the PC right now (shown on the Overlays cards) */
 let OV_OPEN=new Set();
 /* the overlays that are ready; the rest carry an "Experimental" pill */
-const OV_BASIC=["radar","deltabar","relative","standings","flag","dash","timing","map","fuel","tyres","inputs","pit","brakes","coach","incidents","engine","weather","trackbar"];
+const OV_BASIC=["radar","deltabar","relative","standings","flag","dash","timing","map","fuel","tyres","inputs","pit","brakes","coach","incidents","engine","weather","trackbar","spotter"];
 /* the overlays that draw a title, which their settings can hide (ui.<overlay>.title; the agent's titleOn) */
 const OV_TITLED=["fuel","engine","tyres","inputs","boost","telemetry","gg","stats","pit","sectors","gaps","incidents","compare","brakes","coach","weather","system"];
 /* an overlay's opacity (ui.<overlay>.alpha, 60–255), else the old one for all of them, else opaque (the agent's ovAlpha) */
@@ -6521,7 +6531,7 @@ Object.assign(I18N,{"tab.rig":["Rig","Rig"],profiles:["Profiles","Perfiles"],
  "w.incidents":["Incident log","Registro de incidentes"],"d.incidents":["Every incident with lap and place on track","Cada incidente con vuelta y punto de la pista"],
  "w.weather":["Weather","Tiempo"],"d.weather":["Track and air temperature, the wind against your car, rain and how wet the track is","Temperatura de pista y aire, el viento respecto a tu coche, la lluvia y la humedad de la pista"],
 
- "w.trackbar":["Track position bar","Barra de posición"],"d.trackbar":["Every car along the lap on one line, yours marked","Cada coche a lo largo de la vuelta en una línea, con el tuyo marcado"],
+ "w.trackbar":["Track position bar","Barra de posición"],"w.spotter":["Spotter","Spotter"],"d.spotter":["A bar on each side lights while a car is alongside","Una barra a cada lado se enciende mientras hay un coche al lado"],"d.trackbar":["Every car along the lap on one line, yours marked","Cada coche a lo largo de la vuelta en una línea, con el tuyo marcado"],
  "w.system":["Performance","Rendimiento"],"d.system":["Frames a second, GPU and CPU use, latency and connection quality","Fotogramas por segundo, uso de GPU y CPU, latencia y calidad de la conexión"],
  
  pitLoss:["Pit loss (s)","Pérdida en boxes (s)"],traceSecs:["Trace length (s)","Duración de la gráfica (s)"],traceH:["Trace height (px)","Altura de la gráfica (px)"],gapMins:["Minutes shown","Minutos visibles"],gapCars:["Cars ahead and behind","Coches delante y detrás"]});
@@ -6556,7 +6566,7 @@ const CONN_ON=false;
 // profiles are switched off for now: no button, no panel, no window (the PC keeps working with its one profile)
 function renderProfBtn(){const b=$("#profBtn");if(b)b.hidden=true;const r=$("#rigProfiles");if(r)r.hidden=true}
 /* new widgets start hidden once, so an update does not crowd your Live screen */
-(function(){const seen=new Set(store.get("pw.seenW",[]));let ch=false;WIDGETS.forEach(w=>{if(!seen.has(w)){if(["gaps","incidents","coach","weather","trackbar","system"].includes(w))HIDDEN.add(w);seen.add(w);ch=true}});if(ch){rawSet("pw.hiddenW",[...HIDDEN]);rawSet("pw.seenW",[...seen])}})();
+(function(){const seen=new Set(store.get("pw.seenW",[]));let ch=false;WIDGETS.forEach(w=>{if(!seen.has(w)){if(["gaps","incidents","coach","weather","trackbar","system","spotter"].includes(w))HIDDEN.add(w);seen.add(w);ch=true}});if(ch){rawSet("pw.hiddenW",[...HIDDEN]);rawSet("pw.seenW",[...seen])}})();
 
 /* ===================== programs that start with Pitlane HQ or iRacing (Settings) ===================== */
 const askOK=async m=>MODE==="local"||await uiConfirm(m);

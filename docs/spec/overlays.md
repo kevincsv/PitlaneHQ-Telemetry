@@ -25,6 +25,9 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   when it beats the reference's time through the same stretch, the best, the average of the last five and, after six
   passes, how much the last five gained on the first five. The web's coach widget on Telemetry shows the same card
   (`focusTick`/`focusHTML` in index.html) with Stop, and the phones' Telemetry tab has its own "Practise a corner".
+- The spotter overlay (`ovspotter.go`, "Around you", hidden on Telemetry until chosen): a bar down each side lights
+  while a car is alongside (the game's CarLeftRight), amber for one car and red for two, with "◀ CAR LEFT", "TWO CARS
+  RIGHT" or "CARS BOTH SIDES" in the middle, "Clear" otherwise. The web's Telemetry widget is the same (`renderSpotter`).
 - With no lap of the driver's own to compare yet (the first laps on a track, or nobody faster known), the coach overlay
   calls the track guide (`guideTips`, from the model's corner card): where the fast drivers brake before the apex, the
   apex speed and the gear, "BRAKE 120 M" in the big style, the hardest corners first; its title is "Track guide" and it

@@ -5,7 +5,7 @@
    style, alpha, textScale, hide, title). Loaded after index.html's main script, whose globals it uses. */
 
 /* the four groups of the list; an overlay missing here goes to the last one */
-const OVT_GROUPS=[["around",["relative","standings","radar","map","trackbar","flag","gaps","incidents"]],
+const OVT_GROUPS=[["around",["relative","standings","radar","spotter","map","trackbar","flag","gaps","incidents"]],
   ["pace",["timing","deltabar","coach","brakes","sectors","compare"]],
   ["car",["dash","inputs","fuel","tyres","engine","pit","boost"]],
   ["more",["weather","gg","stats","telemetry","system"]]];
@@ -49,6 +49,7 @@ function ovtThumb(w){
     map:()=>`<svg class="ovt-th-map" viewBox="0 0 120 80" aria-hidden="true"><path d="M14 58C10 30 30 12 56 16c24 4 18 22 40 18 18-4 16 28-4 32-26 6-72 10-78-8Z"/><circle class="me" cx="56" cy="16" r="4.5"/><circle class="o1" cx="96" cy="34" r="3.5"/><circle class="o2" cx="30" cy="70" r="3.5"/></svg>`,
     deltabar:()=>`<div class="ovt-th-delta"><i></i><b>−0.24</b></div>`,
     trackbar:()=>`<div class="ovt-th-tbar"><i style="left:12%"></i><i style="left:30%"></i><i class="me" style="left:47%"></i><i style="left:55%"></i><i style="left:81%"></i></div>`,
+    spotter:()=>`<div class="ovt-th-spot" style="display:flex;gap:6px;align-items:center;height:100%"><i style="width:8px;height:70%;border-radius:3px;background:#f2c94c"></i><b style="flex:1;text-align:center;font-size:11px">◀ CAR LEFT</b><i style="width:8px;height:70%;border-radius:3px;background:#222b37"></i></div>`,
     flag:()=>`<div class="ovt-th-flag">T7</div>`,
     dash:()=>`<div class="ovt-th-gear"><span class="leds"><i class="g"></i><i class="g"></i><i class="y"></i><i class="y"></i><i class="r"></i><i></i></span><b>4</b><small>184</small></div>`,
     boost:()=>`<div class="ovt-th-gear"><span class="pill">DRS</span><span class="ovt-th-meter"><i style="width:64%"></i></span></div>`,

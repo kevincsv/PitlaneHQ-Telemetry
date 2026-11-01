@@ -4,6 +4,7 @@ import { voiceIce } from "./voiceice.js";
 import { downloads, latestBuild } from "./downloads.js";
 import { markModel, rebuildDirty, reconcileIds, buildOvalKinds } from "./model.js";
 import { fillCats } from "./coachtips.js";
+import { shadowRun, answerRun } from "./coachlearn.js";
 import { rebuildTrackMaps, rebuildEdges } from "./trackmaps.js";
 import { autoShare, reshareSession, unshareInvalid } from "./community.js";
 import { catMap, catOf, licOf } from "./categories.js";
@@ -539,6 +540,9 @@ export default {
     const all = [];
     const wait = ctx.waitUntil.bind(ctx); ctx = { ...ctx, waitUntil: (pr) => { all.push(pr); wait(pr); } };
     ctx.waitUntil(rebuildDirty(env, { daily })); ctx.waitUntil(indexNow(env).catch(() => {}));
+    // the coach learns from every session: the server's own coach over the sessions nobody opened it on, and the answers
+    // the next sessions give to every tip (coachlearn.js)
+    ctx.waitUntil(shadowRun(env).then(() => answerRun(env)).catch(() => {}));
     if (hourly) { ctx.waitUntil(fillCats(env).catch(() => {})); ctx.waitUntil(fillSectors(env).catch(() => {})); ctx.waitUntil(pruneUsage(env).catch(() => {})); ctx.waitUntil(pruneSeen(env).catch(() => {})); }
     if (daily) { ctx.waitUntil(buildOvalKinds(env).catch(() => {})); ctx.waitUntil(fixLapTimes(env).catch(() => {})); ctx.waitUntil(repairImpossibleShares(env).catch(() => {})); ctx.waitUntil(env.DB.prepare(ALL_SESSION_SUMS).run().catch(() => {})); } ctx.waitUntil(resharePending(env).catch(() => {})); ctx.waitUntil(rebuildTrackMaps(env).catch(() => {})); ctx.waitUntil(rebuildEdges(env).catch(() => {})); ctx.waitUntil(scanLeagues(env).catch(() => {})); ctx.waitUntil(prunePresence(env).catch(() => {}));
     wait(Promise.allSettled(all).then(() => flushUsage(raw, true)));

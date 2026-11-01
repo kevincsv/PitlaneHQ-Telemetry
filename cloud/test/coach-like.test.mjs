@@ -32,7 +32,7 @@ assert.equal(PW.catGroup(null, null, {}), "");
 // ---------- the buckets by group ----------
 const db = new DatabaseSync(":memory:");
 db.exec("CREATE TABLE model_laps (game TEXT, track_id INTEGER, car_id INTEGER)"); // 0053 adds a column to the model's memory too
-for (const f of ["0051_coach_tips.sql", "0053_coach_learning.sql", "0084_coach_plan_votes.sql", "0087_coach_categories.sql"]) db.exec(readFileSync(new URL("../migrations/" + f, import.meta.url), "utf8"));
+for (const f of ["0051_coach_tips.sql", "0053_coach_learning.sql", "0084_coach_plan_votes.sql", "0087_coach_categories.sql", "0088_coach_learn_faster.sql"]) db.exec(readFileSync(new URL("../migrations/" + f, import.meta.url), "utf8"));
 const D1 = { prepare: (q) => { const mk = (a) => ({ bind: (...b) => mk(b), all: async () => ({ results: db.prepare(q).all(...a) }), first: async () => db.prepare(q).get(...a) ?? null, run: async () => db.prepare(q).run(...a) }); return mk([]); }, batch: async (l) => { for (const x of l) await x.run(); } };
 const env = { DB: D1 };
 const tip = db.prepare("INSERT INTO coach_tips (account, game, track_id, car_id, session_id, started, n, apex, kind, cls, outcome, created, cat) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)");
@@ -45,8 +45,8 @@ for (let i = 0; i < 5; i++) tip.run("c" + i, "iracing", 3, 3, "d" + sn++, 1, 1, 
 const wOf = async (g) => (await buckets(env, null, g)).buckets.find((x) => x.kind === "brake_later" && x.cls === "slow");
 const all = await wOf(""), road = await wOf("road"), oval = await wOf("oval"), dirt = await wOf("dirt_road");
 assert.equal(all.n, 80); assert.equal(all.cat, undefined);
-assert.equal(road.n, 40); assert.equal(road.cat, "road"); assert.equal(road.w, 1.2);
-assert.equal(oval.n, 35); assert.equal(oval.cat, "oval"); assert.equal(oval.w, 0.8);
+assert.equal(road.n, 40); assert.equal(road.cat, "road"); assert.ok(road.w > 1.1 && road.w <= 1.2, "most of the way to 1.2 from everyone's weight");
+assert.equal(oval.n, 35); assert.equal(oval.cat, "oval"); assert.ok(oval.w < 0.9 && oval.w >= 0.8);
 assert.ok(oval.w < all.w && all.w < road.w, "each group by its own drivers");
 assert.equal(dirt.n, 80, "a group with fewer than MIN_CASES cases learns from everyone"); assert.equal(dirt.cat, undefined);
 assert.ok(MIN_CASES > 5);
@@ -56,7 +56,7 @@ const vote = db.prepare("INSERT INTO coach_plan_votes (account, track_id, car_id
 for (let i = 0; i < 20; i++) vote.run("r" + i, 1, 1, "vr" + i, 1, "trail@", "trail", "trail", "", "", 1, 1, "road");
 for (let i = 0; i < MIN_PLAN_VOTES; i++) vote.run("o" + i, 2, 2, "vo" + i, 1, "trail@", "trail", "trail", "", "", -1, 1, "oval");
 const pAll = await planWeightsFor(env, ""), pRoad = await planWeightsFor(env, "road"), pOval = await planWeightsFor(env, "oval"), pDirt = await planWeightsFor(env, "dirt_oval");
-assert.equal(pRoad.trail, 1.2); assert.equal(pOval.trail, 0.8);
+assert.ok(pRoad.trail > 1.1 && pRoad.trail <= 1.2); assert.ok(pOval.trail < 0.9 && pOval.trail >= 0.8);
 assert.equal(pDirt.trail, pAll.trail, "a group with too few votes takes everyone's");
 
 // ---------- the car card's corners and ovals ----------

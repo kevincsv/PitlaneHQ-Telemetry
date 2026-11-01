@@ -188,6 +188,37 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   `like:oval`, two corners at most); once the track has its own corner cards those corners speak instead. Hints, never a
   reference lap.
 
+## How the coach learns from every session (coachlearn.js, migration 0088)
+
+- **The server's own coach** (`shadowRun`, every ten minutes, newest sessions first and back through 180 days): for every
+  session of an account (official or against the AI, never a test drive) nobody opened the coach on, it runs the module's
+  `coachCompare` over the session's best whole lap against the model's next level for that time (else the record) and keeps
+  what it would have said (`coach_tips` with `src` 'auto'; `coach_shadow` marks the sessions gone over). Those tips are never
+  shown and never answer `/coach/last`; when the driver opens the coach on that session, what they saw replaces them
+  (`src` 'app').
+- **Every tip answered by the server** (`answerRun`): the driver's next session on that car and track (60 days at most) with a
+  whole lap answers every tip without an outcome, the same stretch (50 m before the reference's braking point to 150 m after
+  its slowest point, `winTime`) of its best lap against the session's best (`tbest`). A tip with no later session yet is looked
+  at again a day later (`looked`). The apps' own answer (POST `/coach/tips`) still comes first when they get there first.
+- **What a tip is worth** (`upliftOf`): the share of a corner's lost time won back next time (`recOf`, -1 to 1.5) after the tip
+  the driver saw, against the share won back where only the server's coach spoke (the same kind on corners of that speed,
+  towards every kind there while it has few cases). `weightOf(b, ratings, prior)` (coachlearn.js, re-exported by
+  coachtips.js): 1 + that difference (±0.3), moved towards from the prior (1, or a wider group's weight) as the cases come,
+  half way at `SHRINK` (15) cases, 0.7 to 1.3; without a baseline, the share of drivers who gained. A driver's own bucket
+  weighs from their third case, against everyone's weight as its prior. The plan's votes the same way (`planWeights(votes,
+  prior)`, half way at `PLAN_SHRINK` 8 votes, a step's id starting from its kind's weight). The admin's Coach tab shows the
+  tips the server's coach found, "Beyond the baseline" per bucket and every weight. `MIN_CASES` (30) is only when a tip may
+  say how many drivers it helped.
+- **Your corners over time** (GET `/community/coach/progress?trackId&carId&before`, `progressRoute`): the best whole lap of the
+  driver's last 8 sessions here (test drives too: it is their own progress) measured in the stretches of the newest session's
+  corners (`progressOf`: `better`/`worse` from 0.05 s, `stuck` after 3 sessions or more no faster while the corner still
+  loses to the reference), and the tips they saw here with what came of each (`tried`). The module's `progressLines` makes
+  "Your corners over time" (the worse and stuck first, six at most; `progress` in `analyse` and its notes), shown in the
+  coach on every device.
+- **Another approach** (`failedOf` in the module, `ctx.progress.tried`): when the two latest times the driver saw a kind of
+  tip in a corner (within 60 m) gained nothing, `coachCompare` gives the tip of the next phase that loses time there (0.02 s or
+  more) instead, and the corner carries `alt` (the kind it replaced). Without `ctx.progress` nothing changes.
+
 ## Beyond one lap against another
 
 - **Track guide** (`trackGuide` in pitwall-analysis.js, from the model): every corner with where the fast drivers brake

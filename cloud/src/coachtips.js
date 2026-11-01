@@ -3,16 +3,18 @@
 // reference. When the same driver drives that car and track again and opens the coach, the same corner's time in the new
 // session's best lap says whether the tip worked (outcome, seconds gained). The 👍/👎 a driver presses on a tip goes with
 // it. Nothing of this shows to the drivers. The admin panel shows the buckets (the tip's kind × the corner's speed), and
-// from MIN_CASES cases a bucket's share of drivers who gained reorders the plan's tips (w, read by coachPlan on the web
-// through /community/coach/weights). The tips' texts never change here, and no lap is made of this.
+// what a bucket is worth reorders the plan's tips from its first cases, a little at a time (w, read by coachPlan through
+// /community/coach/weights). The server also coaches and answers every session by itself (coachlearn.js), so the coach
+// learns from every session, not only the ones a driver opens it on. The tips' texts never change here, and no lap is
+// made of this.
 import { sessionAccount, isAdmin } from "./accounts.js";
 import { famId } from "./carfamily.js";
 import { groupFor, GROUPS } from "./categories.js";
 import { MIN_PLAN_VOTES, STEP, planVotes, planWeights, planWeightsFor } from "./coachplan.js";
 import { calibrateRun } from "./coachcalib.js";
+import { upliftStats, progressRoute, weightOf, SHRINK } from "./coachlearn.js";
 
-export const MIN_CASES = 30;   // cases a bucket needs before it reorders anything
-const MIN_RATINGS = 20;        // ratings a kind needs before its thumbs count
+export const MIN_CASES = 30;   // cases a bucket needs before a tip may say how many drivers it helped (the admin's choice)
 const SAME_CORNER_M = 60;      // the same corner next time: its slowest point within this many metres
 const GAIN_S = 0.05;           // a corner counts as gained (or lost) from this many seconds
 
@@ -26,7 +28,7 @@ const KIND = /^[a-z_]{1,32}$/, CLS = { slow: 1, medium: 1, fast: 1 }, REF = { le
 const r3 = (v) => Math.round(v * 1000) / 1000;
 const BRAKE_KINDS = ["brake_later", "brake_earlier", "brake_late_apex"]; // the tips that ask for metres of braking: their numbers are calibrated
 const MIN_ASK = 10;      // gains a bucket needs before its metres calibrate a tip
-const MIN_PERSONAL = 10; // cases a driver's own bucket needs before it weighs
+const MIN_PERSONAL = 3;  // cases a driver's own bucket needs before it weighs (and then a little at a time)
 const HABIT_TRACKS = 3;  // tracks a kind has to repeat on to be a habit of the driver
 // the kinds of tip about the pedals and the speed: a habit of them on other kinds of track is still worth saying (the line,
 // the gears and the steering belong to the kind of track)
@@ -35,14 +37,8 @@ const FLAGS = { traffic: 1, cold: 1 };
 const median = (a) => { if (!a.length) return null; const v = a.slice().sort((x, y) => x - y); return v[v.length >> 1]; };
 const flagsOf = (f) => (Array.isArray(f) ? f.filter((x) => FLAGS[x]).slice(0, 4).join(",") : "") || null;
 
-// the weight of a bucket: 1 while it has fewer than MIN_CASES cases, else 0.8 + 0.4 × the share of drivers who gained
-// there next time (0.7 to 1.3), and 15 % less when the drivers mostly gave the kind a thumbs down
-export function weightOf(b, rt) {
-  let w = 1;
-  if (b.n >= MIN_CASES) w = Math.min(1.3, Math.max(0.7, 0.8 + 0.4 * (b.win / b.n)));
-  if (rt && rt.up + rt.down >= MIN_RATINGS && rt.down > 0.6 * (rt.up + rt.down)) w *= 0.85;
-  return Math.round(Math.max(0.6, w) * 100) / 100;
-}
+// the weight of a bucket: weightOf in coachlearn.js (from the first cases, a little at a time)
+export { weightOf, SHRINK };
 
 // the buckets (a tip's kind × the corner's speed) for everyone, or for one account (the driver's own weights). With a group
 // (categories.js groupOf: road, oval, dirt_oval, dirt_road) a bucket that has MIN_CASES cases of its own in that group
@@ -52,7 +48,7 @@ export async function buckets(env, account, grp, min = MIN_CASES) {
   const who = account ? " AND account=?2" : "";
   const b = await env.DB.prepare(
     `SELECT COALESCE(cat,'') AS cat, kind, cls, COUNT(*) AS n, SUM(outcome>?1) AS win, SUM(outcome<-?1) AS loss, SUM(outcome) AS tot
-       FROM coach_tips WHERE outcome IS NOT NULL AND kind<>''${who} GROUP BY cat, kind, cls`).bind(...(account ? [GAIN_S, account] : [GAIN_S])).all();
+       FROM coach_tips WHERE outcome IS NOT NULL AND kind<>'' AND COALESCE(src,'app')='app'${who} GROUP BY cat, kind, cls`).bind(...(account ? [GAIN_S, account] : [GAIN_S])).all();
   const t = await env.DB.prepare(`SELECT COALESCE(cat,'') AS cat, kind, SUM(rating=1) AS up, SUM(rating=-1) AS down FROM coach_tips WHERE rating<>0 AND kind<>''${account ? " AND account=?1" : ""} GROUP BY cat, kind`).bind(...(account ? [account] : [])).all();
   const ratings = {}, gRatings = {};
   for (const x of t.results || []) {
@@ -67,10 +63,16 @@ export async function buckets(env, account, grp, min = MIN_CASES) {
     o.n += x.n; o.win += x.win || 0; o.loss += x.loss || 0; o.tot += x.tot || 0; pool.set(k, o);
     if (grp && x.cat === grp) mine.set(k, { kind: x.kind, cls: x.cls || "", n: x.n, win: x.win || 0, loss: x.loss || 0, tot: x.tot || 0 });
   }
+  // what each bucket is worth beyond what the drivers find by themselves (everyone's cases, coachlearn.js). Every group's
+  // cases together give the pooled weight; a group's own cases move its weight away from that one from their first case
+  // (weightOf's prior), and the driver's own buckets are measured without the baseline
+  const up = await upliftStats(env);
   const out = [];
   for (const [k, o] of pool) {
-    const g = mine.get(k), use = g && g.n >= min ? g : o;
-    out.push({ kind: o.kind, cls: o.cls, n: use.n, win: use.win, loss: use.loss, avg: r3(use.n ? use.tot / use.n : 0), w: weightOf(use, rtOf(o.kind)), ...(use === g ? { cat: grp } : {}) });
+    const u = up[k] || {}, upv = account ? null : u.up != null ? u.up : null, g = mine.get(k), use = g && g.n >= min ? g : o;
+    const pooled = weightOf({ ...o, up: upv }, null);
+    const w = g ? weightOf({ ...g, up: null }, rtOf(o.kind), pooled) : weightOf({ ...o, up: upv }, rtOf(o.kind));
+    out.push({ kind: o.kind, cls: o.cls, n: use.n, win: use.win, loss: use.loss, avg: r3(use.n ? use.tot / use.n : 0), up: upv, base: u.base != null ? u.base : null, nu: u.nu || 0, w, ...(use === g ? { cat: grp } : {}) });
   }
   // a kind whose thumbs are down also weighs less on corners where it has no scored case yet
   const kinds = new Set([...Object.keys(ratings), ...Object.keys(gRatings)]);
@@ -148,11 +150,13 @@ export async function coachTipRoutes(req, env, p, m, body, game) {
     }
     if (!rows.length) return json({ ok: true, kept: 0, scored: 0 });
     const cat = (await groupOfBody(env, game, body, trackId, carId)) || null;
+    // what the driver saw replaces what the server's coach would have said on this session (coachlearn.js shadowRun)
+    await env.DB.prepare("DELETE FROM coach_tips WHERE account=?1 AND session_id=?2 AND src='auto'").bind(acc.id, sid).run().catch(() => {});
     const ins = env.DB.prepare(
       `INSERT INTO coach_tips (account, game, track_id, car_id, session_id, started, n, d, apex, kind, cls, ref, lost, ta, tb, tbest, created, dd, flags, cat)
        VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14,?15,?16,?17,?18,?19,?20)
        ON CONFLICT(account, session_id, n) DO UPDATE SET d=excluded.d, apex=excluded.apex, kind=excluded.kind, cls=excluded.cls, ref=excluded.ref,
-         lost=excluded.lost, ta=excluded.ta, tb=excluded.tb, tbest=COALESCE(excluded.tbest, coach_tips.tbest), created=excluded.created, dd=excluded.dd, flags=excluded.flags, cat=COALESCE(excluded.cat, coach_tips.cat)`);
+         lost=excluded.lost, ta=excluded.ta, tb=excluded.tb, tbest=COALESCE(excluded.tbest, coach_tips.tbest), created=excluded.created, dd=excluded.dd, flags=excluded.flags, cat=COALESCE(excluded.cat, coach_tips.cat), src='app'`);
     await env.DB.batch(rows.map((c) => ins.bind(acc.id, game, trackId, carId, sid, started, c.n, c.d, c.apex, c.kind, c.cls, ref, c.lost, c.ta, c.tb, c.tbest, now, c.dd, flags, cat)));
     // the earlier sessions of this driver here whose tips have no outcome yet: the same corner (by its slowest point) in
     // this session's best lap says what came of them
@@ -226,10 +230,16 @@ export async function coachTipRoutes(req, env, p, m, body, game) {
     const u = new URL(req.url), trackId = +u.searchParams.get("trackId") || 0, carId = (+u.searchParams.get("carId") || 0) && (await famId(env, game, +u.searchParams.get("carId"))), before = +u.searchParams.get("before") || Date.now();
     if (!trackId || !carId) return err("trackId and carId", 400);
     const last = await env.DB.prepare(
-      `SELECT session_id, started FROM coach_tips WHERE account=?1 AND game=?2 AND track_id=?3 AND car_id=?4 AND started<?5 AND kind<>'' AND tbest IS NOT NULL ORDER BY started DESC LIMIT 1`).bind(acc.id, game, trackId, carId, before).first();
+      `SELECT session_id, started FROM coach_tips WHERE account=?1 AND game=?2 AND track_id=?3 AND car_id=?4 AND started<?5 AND kind<>'' AND tbest IS NOT NULL AND COALESCE(src,'app')='app' ORDER BY started DESC LIMIT 1`).bind(acc.id, game, trackId, carId, before).first();
     if (!last) return json({ tips: [] }, 200, { "cache-control": "private, max-age=300" });
     const t = await env.DB.prepare("SELECT n, apex, kind, lost, tbest FROM coach_tips WHERE account=?1 AND session_id=?2 AND kind<>'' AND lost>0.05 AND tbest IS NOT NULL ORDER BY lost DESC LIMIT 12").bind(acc.id, last.session_id).all();
     return json({ started: last.started, tips: (t.results || []).map((x) => ({ n: x.n, apex: x.apex, kind: x.kind, lost: r3(x.lost), tbest: r3(x.tbest) })) }, 200, { "cache-control": "private, max-age=300" });
+  }
+  // the driver's corners over their last sessions here and what came of the tips they saw in each (coachlearn.js)
+  if (p === "/coach/progress" && m === "GET") {
+    const u = new URL(req.url), trackId = +u.searchParams.get("trackId") || 0, carId = +u.searchParams.get("carId") || 0, before = +u.searchParams.get("before") || Date.now();
+    if (!trackId || !carId) return err("trackId and carId", 400);
+    return json(await progressRoute(env, acc, game, trackId, carId, before), 200, { "cache-control": "private, max-age=600" });
   }
   // the driver's own memory: the kinds that repeat across their tracks (habits), and their own buckets' weights
   // With ?cat=&trackId=&carId= the habits, weights and corner types of that group first: a habit of the ovals on an oval;
@@ -248,7 +258,10 @@ export async function coachTipRoutes(req, env, p, m, body, game) {
     else habits = (await habitsOf("")).filter((x) => !grp || TRANSFER.test(x.kind));
     const { buckets: mine } = await buckets(env, acc.id, grp, MIN_PERSONAL);
     const w = {};
-    for (const x of mine) if (x.n >= MIN_PERSONAL && x.w !== 1) w[x.kind + "|" + x.cls] = x.w;
+    // a driver's own bucket: what came of the tips they saw, against everyone's weight of that bucket (their prior), so
+    // what works for them moves their plan from their third case
+    const { buckets: all } = await buckets(env, null, grp);
+    for (const x of mine) { if (x.n < MIN_PERSONAL) continue; const g = all.find((y) => y.kind === x.kind && y.cls === x.cls), gw = g ? g.w : 1, own = weightOf({ ...x, up: null }, null, gw); if (own !== gw && gw > 0) w[x.kind + "|" + x.cls] = Math.round((own / gw) * 100) / 100; }
     // the corner types across their tracks: what they lose on average in slow, medium and fast corners against the
     // next level or the record (the strengths and weaknesses the apps show); the group's when it has them
     const clsOf = async (g) => {
@@ -285,9 +298,9 @@ export async function coachTipRoutes(req, env, p, m, body, game) {
     if (!isAdmin(env, acc.id)) return err("only the admins of this server can do this", 403);
     const { buckets: b, ratings } = await buckets(env);
     const tot = await env.DB.prepare(
-      `SELECT COUNT(*) AS tips, SUM(kind<>'') AS withTip, SUM(outcome IS NOT NULL) AS scored, SUM(rating<>0) AS rated, COUNT(DISTINCT account) AS drivers,
-         COUNT(DISTINCT track_id||':'||car_id) AS combos, SUM(created>?1) AS week FROM coach_tips`).bind(Date.now() - 7 * 86400e3).first();
-    const kinds = await env.DB.prepare("SELECT kind, COUNT(*) AS n, SUM(outcome IS NOT NULL) AS scored FROM coach_tips WHERE kind<>'' GROUP BY kind ORDER BY n DESC").all();
+      `SELECT SUM(src='app') AS tips, SUM(kind<>'' AND src='app') AS withTip, SUM(outcome IS NOT NULL AND src='app') AS scored, SUM(rating<>0) AS rated, COUNT(DISTINCT account) AS drivers,
+         COUNT(DISTINCT track_id||':'||car_id) AS combos, SUM(created>?1) AS week, SUM(src='auto') AS auto, SUM(src='auto' AND outcome IS NOT NULL) AS autoScored FROM coach_tips`).bind(Date.now() - 7 * 86400e3).first();
+    const kinds = await env.DB.prepare("SELECT kind, COUNT(*) AS n, SUM(outcome IS NOT NULL) AS scored FROM coach_tips WHERE kind<>'' AND COALESCE(src,'app')='app' GROUP BY kind ORDER BY n DESC").all();
     const pv = await planVotes(env);
     return json({ min: MIN_CASES, gain: GAIN_S, totals: tot || {}, buckets: b, ratings, kinds: kinds.results || [], off: await offList(env), confidence: await confidenceOn(env), plan: pv, planMin: MIN_PLAN_VOTES });
   }

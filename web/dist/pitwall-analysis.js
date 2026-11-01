@@ -56,6 +56,20 @@
     return (apex) => { if (!(apex >= 0)) return null; let b = null; for (const c of cs) { const g = Math.abs(c.apex - apex); if (g <= 60 && (!b || g < Math.abs(b.apex - apex))) b = c; } return b ? { ...b, spreadMax: b.spreadMax != null ? b.spreadMax : mx } : null; };
   }
 
+  /* the kinds of tip this driver saw in a corner whose two latest outcomes there gained nothing (ctx.progress.tried from
+     /community/coach/progress, the newest first, within 60 m of the corner's slowest point): the coach tries another
+     approach there. A Set, or null */
+  function failedOf(ctx) {
+    const T = ctx && ctx.progress && Array.isArray(ctx.progress.tried) ? ctx.progress.tried : null;
+    if (!T || !T.length) return () => null;
+    return (apex) => {
+      const by = {};
+      for (const x of T) { if (!x || !x.kind || !(Math.abs(x.apex - apex) <= 60)) continue; const a = (by[x.kind] = by[x.kind] || []); if (a.length < 2) a.push(x.ok > 0); }
+      const out = new Set(Object.entries(by).filter(([, a]) => a.length >= 2 && !a.some(Boolean)).map(([k]) => k));
+      return out.size ? out : null;
+    };
+  }
+
   /* lap B's pedals and gears estimated from its speed (a rival's lap the PC saw from its place on track): the coach
      measures braking points, speeds and where the throttle comes back against it, never how a pedal is pressed */
   const estOf = (B, ctx) => !!((ctx && ctx.estB) || (B && (B.est || B.field)));
@@ -183,6 +197,7 @@
     // on an oval, a corner where you lift and the reference stays flat out is a corner too (flatB)
     if (oval) za.forEach((q) => { if (q.imin >= n || !sb[q.i] || !sb[q.imin] || zb.some((z) => q.imin >= z.i - 20 && q.i <= z.imin + 30)) return; for (let k = q.i; k <= q.imin; k++) if (sb[k] && sb[k][2] < .9) return; zb.push({ i: q.i, imin: q.imin, v: sb[q.i][0], vmin: sb[q.imin][0], lift: true, flatB: true }); });
     if (oval) zb.sort((a, b) => a.i - b.i);
+    const failed = failedOf(ctx);
     const T = (s, i) => s[i] && s[i][1], seg = (x, y) => x < y && sa[x] && sa[y] && sb[x] && sb[y] ? (T(sa, y) - T(sa, x)) - (T(sb, y) - T(sb, x)) : 0;
     const peak = (s, x, y) => { let p = 0, ip = x; for (let k = x; k <= y && k < s.length; k++) if (s[k] && s[k][3] > p) { p = s[k][3]; ip = k; } return [p, ip]; };
     const release = (s, from, to) => { for (let k = from; k <= to && k < s.length; k++) if (s[k] && s[k][3] < .05) return k; return to; };
@@ -206,10 +221,13 @@
       const gearAt = (s, i) => s[i] && isFinite(s[i][4]) ? Math.round(s[i][4]) : 0, apexA = m ? m.imin : z.imin, gA = gearAt(sa, apexA), gB = gearAt(sb, z.imin);
       const lifts = (s, from, to) => { let n = 0, prev = -1; for (let k = from; k <= to && k < s.length; k++) { if (!s[k]) continue; const t = s[k][2]; if (prev >= 0 && prev > .8 && t < .5) n++; prev = t; } return n; }, lA = lifts(sa, apexA, i1), lB = lifts(sb, z.imin, i1);
       const revs = (s, from, to) => { let n = 0, prevD = 0, last = null, has = false; for (let k = from; k <= to && k < s.length; k++) { if (!s[k] || !isFinite(s[k][5])) continue; const v = s[k][5]; if (v !== 0) has = true; if (last != null) { const d = v - last; if (Math.abs(d) > .004) { if (prevD !== 0 && Math.sign(d) !== Math.sign(prevD)) n++; prevD = d; } } last = v; } return [n, has]; }, [rA, hasA] = revs(sa, i0, i1), [rB, hasB] = revs(sb, i0, i1);
-      let en = "", es = "", pt = "", phase = null, kind = ""; const say = (k, a, b, c) => { kind = k; en = a; es = b; pt = c; };
+      let en = "", es = "", pt = "", phase = null, kind = "", alt = null; const say = (k, a, b, c) => { kind = k; en = a; es = b; pt = c; };
       const cls = cornerClass(z.vmin);
       if (lost > .03) {
-        phase = worst[0]; if (z.lift && phase === "brake") phase = "entry"; const r = Math.round; // a corner taken without braking has no braking phase to speak of
+        // the tip of a phase (the one that loses the most first): what this lap does differently there
+        const decide = (p0) => {
+        en = ""; es = ""; pt = ""; kind = "";
+        phase = p0; if (z.lift && phase === "brake") phase = "entry"; const r = Math.round; // a corner taken without braking has no braking phase to speak of
         // the metres a braking tip asks for: what the drivers who gained really moved their braking by (tipAsk), never more than the gap seen
         const askA = tipAsk("brake_late_apex", cls), askE = tipAsk("brake_earlier", cls), askL = tipAsk("brake_later", cls);
         // braking later than the reference and arriving slower at the apex is one mistake, whatever phase pays for it
@@ -262,6 +280,15 @@
           else if (dmin != null && dmin < -2) say("oval_center", `Carry ${r(-dmin)} ${u} more through the middle of the corner`, `Pasa ${r(-dmin)} ${u} más rápido por el centro de la curva`, `Passe pelo meio da curva com ${r(-dmin)} ${u} a mais`);
           else if (/^(brake|trail|entry_|apex_)/.test(kind)) say("oval_roll", "Roll more speed into the corner with one smooth, lighter lift", "Deja correr más velocidad en la curva con un solo levantón suave y más corto", "Leve mais velocidade para dentro da curva com um só alívio, suave e mais leve");
         }
+        };
+        decide(worst[0]);
+        // a tip this driver saw here twice without gaining gives way to the tip of the next phase that loses time: another approach
+        const bad = failed(z.imin * BIN);
+        if (bad && bad.has(kind)) {
+          const was = kind, order = Object.entries(ph).sort((p, q) => q[1] - p[1]).slice(1);
+          for (const [p2, v] of order) { if (v < .02) break; decide(p2); if (kind && kind !== was && !bad.has(kind)) { alt = was; break; } }
+          if (!alt) decide(worst[0]);
+        }
         // a tip an admin turned off for corners of this speed gives way to the phase's plain tip
         if (tipOff(kind, cls)) { const G = { brake: ["brake_generic", "Brake a little later and harder", "Frena un poco más tarde y más fuerte", "Freie um pouco depois e mais forte"], entry: ["entry_speed", "Carry more speed into the turn", "Entra con más velocidad en la curva", "Leve mais velocidade para dentro da curva"], apex: ["apex_line", "A rounder, faster line through the apex", "Una trazada más redonda y rápida por el vértice", "Uma linha mais redonda e rápida pelo ápice"], exit: ["full_throttle", "Full throttle sooner on exit", "Acelerador a fondo antes en la salida", "Acelerador a fundo mais cedo na saída"] }; say(...(G[phase] || G.brake)); }
       }
@@ -274,7 +301,7 @@
       }
       // the corner's own times (what the lap and the reference spent from the braking zone to the exit): the coach learns from them
       const ta = sa[i1][1] - sa[i0][1], tb = sb[i1][1] - sb[i0][1];
-      return { n: z.turn != null ? z.turn + 1 : turnNo(turns, z.imin * BIN, n * BIN, k + 1), d: z.i * BIN, apex: z.imin * BIN, dd, ve: m ? spd(m.v) : null, vr: spd(z.v), vmin: m ? spd(m.vmin) : null, vminr: spd(z.vmin), lost, ph, phase, coastA, coastB, trailA, trailB, late, line, tip: [en, es, pt], kind, cls, ta, tb, gA, gB, lift: !!z.lift, pua: puA != null ? puA * BIN : null, pur: puB != null ? puB * BIN : null, stA: hasA && hasB ? steerMax(sa, i0, i1) : null, stB: hasA && hasB ? steerMax(sb, i0, i1) : null, rA, rB, lA, lB, ...(oval ? { oval, flatB: !!z.flatB } : {}), ...(est ? { est: true } : {}) };
+      return { n: z.turn != null ? z.turn + 1 : turnNo(turns, z.imin * BIN, n * BIN, k + 1), d: z.i * BIN, apex: z.imin * BIN, dd, ve: m ? spd(m.v) : null, vr: spd(z.v), vmin: m ? spd(m.vmin) : null, vminr: spd(z.vmin), lost, ph, phase, coastA, coastB, trailA, trailB, late, line, tip: [en, es, pt], kind, cls, ta, tb, gA, gB, lift: !!z.lift, pua: puA != null ? puA * BIN : null, pur: puB != null ? puB * BIN : null, stA: hasA && hasB ? steerMax(sa, i0, i1) : null, stB: hasA && hasB ? steerMax(sb, i0, i1) : null, rA, rB, lA, lB, ...(alt ? { alt } : {}), ...(oval ? { oval, flatB: !!z.flatB } : {}), ...(est ? { est: true } : {}) };
     }).filter(Boolean);
   }
   /* the most the wheel is turned in a stretch (rad): how much steering a corner asks for */
@@ -685,6 +712,23 @@
     return (Array.isArray(byCls) ? byCls : []).filter((x) => N[x.cls] && x.n >= 5).sort((a, b) => b.avg - a.avg).map((x) => ({ cls: x.cls, avg: x.avg, n: x.n, t: Tx(...N[x.cls]), text: Tx(`${Math.round(x.avg * 100) / 100} s lost on average (${x.n} corners)`, `${Math.round(x.avg * 100) / 100} s perdidos de media (${x.n} curvas)`, `${Math.round(x.avg * 100) / 100} s perdidos em média (${x.n} curvas)`) }));
   }
 
+  /* ---------- your corners over time ---------- */
+  /* every corner's time in the driver's last sessions here (/community/coach/progress corners, the server measures the
+     best lap of each session in the same stretch): the corners that got faster, slower, or stay where they were while
+     they still lose to the reference. [{n, apex, trend, gain, sessions, t, text, tone}], six at most */
+  function progressLines(prog, cs, ctx) {
+    const P = prog && Array.isArray(prog.corners) ? prog.corners : [];
+    if (!P.length) return [];
+    const Tx = txOf(ctx), r2 = (v) => Math.round(v * 100) / 100, rank = { worse: 0, stuck: 1, better: 2 };
+    return P.filter((c) => c && rank[c.trend] != null && c.sessions >= 2).map((c) => {
+      const m = (cs || []).filter((x) => Math.abs(x.apex - c.apex) <= 60).sort((x, y) => Math.abs(x.apex - c.apex) - Math.abs(y.apex - c.apex))[0], n = m ? m.n : c.n, k = c.sessions;
+      const text = c.trend === "better" ? Tx(`${r2(c.gain)} s faster over your last ${k} sessions`, `${r2(c.gain)} s más rápido en tus últimas ${k} sesiones`, `${r2(c.gain)} s mais rápido nas suas últimas ${k} sessões`)
+        : c.trend === "worse" ? Tx(`${r2(-c.gain)} s slower than ${k} sessions ago`, `${r2(-c.gain)} s más lento que hace ${k} sesiones`, `${r2(-c.gain)} s mais lento que há ${k} sessões`)
+        : Tx(`No faster in your last ${k} sessions`, `Sin mejorar en tus últimas ${k} sesiones`, `Sem melhorar nas suas últimas ${k} sessões`);
+      return { n, apex: c.apex, trend: c.trend, gain: c.gain, sessions: k, t: `T${n}`, text, tone: c.trend === "better" ? "good" : "bad" };
+    }).sort((a, b) => rank[a.trend] - rank[b.trend] || Math.abs(b.gain) - Math.abs(a.gain)).slice(0, 6);
+  }
+
   /* ---------- the track left unused ---------- */
   /* where lap A stays away from the edge of the road on a corner's exit (from 30 to 150 m after the apex), against the
      edges the drivers' laps give (/community/trackmap edges: metres to the left, l, and to the right, r, of the layout at
@@ -858,6 +902,7 @@
     if (o.followup && o.followup.length) out.push({ k: "followup", title: Tx("Your last session's plan", "El plan de tu última sesión", "O plano da sua última sessão"), items: o.followup.map((x) => ({ t: (x.ok > 0 ? "✓ " : x.ok < 0 ? "✗ " : "= ") + x.t, text: x.text, tone: x.ok > 0 ? "good" : x.ok < 0 ? "bad" : "" })) });
     const st = [...(o.ranks || []).map((x) => ({ t: `T${x.n}`, text: Tx(`top ${x.top} % among ${x.drivers} drivers`, `top ${x.top} % entre ${x.drivers} pilotos`, `top ${x.top} % entre ${x.drivers} pilotos`), tone: x.top <= 25 ? "good" : x.top >= 60 ? "bad" : "" })), ...(o.cls || []).map((x) => ({ t: x.t, text: x.text, tone: "" }))];
     if (st.length) out.push({ k: "stand", title: Tx("Strengths and weaknesses", "Puntos fuertes y débiles", "Pontos fortes e fracos"), items: st });
+    if (o.progress && o.progress.length) out.push({ k: "progress", title: Tx("Your corners over time", "Tus curvas con el tiempo", "Suas curvas ao longo do tempo"), items: o.progress.map((x) => ({ t: x.t, text: x.text, tone: x.tone })) });
     if (o.edges && o.edges.length) out.push({ k: "edges", title: Tx("Track left unused", "Pista sin usar", "Pista sem usar"), items: o.edges.map((x) => ({ t: `T${x.n}`, text: x.text, tone: "bad" })) });
     if (o.like) { const it = [...(o.like.oval ? [{ t: Tx(...LIKE_OVALS[o.like.oval.kind]), text: o.like.oval.lines.join(" "), tone: "" }] : []), ...o.like.corners.map((c) => ({ t: `T${c.n}`, text: c.lines.join(" "), tone: "" }))]; if (it.length) out.push({ k: "like", title: Tx("From other tracks", "De otros circuitos", "De outras pistas"), items: it }); }
     if (o.guide && o.guide.corners.length) out.push({ k: "guide", title: Tx("Track guide", "Guía del circuito", "Guia da pista"), items: guideItems(o.guide) });
@@ -882,6 +927,7 @@
     if (ctx.model) { const g = trackGuide(ctx.model, ctx), rk = cornerRanks(A, ctx.model, ctx); if (g) out.guide = g; if (rk.length) out.ranks = rk; } // the track guide and where lap A stands in every corner
     if (Array.isArray(ctx.byCls)) out.cls = clsLines(ctx.byCls, ctx); // the corner types across the driver's tracks
     if (ctx.like) { const lk = likeOf(A, ctx, plan.cs); if (lk) out.like = lk; } // what the fast drivers of this car do on other tracks, where this track has no corner card
+    if (ctx.progress) { const pg = progressLines(ctx.progress, plan.cs, ctx); if (pg.length) out.progress = pg; } // the corners over the driver's last sessions
     if (ctx.map && ctx.map.edges) { const eu = edgeUse(A, ctx.map, ctx); if (eu.length) out.edges = eu; } // the track left unused on the exits
     out.notes = notesOf(out, ctx);
     return opts && opts.json ? JSON.stringify(out) : out;
@@ -889,7 +935,7 @@
 
   const api = { VERSION, BIN, lapSeries, serOf, lapShape, sameFrame, lineOffsets, cornerLine, lineTip, brakeZones, PHASES, phaseName, turnNo, COACH_GEN, cornerClass, cornerZones,
     OVAL_KINDS, ovalOf, liftZones, ovalZones, dirtLineTip, coachCompare, cornerConsistency, pairSecs, lapDriving, kindName, stepName, tipMain, tipShort, tipTodo, coachPlan, stepText, analyzerFacts, analyse,
-    estOf, followUp, trackGuide, cornerRanks, clsLines, racePace, edgeUse, notesOf, guideItems, likeOf, likeSteps, catGroup };
+    estOf, failedOf, progressLines, followUp, trackGuide, cornerRanks, clsLines, racePace, edgeUse, notesOf, guideItems, likeOf, likeSteps, catGroup };
   root.PW_ANALYSIS = api;
   if (typeof module !== "undefined" && module.exports) module.exports = api;
 })(typeof window !== "undefined" ? window : typeof globalThis !== "undefined" ? globalThis : this);

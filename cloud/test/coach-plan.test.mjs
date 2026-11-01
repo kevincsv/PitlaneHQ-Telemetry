@@ -75,9 +75,12 @@ for (let i = 0; i < MIN_PLAN_VOTES; i++) { ins.run("a" + i, 1, 2, "s" + i, 1, "t
 const env = { DB: { prepare: (q) => ({ all: async () => ({ results: db.prepare(q).all() }) }) } };
 const votes = await planVotes(env), W = planWeights(votes);
 assert.equal(votes.find((x) => x.id === "plan").up, MIN_PLAN_VOTES);
-assert.equal(W.trail, 1.12);
-assert.equal(W["corner:coast"], 0.88);
-assert.equal(W.corner, 0.88, "a kind of step from all its votes");
+assert.equal(W.trail, 1.11, "12 of 15 up: most of the way to 1.12");
+assert.equal(W["corner:coast"], 0.89, "a step starts from its kind's weight");
+assert.equal(W.corner, 0.92, "a kind of step from all its votes");
 assert.equal(W.plan, undefined, "votes on the whole plan move no step");
-assert.deepEqual(planWeights([{ id: "trail", k: "trail", up: 3, down: 1 }]), {}, "too few votes move nothing");
+const few = planWeights([{ id: "trail", k: "trail", up: 3, down: 1 }]).trail;
+assert.ok(few > 1 && few < 1.08, "a few votes move a step a little, from the first ones");
+assert.deepEqual(planWeights([{ id: "trail", k: "trail", up: 0, down: 0 }]), {}, "no votes move nothing");
+assert.equal(planWeights([{ id: "trail", k: "trail", up: 1, down: 0 }], 0.9).trail < 1, true, "a wider group's weight is the prior");
 console.log("coach plan: ok");

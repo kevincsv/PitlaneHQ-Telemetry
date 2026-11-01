@@ -3,7 +3,7 @@
    (index.html: the game badges, the Auto switch per game, the columns offered) and by the agent (gamesupport.go: the
    overlays it opens by itself, the columns it draws). "games" are the ones out for everyone; ACC and Assetto Corsa are in
    development (GAME_WIP in index.html, gameWIP in games.go). ACC's names, laps and times come from its broadcasting
-   API (accbcast.go); the first Assetto Corsa only shares your own car and no engine temperatures. Keep it plain JSON
+   API (accbcast.go), Assetto Corsa's from Pitlane HQ's in-game app (acapp.go); Assetto Corsa has no engine temperatures. Keep it plain JSON
    between the braces. */
 window.PW_GAMES={
   "games": ["iracing", "lmu"],
@@ -11,7 +11,7 @@ window.PW_GAMES={
     "iracing": [],
     "lmu": ["ir", "lic", "inc"],
     "acc": ["ir", "lic", "inc"],
-    "ac": ["ir", "lic", "inc", "names", "others", "engine"]
+    "ac": ["ir", "lic", "inc", "engine"]
   },
   "needs": {
     "widgets": {"radar": ["others"], "relative": ["others"], "standings": ["others", "names"], "gaps": ["others", "names"], "incidents": ["inc"], "trackbar": ["others"], "engine": ["engine"]},

@@ -18,15 +18,22 @@ index.html). Nothing to set up for either.
   GT3, GT4, GT2, CUP, ST, CHL, TCX, with a colour per class), position, laps, last and best lap, the place on the lap
   and the pit lane. The car index is the shared memory's carID. Without it (an old file, a wrong password) the other
   cars are still on the radar, relative and map from the shared memory, as "Car 2", "Car 3".
-- The first Assetto Corsa shares only your own car and no engine temperatures.
+- The first Assetto Corsa's shared memory has only your own car (and no engine temperatures). The other cars come from
+  Pitlane HQ's own in-game app (`acapp/PitlaneHQ/PitlaneHQ.py`, `acapp.go`, the owner's choice): a Python app of the
+  game that draws nothing and writes every car (driver, car, place, laps, place on the lap, last and best lap, pit
+  lane, position) ten times a second to `apps\python\PitlaneHQ\field.txt` in the game's folder. The agent installs it
+  there (the folder of the running acs.exe) and switches it on in `Documents\Assetto Corsa\cfg\python.ini`
+  (`[PITLANEHQ] ACTIVE=1`) when Assetto Corsa runs, and reads the file into the same field ACC's API fills. The game
+  loads its apps when it starts: while the file is not being written, the app's note and the dimmed Relative,
+  Standings, Radar, Gap graph and Track position bar say to restart the game (`status.bcast`).
 
 ## What works where (`web/dist/pitwall-games.js`)
 
 | | ACC | Assetto Corsa |
 | --- | --- | --- |
-| Lacks | iRating, licences, incidents | iRating, licences, incidents, the other cars and their names, engine temperatures |
-| Overlays that do not work (dimmed, struck-through badge, never opened by Auto) | Incident log | Relative, Standings, Radar, Gap graph, Track position bar, Incident log, Engine |
-| Relative and Standings columns left out | iRating, iRating change, licence, incidents | (the overlays do not work) |
+| Lacks | iRating, licences, incidents | iRating, licences, incidents, engine temperatures |
+| Overlays that do not work (dimmed, struck-through badge, never opened by Auto) | Incident log | Incident log, Engine |
+| Relative and Standings columns left out | iRating, iRating change, licence, incidents | iRating, iRating change, licence, incidents |
 
 ## Pages
 

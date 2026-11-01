@@ -11,7 +11,9 @@ package main
 import (
 	"encoding/binary"
 	"fmt"
+	"log"
 	"math"
+	"path/filepath"
 	"strings"
 	"sync"
 	"time"
@@ -31,6 +33,8 @@ const acPathBins = 1000
 type acSource struct {
 	acc  bool
 	bc   *accBcast
+	af   *acFieldFile // Assetto Corsa: the cars its in-game app writes (acapp.go)
+	afSt string
 	mu   sync.Mutex
 	v    acViews
 	img  *irImage
@@ -68,6 +72,19 @@ func (s *acSource) Open() error {
 	s.v = v
 	if s.acc {
 		s.bc = startACCBcast()
+	} else {
+		s.af = &acFieldFile{}
+		if root := acRoot(); root != "" {
+			s.af.path = filepath.Join(root, "apps", "python", "PitlaneHQ", "field.txt")
+			changed, err := acAppInstall(root, acPythonIni())
+			if err != nil {
+				log.Printf("Assetto Corsa app: %v", err)
+			}
+			if changed {
+				s.af.restart = true
+				log.Printf("Assetto Corsa: Pitlane HQ's app installed in %s; the game loads it from its next start", root)
+			}
+		}
 	}
 	s.img = newIRImage(acVarDefs())
 	s.lastLaps = -1
@@ -102,6 +119,10 @@ func (s *acSource) Close() {
 	}
 	s.bc.Close()
 	s.bc = nil
+	if s.af != nil {
+		s.af = nil
+		accBcastNow.Store("")
+	}
 	s.mu.Unlock()
 }
 
@@ -231,6 +252,26 @@ func (s *acSource) convert(p, g, st []byte) bool {
 		me = [2]float64{af32(g, 252), af32(g, 260)} // Assetto Corsa: carCoordinates of your car only
 		cars = []car{{id: 0, x: me[0], z: me[1]}}
 	}
+	// Assetto Corsa: every car from Pitlane HQ's in-game app (you are car 0)
+	var fld accField
+	bcOK := false
+	if !s.acc && s.af != nil {
+		now := time.Now()
+		f, list, ok := s.af.get(now)
+		if ok {
+			fld, bcOK = f, true
+			cars = cars[:1]
+			for _, c := range list {
+				if c.id != 0 && len(cars) < lmuCars {
+					cars = append(cars, car{id: c.id, x: c.x, z: c.z})
+				}
+			}
+		}
+		if st := s.af.status(now); st != s.afSt {
+			s.afSt = st
+			setFieldState(st)
+		}
+	}
 	// learn the track from your own driving: position at each point of the lap
 	if norm >= 0 && norm < 1 && (me[0] != 0 || me[1] != 0) {
 		k := int(norm * acPathBins)
@@ -245,8 +286,6 @@ func (s *acSource) convert(p, g, st []byte) bool {
 	}
 
 	// ACC's broadcasting API: who drives each car, positions, laps, times
-	var fld accField
-	bcOK := false
 	if s.acc {
 		fld, bcOK = s.bc.snapshot(time.Now())
 	}
@@ -259,7 +298,7 @@ func (s *acSource) convert(p, g, st []byte) bool {
 		sess = ai32(g, acg_sessionIndex)
 	}
 	shmType := ai32(g, acg_acc_session_type)
-	s.writeSession(st, sess, ids, player, fld, bcOK, accSessionType(fld.sessType, bcOK, shmType))
+	s.writeSession(st, sess, ids, player, fld, bcOK, accSessionType(fld.sessType, bcOK && !fld.fromAC, shmType))
 
 	m := s.img
 	m.begin()
@@ -465,7 +504,7 @@ func (s *acSource) convert(p, g, st []byte) bool {
 		prog, behind float64
 	}
 	rows := make([]bcRow, len(cars))
-	race := bcOK && fld.sessType == 10
+	race := bcOK && (fld.sessType == 10 && !fld.fromAC || fld.fromAC && ai32(g, acg_acc_session_type) == 2)
 	if bcOK {
 		leadProg, fastest := -1.0, -1
 		for i, c := range cars {
@@ -474,7 +513,7 @@ func (s *acSource) convert(p, g, st []byte) bool {
 				continue
 			}
 			e := fld.entries[c.id]
-			_, cls := accModel(e.model)
+			_, cls := e.modelClass()
 			rows[i] = bcRow{ok: true, c: bc, class: cls, prog: float64(bc.laps) + bc.spline}
 			if rows[i].prog > leadProg {
 				leadProg = rows[i].prog
@@ -512,7 +551,7 @@ func (s *acSource) convert(p, g, st []byte) bool {
 		pct := -1.0
 		if i == player {
 			pct = math.Max(0, norm)
-		} else if s.acc {
+		} else if s.acc || bcOK {
 			pct = s.pctAt(c.x, c.z)
 			if rows[i].ok && rows[i].c.spline >= 0 && rows[i].c.spline <= 1 {
 				pct = rows[i].c.spline // the game's own place on the lap, better than the track learned so far
@@ -585,7 +624,7 @@ func (s *acSource) convert(p, g, st []byte) bool {
 	case right2 == 1:
 		lr = 3
 	}
-	if s.acc {
+	if s.acc || bcOK {
 		m.set("CarLeftRight", float64(lr))
 	}
 	m.setBool("IsOnTrack", status == 2 && !inPit)
@@ -654,7 +693,7 @@ func (s *acSource) writeSession(st []byte, sess int, ids []int, player int, fld 
 			e, has = fld.entries[ids[i]]
 		}
 		if has {
-			model, cls := accModel(e.model)
+			model, cls := e.modelClass()
 			d := e.driver()
 			if n := strings.TrimSpace(d.first + " " + d.last); n != "" {
 				r.name = n
@@ -665,7 +704,11 @@ func (s *acSource) writeSession(st []byte, sess int, ids []int, player int, fld 
 			}
 			r.num, r.class, r.color = e.num, cls, accClassColor(cls)
 			if i != player { // your own car keeps the game's own name of it
-				r.car, r.carPath, r.carID = model, fmt.Sprintf("acc_%d", e.model), lmuHash(fmt.Sprintf("acc_%d", e.model), 20000, 80000)
+				path := fmt.Sprintf("acc_%d", e.model)
+				if e.carName != "" {
+					path = e.carName
+				}
+				r.car, r.carPath, r.carID = model, path, lmuHash(path, 20000, 80000)
 			}
 		}
 		if i == player {

@@ -213,7 +213,7 @@ type statusMsg struct {
 	Demo      bool   `json:"demo"`
 	TickRate  int    `json:"tickRate"`
 	Game      string `json:"game"`            // the game chosen in Settings: auto, iracing or lmu
-	Bcast     string `json:"bcast,omitempty"` // ACC's broadcasting API (accbcast.go): "on", "restart" or ""
+	Bcast     string `json:"bcast,omitempty"` // the other cars' source: ACC's broadcasting API (accbcast.go), Assetto Corsa's app (acapp.go): "on", "restart" or ""
 }
 
 func currentStatus() statusMsg {
@@ -221,7 +221,7 @@ func currentStatus() statusMsg {
 	tel.mu.RLock()
 	defer tel.mu.RUnlock()
 	bc := ""
-	if tel.source == "acc" {
+	if tel.source == "acc" || tel.source == "ac" {
 		bc = accBcastState()
 	}
 	return statusMsg{tel.connected, tel.source, tel.demo, tel.tickRate, g, bc}

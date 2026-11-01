@@ -42,6 +42,15 @@ type accEntry struct {
 	model, num, cup, cur int
 	team                 string
 	drivers              []accDriver
+	carName              string // Assetto Corsa's own car id (its in-game app, acapp.go); ACC says the model
+}
+
+// the car's name and class: ACC's model table, or Assetto Corsa's car id (one class, the game's)
+func (e accEntry) modelClass() (string, string) {
+	if e.carName != "" {
+		return acPretty(e.carName), "Assetto Corsa"
+	}
+	return accModel(e.model)
 }
 
 func (e accEntry) driver() accDriver {
@@ -73,6 +82,7 @@ type accField struct {
 	phase    int
 	ver      int // grows when the entry list changes (names, cars)
 	at       time.Time
+	fromAC   bool // from Assetto Corsa's in-game app: the session type is the shared memory's
 }
 
 type accBcast struct {
@@ -96,6 +106,11 @@ func (b *accBcast) tell() {
 		return
 	}
 	b.told = st
+	setFieldState(st)
+}
+
+// setFieldState: what the app is told about the other cars' source (ACC's API, Assetto Corsa's app)
+func setFieldState(st string) {
 	accBcastNow.Store(st)
 	tel.mu.Lock()
 	tel.schemaVer++

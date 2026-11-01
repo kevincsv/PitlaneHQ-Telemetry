@@ -3,8 +3,10 @@ package main
 // Assetto Corsa Competizione and Assetto Corsa: read the games' shared memory
 // (Local\acpmf_physics, acpmf_graphics, acpmf_static; always on, nothing to set up)
 // and write it into an iRacing-style memory image like LMU does. ACC also
-// publishes where every car is on track (radar, relative, map); the first
-// Assetto Corsa only publishes your own car. Layout: ac_layout.go.
+// publishes where every car is on track (radar, relative, map), and its
+// broadcasting API (accbcast.go) who drives each car, its position, laps and
+// times (standings, gaps); the first Assetto Corsa only publishes your own
+// car. Layout: ac_layout.go.
 
 import (
 	"encoding/binary"
@@ -28,6 +30,7 @@ const acPathBins = 1000
 
 type acSource struct {
 	acc  bool
+	bc   *accBcast
 	mu   sync.Mutex
 	v    acViews
 	img  *irImage
@@ -63,6 +66,9 @@ func (s *acSource) Open() error {
 		return err
 	}
 	s.v = v
+	if s.acc {
+		s.bc = startACCBcast()
+	}
 	s.img = newIRImage(acVarDefs())
 	s.lastLaps = -1
 	s.stop = make(chan struct{})
@@ -94,7 +100,16 @@ func (s *acSource) Close() {
 		s.v.Close()
 		s.v = nil
 	}
+	s.bc.Close()
+	s.bc = nil
 	s.mu.Unlock()
+}
+
+// bcastStatus: ACC's broadcasting API, "on", "restart" (the port was just written: start the game again) or ""
+func (s *acSource) bcastStatus() string {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.bc.status()
 }
 
 func acVarDefs() []demoVar {
@@ -229,17 +244,28 @@ func (s *acSource) convert(p, g, st []byte) bool {
 		s.prev = me
 	}
 
-	s.writeSession(st, len(cars), player)
+	// ACC's broadcasting API: who drives each car, positions, laps, times
+	var fld accField
+	bcOK := false
+	if s.acc {
+		fld, bcOK = s.bc.snapshot(time.Now())
+	}
+	ids := make([]int, len(cars))
+	for i, c := range cars {
+		ids[i] = c.id
+	}
+	sess := 0
+	if s.acc {
+		sess = ai32(g, acg_sessionIndex)
+	}
+	shmType := ai32(g, acg_acc_session_type)
+	s.writeSession(st, sess, ids, player, fld, bcOK, accSessionType(fld.sessType, bcOK, shmType))
 
 	m := s.img
 	m.begin()
 	et := s.sessionTime(g)
 	m.set("SessionTime", et)
 	m.set("SessionTick", float64(m.tick+1))
-	sess := 0
-	if s.acc {
-		sess = ai32(g, acg_sessionIndex)
-	}
 	m.set("SessionNum", float64(sess))
 	state := 4
 	flag := ai32(g, acg_flag)
@@ -326,6 +352,10 @@ func (s *acSource) convert(p, g, st []byte) bool {
 		m.set("Precipitation", rain/5)
 		m.set("TrackWetness", float64([]int{1, 1, 2, 3, 4, 5, 6, 7}[min(max(ai32(g, acg_trackGripStatus), 0), 7)]))
 		m.set("SessionTimeOfDay", af32(g, acg_Clock))
+		if w := af32(g, acg_windSpeed); w >= 0 && w < 100 {
+			m.set("WindVel", w)
+			m.set("WindDir", math.Mod(af32(g, acg_windDirection)+2*math.Pi, 2*math.Pi))
+		}
 	}
 	maxRPM := float64(ai32(st, acs_maxRpm))
 	if s.acc {
@@ -426,12 +456,67 @@ func (s *acSource) convert(p, g, st []byte) bool {
 		estLap = 120
 	}
 	left2, right2 := 0, 0
+	// class places and the gap to the leader, from the broadcasting API
+	type bcRow struct {
+		ok           bool
+		c            accCar
+		class        string
+		classPos     int
+		prog, behind float64
+	}
+	rows := make([]bcRow, len(cars))
+	race := bcOK && fld.sessType == 10
+	if bcOK {
+		leadProg, fastest := -1.0, -1
+		for i, c := range cars {
+			bc, ok := fld.cars[c.id]
+			if !ok {
+				continue
+			}
+			e := fld.entries[c.id]
+			_, cls := accModel(e.model)
+			rows[i] = bcRow{ok: true, c: bc, class: cls, prog: float64(bc.laps) + bc.spline}
+			if rows[i].prog > leadProg {
+				leadProg = rows[i].prog
+			}
+			if bc.best > 0 && (fastest < 0 || bc.best < fastest) {
+				fastest = bc.best
+			}
+		}
+		for i := range rows {
+			r := &rows[i]
+			if !r.ok {
+				continue
+			}
+			r.classPos = 1
+			for j := range rows {
+				if j != i && rows[j].ok && rows[j].class == r.class && rows[j].c.pos > 0 && rows[j].c.pos < r.c.pos {
+					r.classPos++
+				}
+			}
+			switch {
+			case race:
+				r.behind = (leadProg - r.prog) * estLap
+			case r.c.best > 0 && fastest > 0:
+				r.behind = float64(r.c.best-fastest) / 1000
+			}
+		}
+	}
+	accSec := func(ms int) float64 {
+		if ms <= 0 {
+			return -1
+		}
+		return float64(ms) / 1000
+	}
 	for i, c := range cars {
 		pct := -1.0
 		if i == player {
 			pct = math.Max(0, norm)
 		} else if s.acc {
 			pct = s.pctAt(c.x, c.z)
+			if rows[i].ok && rows[i].c.spline >= 0 && rows[i].c.spline <= 1 {
+				pct = rows[i].c.spline // the game's own place on the lap, better than the track learned so far
+			}
 			dx, dz := c.x-me[0], c.z-me[1]
 			along := dx*s.fwd[0] + dz*s.fwd[1]
 			side := -dx*s.fwd[1] + dz*s.fwd[0] // >0: left of the direction of travel
@@ -450,9 +535,30 @@ func (s *acSource) convert(p, g, st []byte) bool {
 		} else {
 			m.setAt("CarIdxTrackSurface", i, -1)
 		}
+		if r := rows[i]; r.ok {
+			bc := r.c
+			m.setAt("CarIdxPosition", i, float64(bc.pos))
+			m.setAt("CarIdxClassPosition", i, float64(r.classPos))
+			m.setAt("CarIdxLap", i, float64(bc.laps+1))
+			m.setAt("CarIdxLapCompleted", i, float64(bc.laps))
+			m.setAt("CarIdxLastLapTime", i, accSec(bc.last))
+			m.setAt("CarIdxBestLapTime", i, accSec(bc.best))
+			m.setAt("CarIdxF2Time", i, r.behind)
+			pit := bc.loc >= 2 && bc.loc <= 4 // pit lane, pit entry, pit exit
+			m.setAt("CarIdxOnPitRoad", i, b2f(pit))
+			if pit {
+				m.setAt("CarIdxTrackSurface", i, 2)
+			}
+			m.setAt("CarIdxGear", i, float64(bc.gear))
+			if i == player {
+				m.set("PlayerCarClassPosition", float64(r.classPos))
+			}
+		}
 		if i == player {
-			m.setAt("CarIdxPosition", i, float64(pos))
-			m.setAt("CarIdxClassPosition", i, float64(pos))
+			if !rows[i].ok {
+				m.setAt("CarIdxPosition", i, float64(pos))
+				m.setAt("CarIdxClassPosition", i, float64(pos))
+			}
 			m.setAt("CarIdxLap", i, float64(laps+1))
 			m.setAt("CarIdxLapCompleted", i, float64(laps))
 			m.setAt("CarIdxLastLapTime", i, last)
@@ -514,12 +620,16 @@ func (s *acSource) pctAt(x, z float64) float64 {
 	return (float64(best) + 0.5) / acPathBins
 }
 
-func (s *acSource) writeSession(st []byte, nCars, player int) {
+func (s *acSource) writeSession(st []byte, sess int, ids []int, player int, fld accField, bcOK bool, sessType string) {
 	track := awstr(st, acs_track, 33)
 	cfgName := awstr(st, acs_trackConfiguration, 33)
 	carID := awstr(st, acs_carModel, 33)
 	name := strings.TrimSpace(awstr(st, acs_playerName, 33) + " " + awstr(st, acs_playerSurname, 33))
-	key := fmt.Sprintf("%s|%s|%s|%s|%d|%d|%.0f", track, cfgName, carID, name, nCars, player, s.lapLen)
+	ver := -1
+	if bcOK {
+		ver = fld.ver
+	}
+	key := fmt.Sprintf("%s|%s|%s|%s|%v|%d|%.0f|%d|%d|%s", track, cfgName, carID, name, ids, player, s.lapLen, ver, sess, sessType)
 	if key == s.sessKey {
 		return
 	}
@@ -530,6 +640,50 @@ func (s *acSource) writeSession(st []byte, nCars, player int) {
 	}
 	trackName := acPretty(track)
 	lenKm := s.lapLen / 1000
+	// every car: who drives it, its car and class (ACC's entry list); without it "Car 2", "Car 3" in your car
+	type row struct {
+		name, abbr, team, car, carPath, class, color string
+		num, classID, carID                          int
+	}
+	rows := make([]row, max(len(ids), 1))
+	classes := map[string]int{}
+	for i := range rows {
+		r := row{name: fmt.Sprintf("Car %d", i+1), team: "-", car: acPretty(carID), carPath: carID, class: game, color: "0xffda59", num: i + 1, classID: 1, carID: lmuHash(carID, 20000, 80000)}
+		e, has := accEntry{}, false
+		if bcOK && i < len(ids) {
+			e, has = fld.entries[ids[i]]
+		}
+		if has {
+			model, cls := accModel(e.model)
+			d := e.driver()
+			if n := strings.TrimSpace(d.first + " " + d.last); n != "" {
+				r.name = n
+			}
+			r.abbr = d.short
+			if e.team != "" {
+				r.team = e.team
+			}
+			r.num, r.class, r.color = e.num, cls, accClassColor(cls)
+			if i != player { // your own car keeps the game's own name of it
+				r.car, r.carPath, r.carID = model, fmt.Sprintf("acc_%d", e.model), lmuHash(fmt.Sprintf("acc_%d", e.model), 20000, 80000)
+			}
+		}
+		if i == player {
+			if !has {
+				r.name = firstNonEmpty(name, "You")
+			} else if r.name == fmt.Sprintf("Car %d", i+1) {
+				r.name = firstNonEmpty(name, "You")
+			}
+		}
+		if r.abbr == "" {
+			r.abbr = r.name
+		}
+		if _, ok := classes[r.class]; !ok {
+			classes[r.class] = len(classes) + 1
+		}
+		r.classID = classes[r.class]
+		rows[i] = r
+	}
 	var sb strings.Builder
 	fmt.Fprintf(&sb, `---
 WeekendInfo:
@@ -546,19 +700,19 @@ WeekendInfo:
  SessionID: 0
  SubSessionID: 0
  Official: 0
- EventType: Race
+ EventType: %s
  Category: SportsCar
  SimMode: full
  Game: %s
- NumCarClasses: 1
+ NumCarClasses: %d
 SessionInfo:
- CurrentSessionNum: 0
+ CurrentSessionNum: %d
  Sessions:
- - SessionNum: 0
+ - SessionNum: %d
    SessionLaps: unlimited
    SessionTime: unlimited
-   SessionType: Race
-   SessionName: SESSION
+   SessionType: %s
+   SessionName: %s
 DriverInfo:
  DriverCarIdx: %d
  DriverUserID: %d
@@ -569,35 +723,31 @@ DriverInfo:
  DriverIncidentCount: 0
  Drivers:
 `, yamlSafe(track), lmuHash(track+"|"+cfgName, 1000000, 800000), lenKm, yamlSafe(trackName), yamlSafe(trackName), yamlSafe(acPretty(cfgName)),
-		game, player, player+1, ai32(st, acs_maxRpm), af32(st, acs_maxFuel))
-	for i := 0; i < max(nCars, 1); i++ {
-		n, car := fmt.Sprintf("Car %d", i+1), acPretty(carID)
-		if i == player {
-			n = firstNonEmpty(name, "You")
-		}
+		sessType, game, len(classes), sess, sess, sessType, strings.ToUpper(sessType), player, player+1, ai32(st, acs_maxRpm), af32(st, acs_maxFuel))
+	for i, r := range rows {
 		fmt.Fprintf(&sb, ` - CarIdx: %d
    UserName: %s
    AbbrevName: %s
    Initials: %s
    UserID: %d
-   TeamName: -
+   TeamName: %s
    CarNumber: "%d"
    CarNumberRaw: %d
    CarPath: %s
-   CarClassID: 1
+   CarClassID: %d
    CarID: %d
    CarScreenName: %s
    CarScreenNameShort: %s
    CarClassShortName: %s
-   CarClassColor: 0xffda59
+   CarClassColor: %s
    IRating: 0
    LicString: ""
    IsSpectator: 0
    CarIsPaceCar: 0
    CarIsAI: 0
    CurDriverIncidentCount: 0
-`, i, yamlSafe(n), yamlSafe(n), string([]rune(yamlSafe(n))[:1]), i+1, i+1, i+1, yamlSafe(carID), lmuHash(carID, 20000, 80000),
-			yamlSafe(car), yamlSafe(car), yamlSafe(game))
+`, i, yamlSafe(r.name), yamlSafe(r.abbr), string([]rune(yamlSafe(r.name))[:1]), i+1, yamlSafe(r.team), r.num, r.num, yamlSafe(r.carPath), r.classID, r.carID,
+			yamlSafe(r.car), yamlSafe(r.car), yamlSafe(r.class), r.color)
 	}
 	sb.WriteString("...\n")
 	s.img.setSession(sb.String())

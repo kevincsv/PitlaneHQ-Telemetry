@@ -119,6 +119,7 @@ must keep this server's protocol.
 | `app-screens.md` | Home, Analysis, licence summary, track and driver notes, main menu, +1L pills |
 | `community.md` | Leaderboards, records, track page, LMU class boards, wet badges, rivals, car families |
 | `lmu.md` | Le Mans Ultimate support |
+| `assetto-corsa.md` | Assetto Corsa Competizione and Assetto Corsa: shared memory, ACC's broadcasting API, what works where |
 | `pc-app.md` | The Windows app, installer, tray, local mode, fonts, startup, updates, uninstall |
 | `sync-and-accounts.md` | Sync, what is encrypted how, escrow, deleting an account |
 | `admin.md` | Admin mode, the admin page, usage analytics |

@@ -49,6 +49,11 @@ func TestGameSupportTable(t *testing.T) {
 		{"lmu", "columns", "ir", false}, {"lmu", "columns", "irc", false}, {"lmu", "columns", "lic", false}, {"lmu", "columns", "inc", false},
 		{"lmu", "items", "sof", false}, {"lmu", "items", "irc", false}, {"lmu", "columns", "last", true}, {"lmu", "widgets", "radar", true},
 		{"lmu", "widgets", "incidents", false}, {"iracing", "columns", "ir", true}, {"", "columns", "ir", true}, {"iracing", "widgets", "incidents", true},
+		// ACC: the broadcasting API gives the other drivers; the first Assetto Corsa only your car
+		{"acc", "widgets", "standings", true}, {"acc", "widgets", "gaps", true}, {"acc", "widgets", "radar", true}, {"acc", "columns", "last", true},
+		{"acc", "columns", "ir", false}, {"acc", "widgets", "incidents", false}, {"acc", "widgets", "engine", true},
+		{"ac", "widgets", "relative", false}, {"ac", "widgets", "radar", false}, {"ac", "widgets", "trackbar", false}, {"ac", "widgets", "engine", false},
+		{"ac", "widgets", "fuel", true}, {"ac", "widgets", "inputs", true}, {"iracing", "widgets", "trackbar", true}, {"lmu", "widgets", "engine", true},
 	} {
 		if got := gameHas(c.game, c.kind, c.name); got != c.want {
 			t.Errorf("gameHas(%q,%q,%q) = %v", c.game, c.kind, c.name, got)

@@ -212,14 +212,19 @@ type statusMsg struct {
 	Source    string `json:"source"`
 	Demo      bool   `json:"demo"`
 	TickRate  int    `json:"tickRate"`
-	Game      string `json:"game"` // the game chosen in Settings: auto, iracing or lmu
+	Game      string `json:"game"`            // the game chosen in Settings: auto, iracing or lmu
+	Bcast     string `json:"bcast,omitempty"` // ACC's broadcasting API (accbcast.go): "on", "restart" or ""
 }
 
 func currentStatus() statusMsg {
 	g := gamePref()
 	tel.mu.RLock()
 	defer tel.mu.RUnlock()
-	return statusMsg{tel.connected, tel.source, tel.demo, tel.tickRate, g}
+	bc := ""
+	if tel.source == "acc" {
+		bc = accBcastState()
+	}
+	return statusMsg{tel.connected, tel.source, tel.demo, tel.tickRate, g, bc}
 }
 
 // GET /api/stream?vars=Speed,RPM|*&hz=30 — Server-Sent Events.

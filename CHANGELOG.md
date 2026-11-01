@@ -4,13 +4,17 @@ Pitlane HQ is in **beta**. Pitlane HQ Agent (the PC app), the web app and the ph
 number, `0.MINOR.PATCH`. A MINOR version brings a set of new features, and fixes go in as "Fixes and
 improvements". 1.0.0 comes when the beta ends. Newest first.
 
+## 0.9.10 beta
+
+- When you uninstall Pitlane HQ from your PC, a short page asks why, so we can make it better.
+- Pitlane HQ is coming to the Microsoft Store, beside the download from our website. The Store keeps that copy up to date by itself.
+- The downloads show Steam as coming soon.
+- The Discord bot's /pro shows what will be part of Pitlane HQ Pro when the beta ends and what stays free.
+- Fixes and improvements.
+
 ## 0.9.9 beta
 
 - In the Overlays tab the tag that says whose data the preview plays sits next to Open or Closed, so it no longer covers the overlay.
-- The Discord bot's /pro shows what will be part of Pitlane HQ Pro when the beta ends and what stays free.
-- When you uninstall Pitlane HQ from your PC, a short page asks why, so we can make it better.
-- The downloads show Steam as coming soon.
-- Pitlane HQ is coming to the Microsoft Store, beside the download from our website. The Store keeps that copy up to date by itself.
 - Fixes and improvements.
 
 ## 0.9.8 beta

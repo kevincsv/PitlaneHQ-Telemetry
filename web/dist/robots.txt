@@ -1,3 +1,4 @@
+# Every robot may read the public pages, search engines and AI assistants alike. /llms.txt says what Pitlane HQ is.
 User-agent: *
 Allow: /
 # the most active leagues the landing shows (public, read by the page)

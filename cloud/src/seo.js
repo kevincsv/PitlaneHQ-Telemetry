@@ -14,12 +14,14 @@ import { foundLeagues } from "./leaguescan.js";
 const SITE = "https://pitlanehq.app";
 // SEO_VER: raised when the public pages change (new languages, new addresses, new texts): every page is sent to
 // IndexNow again once. SEO_DATE: the day their texts last changed, the sitemap's lastmod of the pages without data.
-const SEO_VER = "12", SEO_DATE = "2026-10-30";
+const SEO_VER = "13", SEO_DATE = "2026-11-01";
 const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
 const slug = (s) => String(s || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 80);
 const fmt = (t) => { if (!(t > 0)) return "–"; const m = Math.floor(t / 60), s = t - m * 60; return (m ? m + ":" + (s < 10 ? "0" : "") : "") + s.toFixed(3); };
 const cap = (s) => String(s || "").charAt(0).toUpperCase() + String(s || "").slice(1);
 const day = (v) => (v > 0 ? new Date(v).toISOString().slice(0, 10) : "");
+// the latest of some days (YYYY-MM-DD), else the day the texts last changed
+const later = (...d) => d.filter(Boolean).sort().pop() || SEO_DATE;
 // text that came through a wrong encoding ("AutÃ³dromo") read back as it was written
 const fix = (s) => { s = String(s || ""); if (!/[ÃÂ]/.test(s)) return s; try { return decodeURIComponent(escape(s)); } catch (e) { return s; } };
 // the three languages of the public pages: English at the root, Spanish under /es, Portuguese (Brazil) under /pt
@@ -139,8 +141,10 @@ const lmuLinks = (l) => [[LANDL[l].path, LANDL[l].h1], [OVLL[l].path, OVLL[l].h1
   ...(HAS.lmuLeagues ? [[LEAGL[l].path, LEAGL[l].h1]] : []), ...(HAS.lmuRecords ? [[REC_IDX.lmu[l], S[l].recH(GNAME.lmu)]] : [])];
 const iracingLinks = (l) => [...TOPICS.filter((x) => x.game !== "lmu").map((x) => [x[l].path, x[l].h1]), [OVL[l].path, OVL[l].h1], [LEAG[l].path, LEAG[l].h1], [REC_IDX.iracing[l], S[l].recH(GNAME.iracing)]];
 
-function page(l, { title, desc, path, alts, body, ld, noindex, game = "iracing" }) {
+function page(l, { title, desc, path, alts, body, ld, noindex, game = "iracing", mod }) {
   const t = T[l], other = game === "lmu" ? "iracing" : "lmu";
+  // every indexed page says what it is and when its text last changed (search engines and AI assistants read it)
+  if (path && !noindex) ld = [webPageLd(l, path, title, desc, mod), ...(ld || [])];
   const lg = game === "lmu" && HAS.lmuLeagues ? LEAGL[l].path : LEAG[l].path, rc = game === "lmu" && HAS.lmuRecords ? REC_IDX.lmu[l] : REC_IDX.iracing[l];
   const hl = alts ? LANGS.map((k) => `<link rel="alternate" hreflang="${HLANG[k]}" href="${SITE}${alts[k]}">`).join("") + `<link rel="alternate" hreflang="x-default" href="${SITE}${alts.en}">` : "";
   const others = alts ? LANGS.filter((k) => k !== l).map((k) => `<a href="${alts[k]}" hreflang="${HLANG[k]}" lang="${HLANG[k]}">${NAME[k]}</a>`).join("") : "";
@@ -157,13 +161,29 @@ ${ld ? `<script type="application/ld+json">${JSON.stringify(ld).replace(/</g, "\
 <main class="w">${body}</main>
 <footer><div class="w"><p class="m">${esc(GUIDES[l])} · iRacing · ${iracingLinks(l).map(([p, h]) => `<a href="${p}">${esc(h)}</a>`).join(" · ")}</p><p class="m">${esc(t.lmuH)} · ${lmuLinks(l).map(([p, h]) => `<a href="${p}">${esc(h)}</a>`).join(" · ")}</p>Pitlane HQ · ${esc(t.free)} · <a href="/downloads">${esc(t.dl)}</a> · <a href="mailto:support@pitlanehq.app">support@pitlanehq.app</a> · ${LANGS.map((k) => `<a href="${LAND[k].path}" hreflang="${HLANG[k]}">${NAME[k]}</a>`).join(" · ")}</div></footer>${VISIT_JS}</body></html>`;
 }
+// the page itself: its address, its name, its language, the site it belongs to and the day it last changed
+const webPageLd = (l, path, name, description, mod) => ({ "@context": "https://schema.org", "@type": "WebPage", "@id": SITE + path + "#page", url: SITE + path, name, description,
+  inLanguage: HLANG[l], isPartOf: { "@id": SITE + "/#website" }, about: { "@id": SITE + "/#app" }, dateModified: mod || SEO_DATE });
+// the steps to start, shown on the landings (and as HowTo for search engines)
+const START = {
+  en: { t: "How to start", name: (gn) => `How to record your ${gn} telemetry with Pitlane HQ`, steps: (gn) => ["Download Pitlane HQ Agent and install it on the Windows PC where you race.",
+    "Open it and sign in, or create a free account.", `Drive in ${gn}. Every lap is saved by itself.`, "Open Analysis in the app, on the web or on your phone, to see where you lose time."] },
+  es: { t: "Cómo empezar", name: (gn) => `Cómo grabar tu telemetría de ${gn} con Pitlane HQ`, steps: (gn) => ["Descarga Pitlane HQ Agent e instálalo en el PC con Windows donde corres.",
+    "Ábrelo e inicia sesión, o crea una cuenta gratis.", `Conduce en ${gn}. Cada vuelta se guarda sola.`, "Abre Análisis en la app, en la web o en el móvil para ver dónde pierdes tiempo."] },
+  pt: { t: "Como começar", name: (gn) => `Como gravar sua telemetria do ${gn} com o Pitlane HQ`, steps: (gn) => ["Baixe o Pitlane HQ Agent e instale no PC com Windows onde você corre.",
+    "Abra e entre na sua conta, ou crie uma conta grátis.", `Pilote no ${gn}. Cada volta é salva sozinha.`, "Abra Análise no app, na web ou no celular para ver onde você perde tempo."] },
+};
+const howToLd = (l, gn, path) => ({ "@context": "https://schema.org", "@type": "HowTo", name: START[l].name(gn), inLanguage: HLANG[l],
+  estimatedCost: { "@type": "MonetaryAmount", currency: "USD", value: "0" }, tool: [{ "@type": "HowToTool", name: "Pitlane HQ Agent" }],
+  step: START[l].steps(gn).map((text, i) => ({ "@type": "HowToStep", position: i + 1, text, url: `${SITE}${path}#start` })) });
 // the breadcrumb search engines show under the result: Pitlane HQ › Records › the page
 const crumbs = (items) => ({ "@context": "https://schema.org", "@type": "BreadcrumbList", itemListElement: items.map(([name, path], i) => ({ "@type": "ListItem", position: i + 1, name, item: SITE + path })) });
 const faqLd = (faq) => ({ "@context": "https://schema.org", "@type": "FAQPage", mainEntity: faq.map(([q, a]) => ({ "@type": "Question", name: q, acceptedAnswer: { "@type": "Answer", text: a } })) });
 // the app, as search engines like it described (never a rating: Pitlane HQ has none to show)
-const appLd = (l, desc, shots) => ({ "@context": "https://schema.org", "@type": "SoftwareApplication", "@id": SITE + "/#app", name: "Pitlane HQ", alternateName: ["PitlaneHQ", "Pitlane HQ Agent"], url: SITE + "/",
+const appLd = (l, desc, shots, features) => ({ "@context": "https://schema.org", "@type": "SoftwareApplication", "@id": SITE + "/#app", name: "Pitlane HQ", alternateName: ["PitlaneHQ", "Pitlane HQ Agent"], url: SITE + "/",
   applicationCategory: "SportsApplication", applicationSubCategory: "Sim racing telemetry", operatingSystem: "Windows, Android, Web", description: desc, inLanguage: HLANG[l], image: `${SITE}/og${l === "en" ? "" : "-" + l}.png`,
   ...(shots && shots.length ? { screenshot: shots.map((f) => ({ "@type": "ImageObject", url: SITE + imgSrc(l, f), width: (SHOT[f] || [])[0], height: (SHOT[f] || [])[1] })) } : {}),
+  ...(features && features.length ? { featureList: features } : {}), downloadUrl: SITE + "/downloads", isAccessibleForFree: true,
   offers: { "@type": "Offer", price: "0", priceCurrency: "USD" }, publisher: { "@id": SITE + "/#org" } });
 const siteLd = (l) => [
   { "@context": "https://schema.org", "@type": "WebSite", "@id": SITE + "/#website", name: "Pitlane HQ", alternateName: ["PitlaneHQ", "Pitlane"], url: SITE + "/", inLanguage: HLANG[l], publisher: { "@id": SITE + "/#org" } },
@@ -566,11 +586,12 @@ async function landing(env, l, game) {
 <div class="cta"><a class="btn p" href="/dl/PitlaneHQ-Setup.exe">${esc(L.dl)}</a><a class="btn" href="/">${esc(L.app)}</a></div>
 <div class="g">${L.cards.map(([h, p]) => `<section class="c"><h2>${esc(h)}</h2><p>${esc(p)}</p></section>`).join("")}</div>
 ${shot(l, lmu ? "coach.jpg" : "compare.jpg")}
+<h2 id="start">${esc(START[l].t)}</h2><ol>${START[l].steps(GNAME[game]).map((x) => `<li>${esc(x)}</li>`).join("")}</ol>
 ${cross(l, game)}
 <h2>${esc(GUIDES[l])}</h2><div class="g">${guides.map((x) => `<a class="c" href="${x.path}"><h3>${esc(x.h1)} →</h3><p>${esc(x.desc)}</p></a>`).join("")}</div>
 ${combos.length ? `<h2>${esc(L.recs)}</h2><p class="m">${esc(L.recsLead)}</p><div class="tw"><table><tbody>${combos.map((x) => `<tr><td><a href="${recPath(l, x, game)}">${esc(fix(x.track))}</a></td><td class="m">${esc(fix(x.car))}</td><td class="t">${fmt(x.best)}</td></tr>`).join("")}</tbody></table></div><p><a href="${REC_IDX[game][l]}">${esc(T[l].rec)} →</a></p>` : ""}
 <h2>${esc(L.faqT)}</h2>${L.faq.map(([q, a]) => `<details><summary>${esc(q)}</summary><p>${esc(a)}</p></details>`).join("")}`;
-  const ld = [...(lmu ? [crumbs([["Pitlane HQ", LAND[l].path], ["Le Mans Ultimate", L.path]])] : []), appLd(l, L.desc, [lmu ? "coach.jpg" : "compare.jpg"]), ...siteLd(l), faqLd(L.faq)];
+  const ld = [...(lmu ? [crumbs([["Pitlane HQ", LAND[l].path], ["Le Mans Ultimate", L.path]])] : []), appLd(l, L.desc, [lmu ? "coach.jpg" : "compare.jpg"], L.cards.map(([h]) => h)), ...siteLd(l), howToLd(l, GNAME[game], L.path), faqLd(L.faq)];
   return html(page(l, { title: L.title, desc: L.desc, path: L.path, alts: lmu ? LANDL_ALTS : LAND_ALTS, body, ld, game }));
 }
 
@@ -620,7 +641,7 @@ async function recordsCombo(env, l, t, c, asked, game = "iracing") {
 <div class="tw"><table><thead><tr><th class="n">#</th><th>${esc(W.driver)}</th><th>${esc(W.time)}</th><th>${esc(W.date)}</th></tr></thead><tbody>${laps.map((v, i) => `<tr><td class="n">${i + 1}</td><td>${esc(v.alias || W.anon)}</td><td class="t">${fmt(v.time)}</td><td class="m">${day(v.created)}</td></tr>`).join("")}</tbody></table></div>
 <div class="c" style="margin-top:22px"><h2>${esc(W.cQ)}</h2><p>${esc(W.cA(gn))}</p><div class="cta" style="margin-bottom:0"><a class="btn p" href="/dl/PitlaneHQ-Setup.exe">${esc(L.dl)}</a><a class="btn" href="${L.path}">${esc(T[l].tel[game])}</a></div></div>`;
   const ld = [crumbs([["Pitlane HQ", LAND[l].path], ...(game === "lmu" ? [["Le Mans Ultimate", LANDL[l].path]] : []), [T[l].rec, idx], [car + " · " + track, recPath(l, x, game)]])];
-  return html(page(l, { title, desc, path: recPath(l, x, game), alts: recAlts(x, game), body, ld, game }));
+  return html(page(l, { title, desc, path: recPath(l, x, game), alts: recAlts(x, game), body, ld, game, mod: later(SEO_DATE, day(Math.max(0, ...laps.map((v) => +v.created || 0)))) }));
 }
 
 // an address of the public pages that does not exist: a real 404 (never the app), so it is not indexed
@@ -670,7 +691,6 @@ async function sitemap(env) {
   const [combos, lmuCombos, D, DL] = await Promise.all([topCombos(env, 2000), topCombos(env, 2000, "lmu"), leaguesData(env), leaguesData(env, "lmu")]);
   // every page with its two other languages (xhtml:link), as search engines like them
   const u = (p, f, pr, alts, mod) => `<url><loc>${SITE}${p}</loc>${mod ? `<lastmod>${mod}</lastmod>` : ""}<changefreq>${f}</changefreq><priority>${pr}</priority>${alts ? LANGS.map((k) => `<xhtml:link rel="alternate" hreflang="${HLANG[k]}" href="${SITE}${alts[k]}"/>`).join("") + `<xhtml:link rel="alternate" hreflang="x-default" href="${SITE}${alts.en}"/>` : ""}</url>`;
-  const later = (...d) => d.filter(Boolean).sort().pop() || SEO_DATE;
   const newest = (cs) => later(SEO_DATE, day(Math.max(0, ...cs.map((x) => x.upd || 0))));
   const s = [u("/", "weekly", "1.0", null, newest(combos))];
   const all = (alts, f, pr, mod) => { for (const k of LANGS) s.push(u(alts[k], f, k === "en" ? pr : (pr - 0.1).toFixed(1), alts, mod)); };
@@ -731,9 +751,63 @@ export async function indexNow(env) {
   if (full) await env.DB.prepare("INSERT INTO app_state (k, v, at) VALUES ('indexnow_ver', ?1, ?2) ON CONFLICT(k) DO UPDATE SET v=excluded.v, at=excluded.at").bind(SEO_VER, Date.now()).run().catch(() => {});
 }
 
-// the search engines' robots that reached the server (Googlebot, Bingbot…): the last visit of each, for the admins, so
-// it is clear whether they get in at all (a robot blocked before the server never shows here)
-const BOT = /(Googlebot|Google-InspectionTool|bingbot|YandexBot|DuckDuckBot|Applebot)/i;
+// ---------- llms.txt ----------
+// /llms.txt (llmstxt.org): what Pitlane HQ is and its pages, in Markdown, for AI assistants and AI search that read a
+// site before they answer about it; /llms-full.txt: the English pages' own texts, whole. Made from the same texts as
+// the pages, so they never say anything the pages do not. Plain facts, never hype; noindex (they are no page for people).
+const mdLink = ([path, h, d]) => `- [${h}](${SITE}${path})${d ? ": " + d : ""}`;
+const ABOUT = "Pitlane HQ (also written PitlaneHQ) is a free sim racing telemetry app for iRacing and Le Mans Ultimate. Le Mans Ultimate support is in beta, and ACC and Assetto Corsa are in development. "
+  + "Pitlane HQ Agent, a Windows program, runs next to the game and records every lap by itself. The web app and the Android app show the laps with a coach that compares them with real faster laps, lap comparison, braking points, "
+  + "leaderboards by car and track, race summaries with the iRating and leagues to join. Pitlane HQ Agent also draws overlays on top of the game, in six looks and in VR, and sends live telemetry to a phone. "
+  + "Everything is free during the beta. The pages are in English, Spanish and Portuguese (Brazil).";
+function llmsTxt() {
+  const l = "en", g = (x) => [x.path, x.h1, x.desc];
+  const ir = [g(LAND.en), g(OVL.en), ...TOPICS.filter((x) => x.game !== "lmu").map((x) => g(x.en)), g(LEAG.en), [REC_IDX.iracing.en, S.en.recH("iRacing"), S.en.recD("iRacing")]];
+  const lm = [g(LANDL.en), g(OVLL.en), ...TOPICS.filter((x) => x.game === "lmu").map((x) => g(x.en)),
+    ...(HAS.lmuLeagues ? [g(LEAGL.en)] : []), ...(HAS.lmuRecords ? [[REC_IDX.lmu.en, S.en.recH("Le Mans Ultimate"), S.en.recD("Le Mans Ultimate")]] : [])];
+  const other = LANGS.filter((k) => k !== l).flatMap((k) => [[LAND[k].path, LAND[k].h1 + " (" + NAME[k] + ")"], [LANDL[k].path, LANDL[k].h1 + " (" + NAME[k] + ")"]]);
+  return `# Pitlane HQ
+
+> Free iRacing and Le Mans Ultimate telemetry with a lap coach, overlays, leaderboards and leagues, on Windows, the web and Android.
+
+${ABOUT}
+
+- Website and web app ${SITE}/
+- Download ${SITE}/downloads
+- Support support@pitlanehq.app
+
+## iRacing
+
+${ir.map(mdLink).join("\n")}
+
+## Le Mans Ultimate
+
+${lm.map(mdLink).join("\n")}
+
+## Download
+
+${[["/downloads", "Download Pitlane HQ", "Pitlane HQ Agent for Windows and the Android app"], ["/changelog", "What's new", "the release notes of every version"]].map(mdLink).join("\n")}
+
+## Optional
+
+${[["/llms-full.txt", "Full texts", "every English page above, whole"], ...other, ["/privacy", "Privacy policy"], ["/terms", "Terms of service"]].map(mdLink).join("\n")}
+`;
+}
+function llmsFull() {
+  const l = "en", qa = (faq) => faq.map(([q, a]) => `### ${q}\n\n${a}`).join("\n\n");
+  const sec = (path, h1, lead, parts, faq) => `# ${h1}\n\n${SITE}${path}\n\n${lead}\n\n${parts.map(([h, p]) => `## ${h}\n\n${p}`).join("\n\n")}${faq && faq.length ? "\n\n## " + LAND[l].faqT + "\n\n" + qa(faq) : ""}`;
+  const land = (L, gn) => sec(L.path, L.h1, L.lead, [...L.cards, [START[l].t, START[l].steps(gn).map((x, i) => `${i + 1}. ${x}`).join("\n")]], L.faq);
+  const W = OVW[l], ov = (O) => sec(O.path, O.h1, O.lead, [...O.items, [W.expT, W.exp], [W.vrT, W.vr], [W.howT, W.how.map((x) => "- " + x).join("\n")]], O.faq);
+  return [`# Pitlane HQ\n\n${ABOUT}`, land(LAND[l], "iRacing"), ov(OVL[l]), ...TOPICS.filter((x) => x.game !== "lmu").map((x) => sec(x[l].path, x[l].h1, x[l].lead, x[l].secs, x[l].faq)),
+    land(LANDL[l], "Le Mans Ultimate"), ov(OVLL[l]), ...TOPICS.filter((x) => x.game === "lmu").map((x) => sec(x[l].path, x[l].h1, x[l].lead, x[l].secs, x[l].faq)),
+    sec(LEAG[l].path, LEAG[l].h1, LEAG[l].lead, [], LEAG[l].faq), sec(REC_IDX.iracing[l], S[l].recH("iRacing"), S[l].recD("iRacing"), [[S[l].howT, S[l].how("iRacing")]], S[l].faq("iRacing"))].join("\n\n---\n\n") + "\n";
+}
+const LLMS = { "/llms.txt": llmsTxt, "/llms-full.txt": llmsFull };
+
+// the robots that reached the server, search engines (Googlebot, Bingbot…) and AI assistants' and AI search's
+// (GPTBot, ClaudeBot, PerplexityBot…): the last visit of each, for the admins, so it is clear whether they get in at
+// all (a robot blocked before the server never shows here)
+const BOT = /(Googlebot|Google-InspectionTool|bingbot|YandexBot|DuckDuckBot|DuckAssistBot|Applebot|GPTBot|OAI-SearchBot|ChatGPT-User|ClaudeBot|Claude-SearchBot|Claude-User|PerplexityBot|Perplexity-User|CCBot|Amazonbot|meta-externalagent|MistralAI-User)/i;
 async function noteBot(req, env, p) {
   const m = BOT.exec(req.headers.get("user-agent") || "");
   if (!m || !env.DB) return;
@@ -767,6 +841,8 @@ export async function seoPage(req, env, url, ctx) {
   const p = url.pathname.replace(/\/+$/, "") || "/";
   await noteBot(req, env, p);
   if (p === "/" + INDEXNOW_KEY + ".txt") return new Response(INDEXNOW_KEY, { headers: { "content-type": "text/plain; charset=utf-8" } });
+  if (LLMS[p]) { await readHas(env); const t = LLMS[p]();
+    return new Response(req.method === "HEAD" ? null : t, { headers: { "content-type": "text/plain; charset=utf-8", "cache-control": "public, max-age=3600", "x-robots-tag": "noindex", etag: etagOf(t) } }); }
   if (!isPublic(p)) return null;
   // the page as the server's edge keeps it for a few minutes (the database is read once for many visits); a local
   // server keeps nothing

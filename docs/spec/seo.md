@@ -43,6 +43,16 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   404 page for any address that does not exist, never the app or the lap viewer with 200; the viewer is noindex), the
   sitemap made by the server, IndexNow once a day. www.pitlanehq.app is a custom domain of the Worker
   (made by the deploy) that answers 301 to pitlanehq.app.
+  AI assistants and AI search: robots.txt shuts no robot out of the public pages (AI crawlers such as GPTBot, ClaudeBot or
+  PerplexityBot read them like search engines; the test checks there is never a `Disallow: /`). `/llms.txt` (llmstxt.org,
+  Markdown as plain text, noindex) says in plain facts what Pitlane HQ is and lists every English public page with its
+  description (Le Mans Ultimate's leagues and records only while they exist), the downloads, the other languages'
+  landings and `/llms-full.txt`, every English page's own texts whole; both are made from the pages' texts, so they never
+  say anything the pages do not. Every indexed page carries a WebPage node (its address, name, language and
+  `dateModified`, `SEO_DATE` or a record's newest lap); the two landings show "How to start" (four steps, `START`) and carry
+  them as HowTo, never on a page where the steps do not show; the SoftwareApplication says `downloadUrl` and
+  `isAccessibleForFree`, and on the landings its `featureList` is their cards' titles. The robots noted for the admins
+  (`noteBot`, `bot_<name>` in app_state) include the AI crawlers.
   Titles, descriptions and texts name the brand as people search it (Pitlane HQ, PitlaneHQ; `alternateName` in the
   JSON-LD) and what it is (iRacing and Le Mans Ultimate telemetry, sim racing telemetry, lap analysis, overlays), plainly,
   never stuffed, never claiming an iPhone app before it is on the App Store; competitors' names only in a question, never a

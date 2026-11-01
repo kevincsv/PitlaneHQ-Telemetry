@@ -203,4 +203,36 @@ for (const [path, p] of pages) for (const href of new Set(p.links)) {
   const walk = (d, pre) => readdirSync(d, { withFileTypes: true }).flatMap((e) => e.isDirectory() ? walk(d + e.name + "/", pre + e.name + "/") : [pre + e.name]);
   for (const f of walk(DIST + "landing/", "/landing/")) assert.ok(re.test(f), `the worker serves ${f}`);
 }
+// every indexed page names itself (WebPage) with the day its text last changed; the landings carry their steps as HowTo
+for (const [path, p] of pages) {
+  const wp = p.ld.find((x) => x["@type"] === "WebPage");
+  assert.ok(wp && wp.url === SITE + path && /^\d{4}-\d\d-\d\d$/.test(wp.dateModified), `${path} WebPage with dateModified`);
+}
+for (const path of ["/iracing-telemetry", "/es/telemetria-le-mans-ultimate", "/pt/telemetria-iracing"]) {
+  const h = pages.get(path).ld.find((x) => x["@type"] === "HowTo");
+  assert.ok(h && h.step.length >= 3, `${path} HowTo`);
+  for (const st of h.step) assert.ok(pages.get(path).text.includes(st.text), `${path} shows the HowTo step "${st.text}"`);
+}
+assert.ok(!pages.get("/iracing-coach").ld.some((x) => x["@type"] === "HowTo"), "HowTo only where the steps show");
+
+// llms.txt for AI assistants: plain text, not indexed, every English page listed, every link answering
+{
+  const r = await get(env, "/llms.txt"); assert.equal(r.status, 200); assert.match(r.headers.get("content-type"), /^text\/plain/); assert.equal(r.headers.get("x-robots-tag"), "noindex");
+  const t = await r.text();
+  assert.match(t, /^# Pitlane HQ\n\n> /, "llms.txt starts with the name and a summary");
+  assert.match(t, /iRacing/); assert.match(t, /Le Mans Ultimate/); assert.ok(!/App Store|iPhone/.test(t), "no iPhone app claimed");
+  for (const set of [...STATIC, ...LMU_DATA]) assert.ok(t.includes(`(${SITE}${set.en})`), `llms.txt lists ${set.en}`);
+  for (const m of t.matchAll(/\]\(https:\/\/pitlanehq\.app(\/[^)]*)\)/g)) { const href = m[1]; if (/^\/(downloads|changelog|privacy|terms)$/.test(href)) continue;
+    const x = await get(env, href); assert.ok(x && x.status === 200, `llms.txt links ${href}, which answers ${x && x.status}`); }
+  const bare = await (await get(world({ lmu: false }), "/llms.txt")).text();
+  for (const set of LMU_DATA) assert.ok(!bare.includes(set.en + ")"), `llms.txt leaves out ${set.en} while it is empty`);
+  const full = await (await get(env, "/llms-full.txt")).text();
+  for (const x of TOPICS) { assert.ok(full.includes("# " + x.en.h1), `llms-full.txt has ${x.en.path}`); assert.ok(full.includes(x.en.faq[0][1]), `llms-full.txt has the answers of ${x.en.path}`); }
+}
+// robots.txt shuts no robot out of the public pages (search engines and AI search alike) and names the sitemap
+{
+  const rb = readFileSync(DIST + "robots.txt", "utf8");
+  assert.ok(!/^Disallow:\s*\/\s*$/m.test(rb), "no robot is shut out of the whole site");
+  assert.match(rb, /^Sitemap: https:\/\/pitlanehq\.app\/sitemap\.xml$/m);
+}
 console.log("seo ok:", pages.size, "pages,", locs.length, "addresses in the sitemap");

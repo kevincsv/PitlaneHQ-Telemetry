@@ -101,6 +101,9 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   deleted, an unused one after 270 days (daily), all of them with the account. Without the secret nothing is sent and the
   phones' background check finds the alerts as before.
 
+- A driver's profile (`openProfile`; the phones' profile screen) shows their 3 latest races under Recent races and
+  a "Show more (N)" button that opens the rest in place.
+
 ## Friends
 
 - Follow drivers (`cloud/src/friends.js`, table `follows`, migration 0090): "Follow" on a driver's public profile

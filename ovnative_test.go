@@ -891,3 +891,31 @@ func TestNativeOverlayTyreBadge(t *testing.T) {
 		t.Fatalf("no names: %q", l)
 	}
 }
+
+func TestTrafficItem(t *testing.T) {
+	st := newOvState("en")
+	st.ses = &ovSession{Drivers: map[int]*ovDriver{
+		0: {Idx: 0, Name: "Me", Class: 2, ClsName: "LMGT3"},
+		1: {Idx: 1, Name: "Hyper", Class: 1, ClsName: "HY"},
+		2: {Idx: 2, Name: "Slow", Class: 3, ClsName: "LMP3"},
+	}}
+	set := func(k string, v any) { b, _ := json.Marshal(v); st.frame[k] = b }
+	set("PlayerCarIdx", 0)
+	set("OnPitRoad", false)
+	set("LapBestLapTime", 100.0)
+	set("CarIdxBestLapTime", []float64{100, 90, 103})
+	set("CarIdxOnPitRoad", []float64{0, 0, 0})
+	set("CarIdxLap", []float64{5, 5, 5})
+	set("CarIdxLapDistPct", []float64{0.50, 0.485, 0.52}) // the Hypercar 1.5 s behind, the LMP3 2 s ahead
+	tr, ok := st.traffic()
+	if !ok || !tr.behind || tr.cls != "HY" || math.Abs(tr.gap+1.5) > 0.01 {
+		t.Fatalf("traffic %+v %v, want the Hypercar 1.5 s behind", tr, ok)
+	}
+	set("CarIdxLapDistPct", []float64{0.50, 0.40, 0.52}) // the Hypercar far back: the LMP3 ahead
+	if tr, ok = st.traffic(); !ok || tr.behind || tr.cls != "LMP3" {
+		t.Fatalf("traffic %+v %v, want the LMP3 ahead", tr, ok)
+	}
+	if _, v, _ := st.item("traffic"); v != "LMP3 ↑2.0s" {
+		t.Fatalf("item %q", v)
+	}
+}

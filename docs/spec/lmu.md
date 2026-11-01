@@ -31,3 +31,8 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   `VirtualEnergyPerLap`), and the fuel the same way in litres (`FuelUsePerLap`, which the phones read). The fuel overlay
   (native and web, `energyLine`, `#fuelEnergy`) and the phones' Fuel card add a line only for a car with energy: the
   energy left, its use a lap and the laps it lasts, amber when it falls short of the finish or runs out before the fuel.
+- Multiclass traffic: the relative and standings item "traffic" (`traffic` in ovnative6.go, `trafficNow` in index.html,
+  phones' `traffic()`): in a multiclass session the nearest car of a faster class closing within 3 s behind (amber, the
+  one to let by), else of a slower class within 3 s ahead; a class's pace is the best lap of any of its cars this
+  session, faster by more than 1 %, a car in the pits left out. It is in the footer by default in Le Mans Ultimate only
+  (until the driver sets their own footer); in iRacing it is there to add. ACC and Assetto Corsa lack it (`PW_GAMES`).

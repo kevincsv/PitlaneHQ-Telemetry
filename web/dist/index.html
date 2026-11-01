@@ -5015,7 +5015,9 @@ const UI_DEFAULTS={
   delta:{src:"best",range:1,predict:true},inp:{gear:true,speed:true,wheel:true,wheelDeg:false,bars:["clu","brk","thr"],values:true,barDir:"v",abs:true,trace:true,traceSecs:12,traceH:110,traceCh:["thr","brk"],lineW:1},pit:{loss:25,margin:.3,limTol:.4,pitOnly:false},gaps:{mins:5,cars:2,numbers:false},
   tel:{vars:["LatAccel","LongAccel","YawRate","SteeringWheelAngle","FuelUsePerHour","OilTemp","WaterTemp","Voltage"]}};
 let CFG={autoStart:false,autoWidgets:[],closeOnExit:true,engine:"webview",edit:false,alpha:255,lock:false,scale:1,startWithWindows:false,trayOnClose:true,ui:{}};
-function ui(k){const d=UI_DEFAULTS[k],v=(CFG.ui||{})[k]||{};return Object.assign({},d,v)}
+function ui(k){const d=UI_DEFAULTS[k],v=(CFG.ui||{})[k]||{},o=Object.assign({},d,v);
+  // multiclass is Le Mans Ultimate's every race: its relative and standings warn of the traffic by default (as the agent's)
+  if((k==="rel"||k==="std")&&!v.foot&&typeof liveGame==="function"&&liveGame()==="lmu")o.foot=[...d.foot,"traffic"];return o}
 function setUI(k,patch){CFG.ui=CFG.ui||{};CFG.ui[k]=Object.assign(ui(k),patch);saveCfg()}
 let cfgTimer=0,cfgSeq=0,cfgPending=false;
 /* local edits win until the PC confirms them, so a reconnect cannot overwrite them */
@@ -5076,7 +5078,17 @@ const ITEMS={
   clock:{n:["Time","Hora"],f:()=>new Date().toLocaleTimeString(locale(),{hour:"2-digit",minute:"2-digit"})},
   simtime:{n:["Sim time","Hora en pista"],f:()=>{const s=T.SessionTimeOfDay;if(s==null)return"–";return String(Math.floor(s/3600)%24).padStart(2,"0")+":"+String(Math.floor(s%3600/60)).padStart(2,"0")}},
   cars:{n:["Cars","Coches"],f:()=>String(field().length)},
+  traffic:{n:["Traffic","Tráfico"],f:()=>{const t=trafficNow();return t?`<span class="${t.behind?"warn":""}">${esc(t.cls)} ${t.behind?"↓":"↑"}${Math.abs(t.g).toFixed(1)}s</span>`:"–"}},
 };
+/* the traffic item: in a multiclass session, the nearest car of a faster class closing behind you (within 3 s, the one to
+   let by) or else of a slower class just ahead (the one to pass). A class's pace is the best lap of any of its cars,
+   faster by more than 1 %; a car in the pits is left out (the agent's traffic in ovnative6.go) */
+function trafficNow(){const me=T.PlayerCarIdx;if(me==null||T.OnPitRoad)return null;const best=T.CarIdxBestLapTime||[],pit=T.CarIdxOnPitRoad||[],ds=drivers(),pace=new Map();
+  ds.forEach(d=>{const b=best[d.CarIdx];if(b>0&&!d.CarIsPaceCar&&!d.IsSpectator){const c=classOf(d);if(!pace.has(c)||b<pace.get(c))pace.set(c,b)}});
+  if(pace.size<2)return null;const mine=ds.find(d=>d.CarIdx===me),mp=mine&&pace.get(classOf(mine));if(!mp)return null;let behind=null,ahead=null;
+  relList().forEach(({d,i,g})=>{if(i===me||classOf(d)===classOf(mine)||pit[i])return;const p=pace.get(classOf(d));if(!p)return;const cls=d.CarClassShortName||Tx("Class","Clase");
+    if(g<0&&g>-3&&p<mp*.99){if(!behind||g>behind.g)behind={cls,g,behind:true}}else if(g>0&&g<3&&p>mp*1.01){if(!ahead||g<ahead.g)ahead={cls,g,behind:false}}});
+  return behind||ahead}
 function strip(keys){return `<div class="hstrip">${keys.filter(k=>ITEMS[k]).map(k=>`<div><span class="k">${L("it."+k,true)}</span><span class="v">${ITEMS[k].f()}</span></div>`).join("")}</div>`}
 Object.entries(ITEMS).forEach(([k,v])=>I18N["it."+k]=v.n);
 

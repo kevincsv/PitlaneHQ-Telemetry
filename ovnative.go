@@ -1295,6 +1295,15 @@ func (st *ovState) item(k string) (string, string, uint32) {
 			return T("Fuel laps", "Vueltas de gasolina"), strconv.FormatFloat(f/u, 'f', 1, 64), colText
 		}
 		return T("Fuel laps", "Vueltas de gasolina"), "–", colText
+	case "traffic":
+		if t, ok := st.traffic(); ok {
+			arrow, col := "↑", uint32(colText) // a slower class ahead
+			if t.behind {
+				arrow, col = "↓", colWarn // a faster class closing behind
+			}
+			return T("Traffic", "Tráfico"), t.cls + " " + arrow + strconv.FormatFloat(math.Abs(t.gap), 'f', 1, 64) + "s", col
+		}
+		return T("Traffic", "Tráfico"), "–", colText
 	case "best":
 		v, _ := st.num("LapBestLapTime")
 		return T("Best lap", "Mejor vuelta"), fmtLap(v), colText
@@ -1585,6 +1594,9 @@ func drawTableOv(c *ovCanvas, st *ovState, z float64, rel bool) int {
 		defCols, defHead, defFoot = relDefCols, []string{"session", "timeleft", "sof"}, []string{"irc", "inc", "fuel"}
 	}
 	cfg := st.uiMap(key)
+	if st.game == "lmu" { // multiclass is Le Mans Ultimate's every race: its relative and standings warn of the traffic by default
+		defFoot = append(append([]string{}, defFoot...), "traffic")
+	}
 	cols, head, foot := uiList(cfg, "cols", defCols), uiList(cfg, "head", defHead), uiList(cfg, "foot", defFoot)
 	cols, head, foot = gameKeep(st.game, "columns", cols), gameKeep(st.game, "items", head), gameKeep(st.game, "items", foot)
 	me := -1

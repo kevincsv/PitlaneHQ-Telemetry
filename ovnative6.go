@@ -199,6 +199,87 @@ func (st *ovState) collectSectors() {
 	m.secT0, m.secHasT0 = tb, forward
 }
 
+// trafficCar: the car of another class the traffic item warns of: its class's short name and its gap in seconds (behind:
+// it is behind you and its class is faster, else it is ahead and its class slower)
+type trafficCar struct {
+	cls    string
+	gap    float64
+	behind bool
+}
+
+// trafficWindow: how close (seconds) a car of another class must be to be warned of
+const trafficWindow = 3.0
+
+// traffic: in a multiclass session, the nearest car of a faster class closing behind you (first, it is the one to let by)
+// or else of a slower class just ahead (the one to pass). A class's pace is the best lap of any of its cars this session,
+// faster by more than 1 %; a car in the pits is left out.
+func (st *ovState) traffic() (trafficCar, bool) {
+	if st.ses == nil || !st.multiClass() {
+		return trafficCar{}, false
+	}
+	mev, ok := st.num("PlayerCarIdx")
+	me := int(mev)
+	if !ok {
+		return trafficCar{}, false
+	}
+	if v, _ := st.num("OnPitRoad"); v != 0 {
+		return trafficCar{}, false
+	}
+	mine := st.ses.Drivers[me]
+	if mine == nil {
+		return trafficCar{}, false
+	}
+	best, pit := st.arr("CarIdxBestLapTime"), st.arr("CarIdxOnPitRoad")
+	pace := map[int]float64{}
+	for _, d := range st.ses.Drivers {
+		if d == nil || d.Skip || d.Idx >= len(best) || best[d.Idx] <= 0 {
+			continue
+		}
+		if p, ok := pace[d.Class]; !ok || best[d.Idx] < p {
+			pace[d.Class] = best[d.Idx]
+		}
+	}
+	myPace := pace[mine.Class]
+	if myPace <= 0 {
+		return trafficCar{}, false
+	}
+	lap := st.estLap()
+	var behind, ahead *trafficCar
+	for _, r := range st.relList() {
+		d := st.ses.Drivers[r.i]
+		if r.i == me || d == nil || d.Class == mine.Class || (r.i < len(pit) && pit[r.i] != 0) {
+			continue
+		}
+		p := pace[d.Class]
+		if p <= 0 {
+			continue
+		}
+		f := r.lapDiff - math.Round(r.lapDiff) // on track: where it is around you, whatever the laps
+		g := f * lap
+		name := d.ClsName
+		if name == "" {
+			name = st.T("Class", "Clase")
+		}
+		switch {
+		case g < 0 && g > -trafficWindow && p < myPace*0.99:
+			if behind == nil || g > behind.gap {
+				behind = &trafficCar{cls: name, gap: g, behind: true}
+			}
+		case g > 0 && g < trafficWindow && p > myPace*1.01:
+			if ahead == nil || g < ahead.gap {
+				ahead = &trafficCar{cls: name, gap: g}
+			}
+		}
+	}
+	if behind != nil {
+		return *behind, true
+	}
+	if ahead != nil {
+		return *ahead, true
+	}
+	return trafficCar{}, false
+}
+
 // multiClass: whether the cars on track race in more than one class
 func (st *ovState) multiClass() bool {
 	if st.ses == nil {

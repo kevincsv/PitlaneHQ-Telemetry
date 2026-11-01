@@ -122,6 +122,15 @@
     if (L >= 3000 && B && Array.isArray(B.bins) && fullShare(serOf(B)) >= .97) return "superspeedway"; // flat out all lap on a long oval: a drafting track
     return L > 0 && L < 1450 ? "short" : L > 0 && L < 2100 ? "mile" : "intermediate";
   }
+  /* the group the coach learns in (categories.js groupOf on the server): oval, dirt_oval, dirt_road or road, from the session's
+     category (ctx.track.cat or the laps' cat), else the kind of oval the laps show; what /community/coach/weights and /coach/me
+     take as ?cat= */
+  function catGroup(A, B, ctx) {
+    const T = (ctx && ctx.track) || {}, c = String(T.cat || (A && A.cat) || (B && B.cat) || "").toLowerCase().replace(/[^a-z]/g, "");
+    if (c === "oval") return "oval"; if (c === "dirtoval") return "dirt_oval"; if (c === "dirtroad") return "dirt_road";
+    if (c) return "road";
+    const ov = ovalOf(A, B, ctx); return ov === "dirt" ? "dirt_oval" : ov ? "oval" : "";
+  }
   /* the lifts of a lap on an oval, the corners taken without braking: from where the throttle comes off (under 90 %, no
      brake) to the slowest point before it is back, when the car really slows */
   function liftZones(s) {
@@ -307,7 +316,7 @@
   const STEP_NAMES = { plan: ["The whole plan", "El plan entero", "O plano inteiro"], corner: ["Corner", "Curva", "Curva"], phase: ["Phase", "Fase", "Fase"], habit: ["Habit", "Hábito", "Hábito"], oval: ["Oval", "Óvalo", "Oval"],
     straight: ["Outside the corners", "Fuera de las curvas", "Fora das curvas"], cons: ["Corner taken differently every lap", "Curva distinta cada vuelta", "Curva diferente a cada volta"], style: ["How the lap is driven", "Cómo se conduce la vuelta", "Como a volta é pilotada"],
     trail: ["Trail braking", "Trail braking", "Trail braking"], rotate: ["The car pushes wide", "El coche se va de morro", "O carro sai de frente"], loose: ["The rear steps out", "La trasera se escapa", "A traseira escapa"], gears: ["Gears", "Marchas", "Marchas"],
-    tyres: ["Pace fading over a run", "Ritmo que cae en la tanda", "Ritmo que cai na sequência"], pace: ["Usual lap against the best", "Vuelta habitual frente a la mejor", "Volta habitual contra a melhor"] };
+    like: ["From other tracks", "De otros circuitos", "De outras pistas"], tyres: ["Pace fading over a run", "Ritmo que cae en la tanda", "Ritmo que cai na sequência"], pace: ["Usual lap against the best", "Vuelta habitual frente a la mejor", "Volta habitual contra a melhor"] };
   function stepName(id, ctx) {
     const Tx = txOf(ctx), [k, sub] = String(id || "").split(":"), N = STEP_NAMES[k], base = N ? Tx(N[0], N[1], N[2]) : k;
     if (!sub) return base;
@@ -547,6 +556,8 @@
     const wob = cons.filter((x) => x.sd > .08).slice(0, 2); wob.forEach((x) => P.push({ k: "cons", turns: [x.n], gain: x.sd * .6, t: Tx(`T${x.n} changes ±${r2(x.sd)} s from lap to lap`, `T${x.n} cambia ±${r2(x.sd)} s de una vuelta a otra`, `T${x.n} muda ±${r2(x.sd)} s de uma volta para outra`), why: Tx("Over the session you take this corner differently every lap. The time spread is the gap between your best and your usual lap.", "A lo largo de la sesión tomas esta curva distinto cada vuelta. La dispersión es la diferencia entre tu mejor vuelta y la habitual.", "Ao longo da sessão você faz esta curva de um jeito diferente a cada volta. A dispersão é a diferença entre sua melhor volta e a volta habitual."), how: Tx("Same braking marker, same turn-in point, same line, every lap. Consistency first, speed after.", "La misma referencia de frenada, el mismo punto de giro, la misma trazada, cada vuelta. Primero regularidad, luego velocidad.", "A mesma referência de frenagem, o mesmo ponto de entrada, a mesma linha, em toda volta. Primeiro regularidade, depois velocidade.") }));
     driving.forEach((d) => P.push({ k: "style", gain: 0, t: d.replace(/^\S+\s/, ""), why: "", how: "" }));
     lapSteps(cs, ov, A, LP, Tx, spdU()).forEach((x) => P.push(x));
+    // a track with few laps: what the fast drivers of this car do in corners like these on other tracks (likeOf)
+    likeSteps(likeOf(A, cx, cs), Tx).forEach((x) => P.push(x));
     // every step says what happened and where (marks and spans on the map), why it costs time and what to do instead
     const PCOST = { brake: ["The braking zones are where the speed changes the most, so a few metres there are worth more than anywhere else on the lap.", "Las frenadas son donde más cambia la velocidad, así que unos metros ahí valen más que en cualquier otra parte de la vuelta.", "As frenagens são onde a velocidade mais muda, então alguns metros ali valem mais do que em qualquer outra parte da volta."], entry: ov && ov !== "short" ? COST.lift : est ? COST.speed : COST.trail, apex: COST.speed, exit: COST.exit };
     const sorted = cs.slice().sort((a, b) => a.d - b.d), tAt = (s, d) => { for (let k = Math.max(0, Math.min(n - 1, Math.round(d / BIN))); k >= 0; k--) if (s.arr[k]) return s.arr[k][1]; return null; };
@@ -753,6 +764,91 @@
     return { rows, lines };
   }
 
+  /* ---------- what other tracks teach a track with few or no laps (GET /community/like, likeFor in model.js) ---------- */
+  /* ctx.like: {cz: [[track, speed in, slowest speed m/s, metres from the braking or the lift to the slowest point, gear there,
+     the most steering, 1 for a lift]] of this car's fast drivers on its other tracks, ot: [{t, k: kind of oval, f: share
+     flat out, lf: share of turns with a lift, n}] its ovals, kinds: {kind: {f: [p25, p50, p75], lf, n, cars}} every car's
+     ovals}. Only the corners of lap A that have no corner card of their own (the model's hint): once the fast drivers of
+     this track are known, theirs speak. Hints from real laps elsewhere, never a reference lap. cs (the coach's corners)
+     gives the turn numbers */
+  const LIKE_OVALS = { superspeedway: ["superspeedways", "superóvalos", "superspeedways"], intermediate: ["intermediate ovals", "óvalos intermedios", "ovais intermediários"], mile: ["one-mile ovals", "óvalos de una milla", "ovais de uma milha"], short: ["short tracks", "óvalos cortos", "pistas curtas"], dirt: ["dirt ovals", "óvalos de tierra", "ovais de terra"] };
+  const LIKE_MIN = 4; // samples (from 2 tracks or more) a corner needs before it says anything
+  function likeOf(A, ctx, cs) {
+    const Lk = ctx && ctx.like;
+    if (!Lk || !A || !Array.isArray(A.bins)) return null;
+    const Tx = txOf(ctx), { spd, spdU } = unitsOf(ctx), hint = hintOf(ctx), turns = turnsOf(ctx), s = serOf(A), n = s.length, L = n * BIN;
+    const cz = Array.isArray(Lk.cz) ? Lk.cz.filter((x) => Array.isArray(x) && x.length >= 7) : [];
+    const med = (a) => medianOf(a), r0 = (v) => Math.round(spd(v)), tracksOf = (a) => new Set(a.map((x) => x[0])).size;
+    const out = [];
+    ovalZones(s).forEach((z, k) => {
+      const apex = z.imin * BIN, d = z.i * BIN, a = s[z.imin];
+      if (!a || hint(apex)) return;
+      const c = (cs || []).filter((x) => Math.abs(x.apex - apex) <= 60).sort((p, q) => Math.abs(p.apex - apex) - Math.abs(q.apex - apex))[0];
+      const no = c ? c.n : turnNo(turns, apex, L, k + 1), lift = z.lift ? 1 : 0, vIn = z.v, vmin = z.vmin, dist = (z.imin - z.i) * BIN, gear = Math.round(a[4] || 0);
+      const lines = [], kinds = [];
+      let gain = 0;
+      // the same speed in and the same slowest speed: how many metres of braking (or lifting) the fast drivers need, and the gear
+      const same = cz.filter((x) => x[6] === lift && Math.abs(x[1] - vIn) <= Math.max(2.5, vIn * 0.06) && Math.abs(x[2] - vmin) <= Math.max(2, vmin * 0.06));
+      if (same.length >= LIKE_MIN && tracksOf(same) >= 2) {
+        const md = Math.round(med(same.map((x) => x[3])));
+        if (dist > md * 1.25 && dist - md >= 12) {
+          const ex = dist - md, g = Math.max(0, ex / ((vIn + vmin) / 2) - ex / vIn);
+          gain += g; kinds.push("brake");
+          lines.push(lift ? Tx(`In this car the fast drivers lift from ${r0(vIn)} to ${r0(vmin)} ${spdU()} in about ${md} m on other tracks. You lifted ${dist} m before the slowest point here. Lift later and shorter.`, `En este coche los rápidos levantan de ${r0(vIn)} a ${r0(vmin)} ${spdU()} en unos ${md} m en otros circuitos. Aquí levantaste ${dist} m antes del punto más lento. Levanta más tarde y menos rato.`, `Neste carro os rápidos aliviam de ${r0(vIn)} para ${r0(vmin)} ${spdU()} em cerca de ${md} m em outras pistas. Aqui você aliviou ${dist} m antes do ponto mais lento. Alivie mais tarde e por menos tempo.`)
+            : Tx(`In this car the fast drivers slow from ${r0(vIn)} to ${r0(vmin)} ${spdU()} in about ${md} m on other tracks. You took ${dist} m here. Brake later and harder.`, `En este coche los rápidos bajan de ${r0(vIn)} a ${r0(vmin)} ${spdU()} en unos ${md} m en otros circuitos. Aquí usaste ${dist} m. Frena más tarde y más fuerte.`, `Neste carro os rápidos reduzem de ${r0(vIn)} para ${r0(vmin)} ${spdU()} em cerca de ${md} m em outras pistas. Aqui você usou ${dist} m. Freie mais tarde e mais forte.`));
+        }
+        const gs = same.map((x) => x[4]).filter((g) => g >= 1), gF = gs.length >= LIKE_MIN ? Math.round(med(gs)) : 0;
+        if (gear >= 1 && gF >= 1 && gear >= gF + 1) { kinds.push("gear"); gain += 0.02; lines.push(Tx(`At these speeds the fast drivers in this car take the slowest point in gear ${gF}. You were in ${gear}.`, `A estas velocidades los rápidos en este coche pasan el punto más lento en ${gF}ª. Tú ibas en ${gear}ª.`, `Nessas velocidades os rápidos neste carro passam o ponto mais lento em ${gF}ª. Você estava em ${gear}ª.`)); }
+      }
+      // the same speed in and the same steering: how fast the fast drivers go through a corner as tight as this one
+      const st = steerMax(s, z.i, Math.min(n - 1, z.imin + 6));
+      if (st > 0) {
+        const tight = cz.filter((x) => x[6] === lift && x[5] != null && Math.abs(x[1] - vIn) <= Math.max(3, vIn * 0.08) && Math.abs(x[5] - st) <= Math.max(0.02, st * 0.2));
+        if (tight.length >= LIKE_MIN && tracksOf(tight) >= 2) {
+          const vs = tight.map((x) => x[2]).sort((p, q) => p - q), vF = med(vs), q1 = vs[Math.floor(vs.length / 4)], q3 = vs[Math.floor(vs.length * 3 / 4)];
+          if (vF - vmin >= 1.2 && vF < vmin * 1.25 && q3 <= q1 * 1.15) {
+            kinds.push("apex"); gain += Math.max(0, 60 / vmin - 60 / vF) * 0.5;
+            lines.push(Tx(`In corners like this one (the same speed in, the same steering) the fast drivers in this car keep ${r0(vF)} ${spdU()} at the slowest point. You were at ${r0(vmin)}. Carry more speed through the middle.`, `En curvas como esta (la misma velocidad de entrada, el mismo giro de volante) los rápidos en este coche mantienen ${r0(vF)} ${spdU()} en el punto más lento. Tú ibas a ${r0(vmin)}. Lleva más velocidad por el centro.`, `Em curvas como esta (a mesma velocidade de entrada, o mesmo giro de volante) os rápidos neste carro mantêm ${r0(vF)} ${spdU()} no ponto mais lento. Você estava a ${r0(vmin)}. Leve mais velocidade pelo meio.`));
+          }
+        }
+      }
+      if (lines.length) out.push({ n: no, d: Math.round(d), apex: Math.round(apex), lift: !!lift, kinds, kind: kinds[0], gain: Math.round(gain * 1000) / 1000, lines, tracks: tracksOf(same.length ? same : cz) });
+    });
+    // an oval: how much of the lap the fast drivers of this car (else of every car) are flat out on this kind of oval, and
+    // whether they lift where this lap braked
+    let oval = null;
+    const ov = ovalOf(A, A, ctx);
+    if (ov && LIKE_OVALS[ov]) {
+      const mine = (Array.isArray(Lk.ot) ? Lk.ot : []).filter((o) => o && o.k === ov), all = Lk.kinds && Lk.kinds[ov], fA = fullShare(s), pc = (v) => Math.round(v * 100);
+      const nm = Tx(...LIKE_OVALS[ov]), zs = ovalZones(s), braked = zs.filter((z) => !z.lift), tn = (z) => { const ap = z.imin * BIN, c = (cs || []).find((x) => Math.abs(x.apex - ap) <= 60); return "T" + (c ? c.n : turnNo(turns, ap, L, zs.indexOf(z) + 1)); };
+      let f = null, lf = null, line = "";
+      if (mine.length) {
+        f = med(mine.map((o) => o.f)); const l2 = mine.map((o) => o.lf).filter((v) => v != null); lf = l2.length ? med(l2) : null;
+        line = Tx(`On ${nm} the fast drivers in this car are flat out ${pc(f)} % of the lap (${mine.length} ${mine.length === 1 ? "track" : "tracks"}). This lap ${pc(fA)} %.`, `En ${nm} los rápidos en este coche van a fondo el ${pc(f)} % de la vuelta (${mine.length} ${mine.length === 1 ? "circuito" : "circuitos"}). Esta vuelta el ${pc(fA)} %.`, `Em ${nm} os rápidos neste carro vão no fundo ${pc(f)} % da volta (${mine.length} ${mine.length === 1 ? "pista" : "pistas"}). Esta volta ${pc(fA)} %.`);
+      } else if (all && Array.isArray(all.f) && all.f[1] != null) {
+        f = all.f[1]; lf = all.lf != null ? all.lf : null;
+        line = Tx(`On ${nm} the fast drivers are flat out ${pc(all.f[0])}–${pc(all.f[2])} % of the lap (${all.cars} cars). This lap ${pc(fA)} %.`, `En ${nm} los rápidos van a fondo entre el ${pc(all.f[0])} y el ${pc(all.f[2])} % de la vuelta (${all.cars} coches). Esta vuelta el ${pc(fA)} %.`, `Em ${nm} os rápidos vão no fundo ${pc(all.f[0])}–${pc(all.f[2])} % da volta (${all.cars} carros). Esta volta ${pc(fA)} %.`);
+      }
+      if (f != null) {
+        const lines = [line], gap = Math.max(0, f - fA);
+        if (lf != null && lf >= 0.5 && braked.length) lines.push(Tx(`They take ${pc(lf)} % of the turns there with a lift and no brake. You braked in ${braked.map(tn).join(", ")}.`, `Ahí toman el ${pc(lf)} % de las curvas levantando, sin freno. Tú frenaste en ${braked.map(tn).join(", ")}.`, `Ali eles fazem ${pc(lf)} % das curvas aliviando, sem freio. Você freou em ${braked.map(tn).join(", ")}.`));
+        if (gap >= 0.05 || lines.length > 1) oval = { kind: ov, f: Math.round(f * 1000) / 1000, fA: Math.round(fA * 1000) / 1000, lf, own: !!mine.length, lines, braked: braked.map((z) => Math.round(z.imin * BIN)), gain: Math.round((gap * 0.5 + (lines.length > 1 ? 0.05 : 0)) * 1000) / 1000 };
+      }
+    }
+    return out.length || oval ? { corners: out.sort((p, q) => q.gain - p.gain), oval } : null;
+  }
+  /* the plan's steps from other tracks: the two corners that gain the most and the oval's (k "like") */
+  function likeSteps(lk, Tx) {
+    if (!lk) return [];
+    const P = lk.corners.slice(0, 2).map((c) => {
+      const f = c.kind === "apex" ? "speed" : c.kind === "gear" ? "gear" : c.lift ? "early_lift" : "early";
+      return { k: "like", id: "like:" + c.kind, kind: c.kind, turns: [c.n], gain: c.gain, t: `T${c.n} · ` + Tx("From other tracks", "De otros circuitos", "De outras pistas"), what: c.lines.join(" "), cost: Tx(...COST[f]), how: "", marks: [{ d: c.d, k: "a", n: c.n }, { d: c.apex, k: "apex", n: c.n }], spans: [[c.d - 50, c.apex + 150]] };
+    });
+    if (lk.oval) P.push({ k: "like", id: "like:oval", kind: "oval", turns: [], gain: lk.oval.gain, t: Tx(...LIKE_OVALS[lk.oval.kind]) + " · " + Tx("From other tracks", "De otros circuitos", "De outras pistas"), what: lk.oval.lines.join(" "), cost: Tx(...COST.lift), how: "", marks: lk.oval.braked.map((d) => ({ d, k: "apex" })), spans: [] });
+    P.forEach((p) => { p.why = (p.what + " " + p.cost).trim(); });
+    return P;
+  }
+
   /* ---------- everything at once, for the phones ---------- */
   /* the sections the web shows beside the coach (the last session's plan, strengths and weaknesses, the track left unused,
      the track guide) as plain lists the phones draw as they are: [{k, title, items: [{t, text, tone}]}], tone "good", "bad"
@@ -763,6 +859,7 @@
     const st = [...(o.ranks || []).map((x) => ({ t: `T${x.n}`, text: Tx(`top ${x.top} % among ${x.drivers} drivers`, `top ${x.top} % entre ${x.drivers} pilotos`, `top ${x.top} % entre ${x.drivers} pilotos`), tone: x.top <= 25 ? "good" : x.top >= 60 ? "bad" : "" })), ...(o.cls || []).map((x) => ({ t: x.t, text: x.text, tone: "" }))];
     if (st.length) out.push({ k: "stand", title: Tx("Strengths and weaknesses", "Puntos fuertes y débiles", "Pontos fortes e fracos"), items: st });
     if (o.edges && o.edges.length) out.push({ k: "edges", title: Tx("Track left unused", "Pista sin usar", "Pista sem usar"), items: o.edges.map((x) => ({ t: `T${x.n}`, text: x.text, tone: "bad" })) });
+    if (o.like) { const it = [...(o.like.oval ? [{ t: Tx(...LIKE_OVALS[o.like.oval.kind]), text: o.like.oval.lines.join(" "), tone: "" }] : []), ...o.like.corners.map((c) => ({ t: `T${c.n}`, text: c.lines.join(" "), tone: "" }))]; if (it.length) out.push({ k: "like", title: Tx("From other tracks", "De otros circuitos", "De outras pistas"), items: it }); }
     if (o.guide && o.guide.corners.length) out.push({ k: "guide", title: Tx("Track guide", "Guía del circuito", "Guia da pista"), items: guideItems(o.guide) });
     return out;
   }
@@ -784,6 +881,7 @@
     if (Array.isArray(ctx.prev)) out.followup = followUp(ctx.prev, plan.cs, ctx); // how this lap does where the last session's plan asked for something
     if (ctx.model) { const g = trackGuide(ctx.model, ctx), rk = cornerRanks(A, ctx.model, ctx); if (g) out.guide = g; if (rk.length) out.ranks = rk; } // the track guide and where lap A stands in every corner
     if (Array.isArray(ctx.byCls)) out.cls = clsLines(ctx.byCls, ctx); // the corner types across the driver's tracks
+    if (ctx.like) { const lk = likeOf(A, ctx, plan.cs); if (lk) out.like = lk; } // what the fast drivers of this car do on other tracks, where this track has no corner card
     if (ctx.map && ctx.map.edges) { const eu = edgeUse(A, ctx.map, ctx); if (eu.length) out.edges = eu; } // the track left unused on the exits
     out.notes = notesOf(out, ctx);
     return opts && opts.json ? JSON.stringify(out) : out;
@@ -791,7 +889,7 @@
 
   const api = { VERSION, BIN, lapSeries, serOf, lapShape, sameFrame, lineOffsets, cornerLine, lineTip, brakeZones, PHASES, phaseName, turnNo, COACH_GEN, cornerClass, cornerZones,
     OVAL_KINDS, ovalOf, liftZones, ovalZones, dirtLineTip, coachCompare, cornerConsistency, pairSecs, lapDriving, kindName, stepName, tipMain, tipShort, tipTodo, coachPlan, stepText, analyzerFacts, analyse,
-    estOf, followUp, trackGuide, cornerRanks, clsLines, racePace, edgeUse, notesOf, guideItems };
+    estOf, followUp, trackGuide, cornerRanks, clsLines, racePace, edgeUse, notesOf, guideItems, likeOf, likeSteps, catGroup };
   root.PW_ANALYSIS = api;
   if (typeof module !== "undefined" && module.exports) module.exports = api;
 })(typeof window !== "undefined" ? window : typeof globalThis !== "undefined" ? globalThis : this);

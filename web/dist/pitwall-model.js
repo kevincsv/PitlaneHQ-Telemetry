@@ -13,7 +13,7 @@ const $=s=>document.querySelector(s);
 const TX=(...a)=>typeof Tx==="function"?Tx(...a):a[0];
 const game=()=>typeof aGame==="function"?aGame():"iracing";
 const url=u=>typeof withGame==="function"?withGame(u,game()):u;
-const COMBOS={g:"",list:null,p:null},MODEL={key:"",busy:false,data:null,err:"",at:0,p:null},CARD={id:0,data:null,busy:false,at:0,p:null};
+const COMBOS={g:"",list:null,p:null},MODEL={key:"",busy:false,data:null,err:"",at:0,p:null},CARD={id:0,data:null,busy:false,at:0,p:null},LIKE={key:"",data:null,busy:false,at:0,p:null};
 
 /* ---------- which car and track: ids from the community list, by name ---------- */
 const norm=s=>String(s||"").toLowerCase().replace(/\s+/g," ").trim();
@@ -109,6 +109,18 @@ async function cardFor(lap){if(!lap||lap.comm)return null;await combos();return 
 /* the card of lap A's car when it is already here (as the server learnt it on every track), with what lap A did */
 function carCard(A){if(!A||!Array.isArray(A.bins))return null;const id=carIdSync(A),k=id&&CARD.id===id&&!CARD.busy?CARD.data:null;return k?{card:k,mine:lapFacts(A.bins)}:null}
 
+/* ---------- what other tracks teach this one (GET /community/like, likeOf in pitwall-analysis.js) ---------- */
+/* the car's corners and ovals on its other tracks and every car's ovals by kind: the coach's hints for the corners this
+   track has no card of yet, the first driver on an oval included */
+const likeKey=(c,g)=>game()+":"+c.trackId+":"+c.carId+":"+(g||"");
+const catOfLap=lap=>{try{return window.PW_ANALYSIS&&typeof anaTrack==="function"?window.PW_ANALYSIS.catGroup(lap,null,{track:anaTrack(lap,null)})||"":""}catch(e){return""}}; // anaTrack, never anaCtx (which asks like())
+function loadLike(c,g){const key=likeKey(c,g);if(LIKE.key===key&&(LIKE.data||LIKE.busy)&&Date.now()-(LIKE.at||0)<600000)return LIKE.busy?LIKE.p:Promise.resolve(LIKE.data);
+  LIKE.key=key;LIKE.busy=true;LIKE.data=null;LIKE.at=Date.now();
+  LIKE.p=cget(url(`/api/community/like?trackId=${c.trackId}&carId=${c.carId}${g?"&cat="+g:""}`)).then(r=>r&&(r.cz||r.kinds)?r:null).catch(()=>null).then(k=>{if(LIKE.key===key){LIKE.data=k;LIKE.busy=false}return k});return LIKE.p}
+async function likeFor(lap){if(!lap||lap.comm)return null;const c=await comboOf(lap);return c?loadLike(c,catOfLap(lap)):null}
+/* what other tracks teach lap A's car and track when it is already here, else null */
+function like(A){const c=comboSync(A);if(!c)return null;return LIKE.key===likeKey(c,catOfLap(A))&&!LIKE.busy?LIKE.data:null}
+
 /* ---------- lap list: the laps not valid crossed out, the fastest valid lap in purple (its sectors: lapSecCols in index.html) ---------- */
 function colourLapTable(LP){const tb=$("#lapTable tbody");if(!tb||!LP||!LP.length)return;
   const valid=LP.filter(l=>l.valid!==false),bestT=Math.min(...valid.map(l=>l.time));
@@ -123,7 +135,7 @@ function syncRefs(m,A){if(typeof CREF==="undefined")return false;let changed=fal
     if(w){const same=!x.stale&&x.time===w.time&&x.key===m.key;CREF[i]=Object.assign(w,{key:m.key});if(!same)changed=true}else if(!x.stale){x.stale=true;changed=true}});
   want.forEach(w=>{if(!CREF.some(x=>x&&x.model===w.model)){CREF.push(Object.assign(w,{key:m.key}));changed=true}});
   return changed}
-let lapsKey="",coachKey="",cardKey="";
+let lapsKey="",coachKey="",cardKey="",likeK="";
 const origLaps=window.renderLaps;
 if(typeof origLaps==="function")window.renderLaps=function(){const r=origLaps.apply(this,arguments);try{
     const LP=typeof analysisLaps==="function"?analysisLaps():[];colourLapTable(LP);
@@ -136,7 +148,9 @@ if(typeof origCoach==="function")window.renderCoach=function(){const r=origCoach
     // the coach reads the model as it renders (PW_MODEL.current); when the model arrives it renders once more
     modelFor(A).then(m=>{const k=(m?m.key:"none")+"|"+A.time;if(k===coachKey)return;coachKey=k;window.renderCoach()}).catch(()=>{});
     // the car card the same way: once it is here, the coach renders once more
-    cardFor(A).then(c=>{const k=(c?c.carId+":"+c.built:"none")+"|"+A.time;if(k===cardKey)return;cardKey=k;if(c)window.renderCoach()}).catch(()=>{})}catch(e){console.warn(e)}return r};
+    cardFor(A).then(c=>{const k=(c?c.carId+":"+c.built:"none")+"|"+A.time;if(k===cardKey)return;cardKey=k;if(c)window.renderCoach()}).catch(()=>{});
+    // and what other tracks teach this one
+    likeFor(A).then(l=>{const k=(l?LIKE.key:"none")+"|"+A.time;if(k===likeK)return;likeK=k;if(l)window.renderCoach()}).catch(()=>{})}catch(e){console.warn(e)}return r};
 const st=document.createElement("style");st.textContent=`.pb,.pb-t{color:var(--pb)!important;font-weight:700}tr.lap-invalid td{opacity:.5;text-decoration:line-through}tr.lap-invalid td:last-child .pill{text-decoration:none}`;document.head.appendChild(st);
-window.PW_MODEL={buildModel,modelFor,current,loading,error,idealLap,levelLap,refsFor,rankOf,comboOf,carCard,cardFor,lapFacts,cornerHint,tempOf};
+window.PW_MODEL={buildModel,modelFor,current,loading,error,idealLap,levelLap,refsFor,rankOf,comboOf,carCard,cardFor,lapFacts,cornerHint,tempOf,like,likeFor};
 })();

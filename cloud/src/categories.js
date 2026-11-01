@@ -70,3 +70,15 @@ export const licOf = (v) => {
   if (s.startsWith("WC") || s.startsWith("PRO")) return "P";
   return LICS.includes(s[0]) ? s[0] : null;
 };
+
+// what the coach learns apart (coachtips.js, the hints from other tracks): ovals, dirt ovals and dirt roads each on their
+// own, sports and formula cars together as road racing (their corners and tips are the same kind), every other game road
+export const GROUPS = ["road", "oval", "dirt_oval", "dirt_road"];
+export const groupOf = (cat) => (cat === "oval" || cat === "dirt_oval" || cat === "dirt_road" ? cat : "road");
+// the group of a car and track: from what the app says (its session's category: Oval, DirtOval, sports_car…), else the
+// season and the names; "" when nothing at all is known (then the coach uses what every group learnt together)
+export async function groupFor(env, game, trackId, carId, hint, track, car) {
+  if (game && game !== "iracing") return "road";
+  if (!trackId && !carId && !hint && !track && !car) return "";
+  return groupOf(catOf(await catMap(env), trackId || 0, carId || 0, hint, track || "", car || ""));
+}

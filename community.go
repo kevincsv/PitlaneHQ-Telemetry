@@ -984,6 +984,7 @@ func registerCommunityRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("/api/community/laps", proxy("/laps"))
 	mux.HandleFunc("/api/community/model", proxy("/model"))
 	mux.HandleFunc("/api/community/car", proxy("/car"))
+	mux.HandleFunc("/api/community/like", proxy("/like")) // what other tracks teach the coach (likeFor in cloud/src/model.js)
 	mux.HandleFunc("/api/community/reports", proxy("/reports"))
 	mux.HandleFunc("/api/community/admin", handleCommAdmin)
 }

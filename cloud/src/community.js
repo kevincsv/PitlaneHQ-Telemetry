@@ -5,7 +5,7 @@
 import { sessionAccount, isAdmin, isTester, testersSet, nameTaken, purgeAccount, emailHash, cleanName } from "./accounts.js";
 import { mailReady, mailLog, mailDomain } from "./email.js";
 import { sealData, openData } from "./crypt.js";
-import { getModel, forCompound, getCarCard, markModel, forgetLap, pseudoId, PSEUDO_MIN, moveDriver, slowsOf } from "./model.js";
+import { getModel, forCompound, getCarCard, likeFor, markModel, forgetLap, pseudoId, PSEUDO_MIN, moveDriver, slowsOf } from "./model.js";
 import { linkDriver, unlinkDriver } from "./driverlinks.js";
 import { recordSeen, seenSummary } from "./seasonseen.js";
 const JSONH = { "content-type": "application/json; charset=utf-8", "cache-control": "no-store", "access-control-allow-origin": "*" };
@@ -66,7 +66,7 @@ import { estimateTrace } from "./pedals.js";
 import { discordLapAlert } from "./discord.js";
 import { recordBeaten, testerAlert } from "./alerts.js";
 import { addFound, editFound, foundLeagues, leagueGame, scanLeagues } from "./leaguescan.js";
-import { catMap, catOf, licOf, CATS } from "./categories.js";
+import { catMap, catOf, licOf, CATS, groupFor } from "./categories.js";
 import { lmuClass, wetOf, clsParam, classLaps } from "./lmuclass.js";
 import { sealedSectors } from "./lapsectors.js";
 
@@ -326,6 +326,14 @@ export async function community(req, env, url, ctx) {
     const c = await famId(env, game, url.searchParams.get("carId"));
     if (!c) return err("carId", 400);
     return json((await getCarCard(env, game, c).catch(() => null)) || {});
+  }
+  // what other tracks teach the coach on a car and track with few or no laps (likeFor in model.js, likeOf in
+  // pitwall-analysis.js): the car's corners and ovals on its other tracks, and every car's ovals by kind
+  if (p === "/like" && m === "GET") {
+    const t = +url.searchParams.get("trackId") || 0, c = await famId(env, game, url.searchParams.get("carId"));
+    if (!c) return err("carId", 400);
+    const grp = await groupFor(env, game, t, c, String(url.searchParams.get("cat") || "").slice(0, 20)).catch(() => "");
+    return json({ ...(await likeFor(env, game, t, c, grp)), cat: grp });
   }
   // the records: the fastest lap of every car and track, the newest first, with the lap it beat (the second fastest
   // of the same car and track): Community's "Recent records" on every device

@@ -159,6 +159,35 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   when the model has them, else every lap's; `cmps` lists the compounds it has apart. The pace among the drivers
   (`times`) is every lap's.
 
+- **By discipline.** What the coach learns across tracks is kept apart by discipline (`groupOf`/`groupFor` in
+  categories.js, `catGroup` in pitwall-analysis.js, migration 0087 `cat` on `coach_tips` and `coach_plan_votes`): oval,
+  dirt oval, dirt road, and road (sports and formula cars together, every other game road). The apps send the group of
+  their laps (`cat` on POST `/coach/tips`, `/coach/rate`, `/coach/planrate`; the web's `coachCat`, the phones' `coachCat`
+  from the session's category) and ask for it (`?cat=` on GET `/coach/weights` and `/coach/me`). A tip's bucket weighs by
+  the group's own cases once it has `MIN_CASES` (its thumbs from `MIN_RATINGS`, a braking tip's metres from `MIN_ASK`
+  gains), else by every group's together (`cat` on the bucket says which); a plan step's votes the same from
+  `MIN_PLAN_VOTES` (`planWeightsFor`). The driver's habits are the group's when they have some (`cat` on the habit), else
+  the habits of every track that are about the pedals and the speed (`TRANSFER`: braking, trail, coasting, the throttle,
+  the speeds); their own weights and corner types (`byCls`) the group's, else every track's. An app of before asks
+  without `cat` and gets every group together. Older rows get their group from the season and their session's category
+  (`fillCats`, hourly). The model, the corner cards and the track guide were always one car and track (iRacing's oval and
+  road layouts of a track are two tracks).
+- **From other tracks** (`likeOf`/`likeSteps` in pitwall-analysis.js, GET `/community/like`, `likeFor` in model.js): a
+  corner of lap A with no corner card of its own (the track has fewer than 3 fast drivers of this car, or none) hears what
+  the fast drivers of this car do in corners like it on its other tracks of the same surface (dirt or not). The car card
+  keeps them (CARD_VERSION 3, `cz` from `cornerSamples`: every braking zone and lift of the laps within 3 % of each
+  track's fastest, its speed in, slowest speed, metres to the slowest point, gear and most steering; never sent with
+  `/model` or `/car`). The same speed in and the same slowest speed (6 %) say the metres of braking they need ("brake
+  later and harder" when lap A takes 25 % and 12 m more) and their gear there; the same speed in and the same steering
+  (20 %) say how fast they go through ("carry more speed" from 4 km/h, only when those corners agree within 15 %). Four
+  corners from two tracks at least. On an oval the car's own ovals of that kind (`ot`, `ovalProfile`: the share of the lap
+  flat out and of the turns taken with a lift) say how much of the lap they are flat out and whether they lift where lap
+  A braked; a car that never drove that kind of oval gets every car's (`buildOvalKinds`, daily, `app_state` coach_ovals,
+  3 car-tracks from 2 cars). So the first driver on an oval still gets a plan. The coach shows them as "From other
+  tracks" (a section on the web and PC, the phones' notes) and as plan steps (`like:brake`, `like:apex`, `like:gear`,
+  `like:oval`, two corners at most); once the track has its own corner cards those corners speak instead. Hints, never a
+  reference lap.
+
 ## Beyond one lap against another
 
 - **Track guide** (`trackGuide` in pitwall-analysis.js, from the model): every corner with where the fast drivers brake

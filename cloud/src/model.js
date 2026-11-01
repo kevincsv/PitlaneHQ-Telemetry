@@ -13,10 +13,12 @@ import { lineOffsets, sameFrame, insideSign } from "./trackgeo.js";
 import { openData } from "./crypt.js";
 import { traceLen, fitsLayout, layoutN } from "./trackmaps.js";
 import { pedalEnvelope, estimatePedals } from "./pedals.js";
+import { catMap, catOf, groupOf } from "./categories.js";
+import "../../web/dist/pitwall-analysis.js"; // the corners and the kind of oval the apps see (cornerSamples, ovalProfile)
 
 // raise it when the way the model learns changes: every model is rebuilt from its memory
 export const MODEL_VERSION = 12; // 4: real laps only — the record and the driver just ahead, no composites; 5: with their line; 6: the fastest line known; 7: clean traces, the next level with real pedals; 8: the corner card; 9: rivals' pedals from what the car really does (pedals.js); 10: wet laps left out, a rival's lap with the game's own pedals (src "real") is a real lap; 11: the references of every tyre compound apart (byCmp); 12: the track guide (gears, ranks, the drivers who improved, the coach's usual tips) and the next level by track temperature (byBand)
-export const CARD_VERSION = 2;  // the car card (below); raise it when what it learns changes
+export const CARD_VERSION = 3;  // the car card (below); raise it when what it learns changes. 3: the corners of the car on its tracks and its ovals (the hints from other tracks)
 const SEG_M = 250;          // metres per micro-sector
 const MAX_LAPS = 80;        // laps the model reads per car and track
 const LEARN_PER_RUN = 120;  // new laps taken into the memory per run (the rest on the next one)
@@ -647,6 +649,12 @@ export async function buildCarCard(env, game, carId) {
     try { const g = goodLap(x.time, memTrace(JSON.parse(await gunz(x.data)))); if (g) laps.push({ trackId: x.track_id, drv: x.drv, time: x.time, bins: g.bins, field: g.field, rival: g.rival }); } catch (e) {}
   }
   const card = { v: CARD_VERSION, game, carId, built: Date.now(), ...cardOf(laps) };
+  // what the car does in the corners of its tracks and how its ovals are driven: the hints for a track with no laps yet
+  const info = {};
+  for (const t of new Set(laps.map((l) => l.trackId))) info[t] = await trackInfo(env, game, t, carId).catch(() => ({ g: "road" }));
+  card.cz = cornerSamples(laps, info);
+  card.ot = ovalProfile(laps, info);
+  card.tg = Object.fromEntries(Object.entries(info).map(([t, x]) => [t, x.g || "road"])); // each track's group
   if (card.vmaxAt) {
     const t = await env.DB.prepare("SELECT track, track_config FROM sessions WHERE game=?1 AND track_id=?2 AND track IS NOT NULL LIMIT 1").bind(game, card.vmaxAt).first().catch(() => null)
       || await env.DB.prepare("SELECT track, NULL AS track_config FROM community_laps WHERE game=?1 AND track_id=?2 LIMIT 1").bind(game, card.vmaxAt).first().catch(() => null);
@@ -665,16 +673,100 @@ export async function markCar(env, game, carId) {
      ON CONFLICT(game, car_id) DO UPDATE SET dirty=1`).bind(game, carId).run().catch(() => {});
 }
 // what the apps ask for: the card of a car, rebuilt when its laps changed; null when it has no laps
-export async function getCarCard(env, game, carId) {
+// (its corners on every track and its ovals, cz and ot, only with full: the hints from other tracks, likeFor)
+export async function getCarCard(env, game, carId, full = false) {
   carId = await famId(env, game, carId); // one model for a car under every badge (carfamily.js)
   if (!carId) return null;
+  const out = (c) => { if (!c || !c.n) return null; if (full) return c; const { cz, ot, tg, ...rest } = c; return rest; };
   const row = await env.DB.prepare("SELECT dirty, data FROM car_cards WHERE game=?1 AND car_id=?2").bind(game, carId).first().catch(() => null);
   if (row && row.data && !row.dirty) {
     const c = JSON.parse(await gunz(row.data));
-    if (c.v === CARD_VERSION) return c.n ? c : null;
+    if (c.v === CARD_VERSION) return out(c);
   }
-  try { const c = await buildCarCard(env, game, carId); return c.n ? c : null; }
-  catch (e) { if (row && row.data) { const c = JSON.parse(await gunz(row.data)); return c.n ? c : null; } return null; }
+  try { return out(await buildCarCard(env, game, carId)); }
+  catch (e) { if (row && row.data) return out(JSON.parse(await gunz(row.data))); return null; }
+}
+
+// ---------- what other tracks teach a track nobody drove yet ----------
+// The car card keeps, for the fast drivers' laps of every track (within 3 % of the fastest there), every braking zone and
+// lift: [track, speed in, slowest speed (m/s), metres from the braking or the lift to the slowest point, the gear there,
+// the most steering from the braking to just after the slowest point (null without steering), 1 for a lift]. The apps
+// match lap A's corners to them (likeOf in pitwall-analysis.js): the same speed in and the same slowest speed say how
+// many metres of braking the fast drivers need and the gear they take; the same steering says how fast they go through.
+const LIKE_FAST = 0.03, LIKE_MAX = 900;
+const PWA = () => globalThis.PW_ANALYSIS;
+// a track's name, its discipline and its kind of oval for a car (the season, the sessions' category, the names)
+async function trackInfo(env, game, trackId, carId) {
+  const s = await env.DB.prepare("SELECT track, track_config, cat FROM sessions WHERE game=?1 AND track_id=?2 AND track IS NOT NULL ORDER BY started DESC LIMIT 1").bind(game, trackId).first().catch(() => null);
+  const cat = game === "iracing" ? catOf(await catMap(env), trackId, carId, s && s.cat, (s && s.track) || "", "") : "sports_car";
+  return { cat, g: groupOf(cat), track: (s && s.track) || "", cfg: (s && s.track_config) || "" };
+}
+const fastOf = (laps) => { const best = {}; for (const l of laps) if (!l.field && !l.rival) best[l.trackId] = Math.min(best[l.trackId] || 1e9, l.time); return laps.filter((l) => !l.field && !l.rival && l.time <= best[l.trackId] * (1 + LIKE_FAST)); };
+export function cornerSamples(laps, info = {}) {
+  const P = PWA(), out = [];
+  if (!P) return out;
+  for (const l of fastOf(laps)) {
+    const s = l.bins;
+    for (const z of P.ovalZones(s)) {
+      const a = s[z.imin];
+      if (!a) continue;
+      let st = 0, has = false;
+      for (let k = z.i; k <= Math.min(s.length - 1, z.imin + 6); k++) { const v = s[k] && s[k][5]; if (typeof v === "number" && isFinite(v)) { if (v !== 0) has = true; st = Math.max(st, Math.abs(v)); } }
+      out.push([l.trackId, r(z.v, 10), r(z.vmin, 10), (z.imin - z.i) * 5, Math.round(a[4] || 0), has ? r(st, 1000) : null, z.lift ? 1 : 0]);
+    }
+  }
+  // the tracks with fewer samples first in line when cut, so no one track speaks for the car alone
+  const per = {};
+  return out.filter((x) => (per[x[0]] = (per[x[0]] || 0) + 1) <= Math.ceil(LIKE_MAX / Math.max(1, new Set(out.map((y) => y[0])).size)));
+}
+// how the car's ovals are driven by the fast drivers: [{t: track, k: the kind of oval, g: its group, f: the share of the lap
+// flat out, lf: the share of its corners taken with a lift and no brake, n: laps}]
+export function ovalProfile(laps, info = {}) {
+  const P = PWA(), by = {};
+  if (!P) return [];
+  for (const l of fastOf(laps)) {
+    const ti = info[l.trackId] || {};
+    if (ti.g !== "oval" && ti.g !== "dirt_oval") continue;
+    const A = { bins: l.bins, maxBin: l.bins.length - 1 };
+    const k = P.ovalOf(A, A, { track: { cat: ti.cat, track: ti.track, track_config: ti.cfg, len: l.bins.length * 5 } });
+    if (!k) continue;
+    let full = 0, c = 0;
+    for (const b of l.bins) { if (!b) continue; c++; if (b[2] > 0.95) full++; }
+    const zs = P.ovalZones(l.bins), o = (by[l.trackId] = by[l.trackId] || { t: l.trackId, k, g: ti.g, f: [], lf: [] });
+    if (c) o.f.push(full / c);
+    if (zs.length) o.lf.push(zs.filter((z) => z.lift).length / zs.length);
+  }
+  const med = (a) => { if (!a.length) return null; const v = a.slice().sort((x, y) => x - y); return v[v.length >> 1]; };
+  return Object.values(by).map((o) => ({ t: o.t, k: o.k, g: o.g, f: r(med(o.f) || 0, 1000), lf: o.lf.length ? r(med(o.lf), 100) : null, n: o.f.length }));
+}
+// every car's ovals together, by kind of oval (once a day): for a car that never drove that kind of oval, how the fast
+// drivers of the other cars drive it (app_state coach_ovals)
+const KIND_MIN = 3;
+export async function buildOvalKinds(env) {
+  const r0 = await env.DB.prepare("SELECT game, car_id, data FROM car_cards WHERE data IS NOT NULL AND game='iracing' LIMIT 3000").all().catch(() => ({ results: [] }));
+  const by = {};
+  for (const x of r0.results || []) {
+    let c = null;
+    try { c = JSON.parse(await gunz(x.data)); } catch (e) { continue; }
+    for (const o of (c && c.ot) || []) { const b = (by[o.k] = by[o.k] || { f: [], lf: [], cars: new Set() }); b.f.push(o.f); if (o.lf != null) b.lf.push(o.lf); b.cars.add(x.car_id); }
+  }
+  const q = (a, p) => { const v = a.slice().sort((x, y) => x - y); return v.length ? v[Math.min(v.length - 1, Math.floor(p * (v.length - 1) + 0.5))] : null; };
+  const kinds = {};
+  for (const [k, b] of Object.entries(by)) if (b.f.length >= KIND_MIN && b.cars.size >= 2) kinds[k] = { f: [q(b.f, 0.25), q(b.f, 0.5), q(b.f, 0.75)], lf: b.lf.length >= KIND_MIN ? q(b.lf, 0.5) : null, n: b.f.length, cars: b.cars.size };
+  await env.DB.prepare("INSERT INTO app_state (k, v, at) VALUES ('coach_ovals', ?1, ?2) ON CONFLICT(k) DO UPDATE SET v=excluded.v, at=excluded.at").bind(JSON.stringify(kinds), Date.now()).run();
+  return kinds;
+}
+// what the apps get for a car and track (GET /community/like): the car's corners and ovals on its other tracks of the
+// same surface (dirt or not), and every car's ovals by kind
+export async function likeFor(env, game, trackId, carId, grp) {
+  const card = await getCarCard(env, game, carId, true).catch(() => null);
+  const dirt = /^dirt/.test(grp || ""), same = (g) => !grp || /^dirt/.test(g || "road") === dirt;
+  const ot = ((card && card.ot) || []).filter((o) => o.t !== trackId && same(o.g));
+  const tg = (card && card.tg) || {};
+  const cz = ((card && card.cz) || []).filter((x) => x[0] !== trackId && same(tg[x[0]]));
+  let kinds = {};
+  if (game === "iracing") { const a = await env.DB.prepare("SELECT v FROM app_state WHERE k='coach_ovals'").first().catch(() => null); try { kinds = a && a.v ? JSON.parse(a.v) : {}; } catch (e) {} }
+  return { v: 1, carId: card ? card.carId : carId, tracks: new Set(cz.map((x) => x[0])).size, cz, ot, kinds, shifts: (card && card.shifts) || [] };
 }
 
 // ---------- ids for a track and car nobody recorded with iRacing's ids yet ----------

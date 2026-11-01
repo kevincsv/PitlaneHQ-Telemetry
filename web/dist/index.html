@@ -3009,7 +3009,7 @@ async function cpRoute(url,method,raw){await cpReady;const u=new URL(url,"https:
   if(p==="/api/community/season")return ok(await cpCall("GET","/community/season",null,false));
   // with your account's token when signed in: the server marks your own laps and analyses (the anonymous ones too)
   // as the PC's proxy does: ?id= is the path's last part and every other parameter goes through
-  const cm=p.match(/^\/api\/community\/(combos|laps|reports|model|records|track|car)$/);if(cm){const id=q.get("id");q.delete("id");return ok(await cpCall("GET","/community/"+cm[1]+(id?"/"+encodeURIComponent(id):"")+(q.toString()?"?"+q:""),null,true))}
+  const cm=p.match(/^\/api\/community\/(combos|laps|reports|model|records|track|car|like)$/);if(cm){const id=q.get("id");q.delete("id");return ok(await cpCall("GET","/community/"+cm[1]+(id?"/"+encodeURIComponent(id):"")+(q.toString()?"?"+q:""),null,true))}
   return no(cpNeedPC())}
 const cpReady=COMPANION?(async()=>{try{const s=await (await cpLocal("server.json")).json();CP.server=String(s.url||"").replace(/\/+$/,"")}catch(e){}
   try{const own=localStorage.getItem("pw.server");if(own)CP.server=own}catch(e){}
@@ -7056,7 +7056,7 @@ function notesFor(id){return NOTES[String(id)]||null}
    phases (braking, entry, apex, exit), the tip about the phase where the time goes, the plan, the sectors, the line. The
    app hands it what it needs (anaCtx) and draws what it answers. */
 function anaCtx(A,B){const tid=A||B?(A&&A.trackId)||(B&&B.trackId)||TURN_TID:null,PM=window.PW_MODEL;
-  return{lang:LANG,units:UNITS,turns:tid?turnsFor(tid):null,weights:COACH_W,me:COACH_ME,hint:A&&PM&&PM.cornerHint?apex=>PM.cornerHint(A,apex):null,post:devWords,track:anaTrack(A,B),estB:!!(B&&(B.est||B.field))}}
+  return{lang:LANG,units:UNITS,turns:tid?turnsFor(tid):null,weights:COACH_W,me:COACH_ME,hint:A&&PM&&PM.cornerHint?apex=>PM.cornerHint(A,apex):null,post:devWords,track:anaTrack(A,B),estB:!!(B&&(B.est||B.field)),like:A&&PM&&PM.like?PM.like(A):null}}
 /* the track and car of the laps for the oval coach (ovalOf in the module): a session's laps carry them, a lap recorded
    live takes the session the agent reads now */
 function anaTrack(A,B){const L=[A,B].find(l=>l&&l.track);if(L)return{cat:L.cat||"",track:L.track||"",track_config:L.track_config||"",car:L.car||""};
@@ -7206,10 +7206,13 @@ function coachPlan(A,R,LP){return PWA.coachPlan(A,R,LP,anaCtx(A,R))}
    that car and track says whether each corner got faster. From COACH_W.min cases of a tip's kind on corners of that speed,
    the share of drivers who gained reorders the plan (coachOf in pitwall-analysis.js); the texts never change. The driver sees none of it, only
    the 👍/👎 on each tip; the admin panel (Coach) shows the counts. */
-let COACH_W={at:0,w:{},b:{},off:new Set(),conf:false,min:30,p:null},COACH_ME={at:0,habits:[],w:{},p:null};
-function coachWeights(){if(Date.now()-COACH_W.at<3600e3||COACH_W.p||demoOn())return;COACH_W.p=cloudGet("/community/coach/weights").then(r=>{COACH_W.at=Date.now();COACH_W.min=r.min||30;COACH_W.w={};COACH_W.b={};(r.buckets||[]).forEach(b=>{const k=b.kind+"|"+b.cls;COACH_W.w[k]=b.w>0?b.w:1;COACH_W.b[k]=b});COACH_W.off=new Set(r.off||[]);COACH_W.plan=r.plan&&typeof r.plan==="object"?r.plan:{};COACH_W.conf=!!r.confidence;COACH_W.p=null}).catch(()=>{COACH_W.at=Date.now()-3000e3;COACH_W.p=null})}
+/* The coach learns apart by discipline (road, oval, dirt oval, dirt road: catGroup in the module, ?cat= on the server): a
+   group's weights where it learnt enough, else everyone's. g is the group of the laps in the coach (undefined keeps the last) */
+let COACH_W={at:0,w:{},b:{},off:new Set(),conf:false,min:30,p:null,cat:""},COACH_ME={at:0,habits:[],w:{},p:null,cat:""};
+const coachCatQ=g=>g?"?cat="+encodeURIComponent(g):"";
+function coachWeights(g){if(g===undefined)g=COACH_W.cat;if(g!==COACH_W.cat&&!COACH_W.p){COACH_W.cat=g;COACH_W.at=0}if(Date.now()-COACH_W.at<3600e3||COACH_W.p||demoOn())return;const want=g;COACH_W.p=cloudGet("/community/coach/weights"+coachCatQ(g)).then(r=>{if(COACH_W.cat!==want){COACH_W.p=null;COACH_W.at=0;return}COACH_W.at=Date.now();COACH_W.min=r.min||30;COACH_W.w={};COACH_W.b={};(r.buckets||[]).forEach(b=>{const k=b.kind+"|"+b.cls;COACH_W.w[k]=b.w>0?b.w:1;COACH_W.b[k]=b});COACH_W.off=new Set(r.off||[]);COACH_W.plan=r.plan&&typeof r.plan==="object"?r.plan:{};COACH_W.conf=!!r.confidence;COACH_W.p=null}).catch(()=>{COACH_W.at=Date.now()-3000e3;COACH_W.p=null})}
 /* the driver's own memory (coachtips.js /coach/me): the kinds of tip that repeat across their tracks (habits) and their own weights */
-function coachMe(){if(Date.now()-COACH_ME.at<600e3||COACH_ME.p||demoOn())return;COACH_ME.p=cloudGet("/community/coach/me").then(r=>{COACH_ME.at=Date.now();COACH_ME.habits=r.habits||[];COACH_ME.w=r.w||{};COACH_ME.byCls=Array.isArray(r.byCls)?r.byCls:[];COACH_ME.p=null}).catch(()=>{COACH_ME.at=Date.now()-500e3;COACH_ME.p=null})}
+function coachMe(g){if(g===undefined)g=COACH_ME.cat;if(g!==COACH_ME.cat&&!COACH_ME.p){COACH_ME.cat=g;COACH_ME.at=0}if(Date.now()-COACH_ME.at<600e3||COACH_ME.p||demoOn())return;const want=g;COACH_ME.p=cloudGet("/community/coach/me"+coachCatQ(g)).then(r=>{if(COACH_ME.cat!==want){COACH_ME.p=null;COACH_ME.at=0;return}COACH_ME.at=Date.now();COACH_ME.habits=r.habits||[];COACH_ME.w=r.w||{};COACH_ME.byCls=Array.isArray(r.byCls)?r.byCls:[];COACH_ME.p=null}).catch(()=>{COACH_ME.at=Date.now()-500e3;COACH_ME.p=null})}
 const tipConf=(k,cls)=>{const b=COACH_W.b[k+"|"+cls];return COACH_W.conf&&b&&b.n>=COACH_W.min?b:null}; // how many drivers it helped, when the admin lets the tips say it
 const COACH_SENT=new Set(),TIPRATE=store.get("pw.tiprate",{});
 function coachWhere(A){const ses=A&&A.sessionId?(CLOUD.sessions||[]).find(x=>x.id===A.sessionId):null;return ses&&ses.started>0?{sid:A.sessionId,started:ses.started}:null}
@@ -7220,9 +7223,11 @@ async function coachReport(A,R,c,best){try{if(!A||!R||A.comm||demoOn()||!c||!c.c
   const cb=best&&best!==A&&best.valid!==false?coachCompare(best,R):null,near=x=>cb?cb.filter(y=>Math.abs(y.apex-x.apex)<=60).sort((p,q)=>Math.abs(p.apex-x.apex)-Math.abs(q.apex-x.apex))[0]:x;
   const ref=R.model==="level"?"level":R.model==="ideal"?"record":R.comm?"comm":"own";
   const corners=c.cs.slice(0,40).map(x=>{const b=near(x);return{n:x.n,d:Math.round(x.d),apex:Math.round(x.apex),kind:x.lost>.03?x.kind:"",cls:x.cls,lost:+x.lost.toFixed(3),ta:+x.ta.toFixed(3),tb:+x.tb.toFixed(3),tbest:b?+b.ta.toFixed(3):null,dd:x.dd!=null?Math.round(x.dd):null}});
-  await cloudPost("/community/coach/tips",{game:aGame(),trackId:co.trackId,carId:co.carId,sid:w.sid,started:w.started,ref,lap:+A.time.toFixed(3),flags:A.flags||[],corners})}catch(e){}}
+  await cloudPost("/community/coach/tips",{game:aGame(),trackId:co.trackId,carId:co.carId,sid:w.sid,started:w.started,ref,lap:+A.time.toFixed(3),flags:A.flags||[],corners,cat:coachCat(A,R)})}catch(e){}}
+/* the discipline of the laps in the coach, what its tips and votes are kept under (catGroup in the module) */
+function coachCat(A,R){try{return PWA.catGroup(A,R||null,{track:anaTrack(A,R||null)})||""}catch(e){return""}}
 async function coachRate(A,c,up){const PM=window.PW_MODEL,w=coachWhere(A);if(!PM||!w||!c)return;const k=w.sid+":"+Math.round(c.apex),was=TIPRATE[k]||0,now=was===up?0:up;if(now)TIPRATE[k]=now;else delete TIPRATE[k];store.set("pw.tiprate",TIPRATE);
-  try{const co=await PM.comboOf(A);if(!co)return;await cloudPost("/community/coach/rate",{game:aGame(),trackId:co.trackId,carId:co.carId,sid:w.sid,started:w.started,n:c.n,apex:Math.round(c.apex),kind:c.kind,cls:c.cls,up:now})}catch(e){}}
+  try{const co=await PM.comboOf(A);if(!co)return;await cloudPost("/community/coach/rate",{game:aGame(),trackId:co.trackId,carId:co.carId,sid:w.sid,started:w.started,n:c.n,apex:Math.round(c.apex),kind:c.kind,cls:c.cls,up:now,cat:coachCat(A)})}catch(e){}}
 /* the step to the next level: the corners where the drivers at your pace lose to the driver just ahead (the model's levelStep) */
 function stepText(L,A){return PWA.stepText(L&&L.step,A,anaCtx(A))}
 const areaName=k=>k==="straight"?Tx("Straights","Rectas","Geraden","Retas"):phaseName(k);
@@ -7272,9 +7277,10 @@ function renderCoach(){coachWeights();coachMe();const LP=coachLaps(),best=markAn
   const prL=pr==="g61"?G61REF:lapOf(pr),keep=rsel.dataset.user==="1"&&!!pr&&!!prL&&prL!==A;
   rsel.value=keep?pr:defRef();if(!LP.length&&G61REF&&!keep)rsel.value="g61";
   const R=rsel.value==="g61"?G61REF:lapOf(rsel.value);window.COACH_A=A;window.COACH_R=R;ANASEL.a=selKey(sel.value,A);ANASEL.b=selKey(rsel.value,R);if(!A||!R||A===R){renderLapCompareHeads(null,null);box.innerHTML=`<div class="panel empty">${Lp("Choose two different laps.","Elige dos vueltas distintas.")}</div>`;return}renderLapCompareHeads(A,R);
+  {const g=coachCat(A,R);coachWeights(g);coachMe(g)}
   const c=coachPlan(A,R,LP),r2=v=>Math.round(v*100)/100,rk=m?PM.rankOf(m,A.time):null;
   // how this lap does where the last session's plan asked for something, the track guide, where the lap stands in every corner
-  const cx=anaCtx(A,R),fu=PWA.followUp(coachLast(A),c.cs,cx),gd=m?PWA.trackGuide(m,cx):null,rks=m?PWA.cornerRanks(A,m,cx):[],cls=PWA.clsLines(COACH_ME.byCls,cx);
+  const cx=anaCtx(A,R),lk=PWA.likeOf(A,cx,c.cs),fu=PWA.followUp(coachLast(A),c.cs,cx),gd=m?PWA.trackGuide(m,cx):null,rks=m?PWA.cornerRanks(A,m,cx):[],cls=PWA.clsLines(COACH_ME.byCls,cx);
   const focusT=c.focus&&c.focus[1]>.05?areaName(c.focus[0]):Tx("Consistency","La regularidad","Konstanz","Regularidade"),focusS=c.focus&&c.focus[1]>.05?Tx(`${r2(c.focus[1])} s to gain`,`${r2(c.focus[1])} s por ganar`,`${r2(c.focus[1])} s zu gewinnen`,`${r2(c.focus[1])} s a ganhar`):Tx("the lap is close to the reference","la vuelta está cerca de la referencia","die Runde ist nah an der Referenz","a volta está perto da referência");
   // where you stand among the drivers known here: the record, the next level (both real laps you can compare with) and your pace
   const vs=t=>Tx("your lap","tu vuelta","deine Runde","sua volta")+": "+sgn(A.time-t,3)+" s";
@@ -7310,7 +7316,7 @@ function renderCoach(){coachWeights();coachMe();const LP=coachLaps(),best=markAn
       <section class="pnl"><div class="pnl-h">${esc(Tx("Sectors","Sectores","Sektoren","Setores"))}</div><div class="pnl-b">${c.secs.length?`<div class="co-secs">${c.secs.map(x=>`<div class="co-s"><span class="k">S${x.n}</span><b class="mono ${x.d>0?"bad":"good"}">${sgn(x.d,3)}</b><small class="mono">A ${x.a.toFixed(3)} · B ${x.b.toFixed(3)}</small></div>`).join("")}</div>`:`<p class="note" style="margin:0">${esc(Tx("No sector times for these laps.","Estas vueltas no tienen tiempos por sector.","Keine Sektorzeiten für diese Runden.","Sem tempos de setor para estas voltas."))}</p>`}</div></section>
       ${c.cs.length?(()=>{const mx=Math.max(.05,...c.cs.map(x=>Math.abs(x.lost)));return`<section class="pnl co-bars"><div class="pnl-h">${esc(Tx("Corner by corner","Curva a curva","Kurve für Kurve","Curva a curva"))}</div><div class="co-bl">${c.cs.slice().sort((a,b)=>b.lost-a.lost).map(x=>{const k=x.lost>.02?"bad":x.lost<-.02?"good":"muted";return`<div class="co-br"><span class="mono">T${x.n}</span><span class="co-bt"><i class="${k}" style="width:${Math.max(2,Math.round(Math.abs(x.lost)/mx*100))}%"></i></span><span class="mono ${k}">${sgn(x.lost,2)}</span></div>`}).join("")}</div></section>`})():""}</div>
     <section class="pnl co-c1"><div class="pnl-h co-ch">${esc(COACH_ALLC?Tx("Corner by corner","Curva a curva","Kurve für Kurve","Curva a curva"):Tx("The corners that cost the most","Las curvas que más cuestan","Die Kurven, die am meisten kosten","As curvas que mais custam"))}<span class="sp"></span>${c.cs.length>3?`<button type="button" class="btn small" id="coachAllC">${esc(COACH_ALLC?Tx("Only the ones that lose time","Solo las que pierden tiempo","Nur die mit Zeitverlust","Só as que perdem tempo"):Tx(`All ${c.cs.length} corners`,`Las ${c.cs.length} curvas`,`Alle ${c.cs.length} Kurven`,`As ${c.cs.length} curvas`))}</button>`:""}</div>
-      ${coachCornersHTML(corners,0)}</section>${gd?`<section class="pnl co-guide"><div class="pnl-h">${esc(Tx("Track guide","Guía del circuito",null,"Guia da pista"))}</div><div class="pnl-b">${guideHTML(gd)}</div></section>`:""}</div></div>`;
+      ${coachCornersHTML(corners,0)}</section>${likeHTML(lk)}${gd?`<section class="pnl co-guide"><div class="pnl-h">${esc(Tx("Track guide","Guía del circuito",null,"Guia da pista"))}</div><div class="pnl-b">${guideHTML(gd)}</div></section>`:""}</div></div>`;
   const cmap=$("#coachMap");cmap._planSel=Math.max(0,c.plan.slice(0,PLAN_SHOW).findIndex(p=>p.marks&&p.marks.length));renderCmpMap(A,R,cmap,{plan:c.plan.slice(0,PLAN_SHOW)});coachReport(A,R,c,best);coachEdges(A,R,cx);
   // a step of the plan pressed (or its number on the map) is the one the map shows: its stretch, its points A and B, the apex and the throttle
   const planSel=i=>{cmap._planSel=i;drawPlanLayer(cmap);box.querySelectorAll(".co-plan [data-ps]").forEach(li=>li.classList.toggle("sel",+li.dataset.ps===i))};cmap._onPlanSel=planSel;
@@ -7337,7 +7343,7 @@ function planVoteHTML(A){const w=coachWhere(A);if(!w)return"";const v=PLANRATE[w
 /* a thumb on one step of the plan or on the whole plan (1 up, -1 down, pressing it again takes it back), kept with the
    account (coachtips.js /coach/planrate): from enough votes the steps the drivers find useful come first */
 function planRate(A,p,up){const PM=window.PW_MODEL,w=coachWhere(A);if(!w)return 0;const key=planKey(p),k=w.sid+"|"+key,now=(PLANRATE[k]||0)===up?0:up;if(now)PLANRATE[k]=now;else delete PLANRATE[k];store.set("pw.planrate",PLANRATE);
-  if(!demoOn())(async()=>{try{const co=PM&&await PM.comboOf(A);if(!co)return;await cloudPost("/community/coach/planrate",{game:aGame(),trackId:co.trackId,carId:co.carId,sid:w.sid,started:w.started,step:key,k:p?p.k:"plan",kind:p&&p.kind||"",turns:p?(p.turns||[]).slice(0,12):[],up:now})}catch(e){}})();return now}
+  if(!demoOn())(async()=>{try{const co=PM&&await PM.comboOf(A);if(!co)return;await cloudPost("/community/coach/planrate",{game:aGame(),trackId:co.trackId,carId:co.carId,sid:w.sid,started:w.started,step:key,k:p?p.k:"plan",kind:p&&p.kind||"",turns:p?(p.turns||[]).slice(0,12):[],up:now,cat:coachCat(A)})}catch(e){}})();return now}
 /* the plan on the track map: every step's number where it happens, and for the step chosen its stretch, where you brake
    or lift (A) and where the reference does (B), the apex and where each picks up the throttle */
 function drawPlanLayer(box){const g=box&&box.querySelector(".planG"),PL=box&&box._plan,at=box&&box._at,L=box&&box._L;if(!g)return;if(!PL||!at||!LAPV.plan){g.innerHTML="";return}
@@ -7374,6 +7380,9 @@ function coachLast(A){const w=coachWhere(A),PM=window.PW_MODEL;if(!w||!PM||demoO
   COACH_LAST[w.sid]={tips:null};(async()=>{let tips=[];try{const co=await PM.comboOf(A);if(co){const r=await cloudGet(`/community/coach/last?game=${aGame()}&trackId=${co.trackId}&carId=${co.carId}&before=${w.started}`);tips=Array.isArray(r.tips)?r.tips:[]}}catch(e){}
     COACH_LAST[w.sid]={tips};if(tips.length&&CUR_VIEW==="coach")renderCoach()})();return null}
 /* how this lap does where the last session's plan asked for something (followUp in pitwall-analysis.js) */
+/* what the fast drivers of this car do on other tracks, for the corners this track has no card of yet (likeOf in the module) */
+function likeHTML(lk){if(!lk)return"";const it=[...(lk.oval?[{t:"",text:lk.oval.lines.join(" ")}]:[]),...lk.corners.map(c=>({t:"T"+c.n,text:c.lines.join(" ")}))];if(!it.length)return"";
+  return`<section class="pnl co-like"><div class="pnl-h">${esc(Tx("From other tracks","De otros circuitos",null,"De outras pistas"))}</div><div class="pnl-b"><ul class="co-fu">${it.map(x=>`<li>${x.t?`<b>${esc(x.t)}</b>`:""}<small>${esc(x.text)}</small></li>`).join("")}</ul></div></section>`}
 function followHTML(fu){if(!fu||!fu.length)return"";return`<section class="pnl co-follow"><div class="pnl-h">${esc(Tx("Your last session's plan","El plan de tu última sesión",null,"O plano da sua última sessão"))}</div><div class="pnl-b"><ul class="co-fu">${fu.map(x=>`<li><span class="co-fi ${x.ok>0?"good":x.ok<0?"bad":"muted"}">${x.ok>0?"✓":x.ok<0?"✗":"="}</span><b>${esc(x.t)}</b><small>${esc(x.text)}</small></li>`).join("")}</ul></div></section>`}
 /* where lap A stands among the drivers here in every corner (cornerRanks) and the driver's corner types across their tracks (clsLines) */
 /* the track left unused on the corners' exits, against the edges the drivers' laps give (pitwall-analysis.js edgeUse) */
@@ -8369,7 +8378,7 @@ let COMM=null,COMMSEL=null,SHARED_REPORTS={};
 /* Community never shows a brand of a car family (the SF23's Honda, NASCAR's Toyota): every car name it gets is the family's */
 const famCars=o=>{if(Array.isArray(o))o.forEach(famCars);else if(o&&typeof o==="object")for(const k in o){const v=o[k];if(k==="car"&&typeof v==="string")o[k]=carFam(v);else if(v&&typeof v==="object")famCars(v)}return o};
 async function cget(p){return famCars(await cget0(p))}
-async function cget0(p){if(/^\/api\/community\/(combos|laps|reports|setups|model|records|track|car)/.test(p))p=withGame(p);if(MODE==="bridge")return jget(p);const u=new URL(p,location.href),t=+u.searchParams.get("trackId"),c=+u.searchParams.get("carId"),id=u.searchParams.get("id");
+async function cget0(p){if(/^\/api\/community\/(combos|laps|reports|setups|model|records|track|car|like)/.test(p))p=withGame(p);if(MODE==="bridge")return jget(p);const u=new URL(p,location.href),t=+u.searchParams.get("trackId"),c=+u.searchParams.get("carId"),id=u.searchParams.get("id");
   return u.pathname.endsWith("/combos")?{combos:[]}:u.pathname.endsWith("/reports")?{reports:[]}:{laps:[]}}
 async function loadComm(){if(MODE==="bridge"){try{COMM=await jget("/api/community")}catch(e){COMM={ready:false,error:e.message}}}else COMM=COMM||{ready:false};return COMM}
 const DEL_OPTS=[["","Keep it","Conservarla","Behalten","Manter"],["now","Right away","Inmediatamente","Sofort","Imediatamente"],["1d","After 1 day","Tras 1 día","Nach 1 Tag","Após 1 dia"],["2d","After 2 days","Tras 2 días","Nach 2 Tagen","Após 2 dias"],["7d","After 1 week","Tras 1 semana","Nach 1 Woche","Após 1 semana"]];

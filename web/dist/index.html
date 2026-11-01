@@ -3795,7 +3795,7 @@ function renderLapMore(A,B){const box=$("#lapMore");if(!box)return;{const r2=$("
     LM_RACE._toL=toL}
   // more charts, behind their switch
   const more=!!LAPV.more;
-  parts.push(`<div class="lm-more"><button type="button" class="chip" id="lmMore" aria-pressed="${more}">${esc(Tx("More charts","Más gráficas",null,"Mais gráficos"))}${proB()}</button></div>`);
+  parts.push(`<div class="lm-more"><button type="button" class="chip" id="lmMore" aria-pressed="${more}">${esc(Tx("More charts","Más gráficas",null,"Mais gráficos"))}${proB()}</button> <button type="button" class="chip" id="lmCsv">${esc(Tx("Export CSV","Exportar CSV",null,"Exportar CSV"))}</button></div>`);
   if(more){const gA=PWA.ggOf(A),gB=B?PWA.ggOf(B):null,sA=PWA.steerOf(A,ctx),sB=B?PWA.steerOf(B,ctx):[],us=PWA.understeer(A,B,ctx),ty=PWA.tyreLaps(laps),cB=css(bVar(B))||"#5aa9ff",cA=css("--accent")||"#ffb02e";
     const gg=gA||gB?`<div class="panel lm-p"><div class="label">${esc(Tx("G-G (friction circle)","G-G (círculo de fricción)",null,"G-G (círculo de atrito)"))}</div>${ggSVG([gB&&{pts:gB.pts,c:cB},gA&&{pts:gA.pts,c:cA}].filter(Boolean))}<p class="lm-sum mono">A ${gA?`${gA.max.lat.toFixed(1)} g ↔ · ${gA.max.brake.toFixed(1)} g ↓ · ${gA.max.acc.toFixed(1)} g ↑`:"–"}${gB?`<br>B ${gB.max.lat.toFixed(1)} g ↔ · ${gB.max.brake.toFixed(1)} g ↓ · ${gB.max.acc.toFixed(1)} g ↑`:""}</p></div>`:"";
     const st=sA.length?`<div class="panel lm-p"><div class="label">${esc(Tx("Steering against speed","Volante frente a velocidad",null,"Volante contra velocidade"))}</div>${xySVG([sB.length&&{pts:sB,c:cB},{pts:sA,c:cA}].filter(Boolean),spdU(),"°")}${us&&us.text?`<p class="lm-sum">${esc(us.text)}</p>`:""}</div>`:"";
@@ -3806,6 +3806,7 @@ function renderLapMore(A,B){const box=$("#lapMore");if(!box)return;{const r2=$("
   {const mi=parts.findIndex(x=>x.startsWith('<div class="lm-more">'));if(mi>=0)parts.splice(mi,parts.length-mi,`<div class="lm-grp">${parts.slice(mi).join("")}</div>`)}
   box.hidden=false;box.innerHTML=parts.join("");lapMoreBalance();
   const mb=$("#lmMore");if(mb)mb.onclick=()=>{LAPV.more=!LAPV.more;store.set("pw.lapv",LAPV);renderLapMore(A,B)};
+  const cv=$("#lmCsv");if(cv)cv.onclick=()=>lapCsv(A);
   const li=$("#lmLen");if(li)li.onchange=()=>{LM_RACE.len=li.value;store.set("pw.fuelrace",{len:LM_RACE.len,unit:LM_RACE.unit});renderLapMore(A,B)};
   box.querySelectorAll("#lmUnit [data-u]").forEach(b=>b.onclick=()=>{LM_RACE.unit=b.dataset.u;store.set("pw.fuelrace",{len:LM_RACE.len,unit:LM_RACE.unit});renderLapMore(A,B)});
   const ti=$("#lmTank");if(ti)ti.onchange=()=>{const v=LM_RACE._toL(+ti.value||0);if(v>0){store.set("pw.tank."+normTrk(A.car||""),Math.round(v*10)/10);if(ses)ses.tank=Math.round(v*10)/10}renderLapMore(A,B)}}
@@ -3840,6 +3841,18 @@ function heightSVG(sets){const W=320,H=180,pl=34,pb=22,n=Math.max(...sets.map(s=
   let g=`<svg class="lm-svg lm-wide" viewBox="0 0 ${W} ${H}" role="img">`;[lo,(lo+hi)/2,hi].forEach(v=>{const r=ft?(v-lo)*3.28084:(v-lo);g+=`<line x1="${pl}" x2="${W-6}" y1="${sy(v).toFixed(1)}" y2="${sy(v).toFixed(1)}" class="lm-grid"/><text x="2" y="${(sy(v)+3).toFixed(1)}" class="lm-ax">${Math.round(r)} ${ft?"ft":"m"}</text>`});
   const d=ft?km*.621371:km,u=ft?"mi":"km";[0,.5,1].forEach(f=>{g+=`<text x="${sx(f*(n-1)).toFixed(1)}" y="${H-6}" class="lm-ax" text-anchor="${f===0?"start":f===1?"end":"middle"}">${(d*f).toFixed(1)} ${u}</text>`});
   sets.forEach(s=>{g+=`<polyline fill="none" stroke="${s.c}" stroke-width="2" points="${s.v.map((v,i)=>sx(i).toFixed(1)+","+sy(v).toFixed(1)).join(" ")}"/>`});return g+"</svg>"}
+/* lap A as a CSV file (one row every 5 m: distance, lap time, speed, throttle, brake, gear, steering, and the height
+   where the lap has it) for other tools */
+function lapCsv(A){if(!A||!A.bins)return;const imp=UNITS==="imperial",rows=[["distance_m","time_s",imp?"speed_mph":"speed_kmh","throttle_pct","brake_pct","gear","steering_deg"].concat(A.z?["height_m"]:[]).join(",")];
+  A.bins.forEach((b,i)=>{if(!b)return;const r=[i*BIN,(+b[1]||0).toFixed(3),((+b[0]||0)*(imp?2.236936:3.6)).toFixed(1),Math.round((+b[2]||0)*100),Math.round((+b[3]||0)*100),b[4]??"",((+b[5]||0)*180/Math.PI).toFixed(1)];if(A.z){const z=A.z[Math.min(A.z.length-1,Math.floor(i*BIN/25))];r.push(z!=null?(+z).toFixed(1):"")}rows.push(r.join(","))});
+  const name=("pitlanehq-"+(A.track||"lap")+"-"+(A.car||"")+"-lap"+(A.n||"")).toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/-+$/,"")+".csv";
+  const url=URL.createObjectURL(new Blob([rows.join("\n")+"\n"],{type:"text/csv"})),a=document.createElement("a");a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),5000)}
+/* the lap screen's keys: [ and ] the lap before and after (A), S swaps A and B, the space bar plays the map's replay */
+addEventListener("keydown",e=>{if(CUR_VIEW!=="laps"||e.ctrlKey||e.metaKey||e.altKey)return;const t=e.target;if(t&&(/^(INPUT|SELECT|TEXTAREA)$/.test(t.tagName)||t.isContentEditable))return;
+  const A=$("#lapA"),B=$("#lapB");if(!A)return;const fire=x=>x.dispatchEvent(new Event("change",{bubbles:true}));
+  if(e.key==="["||e.key==="]"){const i=A.selectedIndex+(e.key==="]"?1:-1);if(i>=0&&i<A.options.length){A.selectedIndex=i;fire(A);e.preventDefault()}}
+  else if((e.key==="s"||e.key==="S")&&B){const a=A.value,b=B.value;if([...A.options].some(o=>o.value===b)&&[...B.options].some(o=>o.value===a)){A.value=b;fire(A);B.value=a;fire(B);e.preventDefault()}}
+  else if(e.key===" "){const r=document.querySelector("#v-laps [data-rp]");if(r){r.click();e.preventDefault()}}});
 function batSVG(sets){const W=320,H=180,pl=34,pb=22,n=Math.max(...sets.map(s=>s.v.length)),km=(n-1)*.05,sx=i=>pl+i/Math.max(1,n-1)*(W-pl-8),sy=v=>H-pb-v/100*(H-pb-8);
   let g=`<svg class="lm-svg lm-wide" viewBox="0 0 ${W} ${H}" role="img">`;[0,50,100].forEach(v=>{g+=`<line x1="${pl}" x2="${W-6}" y1="${sy(v).toFixed(1)}" y2="${sy(v).toFixed(1)}" class="lm-grid"/><text x="2" y="${(sy(v)+3).toFixed(1)}" class="lm-ax">${v}%</text>`});
   const d=UNITS==="imperial"?km*.621371:km,u=UNITS==="imperial"?"mi":"km";[0,.5,1].forEach(f=>{g+=`<text x="${sx(f*(n-1)).toFixed(1)}" y="${H-6}" class="lm-ax" text-anchor="${f===0?"start":f===1?"end":"middle"}">${(d*f).toFixed(1)} ${u}</text>`});
@@ -5114,10 +5127,10 @@ async function renderCloudLaps(){const box=$("#cloudLapsBox");if(!box)return;clo
   if(CLOUD.sessions===null||CLOUD.game!==aGame()){box.innerHTML=`<div class="panel empty">${esc(Tx("Loading your races…","Cargando tus carreras…","Deine Rennen werden geladen…","Carregando suas corridas…"))}</div>`;await cloudLoadSessions(true)}
   let ss=CLOUD.sessions||[],loc=locale();if(!ss.length){box.innerHTML=`<div class="panel empty">${esc(CLOUD.err||Tx("Nothing in your account yet: drive with Pitlane HQ open on your PC and your sessions show here.","Aún no hay nada en tu cuenta: corre con Pitlane HQ abierto en tu PC y tus sesiones aparecerán aquí.","Noch nichts in deinem Konto: fahre mit Pitlane HQ auf dem PC, dann erscheinen deine Sitzungen hier.","Ainda não há nada na sua conta: corra com o Pitlane HQ aberto no PC e suas sessões aparecem aqui."))}</div>`;return}
   const kind=sessKind,all=ss,tracks=[...new Set(all.map(x=>x.track).filter(Boolean))].sort((a,b)=>a.localeCompare(b));if(MRF.track&&!tracks.includes(MRF.track))MRF.track="";
-  const q=MRF.q.trim().toLowerCase(),hit=x=>(!q||`${x.track} ${x.track_config||""} ${x.car}`.toLowerCase().includes(q))&&(!MRF.track||x.track===MRF.track)&&(!MRF.kind||kindKey(x.kind)===MRF.kind)&&(!MRF.best||isBestSes(x));
+  const q=MRF.q.trim().toLowerCase(),hit=x=>(!q||`${x.track} ${x.track_config||""} ${x.car} ${x.started?new Date(x.started).toLocaleDateString(loc,{day:"numeric",month:"long",year:"numeric"}):""}`.toLowerCase().includes(q))&&(!MRF.track||x.track===MRF.track)&&(!MRF.kind||kindKey(x.kind)===MRF.kind)&&(!MRF.best||isBestSes(x));
   ss=all.filter(hit).slice().sort(MRF.sort==="best"?(a,b)=>(a.best>0?a.best:1e9)-(b.best>0?b.best:1e9):MRF.sort==="laps"?(a,b)=>(b.laps||0)-(a.laps||0):(a,b)=>(b.started||0)-(a.started||0));
   const opt=(v,t,cur)=>`<option value="${esc(v)}"${v===cur?" selected":""}>${esc(t)}</option>`;
-  const bar=`<div class="mr-filt"><input type="search" id="mrQ" value="${esc(MRF.q)}" placeholder="${esc(Tx("Search track or car","Buscar circuito o coche","Strecke oder Auto suchen","Buscar pista ou carro"))}" aria-label="${esc(Tx("Search","Buscar"))}">
+  const bar=`<div class="mr-filt"><input type="search" id="mrQ" value="${esc(MRF.q)}" placeholder="${esc(Tx("Search track, car or date","Buscar circuito, coche o fecha","Strecke oder Auto suchen","Buscar pista, carro ou data"))}" aria-label="${esc(Tx("Search","Buscar"))}">
     <select id="mrT" aria-label="${esc(Tx("Track","Circuito"))}">${opt("",Tx("All tracks","Todos los circuitos","Alle Strecken","Todas as pistas"),MRF.track)}${tracks.map(t=>opt(t,t,MRF.track)).join("")}</select>
     <select id="mrK" aria-label="${esc(Tx("Session","Sesión"))}">${opt("",Tx("All sessions","Todas las sesiones","Alle Sitzungen","Todas as sessões"),MRF.kind)}${opt("race",sessKind("Race"),MRF.kind)}${opt("qual",sessKind("Qualify"),MRF.kind)}${opt("prac",sessKind("Practice"),MRF.kind)}</select>
     <select id="mrS" aria-label="${esc(Tx("Order","Orden"))}">${opt("new",Tx("Newest first","Más recientes","Neueste zuerst","Mais recentes"),MRF.sort)}${opt("best",Tx("Fastest lap first","Vuelta más rápida primero","Schnellste Runde zuerst","Volta mais rápida primeiro"),MRF.sort)}${opt("laps",Tx("Most laps first","Más vueltas primero","Meiste Runden zuerst","Mais voltas primeiro"),MRF.sort)}</select>

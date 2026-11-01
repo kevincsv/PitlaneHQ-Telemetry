@@ -132,3 +132,10 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   what they gained, each with "Share card" (the lap card, `shareLapCard`, with "New personal best" and the gain where a
   leaderboard place would be). Share copies the week as text (the phone's share sheet on the web and the phones).
 
+## Search, CSV and keys
+
+- My sessions' search also finds the date ("26 October"). The lap analysis has "Export CSV" beside More charts
+  (`lapCsv`): lap A every 5 m with distance, lap time, speed, throttle, brake, gear, steering and the height when the lap
+  has it. On the lap screen of the PC app and the web, [ and ] go to the lap before and after, S swaps A and B and the
+  space bar plays the map's replay.
+

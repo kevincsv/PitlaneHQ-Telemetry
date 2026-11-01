@@ -7,7 +7,7 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   apps: Settings → Admin), never uploaded, with a banner on every screen. The `-demo` flag of
   PitlaneHQ.exe is for development only and has no button in the app. The one exception is the web's visitor
   (`web/dist/pitwall-tour.js`, COMPANION and not signed in): the landing, the "Boxes" design 1 (the owner's choice,
-  built exactly as its mockup). The app header carries real buttons (Records, Leagues, the language, Downloads in
+  built exactly as its mockup). The app header carries real buttons (Pricing, which scrolls to the Pricing section, Records, Leagues, the language, Downloads in
   amber; at phone width only their icons, the version badge hidden). The hero is the tagline ("Telemetry, coach and
   overlays for your laps", the eyebrow "iRacing · Le Mans Ultimate (beta)"), one sentence, Create account, Download for
   Windows, Android, Microsoft Store and Steam "Coming soon" badges that are not links (also on `/downloads`,
@@ -22,7 +22,7 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   driver's name); "The most active leagues right now", the three first of `/community/leagues/found` (the section shows
   once they are there), with "See every league" and "Post your league for free"; "Over the game", the overlays as the
   agent draws them (`landing/<lang>/ov-*.png`: the default design's from `OV_LANG=<lang> OV_STYLE_DIR=dir go test -run
-  'TestOverlayStylesDraw$' .`, the older ones from `ovSavePNG`) with four chips and one line naming the rest; "Three
+  'TestOverlayStylesDraw$' .`, the older ones from `ovSavePNG`) with four chips and one line naming the rest; "Pricing" (`#pricing`, "Free while it is in beta"), two cards modelled on a usual pricing page, Free ($0 forever, what is always free, Create account) and Pro ($0 during the beta with a "Free in beta" tag, what Pro will hold in `docs/spec/pro.md`, and "After the beta $3 a month or $29 a year"), with the Stripe Support link under them (`donateUrl()`, not in the Steam app); "Three
   steps"; the footer. No community numbers on it (too few yet, the owner's choice). The screenshots are the app with
   its demo data, without the demo badge and with plausible names (never the owner's). "Create account" scrolls to the
   form at the top; a visitor never enters the app on invented data (`sampleOn()` is always false). Never on the PC app.

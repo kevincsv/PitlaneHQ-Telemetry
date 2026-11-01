@@ -25,6 +25,7 @@
   const MS_STORE = "";
   const ICON = {
     dl: '<svg viewBox="0 0 24 24"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>',
+    tag: '<svg viewBox="0 0 24 24"><path d="M3 12V4a1 1 0 0 1 1-1h8l9 9-9 9z"/><circle cx="7.5" cy="7.5" r="1.5"/></svg>',
     rec: '<svg viewBox="0 0 24 24"><path d="M8 21h8"/><path d="M12 17v4"/><path d="M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M17 5h3v2a3 3 0 0 1-3 3"/><path d="M7 5H4v2a3 3 0 0 0 3 3"/></svg>',
     lg: '<svg viewBox="0 0 24 24"><path d="M4 21V4"/><path d="M4 4h13l-2 4 2 4H4"/></svg>',
     lang: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3a14 14 0 0 1 0 18a14 14 0 0 1 0-18"/></svg>',
@@ -144,6 +145,32 @@
     [t("Install the agent", "Instala el agente", "Instale o agente"), t("Pitlane HQ for Windows.", "Pitlane HQ para Windows.", "Pitlane HQ para Windows.")],
     [t("Hit the track", "Sal a pista", "Vá para a pista"), t("Every lap shows on the web and on your phone without you doing anything.", "Cada vuelta aparece en la web y en el móvil sin que hagas nada.", "Cada volta aparece na web e no celular sem você fazer nada.")],
   ];
+  // Pricing: everything is free while Pitlane HQ is in beta; Pro (docs/spec/pro.md) shows what it will cost after it
+  const FREE = () => [
+    t("Every lap recorded and your own lap analysis", "Cada vuelta grabada y el análisis de tus vueltas", "Cada volta gravada e a análise das suas voltas"),
+    t("Every standard overlay, in VR too", "Todos los overlays estándar, también en VR", "Todos os overlays padrão, também em VR"),
+    t("Sync with your whole history on PC, web and phone", "Sincronización con todo tu historial en PC, web y móvil", "Sincronização com todo o seu histórico no PC, web e celular"),
+    t("Live telemetry on your phone", "Telemetría en vivo en el móvil", "Telemetria ao vivo no celular"),
+    t("Leaderboards, records and leagues", "Clasificaciones, récords y ligas", "Classificações, recordes e ligas"),
+    t("The Discord bot with every command", "El bot de Discord con todos los comandos", "O bot do Discord com todos os comandos"),
+  ];
+  const PROL = () => [
+    t("Everything in Free", "Todo lo de Free", "Tudo do Free"),
+    t("The full coach with its plan on the track map", "El coach completo con su plan en el mapa", "O coach completo com o plano no mapa"),
+    t("Compare with friends, rivals and the fastest laps", "Compara con amigos, rivales y las vueltas más rápidas", "Compare com amigos, rivais e as voltas mais rápidas"),
+    t("Race fuel, corner consistency and offs explained", "Combustible de carrera, constancia por curva y salidas explicadas", "Combustível de corrida, consistência por curva e saídas explicadas"),
+    t("The experimental overlays", "Los overlays experimentales", "Os overlays experimentais"),
+  ];
+  const CHK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>';
+  const plan = (cls, name, price, per, note, list, cta) => `<div class="tr-card tr-plan${cls}"><div class="tr-ph"><h3>${esc(name)}</h3>${note ? `<span class="tr-tag">${esc(note)}</span>` : ""}</div>
+<div class="tr-pr"><b>${esc(price)}</b><span>${esc(per)}</span></div><ul>${list.map((x) => `<li>${CHK}${esc(x)}</li>`).join("")}</ul>${cta}</div>`;
+  function pricingHTML() {
+    const don = (() => { try { return typeof donateUrl === "function" ? donateUrl() : ""; } catch (e) { return ""; } })();
+    return `<section class="tr-sec" id="pricing">${head(t("Pricing", "Precios", "Preços"), t("Free while it is in beta", "Gratis mientras está en beta", "Grátis enquanto está em beta"), t("Every feature is open to everyone during the beta. Pro arrives when it ends.", "Todas las funciones están abiertas a todos durante la beta. Pro llega cuando termine.", "Todos os recursos estão abertos a todos durante o beta. O Pro chega quando ele terminar."))}
+<div class="tr-plans">${plan("", "Free", "$0", t("forever", "para siempre", "para sempre"), "", FREE(), `<button type="button" class="tr-b tr-p" data-tr="create">${esc(t("Create account", "Crear cuenta", "Criar conta"))}</button>`)}
+${plan(" tr-pro", "Pro", "$0", t("during the beta", "durante la beta", "durante o beta"), t("Free in beta", "Gratis en beta", "Grátis no beta"), PROL(), `<p class="tr-after">${esc(t("After the beta $3 a month or $29 a year.", "Después de la beta $3 al mes o $29 al año.", "Depois do beta $3 por mês ou $29 por ano."))}</p>`)}</div>
+${don ? `<p class="tr-hint">${esc(t("Want to help Pitlane HQ grow?", "¿Quieres ayudar a que Pitlane HQ crezca?", "Quer ajudar o Pitlane HQ a crescer?"))} <a href="${esc(don)}" target="_blank" rel="noopener">${esc(t("Support it", "Apóyalo", "Apoie"))} →</a></p>` : ""}</section>`;
+  }
   const DISC = { oval: ["Oval", "Óvalo", "Oval"], sports_car: ["Sports Car", "Sports Car", "Sports Car"], formula_car: ["Formula Car", "Fórmula", "Fórmula"], dirt_oval: ["Dirt Oval", "Óvalo de tierra", "Oval de terra"], dirt_road: ["Dirt Road", "Tierra", "Terra"] };
   const head = (eyb, h2, p) => `<header class="tr-sh"><div><span class="tr-eyb">${esc(eyb)}</span><h2>${esc(h2)}</h2></div>${p ? `<p>${esc(p)}</p>` : ""}</header>`;
 
@@ -175,9 +202,10 @@
 <section class="tr-sec">${head("Overlays", t("Over the game", "Encima del juego", "Sobre o jogo"), t("Each overlay with its own design, its opacity and what you want to see. In VR too.", "Cada overlay con su diseño, su opacidad y lo que quieres ver. También en VR.", "Cada overlay com seu design, sua opacidade e o que você quer ver. Também em VR."))}
 <div class="tr-scene"><div class="tr-chips">${CHIPS().map((c) => `<span>${esc(c)}</span>`).join("")}</div><div class="tr-ovm">${ovs}</div>
 <p class="tr-ex">${esc(t("And also radar, map, flags, engine, incidents, stats, live compare and performance.", "Y también radar, mapa, banderas, motor, incidentes, estadísticas, comparación en vivo y rendimiento.", "E também radar, mapa, bandeiras, motor, incidentes, estatísticas, comparação ao vivo e desempenho."))}</p></div></section>
+${pricingHTML()}
 <section class="tr-sec">${head(t("Start in two minutes", "Empieza en dos minutos", "Comece em dois minutos"), t("Three steps", "Tres pasos", "Três passos"))}
 <div class="tr-steps">${STEPS().map(([h, p], i) => `<div class="tr-card"><s>${i + 1}</s><h3>${esc(h)}</h3><p>${esc(p)}</p></div>`).join("")}</div></section>
-<footer class="tr-foot"><span>Pitlane HQ</span><a href="${IRP()}">${esc(t("iRacing telemetry", "Telemetría iRacing", "Telemetria iRacing"))}</a><a href="${LMUP()}">${esc(t("Le Mans Ultimate telemetry", "Telemetría Le Mans Ultimate", "Telemetria Le Mans Ultimate"))}</a><a href="/downloads">${esc(t("Downloads", "Descargas", "Downloads"))}</a><a href="${RECP()}">${esc(t("Records", "Récords", "Recordes"))}</a><a href="${LEAGP()}">${esc(t("Leagues", "Ligas", "Ligas"))}</a><a href="/changelog">${esc(t("What's new", "Novedades", "Novidades"))}</a><a href="mailto:support@pitlanehq.app">support@pitlanehq.app</a></footer>`;
+<footer class="tr-foot"><span>Pitlane HQ</span><a href="${IRP()}">${esc(t("iRacing telemetry", "Telemetría iRacing", "Telemetria iRacing"))}</a><a href="${LMUP()}">${esc(t("Le Mans Ultimate telemetry", "Telemetría Le Mans Ultimate", "Telemetria Le Mans Ultimate"))}</a><a href="/downloads">${esc(t("Downloads", "Descargas", "Downloads"))}</a><a href="#pricing" data-tr="price">${esc(t("Pricing", "Precios", "Preços"))}</a><a href="${RECP()}">${esc(t("Records", "Récords", "Recordes"))}</a><a href="${LEAGP()}">${esc(t("Leagues", "Ligas", "Ligas"))}</a><a href="/changelog">${esc(t("What's new", "Novedades", "Novidades"))}</a><a href="mailto:support@pitlanehq.app">support@pitlanehq.app</a></footer>`;
   }
   // a tab changes what the window shows: a screenshot, or the live telemetry drawn from the real laps
   function showTab(b) {
@@ -190,13 +218,15 @@
     const cv = box.querySelector("canvas"), tok = (S.tok = {});
     Promise.resolve(lapData()).then((D) => { if (!D || S.tok !== tok || !cv.isConnected) return; S.stop = startLive(cv, D); });
   }
-  // the app header carries the design's buttons: Records, Leagues, the language and Downloads
+  // the app header carries the design's buttons: Pricing, Records, Leagues, the language and Downloads
   function topNav() {
     const h = document.querySelector("header.top"); if (!h) return;
     let n = h.querySelector(".tr-nav"); if (!n) { n = document.createElement("div"); n.className = "tr-nav"; h.appendChild(n); }
-    n.innerHTML = `<a class="tr-hb" href="${RECP()}">${ICON.rec}<span>${esc(t("Records", "Récords", "Recordes"))}</span></a><a class="tr-hb" href="${LEAGP()}">${ICON.lg}<span>${esc(t("Leagues", "Ligas", "Ligas"))}</span></a><button type="button" class="tr-hb tr-lang" data-tr="lang">${ICON.lang}${L().toUpperCase()} ▾</button><a class="tr-hb tr-dl" href="/downloads">${ICON.dl}<span>${esc(t("Downloads", "Descargas", "Downloads"))}</span></a>`;
+    n.innerHTML = `<a class="tr-hb" href="#pricing" data-tr="price">${ICON.tag}<span>${esc(t("Pricing", "Precios", "Preços"))}</span></a><a class="tr-hb" href="${RECP()}">${ICON.rec}<span>${esc(t("Records", "Récords", "Recordes"))}</span></a><a class="tr-hb" href="${LEAGP()}">${ICON.lg}<span>${esc(t("Leagues", "Ligas", "Ligas"))}</span></a><button type="button" class="tr-hb tr-lang" data-tr="lang">${ICON.lang}${L().toUpperCase()} ▾</button><a class="tr-hb tr-dl" href="/downloads">${ICON.dl}<span>${esc(t("Downloads", "Descargas", "Downloads"))}</span></a>`;
+    n.querySelector("[data-tr=price]").onclick = (ev) => { ev.preventDefault(); toPricing(); };
     n.querySelector("[data-tr=lang]").onclick = () => { try { chooseLanguage(); } catch (e) {} };
   }
+  function toPricing() { const p = S.el && S.el.querySelector("#pricing"); if (p) p.scrollIntoView({ behavior: reduced() ? "auto" : "smooth", block: "start" }); }
   // the sign-in (or create account) panel of the "me" view sits in the hero, beside the tagline, as in the design
   function auth() {
     const me = document.getElementById("meBody"), slot = S.el && S.el.querySelector(".tr-auth"), pn = me && me.querySelector(".me-auth");
@@ -232,6 +262,7 @@
       const b = ev.target.closest("[data-tr]"); if (!b) return;
       // posting a league needs an account: the form to create it, then the leagues hub once signed in
       if (b.dataset.tr === "league") { try { sessionStorage.setItem("pw.goLeagues", "1"); } catch (e) {} b.dataset.tr = "create"; b.click(); b.dataset.tr = "league"; return; }
+      if (b.dataset.tr === "price") { ev.preventDefault(); toPricing(); return; }
       if (b.dataset.tr === "create") {
         scrollTo({ top: 0, behavior: "smooth" });
         setTimeout(() => { const btn = document.getElementById("meToReg"); if (btn) btn.click(); setTimeout(() => { const f = document.querySelector(".tr-auth input"); if (f) f.focus({ preventScroll: true }); }, 80); }, 450);
@@ -317,11 +348,23 @@ html.tour-on #v-me>.vhead,html.tour-on #meBody>.me-welcome,html.tour-on #meBody>
 #tour .tr-ovm figure{break-inside:avoid;margin:0 0 14px;display:block}#tour .tr-ovm img{display:block;width:100%;height:auto;border-radius:6px;box-shadow:0 10px 24px -12px #000}#tour .tr-ovm .tr-gg img{width:62%}
 #tour .tr-ovm figcaption{font:600 11px var(--f-data);color:#98a3b2;text-transform:uppercase;letter-spacing:.06em;margin-top:6px}
 #tour .tr-ex{font-size:12px;color:#6c7787;margin:10px 0 0}
+#tour .tr-plans{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;max-width:880px}
+#tour .tr-plan{display:flex;flex-direction:column;gap:16px;padding:24px}
+#tour .tr-plan.tr-pro{border-color:#ffb02e66;background:linear-gradient(180deg,#ffb02e12,#161c24 40%);box-shadow:0 30px 60px -36px #ffb02e55}
+#tour .tr-ph{display:flex;justify-content:space-between;align-items:center;gap:10px}#tour .tr-ph h3{margin:0;font-size:26px}
+#tour .tr-tag{font:600 11px var(--f-body);letter-spacing:.04em;text-transform:uppercase;color:#1a1204;background:#ffb02e;border-radius:5px;padding:3px 8px;white-space:nowrap}
+#tour .tr-pr{display:flex;align-items:baseline;gap:8px}#tour .tr-pr b{font:700 44px/1 var(--f-data);color:#eef1f5}#tour .tr-pr span{color:#98a3b2;font-size:14px}
+#tour .tr-plan ul{list-style:none;margin:0;padding:0;display:grid;gap:10px;flex:1;align-content:start}
+#tour .tr-plan li{display:flex;gap:10px;align-items:flex-start;font-size:14px;line-height:1.45;color:#cfd6de}
+#tour .tr-plan li svg{width:16px;height:16px;flex:none;margin-top:2px;fill:none;stroke:#ffb02e;stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round}
+#tour .tr-after{margin:0;padding:12px 14px;border-radius:8px;background:#11161d;border:1px solid #263140;color:#cfd6de;font-size:14px}
+#tour .tr-hint a{color:#ffb02e;font-weight:600;text-decoration:none}
+#tour #pricing{scroll-margin-top:72px}
 #tour .tr-steps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}#tour .tr-steps s{text-decoration:none;font:700 13px var(--f-data);color:#ffb02e}
 #tour .tr-foot{border-top:1px solid #263140;padding:26px 0;margin-top:20px;color:#98a3b2;font-size:13px;display:flex;gap:18px;flex-wrap:wrap}#tour .tr-foot a{color:#ffb02e;text-decoration:none}
 @media(max-width:900px){#tour .tr-hero{grid-template-columns:minmax(0,1fr);gap:32px;padding:32px 0}}
 @media(max-width:860px){#tour .tr-show{grid-template-columns:minmax(0,1fr)}#tour .tr-tabs{grid-auto-flow:column;grid-auto-columns:max-content;overflow-x:auto;scrollbar-width:none}#tour .tr-tabs button span{display:none!important}#tour .tr-top3{grid-template-columns:minmax(0,1fr)}}
-@media(max-width:820px){#tour .tr-steps{grid-template-columns:minmax(0,1fr)}}
+@media(max-width:820px){#tour .tr-steps,#tour .tr-plans{grid-template-columns:minmax(0,1fr)}}
 @media(max-width:600px){#tour .tr-sec{padding:44px 0}#tour .tr-ctas .tr-b{flex:1 1 auto}#tour .tr-wbar i{width:34px}}
 @media(prefers-reduced-motion:reduce){#tour *{transition:none!important}}`;
   document.head.appendChild(st);

@@ -131,7 +131,7 @@ export async function keepBestLap(env, uid, x) {
   await markModel(env, x.game, x.trackId, x.carId);
   // improved: a faster lap than the one shared before (the Discord alerts), not only its telemetry added
   const improved = !old || old.game !== x.game || x.time < old.time;
-  const res = { shared: true, traced: !!x.trace, improved, prev: old && old.game === x.game ? old.time : null, game: x.game, trackId: x.trackId, carId: x.carId, track: x.track, car: x.car, time: x.time, anon: !!x.anon };
+  const res = { shared: true, traced: !!x.trace, improved, prev: old && old.game === x.game ? old.time : null, game: x.game, trackId: x.trackId, carId: x.carId, track: x.track, car: x.car, time: x.time, anon: !!x.anon, ai: !!x.ai, shown: x.shown };
   // a new best lap: the Discord servers of its driver hear about it (x.ctx only where a lap was just driven)
   if (improved && x.ctx) x.ctx.waitUntil(discordLapAlert(env, uid, res).catch(() => {}));
   return res;

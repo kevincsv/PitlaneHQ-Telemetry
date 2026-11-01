@@ -40,3 +40,10 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   role; the bot posts the welcome, the rules and the newest whats-new.json notes once. Preview lists the changes; Build
   runs three steps (roles, channels, then Community, forums, posts and onboarding), each its own request. Nothing is ever
   deleted: channels and roles of the same name are reused. After it, /setup in the server and Administrator taken off the bot.
+- Two settings per server, only on the admin page (Server → Discord server; the servers' own /setup never shows them):
+  "Every driver's best laps and records" (`discord_guilds.everyone`, migration 0091) makes `discordLapAlert` post every
+  driver's new best iRacing laps and records in that server's /setup channels, not only its members' (never anonymous
+  accounts, race rivals or laps against the AI; the name the leaderboard shows; no Pro needed). "The apps' feedback in
+  its feedback forum" (`feedback_channel`, migration 0092, the server's channel named feedback, a forum first) makes every
+  Share your feedback answer a post there (`discordFeedback`, from POST /community/feedback): the text, the stars, the
+  device, the version and the overlay design, never the driver's name; the forum's tags of the device and Overlays.

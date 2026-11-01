@@ -24,6 +24,7 @@ import { srcName, KIND_NAMES, hiText, areasOf } from "./usagenames.js";
 import { visitOf, countryOf, isBot, sourcesOf, SQL_VISIT_ADD } from "./sourceslib.js";
 import { openEscrow } from "./escrow.js";
 import { sendFeedback } from "./email.js";
+import { discordFeedback } from "./discord.js";
 import { driverMessage, cleanLang } from "./supportlib.js";
 import { SQL_USAGE_ADD, SQL_ASK_USED, SQL_ASK_SEEN, SQL_RACES_SINCE, SQL_OV_RACE, SQL_OV_SEEN, SQL_OV_ANSWERED, day, cleanUsage, cleanFeedback, analyticsMore, highlightsOf, SQL_SESSIONS_DAYS, cleanOvRace, shouldAsk, shouldAskOv, analyticsOf, ASK_USED, FEEDBACK_PER_DAY, MAX_DAYS } from "./usagelib.js";
 
@@ -95,6 +96,8 @@ export async function usageRoute(req, env, url) {
     ]);
     const esc = await openEscrow(env, acc.escrow).catch(() => null);
     const mailed = await sendFeedback(env, { ...f, nick: acc.display || "", accountId: acc.id, email: (esc && esc.email) || "" }).catch(() => false);
+    // and in the Discord feedback forum an admin chose, without the driver's name (discord.js)
+    await discordFeedback(env, f).catch(() => 0);
     return json({ ok: true, id, mailed });
   }
   if (!isAdmin(env, acc.id)) return err("only the admins of this server can do this", 403);

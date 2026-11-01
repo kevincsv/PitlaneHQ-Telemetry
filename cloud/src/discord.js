@@ -565,6 +565,35 @@ export async function discordWeekly(env, now = Date.now()) {
   return n;
 }
 
+// an answer of Share your feedback (usage.js), posted without the driver's name in every server an admin chose for it
+// (`feedback_channel`): a post of its own in a forum, with the tags of its device and Overlays when they are there; a
+// message in a text channel
+const FB_TAGS = { web: "web", pc: "windowsagent", android: "android", ios: "ios" };
+const FB_DEV = { web: "Web", pc: "Windows agent", android: "Android", ios: "iOS" };
+export async function discordFeedback(env, f) {
+  if (!env.DISCORD_BOT_TOKEN || !f || !f.text) return 0;
+  const gs = (await env.DB.prepare("SELECT feedback_channel AS ch FROM discord_guilds WHERE feedback_channel IS NOT NULL").all().catch(() => ({ results: [] }))).results || [];
+  const H = { authorization: "Bot " + env.DISCORD_BOT_TOKEN, "content-type": "application/json" };
+  const stars = f.rating ? "★".repeat(f.rating) + "☆".repeat(5 - f.rating) : "";
+  const foot = [FB_DEV[f.device], f.v ? "v" + f.v : "", f.kind === "overlays" ? "Overlays" + (f.style ? " · " + f.style : "") : ""].filter(Boolean).join(" · ");
+  const embed = { color: AMBER, description: f.text.slice(0, 4000), ...(stars ? { title: stars } : {}), ...(foot ? { footer: { text: foot } } : {}) };
+  let n = 0;
+  for (const g of gs) {
+    const c = await fetch(`${API}/channels/${g.ch}`, { headers: H }).then((r) => (r.ok ? r.json() : null)).catch(() => null);
+    if (!c) continue;
+    if (c.type === 15) {
+      const norm = (x) => String(x || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+      const want = [FB_TAGS[f.device], f.kind === "overlays" ? "overlays" : ""].filter(Boolean);
+      const tags = (c.available_tags || []).filter((t) => want.includes(norm(t.name))).map((t) => t.id).slice(0, 5);
+      const name = (f.text.split("\n")[0].trim() || "Feedback").slice(0, 90);
+      const r = await fetch(`${API}/channels/${g.ch}/threads`, { method: "POST", headers: H,
+        body: JSON.stringify({ name, applied_tags: tags, message: { embeds: [embed], allowed_mentions: { parse: [] } } }) }).catch(() => null);
+      if (r && r.ok) n++;
+    } else if (await post(env, g.ch, { embeds: [embed] })) n++;
+  }
+  return n;
+}
+
 async function post(env, channel, msg) {
   const r = await fetch(`${API}/channels/${channel}/messages`, {
     method: "POST",
@@ -577,19 +606,24 @@ async function post(env, channel, msg) {
 // a new best lap of a linked driver (keepBestLap improved what the account shares): posted in the alerts
 // channel of every server where they use the bot, while the account that set the alerts up has Pro
 export async function discordLapAlert(env, accountId, lap) {
-  if (!env.DISCORD_BOT_TOKEN || !lap || !lap.improved || lap.game !== "iracing") return;
-  const a = await env.DB.prepare("SELECT a.anon, u.alias, dl.discord_id FROM accounts a JOIN community_users u ON u.id=a.id JOIN discord_links dl ON dl.account_id=a.id WHERE a.id=?1").bind(accountId).first();
-  if (!a || a.anon || lap.anon) return;
-  const gs = (await env.DB.prepare("SELECT g.guild_id, g.alerts_channel, g.records_channel, g.set_by, g.lang FROM discord_members m JOIN discord_guilds g ON g.guild_id=m.guild_id WHERE m.discord_id=?1 AND (g.alerts_channel IS NOT NULL OR g.records_channel IS NOT NULL)").bind(a.discord_id).all()).results || [];
+  if (!env.DISCORD_BOT_TOKEN || !lap || !lap.improved || lap.game !== "iracing" || lap.anon || String(accountId).startsWith("o:")) return;
+  const a = await env.DB.prepare("SELECT a.anon, u.alias, u.iracing, dl.discord_id FROM accounts a JOIN community_users u ON u.id=a.id LEFT JOIN discord_links dl ON dl.account_id=a.id WHERE a.id=?1").bind(accountId).first();
+  if (!a || a.anon) return;
+  // the servers its driver is in, and the servers an admin set to get every driver's laps (`everyone`, not the laps
+  // driven against the AI)
+  const mine = a.discord_id ? (await env.DB.prepare("SELECT g.guild_id, g.alerts_channel, g.records_channel, g.set_by, g.lang, g.everyone FROM discord_members m JOIN discord_guilds g ON g.guild_id=m.guild_id WHERE m.discord_id=?1 AND (g.alerts_channel IS NOT NULL OR g.records_channel IS NOT NULL)").bind(a.discord_id).all()).results || [] : [];
+  const all = lap.ai ? [] : (await env.DB.prepare("SELECT guild_id, alerts_channel, records_channel, set_by, lang, everyone FROM discord_guilds WHERE everyone=1 AND (alerts_channel IS NOT NULL OR records_channel IS NOT NULL)").all().catch(() => ({ results: [] }))).results || [];
+  const gs = [...new Map([...mine, ...all].map((g) => [g.guild_id, g])).values()];
   if (!gs.length) return;
   const st = await env.DB.prepare(
     `SELECT (SELECT COUNT(*) FROM community_laps l WHERE l.track_id=?1 AND l.car_id=?2 AND l.game='iracing' AND ${NOT_MODEL} AND l.time<?3)+1 AS pos,
             (SELECT COUNT(*) FROM community_laps l WHERE l.track_id=?1 AND l.car_id=?2 AND l.game='iracing' AND ${NOT_MODEL}) AS total`
   ).bind(lap.trackId, lap.carId, lap.time).first();
   const k = { t: lap.trackId, c: lap.carId, track: lap.track, car: lap.car };
+  const name = lap.shown === "iracing" && a.iracing ? a.iracing : a.alias;
   for (const g of gs) {
     const rec = st.pos === 1 && st.total > 1, channel = rec ? g.records_channel || g.alerts_channel : g.alerts_channel;
-    if (!channel || !(await isPro(env, g.set_by))) continue;
+    if (!channel || (!g.everyone && !(await isPro(env, g.set_by)))) continue;
     const l = ["es", "pt"].includes(g.lang) ? g.lang : "en";
     const fields = [
       { name: tr(l, "Time", "Tiempo", "Tempo"), value: `\`${fmt(lap.time)}\`` + (lap.prev ? ` \`${gap(lap.time - lap.prev)}\`` : ""), inline: true },
@@ -597,7 +631,7 @@ export async function discordLapAlert(env, accountId, lap) {
     ];
     await post(env, channel, {
       embeds: [{ color: rec ? PURPLE : AMBER, url: recUrl(l, k), title: rec ? tr(l, "🏆 New record", "🏆 Nuevo récord", "🏆 Novo recorde") : tr(l, "⏱️ New best lap", "⏱️ Nueva mejor vuelta", "⏱️ Nova melhor volta"),
-        description: `<@${a.discord_id}> **${md(a.alias)}**\n${md(fix(lap.car))} · ${md(fix(lap.track))}`, fields }],
+        description: `${a.discord_id ? `<@${a.discord_id}> ` : ""}**${md(name)}**\n${md(fix(lap.car))} · ${md(fix(lap.track))}`, fields }],
     });
   }
 }

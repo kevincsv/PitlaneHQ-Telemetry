@@ -39,3 +39,9 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
 - Damage: the agent turns the game's eight dents round the body (0 none, 1 some, 2 more) into `CarDamagePct` (a share of
   the worst) and a part or a wheel off into `CarPartsOff`; the dash row (native `dcItems`, web `renderDC`, phones
   `liveDC`) shows Damage and "part off" only while there is any.
+- Hybrid battery: the lap recorder keeps `EnergyERSBatteryPct` every 50 m (`batVar`, `addBat`, the trace's `bat`, only
+  a car with a battery); the lap analysis draws it for laps A and B ("Hybrid battery" under More charts on the PC and
+  the web, with the charge at the line and the end and what was deployed and got back; a chart after Inputs on the
+  phones).
+- Stints and pit stops: the race summary's Stints table (web, PC, and the race page on the phones, `Race.stints`) adds
+  what each stop cost, the lap in and the lap out against the race's median clean lap (every game).

@@ -805,3 +805,25 @@ func TestLMUFuelPerLap(t *testing.T) {
 		t.Fatalf("fuel per lap %v, want 3.45", u)
 	}
 }
+
+// the hybrid battery's trace: one point every 50 m, holes filled from the point before, none for a car without one
+func TestLapBattery(t *testing.T) {
+	r := &lapRec{}
+	for d := 0.0; d < 1000; d += 10 {
+		if d >= 300 && d < 360 {
+			continue
+		}
+		r.addBat(d, 80-d/50)
+	}
+	b := r.battery()
+	if len(b) != 20 || b[0] != 80 || b[6] != b[5] || b[19] != 61 {
+		t.Fatalf("battery %v", b)
+	}
+	n := &lapRec{}
+	for d := 0.0; d < 1000; d += 10 {
+		n.addBat(d, 0)
+	}
+	if n.battery() != nil {
+		t.Fatalf("no battery: %v", n.battery())
+	}
+}

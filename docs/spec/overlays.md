@@ -28,6 +28,10 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
 - The spotter overlay (`ovspotter.go`, "Around you", hidden on Telemetry until chosen): a bar down each side lights
   while a car is alongside (the game's CarLeftRight), amber for one car and red for two, with "◀ CAR LEFT", "TWO CARS
   RIGHT" or "CARS BOTH SIDES" in the middle, "Clear" otherwise. The web's Telemetry widget is the same (`renderSpotter`).
+- Overlay sets by kind of racing: with a saved preset, the Overlays tab's "Open by itself in" picks one per Road, Oval,
+  Dirt road, Dirt oval and Le Mans Ultimate (`ovtKindsHTML`, `ui.autoKind`). When a session of that kind starts the
+  agent opens that set instead of the Auto overlays (`autoKindFor` in gamesupport.go, iRacing's Category; the game's
+  choice first), still only what works in the game.
 - With no lap of the driver's own to compare yet (the first laps on a track, or nobody faster known), the coach overlay
   calls the track guide (`guideTips`, from the model's corner card): where the fast drivers brake before the apex, the
   apex speed and the gear, "BRAKE 120 M" in the big style, the hardest corners first; its title is "Track guide" and it

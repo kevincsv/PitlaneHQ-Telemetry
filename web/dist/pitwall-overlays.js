@@ -96,6 +96,11 @@ function ovtPresetsHTML(){const mine=ovtMyPresets();
     Object.keys(OVT_PRESETS).map(k=>{const on=ovtPresetOn(OVT_PRESETS[k]);return `<button type="button" class="ovt-chip${on?" on":""}" data-a="preset" data-k="${k}" aria-pressed="${on}">${esc(T3(...OVT_PRESET_NAMES[k]))}</button>`}).join("")+
     Object.keys(mine).map(k=>{const on=ovtPresetOn(mine[k]||[]);return `<span class="ovt-chip mine${on?" on":""}"><button type="button" data-a="mypreset" data-k="${esc(k)}" aria-pressed="${on}">${esc(k)}</button><button type="button" class="x" data-a="delpreset" data-k="${esc(k)}" aria-label="${esc(T3("Delete","Eliminar","Excluir")+" "+k)}">×</button></span>`}).join("")+
     `<button type="button" class="ovt-chip add" data-a="savepreset">+ ${esc(T3("Save current","Guardar el actual","Salvar o atual"))}</button>`}
+/* a saved set per kind of racing or game: it opens by itself for those sessions instead of the Auto overlays
+   (ui.autoKind, autoKindFor in gamesupport.go); only with a saved set */
+const OVT_KINDS=[["road",["Road","Circuito","Circuito"]],["oval",["Oval","Óvalo","Oval"]],["dirt_road",["Dirt road","Tierra","Terra"]],["dirt_oval",["Dirt oval","Óvalo de tierra","Oval de terra"]],["lmu",["Le Mans Ultimate","Le Mans Ultimate","Le Mans Ultimate"]]];
+function ovtKindsHTML(){const mine=Object.keys(ovtMyPresets());if(!mine.length)return"";const cur=(CFG.ui||{}).autoKind||{};
+  return `<div class="ovt-kinds" style="display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;margin-top:8px"><span class="ovt-lab">${esc(T3("Open by itself in","Se abre solo en","Abre sozinho em"))}</span>${OVT_KINDS.map(([k,n])=>`<label class="ovt-f" style="display:flex;gap:6px;align-items:center"><span>${esc(T3(...n))}</span><select data-c="autokind" data-k="${k}"><option value="">${esc(T3("The Auto overlays","Los overlays Auto","Os overlays Auto"))}</option>${mine.map(m=>`<option value="${esc(m)}"${cur[k]===m?" selected":""}>${esc(m)}</option>`).join("")}</select></label>`).join("")}</div>`}
 function ovtDesignHTML(){const cur=ovtStyleAll();
   return `<label class="ovt-designsel"><span class="ovt-lab">${esc(T3("Design","Diseño","Design"))}</span><select data-c="style">${OV_STYLES.map(([k])=>`<option value="${k}"${cur===k?" selected":""}>${esc(ovStyleLabel(k))}${k==="classic"?"":" · Beta"}</option>`).join("")}</select></label>`}
 // the foot: when they open and close by themselves. The window kind (always the frameless one), the frame rate and
@@ -124,7 +129,7 @@ function renderOverlaysTab(){const root=ovtFrame();if(!root)return;const remote=
   const c=$("#ovCallout");if(c){const t=MODE!=="bridge"?Lp("Overlay windows open when the app runs in Pitlane HQ Agent on your Windows PC. You can set them up here already.","Las ventanas overlay se abren cuando la app funciona en Pitlane HQ Agent en tu PC con Windows. Ya puedes configurarlas aquí.",false,null,"As janelas overlay abrem quando o app roda no Pitlane HQ Agent no seu PC com Windows. Você já pode configurá-las aqui."):!remote?Lp("Overlay windows need Pitlane HQ Agent running on Windows.","Las ventanas overlay necesitan Pitlane HQ Agent en Windows.",false,null,"As janelas overlay precisam do Pitlane HQ Agent no Windows."):"";c.innerHTML=t;c.hidden=!t}
   $("#ovtActs").innerHTML=`<button type="button" class="btn${CFG.edit?" primary":""}" data-a="edit" aria-pressed="${!!CFG.edit}"${remote||MODE==="local"?"":dis}>${esc(CFG.edit?T3("Done placing","Terminar de colocar","Terminar de posicionar"):T3("Place on the screen","Colocar en la pantalla","Posicionar na tela"))}</button>
     <button type="button" class="btn" data-a="closeall"${dis}>${L("closeAll",true)}</button><button type="button" class="btn primary" data-a="opennow"${dis}>${esc(T3("Open now","Abrir ahora","Abrir agora"))}</button>`;
-  $("#ovtPresets").innerHTML=ovtPresetsHTML();
+  $("#ovtPresets").innerHTML=ovtPresetsHTML()+ovtKindsHTML();
   const foot=$("#ovtFoot");foot.innerHTML=ovtFootHTML();
   ovtRenderScreen();
   ovtCounts();markOvOpen();markGameGaps();renderScreenEditor();refreshScreenRects()}
@@ -211,6 +216,7 @@ function ovtChange(e){const t=e.target,c=t.dataset&&t.dataset.c;if(!c)return;
   if(c==="style"){CFG.ui=CFG.ui||{};if(t.value===OV_DEFAULT_STYLE)delete CFG.ui.ovstyle;else CFG.ui.ovstyle=t.value;saveCfg();renderOverlaysTab()}
   else if(c==="ovstyle"){const w=t.dataset.w;CFG.ui=CFG.ui||{};const m=Object.assign({},CFG.ui[w]||{});if(t.value)m.style=t.value;else delete m.style;CFG.ui[w]=m;saveCfg()}
   else if(c==="alpha")setUI(t.dataset.w,{alpha:Math.max(60,Math.min(255,+t.value||255))});
+  else if(c==="autokind"){CFG.ui=CFG.ui||{};const m={...(CFG.ui.autoKind||{})};if(t.value)m[t.dataset.k]=t.value;else delete m[t.dataset.k];if(Object.keys(m).length)CFG.ui.autoKind=m;else delete CFG.ui.autoKind;saveCfg()}
 }
 function ovtInput(e){const t=e.target,c=t.dataset&&t.dataset.c;
   if(c==="alpha"){const p=$("#ovtPrev"),v=$("#ovtAlphaV");if(p)p.style.opacity=String(+t.value/255);if(v)v.textContent=Math.round(+t.value/255*100)+"%"}}

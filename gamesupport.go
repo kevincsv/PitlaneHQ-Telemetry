@@ -102,3 +102,42 @@ func autoFor(c Config, game string) []string {
 	}
 	return out
 }
+
+// autoKindFor: the overlays that open by themselves for this session. A saved overlay set ("Presets", ui.ovpresets)
+// chosen for the game (ui.autoKind = {"lmu": "Endurance"}) or for the kind of racing (iRacing's Category: "oval",
+// "road", "dirt_oval", "dirt_road"; "Formula" counts as road) opens instead of the Auto ones; the game's choice first
+func autoKindFor(c Config, game, cat string) []string {
+	kinds, _ := c.UI["autoKind"].(map[string]any)
+	pre, _ := c.UI["ovpresets"].(map[string]any)
+	list, _ := pre["list"].(map[string]any)
+	if len(kinds) == 0 || len(list) == 0 {
+		return autoFor(c, game)
+	}
+	k := strings.ToLower(strings.ReplaceAll(cat, " ", ""))
+	switch k {
+	case "dirtoval":
+		k = "dirt_oval"
+	case "dirtroad":
+		k = "dirt_road"
+	case "formula", "formulacar", "sportscar":
+		k = "road"
+	}
+	for _, key := range []string{game, k} {
+		name, _ := kinds[key].(string)
+		if name == "" {
+			continue
+		}
+		ws, ok := list[name].([]any)
+		if !ok {
+			continue
+		}
+		out := []string{}
+		for _, x := range ws {
+			if w, ok := x.(string); ok && gameHas(game, "widgets", w) {
+				out = append(out, w)
+			}
+		}
+		return out
+	}
+	return autoFor(c, game)
+}

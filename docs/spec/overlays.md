@@ -28,8 +28,8 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   fits its content's height (grows at once, shrinks after a moment). An overlay never leaves the desktop when
   dragged, resized or placed (`keepOnScreen`, `clampMove`). Nor is it made smaller than it can be read: its default width
   (`overlayMinSize`; the map, the radar and the g-force their default height too), when resized, moved or opened, and
-  not even while the corner is dragged (`WM_GETMINMAXINFO`, `OV_MINW` in the Overlays screen editor). The
-  Overlays cards show no OBS address. An overlay window draws only its own widget; only the
+  not even while the corner is dragged (`WM_GETMINMAXINFO`, `OV_MINW` in the Overlays tab's screen). The
+  Overlays tab shows no OBS address. An overlay window draws only its own widget; only the
   radar's window hides itself when nobody is near. Every overlay is native UI drawn in Go, never WebView2 (its
   content is always opaque; a test checks every overlay in `overlayOrder`): `ovnative.go` (shapes, the app's own
   fonts embedded from `ovfonts/` (IBM Plex Sans, JetBrains Mono, Barlow Condensed, OFL), its colours, licence badges
@@ -62,9 +62,8 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   both in the stream's config event, so they change at once. The gaps overlay and widget drop a sample a whole lap
   off from both its neighbours (`cleanGaps`: the game counts a car's lap a moment before or after its distance
   wraps), the track bar's car numbers never overlap, and the live compare's "Now" waits for a lap the game times.
-  Overlay presets: the four built in and your own (saved in the overlay settings, `CFG.ui.ovpresets`, so they go
-  with the account), applied with one click and deleted with their ×; names asked in the app's own dialog.
-  Overlay windows use the app's language (`&lang=` from `uiLangChoice`). The Overlays screen editor shows only the
+  Overlay presets: see "The Overlays tab" below.
+  Overlay windows use the app's language (`&lang=` from `uiLangChoice`). The Overlays tab's screen shows only the
   overlays that are open or Auto, always inside the screen. In a narrow PC window the main tabs show only icons. The delta bar overlay has no title: a rounded track and the delta in a pill in the centre.
   An overlay asks the PC only for the values it shows, 60 times a second, and redraws fast (relative 10/s,
   standings 4/s, radar 30/s). The agent stays light: the stream's frame is written straight from the telemetry buffer
@@ -79,11 +78,11 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   the per-pixel distance where the answer is known and the text's glyphs and widths are kept (`textMask`, `ovWidths`),
   the map's still part is drawn once per size and track (`mapLayer`), always the same pixels as before
   (`TestOverlayShapesSameAsBefore`, `TestOverlaysRedrawTheSame`; `ovbench_test.go` measures every overlay's draw), and
-  Overlays → More → Frame rate (30 by default, 20, 15 or 10 a second, `ui.ovfps`; the radar twice it) lowers it.
+  Overlays → More settings → Frame rate (30 by default, 20, 15 or 10 a second, `ui.ovfps`; the radar twice it) lowers it.
   Every overlay's Configure window has its own Opacity (`ui.<overlay>.alpha`, 60–255, `ovAlpha`/`ovAlphaOf`; unset, the
   old setting for all of them, `CFG.alpha`, else opaque; VR too; the designs' panels are opaque themselves, fillA 1, so at 255 nothing of the game shows through, Frameless aside, `TestOverlayStylesOpaque`) and, for the overlays with a title (`OV_TITLED`),
   "Show the title" (`ui.<overlay>.title`, on by default, `titleOn`/`titleH`: off, the content moves up and the overlay
-  is shorter; the engine's and the pit lane's badges keep their row while lit); Overlays → More → Titles shows or
+  is shorter; the engine's and the pit lane's badges keep their row while lit); Overlays → More settings → Titles shows or
   hides them all at once. Every overlay window's Configure also has its text size (`ui.<overlay>.textScale` 0.85/1/1.2,
   scaling its whole drawing, `textScale`) and "Hide by itself" (`ui.<overlay>.hide`: "car" out of the car, garage or no
   game, "pits" that and on the pit road; nothing on the screen, like the radar with nobody near, never while moving the
@@ -128,7 +127,7 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   every open overlay window also shows in the headset as a SteamVR overlay (OpenVR 2.5.1, `vr/openvr_api.dll`
   embedded and written to %LOCALAPPDATA%\PitlaneHQ\openvr, `vr_windows.go`) with the same picture it draws on the
   screen, where it sits on the main screen (`vrPlace` in vrmath.go: a flat screen of that width at that distance and
-  height, each overlay turned to face you), so moving them in Overlays → Edit positions moves them in VR. It joins
+  height, each overlay turned to face you), so moving them in the Overlays tab (or on the screen with Place on the screen) moves them in VR. It joins
   SteamVR only when it is running (a background app, never starting it), lets go when it quits, and Meta headsets
   work through SteamVR as the OpenXR runtime.
   There is no car controls overlay. The overlays' designs (the owner's choice): Lane is the default (still labelled Beta,
@@ -151,3 +150,49 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   The basic overlays (`OV_BASIC`): radar, delta bar, relative, standings,
   flags, dash, timing, map, fuel, tyres, inputs, pit, brakes, coach, incidents, engine, weather, track bar.
   Experimental (listed with the rest, an "Experimental" pill): compare, boost, gg, stats, sectors, gaps, telemetry, system.
+
+## The Overlays tab
+
+The PC app's Overlays tab (and Pitlane HQ Desktop, which shows the same page) is `web/dist/pitwall-overlays.js`, loaded
+after index.html's main script: `renderOverlaysTab`, the screen (`renderScreenEditor`, `refreshScreenRects`), `markOvOpen`
+and the presets all live there, with their own CSS (`#ovtCss`). Index.html keeps only the section (`#ovTab`), the
+overlay windows' code and the settings window (`openWidgetCfg`). The rules:
+
+- One set of controls in three layouts the driver switches with Screen, Gallery and List at the top (the owner asked
+  for all three; `pw.ovLayout`, kept on this PC, Screen by default). Every layout reads and writes the same settings,
+  so switching never changes anything.
+- The overlays in four groups, the same in every layout (`OVT_GROUPS`): Around you (relative, standings, radar, map,
+  track bar, flags, gap graph, incident log), Pace (timing, delta bar, coach, braking markers, mini-sectors, lap
+  compare), Car (dash, inputs, fuel, tyres, engine, pit, DRS & push-to-pass) and More (weather, g-force, driving stats,
+  telemetry, performance). A new overlay not listed there goes to More by itself.
+- At the top, on every layout: the layout switch, Place on the screen (`CFG.edit`: the real windows can be dragged on
+  the screen; Done placing locks them), Close all, Open now (opens the Auto overlays of the game running, or all of
+  them with no game), the presets and the design for all the overlays (`ui.ovstyle`, Lane by default; the Gallery shows
+  each design as a small swatch, the others as a menu). At the foot: Open my overlays when I get in the car, Close
+  them when the game closes and More settings (window engine, titles shown or hidden, frame rate, click-through).
+- Presets: the four built in (Race, Qualifying, Endurance, Engineer) and your own (`CFG.ui.ovpresets`, so they go with
+  the account; the old `pw.overlayPresets` of a browser is moved there once), names asked in the app's own dialog,
+  deleted with their ×. A preset sets the Auto list (and clears the per-game exceptions, `ui.autoOff`), turns on Open
+  when I get in the car and Close them when the game closes. The preset that matches the Auto list is lit.
+- Each overlay, wherever it shows: a dot (green while its window is open), its name, the "Experimental" pill for the
+  ones not in `OV_BASIC`, its Auto per game (iRacing, LMU: `autoIn`/`setAutoIn`; a game that does not send what it
+  needs is dashed and says so on hover), Open or Close (its window on the PC; "Open here" in a browser on the PC's
+  address; nothing on the web) and its settings (`openWidgetCfg`). The experimental ones ask for Pro only when
+  `proGated()`.
+- Screen: the list on the left (the chosen overlay lit, Auto marked, β for experimental), the screen in the middle with
+  every open or Auto overlay where it sits on the PC (open ones solid, closed ones dashed, the chosen one in the accent;
+  drag to move, the corner to resize, a click chooses it; the windows move as you drag, never smaller than
+  `OV_MINW`/`OV_MINH`) and Reset positions, and on the right the chosen overlay (`pw.ovSel`): its live preview (the
+  overlay page itself with `preview=1`, scaled to the column, at its opacity; its picture away from the PC), Open or
+  Close, All settings, Auto per game, its own design, opacity, text size, Hide by itself and Show the title (the same
+  keys as its settings window: `ui.<overlay>.style`, `alpha`, `textScale`, `hide`, `title`).
+- Gallery: a card per overlay with a small picture of what it shows (`ovtThumb`, drawn in CSS, never a live page per
+  card), an "Open" badge while open, the Auto switch (all its games at once; half lit when only some), Open or Close,
+  settings, and its Auto per game under it. Filters: All, each group, Open (on the PC) and Auto, with their counts, and
+  a search by name.
+- List: each group a panel you fold (`pw.ovFold`) with its counts, a row per overlay (dot, name, Auto per game, Open or
+  Close, settings) and the same search. With Place on the screen on, Gallery and List show the screen above.
+- The tab's subtitle is only the counts ("2 open · 9 on Auto"). The one note is the line that the overlay windows
+  need Pitlane HQ Agent on Windows, shown only away from it. No other text explains the tab.
+- The tab redraws its parts, not its frame: the search box keeps its focus and the preview its page while settings
+  change; the open state is refreshed from the agent every 1.5 s (`/api/overlay/list`).

@@ -10,8 +10,8 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   SplitTimeInfo; start lights, wind and the fuel rate come from the game; it has no iRating, licences or incident
   count (contacts stand in, `GAME_NO.lmu`). What works in which game is one table, `web/dist/pitwall-games.js`
   (`PW_GAMES`: what each game lacks, what each overlay, column and item needs), read by the app (`gameHas`,
-  `gameBadges`) and the agent (`gamesupport.go`, `gamesupport_test.go`): the Overlays tab badges the games each overlay
-  works in and its Auto switch is per game (`CFG.autoWidgets` plus `ui.autoOff[game]`, `setAutoIn`/`autoIn`; a game it
+  `gameBadges`) and the agent (`gamesupport.go`, `gamesupport_test.go`): the Overlays tab's Auto is per game, one
+  button per game (`CFG.autoWidgets` plus `ui.autoOff[game]`, `setAutoIn`/`autoIn`; a game it
   does not work in is disabled and the agent never opens it there, `autoFor`), the settings of the relative and the
   standings badge the iRacing-only columns and items and do not offer them while LMU is chosen, and the native
   relative and standings leave them out in LMU (the stream's status names the game). A session is "vs AI" when the game marks AI drivers (`CarIsAI`), an

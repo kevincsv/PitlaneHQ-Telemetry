@@ -105,36 +105,13 @@ function updateDashboard(){
  var lr=tx.SessionLapsRemainEx,tr2=tx.SessionTimeRemain,left="—";if(lr!=null&&lr>=0&&lr<32000)left=lr+tr(" laps"," vueltas");else if(tr2!=null&&tr2>0&&tr2<604800)left=Math.floor(tr2/60)+":"+String(Math.floor(tr2%60)).padStart(2,"0");set("pwLeft",left);
  set("pwSessType",sess.SessionType||sess.SessionName||tr("Session","Sesión"))
 }
-var PRESETS={race:["radar","deltabar","relative","standings"],qualifying:["deltabar","compare","inputs","map"],endurance:["relative","fuel","tyres","deltabar","standings"],engineer:["map","relative","radar","inputs","fuel","tyres","telemetry"]};
-var PRESET_NAMES={race:["Race","Carrera"],qualifying:["Qualifying","Clasificación"],endurance:["Endurance","Resistencia"],engineer:["Engineer","Ingeniero"]};
-// your own presets live in the overlay settings (CFG.ui.ovpresets), so they go with the account to every PC;
-// the ones saved before only in this browser are moved there once
-function myPresets(){var u=(CFG.ui||{}).ovpresets,list=u&&u.list&&typeof u.list==="object"?u.list:{};
- try{var old=JSON.parse(localStorage.getItem("pw.overlayPresets")||"null");if(old&&typeof old==="object"){var moved=false;Object.keys(old).forEach(function(k){if(!list[k]&&Array.isArray(old[k])){list[k]=old[k];moved=true}});localStorage.removeItem("pw.overlayPresets");if(moved)savePresets(list)}}catch(e){}
- return list}
-function savePresets(list){CFG.ui=CFG.ui||{};CFG.ui.ovpresets={list:list};saveCfg()}
-function applyPreset(ws){CFG.autoWidgets=ws.filter(function(w){return WIDGETS.includes(w)});CFG.autoStart=true;CFG.closeOnExit=true;saveCfg();renderOverlaysTab();toast(tr("Overlay preset applied.","Perfil de overlays aplicado."))}
-function overlayPresets(){
- var g=$("#ovGlobal");if(!g)return;var bar=$("#pwOverlayPresets"),mine=myPresets(),key=LANG+JSON.stringify(mine);
- if(bar&&bar.dataset.k===key)return;
- if(!bar){bar=document.createElement("div");bar.id="pwOverlayPresets";bar.className="pw-overlay-presets";g.appendChild(bar)}
- bar.dataset.k=key;
- bar.innerHTML='<span class="label">'+tr("Presets","Perfiles")+'</span>'+Object.keys(PRESETS).map(function(k){return'<button type="button" class="pw-preset" data-pwpreset="'+k+'">'+safe(tr(PRESET_NAMES[k][0],PRESET_NAMES[k][1]))+"</button>"}).join("")
-  +Object.keys(mine).map(function(k){return'<span class="pw-preset pw-mine"><button type="button" data-pwmine="'+safe(k)+'">'+safe(k)+'</button><button type="button" class="pw-del" data-pwdel="'+safe(k)+'" title="'+safe(tr("Delete","Eliminar"))+'" aria-label="'+safe(tr("Delete","Eliminar")+" "+k)+'">×</button></span>'}).join("")
-  +'<button type="button" class="pw-preset" id="pwSavePreset">+ '+tr("Save current","Guardar el actual")+'</button>';
- bar.querySelectorAll("[data-pwpreset]").forEach(function(x){x.onclick=function(){applyPreset(PRESETS[x.dataset.pwpreset])}});
- bar.querySelectorAll("[data-pwmine]").forEach(function(x){x.onclick=function(){var l=myPresets()[x.dataset.pwmine];if(l)applyPreset(l)}});
- bar.querySelectorAll("[data-pwdel]").forEach(function(x){x.onclick=async function(){var n=x.dataset.pwdel;if(!await uiConfirm(tr("Delete the preset “"+n+"”?","¿Eliminar el perfil «"+n+"»?")))return;var l=myPresets();delete l[n];savePresets(l);overlayPresets();toast(tr("Preset deleted.","Perfil eliminado."))}});
- $("#pwSavePreset").onclick=async function(){var ws=(CFG.autoWidgets||[]).slice();if(!ws.length){toast(tr("Turn on Auto for the overlays you want first.","Activa primero Auto en los overlays que quieras."));return}
-  var n=await uiPrompt(tr("Preset name","Nombre del perfil"),tr("My preset","Mi perfil"));n=String(n||"").trim().slice(0,32);if(!n)return;
-  var l=myPresets();if(l[n]&&!await uiConfirm(tr("Replace the preset “"+n+"”?","¿Reemplazar el perfil «"+n+"»?")))return;l[n]=ws;savePresets(l);overlayPresets();toast(tr("Preset saved.","Perfil guardado."))}
-}
+// the overlay presets are in pitwall-overlays.js, with the Overlays tab
 function hook(){
  installCss();installModals();installDashboard();
  // the web app on a phone: the header's "Connect PC" goes to the Live page (pairing, live through the account), the centre is for the PC
  var c=$("#conn");if(c&&!(typeof COMPANION!=="undefined"&&COMPANION))c.onclick=function(){$("#pwCenter").hidden=false;renderCenter();refreshInfo(true)};
- setInterval(function(){headerState();updateDashboard();if($("#pwCenter")&&!$("#pwCenter").hidden)renderCenter();if($("#pwDiag")&&!$("#pwDiag").hidden)renderDiag();if(typeof CUR_VIEW!=="undefined"&&CUR_VIEW==="overlays")overlayPresets()},250);
- setInterval(function(){refreshInfo(false)},5000);overlayPresets()
+ setInterval(function(){headerState();updateDashboard();if($("#pwCenter")&&!$("#pwCenter").hidden)renderCenter();if($("#pwDiag")&&!$("#pwDiag").hidden)renderDiag()},250);
+ setInterval(function(){refreshInfo(false)},5000)
 }
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",hook);else hook();
 })();

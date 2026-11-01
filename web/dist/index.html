@@ -388,14 +388,7 @@ html.sorting,html.sorting *{user-select:none!important;-webkit-user-select:none!
 html.ov .grip{display:none}
 html.pvdemo body::before{content:"SAMPLE DATA";position:fixed;top:4px;right:6px;z-index:40;padding:2px 7px;border-radius:999px;background:color-mix(in srgb,var(--accent) 85%,transparent);color:#11151b;font:800 9px/1.4 var(--f-data);letter-spacing:.08em;pointer-events:none}
 html.pvdemo[lang=es] body::before{content:"DATOS DE EJEMPLO"}
-/* overlays tab */
-.ovcards{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,300px),1fr));gap:10px;margin-top:10px}
-.ovcard{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:12px;display:grid;gap:10px;min-width:0}
-.ovcard.on{border-color:color-mix(in srgb,var(--accent) 55%,var(--line))}
-.ovcard .top{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}.ovcard .top .chip{flex:none;white-space:nowrap}
-.ovcard .nm{font:700 18px/1.1 var(--f-display);text-transform:uppercase;letter-spacing:.02em}
 .btn[disabled],.pin[disabled]{opacity:.45;cursor:default}
-#ovGlobal{display:grid;gap:4px}
 /* components */
 .hstrip{display:flex;flex-wrap:wrap;gap:4px 16px;padding:6px 2px;font-size:13px}
 .hstrip>div{display:flex;gap:6px;align-items:baseline}
@@ -514,13 +507,6 @@ html.ov.ovwin #dbTrend{position:absolute;top:50%;left:calc(50% + 52px);transform
 .rb-mode{display:flex;flex-direction:column;gap:6px;text-align:left;border:1px solid var(--line);background:var(--surface);border-radius:14px;padding:16px;color:var(--fg);cursor:pointer;min-height:44px}.rb-mode.sel{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 8%,var(--surface))}.rb-n{font-size:30px;font-weight:700}
 .rb-mine{display:flex;flex-direction:column;gap:12px}.rb-gears{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:10px}.rb-gears label{display:flex;flex-direction:column;gap:4px}.rb-all{width:130px;font-size:18px}
 .rb-sound{display:flex;gap:24px;align-items:flex-end;flex-wrap:wrap;padding-top:14px;border-top:1px solid var(--line)}.rb-sound label,.rb-sound>div{display:flex;flex-direction:column;gap:6px}.rb-sound input[type=range]{min-width:160px}.dim{opacity:.45}
-.ov-top{display:flex;justify-content:flex-end}.ov-list{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:4px 18px;overflow:auto}
-.ov-row{display:grid;grid-template-columns:minmax(0,1fr) 170px 130px 120px;gap:10px;align-items:center;border-top:1px solid var(--line);padding:5px 0}.ov-row.ov-h{border-top:0;padding:10px 0;font:700 12px var(--f-display);letter-spacing:1.2px;text-transform:uppercase;color:var(--muted)}
-.ov-n{display:flex;gap:8px;align-items:center;min-width:0}.ov-swb{background:none;border:0;min-height:44px;text-align:left;cursor:pointer}.ov-sw{display:inline-block;width:46px;height:26px;border-radius:13px;position:relative;background:var(--surface2,#222b37);border:1px solid var(--line);vertical-align:middle}.ov-sw i{position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:var(--muted)}.ov-sw.on{background:var(--accent);border-color:var(--accent)}.ov-sw.on i{left:23px;background:#11151b}
-.ov-st{font-size:13px;font-weight:600;border-radius:999px;padding:7px 14px;min-height:36px;background:none;color:var(--muted);border:1px solid var(--line);cursor:pointer}.ov-st.on{background:var(--good);color:#0f1216;border-color:var(--good)}
-.ov-foot{margin-top:12px;gap:14px;align-items:center;flex-wrap:wrap}
-.ov-list{scrollbar-width:thin;scrollbar-color:#3a4350 transparent}.ov-list::-webkit-scrollbar{width:10px}.ov-list::-webkit-scrollbar-thumb{background:#3a4350;border-radius:6px;border:2px solid var(--surface)}
-@media (max-width:760px){.ov-row{grid-template-columns:minmax(0,1fr) 60px 90px;}.ov-row>:nth-child(4){grid-column:1/-1}.ov-row.ov-h>:nth-child(4){display:none}}
 .std-bar{gap:10px;margin:0 0 10px;flex-wrap:wrap}#stdPos{margin-top:12px}#stdPos canvas{width:100%;display:block;margin-top:8px}
 #liveTraces canvas,#liveCmp canvas{width:100%;display:block}.trc-head{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:6px;flex-wrap:wrap}.trc-leg{font-size:12px;display:flex;gap:12px;flex-wrap:wrap}.trc-leg .acc{color:var(--accent)}
 #liveCmp{display:grid;gap:12px}#liveCmp[hidden]{display:none}.lcmp-pick .frow{margin-top:6px;flex-wrap:wrap}.lcmp-pick .chip[aria-pressed=true]{background:var(--chipc,var(--accent));border-color:var(--chipc,var(--accent));color:#11151b}
@@ -1173,7 +1159,6 @@ html.ownframe .drawer,html.ownframe .uidlg,html.ownframe .msheet{top:53px}
 html.phone header.top{flex-wrap:nowrap;gap:8px}html.phone header.top .brand{min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;flex:0 1 auto}html.phone header.top #setBtn{flex:none;width:40px;height:40px;padding:0;justify-content:center;align-items:center}
 html.phone #langSeg{display:block!important;width:100%!important}
 html.ovfit,html.ovfit body{overflow:hidden!important}html.ovfit section.view{width:var(--ovdw);transform:scale(var(--ovz));transform-origin:0 0}
-.ovcard.live{border-color:var(--accent)}.ovcard .pin[aria-pressed=true]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}.ovcard .pin:disabled{opacity:.4;cursor:default}
 .pc-relay{margin-bottom:10px}#v-me>.vhead,#meBody{max-width:1180px;margin-left:auto;margin-right:auto}
 section.view.wip>*:not(.wip-card){display:none!important}.wip-card{max-width:620px;margin:40px auto;text-align:center;display:grid;gap:10px;justify-items:center}.wip-card p{color:var(--muted);margin:0}
 .lapcontrols #coachLap,.lapcontrols #coachRef{min-width:150px}
@@ -1199,7 +1184,7 @@ html.ownframe ::-webkit-scrollbar-thumb{background:#3a4350;border-radius:6px;bor
 .ndban{display:none;position:absolute;left:10px;right:10px;top:10px;z-index:6;background:var(--warn);color:#14110a;font:600 12.5px/1.35 var(--f-body);padding:8px 10px;border-radius:8px;box-shadow:0 6px 18px rgba(0,0,0,.35);pointer-events:none}
 .wpanel.nodata:hover .ndban,.wpanel.nodata:focus-within .ndban{display:block}
 .wpanel.nodata::after{content:"ⓘ";position:absolute;right:10px;bottom:8px;color:var(--warn);font-size:14px;opacity:.9}
-.ovcard.nodata{opacity:.6}.wtable th.nd{opacity:.45;cursor:help;text-decoration:underline dotted}
+.wtable th.nd{opacity:.45;cursor:help;text-decoration:underline dotted}
 .agame{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:-4px 0 12px}.hm-cal{padding:12px 14px;overflow-x:auto}.hm-grid{display:flex;gap:3px;min-width:max-content}.hm-wk{display:flex;flex-direction:column;gap:3px}.hm-mo{height:13px;font:600 9px var(--f-data);color:var(--muted);white-space:nowrap}
 .hm-d{width:13px;height:13px;border-radius:3px;background:var(--surface2,#1e2631);border:0;padding:0;display:block}.hm-d.off{visibility:hidden}button.hm-d{cursor:pointer}button.hm-d:hover,button.hm-d:focus-visible{outline:2px solid var(--fg);outline-offset:1px}
 .hm-d.l1{background:color-mix(in srgb,var(--accent) 35%,var(--surface2,#1e2631))}.hm-d.l2{background:color-mix(in srgb,var(--accent) 60%,var(--surface2,#1e2631))}.hm-d.l3{background:color-mix(in srgb,var(--accent) 80%,var(--surface2,#1e2631))}.hm-d.l4{background:var(--accent)}
@@ -1888,29 +1873,6 @@ html .hl-sec{padding:0 0 12px;border-radius:var(--radius);display:flex;flex-dire
 #v-field .std-bar .seg,#v-field .std-bar .seg3{border-color:var(--line2);border-radius:6px}
 #v-tyres .tcard{border-radius:var(--radius);border-color:var(--line);background:var(--surface2)}
 #v-revbeep .panel,#v-share .panel{border-radius:var(--radius)}
-/* Overlays: the title, the presets as pills and the buttons on one row, then the list as a panel */
-#v-overlays:not([hidden]){display:flex;flex-wrap:wrap;align-items:center;gap:12px 16px}
-#v-overlays>*{flex:1 1 100%;min-width:0;margin-top:0!important;margin-bottom:0!important}
-#v-overlays>.vhead{flex:0 1 auto;margin:0}
-#v-overlays>#ovGlobal{flex:1 1 560px;display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px;background:none;border:0;padding:0}
-#v-overlays>#ovCallout{order:1}#v-overlays>#ovScreenPanel{order:2}#v-overlays>#ovCards{order:3}
-#ovGlobal .ov-top{order:2;margin-left:auto}#ovGlobal .ov-top .frow{gap:8px;flex-wrap:wrap;justify-content:flex-end}
-#ovGlobal .pw-overlay-presets{order:1;margin:0;padding:0;border:0;gap:6px}
-#ovGlobal .pw-overlay-presets>.label{font:500 10px/1.3 var(--f-body);letter-spacing:.1em;margin-right:2px}
-#ovGlobal .pw-preset{font:600 12px/1 var(--f-body);letter-spacing:.06em;text-transform:uppercase;padding:7px 14px;border-radius:999px;border:1px solid var(--line2);background:transparent;color:var(--muted)}
-#ovGlobal .pw-preset:hover{color:var(--fg);border-color:var(--line2)}
-#ovGlobal .pw-mine{padding:0 6px 0 14px}#ovGlobal .pw-mine button{padding:7px 0;letter-spacing:inherit;text-transform:inherit}#ovGlobal .pw-mine .pw-del{padding:2px 6px}
-#ovScreenPanel{border-radius:var(--radius)}
-#ovCards .ov-list{padding:0;border-radius:var(--radius);border-color:var(--line);background:var(--surface)}
-#ovCards .ov-row{grid-template-columns:minmax(0,1fr) 190px 110px 110px;padding:7px 14px;border-top:0;border-bottom:1px solid var(--row);font-size:13px}
-#ovCards .ov-row:last-child{border-bottom:0}
-#ovCards .ov-row.ov-h{padding:10px 14px;border-bottom:1px solid var(--line);font:500 10px/1.3 var(--f-body);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
-#ovCards .ov-row.ov-h>span:first-child{text-transform:none;letter-spacing:0;font-size:11px}
-#ovCards .ov-n b{font-weight:500}
-#ovCards .ov-row[data-ovw] .ov-n::before{content:"";flex:none;width:8px;height:8px;border-radius:50%;background:var(--line2)}
-#ovCards .ov-row[data-ovw]:has(.ov-st.on) .ov-n::before{background:var(--good)}
-#ovCards .ov-swb{min-height:30px}
-.ov-gsw{display:flex;flex-wrap:wrap;gap:4px 10px;align-items:center}.ov-g{display:inline-flex;flex-direction:column;align-items:center;gap:2px;padding:2px 0}.ov-g small{font:600 9px/1.2 var(--f-body);letter-spacing:.04em;color:var(--muted);text-transform:uppercase}.ov-g:disabled{cursor:not-allowed;opacity:.35}
 .gm-bs .pill.gm{margin-left:4px}.ov-n .gm-bs{white-space:nowrap}
 /* Lap compare, live: the same panels, its numbers as number cards */
 #liveCmp .panel{border-radius:var(--radius)}
@@ -1920,14 +1882,6 @@ html .hl-sec{padding:0 0 12px;border-radius:var(--radius);display:flex;flex-dire
 #liveCmp .lcmp-k>b{font:600 26px/1.15 var(--f-data);font-variant-numeric:tabular-nums}#liveCmp .lcmp-k>.note{font-size:12px;color:var(--muted)}
 #liveCmp .trc-leg{font:500 10px/1.3 var(--f-body);letter-spacing:.08em;text-transform:uppercase}#lcAt{font:600 11px var(--f-data);color:var(--accent)}
 .drawer.float .drawer-panel:has(.cfgsplit) #cfgForm .chip{border-radius:6px;font:600 11px/1 var(--f-body);min-height:30px;padding:0 10px}
-#ovCards .ov-sw{width:38px;height:22px;border-radius:11px;border:0;background:var(--line2)}
-#ovCards .ov-sw i{top:3px;left:3px;width:16px;height:16px;background:var(--fg)}
-#ovCards .ov-sw.on{background:var(--accent)}#ovCards .ov-sw.on i{left:19px;background:var(--accent-ink)}
-#ovCards .ov-st{justify-self:start;font:500 11px/1 var(--f-data);min-height:28px;padding:0 8px;border-radius:6px;border:1px solid transparent;background:none;color:var(--muted)}
-#ovCards .ov-st:hover{border-color:var(--line2)}#ovCards .ov-st.on{background:none;border-color:transparent;color:var(--good)}#ovCards .ov-st.on:hover{border-color:var(--line2)}
-#ovCards .ov-row>.btn{justify-self:end}
-#ovCards .ov-foot .label{font:500 10px/1.3 var(--f-body);letter-spacing:.1em}
-@media (max-width:760px){#ovCards .ov-row{grid-template-columns:minmax(0,1fr) 54px 84px}#ovCards .ov-row>.btn{justify-self:start}#v-overlays>#ovGlobal{flex-basis:100%}#ovGlobal .ov-top{margin-left:0}#ovGlobal .ov-top .frow{justify-content:flex-start}}
 /* a widget's or overlay's settings: the design's floating panel, its title the header you drag it by, the live
    preview on a darker ground at the left and the settings as rows at the right */
 .drawer.float .drawer-panel:has(.cfgsplit){padding:0;background:var(--surface);border:1px solid var(--line2);border-radius:var(--radius);box-shadow:0 20px 50px rgba(0,0,0,.5)}
@@ -2178,10 +2132,9 @@ html .hl-sec{padding:0 0 12px;border-radius:var(--radius);display:flex;flex-dire
 <!-- OVERLAYS -->
 <section class="view" id="v-overlays" hidden>
   <div class="vhead"><div><h1 data-i18n="tab.overlays"></h1><div class="sub" id="ovSub"></div></div></div>
-  <div class="callout" id="ovCallout"></div>
-  <div class="panel" id="ovGlobal"></div>
-  <div class="panel" id="ovScreenPanel" style="margin-top:10px"><h2 data-i18n="yourScreen"></h2><p class="note" id="ovScreenNote"></p><div class="screen" id="ovScreen"></div></div>
-  <div id="ovCards" style="margin-top:10px"></div>
+  <div class="callout" id="ovCallout" hidden></div>
+  <!-- the Overlays tab itself: pitwall-overlays.js (Screen, Gallery or List) -->
+  <div id="ovTab"></div>
 </section>
 
 <!-- BRAKING COACH -->
@@ -5587,55 +5540,7 @@ Object.assign(I18N,{"tab.overlays":["Overlays","Overlays"],ovGlobal:["How overla
  "d.boost":["DRS, push-to-pass and hybrid","DRS, push-to-pass e híbrido"],"d.inputs":["Throttle, brake, clutch, wheel and gear","Acelerador, freno, embrague, volante y marcha"],"d.fuel":["Fuel left, per lap and to add","Combustible restante, por vuelta y a añadir"],
  "d.engine":["Water, oil, voltage and temperatures","Agua, aceite, voltaje y temperaturas"],"d.tyres":["Tyre temperatures and wear","Temperatura y desgaste de neumáticos"],"d.standings":["Race order with the columns you choose","Clasificación con las columnas que elijas"],"d.telemetry":["Any telemetry values you pick","Los valores de telemetría que elijas"]});
 let CFG_BACK=null;
-function renderOverlaysTab(){const box=$("#ovCards");if(!box)return;renderScreenEditor();$("#ovScreenNote").innerHTML=pcOverlays()?Lp("Drag a box to move that overlay on your PC screen, or its corner to resize it. The windows move as you drag.","Arrastra un recuadro para mover ese overlay en la pantalla del PC, o su esquina para cambiar el tamaño. Las ventanas se mueven mientras arrastras."):Lp("Preview of where your overlays sit on the PC screen. Moving them here moves the real windows when the app runs in Pitlane HQ Agent.","Vista de dónde están tus overlays en la pantalla del PC. Al moverlos aquí se mueven las ventanas reales cuando la app funciona en Pitlane HQ Agent.");const pc=isPC(),remote=pcOverlays(),auto=new Set(CFG.autoWidgets||[]);
-  const c=$("#ovCallout");
-  c.innerHTML=MODE!=="bridge"?Lp("Preview: overlay windows open when the app runs in Pitlane HQ Agent on your Windows PC. You can set them up here already.","Vista previa: las ventanas overlay se abren cuando la app funciona en Pitlane HQ Agent en tu PC con Windows. Ya puedes configurarlas aquí.")
-    :!remote?Lp("Overlay windows need Pitlane HQ Agent running on Windows.","Las ventanas overlay necesitan Pitlane HQ Agent en Windows.")
-    :pc?Lp("Overlays stay on top of iRacing in borderless or windowed mode. Turn on Edit positions to drag and resize them; turn it off to lock them.","Los overlays quedan encima de iRacing en modo ventana o sin bordes. Activa Editar posiciones para moverlos y cambiar su tamaño; desactívalo para fijarlos.")
-    :Lp("Changes here apply to the overlays on your PC.","Los cambios aquí se aplican a los overlays de tu PC.");
-  $("#ovSub").textContent=Tx(`${auto.size} open automatically`,`${auto.size} se abren automáticamente`,`${auto.size} öffnen sich automatisch`,`${auto.size} abrem automaticamente`);
-  const dis=remote?"":" disabled";
-  const list=WIDGETS; // every overlay, the experimental ones with their pill
-  if(!PRO.tried)loadPro().then(()=>{if(PRO.loaded&&typeof CUR_VIEW!=="undefined"&&CUR_VIEW==="overlays")renderOverlaysTab()});
-  // without Pro on this PC once the beta is over the experimental ones close; the Auto list is left as it is (it goes
-  // with the account, so the PC with Pro keeps it): the agent opens only the first basic ones (proAutoList in pcid.go)
-  if(proGated()){
-    WIDGETS.filter(w=>!OV_BASIC.includes(w)&&OV_OPEN.has(w)).forEach(w=>{OV_OPEN.delete(w);fetch(`/api/overlay/close?w=${w}`,{method:"POST"}).catch(()=>{})})}
-  const ovPB=$("#pwOverlayPresets");
-  // Overlays as one list (design A): the buttons and the presets on top, every overlay as a row (opens when you get in
-  // the car, open now, configure), how they behave at the foot; the screen where you place them only while placing
-  $("#ovGlobal").innerHTML=`<div class="ov-top"><div class="frow"><button type="button" class="btn primary" id="oOpenSel"${dis}>${esc(Tx("Open now","Abrir ahora","Jetzt öffnen","Abrir agora"))}</button><button type="button" class="btn" id="oCloseAll"${dis}>${L("closeAll",true)}</button>
-      <button type="button" class="btn${CFG.edit?" primary":""}" id="oEdit" aria-pressed="${!!CFG.edit}">${esc(CFG.edit?Tx("Done placing","Terminar de colocar","Platzieren beenden","Terminar de posicionar"):Tx("Place on the screen","Colocar en la pantalla","Auf dem Bildschirm platzieren","Posicionar na tela"))}</button><button type="button" class="btn" id="oReset"${dis}>${L("resetPos",true)}</button></div></div>`;
-  if(ovPB)$("#ovGlobal").appendChild(ovPB); // the presets bar goes back at once, never gone for a moment
-  const sw=on=>`<span class="ov-sw${on?" on":""}"><i></i></span>`;
-  box.innerHTML=`<div class="frow ov-design" style="margin:0 0 12px;align-items:center;justify-content:flex-start"><span class="label">${esc(Tx("Design","Diseño","Design","Design"))}</span>${OV_STYLES.map(([k])=>`<button type="button" class="chip" data-ovstyle="${k}" aria-pressed="${(ovStyleOk((CFG.ui||{}).ovstyle)?CFG.ui.ovstyle:OV_DEFAULT_STYLE)===k}">${esc(ovStyleLabel(k))}${k==="classic"?"":betaPill()}</button>`).join("")}</div><div class="ov-list"><div class="ov-row ov-h"><span>${esc(Tx("Overlay","Overlay"))}</span><span>${esc(Tx("When I get in the car","Al entrar al coche","Beim Einsteigen","Ao entrar no carro"))}</span><span>${esc(Tx("Now","Ahora","Jetzt","Agora"))}</span><span></span></div>
-    ${list.map(w=>{const op=OV_OPEN.has(w);return`<div class="ov-row" data-ovw="${w}"><span class="ov-n"><b>${L("w."+w)}</b>${OV_BASIC.includes(w)?"":`<span class="pill">${esc(Tx("Experimental","Experimental"))}</span>`}${gameBadges("widgets",w)}</span>
-      <span class="ov-gsw">${VIEW_GAMES.map(g=>{const ok=gameHas(g,"widgets",w),on=ok&&autoIn(w,g);return`<button type="button" class="ov-swb ov-g" data-auto="${w}" data-autog="${g}" aria-pressed="${on}"${ok?"":` disabled title="${esc(gameLacks(g,"widgets",w))}"`} aria-label="${esc(L("w."+w)+" · "+GAME_NAMES[g]+" · "+Tx("when I get in the car","al entrar al coche","beim Einsteigen","ao entrar no carro"))}"><small>${ok?esc(GAME_SHORT[g]):"&nbsp;"}</small>${sw(on)}</button>`}).join("")}</span>
-      ${remote?`<button type="button" class="ov-st${op?" on":""}" data-ovt="${w}">${esc(op?Tx("Open","Abierto","Offen","Aberto"):Tx("Closed","Cerrado","Geschlossen","Fechado"))}</button>`:MODE==="bridge"?`<button type="button" class="ov-st" data-view="${w}">${L("openHere",true)}</button>`:`<span></span>`}
-      <button type="button" class="btn small" data-cfg="${w}">${L("configure",true)}</button></div>`}).join("")}</div>
-    <div class="ov-foot frow" style="margin-top:12px;align-items:center">${chk("oAuto",CFG.autoStart,L("autoOpen",true))}${chk("oClose",CFG.closeOnExit,L("closeExit",true))}
-      <details><summary class="label">${esc(Tx("More","Más","Mehr","Mais"))}</summary><div class="frow" style="margin-top:8px"><span class="label">${L("engineSel",true)}</span><select id="oEngine"><option value="webview">${esc(Tx("Frameless (recommended)","Sin bordes (recomendado)"))}</option><option value="edge">${esc(Tx("Edge window","Ventana de Edge"))}</option></select>
-        <span class="label">${esc(Tx("Titles","Títulos","Titel","Títulos"))}</span><span class="seg3"><button type="button" data-ttl="1" aria-pressed="${OV_TITLED.every(w=>ui(w).title!==false)}">${esc(Tx("Show all","Mostrar todos","Alle anzeigen","Mostrar todos"))}</button><button type="button" data-ttl="0" aria-pressed="${OV_TITLED.every(w=>ui(w).title===false)}">${esc(Tx("Hide all","Ocultar todos","Alle ausblenden","Ocultar todos"))}</button></span><label class="label" for="oFps">${esc(Tx("Frame rate","Fotogramas por segundo","Bildrate","Quadros por segundo"))}</label><select id="oFps">${[30,20,15,10].map(n=>`<option value="${n}">${esc(Tx(n+" a second",n+" por segundo",n+" pro Sekunde",n+" por segundo"))}</option>`).join("")}</select>${chk("oLock",CFG.lock,L("clickThrough",true))}</div></details></div>`;
-  $("#ovScreenPanel").hidden=!CFG.edit;
-  const q=s=>document.querySelector(s),tog=(id,k)=>{const e=q("#"+id);if(e)e.onclick=()=>{CFG[k]=!CFG[k];saveCfg();renderOverlaysTab()}};
-  document.querySelectorAll("#ovCards [data-ttl]").forEach(b=>b.onclick=()=>{const on=b.dataset.ttl==="1";CFG.ui=CFG.ui||{};OV_TITLED.forEach(w=>{const m=Object.assign({},CFG.ui[w]||{});if(on)delete m.title;else m.title=false;CFG.ui[w]=m});saveCfg();renderOverlaysTab()});
-  tog("oAuto","autoStart");tog("oClose","closeOnExit");tog("oEdit","edit");tog("oStart","startWithWindows");tog("oLock","lock");
-  q("#oEngine").value=CFG.engine||"webview";q("#oEngine").onchange=e=>{CFG.engine=e.target.value;saveCfg()};q("#oFps").value=String((CFG.ui||{}).ovfps||30);q("#oFps").onchange=e=>{CFG.ui=CFG.ui||{};const n=+e.target.value;if(n>=30)delete CFG.ui.ovfps;else CFG.ui.ovfps=n;saveCfg()};
-  q("#oOpenSel").onclick=async()=>{const lg=liveNow(),ws=(CFG.autoWidgets||[]).filter(w=>!lg||autoIn(w,lg));if(!ws.length){toast(Tx("Mark some overlays with Auto first.","Marca primero algunos overlays con Auto."));return}for(const w of ws){await openOverlayOnPC(w)}toast(Tx("Opened on your PC.","Abiertos en tu PC."))};
-  const backToLive=w=>{if(HIDDEN.has(w)){HIDDEN.delete(w);store.set("pw.hiddenW",[...HIDDEN]);applyLayout()}}; // a closed overlay comes back to Telemetry
-  q("#oCloseAll").onclick=()=>{[...OV_OPEN].forEach(backToLive);OV_OPEN.clear();markOvOpen();fetch("/api/overlay/close?w=*",{method:"POST"}).catch(()=>{}).finally(()=>setTimeout(refreshScreenRects,400))};
-  q("#oReset").onclick=()=>fetch("/api/overlay/reset",{method:"POST"}).then(()=>toast(Tx("Positions reset. Reopen overlays to apply.","Posiciones restablecidas. Vuelve a abrir los overlays.")));
-  const proNeed=w=>{if(!proGated()||OV_BASIC.includes(w))return false;proDialog(Tx("The experimental overlays need Pro.","Los overlays experimentales necesitan Pro.","The experimental overlays need Pro.","Os overlays experimentais precisam do Pro."));return true};
-  box.querySelectorAll("[data-autog]").forEach(b=>b.onclick=()=>{const w=b.dataset.auto,g=b.dataset.autog;if(!gameHas(g,"widgets",w))return;const on=autoIn(w,g);if(!on&&!(CFG.autoWidgets||[]).includes(w)&&proNeed(w))return;setAutoIn(w,g,!on);saveCfg();renderOverlaysTab()});
-  box.querySelectorAll("[data-ovt]").forEach(b=>b.onclick=async()=>{const w=b.dataset.ovt;
-    if(!OV_OPEN.has(w)){if(proNeed(w))return;await popOut(w);OV_OPEN.add(w);markOvOpen();setTimeout(refreshScreenRects,600);return}
-    OV_OPEN.delete(w);backToLive(w);markOvOpen();fetch(`/api/overlay/close?w=${w}`,{method:"POST"}).catch(()=>{}).finally(()=>setTimeout(refreshScreenRects,400))});
-  markOvOpen();markGameGaps();refreshScreenRects(); // what is really open on the PC, at once
-  box.querySelectorAll("[data-view]").forEach(b=>b.onclick=()=>window.open(`/?overlay=${b.dataset.view}`,"_blank"));
-  document.querySelectorAll("#ovCards [data-ovstyle]").forEach(b=>b.onclick=()=>{CFG.ui=CFG.ui||{};const k=b.dataset.ovstyle;if(k===OV_DEFAULT_STYLE)delete CFG.ui.ovstyle;else CFG.ui.ovstyle=k;saveCfg();renderOverlaysTab()});
-  box.querySelectorAll("[data-cfg]").forEach(b=>b.onclick=()=>{CFG_BACK=()=>{closeDrawer();renderOverlaysTab()};openWidgetCfg(b.dataset.cfg,true)});
-  box.querySelectorAll("[data-show]").forEach(b=>b.onclick=()=>{const w=b.dataset.show;HIDDEN.has(w)?HIDDEN.delete(w):HIDDEN.add(w);store.set("pw.hiddenW",[...HIDDEN]);applyLayout();renderOverlaysTab()});
-}
+/* renderOverlaysTab, the screen editor and markOvOpen: pitwall-overlays.js */
 
 /* ===================== readable names for iRacing variables ===================== */
 const TELN=(()=>{const t={};`SessionTime|Session time|Tiempo de sesión
@@ -6020,26 +5925,6 @@ let SCREEN=null,SCREEN_DRAG=false;
 async function screenInfo(){if(SCREEN)return SCREEN;try{if(MODE==="bridge"&&!REMOTE){SCREEN=await (await fetch("/api/overlay/screen")).json()}}catch(e){}if(!SCREEN)SCREEN={virtual:[0,0,1920,1080],primary:[0,0,1920,1080]};return SCREEN}
 /* the smallest each overlay may be (overlayMinSize in overlay.go: its default width; the map, the radar and the g-force their default height too) */
 const OV_MINW={flag:520,dash:560,timing:440,map:440,relative:600,fuel:420,engine:320,tyres:420,inputs:560,standings:720,radar:260,boost:360,telemetry:420,compare:680,gg:280,deltabar:520,stats:420,pit:440,sectors:560,gaps:560,incidents:380,coach:520,brakes:480,weather:360,trackbar:700,system:320},OV_MINH={map:480,radar:300,gg:300};
-async function renderScreenEditor(){const box=$("#ovScreen");if(!box||SCREEN_DRAG)return;const sc=await screenInfo(),[vx,vy,vw,vh]=sc.virtual;box.style.aspectRatio=vw+" / "+vh;
-  const pos=CFG.positions||{},names=[...new Set([...(CFG.autoWidgets||[]),...OV_OPEN])].filter(n=>OVSZ[n]);
-  const inside=([x,y,w,h])=>{w=Math.min(w,vw);h=Math.min(h,vh);return[Math.max(vx,Math.min(vx+vw-w,x)),Math.max(vy,Math.min(vy+vh-h,y)),w,h]};
-  const rect=(n,i)=>inside(pos[n]||[vx+60+i*40,vy+60+i*40,OVSZ[n][0],OVSZ[n][1]]);
-  box.innerHTML=`<div class="mon" style="left:${(sc.primary[0]-vx)/vw*100}%;top:${(sc.primary[1]-vy)/vh*100}%;width:${sc.primary[2]/vw*100}%;height:${sc.primary[3]/vh*100}%"></div>`+
-    names.map((n,i)=>{const[x,y,w,h]=rect(n,i);return `<div class="ovrect${(CFG.autoWidgets||[]).includes(n)?" auto":""}${OV_OPEN.has(n)?"":" closed"}" data-n="${n}" style="left:${(x-vx)/vw*100}%;top:${(y-vy)/vh*100}%;width:${w/vw*100}%;height:${h/vh*100}%"><span>${L("w."+n,true)}</span><i class="rz"></i></div>`}).join("")||
-    `<p class="empty" style="position:absolute;inset:0;display:grid;place-items:center">${Lp("Open an overlay or mark it with Auto to place it here.","Abre un overlay o márcalo con Auto para colocarlo aquí.")}</p>`;
-  box.querySelectorAll(".ovrect").forEach((el,i)=>{el.onpointerdown=e=>{e.preventDefault();SCREEN_DRAG=true;el.setPointerCapture(e.pointerId);const n=el.dataset.n,resize=!!e.target.closest(".rz"),k=vw/box.clientWidth;
-    let[x,y,w,h]=rect(n,names.indexOf(n));const sx=e.clientX,sy=e.clientY,x0=x,y0=y,w0=w,h0=h;let t=0;
-    const send=()=>{CFG.positions=Object.assign({},CFG.positions,{[n]:[x,y,w,h]});if(pcOverlays())fetch(`/api/overlay/move?w=${n}&x=${x}&y=${y}&width=${w}&height=${h}`,{method:"POST"}).catch(()=>{});else if(MODE==="local")store.set("pw.cfg",CFG)};
-    el.onpointermove=ev=>{const dx=(ev.clientX-sx)*k,dy=(ev.clientY-sy)*k,snap=v=>Math.round(v/5)*5;
-      if(resize){const mw=OV_MINW[n]||200,mh=OV_MINH[n]||40;w=Math.max(mw,Math.min(vx+vw-x,snap(w0+dx)));h=Math.max(mh,Math.min(vy+vh-y,snap(h0+dy)))}else{x=Math.max(vx,Math.min(vx+vw-w,snap(x0+dx)));y=Math.max(vy,Math.min(vy+vh-h,snap(y0+dy)))}
-      el.style.left=(x-vx)/vw*100+"%";el.style.top=(y-vy)/vh*100+"%";el.style.width=w/vw*100+"%";el.style.height=h/vh*100+"%";const now=performance.now();if(now-t>120){t=now;send()}};
-    el.onpointerup=()=>{el.onpointermove=null;el.onpointerup=null;SCREEN_DRAG=false;send()}}})}
-
-// keep "Your screen" in step with the overlay windows (they can be dragged on the screen itself)
-async function refreshScreenRects(){if(SCREEN_DRAG||CUR_VIEW!=="overlays"||!pcOverlays())return;try{const j=await (await fetch("/api/overlay/list")).json();const r=j.rects||{};
-  let ch=false;Object.keys(r).forEach(n=>{const v=r[n];if(!v||!OVSZ[n])return;const o=(CFG.positions||{})[n];if(!o||o.join()!==v.join()){CFG.positions=Object.assign({},CFG.positions,{[n]:v});ch=true}});
-  const open=(j.open||[]).join();OV_OPEN=new Set(j.open||[]);markOvOpen();if(ch||open!==refreshScreenRects.open){refreshScreenRects.open=open;renderScreenEditor()}}catch(e){}}
-setInterval(refreshScreenRects,1500);
 /* overlay windows keep their look: each widget is drawn at its own width and scaled with the
    window, and the window's height follows the content (no scroll bars, nothing cut off).
    Resizing keeps the proportions, between half and two and a half times the normal size. */
@@ -6106,7 +5991,6 @@ async function renderProCard(){const box=$("#mePro");if(!box)return;if(!PRO_CARD
       ${PRO.beta&&L.full>L.price?`<span class="note"><s>${esc(proMoney(L.full))}</s> ${esc(T("half price while Pitlane HQ is in beta, paid once","mitad de precio mientras Pitlane HQ está en beta, un solo pago","half price while Pitlane HQ is in beta, paid once","metade do preço enquanto o Pitlane HQ está em beta, pagamento único"))}</span>`:`<span class="note">${esc(T("paid once","un solo pago","paid once","pagamento único"))}</span>`}</div>`:""}
     <p class="note" style="margin:10px 0 0">${esc(T("Or support Pitlane HQ with a donation:","O apoya Pitlane HQ con una donación:","Or support Pitlane HQ with a donation:","Ou apoie o Pitlane HQ com uma doação:"))} <a href="${PATREON_URL}" target="_blank" rel="noopener">♥ Patreon</a></p>`;
   const b=$("#meProBuy");if(b)b.onclick=proOpenBuy;const mv=$("#meProMove");if(mv)mv.onclick=proMoveHere}
-function markOvOpen(){document.querySelectorAll("#ovCards [data-ovt]").forEach(b=>{const on=OV_OPEN.has(b.dataset.ovt);b.classList.toggle("on",on);b.textContent=on?Tx("Open","Abierto","Offen","Aberto"):Tx("Closed","Cerrado","Geschlossen","Fechado")})}
 /* ---------- live preview while configuring ---------- */
 let PREVIEW_TIMER=0;
 function startPreview(w){clearInterval(PREVIEW_TIMER);const pv=$("#cfgPreview");if(!pv)return;
@@ -6398,7 +6282,7 @@ function gameMissing(needs){if(!STATUS.connected||STATUS.demo)return"";const g=S
 const colLacks=k=>gameMissing(COL_NEEDS[k]);
 function markGameGaps(){document.querySelectorAll(".wpanel[data-w]").forEach(p=>{const m=gameMissing(WIDGET_NEEDS[p.dataset.w]);p.classList.toggle("nodata",!!m);let b=p.querySelector(":scope>.ndban");
     if(m){if(!b){b=document.createElement("div");b.className="ndban";b.setAttribute("role","note");p.appendChild(b)}b.textContent="ⓘ "+m}else if(b)b.remove()});
-  document.querySelectorAll("#ovCards .ov-row[data-ovw]").forEach(c=>{const w=c.querySelector("[data-auto]");const m=w?gameMissing(WIDGET_NEEDS[w.dataset.auto]):"";c.classList.toggle("nodata",!!m);c.title=m})}
+  document.querySelectorAll("#ovTab [data-ovw]").forEach(c=>{const m=gameMissing(WIDGET_NEEDS[c.dataset.ovw]);c.classList.toggle("nodata",!!m);c.title=m})}
 /* which sim Pitlane HQ reads: iRacing, Le Mans Ultimate, or whichever is running */
 const GAME_NAMES={iracing:"iRacing",lmu:"Le Mans Ultimate",acc:"Assetto Corsa Competizione",ac:"Assetto Corsa"},GAME_SHORT={iracing:"iRacing",lmu:"LMU",acc:"ACC",ac:"AC"};
 const GAMES={auto:["Automatic","Automático","Automatisch","Automático"],...Object.fromEntries(Object.entries(GAME_NAMES).map(([k,v])=>[k,[v,v,v,v]]))};
@@ -9740,6 +9624,7 @@ async function askShare(){if(MODE!=="bridge"||REMOTE||COMPANION||OV.on||$("#shar
     try{COMM=await jpost("/api/community",{action:"save",nameKind:c.nameKind||"nick",alias:c.alias||"",url:"",shareTimes:on,shareTraces:on,shareReports:on,anonymous:k==="anon",deleteAfter:on?$("#saDA").value:""})}catch(e){toast(e.message)}m.remove()}}
 </script>
 
+<script src="pitwall-overlays.js"></script>
 <script src="pitwall-ui-v1.js"></script>
 <script src="pitwall-my-laps-v2.js"></script>
 <script src="pitwall-model.js"></script>

@@ -4,6 +4,15 @@ Pitlane HQ is in **beta**. Pitlane HQ Agent (the PC app), the web app and the ph
 number, `0.MINOR.PATCH`. A MINOR version brings a set of new features, and fixes go in as "Fixes and
 improvements". 1.0.0 comes when the beta ends. Newest first.
 
+## 0.9.13 beta
+
+- In multiclass races the relative and the standings warn you when faster or slower classes are coming.
+- Le Mans Ultimate shows the car's damage on the dash.
+- The lap analysis shows Le Mans Ultimate's hybrid battery through the lap.
+- The race summary shows what each pit stop cost.
+- Pitlane HQ is in the Microsoft Store.
+- Fixes and improvements.
+
 ## 0.9.12 beta
 
 - Le Mans Ultimate shows the virtual energy you use per lap and how many laps it lasts.

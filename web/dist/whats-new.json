@@ -1,6 +1,12 @@
 {
   "versions": [
     {
+      "v": "0.9.13",
+      "en": ["In multiclass races the relative and the standings warn you when faster or slower classes are coming.", "Le Mans Ultimate shows the car's damage on the dash.", "The lap analysis shows Le Mans Ultimate's hybrid battery through the lap.", "The race summary shows what each pit stop cost.", "Pitlane HQ is in the Microsoft Store.", "Fixes and improvements."],
+      "es": ["En carreras multiclase, el relative y la clasificación te avisan cuando llegan clases más rápidas o más lentas.", "Le Mans Ultimate muestra los daños del coche en el dash.", "El análisis de vuelta muestra la batería híbrida de Le Mans Ultimate a lo largo de la vuelta.", "El resumen de carrera muestra lo que costó cada parada en boxes.", "Pitlane HQ está en Microsoft Store.", "Arreglos y mejoras."],
+      "pt": ["Em corridas multiclasse, o relative e a classificação avisam quando classes mais rápidas ou mais lentas estão chegando.", "O Le Mans Ultimate mostra os danos do carro no dash.", "A análise de volta mostra a bateria híbrida do Le Mans Ultimate ao longo da volta.", "O resumo da corrida mostra quanto custou cada parada nos boxes.", "O Pitlane HQ está na Microsoft Store.", "Correções e melhorias."]
+    },
+    {
       "v": "0.9.12",
       "en": ["Le Mans Ultimate shows the virtual energy you use per lap and how many laps it lasts.", "Live on the phones shows the car's electronics and Le Mans Ultimate's virtual energy.", "Supporters get a founding supporter line on their profile, and the help button has Donate under Chat with support.", "A Pricing page shows what Pitlane HQ Pro will cost after the beta. Everything stays free during the beta.", "The Discord bot works with Le Mans Ultimate in /record, /coach, /board, /track, /compare and the weekly post.", "Fixes and improvements."],
       "es": ["Le Mans Ultimate muestra la energía virtual que usas por vuelta y cuántas vueltas te dura.", "Live en los móviles muestra la electrónica del coche y la energía virtual de Le Mans Ultimate.", "Los supporters tienen una línea de supporter fundador en su perfil, y el botón de ayuda tiene Donar debajo de Chat con soporte.", "Una página de Precios muestra lo que costará Pitlane HQ Pro después de la beta. Todo sigue gratis durante la beta.", "El bot de Discord funciona con Le Mans Ultimate en /record, /coach, /board, /track, /compare y el post semanal.", "Arreglos y mejoras."],

@@ -870,12 +870,12 @@ var require_pitwall_analysis = __commonJS({
         return v.length % 2 ? v[h] : (v[h - 1] + v[h]) / 2;
       }, "medianOf");
       function lapSteps(cs, ov, A, LP, Tx, u) {
-        const P2 = [], r4 = Math.round, r22 = /* @__PURE__ */ __name((v) => Math.round(v * 100) / 100, "r2"), sum = /* @__PURE__ */ __name((l, f) => l.reduce((q2, c) => q2 + f(c), 0), "sum"), lostOf = /* @__PURE__ */ __name((l) => sum(l, (c) => Math.max(0, c.lost)), "lostOf"), dirt = ov === "dirt", ss = ov === "superspeedway";
+        const P2 = [], r4 = Math.round, r22 = /* @__PURE__ */ __name((v) => Math.round(v * 100) / 100, "r2"), sum2 = /* @__PURE__ */ __name((l, f) => l.reduce((q2, c) => q2 + f(c), 0), "sum"), lostOf = /* @__PURE__ */ __name((l) => sum2(l, (c) => Math.max(0, c.lost)), "lostOf"), dirt = ov === "dirt", ss = ov === "superspeedway";
         const T4 = /* @__PURE__ */ __name((a) => Tx(a[0], a[1], a[2]), "T"), step = /* @__PURE__ */ __name((k, list, gain, t, what, cost, how) => P2.push({ k, id: k, turns: list.map((c) => c.n), gain, t, what, cost, why: (what + " " + cost).trim(), how, marks: turnMarks(list), spans: turnSpans(list) }), "step");
         const tr2 = cs.filter((c) => !c.est && !c.lift && c.lost > 0.03 && c.trailA != null && c.trailB - c.trailA >= 12);
-        const gTr = sum(tr2, (c) => Math.max(0, (c.ph.brake || 0) + (c.ph.entry || 0)));
+        const gTr = sum2(tr2, (c) => Math.max(0, (c.ph.brake || 0) + (c.ph.entry || 0)));
         if (tr2.length >= 2 && !ss && gTr > 0.06) {
-          const mA = r4(sum(tr2, (c) => c.trailA) / tr2.length), mB = r4(sum(tr2, (c) => c.trailB) / tr2.length), nm = tNames(tr2);
+          const mA = r4(sum2(tr2, (c) => c.trailA) / tr2.length), mB = r4(sum2(tr2, (c) => c.trailB) / tr2.length), nm = tNames(tr2);
           step(
             "trail",
             tr2,
@@ -888,7 +888,7 @@ var require_pitwall_analysis = __commonJS({
         }
         const us = dirt ? [] : cs.filter((c) => c.lost > 0.03 && c.stA > 0 && c.stB > 0 && c.stA > c.stB * 1.12 && c.vmin != null && c.vmin < c.vminr - 1);
         if (us.length >= 2) {
-          const pc = r4(sum(us, (c) => c.stA / c.stB - 1) / us.length * 100), nm = tNames(us);
+          const pc = r4(sum2(us, (c) => c.stA / c.stB - 1) / us.length * 100), nm = tNames(us);
           step(
             "rotate",
             us,
@@ -1876,7 +1876,8 @@ var driverMessage = /* @__PURE__ */ __name((env, accId, id2, now, m) => [
 ], "driverMessage");
 async function handleSupport(req, env, url, { sessionAccount: sessionAccount2, isAdmin: isAdmin2, openEscrow: openEscrow2, sendSupportChat: sendSupportChat2, sendSupportReply: sendSupportReply2 }) {
   const p = url.pathname, m = req.method;
-  if (p !== "/community/support" && p !== "/community/support/unread" && !p.startsWith("/community/admin/support")) return null;
+  const adminSide = p === "/community/admin/support" || p.startsWith("/community/admin/support/");
+  if (p !== "/community/support" && p !== "/community/support/unread" && !adminSide) return null;
   const acc = await sessionAccount2(req, env);
   if (!acc) return err("sign in with your Pitlane HQ account", 401);
   const now = Date.now();
@@ -1901,7 +1902,7 @@ async function handleSupport(req, env, url, { sessionAccount: sessionAccount2, i
     const mailed = await sendSupportChat2(env, { ...f, nick: acc.display || "", accountId: acc.id, email: esc7 && esc7.email || "" }).catch(() => false);
     return json({ ok: true, mailed, msg: { id: id3, me: true, text: f.text, created: now, kind: "chat" } });
   }
-  if (!p.startsWith("/community/admin/support")) return err("not found", 404);
+  if (!adminSide) return err("not found", 404);
   if (!isAdmin2(env, acc.id)) return err("only the admins of this server can do this", 403);
   if (p === "/community/admin/support/unread" && m === "GET") {
     const r4 = await env.DB.prepare(SQL_UNREAD_ADMIN).first();
@@ -2804,8 +2805,8 @@ async function noteCar(env, game, carId, name2) {
     cache.set(k, { fam: row.fam_id, at: Date.now(), known: true });
     return row.fam_id;
   }
-  const head = await env.DB.prepare("SELECT fam_id FROM car_families WHERE game=?1 AND fam=?2 ORDER BY created LIMIT 1").bind(g, f.key).first();
-  const fam = head ? head.fam_id : c;
+  const head2 = await env.DB.prepare("SELECT fam_id FROM car_families WHERE game=?1 AND fam=?2 ORDER BY created LIMIT 1").bind(g, f.key).first();
+  const fam = head2 ? head2.fam_id : c;
   await env.DB.prepare("INSERT OR IGNORE INTO car_families (game, car_id, fam_id, fam, created) VALUES (?1,?2,?3,?4,?5)").bind(g, c, fam, f.key, Date.now()).run();
   if (fam !== c) await joinCar(env, g, c, fam);
   cache.set(k, { fam, at: Date.now(), known: true });
@@ -2835,13 +2836,13 @@ function curvature(x, y, step = 5) {
   const n = Math.min(x.length, y.length), k = new Array(n).fill(0);
   if (n < 20) return k;
   const at2 = /* @__PURE__ */ __name((i) => (i % n + n) % n, "at");
-  const head = new Array(n);
+  const head2 = new Array(n);
   for (let i = 0; i < n; i++) {
     const a = at2(i - SMOOTH), b2 = at2(i + SMOOTH);
-    head[i] = Math.atan2(y[b2] - y[a], x[b2] - x[a]);
+    head2[i] = Math.atan2(y[b2] - y[a], x[b2] - x[a]);
   }
   for (let i = 0; i < n; i++) {
-    let d = head[at2(i + 1)] - head[at2(i - 1)];
+    let d = head2[at2(i + 1)] - head2[at2(i - 1)];
     while (d > Math.PI) d -= 2 * Math.PI;
     while (d < -Math.PI) d += 2 * Math.PI;
     k[i] = d / (2 * step);
@@ -5796,12 +5797,12 @@ var isBot = /* @__PURE__ */ __name((ua) => !ua || /bot|crawl|spider|slurp|previe
 var SQL_VISIT_ADD = "INSERT INTO visits_days (day, src, country, page, n) VALUES (?1,?2,?3,?4,1) ON CONFLICT(day, src, country, page) DO UPDATE SET n=MIN(visits_days.n+1, 1000000)";
 var SQL_ACCOUNT_SRC = "UPDATE accounts SET src=?2, src_page=?3, country=?4 WHERE id=?1 AND src IS NULL";
 function sourcesOf(visits, prevVisits, signups, prevSignups) {
-  const sum = /* @__PURE__ */ __name((rows, key2) => {
+  const sum2 = /* @__PURE__ */ __name((rows, key2) => {
     const m = /* @__PURE__ */ new Map();
     for (const r4 of rows) m.set(r4[key2], (m.get(r4[key2]) || 0) + (r4.n || 0));
     return m;
   }, "sum");
-  const vSrc = sum(visits, "src"), vCountry = sum(visits, "country"), vPage = sum(visits, "page"), pSrc = sum(prevVisits, "src");
+  const vSrc = sum2(visits, "src"), vCountry = sum2(visits, "country"), vPage = sum2(visits, "page"), pSrc = sum2(prevVisits, "src");
   const sSrc = /* @__PURE__ */ new Map(), sCountry = /* @__PURE__ */ new Map();
   for (const a of signups) {
     const s = a.src || "unknown", c = a.country || "XX";
@@ -6114,7 +6115,7 @@ async function freeName(env, want) {
 __name(freeName, "freeName");
 var isAdmin = /* @__PURE__ */ __name((env, id2) => env.LOCAL === "1" || String(env.ADMINS || env.SEASON_UPLOADERS || "").split(",").map((x) => x.trim()).filter(Boolean).includes(id2), "isAdmin");
 var testersSet = /* @__PURE__ */ __name((env, id2) => !!id2 && String(env.TESTERS || "").split(",").map((x) => x.trim()).filter(Boolean).includes(id2), "testersSet");
-var isTester = /* @__PURE__ */ __name((env, id2, row) => !!id2 && (!!(row && row.tester) || testersSet(env, id2)), "isTester");
+var isTester = /* @__PURE__ */ __name((env, id2, row) => !!id2 && (row && row.tester != null ? !!row.tester : testersSet(env, id2)), "isTester");
 async function accounts(req, env, url) {
   if (env.COMMUNITY !== "1") return err3("accounts are not enabled on this server", 404);
   const p = url.pathname.replace(/^\/account/, ""), m = req.method;
@@ -6946,11 +6947,435 @@ async function voiceIce(env) {
 }
 __name(voiceIce, "voiceIce");
 
+// src/usagelib.js
+var DEVICES2 = ["web", "pc", "android", "ios"];
+var KEY_RE = /^(view|act|game):[a-z0-9_.-]{1,40}$/;
+var MAX_KEYS = 100;
+var MAX_N = 1e3;
+var MAX_DAYS = 90;
+var FEEDBACK_MAX = 4e3;
+var FEEDBACK_PER_DAY = 20;
+var ASK_USED = 6 * 36e5;
+var ASK_RACES = 2;
+var MAX_MS = 10 * 6e4;
+var OV_FIRST = 1;
+var OV_AGAIN = 6;
+var OV_GAMES = ["iracing", "lmu"];
+var OV_MAX = 30;
+var STYLE_RE = /^[a-z0-9_-]{1,20}$/;
+var OV_RE = /^[a-z]{2,12}$/;
+var USAGE_GAMES = ["iracing", "lmu", "acc", "ac"];
+var gameKeyOk = /* @__PURE__ */ __name((k) => !k.startsWith("game:") || USAGE_GAMES.includes(k.slice(5)), "gameKeyOk");
+var day = /* @__PURE__ */ __name((t) => new Date(t).toISOString().slice(0, 10), "day");
+var cleanV2 = /* @__PURE__ */ __name((v) => String(v == null ? "" : v).replace(/[^0-9a-zA-Z.+-]/g, "").slice(0, 24), "cleanV");
+function cleanUsage(b2) {
+  if (!b2 || typeof b2 !== "object") return { error: "missing body" };
+  const device = String(b2.device || "").toLowerCase();
+  if (!DEVICES2.includes(device)) return { error: "unknown device" };
+  const counts = [];
+  if (b2.counts && typeof b2.counts === "object" && !Array.isArray(b2.counts)) {
+    for (const [k0, n0] of Object.entries(b2.counts)) {
+      if (counts.length >= MAX_KEYS) break;
+      const k = String(k0).toLowerCase(), n = Math.floor(Number(n0));
+      if (!KEY_RE.test(k) || !gameKeyOk(k) || !(n > 0)) continue;
+      counts.push([k, Math.min(n, MAX_N)]);
+    }
+  }
+  const ms = Math.max(0, Math.min(MAX_MS, Math.floor(Number(b2.ms) || 0)));
+  return { device, v: cleanV2(b2.v), counts, ms };
+}
+__name(cleanUsage, "cleanUsage");
+function cleanFeedback(b2) {
+  if (!b2 || typeof b2 !== "object") return { error: "missing body" };
+  const text2 = String(b2.text == null ? "" : b2.text).replace(/\r\n?/g, "\n").replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f]/g, "").trim();
+  if (!text2) return { error: "write something first" };
+  if (text2.length > FEEDBACK_MAX) return { error: "too long (" + FEEDBACK_MAX + " characters at most)" };
+  let rating = null;
+  if (b2.rating != null && b2.rating !== "" && b2.rating !== 0) {
+    const r4 = Number(b2.rating);
+    if (!Number.isInteger(r4) || r4 < 1 || r4 > 5) return { error: "the rating goes from 1 to 5" };
+    rating = r4;
+  }
+  const kind = b2.kind === "overlays" ? "overlays" : "general";
+  let style = null;
+  if (kind === "overlays") {
+    style = cleanStyle(b2.style);
+    if (!style) return { error: "unknown overlay design" };
+  }
+  const device = String(b2.device || "").toLowerCase();
+  return { text: text2, rating, kind, style, device: DEVICES2.includes(device) ? device : "", v: cleanV2(b2.v), view: String(b2.view || "").replace(/[^a-z0-9_.:-]/gi, "").slice(0, 40) };
+}
+__name(cleanFeedback, "cleanFeedback");
+function cleanStyle(v) {
+  if (v == null || v === "") return "classic";
+  const s = String(v).toLowerCase();
+  return STYLE_RE.test(s) ? s : null;
+}
+__name(cleanStyle, "cleanStyle");
+function cleanOvRace(b2) {
+  if (!b2 || typeof b2 !== "object") return { error: "missing body" };
+  const style = cleanStyle(b2.style);
+  if (!style) return { error: "unknown overlay design" };
+  const game = String(b2.game || "").toLowerCase();
+  if (!OV_GAMES.includes(game)) return { error: "unknown game" };
+  const ovs = [...new Set((Array.isArray(b2.ovs) ? b2.ovs : []).map((x) => String(x).toLowerCase()).filter((x) => OV_RE.test(x)))].slice(0, OV_MAX);
+  if (!ovs.length) return { error: "no overlay was open" };
+  const sid = String(b2.sid == null ? "" : b2.sid).replace(/[^A-Za-z0-9._:-]/g, "").slice(0, 80);
+  return { style, game, ovs, sid };
+}
+__name(cleanOvRace, "cleanOvRace");
+var shouldAskOv = /* @__PURE__ */ __name((answered, races) => answered ? races >= OV_AGAIN : races >= OV_FIRST, "shouldAskOv");
+var shouldAsk = /* @__PURE__ */ __name((used, races) => used >= ASK_USED || races >= ASK_RACES, "shouldAsk");
+function analyticsOf(days, perDay, rows, presence, accounts2) {
+  const byDev = /* @__PURE__ */ new Map(), byKey = /* @__PURE__ */ new Map(), byGame = /* @__PURE__ */ new Map(), byUser = /* @__PURE__ */ new Map();
+  const add = /* @__PURE__ */ __name((m, k, acc, n) => {
+    let x = m.get(k);
+    if (!x) m.set(k, x = { n: 0, users: /* @__PURE__ */ new Set() });
+    x.n += n;
+    x.users.add(acc);
+  }, "add");
+  for (const r4 of rows) {
+    if (!gameKeyOk(r4.key)) continue;
+    add(byDev, r4.device, r4.account_id, r4.n);
+    if (r4.key.startsWith("game:")) add(byGame, r4.key.slice(5), r4.account_id, r4.n);
+    else add(byKey, r4.key, r4.account_id, r4.n);
+    let u = byUser.get(r4.account_id);
+    if (!u) byUser.set(r4.account_id, u = { n: 0, devices: /* @__PURE__ */ new Set(), keys: /* @__PURE__ */ new Map(), last: "" });
+    u.n += r4.n;
+    u.devices.add(r4.device);
+    u.keys.set(r4.key, (u.keys.get(r4.key) || 0) + r4.n);
+    if (r4.last > u.last) u.last = r4.last;
+  }
+  const seen2 = /* @__PURE__ */ new Map(), versions = /* @__PURE__ */ new Map();
+  for (const p of presence) {
+    if (!seen2.has(p.account_id) || p.last_seen > seen2.get(p.account_id)) seen2.set(p.account_id, p.last_seen);
+    if (p.app_version) {
+      const k = p.kind + "|" + p.app_version;
+      versions.set(k, (versions.get(k) || 0) + 1);
+    }
+  }
+  const list = /* @__PURE__ */ __name((m, name2) => [...m].map(([k, x]) => ({ [name2]: k, users: x.users.size, n: x.n })).sort((a, b2) => b2.n - a.n), "list");
+  return {
+    days,
+    active: perDay.map((x) => ({ day: x.day, users: x.users })),
+    byDevice: list(byDev, "device"),
+    top: list(byKey, "key").slice(0, 60),
+    games: list(byGame, "game"),
+    versions: [...versions].map(([k, n]) => ({ device: k.split("|")[0], v: k.split("|")[1], devices: n })).sort((a, b2) => b2.devices - a.devices),
+    users: [...byUser].map(([id2, u]) => ({
+      id: id2,
+      nick: (accounts2.get(id2) || {}).display || "",
+      lastSeen: seen2.get(id2) || (u.last ? Date.parse(u.last + "T12:00:00Z") : 0),
+      lastDay: u.last,
+      devices: [...u.devices],
+      n: u.n,
+      top: [...u.keys].map(([key2, n]) => ({ key: key2, n })).sort((a, b2) => b2.n - a.n).slice(0, 6)
+    })).sort((a, b2) => b2.lastSeen - a.lastSeen).slice(0, 300)
+  };
+}
+__name(analyticsOf, "analyticsOf");
+var LAPS_KEYS = /* @__PURE__ */ new Set(["view:laps", "view:telemetry", "view:cloudlaps", "view:session", "act:race_summary", "act:compare"]);
+var COACH_KEYS = /* @__PURE__ */ new Set(["act:coach_report", "view:coach", "act:open_in_coach", "act:coach_plan", "act:plan_to_overlay"]);
+var sesDay = /* @__PURE__ */ __name((t) => new Date(t).toISOString().slice(0, 10), "sesDay");
+function analyticsMore({ from, t0, actDays, rows, sessions, prevSessions, prevActive, accounts: accounts2, accountsAll }) {
+  const perDay = /* @__PURE__ */ new Map(), userDays = /* @__PURE__ */ new Map(), app = /* @__PURE__ */ new Map(), drove = /* @__PURE__ */ new Map();
+  const mark = /* @__PURE__ */ __name((m, d, id2) => {
+    let x = m.get(d);
+    if (!x) m.set(d, x = /* @__PURE__ */ new Set());
+    x.add(id2);
+  }, "mark");
+  for (const r4 of actDays) {
+    if (r4.day < from) continue;
+    mark(perDay, r4.day, r4.account_id);
+    mark(app, r4.day, r4.account_id);
+    mark(userDays, r4.account_id, r4.day);
+  }
+  const games = /* @__PURE__ */ new Map(), drivers = /* @__PURE__ */ new Set();
+  let nSes = 0, races = 0, laps = 0, secs = 0;
+  for (const s of sessions) {
+    const id2 = String(s.uploader || "").slice(5), d = s.day || sesDay(s.started || 0);
+    if (!id2 || d < from) continue;
+    mark(perDay, d, id2);
+    mark(drove, d, id2);
+    mark(userDays, id2, d);
+    drivers.add(id2);
+    let g = games.get(s.game);
+    if (!g) games.set(s.game, g = { game: s.game, drivers: /* @__PURE__ */ new Set(), sessions: 0, races: 0, laps: 0, secs: 0 });
+    g.drivers.add(id2);
+    g.sessions += s.n || 0;
+    g.races += s.races || 0;
+    g.laps += s.laps || 0;
+    g.secs += s.secs || 0;
+    nSes += s.n || 0;
+    races += s.races || 0;
+    laps += s.laps || 0;
+    secs += s.secs || 0;
+  }
+  const devices = /* @__PURE__ */ new Map(), keys = /* @__PURE__ */ new Map();
+  for (const r4 of rows) {
+    let d = devices.get(r4.account_id);
+    if (!d) devices.set(r4.account_id, d = /* @__PURE__ */ new Set());
+    d.add(r4.device);
+    let k = keys.get(r4.account_id);
+    if (!k) keys.set(r4.account_id, k = /* @__PURE__ */ new Set());
+    k.add(r4.key);
+  }
+  const fresh = accounts2.filter((a) => a.created >= t0);
+  const has = /* @__PURE__ */ __name((id2, set) => [...keys.get(id2) || []].some((k) => set.has(k)), "has");
+  const daysList = [...userDays.values()].map((x) => x.size);
+  const list = /* @__PURE__ */ __name((m) => [...m].sort((a, b2) => a[0] < b2[0] ? -1 : 1).map(([day4, u]) => ({ day: day4, users: u.size })), "list");
+  return {
+    active: list(perDay),
+    activeApp: list(app),
+    drove: list(drove),
+    signupsPerDay: [...fresh.reduce((m, a) => m.set(sesDay(a.created), (m.get(sesDay(a.created)) || 0) + 1), /* @__PURE__ */ new Map())].sort().map(([day4, n]) => ({ day: day4, n })),
+    totals: { active: userDays.size, newAccounts: fresh.length, accounts: accountsAll, drove: drivers.size, sessions: nSes, races, laps, secs: Math.round(secs), returning: daysList.filter((n) => n >= 2).length, multiDevice: [...devices.values()].filter((d) => d.size >= 2).length },
+    prev: { active: prevActive, newAccounts: accounts2.length - fresh.length, sessions: prevSessions.sessions || 0, drove: prevSessions.drivers || 0, secs: Math.round(prevSessions.secs || 0) },
+    funnel: { accounts: fresh.length, opened: fresh.filter((a) => keys.has(a.id)).length, drove: fresh.filter((a) => drivers.has(a.id)).length, laps: fresh.filter((a) => has(a.id, LAPS_KEYS)).length, coach: fresh.filter((a) => has(a.id, COACH_KEYS)).length },
+    comeback: { d1: daysList.filter((n) => n === 1).length, d23: daysList.filter((n) => n >= 2 && n <= 3).length, d4: daysList.filter((n) => n >= 4).length },
+    driven: [...games.values()].map((g) => ({ game: g.game, drivers: g.drivers.size, sessions: g.sessions, races: g.races, laps: g.laps, secs: Math.round(g.secs) })).sort((a, b2) => b2.sessions - a.sessions)
+  };
+}
+__name(analyticsMore, "analyticsMore");
+function highlightsOf(a) {
+  const out = [], t = a.totals || {}, pv = a.prev || {}, F2 = a.funnel || {}, act = t.active || 0, top = a.top || [];
+  if (pv.active) out.push({ k: t.active >= pv.active ? "active_more" : "active_fewer", tone: t.active >= pv.active ? "good" : "bad", a: [act, a.days, Math.abs(act - pv.active)] });
+  else out.push({ k: "active_first", tone: "good", a: [act, a.days, t.newAccounts || 0] });
+  if (F2.accounts >= 3) {
+    const w = [["no_app", F2.accounts - (F2.opened || 0)], ["no_drive", F2.accounts - (F2.drove || 0)]].sort((x, y) => y[1] - x[1])[0];
+    if (w[1] > 0) out.push({ k: w[0], tone: "bad", a: [w[1], F2.accounts, Math.round(w[1] / F2.accounts * 100)] });
+  }
+  const users = /* @__PURE__ */ __name((keys) => Math.max(0, ...keys.map((k) => (top.find((x) => x.key === k) || {}).users || 0)), "users");
+  const coach2 = users(["act:coach_report", "view:coach"]), laps = users(["view:telemetry", "view:laps"]);
+  if (act && laps && coach2 < laps * 0.6) out.push({ k: "coach_low", tone: "warn", a: [coach2, act, laps] });
+  const S3 = a.sources || {}, bs = (S3.bySource || []).filter((x) => x.signups && x.src !== "unknown").sort((x, y) => y.signups - x.signups)[0];
+  const bv = (S3.bySource || []).filter((x) => x.visits).sort((x, y) => y.visits - x.visits)[0];
+  if (bs) out.push({ k: "top_signups", tone: "blue", a: [bs.src, bs.signups] });
+  else if (bv) out.push({ k: "top_visits", tone: "blue", a: [bv.src, bv.visits, S3.visits] });
+  const g = (a.driven || []).filter((x) => x.drivers).map((x) => [x.game, x.sessions / x.drivers]).sort((x, y) => y[1] - x[1]);
+  if (g.length > 1 && g[0][1] >= g[g.length - 1][1] * 2) out.push({ k: "games", tone: "blue", a: [g[0][0], g[0][1].toFixed(1), g[g.length - 1][0], g[g.length - 1][1].toFixed(1)] });
+  const devs = new Map((a.byDevice || []).map((x) => [x.device, x.users]));
+  for (const d of ["android", "ios"]) if (act && !devs.get(d)) out.push({ k: "no_" + d, tone: "bad", a: [a.days] });
+  const vers = /* @__PURE__ */ new Map();
+  for (const v of a.versions || []) {
+    const k = v.device === "desktop" ? "pc" : v.device;
+    if (!vers.has(k)) vers.set(k, []);
+    vers.get(k).push(v);
+  }
+  const num4 = /* @__PURE__ */ __name((v) => String(v || "").split(/[^0-9]+/).filter(Boolean).slice(0, 3).map(Number), "num");
+  const cmp = /* @__PURE__ */ __name((x, y) => {
+    const p = num4(x), q2 = num4(y);
+    for (let i = 0; i < 3; i++) {
+      const d = (p[i] || 0) - (q2[i] || 0);
+      if (d) return d;
+    }
+    return 0;
+  }, "cmp");
+  let behind = 0;
+  for (const list of vers.values()) {
+    const newest = list.map((x) => x.v).sort(cmp).pop();
+    behind += list.filter((x) => cmp(x.v, newest)).reduce((s, x) => s + x.devices, 0);
+  }
+  if (behind) out.push({ k: "behind", tone: "warn", a: [behind] });
+  const I = a.installs || {}, Su = a.supporters || {};
+  if (I.uninstalls) out.push({ k: (I.reasons || []).length ? "uninstalls_why" : "uninstalls", tone: "bad", a: [I.uninstalls, a.days, ((I.reasons || [])[0] || {}).k || ""] });
+  if (Su.donations) out.push({ k: "donations", tone: "good", a: [Su.donations, a.days] });
+  return out;
+}
+__name(highlightsOf, "highlightsOf");
+var SQL_SESSIONS_DAYS = "SELECT date(started/1000,'unixepoch') AS day, game, uploader, COUNT(*) AS n, SUM(COALESCE(laps,0)) AS laps, SUM(COALESCE(secs,0)) AS secs, SUM(CASE WHEN lower(COALESCE(kind,'')) LIKE '%race%' THEN 1 ELSE 0 END) AS races FROM sessions WHERE started>=?1 AND uploader LIKE 'acct:%' GROUP BY 1, game, uploader LIMIT 20000";
+var SQL_USAGE_ADD = "INSERT INTO usage_days (day, account_id, device, key, n) VALUES (?1,?2,?3,?4,?5) ON CONFLICT(day, account_id, device, key) DO UPDATE SET n=MIN(usage_days.n+excluded.n, 100000)";
+var SQL_ASK_USED = "INSERT INTO feedback_ask (account_id, shown, used) VALUES (?1,?2,?3) ON CONFLICT(account_id) DO UPDATE SET used=feedback_ask.used+excluded.used";
+var SQL_ASK_SEEN = "INSERT INTO feedback_ask (account_id, shown, used) VALUES (?1,?2,0) ON CONFLICT(account_id) DO UPDATE SET shown=excluded.shown, used=0";
+var SQL_RACES_SINCE = "SELECT COUNT(*) AS n FROM sessions WHERE uploader=?1 AND started>?2 AND lower(COALESCE(kind,'')) LIKE '%race%'";
+var SQL_OV_RACE = "INSERT INTO feedback_ask (account_id, shown, used, ov_races, ov_last_style, ov_last_sid) VALUES (?1,?2,0,1,?3,?4) ON CONFLICT(account_id) DO UPDATE SET ov_races=MIN(feedback_ask.ov_races+(CASE WHEN COALESCE(feedback_ask.ov_last_sid,'')=excluded.ov_last_sid THEN 0 ELSE 1 END), 1000), ov_last_style=excluded.ov_last_style, ov_last_sid=excluded.ov_last_sid";
+var SQL_OV_SEEN = "UPDATE feedback_ask SET ov_races=0 WHERE account_id=?1";
+var SQL_OV_ANSWERED = "INSERT INTO feedback_ask (account_id, shown, used, ov_races, ov_answered) VALUES (?1,?2,0,0,1) ON CONFLICT(account_id) DO UPDATE SET ov_races=0, ov_answered=1";
+
+// src/uninstall.js
+var esc3 = /* @__PURE__ */ __name((s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]), "esc");
+var json7 = /* @__PURE__ */ __name((o, s = 200) => new Response(JSON.stringify(o), { status: s, headers: { "content-type": "application/json", "cache-control": "no-store" } }), "json");
+var UNINSTALL_PER_DAY = 3;
+var UNINSTALL_ALL_DAY = 200;
+var REASONS = {
+  game: { en: "It does not work with my game", es: "No funciona con mi juego", pt: "N\xE3o funciona com o meu jogo" },
+  bugs: { en: "Bugs or crashes", es: "Errores o cierres", pt: "Erros ou travamentos" },
+  slow: { en: "It slows down my PC or my game", es: "Hace ir lento mi PC o mi juego", pt: "Deixa meu PC ou meu jogo lento" },
+  missing: { en: "It is missing something I need", es: "Le falta algo que necesito", pt: "Falta algo de que eu preciso" },
+  hard: { en: "Hard to use", es: "Dif\xEDcil de usar", pt: "Dif\xEDcil de usar" },
+  other_app: { en: "I use another app", es: "Uso otra app", pt: "Uso outro app" },
+  little: { en: "I do not race enough", es: "No corro lo suficiente", pt: "N\xE3o corro o suficiente" },
+  reinstall: { en: "I am going to install it again", es: "Lo voy a volver a instalar", pt: "Vou instalar de novo" },
+  other: { en: "Something else", es: "Otra cosa", pt: "Outra coisa" }
+};
+var TXT = {
+  en: { title: "Why did you uninstall Pitlane HQ?", more: "Anything else you want to tell us", send: "Send", thanks: "Thank you. We read every answer.", pick: "Choose a reason or write something first.", fail: "It could not be sent. Try again in a minute.", again: "Download Pitlane HQ" },
+  es: { title: "\xBFPor qu\xE9 has desinstalado Pitlane HQ?", more: "Algo m\xE1s que quieras contarnos", send: "Enviar", thanks: "Gracias. Leemos todas las respuestas.", pick: "Elige un motivo o escribe algo primero.", fail: "No se pudo enviar. Prueba otra vez en un minuto.", again: "Descargar Pitlane HQ" },
+  pt: { title: "Por que voc\xEA desinstalou o Pitlane HQ?", more: "Algo mais que queira nos contar", send: "Enviar", thanks: "Obrigado. Lemos todas as respostas.", pick: "Escolha um motivo ou escreva algo primeiro.", fail: "N\xE3o foi poss\xEDvel enviar. Tente de novo em um minuto.", again: "Baixar o Pitlane HQ" }
+};
+function uninstallLang(req, url) {
+  const q2 = (url.searchParams.get("lang") || "").slice(0, 2).toLowerCase();
+  if (TXT[q2]) return q2;
+  for (const part of (req.headers.get("accept-language") || "").toLowerCase().split(",")) {
+    const l = part.trim().slice(0, 2);
+    if (TXT[l]) return l;
+  }
+  return "en";
+}
+__name(uninstallLang, "uninstallLang");
+var cleanV3 = /* @__PURE__ */ __name((v) => String(v == null ? "" : v).replace(/[^0-9a-z.+-]/gi, "").slice(0, 20), "cleanV");
+function cleanUninstall(b2) {
+  if (!b2 || typeof b2 !== "object") return { error: "missing body" };
+  const got = Array.isArray(b2.reasons) ? b2.reasons.map((x) => String(x)) : [];
+  const reasons = Object.keys(REASONS).filter((k) => got.includes(k));
+  const text2 = String(b2.text == null ? "" : b2.text).replace(/\r\n?/g, "\n").replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f]/g, "").trim();
+  if (text2.length > FEEDBACK_MAX) return { error: "too long (" + FEEDBACK_MAX + " characters at most)" };
+  if (!reasons.length && !text2) return { error: "choose a reason or write something first" };
+  const said = [reasons.map((k) => REASONS[k].en).join(" \xB7 "), text2].filter(Boolean).join("\n\n");
+  return { reasons, text: said, rating: null, kind: "uninstall", style: reasons.join(",").slice(0, 100) || null, device: "pc", v: cleanV3(b2.v), view: "uninstall" };
+}
+__name(cleanUninstall, "cleanUninstall");
+function uninstallPage(l, v) {
+  const t = TXT[l] || TXT.en;
+  const chips = Object.entries(REASONS).map(([k, n]) => `<label class="c"><input type="checkbox" value="${k}"><span>${esc3(n[l] || n.en)}</span></label>`).join("");
+  return `<!doctype html><html lang="${l === "pt" ? "pt-BR" : l}"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><title>${esc3(t.title)} \xB7 Pitlane HQ</title><link rel="icon" href="/favicon.ico" sizes="any">
+<style>*{box-sizing:border-box}body{margin:0;background:#0d1116;color:#e7ebf1;font:16px/1.5 system-ui,sans-serif}main{max-width:640px;margin:0 auto;padding:28px 16px 48px}h1{font-size:24px;margin:0 0 18px}.top{display:flex;align-items:center;gap:10px;margin-bottom:22px}.top b{font-size:15px;letter-spacing:.06em}.top img{width:28px;height:28px;border-radius:7px}
+.cs{display:flex;flex-wrap:wrap;gap:8px}.c{cursor:pointer}.c input{position:absolute;opacity:0;pointer-events:none}.c span{display:inline-block;padding:9px 14px;border-radius:999px;background:#151c25;border:1px solid #263140;color:#c9d2de;font-size:14px}.c input:checked+span{background:#2a2112;border-color:#ffb02e;color:#ffb02e}.c input:focus-visible+span{outline:2px solid #ffb02e;outline-offset:2px}
+textarea{width:100%;min-height:110px;margin-top:16px;padding:12px;border-radius:12px;border:1px solid #263140;background:#151c25;color:#e7ebf1;font:inherit;resize:vertical}textarea:focus{outline:none;border-color:#ffb02e}
+button{margin-top:14px;padding:11px 22px;border:0;border-radius:10px;background:#ffb02e;color:#0d1116;font:600 15px system-ui,sans-serif;cursor:pointer}button:disabled{opacity:.6;cursor:default}#e{color:#ff7a6b;font-size:14px;min-height:20px;margin:10px 0 0}#ok{font-size:18px}a{color:#ffb02e}.m{color:#8a97a9;font-size:14px;margin-top:22px}</style>
+<main><div class="top"><img src="/icon-192.png" alt=""><b>PITLANE HQ</b></div>
+<form id="f"><h1>${esc3(t.title)}</h1><div class="cs">${chips}</div><textarea id="t" maxlength="${FEEDBACK_MAX}" placeholder="${esc3(t.more)}"></textarea><button id="s" type="submit">${esc3(t.send)}</button><p id="e" role="alert"></p></form>
+<div id="done" hidden><p id="ok">${esc3(t.thanks)}</p><p class="m"><a href="/downloads">${esc3(t.again)}</a></p></div></main>
+<script>(()=>{const f=document.getElementById("f"),e=document.getElementById("e"),s=document.getElementById("s"),V=${JSON.stringify(cleanV3(v))};
+f.onsubmit=async(ev)=>{ev.preventDefault();const reasons=[...f.querySelectorAll("input:checked")].map(x=>x.value),text=document.getElementById("t").value.trim();
+if(!reasons.length&&!text){e.textContent=${JSON.stringify(t.pick)};return}e.textContent="";s.disabled=true;
+try{const r=await fetch("/community/feedback/uninstall",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({reasons,text,v:V})});if(!r.ok)throw 0;f.hidden=true;document.getElementById("done").hidden=false}
+catch(x){e.textContent=${JSON.stringify(t.fail)};s.disabled=false}}})()<\/script></html>`;
+}
+__name(uninstallPage, "uninstallPage");
+async function netKey(req, now) {
+  const raw = "uninstall|" + new Date(now).toISOString().slice(0, 10) + "|" + (req.headers.get("cf-connecting-ip") || "");
+  const h = new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(raw)));
+  return "uninstall:" + [...h.slice(0, 8)].map((b2) => b2.toString(16).padStart(2, "0")).join("");
+}
+__name(netKey, "netKey");
+async function uninstallRoute(req, env, url, { send: send2 = /* @__PURE__ */ __name(async () => false, "send"), discord = /* @__PURE__ */ __name(async () => 0, "discord") } = {}) {
+  const p = url.pathname.replace(/\/+$/, "");
+  if (p === "/uninstalled" && req.method === "GET") {
+    if (!isBot(req.headers.get("user-agent"))) await pcCount(env, "uninstall", cleanV3(url.searchParams.get("v")));
+    return new Response(uninstallPage(uninstallLang(req, url), url.searchParams.get("v")), { headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-store", vary: "Accept-Language" } });
+  }
+  if (p !== "/community/feedback/uninstall" || req.method !== "POST") return null;
+  if (isBot(req.headers.get("user-agent"))) return json7({ ok: true });
+  let b2 = null;
+  try {
+    b2 = JSON.parse((await req.text()).slice(0, 2e4));
+  } catch {
+    b2 = null;
+  }
+  const f = cleanUninstall(b2);
+  if (f.error) return json7({ error: f.error }, 400);
+  const now = Date.now(), who2 = await netKey(req, now);
+  const c = await env.DB.prepare("SELECT SUM(account_id=?1) AS mine, COUNT(*) AS n FROM feedback WHERE kind='uninstall' AND created>?2").bind(who2, now - 864e5).first();
+  if (c && (c.mine >= UNINSTALL_PER_DAY || c.n >= UNINSTALL_ALL_DAY)) return json7({ error: "thank you, that is enough for today" }, 429);
+  const id2 = crypto.randomUUID();
+  await env.DB.prepare("INSERT INTO feedback (id, account_id, created, device, v, rating, text, view, kind, style) VALUES (?1,?2,?3,?4,?5,NULL,?6,?7,?8,?9)").bind(id2, who2, now, f.device, f.v, f.text, f.view, f.kind, f.style).run();
+  const mailed = await send2(env, { ...f, nick: "", accountId: "" }).catch(() => false);
+  if (await discord(env, f).catch(() => 0) > 0) await env.DB.prepare("UPDATE feedback SET discord_at=?2 WHERE id=?1").bind(id2, now).run().catch(() => {
+  });
+  return json7({ ok: true, mailed });
+}
+__name(uninstallRoute, "uninstallRoute");
+
+// src/pcstats.js
+var SQL_PC_ADD = "INSERT INTO pc_days (day, kind, v, n) VALUES (?1, ?2, ?3, 1) ON CONFLICT(day, kind, v) DO UPDATE SET n = n + 1";
+function pcCount(env, kind, v) {
+  if (!env || !env.DB) return Promise.resolve();
+  const d = (/* @__PURE__ */ new Date()).toISOString().slice(0, 10);
+  return env.DB.prepare(SQL_PC_ADD).bind(d, kind, String(v || "").replace(/[^0-9a-z.+-]/gi, "").slice(0, 20)).run().catch(() => {
+  });
+}
+__name(pcCount, "pcCount");
+var sum = /* @__PURE__ */ __name((a, f) => a.reduce((s, x) => s + (f(x) || 0), 0), "sum");
+var L3 = /* @__PURE__ */ __name((r4) => [r4.en, r4.es, r4.pt], "L3");
+function installsOf({ from, pcRows = [], answers = [] }) {
+  const now = pcRows.filter((x) => x.day >= from), prev = pcRows.filter((x) => x.day < from);
+  const aNow = answers.filter((x) => x.day >= from), aPrev = answers.filter((x) => x.day < from);
+  const perDayU = /* @__PURE__ */ __name((rows, ans) => {
+    const m = /* @__PURE__ */ new Map();
+    for (const x of rows) if (x.kind === "uninstall") m.set(x.day, (m.get(x.day) || 0) + x.n);
+    const a = /* @__PURE__ */ new Map();
+    for (const x of ans) a.set(x.day, (a.get(x.day) || 0) + 1);
+    for (const [d, n] of a) if (n > (m.get(d) || 0)) m.set(d, n);
+    return m;
+  }, "perDayU");
+  const uNow = perDayU(now, aNow), uPrev = perDayU(prev, aPrev);
+  const dl = /* @__PURE__ */ __name((rows) => sum(rows.filter((x) => x.kind === "download"), (x) => x.n), "dl");
+  const days = /* @__PURE__ */ new Map();
+  for (const x of now) if (x.kind === "download") days.set(x.day, { day: x.day, downloads: ((days.get(x.day) || {}).downloads || 0) + x.n, uninstalls: 0 });
+  for (const [d, n] of uNow) days.set(d, { day: d, downloads: (days.get(d) || {}).downloads || 0, uninstalls: n });
+  const byV = /* @__PURE__ */ new Map();
+  for (const x of now) if (x.kind === "uninstall" && x.v) byV.set(x.v, (byV.get(x.v) || 0) + x.n);
+  if (!byV.size) {
+    for (const x of aNow) if (x.v) byV.set(x.v, (byV.get(x.v) || 0) + 1);
+  }
+  const reasons = /* @__PURE__ */ new Map();
+  for (const x of aNow) for (const k of String(x.style || "").split(",")) if (REASONS[k]) reasons.set(k, (reasons.get(k) || 0) + 1);
+  return {
+    downloads: dl(now),
+    prevDownloads: dl(prev),
+    downloadsBeta: sum(now.filter((x) => x.kind === "download" && x.v === "beta"), (x) => x.n),
+    uninstalls: sum([...uNow.values()], (n) => n),
+    prevUninstalls: sum([...uPrev.values()], (n) => n),
+    answered: aNow.length,
+    prevAnswered: aPrev.length,
+    perDay: [...days.values()].sort((a, b2) => a.day < b2.day ? -1 : 1),
+    byVersion: [...byV].map(([v, n]) => ({ v, n })).sort((a, b2) => b2.n - a.n).slice(0, 8),
+    reasons: Object.keys(REASONS).filter((k) => reasons.has(k)).map((k) => ({ k, n: reasons.get(k), name: L3(REASONS[k]) })).sort((a, b2) => b2.n - a.n),
+    // what they wrote beyond the reasons (the answer's text after the reasons' line), newest first
+    said: aNow.filter((x) => x.text).sort((a, b2) => b2.created - a.created).map((x) => ({ at: x.created, v: x.v || "", text: saidOf(x) })).filter((x) => x.text).slice(0, 6)
+  };
+}
+__name(installsOf, "installsOf");
+function saidOf(x) {
+  const t = String(x.text || ""), hasReasons = String(x.style || "").length > 0;
+  if (!hasReasons) return t.slice(0, 400);
+  const i = t.indexOf("\n\n");
+  return i < 0 ? "" : t.slice(i + 2).slice(0, 400);
+}
+__name(saidOf, "saidOf");
+function supportersOf({ t0, badges = [], patrons = 0, orders = [] }) {
+  const by = /* @__PURE__ */ __name((s) => sum(badges.filter((x) => (x.src || "manual") === s), (x) => x.n), "by");
+  const paid = orders.filter((x) => x.status === "on");
+  const now = paid.filter((x) => x.at >= t0), prev = paid.filter((x) => x.at < t0);
+  const money = /* @__PURE__ */ __name((rows) => {
+    const m = /* @__PURE__ */ new Map();
+    for (const x of rows) if (x.amount != null && x.currency) m.set(x.currency, (m.get(x.currency) || 0) + x.amount);
+    return [...m].map(([currency, amount]) => ({ currency, amount })).sort((a, b2) => b2.amount - a.amount);
+  }, "money");
+  return {
+    total: sum(badges, (x) => x.n),
+    stripe: by("stripe"),
+    manual: by("manual"),
+    patreon: by("patreon"),
+    patrons: patrons || 0,
+    donations: now.length,
+    prevDonations: prev.length,
+    amounts: money(now),
+    prevAmounts: money(prev),
+    // donors who have no account yet: they get the badge when they sign up with that email
+    waiting: now.filter((x) => !x.account_id).length,
+    refunded: orders.filter((x) => x.status === "refunded" && x.at >= t0).length,
+    recent: now.sort((a, b2) => b2.at - a.at).slice(0, 8).map((x) => ({ at: x.at, amount: x.amount ?? null, currency: x.currency || "", name: x.name || "", id: x.account_id || "" }))
+  };
+}
+__name(supportersOf, "supportersOf");
+
 // src/downloads.js
 var H = { "content-type": "text/html; charset=utf-8", "cache-control": "no-cache", "referrer-policy": "no-referrer", vary: "Accept-Language" };
-var esc3 = /* @__PURE__ */ __name((s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]), "esc");
+var esc4 = /* @__PURE__ */ __name((s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]), "esc");
 var TYPES = { exe: "application/vnd.microsoft.portable-executable", zip: "application/zip", apk: "application/vnd.android.package-archive", aab: "application/octet-stream", ipa: "application/octet-stream", json: "application/json; charset=utf-8", md: "text/markdown; charset=utf-8" };
-var MS_STORE = "";
+var MS_STORE = "https://apps.microsoft.com/detail/9P3642QCS9ZG";
 async function downloads(req, env, url) {
   const p = url.pathname;
   if (!env.DL) return new Response(JSON.stringify({ error: "downloads are not set up on this server (R2 bucket DL)" }), { status: 404, headers: { "content-type": "application/json" } });
@@ -6961,6 +7386,7 @@ async function downloads(req, env, url) {
     const o = await env.DL.get(key2);
     if (!o) return new Response("not found", { status: 404 });
     if (name2 === "version.json") return pcVersion(await o.text());
+    if (name2 === "PitlaneHQ-Setup.exe" && req.method === "GET" && !isBot(req.headers.get("user-agent")) && !/^bytes=[1-9]/.test(req.headers.get("range") || "")) await pcCount(env, "download", beta ? "beta" : "");
     const ext = name2.split(".").pop().toLowerCase();
     const h = new Headers({ "content-type": TYPES[ext] || "application/octet-stream", "cache-control": ext === "json" || ext === "md" ? "no-cache" : "public, max-age=300", "x-content-type-options": "nosniff", "access-control-allow-origin": "*" });
     if (o.httpEtag) h.set("etag", o.httpEtag);
@@ -6984,14 +7410,14 @@ async function downloads(req, env, url) {
   if (p === "/downloads") {
     const pc = await json18("version.json") || {}, ph = await json18("phones.json") || {};
     const t = /* @__PURE__ */ __name((en, s) => es ? s : en, "t");
-    const row = /* @__PURE__ */ __name((title, sub, file) => `<a class="c" href="/dl/${esc3(file)}"><b>${esc3(title)}</b><span>${esc3(sub)}</span></a>`, "row");
+    const row = /* @__PURE__ */ __name((title, sub, file) => `<a class="c" href="/dl/${esc4(file)}"><b>${esc4(title)}</b><span>${esc4(sub)}</span></a>`, "row");
     const body = `<h1>${t("Download Pitlane HQ", "Descargar Pitlane HQ")}</h1><p>${t("Free. One account for the PC, the web and the phone apps.", "Gratis. Una cuenta para el PC, la web y las apps de m\xF3vil.")}</p>
-<h2>Windows ${pc.version ? `<small>v${esc3(pc.version)} beta</small>` : ""}</h2><div class="g">
-${row(t("Pitlane HQ for Windows", "Pitlane HQ para Windows"), t("Records your laps and uploads them so you can analyse them", "Graba tus vueltas y las sube para que las analices"), "PitlaneHQ-Setup.exe")}${MS_STORE ? `<a class="c" href="${esc3(MS_STORE)}" rel="noopener"><b>Microsoft Store</b><span>${t("The same app, updated by the Store", "La misma app, actualizada por la Store")}</span></a>` : `<div class="c" style="opacity:.7"><b>Microsoft Store</b><span>${t("Coming soon", "Pr\xF3ximamente")}</span></div>`}<div class="c" style="opacity:.7"><b>Steam</b><span>${t("Coming soon", "Pr\xF3ximamente")}</span></div></div>
-<h2>${t("Phones", "M\xF3viles")} ${ph.version ? `<small>v${esc3(String(ph.version).replace(/^v/, "").replace(/-?beta$/i, ""))} beta</small>` : ""}</h2><div class="g">
+<h2>Windows ${pc.version ? `<small>v${esc4(pc.version)} beta</small>` : ""}</h2><div class="g">
+${row(t("Pitlane HQ for Windows", "Pitlane HQ para Windows"), t("Records your laps and uploads them so you can analyse them", "Graba tus vueltas y las sube para que las analices"), "PitlaneHQ-Setup.exe")}${MS_STORE ? `<a class="c" href="${esc4(MS_STORE)}" rel="noopener"><b>Microsoft Store</b><span>${t("The same app, updated by the Store", "La misma app, actualizada por la Store")}</span></a>` : `<div class="c" style="opacity:.7"><b>Microsoft Store</b><span>${t("Coming soon", "Pr\xF3ximamente")}</span></div>`}<div class="c" style="opacity:.7"><b>Steam</b><span>${t("Coming soon", "Pr\xF3ximamente")}</span></div></div>
+<h2>${t("Phones", "M\xF3viles")} ${ph.version ? `<small>v${esc4(String(ph.version).replace(/^v/, "").replace(/-?beta$/i, ""))} beta</small>` : ""}</h2><div class="g">
 ${ph.apk ? row("Android", t("App (APK). Google Play soon", "App (APK). Pronto en Google Play"), ph.apk) : ""}<div class="c" style="opacity:.7"><b>iPhone</b><span>${t("Coming to the App Store", "Pronto en la App Store")}</span></div></div>
 <p class="n"><a href="/changelog">${t("What changed in each version", "Qu\xE9 cambi\xF3 en cada versi\xF3n")}</a> \xB7 <a href="${es ? "/es/precios" : "/pricing"}">${t("Pricing", "Precios")}</a> \xB7 <a href="/">${t("Open the web app", "Abrir la app web")}</a></p>`;
-    return new Response(page2(body, { lang: es ? "es" : "en" }), { headers: H });
+    return new Response(page2(body, { lang: es ? "es" : "en", ld: dlLd(pc) }), { headers: H });
   }
   if (p === "/changelog" || p === "/changelog/phones") {
     let vs = [];
@@ -7000,7 +7426,7 @@ ${ph.apk ? row("Android", t("App (APK). Google Play soon", "App (APK). Pronto en
     } catch (e) {
     }
     const l = es ? "es" : "en";
-    const body = `<h1>${es ? "Novedades" : "What's new"}</h1>` + vs.map((x) => `<h2 id="${esc3(String(x.v).replace(/\./g, ""))}-beta">${esc3(x.v)} <small>${esc3(x.date || "")}</small></h2><ul>${(x[l] || x.en || []).map((t) => `<li>${esc3(t)}</li>`).join("")}</ul>`).join("");
+    const body = `<h1>${es ? "Novedades" : "What's new"}</h1>` + vs.map((x) => `<h2 id="${esc4(String(x.v).replace(/\./g, ""))}-beta">${esc4(x.v)} <small>${esc4(x.date || "")}</small></h2><ul>${(x[l] || x.en || []).map((t) => `<li>${esc4(t)}</li>`).join("")}</ul>`).join("");
     return new Response(page2(
       body + `<p class="n"><a href="/downloads">${es ? "Descargas" : "Downloads"}</a> \xB7 <a href="/">${es ? "Abrir la app" : "Open the app"}</a></p>`,
       { lang: es ? "es" : "en", path: p, title: "What's new in Pitlane HQ \xB7 Changelog", desc: "What changed in each version of Pitlane HQ, the iRacing and Le Mans Ultimate telemetry app for Windows, the web and Android." }
@@ -7009,7 +7435,34 @@ ${ph.apk ? row("Android", t("App (APK). Google Play soon", "App (APK). Pronto en
   return new Response("not found", { status: 404 });
 }
 __name(downloads, "downloads");
-var page2 = /* @__PURE__ */ __name((body, o = {}) => `<!doctype html><html lang="${o.lang || "en"}"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${o.title || "Download Pitlane HQ \xB7 iRacing and LMU telemetry for Windows"}</title><meta name="description" content="${o.desc || "Download Pitlane HQ Agent for Windows, which records your iRacing and Le Mans Ultimate laps, and the Android app. Free."}"><link rel="canonical" href="https://pitlanehq.app${o.path || "/downloads"}"><meta property="og:image" content="https://pitlanehq.app/og.png"><link rel="icon" href="/favicon.ico" sizes="any"><link rel="icon" href="/logo.svg" type="image/svg+xml">
+var DL_TITLE = "Download Pitlane HQ \xB7 iRacing and LMU telemetry for Windows";
+var DL_DESC = "Download Pitlane HQ Agent for Windows, here or on the Microsoft Store, to record your iRacing and Le Mans Ultimate laps, and the Android app. Free.";
+function head(o) {
+  const title = esc4(o.title || DL_TITLE), desc = esc4(o.desc || DL_DESC), url = "https://pitlanehq.app" + (o.path || "/downloads");
+  const ld = o.ld ? `<script type="application/ld+json">${JSON.stringify(o.ld).replace(/</g, "\\u003c")}<\/script>` : "";
+  return `<title>${title}</title><meta name="description" content="${desc}"><link rel="canonical" href="${url}"><meta name="robots" content="index,follow,max-image-preview:large"><meta property="og:type" content="website"><meta property="og:site_name" content="Pitlane HQ"><meta property="og:title" content="${title}"><meta property="og:description" content="${desc}"><meta property="og:url" content="${url}"><meta property="og:image" content="https://pitlanehq.app/og.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="${title}"><meta name="twitter:description" content="${desc}"><meta name="twitter:image" content="https://pitlanehq.app/og.png">${ld}`;
+}
+__name(head, "head");
+var dlLd = /* @__PURE__ */ __name((pc) => ({
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "@id": "https://pitlanehq.app/#app",
+  name: "Pitlane HQ",
+  alternateName: ["PitlaneHQ", "Pitlane HQ Agent"],
+  url: "https://pitlanehq.app/",
+  applicationCategory: "SportsApplication",
+  applicationSubCategory: "Sim racing telemetry",
+  operatingSystem: "Windows, Android, Web",
+  ...pc && pc.version ? { softwareVersion: String(pc.version).replace(/^v/, "") } : {},
+  downloadUrl: "https://pitlanehq.app/downloads",
+  installUrl: MS_STORE,
+  sameAs: [MS_STORE],
+  isAccessibleForFree: true,
+  offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
+  image: "https://pitlanehq.app/og.png",
+  publisher: { "@type": "Organization", name: "Pitlane HQ", url: "https://pitlanehq.app/" }
+}), "dlLd");
+var page2 = /* @__PURE__ */ __name((body, o = {}) => `<!doctype html><html lang="${o.lang || "en"}"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">${head(o)}<link rel="icon" href="/favicon.ico" sizes="any"><link rel="icon" href="/logo.svg" type="image/svg+xml">
 <style>body{margin:0;background:#11151b;color:#e7ebf1;font:16px/1.55 system-ui,sans-serif}main{max-width:760px;margin:0 auto;padding:28px 16px 48px}h1{font-size:26px;letter-spacing:.04em;text-transform:uppercase;margin:0 0 6px}h2{font-size:18px;margin:26px 0 10px;letter-spacing:.03em}h2 small{color:#8a97a9;font-weight:600;font-size:12px;margin-left:8px}
 h3{font-size:14px;color:#ffb02e;margin:18px 0 4px}p{color:#a9b4c3;margin:6px 0}ul{padding-left:20px;color:#c9d2de}li{margin:4px 0}code{background:#19202a;padding:1px 5px;border-radius:4px;font-size:13px}a{color:#ffb02e}
 .g{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px}.c{display:grid;gap:3px;padding:14px;border:1px solid #2b3542;border-radius:12px;background:#19202a;text-decoration:none;color:#e7ebf1}.c:hover{border-color:#ffb02e}.c span{color:#8a97a9;font-size:13px}.n{margin-top:26px;font-size:14px}
@@ -7083,7 +7536,7 @@ async function betaSignIn(res, env) {
     return res;
   }
   if (!j || typeof j.token !== "string" || !j.id) return res;
-  if (isAdmin(env, j.id) || j.tester || isTester(env, j.id, null)) return res;
+  if (isAdmin(env, j.id) || j.tester) return res;
   try {
     await env.DB.prepare("DELETE FROM account_sessions WHERE token_hash=?1").bind(await sha256(j.token)).run();
   } catch (e) {
@@ -7201,14 +7654,14 @@ async function calibrateRun(env) {
     out.push({ game: t.game, trackId: t.track_id, carId: t.car_id, drivers: t.d, ...r4 });
     all.push(...cl.map((l) => ({ l, k: out.length })));
   }
-  const sum = { laps: 0, kinds: {}, steps: {} };
+  const sum2 = { laps: 0, kinds: {}, steps: {} };
   for (const c of out) {
-    sum.laps += c.laps;
-    for (const [k, v] of Object.entries(c.kinds)) sum.kinds[k] = (sum.kinds[k] || 0) + v * c.laps / 100;
-    for (const [k, v] of Object.entries(c.steps)) sum.steps[k] = (sum.steps[k] || 0) + v * c.laps / 100;
+    sum2.laps += c.laps;
+    for (const [k, v] of Object.entries(c.kinds)) sum2.kinds[k] = (sum2.kinds[k] || 0) + v * c.laps / 100;
+    for (const [k, v] of Object.entries(c.steps)) sum2.steps[k] = (sum2.steps[k] || 0) + v * c.laps / 100;
   }
-  const pc = /* @__PURE__ */ __name((o) => Object.fromEntries(Object.entries(o).sort((a, b2) => b2[1] - a[1]).map(([k, v]) => [k, Math.round(v / Math.max(1, sum.laps) * 100)])), "pc");
-  return { combos: out, total: { laps: sum.laps, kinds: pc(sum.kinds), steps: pc(sum.steps) } };
+  const pc = /* @__PURE__ */ __name((o) => Object.fromEntries(Object.entries(o).sort((a, b2) => b2[1] - a[1]).map(([k, v]) => [k, Math.round(v / Math.max(1, sum2.laps) * 100)])), "pc");
+  return { combos: out, total: { laps: sum2.laps, kinds: pc(sum2.kinds), steps: pc(sum2.steps) } };
 }
 __name(calibrateRun, "calibrateRun");
 
@@ -7462,8 +7915,8 @@ var MIN_CASES = 30;
 var SAME_CORNER_M = 60;
 var GAIN_S2 = 0.05;
 var JSONH5 = { "content-type": "application/json; charset=utf-8", "cache-control": "no-store", "access-control-allow-origin": "*" };
-var json7 = /* @__PURE__ */ __name((v, status = 200, h = {}) => new Response(JSON.stringify(v), { status, headers: { ...JSONH5, ...h } }), "json");
-var err4 = /* @__PURE__ */ __name((msg, status) => json7({ error: msg }, status), "err");
+var json8 = /* @__PURE__ */ __name((v, status = 200, h = {}) => new Response(JSON.stringify(v), { status, headers: { ...JSONH5, ...h } }), "json");
+var err4 = /* @__PURE__ */ __name((msg, status) => json8({ error: msg }, status), "err");
 var num = /* @__PURE__ */ __name((v) => typeof v === "number" && isFinite(v) ? v : null, "num");
 var int = /* @__PURE__ */ __name((v) => Number.isInteger(v) && v > 0 && v < 1e12 ? v : null, "int");
 var str = /* @__PURE__ */ __name((v, max = 40) => typeof v === "string" ? v.slice(0, max) : "", "str");
@@ -7593,7 +8046,7 @@ async function coachTipRoutes(req, env, p, m, body, game) {
       const kind = KIND2.test(c.kind || "") ? c.kind : "";
       rows.push({ n, d: num(c.d), apex, kind, cls: CLS[c.cls] ? c.cls : "", lost: num(c.lost), ta: num(c.ta), tb: num(c.tb), tbest: num(c.tbest), dd: num(c.dd) });
     }
-    if (!rows.length) return json7({ ok: true, kept: 0, scored: 0 });
+    if (!rows.length) return json8({ ok: true, kept: 0, scored: 0 });
     const cat = await groupOfBody(env, game, body, trackId, carId) || null;
     await env.DB.prepare("DELETE FROM coach_tips WHERE account=?1 AND session_id=?2 AND src='auto'").bind(acc.id, sid).run().catch(() => {
     });
@@ -7627,7 +8080,7 @@ async function coachTipRoutes(req, env, p, m, body, game) {
       }
     }
     if (upd.length) await env.DB.batch(upd);
-    return json7({ ok: true, kept: rows.length, scored: upd.length });
+    return json8({ ok: true, kept: rows.length, scored: upd.length });
   }
   if (p === "/coach/rate" && m === "POST") {
     const trackId = int(body.trackId), carId = int(body.carId) && await famId(env, game, body.carId), sid = str(body.sid, 120), started = int(body.started), n = int(body.n), apex = num(body.apex);
@@ -7638,7 +8091,7 @@ async function coachTipRoutes(req, env, p, m, body, game) {
       `INSERT INTO coach_tips (account, game, track_id, car_id, session_id, started, n, apex, kind, cls, rating, created, cat) VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13)
        ON CONFLICT(account, session_id, n) DO UPDATE SET rating=excluded.rating, kind=CASE WHEN coach_tips.kind='' THEN excluded.kind ELSE coach_tips.kind END, cls=CASE WHEN coach_tips.cls='' THEN excluded.cls ELSE coach_tips.cls END, cat=COALESCE(coach_tips.cat, excluded.cat)`
     ).bind(acc.id, game, trackId, carId, sid, started, n, apex, kind, cls, up, Date.now(), cat).run();
-    return json7({ ok: true });
+    return json8({ ok: true });
   }
   if (p === "/coach/planrate" && m === "POST") {
     const trackId = int(body.trackId), carId = int(body.carId) && await famId(env, game, body.carId), sid = str(body.sid, 120), started = int(body.started);
@@ -7651,12 +8104,12 @@ async function coachTipRoutes(req, env, p, m, body, game) {
       `INSERT INTO coach_plan_votes (account, game, track_id, car_id, session_id, started, step, sid, k, kind, turns, up, created, cat) VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14)
        ON CONFLICT(account, session_id, step) DO UPDATE SET up=excluded.up, created=excluded.created, cat=COALESCE(coach_plan_votes.cat, excluded.cat)`
     ).bind(acc.id, game, trackId, carId, sid, started, step, id2, k, kind, turns, up, Date.now(), await groupOfBody(env, game, body, trackId, carId) || null).run();
-    return json7({ ok: true });
+    return json8({ ok: true });
   }
   if (p === "/coach/weights" && m === "GET") {
     const grp = await groupQ(env, game, new URL(req.url));
     const { buckets: b2 } = await buckets(env, null, grp);
-    return json7({ min: MIN_CASES, cat: grp, buckets: b2.filter((x) => x.w !== 1 || x.ask || x.n >= MIN_CASES), off: await offList(env), confidence: await confidenceOn(env), plan: await planWeightsFor(env, grp) }, 200, { "cache-control": "private, max-age=3600" });
+    return json8({ min: MIN_CASES, cat: grp, buckets: b2.filter((x) => x.w !== 1 || x.ask || x.n >= MIN_CASES), off: await offList(env), confidence: await confidenceOn(env), plan: await planWeightsFor(env, grp) }, 200, { "cache-control": "private, max-age=3600" });
   }
   if (p === "/coach/last" && m === "GET") {
     const u = new URL(req.url), trackId = +u.searchParams.get("trackId") || 0, carId = (+u.searchParams.get("carId") || 0) && await famId(env, game, +u.searchParams.get("carId")), before = +u.searchParams.get("before") || Date.now();
@@ -7664,14 +8117,14 @@ async function coachTipRoutes(req, env, p, m, body, game) {
     const last = await env.DB.prepare(
       `SELECT session_id, started FROM coach_tips WHERE account=?1 AND game=?2 AND track_id=?3 AND car_id=?4 AND started<?5 AND kind<>'' AND tbest IS NOT NULL AND COALESCE(src,'app')='app' ORDER BY started DESC LIMIT 1`
     ).bind(acc.id, game, trackId, carId, before).first();
-    if (!last) return json7({ tips: [] }, 200, { "cache-control": "private, max-age=300" });
+    if (!last) return json8({ tips: [] }, 200, { "cache-control": "private, max-age=300" });
     const t = await env.DB.prepare("SELECT n, apex, kind, lost, tbest FROM coach_tips WHERE account=?1 AND session_id=?2 AND kind<>'' AND lost>0.05 AND tbest IS NOT NULL ORDER BY lost DESC LIMIT 12").bind(acc.id, last.session_id).all();
-    return json7({ started: last.started, tips: (t.results || []).map((x) => ({ n: x.n, apex: x.apex, kind: x.kind, lost: r32(x.lost), tbest: r32(x.tbest) })) }, 200, { "cache-control": "private, max-age=300" });
+    return json8({ started: last.started, tips: (t.results || []).map((x) => ({ n: x.n, apex: x.apex, kind: x.kind, lost: r32(x.lost), tbest: r32(x.tbest) })) }, 200, { "cache-control": "private, max-age=300" });
   }
   if (p === "/coach/progress" && m === "GET") {
     const u = new URL(req.url), trackId = +u.searchParams.get("trackId") || 0, carId = +u.searchParams.get("carId") || 0, before = +u.searchParams.get("before") || Date.now();
     if (!trackId || !carId) return err4("trackId and carId", 400);
-    return json7(await progressRoute(env, acc, game, trackId, carId, before), 200, { "cache-control": "private, max-age=600" });
+    return json8(await progressRoute(env, acc, game, trackId, carId, before), 200, { "cache-control": "private, max-age=600" });
   }
   if (p === "/coach/me" && m === "GET") {
     const grp = await groupQ(env, game, new URL(req.url));
@@ -7701,7 +8154,7 @@ async function coachTipRoutes(req, env, p, m, body, game) {
     }, "clsOf");
     let byCls = grp ? await clsOf(grp) : [];
     if (!byCls.length) byCls = await clsOf("");
-    return json7({ habits, w, minTracks: HABIT_TRACKS, byCls, cat: grp }, 200, { "cache-control": "private, max-age=600" });
+    return json8({ habits, w, minTracks: HABIT_TRACKS, byCls, cat: grp }, 200, { "cache-control": "private, max-age=600" });
   }
   if (p === "/admin/coach/off" && m === "POST") {
     if (!isAdmin(env, acc.id)) return err4("only the admins of this server can do this", 403);
@@ -7709,16 +8162,16 @@ async function coachTipRoutes(req, env, p, m, body, game) {
     if (!kind || !cls) return err4("kind and cls", 400);
     if (body.off) await env.DB.prepare("INSERT INTO coach_off (kind, cls, created) VALUES (?1,?2,?3) ON CONFLICT DO NOTHING").bind(kind, cls, Date.now()).run();
     else await env.DB.prepare("DELETE FROM coach_off WHERE kind=?1 AND cls=?2").bind(kind, cls).run();
-    return json7({ ok: true, off: await offList(env) });
+    return json8({ ok: true, off: await offList(env) });
   }
   if (p === "/admin/coach/confidence" && m === "POST") {
     if (!isAdmin(env, acc.id)) return err4("only the admins of this server can do this", 403);
     await env.DB.prepare("INSERT INTO app_state (k, v, at) VALUES ('coach_confidence', ?1, ?2) ON CONFLICT(k) DO UPDATE SET v=excluded.v, at=excluded.at").bind(body.on ? "1" : "0", Date.now()).run();
-    return json7({ ok: true, confidence: !!body.on });
+    return json8({ ok: true, confidence: !!body.on });
   }
   if (p === "/admin/coach/calibrate" && m === "GET") {
     if (!isAdmin(env, acc.id)) return err4("only the admins of this server can do this", 403);
-    return json7(await calibrateRun(env));
+    return json8(await calibrateRun(env));
   }
   if (p === "/admin/coach" && m === "GET") {
     if (!isAdmin(env, acc.id)) return err4("only the admins of this server can do this", 403);
@@ -7729,7 +8182,7 @@ async function coachTipRoutes(req, env, p, m, body, game) {
     ).bind(Date.now() - 7 * 864e5).first();
     const kinds = await env.DB.prepare("SELECT kind, COUNT(*) AS n, SUM(outcome IS NOT NULL) AS scored FROM coach_tips WHERE kind<>'' AND COALESCE(src,'app')='app' GROUP BY kind ORDER BY n DESC").all();
     const pv = await planVotes(env);
-    return json7({ min: MIN_CASES, gain: GAIN_S2, totals: tot || {}, buckets: b2, ratings, kinds: kinds.results || [], off: await offList(env), confidence: await confidenceOn(env), plan: pv, planMin: MIN_PLAN_VOTES });
+    return json8({ min: MIN_CASES, gain: GAIN_S2, totals: tot || {}, buckets: b2, ratings, kinds: kinds.results || [], off: await offList(env), confidence: await confidenceOn(env), plan: pv, planMin: MIN_PLAN_VOTES });
   }
   return null;
 }
@@ -7922,8 +8375,8 @@ var gameOf = /* @__PURE__ */ __name((g) => GAMES2.includes(g) ? g : "iracing", "
 
 // src/lmuapi.js
 var JSONH6 = { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" };
-var json8 = /* @__PURE__ */ __name((v, status = 200) => new Response(JSON.stringify(v), { status, headers: JSONH6 }), "json");
-var err5 = /* @__PURE__ */ __name((msg, status) => json8({ error: msg }, status), "err");
+var json9 = /* @__PURE__ */ __name((v, status = 200) => new Response(JSON.stringify(v), { status, headers: JSONH6 }), "json");
+var err5 = /* @__PURE__ */ __name((msg, status) => json9({ error: msg }, status), "err");
 var LMU_BODY_MAX = 256 * 1024;
 var RAW_MAX = 64 << 20;
 var ITEMS_MAX = 400;
@@ -7988,22 +8441,22 @@ async function lmuApiRoutes(req, env, p, m, url) {
     for (let i = 0; i < up.rows.length; i += 50) {
       await env.DB.batch(up.rows.slice(i, i + 50).map((r4) => st.bind(acc.id, now, up.version, r4.path, r4.status, r4.ctype, r4.size, r4.ms, r4.body)));
     }
-    return json8({ ok: true, version: up.version, stored: up.rows.length });
+    return json9({ ok: true, version: up.version, stored: up.rows.length });
   }
   if (p === "/admin/lmu-api" && m === "GET") {
     const v = url.searchParams.get("version");
     if (!v) {
       const r5 = await env.DB.prepare("SELECT game_version AS version, COUNT(*) AS paths, SUM(status=200) AS ok, MAX(at) AS at, COUNT(DISTINCT account_id) AS accounts FROM lmu_api GROUP BY game_version ORDER BY MAX(at) DESC LIMIT 100").all();
-      return json8({ versions: r5.results || [] });
+      return json9({ versions: r5.results || [] });
     }
     const r4 = await env.DB.prepare("SELECT id, account_id AS account, at, game_version AS version, path, status, ctype, size, ms, LENGTH(body) AS kept FROM lmu_api WHERE game_version=?1 ORDER BY path LIMIT 5000").bind(v).all();
-    return json8({ version: v, items: r4.results || [] });
+    return json9({ version: v, items: r4.results || [] });
   }
   if (p === "/admin/lmu-api/item" && m === "GET") {
     const id2 = +url.searchParams.get("id");
     if (!Number.isInteger(id2) || id2 <= 0) return err5("id", 400);
     const r4 = await env.DB.prepare("SELECT id, account_id AS account, at, game_version AS version, path, status, ctype, size, ms, body FROM lmu_api WHERE id=?1").bind(id2).first();
-    return r4 ? json8(r4) : err5("not found", 404);
+    return r4 ? json9(r4) : err5("not found", 404);
   }
   return err5("method", 405);
 }
@@ -8081,13 +8534,13 @@ async function accessToken(sa, { fetch: f = fetch, now = Date.now() } = {}) {
   const der = Uint8Array.from(atob(pem), (c) => c.charCodeAt(0));
   const key2 = await crypto.subtle.importKey("pkcs8", der, { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" }, false, ["sign"]);
   const iat = Math.floor(now / 1e3);
-  const head = b64url(JSON.stringify({ alg: "RS256", typ: "JWT" }));
+  const head2 = b64url(JSON.stringify({ alg: "RS256", typ: "JWT" }));
   const claim = b64url(JSON.stringify({ iss: sa.client_email, scope: "https://www.googleapis.com/auth/firebase.messaging", aud: "https://oauth2.googleapis.com/token", iat, exp: iat + 3600 }));
-  const sig = b64url(await crypto.subtle.sign("RSASSA-PKCS1-v1_5", key2, new TextEncoder().encode(head + "." + claim)));
+  const sig = b64url(await crypto.subtle.sign("RSASSA-PKCS1-v1_5", key2, new TextEncoder().encode(head2 + "." + claim)));
   const r4 = await f("https://oauth2.googleapis.com/token", {
     method: "POST",
     headers: { "content-type": "application/x-www-form-urlencoded" },
-    body: "grant_type=" + encodeURIComponent("urn:ietf:params:oauth:grant-type:jwt-bearer") + "&assertion=" + head + "." + claim + "." + sig
+    body: "grant_type=" + encodeURIComponent("urn:ietf:params:oauth:grant-type:jwt-bearer") + "&assertion=" + head2 + "." + claim + "." + sig
   });
   const j = await r4.json().catch(() => ({}));
   if (!r4.ok || !j.access_token) throw new Error("google token: " + r4.status);
@@ -8138,8 +8591,8 @@ var ALERT_DAYS = 30;
 var ALERT_MAX = 20;
 var WEEK = 7 * 864e5;
 var PER_RUN2 = 100;
-var L3 = /* @__PURE__ */ __name((l) => ["en", "es", "pt"].includes(l) ? l : "en", "L3");
-var json9 = /* @__PURE__ */ __name((o, status = 200) => new Response(JSON.stringify(o), { status, headers: { "content-type": "application/json", "cache-control": "no-store" } }), "json");
+var L32 = /* @__PURE__ */ __name((l) => ["en", "es", "pt"].includes(l) ? l : "en", "L3");
+var json10 = /* @__PURE__ */ __name((o, status = 200) => new Response(JSON.stringify(o), { status, headers: { "content-type": "application/json", "cache-control": "no-store" } }), "json");
 var SQL_RECORD = "SELECT user_id, time FROM community_laps WHERE game=?1 AND track_id=?2 AND car_id=?3 AND COALESCE(shown,'')<>'model' ORDER BY time LIMIT 1";
 var SQL_ACCOUNT_OF = "SELECT COALESCE(a.id, CASE WHEN u.id LIKE 'guest-%' THEN u.owner END) AS acc FROM community_users u LEFT JOIN accounts a ON a.id=u.id WHERE u.id=?1";
 var SQL_ALIAS = "SELECT alias FROM community_users WHERE id=?1";
@@ -8181,10 +8634,10 @@ var W = {
     pb: /* @__PURE__ */ __name((n) => n === 1 ? "1 novo recorde pessoal." : `${n} novos recordes pessoais.`, "pb")
   }
 };
-function weekNote(sum, pbs, l) {
-  if (!sum || !sum.sessions) return null;
-  const w = W[L3(l)], lines = [w.line(sum)];
-  if (sum.races) lines.push(w.races(sum));
+function weekNote(sum2, pbs, l) {
+  if (!sum2 || !sum2.sessions) return null;
+  const w = W[L32(l)], lines = [w.line(sum2)];
+  if (sum2.races) lines.push(w.races(sum2));
   if (pbs && pbs.length) lines.push(w.pb(pbs.length));
   return { title: w.title, text: lines.join(" ") };
 }
@@ -8224,11 +8677,11 @@ async function handleAlerts(req, env, url, { sessionAccount: sessionAccount2 }, 
   const p = url.pathname, m = req.method;
   if (p !== "/community/alerts" && p !== "/community/alerts/on") return null;
   const acc = await sessionAccount2(req, env);
-  if (!acc) return json9({ error: "sign in with your Pitlane HQ account" }, 401);
+  if (!acc) return json10({ error: "sign in with your Pitlane HQ account" }, 401);
   if (p === "/community/alerts" && m === "GET") {
     const since = Math.max(now - ALERT_DAYS * 864e5, +url.searchParams.get("since") || 0);
     const r4 = await env.DB.prepare(SQL_ALERTS).bind(acc.id, since).all();
-    return json9({ now, alerts: (r4.results || []).map((a) => {
+    return json10({ now, alerts: (r4.results || []).map((a) => {
       let d = {};
       try {
         d = JSON.parse(a.data);
@@ -8237,19 +8690,19 @@ async function handleAlerts(req, env, url, { sessionAccount: sessionAccount2 }, 
       return { ...d, id: a.id, kind: a.kind, created: a.created };
     }) });
   }
-  if (p === "/community/alerts/on" && m === "GET") return json9({ on: !!await env.DB.prepare(SQL_SUB_GET).bind(acc.id).first() });
+  if (p === "/community/alerts/on" && m === "GET") return json10({ on: !!await env.DB.prepare(SQL_SUB_GET).bind(acc.id).first() });
   if (p === "/community/alerts/on" && m === "POST") {
     const b2 = await req.json().catch(() => null) || {};
-    if (b2.on) await env.DB.prepare(SQL_SUB_ON).bind(acc.id, L3(String(b2.lang || "").slice(0, 2))).run();
+    if (b2.on) await env.DB.prepare(SQL_SUB_ON).bind(acc.id, L32(String(b2.lang || "").slice(0, 2))).run();
     else await env.DB.prepare(SQL_SUB_OFF).bind(acc.id).run();
     const tok = b2.push && b2.push.token;
     if (isPushToken(tok)) {
       if (b2.on) await env.DB.prepare(SQL_TOKEN_ADD).bind(tok, acc.id, b2.push.platform === "ios" ? "ios" : "android", now).run();
       else await env.DB.prepare(SQL_TOKEN_DEL).bind(tok).run();
     }
-    return json9({ on: !!b2.on });
+    return json10({ on: !!b2.on });
   }
-  return json9({ error: "not found" }, 404);
+  return json10({ error: "not found" }, 404);
 }
 __name(handleAlerts, "handleAlerts");
 async function weeklyAlerts(env, { sessionSummary: sessionSummary2 }, now = Date.now()) {
@@ -8258,8 +8711,8 @@ async function weeklyAlerts(env, { sessionSummary: sessionSummary2 }, now = Date
   for (const d of due) {
     try {
       const up = "acct:" + d.account_id, from = now - WEEK;
-      const sum = await sessionSummary2(env.DB, { from, tz: 0, game: null, uploader: up, now });
-      const note2 = sum && sum.sessions ? weekNote(sum, pbsOf((await env.DB.prepare(SQL_PBS).bind(up, from).all()).results || []), d.lang) : null;
+      const sum2 = await sessionSummary2(env.DB, { from, tz: 0, game: null, uploader: up, now });
+      const note2 = sum2 && sum2.sessions ? weekNote(sum2, pbsOf((await env.DB.prepare(SQL_PBS).bind(up, from).all()).results || []), d.lang) : null;
       if (note2) {
         await env.DB.prepare(SQL_ALERT_ADD).bind(rid6(), d.account_id, "week", now, JSON.stringify(note2)).run();
         written++;
@@ -8291,15 +8744,15 @@ var alertsRoute = /* @__PURE__ */ __name((req, env, url) => handleAlerts(req, en
 var weeklyAlerts2 = /* @__PURE__ */ __name((env, now) => weeklyAlerts(env, { sessionSummary }, now), "weeklyAlerts");
 
 // src/testask.js
-var SQL_ASK = "UPDATE accounts SET test_ask=?2, test_ask_what=?3 WHERE id=?1 AND test_ask IS NULL AND tester IS NULL";
-var SQL_PENDING = "SELECT id, display, test_ask AS asked, test_ask_what AS what FROM accounts WHERE test_ask>0 AND tester IS NULL ORDER BY test_ask DESC LIMIT 200";
-var SQL_PENDING_N = "SELECT COUNT(*) AS n FROM accounts WHERE test_ask>0 AND tester IS NULL";
+var SQL_ASK = "UPDATE accounts SET test_ask=?2, test_ask_what=?3 WHERE id=?1 AND test_ask IS NULL AND COALESCE(tester,0)=0";
+var SQL_PENDING = "SELECT id, display, test_ask AS asked, test_ask_what AS what FROM accounts WHERE test_ask>0 AND COALESCE(tester,0)=0 ORDER BY test_ask DESC LIMIT 200";
+var SQL_PENDING_N = "SELECT COUNT(*) AS n FROM accounts WHERE test_ask>0 AND COALESCE(tester,0)=0";
 var SQL_YES = "UPDATE accounts SET tester=1, test_ask=NULL WHERE id=?1 AND test_ask>0";
 var SQL_NO = "UPDATE accounts SET test_ask=?2 WHERE id=?1 AND test_ask>0";
 var ASK_WHAT = /* @__PURE__ */ new Set(["leagues", "planner", "acc", "ac", "nascar", "team", "coach", "general"]);
 var adminIds = /* @__PURE__ */ __name((env) => String(env.ADMINS || env.SEASON_UPLOADERS || "").split(",").map((x) => x.trim()).filter(Boolean), "adminIds");
-var json10 = /* @__PURE__ */ __name((o, status = 200) => new Response(JSON.stringify(o), { status, headers: { "content-type": "application/json; charset=utf-8", "cache-control": "no-store", "access-control-allow-origin": "*" } }), "json");
-var err6 = /* @__PURE__ */ __name((error, status) => json10({ error }, status), "err");
+var json11 = /* @__PURE__ */ __name((o, status = 200) => new Response(JSON.stringify(o), { status, headers: { "content-type": "application/json; charset=utf-8", "cache-control": "no-store", "access-control-allow-origin": "*" } }), "json");
+var err6 = /* @__PURE__ */ __name((error, status) => json11({ error }, status), "err");
 async function testAskRoutes(req, env, p, m, body, deps, now = Date.now()) {
   if (p !== "/tester/ask" && p !== "/admin/test-asks") return null;
   const acc = await deps.sessionAccount(req, env);
@@ -8308,29 +8761,29 @@ async function testAskRoutes(req, env, p, m, body, deps, now = Date.now()) {
   if (p === "/tester/ask") {
     if (m === "GET") {
       const pending = admin ? (await env.DB.prepare(SQL_PENDING_N).first() || {}).n || 0 : void 0;
-      return json10({ asked: acc.test_ask != null, tester: tester || admin, pending });
+      return json11({ asked: acc.test_ask != null, tester: tester || admin, pending });
     }
     if (m !== "POST") return err6("not found", 404);
-    if (tester || admin) return json10({ ok: true, tester: true });
+    if (tester || admin) return json11({ ok: true, tester: true });
     const what = ASK_WHAT.has(String(body.what || "")) ? String(body.what) : "general";
     const r5 = await env.DB.prepare(SQL_ASK).bind(acc.id, now, what).run();
     const changed = r5 && (r5.meta ? r5.meta.changes : r5.changes);
     if (changed) await deps.testAskAlert(env, adminIds(env).filter((a) => a !== acc.id), { account: acc.id, name: String(acc.display || "").slice(0, 60), what }, now);
-    return json10({ ok: true, asked: true });
+    return json11({ ok: true, asked: true });
   }
   if (!admin) return err6("only the admins of this server can do this", 403);
-  if (m === "GET") return json10({ items: ((await env.DB.prepare(SQL_PENDING).all()).results || []).map((x) => ({ ...x, what: x.what || "general" })) });
+  if (m === "GET") return json11({ items: ((await env.DB.prepare(SQL_PENDING).all()).results || []).map((x) => ({ ...x, what: x.what || "general" })) });
   if (m !== "POST") return err6("not found", 404);
   const id2 = String(body.id || "");
   if (body.yes) {
     const r5 = await env.DB.prepare(SQL_YES).bind(id2).run();
     if (!(r5 && (r5.meta ? r5.meta.changes : r5.changes))) return err6("this request is no longer waiting", 404);
     await deps.testerAlert(env, id2, now);
-    return json10({ ok: true, tester: true });
+    return json11({ ok: true, tester: true });
   }
   const r4 = await env.DB.prepare(SQL_NO).bind(id2, -now).run();
   if (!(r4 && (r4.meta ? r4.meta.changes : r4.changes))) return err6("this request is no longer waiting", 404);
-  return json10({ ok: true, tester: false });
+  return json11({ ok: true, tester: false });
 }
 __name(testAskRoutes, "testAskRoutes");
 
@@ -8662,8 +9115,8 @@ __name(fillSectors, "fillSectors");
 
 // src/friends.js
 var JSONH7 = { "content-type": "application/json; charset=utf-8", "cache-control": "no-store", "access-control-allow-origin": "*" };
-var json11 = /* @__PURE__ */ __name((v, status = 200) => new Response(JSON.stringify(v), { status, headers: JSONH7 }), "json");
-var err7 = /* @__PURE__ */ __name((msg, status) => json11({ error: msg }, status), "err");
+var json12 = /* @__PURE__ */ __name((v, status = 200) => new Response(JSON.stringify(v), { status, headers: JSONH7 }), "json");
+var err7 = /* @__PURE__ */ __name((msg, status) => json12({ error: msg }, status), "err");
 var FOLLOW_MAX = 200;
 var ID_RE = /^[A-Za-z0-9]{8,40}$/;
 async function follows(env, account, id2) {
@@ -8691,14 +9144,14 @@ async function friendRoutes(req, env, p, m, body, url, game, acc) {
     if (p === "/friends/unfollow") {
       const del = id2 || (ID_RE.test(String((body || {}).id || "")) ? body.id : null);
       if (del) await env.DB.prepare("DELETE FROM follows WHERE account_id=?1 AND driver_id=?2").bind(acc.id, del).run();
-      return json11({ following: false });
+      return json12({ following: false });
     }
     if (!id2) return err7("this driver is anonymous", 404);
     if (id2 === acc.id) return err7("that is you", 400);
     const n = await env.DB.prepare("SELECT COUNT(*) AS n FROM follows WHERE account_id=?1").bind(acc.id).first();
     if (n && n.n >= FOLLOW_MAX) return err7(`you follow ${FOLLOW_MAX} drivers already`, 400);
     await env.DB.prepare("INSERT OR IGNORE INTO follows (account_id, driver_id, created) VALUES (?1,?2,?3)").bind(acc.id, id2, Date.now()).run();
-    return json11({ following: true, id: id2 });
+    return json12({ following: true, id: id2 });
   }
   if (p === "/friends" && m === "GET") {
     const fr = (await env.DB.prepare(
@@ -8717,7 +9170,7 @@ async function friendRoutes(req, env, p, m, body, url, game, acc) {
       if (k.length < 8) k.push(l);
       by.set(l.uid, k);
     }
-    return json11({ friends: fr.map((f) => ({ id: f.id, name: f.name || "Driver", sup: !!f.sup, since: f.created, laps: (by.get(f.id) || []).map(({ uid, ...l }) => l) })) });
+    return json12({ friends: fr.map((f) => ({ id: f.id, name: f.name || "Driver", sup: !!f.sup, since: f.created, laps: (by.get(f.id) || []).map(({ uid, ...l }) => l) })) });
   }
   if (p === "/friends/laps" && m === "GET") {
     const t = +url.searchParams.get("trackId"), c = await famId(env, game, url.searchParams.get("carId"));
@@ -8727,7 +9180,7 @@ async function friendRoutes(req, env, p, m, body, url, game, acc) {
        WHERE l.track_id=?1 AND l.car_id=?2 AND l.game=?3 AND l.anon=0 AND COALESCE(a.anon,0)=0 AND COALESCE(l.shown,'')<>'model'
          AND l.user_id IN (SELECT driver_id FROM follows WHERE account_id=?4) ORDER BY l.time LIMIT ${FOLLOW_MAX}`
     ).bind(t, c, game, acc.id).all();
-    return json11({ laps: (r4.results || []).map((x) => ({ ...x, sectors: x.sectors ? JSON.parse(x.sectors) : null })) });
+    return json12({ laps: (r4.results || []).map((x) => ({ ...x, sectors: x.sectors ? JSON.parse(x.sectors) : null })) });
   }
   return err7("not found", 404);
 }
@@ -8735,8 +9188,8 @@ __name(friendRoutes, "friendRoutes");
 
 // src/community.js
 var JSONH8 = { "content-type": "application/json; charset=utf-8", "cache-control": "no-store", "access-control-allow-origin": "*" };
-var json12 = /* @__PURE__ */ __name((v, status = 200) => new Response(JSON.stringify(v), { status, headers: JSONH8 }), "json");
-var err8 = /* @__PURE__ */ __name((msg, status) => json12({ error: msg }, status), "err");
+var json13 = /* @__PURE__ */ __name((v, status = 200) => new Response(JSON.stringify(v), { status, headers: JSONH8 }), "json");
+var err8 = /* @__PURE__ */ __name((msg, status) => json13({ error: msg }, status), "err");
 var str3 = /* @__PURE__ */ __name((v, max = 120) => typeof v === "string" ? v.slice(0, max) : v == null ? null : String(v).slice(0, max), "str");
 var num2 = /* @__PURE__ */ __name((v) => typeof v === "number" && isFinite(v) ? v : null, "num");
 var int3 = /* @__PURE__ */ __name((v) => Number.isInteger(v) && v > 0 && v < 1e9 ? v : null, "int");
@@ -8986,7 +9439,7 @@ async function community(req, env, url, ctx) {
   if (p === "/register" && m === "POST") {
     const id2 = rid7(), token = rid7() + rid7();
     await env.DB.prepare("INSERT INTO community_users (id, token_hash, alias, created) VALUES (?1,?2,?3,?4)").bind(id2, await sha2562(token), cleanAlias(body.alias), Date.now()).run();
-    return json12({ id: id2, token });
+    return json13({ id: id2, token });
   }
   {
     const pr = await proRoutes(req, env, p, m, body);
@@ -9008,7 +9461,7 @@ async function community(req, env, url, ctx) {
     ).bind(game).all();
     const cm = game === "iracing" ? await catMap(env) : { tc: {}, c: {} };
     const fams = await famGroups(env, game);
-    return json12({ combos: (r4.results || []).map(({ hint, ...x }) => ({ ...x, ...fams.has(x.carId) ? { ids: [...fams.get(x.carId)] } : {}, car: famName(game, x.carId, x.car), cat: game === "iracing" ? catOf(cm, x.trackId, x.carId, hint, x.track, x.car) : "sports_car" })) });
+    return json13({ combos: (r4.results || []).map(({ hint, ...x }) => ({ ...x, ...fams.has(x.carId) ? { ids: [...fams.get(x.carId)] } : {}, car: famName(game, x.carId, x.car), cat: game === "iracing" ? catOf(cm, x.trackId, x.carId, hint, x.track, x.car) : "sports_car" })) });
   }
   if (p === "/model" && m === "GET") {
     const t = +url.searchParams.get("trackId"), c = await famId(env, game, url.searchParams.get("carId"));
@@ -9017,18 +9470,18 @@ async function community(req, env, url, ctx) {
     const md2 = forCompound(await getModel(env, game, t, c), cq != null && /^\d{1,2}$/.test(cq) ? +cq : null, tq != null && /^-?\d{1,2}(\.\d+)?$/.test(tq) ? +tq : null);
     const rivals = seesRivals(req, env, await me(req, env).catch(() => null));
     const fs = await env.DB.prepare(`SELECT l.time, ${shownName("l", "u", rivals)} AS alias FROM community_laps l JOIN community_users u ON u.id=l.user_id WHERE l.track_id=?1 AND l.car_id=?2 AND l.game=?3 AND COALESCE(l.shown,'')<>'model' ORDER BY l.time LIMIT 1`).bind(t, c, game).first();
-    return json12({ ...md2, car: await getCarCard(env, game, c).catch(() => null), fastShared: fs || null });
+    return json13({ ...md2, car: await getCarCard(env, game, c).catch(() => null), fastShared: fs || null });
   }
   if (p === "/car" && m === "GET") {
     const c = await famId(env, game, url.searchParams.get("carId"));
     if (!c) return err8("carId", 400);
-    return json12(await getCarCard(env, game, c).catch(() => null) || {});
+    return json13(await getCarCard(env, game, c).catch(() => null) || {});
   }
   if (p === "/like" && m === "GET") {
     const t = +url.searchParams.get("trackId") || 0, c = await famId(env, game, url.searchParams.get("carId"));
     if (!c) return err8("carId", 400);
     const grp = await groupFor(env, game, t, c, String(url.searchParams.get("cat") || "").slice(0, 20)).catch(() => "");
-    return json12({ ...await likeFor(env, game, t, c, grp), cat: grp });
+    return json13({ ...await likeFor(env, game, t, c, grp), cat: grp });
   }
   if (p === "/records" && m === "GET") {
     const lim = Math.min(100, Math.max(1, +url.searchParams.get("limit") || 40));
@@ -9048,7 +9501,7 @@ async function community(req, env, url, ctx) {
        WHERE l.rk=1 ORDER BY l.created DESC LIMIT ?2`
     ).bind(game, lim).all());
     const cm = all || game === "iracing" ? await catMap(env) : null;
-    return json12({ records: (r4.results || []).map(({ uid, hint, prevTime, prevAlias, ...x }) => ({ ...x, game: gameOf(x.game), car: famName(gameOf(x.game), x.carId, x.car), cat: cm && gameOf(x.game) === "iracing" ? catOf(cm, x.trackId, x.carId, hint, x.track, x.car) : "sports_car", prof: !!x.prof, sup: !!x.sup, hasTrace: !!x.hasTrace, mine: !!who2 && uid === who2.id, field: String(uid).startsWith("o:"), prev: prevTime ? { time: prevTime, alias: prevAlias } : null })) });
+    return json13({ records: (r4.results || []).map(({ uid, hint, prevTime, prevAlias, ...x }) => ({ ...x, game: gameOf(x.game), car: famName(gameOf(x.game), x.carId, x.car), cat: cm && gameOf(x.game) === "iracing" ? catOf(cm, x.trackId, x.carId, hint, x.track, x.car) : "sports_car", prof: !!x.prof, sup: !!x.sup, hasTrace: !!x.hasTrace, mine: !!who2 && uid === who2.id, field: String(uid).startsWith("o:"), prev: prevTime ? { time: prevTime, alias: prevAlias } : null })) });
   }
   if (p === "/track" && m === "GET") {
     const t = +url.searchParams.get("trackId");
@@ -9072,7 +9525,7 @@ async function community(req, env, url, ctx) {
     const cm = game === "iracing" ? await catMap(env) : null;
     const pts = lay && lay.pts ? JSON.parse(lay.pts) : null;
     const name2 = tot && tot.track || lay && lay.track || "";
-    return json12({
+    return json13({
       trackId: t,
       game,
       track: name2,
@@ -9088,7 +9541,7 @@ async function community(req, env, url, ctx) {
     if (cq && +url.searchParams.get("trackId")) {
       const who3 = await me(req, env).catch(() => null);
       const rows = await classLaps(env, +url.searchParams.get("trackId"), cq, { admin: !!who3 && isAdmin(env, who3.id), rivals: seesRivals(req, env, who3), acctTrace: ACCT_TRACE });
-      return json12({ cat: "sports_car", cls: cq, laps: rows.map(({ uid, ...x }) => ({ ...x, car: famName(game, x.carId, x.car), lic: licOf(x.lic), prof: !!x.prof, sup: !!x.sup, mine: !!who3 && uid === who3.id, field: String(uid).startsWith("o:"), hasTrace: !!x.hasTrace, sectors: x.sectors ? JSON.parse(x.sectors) : null })) });
+      return json13({ cat: "sports_car", cls: cq, laps: rows.map(({ uid, ...x }) => ({ ...x, car: famName(game, x.carId, x.car), lic: licOf(x.lic), prof: !!x.prof, sup: !!x.sup, mine: !!who3 && uid === who3.id, field: String(uid).startsWith("o:"), hasTrace: !!x.hasTrace, sectors: x.sectors ? JSON.parse(x.sectors) : null })) });
     }
     const t = +url.searchParams.get("trackId"), c = await famId(env, game, url.searchParams.get("carId"));
     if (!t || !c) return err8("trackId and carId", 400);
@@ -9102,7 +9555,7 @@ async function community(req, env, url, ctx) {
        FROM community_laps l JOIN community_users u ON u.id=l.user_id LEFT JOIN accounts ac ON ac.id=l.user_id
        WHERE l.track_id=?1 AND l.car_id=?2 AND l.game=?3 AND COALESCE(l.shown,'')<>'model' ORDER BY l.time LIMIT 200`
     ).bind(t, c, game, cat).all();
-    return json12({ cat, cls: game === "lmu" ? h && h.cls || lmuClass(null, h && h.car) : null, laps: (r4.results || []).map(({ uid, ...x }) => ({ ...x, lic: licOf(x.lic), prof: !!x.prof, sup: !!x.sup, mine: !!who2 && uid === who2.id, field: String(uid).startsWith("o:"), hasTrace: !!x.hasTrace, sectors: x.sectors ? JSON.parse(x.sectors) : null })) });
+    return json13({ cat, cls: game === "lmu" ? h && h.cls || lmuClass(null, h && h.car) : null, laps: (r4.results || []).map(({ uid, ...x }) => ({ ...x, lic: licOf(x.lic), prof: !!x.prof, sup: !!x.sup, mine: !!who2 && uid === who2.id, field: String(uid).startsWith("o:"), hasTrace: !!x.hasTrace, sectors: x.sectors ? JSON.parse(x.sectors) : null })) });
   }
   if (p.startsWith("/laps/") && m === "GET") {
     const rivals = seesRivals(req, env, await me(req, env).catch(() => null));
@@ -9118,7 +9571,7 @@ async function community(req, env, url, ctx) {
       const card = await getCarCard(env, l.game, l.car_id).catch(() => null);
       tr2 = estimateTrace(tr2, card && card.pedals, card && card.shifts);
     }
-    return json12({ id: l.id, alias: l.alias, game: l.game, time: l.time, car: famName(l.game, l.car_id, l.car), track: l.track, carId: l.car_id, trackId: l.track_id, sectors: l.sectors ? JSON.parse(l.sectors) : null, trace: tr2 });
+    return json13({ id: l.id, alias: l.alias, game: l.game, time: l.time, car: famName(l.game, l.car_id, l.car), track: l.track, carId: l.car_id, trackId: l.track_id, sectors: l.sectors ? JSON.parse(l.sectors) : null, trace: tr2 });
   }
   if (p === "/reports" && m === "GET") {
     const t = +url.searchParams.get("trackId"), c = +url.searchParams.get("carId");
@@ -9130,7 +9583,7 @@ async function community(req, env, url, ctx) {
        FROM community_reports r JOIN community_users u ON u.id=r.user_id WHERE (?1=0 OR r.track_id=?1) AND (?2=0 OR r.car_id IN (${fam.map((n) => +n || 0).join(",")})) AND r.game=?3 ORDER BY r.created DESC LIMIT 100`
     ).bind(t || 0, c || 0, game).all();
     const who2 = await me(req, env).catch(() => null);
-    return json12({ reports: (r4.results || []).map(({ uid, ...x }) => ({ ...x, car: famName(game, c, x.car), mine: !!who2 && uid === who2.id })) });
+    return json13({ reports: (r4.results || []).map(({ uid, ...x }) => ({ ...x, car: famName(game, c, x.car), mine: !!who2 && uid === who2.id })) });
   }
   if (p === "/trackmaps" && m === "GET") {
     const t = +url.searchParams.get("trackId");
@@ -9197,7 +9650,7 @@ async function community(req, env, url, ctx) {
     if (!t || !turns) return err8("trackId and turns", 400);
     if (!turns.length) await env.DB.prepare("DELETE FROM track_turns WHERE game=?1 AND track_id=?2").bind(g, t).run();
     else await env.DB.prepare("INSERT INTO track_turns (game, track_id, turns, updated) VALUES (?1, ?2, ?3, ?4) ON CONFLICT(game, track_id) DO UPDATE SET turns=excluded.turns, updated=excluded.updated").bind(g, t, JSON.stringify(turns.map((x) => Math.round(x * 1e5) / 1e5)), Date.now()).run();
-    return json12({ ok: true, trackId: t, game: g, turns });
+    return json13({ ok: true, trackId: t, game: g, turns });
   }
   const um = p.match(/^\/admin\/reports\/([A-Za-z0-9_.:-]{1,64})\/uncut$/);
   if (um && m === "POST") {
@@ -9208,7 +9661,7 @@ async function community(req, env, url, ctx) {
     const d = JSON.parse(await openData(env, r4.data));
     if (Array.isArray(d.laps)) d.laps = d.laps.map((l) => l.i ? l : { ...l, cut: false });
     await env.DB.prepare("UPDATE community_reports SET data=?2 WHERE id=?1").bind(um[1], await sealData(env, JSON.stringify(d))).run();
-    return json12({ ok: true });
+    return json13({ ok: true });
   }
   const du = p.match(/^\/admin\/users\/([A-Za-z0-9]{8,40})$/);
   if (du && m === "DELETE") {
@@ -9217,7 +9670,7 @@ async function community(req, env, url, ctx) {
     const id2 = du[1];
     if (id2 === acc.id || isAdmin(env, id2)) return err8("an admin account cannot be deleted from here", 400);
     await purgeAccount(env, id2);
-    return json12({ deleted: true });
+    return json13({ deleted: true });
   }
   if (m === "GET" && p === "/admin/status") {
     const acc = await sessionAccount(req, env);
@@ -9232,10 +9685,11 @@ async function community(req, env, url, ctx) {
       (SELECT COUNT(DISTINCT uploader) FROM sessions WHERE started>?1) AS drivers7,
       (SELECT COUNT(*) FROM community_laps) AS shared, (SELECT COUNT(*) FROM (SELECT 1 FROM community_laps WHERE COALESCE(shown,'')<>'model' GROUP BY game, track_id, car_id)) AS boards,
       (SELECT COUNT(*) FROM model_laps) AS learnt, (SELECT COUNT(*) FROM model_cache) AS models, (SELECT COUNT(*) FROM model_cache WHERE dirty=1) AS modelsDirty, (SELECT COUNT(*) FROM car_cards) AS cars,
-      (SELECT COUNT(*) FROM leagues) AS leagues, (SELECT COUNT(*) FROM accounts WHERE supporter=1) AS supporters, (SELECT COUNT(*) FROM accounts WHERE supporter=1 AND supporter_src='patreon') AS supportersPatreon,
+      (SELECT COUNT(*) FROM leagues) AS leagues, (SELECT COUNT(*) FROM accounts WHERE supporter=1) AS supporters, (SELECT COUNT(*) FROM accounts WHERE supporter=1 AND supporter_src='patreon') AS supportersPatreon, (SELECT COUNT(*) FROM accounts WHERE supporter=1 AND supporter_src='stripe') AS supportersStripe,
+      (SELECT COUNT(*) FROM pro_orders WHERE kind='supporter' AND status='on') AS donations,
       (SELECT COUNT(*) FROM patreon_patrons WHERE active=1) AS patrons, (SELECT MAX(updated) FROM patreon_patrons) AS patreonLast,
       (SELECT COUNT(*) FROM auth_fails) AS authFails`).bind(d7, d30, d1).first().catch((x) => ({ error: String(x && x.message || x) }));
-    return json12({
+    return json13({
       mail: { ready: mailReady(env), via: env.RESEND_API_KEY ? "resend" : "", from: env.EMAIL_FROM || "", lastOk: ok ? ok.at : 0, lastError: e && (!ok || e.at > ok.at) ? { at: e.at, ...JSON.parse(e.v || "{}") } : null },
       counts,
       config: { patreon: !!env.PATREON_WEBHOOK_SECRET, leaguesOpen: env.LEAGUES_OPEN === "1", community: env.COMMUNITY !== "0", dataKey: !!env.DATA_KEY, pepper: !!env.EMAIL_PEPPER, admins: String(env.ADMINS || env.SEASON_UPLOADERS || "").split(",").filter(Boolean).length }
@@ -9245,14 +9699,14 @@ async function community(req, env, url, ctx) {
     const acc = await sessionAccount(req, env);
     if (!acc || !isAdmin(env, acc.id)) return err8("only the admins of this server can do this", 403);
     const [items, domain] = await Promise.all([mailLog(env), mailDomain(env).catch(() => null)]);
-    return json12({ items, domain });
+    return json13({ items, domain });
   }
   if (m === "GET" && p === "/admin/guests") {
     const acc = await sessionAccount(req, env);
     if (!acc || !isAdmin(env, acc.id)) return err8("only the admins of this server can do this", 403);
     const r4 = await env.DB.prepare(`SELECT g.id, g.alias, g.created, g.owner, o.display AS ownerName, (SELECT COUNT(*) FROM community_laps l WHERE l.user_id=g.id) AS laps, gl.account_id AS linked, la.display AS linkedName
       FROM community_users g LEFT JOIN accounts o ON o.id=g.owner LEFT JOIN guest_links gl ON gl.gid=g.id LEFT JOIN accounts la ON la.id=gl.account_id WHERE g.id LIKE 'guest-%' ORDER BY g.created DESC LIMIT 300`).all();
-    return json12({ guests: (r4.results || []).map((x) => ({ id: x.id, name: x.alias, created: x.created, owner: x.owner, ownerName: x.ownerName || "", laps: x.laps || 0, linked: x.linked || null, linkedName: x.linkedName || null })) });
+    return json13({ guests: (r4.results || []).map((x) => ({ id: x.id, name: x.alias, created: x.created, owner: x.owner, ownerName: x.ownerName || "", laps: x.laps || 0, linked: x.linked || null, linkedName: x.linkedName || null })) });
   }
   if (m === "GET" && (p === "/admin/uploads" || p === "/admin/users")) {
     const acc = await sessionAccount(req, env);
@@ -9269,7 +9723,7 @@ async function community(req, env, url, ctx) {
         EXISTS (SELECT 1 FROM driver_links d WHERE d.account_id=a.id) AS driverLinked,
         (SELECT group_concat(d.game, ',') FROM driver_links d WHERE d.account_id=a.id) AS driverGames
         FROM accounts a ${q3 ? "WHERE a.display LIKE ?1 OR a.id LIKE ?1" : ""} ORDER BY a.created DESC LIMIT 500`).bind(...q3 ? ["%" + q3.replace(/[%_]/g, "") + "%"] : []).all();
-      return json12({ users: (r5.results || []).map((x) => ({ ...x, admin: isAdmin(env, x.id), tester: isTester(env, x.id, x), testerSet: testersSet(env, x.id) })) });
+      return json13({ users: (r5.results || []).map((x) => ({ ...x, admin: isAdmin(env, x.id), tester: isTester(env, x.id, x) })) });
     }
     const q2 = /* @__PURE__ */ __name((t, extra) => env.DB.prepare(`SELECT x.id, '${t}' AS kind, x.car, x.track, x.created, x.anon, COALESCE(x.shown,'nick') AS shown, ${extra}
       u.id AS userId, u.alias, u.iracing, u.owner, o.display AS ownerName, ac.display AS account
@@ -9283,14 +9737,14 @@ async function community(req, env, url, ctx) {
       via: !x.owner ? "account" : String(x.userId).startsWith("o:") ? "rival" : "drinks",
       realUploader: !x.owner ? x.account || x.alias : String(x.userId).startsWith("o:") ? `${x.alias} (race rival \xB7 shared by ${x.ownerName || x.owner})` : `${x.alias} (Drinks \xB7 ${x.ownerName || x.owner})`
     }));
-    return json12({ items });
+    return json13({ items });
   }
   if (p === "/admin/supporter" && m === "POST") {
     const acc = await sessionAccount(req, env);
     if (!acc || !isAdmin(env, acc.id)) return err8("only the admins of this server can do this", 403);
     const id2 = String(body.id || "");
     const r4 = await env.DB.prepare("UPDATE accounts SET supporter=?2, supporter_src=?3 WHERE id=?1").bind(id2, body.on ? 1 : 0, body.on ? "manual" : null).run();
-    return r4.meta && r4.meta.changes ? json12({ ok: true, supporter: !!body.on }) : err8("account not found", 404);
+    return r4.meta && r4.meta.changes ? json13({ ok: true, supporter: !!body.on }) : err8("account not found", 404);
   }
   if (p === "/admin/tester" && m === "POST") {
     const acc = await sessionAccount(req, env);
@@ -9298,10 +9752,9 @@ async function community(req, env, url, ctx) {
     const id2 = String(body.id || "");
     const was = await env.DB.prepare("SELECT tester FROM accounts WHERE id=?1").bind(id2).first();
     if (!was) return err8("account not found", 404);
-    if (!body.on && testersSet(env, id2)) return err8("this driver is a tester in the server's settings (TESTERS)", 409);
-    await env.DB.prepare("UPDATE accounts SET tester=?2, test_ask=NULL WHERE id=?1").bind(id2, body.on ? 1 : null).run();
-    if (body.on && !was.tester && !testersSet(env, id2)) await testerAlert(env, id2);
-    return json12({ ok: true, tester: !!body.on });
+    await env.DB.prepare("UPDATE accounts SET tester=?2, test_ask=NULL WHERE id=?1").bind(id2, body.on ? 1 : 0).run();
+    if (body.on && !isTester(env, id2, was)) await testerAlert(env, id2);
+    return json13({ ok: true, tester: !!body.on });
   }
   if (p === "/admin/since" && m === "POST") {
     const acc = await sessionAccount(req, env);
@@ -9309,7 +9762,7 @@ async function community(req, env, url, ctx) {
     const since = body.since == null || body.since === "" ? null : Number(body.since);
     if (since !== null && !(isFinite(since) && since > 9466848e5 && since < Date.now() + 864e5)) return err8("that date is not valid", 400);
     const r4 = await env.DB.prepare("UPDATE accounts SET member_since=?2 WHERE id=?1").bind(String(body.id || ""), since === null ? null : Math.round(since)).run();
-    return r4.meta && r4.meta.changes ? json12({ ok: true, since }) : err8("account not found", 404);
+    return r4.meta && r4.meta.changes ? json13({ ok: true, since }) : err8("account not found", 404);
   }
   if (p === "/admin/turns-check" && m === "GET") {
     const acc = await sessionAccount(req, env);
@@ -9338,12 +9791,12 @@ async function community(req, env, url, ctx) {
     }
     const bad = /* @__PURE__ */ __name((x) => (x.placed ? 0 : 2) + (x.official && x.fitted !== x.official ? 1 : 0), "bad");
     out.sort((a, b2) => bad(b2) - bad(a) || a.track.localeCompare(b2.track));
-    return json12({ tracks: out });
+    return json13({ tracks: out });
   }
   if (p === "/admin/trackmaps-rebuild" && m === "POST") {
     const acc = await sessionAccount(req, env);
     if (!acc || !isAdmin(env, acc.id)) return err8("only the admins of this server can do this", 403);
-    return json12({ ok: true, ...await rebuildTrackMaps(env, { all: true }) });
+    return json13({ ok: true, ...await rebuildTrackMaps(env, { all: true }) });
   }
   if (p === "/admin/models" && m === "POST") {
     const acc = await sessionAccount(req, env);
@@ -9351,7 +9804,7 @@ async function community(req, env, url, ctx) {
     const r4 = await env.DB.prepare("UPDATE model_cache SET dirty=1").run();
     await env.DB.prepare("UPDATE car_cards SET dirty=1").run().catch(() => {
     });
-    return json12({ ok: true, models: r4.meta && r4.meta.changes || 0 });
+    return json13({ ok: true, models: r4.meta && r4.meta.changes || 0 });
   }
   if (p === "/admin/blocked" && m === "GET") {
     const acc = await sessionAccount(req, env);
@@ -9370,7 +9823,7 @@ async function community(req, env, url, ctx) {
     }
     const mask2 = /* @__PURE__ */ __name((v) => /^ip:[0-9a-f]{6}/.test(v) ? "#" + v.slice(3, 9) : "#" + String(v).slice(0, 6), "mask");
     const limit = { login: 5, "2fa": 5, mail: 3, reset: 10, reg: 5, ip: 30 };
-    return json12({ blocked: rows.map((x) => {
+    return json13({ blocked: rows.map((x) => {
       const m2 = /^(login|mail|2fa|reset|reg):(.+)$/.exec(x.k), kind = m2 ? m2[1] : "ip", v = m2 ? m2[2] : x.k, a = who2[v];
       const net = kind === "ip" || (kind === "mail" || kind === "reset" || kind === "reg") && !/^[0-9a-f]{64}$/.test(v);
       return { k: x.k, kind, n: x.n, last: x.last, account: a ? { id: a.id, display: a.display } : null, net: net ? mask2(v) : null, blocked: x.n >= (net && kind === "mail" ? 10 : limit[kind] || 5) };
@@ -9390,7 +9843,7 @@ async function community(req, env, url, ctx) {
       r4 = await env.DB.prepare("DELETE FROM auth_fails WHERE k IN (?1, ?2, ?3)").bind("login:" + eh, "mail:" + eh, "2fa:" + (a ? a.id : "-")).run();
     } else if (body.all === true) r4 = await env.DB.prepare("DELETE FROM auth_fails").run();
     else return err8("say what to unblock", 400);
-    return json12({ ok: true, cleared: r4.meta && r4.meta.changes || 0 });
+    return json13({ ok: true, cleared: r4.meta && r4.meta.changes || 0 });
   }
   const ua = p.match(/^\/admin\/users\/([A-Za-z0-9]{8,40})\/(verify|2fa-off|signout|rename|unlink-driver|link-guest|unlink-guest)$/);
   if (ua && m === "POST") {
@@ -9412,7 +9865,7 @@ async function community(req, env, url, ctx) {
       if (!g) return err8("DRINKS driver not found", 404);
       if (ua[2] === "unlink-guest") {
         await env.DB.prepare("DELETE FROM guest_links WHERE gid=?1 AND account_id=?2").bind(g.id, id2).run();
-        return json12({ ok: true, name: g.alias });
+        return json13({ ok: true, name: g.alias });
       }
       const had = await env.DB.prepare("SELECT account_id FROM guest_links WHERE gid=?1").bind(g.id).first();
       if (had && had.account_id !== id2) return err8("this DRINKS driver is already joined to another account", 409);
@@ -9442,7 +9895,7 @@ async function community(req, env, url, ctx) {
         await markModel(env, gm, +t, +cId).catch(() => {
         });
       }
-      return json12({ ok: true, name: g.alias, moved: laps.length });
+      return json13({ ok: true, name: g.alias, moved: laps.length });
     }
     if (ua[2] === "rename") {
       const display = cleanName(body.name);
@@ -9450,20 +9903,20 @@ async function community(req, env, url, ctx) {
       if (await nameTaken(env, display, id2)) return err8("this nickname is already taken", 409);
       await env.DB.batch([env.DB.prepare("UPDATE accounts SET display=?2, name_kind='nick' WHERE id=?1").bind(id2, display), env.DB.prepare("UPDATE community_users SET alias=?2 WHERE id=?1").bind(id2, display)]);
     }
-    return json12({ ok: true });
+    return json13({ ok: true });
   }
   if (p === "/admin/sessions" && m === "GET") {
     const acc = await sessionAccount(req, env);
     if (!acc || !isAdmin(env, acc.id)) return err8("only the admins of this server can do this", 403);
     const r4 = await env.DB.prepare(`SELECT s.id, s.started, s.track, s.track_config AS trackConfig, s.car, s.kind, s.laps, s.game, s.official, s.cat, a.display AS who, a.id AS accountId
       FROM sessions s LEFT JOIN accounts a ON 'acct:'||a.id=s.uploader ORDER BY s.started DESC LIMIT 100`).all();
-    return json12({ sessions: r4.results || [] });
+    return json13({ sessions: r4.results || [] });
   }
   if (p === "/profile/badge" && m === "POST") {
     const who2 = await sessionAccount(req, env);
     if (!who2) return err8("sign in with your Pitlane HQ account", 401);
     await env.DB.prepare("UPDATE accounts SET supporter_hidden=?2 WHERE id=?1").bind(who2.id, body.hidden ? 1 : 0).run();
-    return json12({ ok: true, hidden: !!body.hidden });
+    return json13({ ok: true, hidden: !!body.hidden });
   }
   if (p === "/profile/races" && m === "POST") {
     const who2 = await sessionAccount(req, env);
@@ -9493,29 +9946,29 @@ async function community(req, env, url, ctx) {
       env.DB.prepare("DELETE FROM profile_races WHERE account_id=?1").bind(who2.id),
       ...list.map((x) => env.DB.prepare("INSERT INTO profile_races (account_id, id, at, data) VALUES (?1,?2,?3,?4) ON CONFLICT DO NOTHING").bind(who2.id, x.id, x.when, JSON.stringify(x)))
     ]);
-    return json12({ ok: true, races: list.length });
+    return json13({ ok: true, races: list.length });
   }
   if (p === "/leagues" || p.startsWith("/leagues/")) {
     const who2 = await sessionAccount(req, env).catch(() => null), admin = !!who2 && isAdmin(env, who2.id);
     const parts = p.slice(9).split("/").filter(Boolean), lid = parts[0] || "", sub = parts[1] || "";
     const lgGame = leagueGame(url.searchParams.get("game") || m === "POST" && body && body.game);
-    if (lid === "found" && !sub && m === "GET") return json12(await foundLeagues(env, admin, lgGame));
+    if (lid === "found" && !sub && m === "GET") return json13(await foundLeagues(env, admin, lgGame));
     if (env.LEAGUES_OPEN !== "1" && !admin && !(who2 && isTester(env, who2.id, who2))) return err8("leagues are in development", 403);
     if (lid === "found") {
-      if (m === "GET") return json12(await foundLeagues(env, admin, lgGame));
+      if (m === "GET") return json13(await foundLeagues(env, admin, lgGame));
       if (m !== "POST" || !admin) return err8("only the admins can do this", 403);
-      if (sub && "edit" in body) return await editFound(env, sub, body.edit) ? json12(await foundLeagues(env, admin, lgGame)) : err8("league not found", 404);
+      if (sub && "edit" in body) return await editFound(env, sub, body.edit) ? json13(await foundLeagues(env, admin, lgGame)) : err8("league not found", 404);
       if (sub) {
         await env.DB.prepare("UPDATE league_found SET hidden=?2 WHERE guild=?1").bind(sub, body.hidden ? 1 : 0).run();
-        return json12({ ok: true });
+        return json13({ ok: true });
       }
       if (body.invite) {
         const r4 = await addFound(env, body.invite, body.game);
         if (r4.error) return err8(r4.error, 400);
-        return json12(await foundLeagues(env, admin, lgGame));
+        return json13(await foundLeagues(env, admin, lgGame));
       }
       await scanLeagues(env, true);
-      return json12(await foundLeagues(env, admin, lgGame));
+      return json13(await foundLeagues(env, admin, lgGame));
     }
     const lst = /* @__PURE__ */ __name((v) => {
       try {
@@ -9564,7 +10017,7 @@ async function community(req, env, url, ctx) {
       const r4 = await env.DB.prepare("SELECT l.*, u.alias, EXISTS (SELECT 1 FROM discord_guilds g WHERE g.league_id=l.id) AS bot FROM leagues l LEFT JOIN community_users u ON u.id=l.owner WHERE l.game=?1 ORDER BY l.updated DESC LIMIT 300").bind(lgGame).all();
       const limit2 = await leagueLimit();
       const mineN = who2 ? (await env.DB.prepare("SELECT COUNT(*) AS n FROM leagues WHERE owner=?1").bind(who2.id).first().catch(() => null) || {}).n || 0 : 0;
-      return json12({ game: lgGame, posted: mineN, leagues: (r4.results || []).map(row), admin, open: env.LEAGUES_OPEN === "1", limit: limit2, supporter: limit2 === LEAGUES_SUPPORTER, limits: { free: LEAGUES_FREE, supporter: LEAGUES_SUPPORTER } });
+      return json13({ game: lgGame, posted: mineN, leagues: (r4.results || []).map(row), admin, open: env.LEAGUES_OPEN === "1", limit: limit2, supporter: limit2 === LEAGUES_SUPPORTER, limits: { free: LEAGUES_FREE, supporter: LEAGUES_SUPPORTER } });
     }
     const cur = lid ? await env.DB.prepare("SELECT l.*, u.alias FROM leagues l LEFT JOIN community_users u ON u.id=l.owner WHERE l.id=?1").bind(lid).first() : null;
     if (lid && !cur) return err8("league not found", 404);
@@ -9576,17 +10029,17 @@ async function community(req, env, url, ctx) {
         const r4 = await env.DB.prepare("SELECT day, views, clicks FROM league_days WHERE league_id=?1 AND day>=?2 ORDER BY day").bind(lid, since).all();
         days2 = (r4.results || []).map((d) => ({ day: d.day, views: d.views || 0, clicks: d.clicks || 0 }));
       }
-      return json12({ league: o, days: days2 });
+      return json13({ league: o, days: days2 });
     }
     if (m !== "POST") return err8("not found", 404);
     if (lid && sub === "hit") {
       const kind = ["view", "discord", "web"].includes(body.kind) ? body.kind : "";
       if (!kind) return err8("what was it", 400);
-      if (who2 && who2.id === cur.owner) return json12({ ok: true, counted: false });
+      if (who2 && who2.id === cur.owner) return json13({ ok: true, counted: false });
       const viewer = who2 ? "a:" + who2.id : "n:" + (await sha2562("league-viewer|" + (env.DATA_KEY || "") + "|" + (req.headers.get("cf-connecting-ip") || "") + "|" + (req.headers.get("user-agent") || ""))).slice(0, 24);
       const day4 = (/* @__PURE__ */ new Date()).toISOString().slice(0, 10);
       const ins = await env.DB.prepare("INSERT OR IGNORE INTO league_hits (league_id, viewer, day, kind) VALUES (?1,?2,?3,?4)").bind(lid, viewer, day4, kind).run();
-      if (!(ins.meta && ins.meta.changes)) return json12({ ok: true, counted: false });
+      if (!(ins.meta && ins.meta.changes)) return json13({ ok: true, counted: false });
       const col = kind === "view" ? "views" : "clicks";
       const q2 = [
         env.DB.prepare(`UPDATE leagues SET ${col}=${col}+1 WHERE id=?1`).bind(lid),
@@ -9594,7 +10047,7 @@ async function community(req, env, url, ctx) {
       ];
       if (Math.random() < 0.02) q2.push(env.DB.prepare("DELETE FROM league_hits WHERE day < ?1").bind(new Date(Date.now() - 45 * 864e5).toISOString().slice(0, 10)));
       await env.DB.batch(q2);
-      return json12({ ok: true, counted: true });
+      return json13({ ok: true, counted: true });
     }
     if (!who2) return err8("sign in with your Pitlane HQ account", 401);
     if (lid && cur.owner !== who2.id && !admin) return err8("league not found", 404);
@@ -9604,7 +10057,7 @@ async function community(req, env, url, ctx) {
         env.DB.prepare("DELETE FROM league_days WHERE league_id=?1").bind(lid),
         env.DB.prepare("DELETE FROM leagues WHERE id=?1").bind(lid)
       ]);
-      return json12({ ok: true, deleted: true });
+      return json13({ ok: true, deleted: true });
     }
     const txt = /* @__PURE__ */ __name((v, n2) => typeof v === "string" ? v.replace(/[\u0000-\u001f\u007f]/g, " ").replace(/\s+/g, " ").trim().slice(0, n2) : "", "txt");
     const link = /* @__PURE__ */ __name((v, re) => {
@@ -9646,14 +10099,14 @@ async function community(req, env, url, ctx) {
     const now = Date.now();
     if (cur) {
       await env.DB.prepare("UPDATE leagues SET name=?2, about=?3, cat=?4, cats=?5, days=?6, time=?7, tz=?8, open=?9, discord=?10, web=?11, schedule=?12, cars=?13, lang=?14, updated=?15, game=?16 WHERE id=?1").bind(lid, x.name, x.about, x.cat, x.cats, x.days, x.time, x.tz, x.open, x.discord, x.web, x.schedule, x.cars, x.lang, now, x.game).run();
-      return json12({ ok: true, id: lid });
+      return json13({ ok: true, id: lid });
     }
     const n = await env.DB.prepare("SELECT COUNT(*) AS n FROM leagues WHERE owner=?1").bind(who2.id).first();
     const limit = await leagueLimit();
     if (n && n.n >= limit && !admin) return err8(limit === LEAGUES_SUPPORTER ? `you can post up to ${limit} leagues` : `you can post up to ${limit} leagues (${LEAGUES_SUPPORTER} as a supporter)`, 429);
     const id2 = rid7();
     await env.DB.prepare("INSERT INTO leagues (id, owner, name, about, cat, cats, days, time, tz, open, discord, web, schedule, cars, lang, created, updated, game) VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14,?15,?16,?16,?17)").bind(id2, who2.id, x.name, x.about, x.cat, x.cats, x.days, x.time, x.tz, x.open, x.discord, x.web, x.schedule, x.cars, x.lang, now, x.game).run();
-    return json12({ ok: true, id: id2, game: x.game });
+    return json13({ ok: true, id: id2, game: x.game });
   }
   if (p === "/profile" && m === "GET") {
     const viewer = await sessionAccount(req, env).catch(() => null), admin = !!viewer && isAdmin(env, viewer.id);
@@ -9710,7 +10163,7 @@ async function community(req, env, url, ctx) {
         if (run.length > 1) trend[k] = run.slice(-8).map((v) => Math.round(v * 1e3) / 1e3);
       }
     }
-    return json12({
+    return json13({
       name: a.alias || "Driver",
       since: a.member_since || a.created,
       mine,
@@ -9744,7 +10197,7 @@ async function community(req, env, url, ctx) {
       trackmaps: ["DELETE FROM track_maps WHERE track_id=?1 AND game=?2", +id2 || 0, game]
     }[kind];
     const r4 = await env.DB.prepare(q2[0]).bind(...q2.slice(1)).run();
-    return json12({ deleted: !!(r4.meta && r4.meta.changes) });
+    return json13({ deleted: !!(r4.meta && r4.meta.changes) });
   }
   if (p.startsWith("/reports/") && m === "GET") {
     const r4 = await env.DB.prepare("SELECT r.*, CASE WHEN r.anon=1 THEN 'Anonymous' WHEN r.shown='iracing' AND COALESCE(u.iracing,'')<>'' THEN u.iracing ELSE u.alias END AS alias FROM community_reports r JOIN community_users u ON u.id=r.user_id WHERE r.id=?1").bind(p.slice(9)).first();
@@ -9752,12 +10205,12 @@ async function community(req, env, url, ctx) {
     const data = JSON.parse(await openData(env, r4.data));
     const rivals = seesRivals(req, env, await me(req, env).catch(() => null));
     for (const k of ["results", "brakes"]) if (Array.isArray(data[k])) data[k] = data[k].map((x) => !x ? x : x.me ? r4.anon ? { ...x, name: "Anonymous" } : x : rivals ? x : { ...x, name: "Anonymous" });
-    return json12({ ...data, id: r4.id, alias: r4.alias, game: r4.game, shared: true });
+    return json13({ ...data, id: r4.id, alias: r4.alias, game: r4.game, shared: true });
   }
   if (p === "/season/info" && m === "GET") {
     const c = await env.DB.prepare("SELECT updated FROM season_cache WHERE k='current'").first();
     const i = await env.DB.prepare("SELECT data FROM season_chunks WHERE k='info' AND idx=0").first();
-    return json12({ updated: c ? c.updated : null, ...i ? JSON.parse(i.data) : {} });
+    return json13({ updated: c ? c.updated : null, ...i ? JSON.parse(i.data) : {} });
   }
   if (p === "/season" && m === "GET") {
     const c = await env.DB.prepare("SELECT updated, chunks FROM season_cache WHERE k='current'").first();
@@ -9768,7 +10221,7 @@ async function community(req, env, url, ctx) {
   }
   if (p === "/setups/cars" && m === "GET") {
     const r4 = await env.DB.prepare("SELECT car_path AS carPath, MAX(car) AS car, COUNT(*) AS n FROM community_setups WHERE game=?1 GROUP BY car_path ORDER BY n DESC LIMIT 500").bind(game).all();
-    return json12({ cars: r4.results || [] });
+    return json13({ cars: r4.results || [] });
   }
   if (p === "/setups" && m === "GET") {
     const car = url.searchParams.get("car") || "", track2 = (url.searchParams.get("track") || "").slice(0, 80), q2 = (url.searchParams.get("q") || "").slice(0, 60);
@@ -9777,32 +10230,32 @@ async function community(req, env, url, ctx) {
        WHERE (?1='' OR s.car_path=?1) AND (?2='' OR s.track LIKE '%'||?2||'%') AND (?3='' OR s.name LIKE '%'||?3||'%' OR s.car LIKE '%'||?3||'%' OR s.track LIKE '%'||?3||'%') AND s.game=?4
        ORDER BY s.downloads DESC, s.created DESC LIMIT 200`
     ).bind(car, track2, q2, game).all();
-    return json12({ setups: r4.results || [] });
+    return json13({ setups: r4.results || [] });
   }
   if (p.startsWith("/setups/") && p !== "/setups/mine" && m === "GET") {
     const id2 = p.slice(8);
     const s = await env.DB.prepare("SELECT s.*, u.alias FROM community_setups s JOIN community_users u ON u.id=s.user_id WHERE s.id=?1").bind(id2).first();
     if (!s) return err8("not found", 404);
     await env.DB.prepare("UPDATE community_setups SET downloads=downloads+1 WHERE id=?1").bind(id2).run();
-    return json12({ id: s.id, alias: s.alias, carPath: s.car_path, car: s.car, track: s.track, name: s.name, notes: s.notes, sha: s.sha, data: s.data });
+    return json13({ id: s.id, alias: s.alias, carPath: s.car_path, car: s.car, track: s.track, name: s.name, notes: s.notes, sha: s.sha, data: s.data });
   }
   if (p === "/preview/sample" && m === "GET") {
     const t = await pickSample(env, game);
-    return t ? new Response(t, { headers: { ...JSONH8, "cache-control": "public, max-age=600" } }) : json12({ frames: [] });
+    return t ? new Response(t, { headers: { ...JSONH8, "cache-control": "public, max-age=600" } }) : json13({ frames: [] });
   }
   let u = await me(req, env);
   if (!u) return err8("wrong or missing token", 401);
   if (p === "/guests" && m === "GET") {
     if (!u.account || !isAdmin(env, u.id)) return err8("only the admins of this server can do this", 403);
     const r4 = await env.DB.prepare("SELECT g.id, g.alias, g.created, (SELECT COUNT(*) FROM community_laps l WHERE l.user_id=g.id) AS laps, (SELECT a.display FROM guest_links gl JOIN accounts a ON a.id=gl.account_id WHERE gl.gid=g.id) AS linked FROM community_users g WHERE g.owner=?1 AND g.id LIKE 'guest-%' ORDER BY g.created DESC LIMIT 60").bind(u.id).all();
-    return json12({ guests: (r4.results || []).map((x) => ({ id: x.id, name: x.alias, laps: x.laps || 0, created: x.created, linked: x.linked || null })) });
+    return json13({ guests: (r4.results || []).map((x) => ({ id: x.id, name: x.alias, laps: x.laps || 0, created: x.created, linked: x.linked || null })) });
   }
   if (m === "POST" && (p === "/laps" || p === "/reports") && typeof body.guest === "string" && body.guest.trim()) {
     if (!u.account || !isAdmin(env, u.id)) return err8("only the admins of this server can share laps for other drivers", 403);
     const name2 = cleanAlias(body.guest);
     const had = await env.DB.prepare("SELECT id FROM community_users WHERE owner=?1 AND id LIKE 'guest-%' AND lower(alias)=lower(?2)").bind(u.id, name2).first();
     const gid = had ? had.id : "guest-" + (await sha2562(u.id + ":" + name2.toLowerCase())).slice(0, 20);
-    if (await nameTaken(env, name2, u.id)) return json12({ error: `"${name2}" is already used by another driver on Pitlane HQ, choose another name`, code: "name_taken" }, 409);
+    if (await nameTaken(env, name2, u.id)) return json13({ error: `"${name2}" is already used by another driver on Pitlane HQ, choose another name`, code: "name_taken" }, 409);
     await env.DB.prepare("INSERT INTO community_users (id, token_hash, alias, created, owner) VALUES (?1,?2,?3,?4,?5) ON CONFLICT(id) DO UPDATE SET alias=excluded.alias, owner=excluded.owner").bind(gid, await sha2562("guest:" + gid + ":" + rid7()), name2, Date.now(), u.id).run();
     const gl = await env.DB.prepare("SELECT l.account_id AS id, a.anon, a.name_kind FROM guest_links l JOIN accounts a ON a.id=l.account_id WHERE l.gid=?1").bind(gid).first();
     const to = gl ? await env.DB.prepare("SELECT id, alias, uploads_day, uploads FROM community_users WHERE id=?1").bind(gl.id).first() : null;
@@ -9819,30 +10272,30 @@ async function community(req, env, url, ctx) {
     if (!u.account || !isAdmin(env, u.id)) return err8("only the admins of this server can do this", 403);
     const from = cleanAlias(body.from || ""), to = cleanAlias(body.to || "");
     if (!from || !to) return err8("both names are needed", 400);
-    if (await nameTaken(env, to, u.id)) return json12({ error: `"${to}" is already used by another driver on Pitlane HQ, choose another name`, code: "name_taken" }, 409);
+    if (await nameTaken(env, to, u.id)) return json13({ error: `"${to}" is already used by another driver on Pitlane HQ, choose another name`, code: "name_taken" }, 409);
     const row = await env.DB.prepare("SELECT id FROM community_users WHERE owner=?1 AND id LIKE 'guest-%' AND lower(alias)=lower(?2)").bind(u.id, from).first();
     if (from.toLowerCase() !== to.toLowerCase()) {
       const clash = await env.DB.prepare("SELECT id FROM community_users WHERE owner=?1 AND id LIKE 'guest-%' AND lower(alias)=lower(?2)").bind(u.id, to).first();
-      if (clash) return json12({ error: `You already have a driver called "${to}"`, code: "name_taken" }, 409);
+      if (clash) return json13({ error: `You already have a driver called "${to}"`, code: "name_taken" }, 409);
     }
     if (row) await env.DB.prepare("UPDATE community_users SET alias=?2 WHERE id=?1").bind(row.id, to).run();
     await env.DB.prepare("UPDATE laps SET drv=?3 WHERE lower(drv)=lower(?2) AND session_id IN (SELECT id FROM sessions WHERE uploader=?1)").bind("acct:" + u.id, from, to).run().catch(() => {
     });
     await env.DB.prepare("UPDATE sessions SET drvs=(SELECT group_concat(DISTINCT drv) FROM laps WHERE session_id=sessions.id) WHERE uploader=?1 AND drvs IS NOT NULL").bind("acct:" + u.id).run().catch(() => {
     });
-    return json12({ ok: true, renamed: !!row, name: to });
+    return json13({ ok: true, renamed: !!row, name: to });
   }
   if (p === "/name-check" && m === "POST") {
     if (!u.account || !isAdmin(env, u.id)) return err8("only the admins of this server can do this", 403);
-    return json12({ free: !await nameTaken(env, cleanAlias(body.name), u.id) });
+    return json13({ free: !await nameTaken(env, cleanAlias(body.name), u.id) });
   }
   if (p === "/preview/sample" && m === "POST") {
     const r4 = await storeSample(env, u.id, body);
-    return r4.error ? err8(r4.error, r4.status) : json12(r4);
+    return r4.error ? err8(r4.error, r4.status) : json13(r4);
   }
   if (p === "/season/seen" && m === "POST") {
     const r4 = await recordSeen(env, u.id, body);
-    return r4.error ? err8(r4.error, r4.status) : json12(r4);
+    return r4.error ? err8(r4.error, r4.status) : json13(r4);
   }
   if ((p === "/season" || p === "/admin/season") && m === "POST") {
     const allowed = String(env.SEASON_UPLOADERS || env.ADMINS || "").split(",").map((x) => x.trim()).filter(Boolean);
@@ -9858,11 +10311,11 @@ async function community(req, env, url, ctx) {
       // what the admin page's Season says about it without reading the whole season
       env.DB.prepare("INSERT INTO season_chunks (k, idx, data) VALUES ('info',0,?1) ON CONFLICT(k, idx) DO UPDATE SET data=excluded.data").bind(JSON.stringify(seasonInfo(body.season, u.id)))
     ]);
-    return json12({ published: true, size: data.length });
+    return json13({ published: true, size: data.length });
   }
   if (p === "/setups/mine" && m === "GET") {
     const r4 = await env.DB.prepare("SELECT id, car_path AS carPath, car, track, name, notes, size, downloads, created FROM community_setups WHERE user_id=?1 ORDER BY created DESC").bind(u.id).all();
-    return json12({ setups: (r4.results || []).map((x) => ({ ...x, alias: u.alias, mine: true })) });
+    return json13({ setups: (r4.results || []).map((x) => ({ ...x, alias: u.alias, mine: true })) });
   }
   if (p === "/setups" && m === "POST") {
     if (typeof body.carPath !== "string" || !CAR_RE.test(body.carPath) || body.carPath.includes("..")) return err8("unknown car folder", 400);
@@ -9875,19 +10328,19 @@ async function community(req, env, url, ctx) {
     const r4 = await env.DB.prepare(
       "INSERT INTO community_setups (id, user_id, car_path, car, track, name, notes, data, sha, size, created, game) VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12) ON CONFLICT(user_id, sha) DO NOTHING"
     ).bind(id2, u.id, body.carPath, str3(body.car), str3(body.track, 80), cleanFile(body.name), str3(body.notes, 1e3), body.data, body.sha, bytes.length, Date.now(), game).run();
-    if (!r4.meta || !r4.meta.changes) return json12({ kept: "you already shared this setup" });
-    return json12({ shared: true, id: id2 });
+    if (!r4.meta || !r4.meta.changes) return json13({ kept: "you already shared this setup" });
+    return json13({ shared: true, id: id2 });
   }
   if (p.startsWith("/setups/") && m === "DELETE") {
     await env.DB.prepare("DELETE FROM community_setups WHERE id=?1 AND user_id=?2").bind(p.slice(8), u.id).run();
-    return json12({ deleted: true });
+    return json13({ deleted: true });
   }
   if (p === "/adopt" && m === "POST") {
     if (!u.account) return err8("sign in with your Pitlane HQ account", 401);
     const t = typeof body.token === "string" ? body.token.trim() : "";
     if (t.length < 20) return err8("missing token", 400);
     const d = await env.DB.prepare("SELECT id FROM community_users WHERE token_hash=?1").bind(await sha2562(t)).first();
-    if (!d || d.id === u.id || /^(o:|guest-)/.test(d.id) || await env.DB.prepare("SELECT 1 FROM accounts WHERE id=?1").bind(d.id).first()) return json12({ adopted: 0 });
+    if (!d || d.id === u.id || /^(o:|guest-)/.test(d.id) || await env.DB.prepare("SELECT 1 FROM accounts WHERE id=?1").bind(d.id).first()) return json13({ adopted: 0 });
     const laps = (await env.DB.prepare("SELECT id, car_id, track_id, time, game, trace IS NOT NULL AS traced FROM community_laps WHERE user_id=?1").bind(d.id).all()).results || [];
     const q2 = [], combos2 = /* @__PURE__ */ new Set();
     for (const l of laps) {
@@ -9914,7 +10367,7 @@ async function community(req, env, url, ctx) {
       const [g, tr2, ca] = c.split("|");
       await markModel(env, g, +tr2, +ca);
     }
-    return json12({ adopted: laps.length });
+    return json13({ adopted: laps.length });
   }
   if (p === "/rival-names" && m === "POST") {
     if (!u.account) return err8("sign in with your Pitlane HQ account", 401);
@@ -9933,13 +10386,13 @@ async function community(req, env, url, ctx) {
       await env.DB.prepare("UPDATE community_users SET alias=?2 WHERE id=?1 AND (alias='Anonymous' OR alias=?3)").bind(ids[0], full, short).run();
       named++;
     }
-    return json12({ named });
+    return json13({ named });
   }
   if (p === "/link-driver" && m === "POST") {
     if (!u.account) return err8("sign in with your Pitlane HQ account", 401);
     if (typeof body.key !== "string" || !/^[0-9a-f]{16,64}$/i.test(body.key)) return err8("missing key", 400);
     const r4 = await linkDriver(env, u.id, await otherId(env, body.key), game);
-    return r4.error ? err8(r4.error, r4.status) : json12(r4);
+    return r4.error ? err8(r4.error, r4.status) : json13(r4);
   }
   if (p === "/lics" && m === "POST") {
     if (!u.account) return err8("sign in with your Pitlane HQ account", 401);
@@ -9959,12 +10412,12 @@ async function community(req, env, url, ctx) {
     }
     if (!n) return err8("no license classes", 400);
     await env.DB.prepare("UPDATE community_users SET lics=?2 WHERE id=?1").bind(u.id, JSON.stringify(out)).run();
-    return json12({ ok: true, lics: out });
+    return json13({ ok: true, lics: out });
   }
   if (p === "/me" && m === "POST") {
     if (u.account) return err8("change your public name in your account", 400);
     await env.DB.prepare("UPDATE community_users SET alias=?2 WHERE id=?1").bind(u.id, cleanAlias(body.alias)).run();
-    return json12({ ok: true });
+    return json13({ ok: true });
   }
   if (p === "/me" && m === "DELETE") {
     await env.DB.batch([
@@ -9973,7 +10426,7 @@ async function community(req, env, url, ctx) {
       env.DB.prepare("DELETE FROM community_setups WHERE user_id=?1").bind(u.id),
       ...u.account ? [] : [env.DB.prepare("DELETE FROM community_users WHERE id=?1").bind(u.id)]
     ]);
-    return json12({ deleted: true });
+    return json13({ deleted: true });
   }
   if (p === "/share-lap" && m === "POST") {
     if (!u.account) return err8("sign in with your Pitlane HQ account", 401);
@@ -9987,13 +10440,13 @@ async function community(req, env, url, ctx) {
     const { trackId, carId } = await comboIds(env, s, name2, g, u.id, body);
     const r4 = await keepBestLap(env, u.id, { game: g, carId, trackId, car: s.car, track: name2, time: lap.time, sectors: lap.sectors, trace: lap.trace, anon: !!body.anon, shown: shownAs, count: /* @__PURE__ */ __name(() => countUpload(env, u), "count"), ctx });
     if (r4.limit) return err8("too many uploads today", 429);
-    if (r4.kept) return json12({ kept: "your faster lap is already shared", traced: r4.traced });
-    return json12({ shared: true, traced: r4.traced });
+    if (r4.kept) return json13({ kept: "your faster lap is already shared", traced: r4.traced });
+    return json13({ shared: true, traced: r4.traced });
   }
   if (p === "/laps" && m === "POST") {
     const carId = int3(body.carId), trackId = int3(body.trackId), time = num2(body.time);
     if (!carId || !trackId || !time || time <= 10 || time > 3600) return err8("lap needs carId, trackId and time", 400);
-    if (isTestDrive(body.kind)) return json12({ kept: "laps of a test drive are not shared" });
+    if (isTestDrive(body.kind)) return json13({ kept: "laps of a test drive are not shared" });
     const sectors = Array.isArray(body.sectors) ? JSON.stringify(body.sectors.filter((x) => typeof x === "number").slice(0, 10)) : null;
     if (typeof body.other === "string" && /^[0-9a-f]{16,64}$/i.test(body.other)) {
       if (!u.account) return err8("sign in with your Pitlane HQ account to share other drivers' times", 401);
@@ -10004,25 +10457,25 @@ async function community(req, env, url, ctx) {
       if (link) {
         const r6 = await keepBestLap(env, link.id, { game, carId, trackId, car: body.car, track: body.track, time, sectors, trace: await sealData(env, plain2), len: traceLen(body.trace), cls: body.cls, wet: wetOf(body.trace && body.trace.f), anon: !!link.anon, shown: link.name_kind === "iracing" ? "iracing" : "nick", lic: body.lic, cat: body.cat, official: body.official, ai: body.ai === true, count: /* @__PURE__ */ __name(() => countUpload(env, u), "count"), ctx });
         if (r6.limit) return err8("too many uploads today", 429);
-        return json12(r6.kept ? { kept: "a faster lap of this driver is already shared" } : { shared: true });
+        return json13(r6.kept ? { kept: "a faster lap of this driver is already shared" } : { shared: true });
       }
       const short = driverName(body.name || body.short);
       await env.DB.prepare("INSERT INTO community_users (id, token_hash, alias, created, owner) VALUES (?1,?2,?5,?3,?4) ON CONFLICT(id) DO UPDATE SET alias=excluded.alias WHERE excluded.alias<>'Anonymous'").bind(oid, "other:" + oid, Date.now(), u.id, short || "Anonymous").run();
       const r5 = await keepBestLap(env, oid, { game, carId, trackId, car: body.car, track: body.track, time, sectors, trace: await sealData(env, plain2), len: traceLen(body.trace), cls: body.cls, wet: wetOf(body.trace && body.trace.f), anon: true, shown: "nick", lic: body.lic, cat: body.cat, official: body.official, ai: body.ai === true, count: /* @__PURE__ */ __name(() => countUpload(env, u), "count") });
       if (r5.limit) return err8("too many uploads today", 429);
-      return json12(r5.kept ? { kept: "a faster lap of this driver is already shared" } : { shared: true });
+      return json13(r5.kept ? { kept: "a faster lap of this driver is already shared" } : { shared: true });
     }
     const plainTrace = body.trace ? JSON.stringify(body.trace) : null;
     if (plainTrace && plainTrace.length > 9e5) return err8("lap trace too large", 400);
     const trace = await sealData(env, plainTrace);
     const r4 = await keepBestLap(env, u.id, { game, carId, trackId, car: body.car, track: body.track, time, sectors, trace, len: traceLen(body.trace), cls: body.cls, wet: wetOf(body.trace && body.trace.f), anon: !!body.anon, shown: shownAs, lic: body.lic, cat: body.cat, official: body.official, ai: body.ai === true, count: /* @__PURE__ */ __name(() => countUpload(env, u), "count"), ctx });
     if (r4.limit) return err8("too many uploads today", 429);
-    return json12(r4.kept ? { kept: "your faster lap is already shared" } : { shared: true });
+    return json13(r4.kept ? { kept: "your faster lap is already shared" } : { shared: true });
   }
   if (p === "/trackinfo" && m === "POST") {
     const trackId = int3(body.trackId);
     if (!trackId || !(Number.isInteger(body.nturns) && body.nturns >= 1 && body.nturns <= 60)) return err8("trackInfo needs trackId and nturns", 400);
-    return json12({ ok: true, changed: await noteTurnCount(env, game, trackId, str3(body.track), body.nturns) });
+    return json13({ ok: true, changed: await noteTurnCount(env, game, trackId, str3(body.track), body.nturns) });
   }
   if (p === "/trackmaps" && m === "POST") {
     const trackId = int3(body.trackId), time = num2(body.time), n = int3(body.n);
@@ -10037,14 +10490,14 @@ async function community(req, env, url, ctx) {
     const g = Array.isArray(body.g) && body.g.length === 2 && body.g.every((v) => typeof v === "number" && isFinite(v)) && Math.abs(body.g[0]) <= 90 && Math.abs(body.g[1]) <= 180 ? body.g.map((v) => Math.round(v * 1e5) / 1e5) : null;
     const r22 = /* @__PURE__ */ __name((v) => Math.round(v * 10) / 10, "r2");
     const old = await env.DB.prepare("SELECT time, geo FROM track_maps WHERE game=?1 AND track_id=?2").bind(game, trackId).first();
-    if (old && old.geo && !g) return json12({ kept: "a layout from the game's position already draws this track" });
-    if (old && old.time <= time && !(g && !old.geo)) return json12({ kept: "a faster clean lap already drew this track" });
+    if (old && old.geo && !g) return json13({ kept: "a layout from the game's position already draws this track" });
+    if (old && old.time <= time && !(g && !old.geo)) return json13({ kept: "a faster clean lap already drew this track" });
     if (!await countUpload(env, u)) return err8("too many uploads today", 429);
     await env.DB.prepare(
       `INSERT INTO track_maps (game, track_id, track, n, len, pts, time, user_id, created, geo) VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10)
        ON CONFLICT(game, track_id) DO UPDATE SET track=excluded.track, n=excluded.n, len=excluded.len, pts=excluded.pts, time=excluded.time, user_id=excluded.user_id, created=excluded.created, geo=excluded.geo`
     ).bind(game, trackId, str3(body.track), n, num2(body.len), JSON.stringify({ x: x.map(r22), y: y.map(r22) }), time, u.id, Date.now(), g ? JSON.stringify(g) : null).run();
-    return json12({ shared: true });
+    return json13({ shared: true });
   }
   if (p === "/pitlane" && m === "POST") {
     const trackId = int3(body.trackId), n = int3(body.n), pts = body.pts;
@@ -10057,7 +10510,7 @@ async function community(req, env, url, ctx) {
     for (const [i, v] of pts) keep[i] = keep[i] == null ? v : Math.round((keep[i] * 0.6 + v * 0.4) * 10) / 10;
     await env.DB.prepare(`INSERT INTO track_pits (game, track_id, n, pts, updated) VALUES (?1,?2,?3,?4,?5)
        ON CONFLICT(game, track_id) DO UPDATE SET n=excluded.n, pts=excluded.pts, updated=excluded.updated`).bind(game, trackId, n, JSON.stringify(keep), Date.now()).run();
-    return json12({ shared: true, points: Object.keys(keep).length });
+    return json13({ shared: true, points: Object.keys(keep).length });
   }
   if (p === "/reports" && m === "POST") {
     const data = JSON.stringify(body.report || {});
@@ -10065,7 +10518,7 @@ async function community(req, env, url, ctx) {
     if (!await countUpload(env, u)) return err8("too many uploads today", 429);
     const r4 = body.report;
     await env.DB.prepare("INSERT INTO community_reports (id, user_id, car_id, car, track_id, track, data, created, anon, game, finish, field, best, shown) VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14)").bind(rid7(), u.id, int3(r4.carId), str3(r4.car), int3(r4.trackId), str3(r4.track), await sealData(env, data), Date.now(), body.anon ? 1 : 0, gameOf(body.game || r4.game), int3(r4.finish), int3(r4.field), num2(r4.best), shownAs).run();
-    return json12({ shared: true });
+    return json13({ shared: true });
   }
   return err8("not found", 404);
 }
@@ -10078,8 +10531,8 @@ __name(seasonInfo, "seasonInfo");
 
 // src/stripe.js
 var JSONH9 = { "content-type": "application/json" };
-var json13 = /* @__PURE__ */ __name((o, s = 200) => new Response(JSON.stringify(o), { status: s, headers: JSONH9 }), "json");
-var err9 = /* @__PURE__ */ __name((e, s = 400) => json13({ error: e }, s), "err");
+var json14 = /* @__PURE__ */ __name((o, s = 200) => new Response(JSON.stringify(o), { status: s, headers: JSONH9 }), "json");
+var err9 = /* @__PURE__ */ __name((e, s = 400) => json14({ error: e }, s), "err");
 var DAY2 = 864e5;
 var GRACE = 3 * DAY2;
 var FIRST = 35 * DAY2;
@@ -10139,52 +10592,58 @@ async function stripeWebhook(req, env, emailHash2, opts = {}) {
     const email = String(o.customer_details && o.customer_details.email || o.customer_email || "").trim().toLowerCase();
     const eh = email ? await emailHash2(env, email) : null;
     if (support) {
-      if (o.payment_status !== "paid") return json13({ ok: true, skipped: "not paid yet" });
+      if (o.payment_status !== "paid") return json14({ ok: true, skipped: "not paid yet" });
       if (!accountId && eh) {
         const a = await env.DB.prepare("SELECT id FROM accounts WHERE email_hash=?1").bind(eh).first().catch(() => null);
         if (a) accountId = a.id;
       }
-      await env.DB.prepare("INSERT INTO pro_orders (id, account_id, email_hash, kind, status, until, at) VALUES (?1,?2,?3,'supporter','on',0,?4) ON CONFLICT(id) DO NOTHING").bind(donOrder(o.id), accountId, eh, now).run();
+      const pi = typeof o.payment_intent === "string" ? o.payment_intent : o.payment_intent && o.payment_intent.id || null;
+      const amount = Number.isFinite(+o.amount_total) && o.amount_total !== null ? Math.round(+o.amount_total) : null;
+      const cur = /^[a-z]{3}$/i.test(String(o.currency || "")) ? String(o.currency).toLowerCase() : null;
+      await env.DB.prepare("INSERT INTO pro_orders (id, account_id, email_hash, kind, status, until, at, amount, currency, ref) VALUES (?1,?2,?3,'supporter','on',0,?4,?5,?6,?7) ON CONFLICT(id) DO NOTHING").bind(donOrder(o.id), accountId, eh, now, amount, cur, pi).run();
       if (accountId) await env.DB.prepare("UPDATE accounts SET supporter=1, supporter_src=COALESCE(supporter_src,'stripe') WHERE id=?1").bind(accountId).run();
-      return json13({ ok: true, supporter: !!accountId });
+      return json14({ ok: true, supporter: !!accountId });
     }
     if (o.mode === "subscription" && o.subscription) {
       const id2 = subOrder(typeof o.subscription === "string" ? o.subscription : o.subscription.id);
       const had = await orderRow(env, id2);
       if (had && had.status === "off") {
         await setPro(env, { accountId, eh, kind: "subscription", until: had.until, on: false, order: id2 });
-        return json13({ ok: true, subscription: false });
+        return json14({ ok: true, subscription: false });
       }
       const until = Math.max(had && had.until || 0, now + FIRST);
       await setPro(env, { accountId, eh, kind: "subscription", until, on: true, order: id2 });
-      return json13({ ok: true, subscription: true });
+      return json14({ ok: true, subscription: true });
     }
     if (o.mode === "payment") {
-      if (o.payment_status !== "paid") return json13({ ok: true, skipped: "not paid yet" });
+      if (o.payment_status !== "paid") return json14({ ok: true, skipped: "not paid yet" });
       const pi = typeof o.payment_intent === "string" ? o.payment_intent : o.payment_intent && o.payment_intent.id || o.id;
       await setPro(env, { accountId, eh, kind: "lifetime", until: 0, on: true, order: payOrder(pi) });
-      return json13({ ok: true, lifetime: true });
+      return json14({ ok: true, lifetime: true });
     }
-    return json13({ ok: true, skipped: "mode " + o.mode });
+    return json14({ ok: true, skipped: "mode " + o.mode });
   }
   if (/^customer\.subscription\.(created|updated|deleted)$/.test(ev) && o.id) {
-    if (o.status === "incomplete") return json13({ ok: true, skipped: "incomplete" });
+    if (o.status === "incomplete") return json14({ ok: true, skipped: "incomplete" });
     const id2 = subOrder(o.id), had = await orderRow(env, id2);
     const end = o.current_period_end || o.items && o.items.data && o.items.data[0] && o.items.data[0].current_period_end || 0;
     const live2 = ev !== "customer.subscription.deleted" && ["active", "trialing", "past_due"].includes(o.status);
     const until = end ? end * 1e3 + GRACE : had && had.until || now + FIRST;
     const on = live2 && until > now;
     await setPro(env, { accountId: had && had.account_id || null, eh: had && had.email_hash || null, kind: "subscription", until: on ? until : now, on, order: id2 });
-    return json13({ ok: true, subscription: on });
+    return json14({ ok: true, subscription: on });
   }
   if (ev === "charge.refunded" && o.refunded && o.payment_intent) {
     const pi = typeof o.payment_intent === "string" ? o.payment_intent : o.payment_intent.id;
     const had = await orderRow(env, payOrder(pi));
-    if (!had || had.kind !== "lifetime") return json13({ ok: true, skipped: "not a lifetime payment" });
+    if (!had || had.kind !== "lifetime") {
+      const r4 = await env.DB.prepare("UPDATE pro_orders SET status='refunded' WHERE kind='supporter' AND ref=?1").bind(pi).run().catch(() => null);
+      return json14({ ok: true, skipped: r4 && r4.meta && r4.meta.changes ? "donation refunded" : "not a lifetime payment" });
+    }
     await setPro(env, { accountId: had.account_id, eh: had.email_hash, kind: "lifetime", until: 0, on: false, order: payOrder(pi) });
-    return json13({ ok: true, lifetime: false });
+    return json14({ ok: true, lifetime: false });
   }
-  return json13({ ok: true, skipped: ev });
+  return json14({ ok: true, skipped: ev });
 }
 __name(stripeWebhook, "stripeWebhook");
 
@@ -11202,9 +11661,9 @@ var GUIDES = { en: "Guides", es: "Gu\xEDas", pt: "Guias" };
 
 // src/seo.js
 var SITE5 = "https://pitlanehq.app";
-var SEO_VER = "16";
+var SEO_VER = "17";
 var SEO_DATE = "2026-11-01";
-var esc4 = /* @__PURE__ */ __name((s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]), "esc");
+var esc5 = /* @__PURE__ */ __name((s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]), "esc");
 var slug2 = /* @__PURE__ */ __name((s) => String(s || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 80), "slug");
 var fmt2 = /* @__PURE__ */ __name((t) => {
   if (!(t > 0)) return "\u2013";
@@ -11212,7 +11671,7 @@ var fmt2 = /* @__PURE__ */ __name((t) => {
   return (m ? m + ":" + (s < 10 ? "0" : "") : "") + s.toFixed(3);
 }, "fmt");
 var cap = /* @__PURE__ */ __name((s) => String(s || "").charAt(0).toUpperCase() + String(s || "").slice(1), "cap");
-var day = /* @__PURE__ */ __name((v) => v > 0 ? new Date(v).toISOString().slice(0, 10) : "", "day");
+var day2 = /* @__PURE__ */ __name((v) => v > 0 ? new Date(v).toISOString().slice(0, 10) : "", "day");
 var later2 = /* @__PURE__ */ __name((...d) => d.filter(Boolean).sort().pop() || SEO_DATE, "later");
 var fix2 = /* @__PURE__ */ __name((s) => {
   s = String(s || "");
@@ -11407,7 +11866,7 @@ var SHOT = {
 var imgSrc = /* @__PURE__ */ __name((l, f) => `/landing/${l}/${f}`, "imgSrc");
 var img = /* @__PURE__ */ __name((l, f, alt) => {
   const [w, h] = SHOT[f] || [1200, 600];
-  return `<img src="${imgSrc(l, f)}" alt="${esc4(alt)}" width="${w}" height="${h}" loading="lazy" decoding="async">`;
+  return `<img src="${imgSrc(l, f)}" alt="${esc5(alt)}" width="${w}" height="${h}" loading="lazy" decoding="async">`;
 }, "img");
 var SHOT_ALT = {
   en: { "coach.jpg": "The Pitlane HQ coach", "compare.jpg": "Two laps compared in Pitlane HQ", "laps.jpg": "The laps of a session in Pitlane HQ", "race.jpg": "A race summary in Pitlane HQ", "m-live.png": "Live telemetry on the phone", "m-race.png": "A race summary on the phone", "m-analysis-0.png": "The laps on the phone" },
@@ -11415,7 +11874,7 @@ var SHOT_ALT = {
   pt: { "coach.jpg": "O coach do Pitlane HQ", "compare.jpg": "Duas voltas comparadas no Pitlane HQ", "laps.jpg": "As voltas de uma sess\xE3o no Pitlane HQ", "race.jpg": "Um resumo de corrida no Pitlane HQ", "m-live.png": "Telemetria ao vivo no celular", "m-race.png": "Um resumo de corrida no celular", "m-analysis-0.png": "As voltas no celular" }
 };
 var shot = /* @__PURE__ */ __name((l, f) => `<figure class="shot">${img(l, f, SHOT_ALT[l][f] || "Pitlane HQ")}</figure>`, "shot");
-var phones = /* @__PURE__ */ __name((l, list) => `<div class="phs">${list.map((f) => `<figure>${img(l, f, SHOT_ALT[l][f] || "Pitlane HQ")}<figcaption>${esc4(SHOT_ALT[l][f] || "")}</figcaption></figure>`).join("")}</div>`, "phones");
+var phones = /* @__PURE__ */ __name((l, list) => `<div class="phs">${list.map((f) => `<figure>${img(l, f, SHOT_ALT[l][f] || "Pitlane HQ")}<figcaption>${esc5(SHOT_ALT[l][f] || "")}</figcaption></figure>`).join("")}</div>`, "phones");
 var HAS = { lmuLeagues: false, lmuRecords: false };
 var HAS_MEMO = /* @__PURE__ */ new WeakMap();
 var DC = "";
@@ -11454,32 +11913,32 @@ function page3(l, { title, desc, path, alts, body, ld, noindex, game = "iracing"
   const others = alts ? LANGS2.filter((k) => k !== l).map((k) => `<a href="${alts[k]}" hreflang="${HLANG[k]}" lang="${HLANG[k]}">${NAME[k]}</a>`).join("") : "";
   const og = `${SITE5}/og${l === "en" ? "" : "-" + l}.png`;
   return `<!doctype html><html lang="${HLANG[l]}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>${esc4(title)}</title><meta name="description" content="${esc4(desc)}">${path ? `<link rel="canonical" href="${SITE5}${path}">` : ""}${noindex ? '<meta name="robots" content="noindex,follow">' : '<meta name="robots" content="index,follow,max-image-preview:large">'}
+<title>${esc5(title)}</title><meta name="description" content="${esc5(desc)}">${path ? `<link rel="canonical" href="${SITE5}${path}">` : ""}${noindex ? '<meta name="robots" content="noindex,follow">' : '<meta name="robots" content="index,follow,max-image-preview:large">'}
 ${hl}
-<meta property="og:type" content="website"><meta property="og:site_name" content="Pitlane HQ"><meta property="og:locale" content="${LOCALE[l]}"><meta property="og:title" content="${esc4(title)}"><meta property="og:description" content="${esc4(desc)}">${path ? `<meta property="og:url" content="${SITE5}${path}">` : ""}<meta property="og:image" content="${og}"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta property="og:image:alt" content="Pitlane HQ">
-<meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="${esc4(title)}"><meta name="twitter:description" content="${esc4(desc)}"><meta name="twitter:image" content="${og}">
+<meta property="og:type" content="website"><meta property="og:site_name" content="Pitlane HQ"><meta property="og:locale" content="${LOCALE[l]}"><meta property="og:title" content="${esc5(title)}"><meta property="og:description" content="${esc5(desc)}">${path ? `<meta property="og:url" content="${SITE5}${path}">` : ""}<meta property="og:image" content="${og}"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta property="og:image:alt" content="Pitlane HQ">
+<meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="${esc5(title)}"><meta name="twitter:description" content="${esc5(desc)}"><meta name="twitter:image" content="${og}">
 <meta name="theme-color" content="#11151b"><link rel="icon" href="/favicon.ico" sizes="any"><link rel="icon" href="/logo.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="/icon-180.png">
 <style>${CSS}</style><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="${FONTS}" media="print" onload="this.media='all'"><noscript><link rel="stylesheet" href="${FONTS}"></noscript>
 ${ld ? `<script type="application/ld+json">${JSON.stringify(ld).replace(/</g, "\\u003c")}<\/script>` : ""}</head><body>
-<header><div class="w"><a class="b" href="/">${LOGO}Pitlane HQ</a><nav><a href="${(game === "lmu" ? LANDL : LAND)[l].path}">${esc4(t.tel[game])}</a><a href="${(game === "lmu" ? OVLL : OVL)[l].path}">${esc4(t.ov)}</a><a href="${lg}">${esc4(t.lgs)}</a><a href="${rc}">${esc4(t.rec)}</a><a href="${(other === "lmu" ? LANDL : LAND)[l].path}">${esc4(GNAME[other])}</a><a href="/downloads">${esc4(t.dl)}</a><a href="/">${esc4(t.app)}</a>${others}</nav></div></header>
+<header><div class="w"><a class="b" href="/">${LOGO}Pitlane HQ</a><nav><a href="${(game === "lmu" ? LANDL : LAND)[l].path}">${esc5(t.tel[game])}</a><a href="${(game === "lmu" ? OVLL : OVL)[l].path}">${esc5(t.ov)}</a><a href="${lg}">${esc5(t.lgs)}</a><a href="${rc}">${esc5(t.rec)}</a><a href="${(other === "lmu" ? LANDL : LAND)[l].path}">${esc5(GNAME[other])}</a><a href="/downloads">${esc5(t.dl)}</a><a href="/">${esc5(t.app)}</a>${others}</nav></div></header>
 <main class="w">${body}${path && !noindex ? whatIs(l) : ""}</main>
-<footer><div class="w"><p class="m">${esc4(GUIDES[l])} \xB7 iRacing \xB7 ${iracingLinks(l).map(([p, h]) => `<a href="${p}">${esc4(h)}</a>`).join(" \xB7 ")}</p><p class="m">${esc4(t.lmuH)} \xB7 ${lmuLinks(l).map(([p, h]) => `<a href="${p}">${esc4(h)}</a>`).join(" \xB7 ")}</p>Pitlane HQ \xB7 ${esc4(t.free)} \xB7 <a href="/downloads">${esc4(t.dl)}</a> \xB7 <a href="${PRICE[l].path}">${esc4(PRICE[l].h1)}</a> \xB7 <a href="mailto:support@pitlanehq.app">support@pitlanehq.app</a> \xB7 ${DC ? `<a href="${esc4(DC)}" rel="noopener">Discord</a> \xB7 ` : ""}${LANGS2.map((k) => `<a href="${LAND[k].path}" hreflang="${HLANG[k]}">${NAME[k]}</a>`).join(" \xB7 ")}</div></footer>${VISIT_JS}</body></html>`;
+<footer><div class="w"><p class="m">${esc5(GUIDES[l])} \xB7 iRacing \xB7 ${iracingLinks(l).map(([p, h]) => `<a href="${p}">${esc5(h)}</a>`).join(" \xB7 ")}</p><p class="m">${esc5(t.lmuH)} \xB7 ${lmuLinks(l).map(([p, h]) => `<a href="${p}">${esc5(h)}</a>`).join(" \xB7 ")}</p>Pitlane HQ \xB7 ${esc5(t.free)} \xB7 <a href="/downloads">${esc5(t.dl)}</a> \xB7 <a href="${MS_STORE}" rel="noopener">Microsoft Store</a> \xB7 <a href="${PRICE[l].path}">${esc5(PRICE[l].h1)}</a> \xB7 <a href="mailto:support@pitlanehq.app">support@pitlanehq.app</a> \xB7 ${DC ? `<a href="${esc5(DC)}" rel="noopener">Discord</a> \xB7 ` : ""}${LANGS2.map((k) => `<a href="${LAND[k].path}" hreflang="${HLANG[k]}">${NAME[k]}</a>`).join(" \xB7 ")}</div></footer>${VISIT_JS}</body></html>`;
 }
 __name(page3, "page");
 var WHAT = {
   en: { t: "What is Pitlane HQ", p: [
     "Pitlane HQ (also written PitlaneHQ) is a free sim racing telemetry app for iRacing and Le Mans Ultimate. It is in beta, and everything in it is free during the beta.",
-    "Pitlane HQ Agent runs on the Windows PC where you race. It records every lap by itself and draws overlays on top of the game, also in VR. The web app and the Android app show your laps with a lap analyzer, lap comparison, sectors and braking points, and a coach that learns from real laps, shows corner by corner where you lose time and gives a plan marked on the track map.",
+    "Pitlane HQ Agent runs on the Windows PC where you race, and it is also on the Microsoft Store. It records every lap by itself and draws overlays on top of the game, also in VR. The web app and the Android app show your laps with a lap analyzer, lap comparison, sectors and braking points, and a coach that learns from real laps, shows corner by corner where you lose time and gives a plan marked on the track map.",
     "Every lap syncs to your account with your whole history. Pitlane HQ also has live telemetry on your phone, race summaries with the fuel of each stint, leaderboards by car and track, friends, leagues and a Discord bot."
   ] },
   es: { t: "Qu\xE9 es Pitlane HQ", p: [
     "Pitlane HQ (tambi\xE9n escrito PitlaneHQ) es una app gratis de telemetr\xEDa para sim racing en iRacing y Le Mans Ultimate. Est\xE1 en beta, y durante la beta todo es gratis.",
-    "Pitlane HQ Agent funciona en el PC con Windows donde corres. Graba cada vuelta solo y dibuja overlays encima del juego, tambi\xE9n en VR. La app web y la app de Android te ense\xF1an tus vueltas con un analizador de vueltas, comparaci\xF3n de vueltas, sectores y puntos de frenada, y un coach que aprende de vueltas reales, te ense\xF1a curva a curva d\xF3nde pierdes tiempo y te da un plan marcado en el mapa.",
+    "Pitlane HQ Agent funciona en el PC con Windows donde corres, y tambi\xE9n est\xE1 en la Microsoft Store. Graba cada vuelta solo y dibuja overlays encima del juego, tambi\xE9n en VR. La app web y la app de Android te ense\xF1an tus vueltas con un analizador de vueltas, comparaci\xF3n de vueltas, sectores y puntos de frenada, y un coach que aprende de vueltas reales, te ense\xF1a curva a curva d\xF3nde pierdes tiempo y te da un plan marcado en el mapa.",
     "Cada vuelta se sincroniza con tu cuenta, con todo tu historial. Pitlane HQ tambi\xE9n tiene telemetr\xEDa en vivo en el m\xF3vil, res\xFAmenes de carrera con el combustible de cada stint, clasificaciones por coche y circuito, amigos, ligas y un bot de Discord."
   ] },
   pt: { t: "O que \xE9 o Pitlane HQ", p: [
     "O Pitlane HQ (tamb\xE9m escrito PitlaneHQ) \xE9 um app gr\xE1tis de telemetria para sim racing no iRacing e no Le Mans Ultimate. Ele est\xE1 em beta, e durante a beta tudo \xE9 gr\xE1tis.",
-    "O Pitlane HQ Agent roda no PC com Windows onde voc\xEA corre. Ele grava cada volta sozinho e desenha overlays sobre o jogo, tamb\xE9m em VR. O app web e o app de Android mostram suas voltas com um analisador de voltas, compara\xE7\xE3o de voltas, setores e pontos de frenagem, e um coach que aprende com voltas reais, mostra curva a curva onde voc\xEA perde tempo e d\xE1 um plano marcado no mapa da pista.",
+    "O Pitlane HQ Agent roda no PC com Windows onde voc\xEA corre, e tamb\xE9m est\xE1 na Microsoft Store. Ele grava cada volta sozinho e desenha overlays sobre o jogo, tamb\xE9m em VR. O app web e o app de Android mostram suas voltas com um analisador de voltas, compara\xE7\xE3o de voltas, setores e pontos de frenagem, e um coach que aprende com voltas reais, mostra curva a curva onde voc\xEA perde tempo e d\xE1 um plano marcado no mapa da pista.",
     "Cada volta sincroniza com a sua conta, com todo o seu hist\xF3rico. O Pitlane HQ tamb\xE9m tem telemetria ao vivo no celular, resumos de corrida com o combust\xEDvel de cada stint, classifica\xE7\xF5es por carro e pista, amigos, ligas e um bot de Discord."
   ] }
 };
@@ -11504,7 +11963,7 @@ var DCW = {
   }
 };
 var dcFaq = /* @__PURE__ */ __name((l) => DC ? [[DCW[l].q, DCW[l].ans + " " + DC]] : [], "dcFaq");
-var whatIs = /* @__PURE__ */ __name((l) => `<section class="x" id="what"><h2>${esc4(WHAT[l].t)}</h2>${WHAT[l].p.map((x) => `<p>${esc4(x)}</p>`).join("")}${DC ? `<p>${esc4(DCW[l].p)} <a href="${esc4(DC)}" rel="noopener">${esc4(DCW[l].a)} \u2192</a></p>` : ""}</section>`, "whatIs");
+var whatIs = /* @__PURE__ */ __name((l) => `<section class="x" id="what"><h2>${esc5(WHAT[l].t)}</h2>${WHAT[l].p.map((x) => `<p>${esc5(x)}</p>`).join("")}${DC ? `<p>${esc5(DCW[l].p)} <a href="${esc5(DC)}" rel="noopener">${esc5(DCW[l].a)} \u2192</a></p>` : ""}</section>`, "whatIs");
 var webPageLd = /* @__PURE__ */ __name((l, path, name2, description, mod) => ({
   "@context": "https://schema.org",
   "@type": "WebPage",
@@ -11519,19 +11978,19 @@ var webPageLd = /* @__PURE__ */ __name((l, path, name2, description, mod) => ({
 }), "webPageLd");
 var START = {
   en: { t: "How to start", name: /* @__PURE__ */ __name((gn) => `How to record your ${gn} telemetry with Pitlane HQ`, "name"), steps: /* @__PURE__ */ __name((gn) => [
-    "Download Pitlane HQ Agent and install it on the Windows PC where you race.",
+    "Download Pitlane HQ Agent from pitlanehq.app or the Microsoft Store and install it on the Windows PC where you race.",
     "Open it and sign in, or create a free account.",
     `Drive in ${gn}. Every lap is saved by itself.`,
     "Open Analysis in the app, on the web or on your phone, to see where you lose time."
   ], "steps") },
   es: { t: "C\xF3mo empezar", name: /* @__PURE__ */ __name((gn) => `C\xF3mo grabar tu telemetr\xEDa de ${gn} con Pitlane HQ`, "name"), steps: /* @__PURE__ */ __name((gn) => [
-    "Descarga Pitlane HQ Agent e inst\xE1lalo en el PC con Windows donde corres.",
+    "Descarga Pitlane HQ Agent desde pitlanehq.app o la Microsoft Store e inst\xE1lalo en el PC con Windows donde corres.",
     "\xC1brelo e inicia sesi\xF3n, o crea una cuenta gratis.",
     `Conduce en ${gn}. Cada vuelta se guarda sola.`,
     "Abre An\xE1lisis en la app, en la web o en el m\xF3vil para ver d\xF3nde pierdes tiempo."
   ], "steps") },
   pt: { t: "Como come\xE7ar", name: /* @__PURE__ */ __name((gn) => `Como gravar sua telemetria do ${gn} com o Pitlane HQ`, "name"), steps: /* @__PURE__ */ __name((gn) => [
-    "Baixe o Pitlane HQ Agent e instale no PC com Windows onde voc\xEA corre.",
+    "Baixe o Pitlane HQ Agent em pitlanehq.app ou na Microsoft Store e instale no PC com Windows onde voc\xEA corre.",
     "Abra e entre na sua conta, ou crie uma conta gr\xE1tis.",
     `Pilote no ${gn}. Cada volta \xE9 salva sozinha.`,
     "Abra An\xE1lise no app, na web ou no celular para ver onde voc\xEA perde tempo."
@@ -11564,6 +12023,8 @@ var appLd = /* @__PURE__ */ __name((l, desc, shots, features) => ({
   ...shots && shots.length ? { screenshot: shots.map((f) => ({ "@type": "ImageObject", url: SITE5 + imgSrc(l, f), width: (SHOT[f] || [])[0], height: (SHOT[f] || [])[1] })) } : {},
   ...features && features.length ? { featureList: features } : {},
   downloadUrl: SITE5 + "/downloads",
+  installUrl: MS_STORE,
+  sameAs: [MS_STORE],
   isAccessibleForFree: true,
   offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
   publisher: { "@id": SITE5 + "/#org" }
@@ -11583,7 +12044,7 @@ var etagOf = /* @__PURE__ */ __name((s) => {
 var html = /* @__PURE__ */ __name((s, cache3 = 600, status = 200) => new Response(s, { status, headers: { "content-type": "text/html; charset=utf-8", "cache-control": `public, max-age=${cache3}, stale-while-revalidate=86400`, etag: etagOf(s), "x-content-type-options": "nosniff" } }), "html");
 var cross = /* @__PURE__ */ __name((l, game) => {
   const o = game === "lmu" ? LAND[l] : LANDL[l];
-  return `<p class="x">${esc4(T3[l].other[game])} <a href="${o.path}">${esc4(o.h1)} \u2192</a></p>`;
+  return `<p class="x">${esc5(T3[l].other[game])} <a href="${o.path}">${esc5(o.h1)} \u2192</a></p>`;
 }, "cross");
 var LAND = {
   en: {
@@ -11880,15 +12341,15 @@ var OVLL_ALTS = altsOf(OVLL);
 function overlaysPage(l, game) {
   const O = (game === "lmu" ? OVLL : OVL)[l], W2 = OVW[l], L = (game === "lmu" ? LANDL : LAND)[l];
   const shots = OV_IMGS[l];
-  const body = `<h1>${esc4(O.h1)}</h1><p class="lead">${esc4(O.lead)}</p>
-<div class="cta"><a class="btn p" href="/dl/PitlaneHQ-Setup.exe">${esc4(L.dl)}</a><a class="btn" href="${L.path}">${esc4(T3[l].tel[game])}</a></div>
-<h2>${esc4(W2.listT)}</h2><div class="g">${O.items.map(([h, p]) => `<section class="c"><h3>${esc4(h)}</h3><p>${esc4(p)}</p></section>`).join("")}</div>
-<h2>${esc4(W2.shotsT)}</h2><div class="ovs">${shots.map(([f, c]) => `<figure>${img(l, f, c)}<figcaption>${esc4(c)}</figcaption></figure>`).join("")}</div>
-<h2>${esc4(W2.expT)}</h2><p>${esc4(W2.exp)}</p>
-<h2>${esc4(W2.vrT)}</h2><p>${esc4(W2.vr)}</p>
-<h2>${esc4(W2.howT)}</h2><ul>${W2.how.map((x) => `<li>${esc4(x)}</li>`).join("")}</ul>
-<h2>${esc4(L.faqT)}</h2>${O.faq.map(([q2, a]) => `<details open><summary>${esc4(q2)}</summary><p>${esc4(a)}</p></details>`).join("")}
-${game === "lmu" ? `<p class="x">${esc4(T3[l].other.lmu)} <a href="${OVL[l].path}">${esc4(OVL[l].h1)} \u2192</a></p>` : `<p class="x">${esc4(T3[l].other.iracing)} <a href="${OVLL[l].path}">${esc4(OVLL[l].h1)} \u2192</a></p>`}`;
+  const body = `<h1>${esc5(O.h1)}</h1><p class="lead">${esc5(O.lead)}</p>
+<div class="cta"><a class="btn p" href="/dl/PitlaneHQ-Setup.exe">${esc5(L.dl)}</a><a class="btn" href="${L.path}">${esc5(T3[l].tel[game])}</a></div>
+<h2>${esc5(W2.listT)}</h2><div class="g">${O.items.map(([h, p]) => `<section class="c"><h3>${esc5(h)}</h3><p>${esc5(p)}</p></section>`).join("")}</div>
+<h2>${esc5(W2.shotsT)}</h2><div class="ovs">${shots.map(([f, c]) => `<figure>${img(l, f, c)}<figcaption>${esc5(c)}</figcaption></figure>`).join("")}</div>
+<h2>${esc5(W2.expT)}</h2><p>${esc5(W2.exp)}</p>
+<h2>${esc5(W2.vrT)}</h2><p>${esc5(W2.vr)}</p>
+<h2>${esc5(W2.howT)}</h2><ul>${W2.how.map((x) => `<li>${esc5(x)}</li>`).join("")}</ul>
+<h2>${esc5(L.faqT)}</h2>${O.faq.map(([q2, a]) => `<details open><summary>${esc5(q2)}</summary><p>${esc5(a)}</p></details>`).join("")}
+${game === "lmu" ? `<p class="x">${esc5(T3[l].other.lmu)} <a href="${OVL[l].path}">${esc5(OVL[l].h1)} \u2192</a></p>` : `<p class="x">${esc5(T3[l].other.iracing)} <a href="${OVLL[l].path}">${esc5(OVLL[l].h1)} \u2192</a></p>`}`;
   const ld = [
     crumbs(game === "lmu" ? [["Pitlane HQ", LAND[l].path], ["Le Mans Ultimate", LANDL[l].path], [O.h1, O.path]] : [["Pitlane HQ", LAND[l].path], [O.h1, O.path]]),
     appLd(l, O.desc, shots.map(([f]) => f)),
@@ -12105,20 +12566,20 @@ async function leaguesPage(env, l, cat, game = "iracing") {
   const cn = cat ? LG_CN[l][cat] : "", path = lmu ? G.path : lgPath(l, cat), num4 = /* @__PURE__ */ __name((n) => Number(n || 0).toLocaleString(HLANG[l]), "num");
   const counts = catCounts(D), cats = lmu ? [] : Object.keys(CAT2.en).filter((k) => counts[k]);
   const catsOf2 = /* @__PURE__ */ __name((x) => (lmu ? [] : (x.cats || []).map((c) => CAT2[l][c] || c)).join(" \xB7 ") || G.any, "catsOf");
-  const ext = /* @__PURE__ */ __name((u) => /^https:\/\//.test(String(u || "")) ? esc4(u) : "", "ext");
-  const postedHTML = posted.map((x) => `<section class="c lg"><h3>${esc4(fix2(x.name))}</h3><p class="m k">${esc4(catsOf2(x))}${x.open ? ` \xB7 <b class="on">${esc4(W2.open)}</b>` : ""}</p>
-${x.days.length ? `<p style="margin:0 0 4px">${esc4(W2.races)} ${esc4(x.days.map((d) => LG_DAYS[l][d]).join(", "))}${x.time ? ` \xB7 ${esc4(x.time)}${x.tz ? ` (${esc4(x.tz)})` : ""}` : ""}</p>` : ""}${x.cars ? `<p class="m" style="margin:0 0 4px">${esc4(W2.cars)} ${esc4(fix2(x.cars))}</p>` : ""}${x.lang ? `<p class="m" style="margin:0 0 4px">${esc4(W2.lang)} ${esc4(x.lang)}</p>` : ""}${x.about ? `<p class="m" style="font-size:14px;margin:6px 0 10px">${esc4(fix2(x.about).slice(0, 400))}</p>` : ""}
-<p style="margin:8px 0 0">${ext(x.discord) ? `<a class="btn" href="${ext(x.discord)}" rel="nofollow noopener" target="_blank">${esc4(W2.join)}</a> ` : ""}${ext(x.web) ? `<a class="btn" href="${ext(x.web)}" rel="nofollow noopener" target="_blank">${esc4(W2.site)}</a> ` : ""}<a href="/?league=${encodeURIComponent(x.id)}" rel="nofollow">${esc4(W2.see)}</a></p></section>`).join("");
-  const foundHTML = found.map((x) => `<section class="c lg">${x.icon ? `<img src="${esc4(x.icon)}" alt="" width="44" height="44" loading="lazy" decoding="async">` : ""}<h3>${esc4(fix2(x.name))}</h3><p class="m k">${esc4(catsOf2(x))}</p><p style="margin:0 0 6px"><b class="on">${num4(x.online)}</b> ${esc4(W2.online)} \xB7 <b>${num4(x.members)}</b> ${esc4(W2.members)}</p>${x.title ? `<p class="m" style="font-size:14px;margin:0 0 10px">${esc4(fix2(x.title))}</p>` : ""}<a class="btn" href="${esc4(x.invite)}" rel="nofollow noopener" target="_blank">${esc4(W2.join)}</a></section>`).join("");
+  const ext = /* @__PURE__ */ __name((u) => /^https:\/\//.test(String(u || "")) ? esc5(u) : "", "ext");
+  const postedHTML = posted.map((x) => `<section class="c lg"><h3>${esc5(fix2(x.name))}</h3><p class="m k">${esc5(catsOf2(x))}${x.open ? ` \xB7 <b class="on">${esc5(W2.open)}</b>` : ""}</p>
+${x.days.length ? `<p style="margin:0 0 4px">${esc5(W2.races)} ${esc5(x.days.map((d) => LG_DAYS[l][d]).join(", "))}${x.time ? ` \xB7 ${esc5(x.time)}${x.tz ? ` (${esc5(x.tz)})` : ""}` : ""}</p>` : ""}${x.cars ? `<p class="m" style="margin:0 0 4px">${esc5(W2.cars)} ${esc5(fix2(x.cars))}</p>` : ""}${x.lang ? `<p class="m" style="margin:0 0 4px">${esc5(W2.lang)} ${esc5(x.lang)}</p>` : ""}${x.about ? `<p class="m" style="font-size:14px;margin:6px 0 10px">${esc5(fix2(x.about).slice(0, 400))}</p>` : ""}
+<p style="margin:8px 0 0">${ext(x.discord) ? `<a class="btn" href="${ext(x.discord)}" rel="nofollow noopener" target="_blank">${esc5(W2.join)}</a> ` : ""}${ext(x.web) ? `<a class="btn" href="${ext(x.web)}" rel="nofollow noopener" target="_blank">${esc5(W2.site)}</a> ` : ""}<a href="/?league=${encodeURIComponent(x.id)}" rel="nofollow">${esc5(W2.see)}</a></p></section>`).join("");
+  const foundHTML = found.map((x) => `<section class="c lg">${x.icon ? `<img src="${esc5(x.icon)}" alt="" width="44" height="44" loading="lazy" decoding="async">` : ""}<h3>${esc5(fix2(x.name))}</h3><p class="m k">${esc5(catsOf2(x))}</p><p style="margin:0 0 6px"><b class="on">${num4(x.online)}</b> ${esc5(W2.online)} \xB7 <b>${num4(x.members)}</b> ${esc5(W2.members)}</p>${x.title ? `<p class="m" style="font-size:14px;margin:0 0 10px">${esc5(fix2(x.title))}</p>` : ""}<a class="btn" href="${esc5(x.invite)}" rel="nofollow noopener" target="_blank">${esc5(W2.join)}</a></section>`).join("");
   const faq = cat ? [G.catQ(cn), ...G.faq] : G.faq;
-  const otherLg = lmu ? `<p class="x"><a href="${LEAG[l].path}">${esc4(LEAG[l].h1)} \u2192</a></p>` : HAS.lmuLeagues ? `<p class="x"><a href="${LEAGL[l].path}">${esc4(LEAGL[l].h1)} \u2192</a></p>` : "";
-  const body = `<h1>${esc4(cat ? G.catH(cn) : G.h1)}</h1><p class="lead">${esc4(cat ? G.catLead(cn) : G.lead)}</p>
-<div class="cta"><a class="btn p" href="/?league-post=1" rel="nofollow">${esc4(W2.post)}</a><a class="btn" href="${(lmu ? LANDL : LAND)[l].path}">${esc4(T3[l].tel[game])}</a></div>
-${cats.length ? `<div class="cats" aria-label="${esc4(W2.byCat)}"><a href="${lgPath(l)}"${cat ? "" : ' class="on"'}>${esc4(W2.all)}</a>${cats.map((k) => `<a href="${lgPath(l, k)}"${k === cat ? ' class="on"' : ""}>${esc4(CAT2[l][k])}</a>`).join("")}</div>` : ""}
-${posted.length ? `<h2>${esc4(W2.posted)}</h2><div class="g">${postedHTML}</div>` : ""}
-${found.length ? `<h2>${esc4(G.active)}</h2><div class="g">${foundHTML}</div>${D.updated ? `<p class="m" style="font-size:14px">${esc4(W2.upd)} ${day(D.updated)}</p>` : ""}` : ""}
-${!posted.length && !found.length ? `<p class="m">${esc4(W2.none)}</p>` : ""}
-<h2>${esc4(LAND[l].faqT)}</h2>${faq.map(([q2, a]) => `<details open><summary>${esc4(q2)}</summary><p>${esc4(a)}</p></details>`).join("")}${otherLg}`;
+  const otherLg = lmu ? `<p class="x"><a href="${LEAG[l].path}">${esc5(LEAG[l].h1)} \u2192</a></p>` : HAS.lmuLeagues ? `<p class="x"><a href="${LEAGL[l].path}">${esc5(LEAGL[l].h1)} \u2192</a></p>` : "";
+  const body = `<h1>${esc5(cat ? G.catH(cn) : G.h1)}</h1><p class="lead">${esc5(cat ? G.catLead(cn) : G.lead)}</p>
+<div class="cta"><a class="btn p" href="/?league-post=1" rel="nofollow">${esc5(W2.post)}</a><a class="btn" href="${(lmu ? LANDL : LAND)[l].path}">${esc5(T3[l].tel[game])}</a></div>
+${cats.length ? `<div class="cats" aria-label="${esc5(W2.byCat)}"><a href="${lgPath(l)}"${cat ? "" : ' class="on"'}>${esc5(W2.all)}</a>${cats.map((k) => `<a href="${lgPath(l, k)}"${k === cat ? ' class="on"' : ""}>${esc5(CAT2[l][k])}</a>`).join("")}</div>` : ""}
+${posted.length ? `<h2>${esc5(W2.posted)}</h2><div class="g">${postedHTML}</div>` : ""}
+${found.length ? `<h2>${esc5(G.active)}</h2><div class="g">${foundHTML}</div>${D.updated ? `<p class="m" style="font-size:14px">${esc5(W2.upd)} ${day2(D.updated)}</p>` : ""}` : ""}
+${!posted.length && !found.length ? `<p class="m">${esc5(W2.none)}</p>` : ""}
+<h2>${esc5(LAND[l].faqT)}</h2>${faq.map(([q2, a]) => `<details open><summary>${esc5(q2)}</summary><p>${esc5(a)}</p></details>`).join("")}${otherLg}`;
   const root = lmu ? [["Pitlane HQ", LAND[l].path], ["Le Mans Ultimate", LANDL[l].path], [G.h1, G.path]] : [["Pitlane HQ", LAND[l].path], [G.h1, G.path]];
   const ld = [crumbs(cat ? [...root, [CAT2[l][cat], path]] : root), faqLd(faq)];
   const thin = cat ? posted.length + found.length < LG_MIN : !posted.length && !found.length;
@@ -12139,15 +12600,15 @@ var catFor = /* @__PURE__ */ __name((cm, game, x, hint, track2, car) => game ===
 async function landing(env, l, game) {
   const lmu = game === "lmu", L = (lmu ? LANDL : LAND)[l], combos2 = await topCombos(env, 8, game), faq = [...L.faq, ...dcFaq(l)];
   const guides = lmu ? [...TOPICS.filter((x) => x.game === "lmu").map((x) => x[l]), OVLL[l], ...HAS.lmuLeagues ? [LEAGL[l]] : [], ...lmuToo(l)] : [...TOPICS.filter((x) => x.game !== "lmu").map((x) => x[l]), OVL[l], LEAG[l]];
-  const body = `<h1>${esc4(L.h1)}</h1><p class="lead">${esc4(L.lead)}</p>
-<div class="cta"><a class="btn p" href="/dl/PitlaneHQ-Setup.exe">${esc4(L.dl)}</a><a class="btn" href="/">${esc4(L.app)}</a></div>
-<div class="g">${L.cards.map(([h, p]) => `<section class="c"><h2>${esc4(h)}</h2><p>${esc4(p)}</p></section>`).join("")}</div>
+  const body = `<h1>${esc5(L.h1)}</h1><p class="lead">${esc5(L.lead)}</p>
+<div class="cta"><a class="btn p" href="/dl/PitlaneHQ-Setup.exe">${esc5(L.dl)}</a><a class="btn" href="/">${esc5(L.app)}</a></div>
+<div class="g">${L.cards.map(([h, p]) => `<section class="c"><h2>${esc5(h)}</h2><p>${esc5(p)}</p></section>`).join("")}</div>
 ${shot(l, lmu ? "coach.jpg" : "compare.jpg")}
-<h2 id="start">${esc4(START[l].t)}</h2><ol>${START[l].steps(GNAME[game]).map((x) => `<li>${esc4(x)}</li>`).join("")}</ol>
+<h2 id="start">${esc5(START[l].t)}</h2><ol>${START[l].steps(GNAME[game]).map((x) => `<li>${esc5(x)}</li>`).join("")}</ol>
 ${cross(l, game)}
-<h2>${esc4(GUIDES[l])}</h2><div class="g">${guides.map((x) => `<a class="c" href="${x.path}"><h3>${esc4(x.h1)} \u2192</h3><p>${esc4(x.desc)}</p></a>`).join("")}</div>
-${combos2.length ? `<h2>${esc4(L.recs)}</h2><p class="m">${esc4(L.recsLead)}</p><div class="tw"><table><tbody>${combos2.map((x) => `<tr><td><a href="${recPath(l, x, game)}">${esc4(fix2(x.track))}</a></td><td class="m">${esc4(fix2(x.car))}</td><td class="t">${fmt2(x.best)}</td></tr>`).join("")}</tbody></table></div><p><a href="${REC_IDX[game][l]}">${esc4(T3[l].rec)} \u2192</a></p>` : ""}
-<h2>${esc4(L.faqT)}</h2>${faq.map(([q2, a]) => `<details><summary>${esc4(q2)}</summary><p>${esc4(a)}</p></details>`).join("")}`;
+<h2>${esc5(GUIDES[l])}</h2><div class="g">${guides.map((x) => `<a class="c" href="${x.path}"><h3>${esc5(x.h1)} \u2192</h3><p>${esc5(x.desc)}</p></a>`).join("")}</div>
+${combos2.length ? `<h2>${esc5(L.recs)}</h2><p class="m">${esc5(L.recsLead)}</p><div class="tw"><table><tbody>${combos2.map((x) => `<tr><td><a href="${recPath(l, x, game)}">${esc5(fix2(x.track))}</a></td><td class="m">${esc5(fix2(x.car))}</td><td class="t">${fmt2(x.best)}</td></tr>`).join("")}</tbody></table></div><p><a href="${REC_IDX[game][l]}">${esc5(T3[l].rec)} \u2192</a></p>` : ""}
+<h2>${esc5(L.faqT)}</h2>${faq.map(([q2, a]) => `<details><summary>${esc5(q2)}</summary><p>${esc5(a)}</p></details>`).join("")}`;
   const ld = [...lmu ? [crumbs([["Pitlane HQ", LAND[l].path], ["Le Mans Ultimate", L.path]])] : [], appLd(l, L.desc, [lmu ? "coach.jpg" : "compare.jpg"], L.cards.map(([h]) => h)), ...siteLd(l), howToLd(l, GNAME[game], L.path), faqLd(faq)];
   return html(page3(l, { title: L.title, desc: L.desc, path: L.path, alts: lmu ? LANDL_ALTS : LAND_ALTS, body, ld, game }));
 }
@@ -12160,11 +12621,11 @@ async function recordsIndex(env, l, cat, game = "iracing") {
   const list = cat ? rows.filter((x) => x.cat === cat) : rows;
   const W2 = S2[l], A = REC_IDX[game], base2 = A[l], q2 = cat ? "?d=" + cat : "", path = base2 + q2;
   const title = `${W2.recH(gn)}${cat ? " \xB7 " + CAT2[l][cat] : ""} \xB7 Pitlane HQ`, desc = W2.recD(gn);
-  const body = `<h1>${esc4(W2.recH(gn))}</h1><p class="lead">${esc4(desc)}</p>
-${cats.length > 1 ? `<div class="cats"><a href="${base2}"${cat ? "" : ' class="on"'}>${esc4(W2.all)}</a>${cats.map((k) => `<a href="${base2}?d=${k}"${k === cat ? ' class="on"' : ""}>${esc4(CAT2[l][k])}</a>`).join("")}</div>` : ""}
-${list.length ? `<div class="tw"><table><thead><tr><th>${esc4(W2.track)}</th><th>${esc4(W2.car)}</th><th>${esc4(W2.record)}</th><th>${esc4(W2.drivers)}</th></tr></thead><tbody>${list.map((x) => `<tr><td><a href="${recPath(l, x, game)}">${esc4(fix2(x.track))}</a></td><td class="m">${esc4(fix2(x.car))}</td><td class="t">${fmt2(x.best)}</td><td class="m">${x.drivers}</td></tr>`).join("")}</tbody></table></div>` : `<p class="m">${esc4(W2.none)}</p>`}
-<h2>${esc4(W2.howT)}</h2><p>${esc4(W2.how(gn))}</p>
-<h2>${esc4(LAND[l].faqT)}</h2>${W2.faq(gn).map(([q3, a]) => `<details open><summary>${esc4(q3)}</summary><p>${esc4(a)}</p></details>`).join("")}${cross(l, game)}`;
+  const body = `<h1>${esc5(W2.recH(gn))}</h1><p class="lead">${esc5(desc)}</p>
+${cats.length > 1 ? `<div class="cats"><a href="${base2}"${cat ? "" : ' class="on"'}>${esc5(W2.all)}</a>${cats.map((k) => `<a href="${base2}?d=${k}"${k === cat ? ' class="on"' : ""}>${esc5(CAT2[l][k])}</a>`).join("")}</div>` : ""}
+${list.length ? `<div class="tw"><table><thead><tr><th>${esc5(W2.track)}</th><th>${esc5(W2.car)}</th><th>${esc5(W2.record)}</th><th>${esc5(W2.drivers)}</th></tr></thead><tbody>${list.map((x) => `<tr><td><a href="${recPath(l, x, game)}">${esc5(fix2(x.track))}</a></td><td class="m">${esc5(fix2(x.car))}</td><td class="t">${fmt2(x.best)}</td><td class="m">${x.drivers}</td></tr>`).join("")}</tbody></table></div>` : `<p class="m">${esc5(W2.none)}</p>`}
+<h2>${esc5(W2.howT)}</h2><p>${esc5(W2.how(gn))}</p>
+<h2>${esc5(LAND[l].faqT)}</h2>${W2.faq(gn).map(([q3, a]) => `<details open><summary>${esc5(q3)}</summary><p>${esc5(a)}</p></details>`).join("")}${cross(l, game)}`;
   const root = game === "lmu" ? [["Pitlane HQ", LAND[l].path], ["Le Mans Ultimate", LANDL[l].path], [T3[l].rec, base2]] : [["Pitlane HQ", LAND[l].path], [T3[l].rec, base2]];
   const ld = [
     crumbs(root),
@@ -12198,13 +12659,13 @@ async function recordsCombo(env, l, t, c, asked, game = "iracing") {
   const x = { t, c, track: track2, car }, cat = catFor(cm, game, x, laps[0].cat, laps[0].track, laps[0].car);
   const W2 = S2[l], rec = fmt2(laps[0].time), idx = REC_IDX[game][l];
   const title = recTitle(W2, car, track2, game), desc = W2.cD(car, track2, rec, laps.length, gn), L = (game === "lmu" ? LANDL : LAND)[l];
-  const body = `<p class="m"><a href="${idx}">${esc4(W2.recH(gn))}</a>${game === "lmu" ? "" : ` \xB7 <a href="${idx}?d=${cat}">${esc4(CAT2[l][cat] || "")}</a>`}</p>
-<h1>${esc4(car)}<br><span class="m" style="font-size:.7em">${esc4(track2)}</span></h1>
-<p class="lead">${esc4(W2.cL(rec))}</p>
-<div class="tw"><table><thead><tr><th class="n">#</th><th>${esc4(W2.driver)}</th><th>${esc4(W2.time)}</th><th>${esc4(W2.date)}</th></tr></thead><tbody>${laps.map((v, i) => `<tr><td class="n">${i + 1}</td><td>${esc4(v.alias || W2.anon)}</td><td class="t">${fmt2(v.time)}</td><td class="m">${day(v.created)}</td></tr>`).join("")}</tbody></table></div>
-<div class="c" style="margin-top:22px"><h2>${esc4(W2.cQ)}</h2><p>${esc4(W2.cA(gn))}</p><div class="cta" style="margin-bottom:0"><a class="btn p" href="/dl/PitlaneHQ-Setup.exe">${esc4(L.dl)}</a><a class="btn" href="${L.path}">${esc4(T3[l].tel[game])}</a></div></div>`;
+  const body = `<p class="m"><a href="${idx}">${esc5(W2.recH(gn))}</a>${game === "lmu" ? "" : ` \xB7 <a href="${idx}?d=${cat}">${esc5(CAT2[l][cat] || "")}</a>`}</p>
+<h1>${esc5(car)}<br><span class="m" style="font-size:.7em">${esc5(track2)}</span></h1>
+<p class="lead">${esc5(W2.cL(rec))}</p>
+<div class="tw"><table><thead><tr><th class="n">#</th><th>${esc5(W2.driver)}</th><th>${esc5(W2.time)}</th><th>${esc5(W2.date)}</th></tr></thead><tbody>${laps.map((v, i) => `<tr><td class="n">${i + 1}</td><td>${esc5(v.alias || W2.anon)}</td><td class="t">${fmt2(v.time)}</td><td class="m">${day2(v.created)}</td></tr>`).join("")}</tbody></table></div>
+<div class="c" style="margin-top:22px"><h2>${esc5(W2.cQ)}</h2><p>${esc5(W2.cA(gn))}</p><div class="cta" style="margin-bottom:0"><a class="btn p" href="/dl/PitlaneHQ-Setup.exe">${esc5(L.dl)}</a><a class="btn" href="${L.path}">${esc5(T3[l].tel[game])}</a></div></div>`;
   const ld = [crumbs([["Pitlane HQ", LAND[l].path], ...game === "lmu" ? [["Le Mans Ultimate", LANDL[l].path]] : [], [T3[l].rec, idx], [car + " \xB7 " + track2, recPath(l, x, game)]])];
-  return html(page3(l, { title, desc, path: recPath(l, x, game), alts: recAlts(x, game), body, ld, game, mod: later2(SEO_DATE, day(Math.max(0, ...laps.map((v) => +v.created || 0)))) }));
+  return html(page3(l, { title, desc, path: recPath(l, x, game), alts: recAlts(x, game), body, ld, game, mod: later2(SEO_DATE, day2(Math.max(0, ...laps.map((v) => +v.created || 0)))) }));
 }
 __name(recordsCombo, "recordsCombo");
 var notFound = /* @__PURE__ */ __name((l) => noIndex(html(page3(l, {
@@ -12212,7 +12673,7 @@ var notFound = /* @__PURE__ */ __name((l) => noIndex(html(page3(l, {
   desc: S2[l].nf,
   path: null,
   noindex: true,
-  body: `<h1>${esc4(S2[l].nf)}</h1><p><a href="${LAND[l].path}">${esc4(T3[l].tel.iracing)}</a> \xB7 <a href="${LANDL[l].path}">${esc4(T3[l].tel.lmu)}</a> \xB7 <a href="${REC_IDX.iracing[l]}">${esc4(T3[l].rec)}</a> \xB7 <a href="/">${esc4(T3[l].app)}</a></p>`
+  body: `<h1>${esc5(S2[l].nf)}</h1><p><a href="${LAND[l].path}">${esc5(T3[l].tel.iracing)}</a> \xB7 <a href="${LANDL[l].path}">${esc5(T3[l].tel.lmu)}</a> \xB7 <a href="${REC_IDX.iracing[l]}">${esc5(T3[l].rec)}</a> \xB7 <a href="/">${esc5(T3[l].app)}</a></p>`
 }), 600, 404)), "notFound");
 var noIndex = /* @__PURE__ */ __name((r4) => {
   r4.headers.set("x-robots-tag", "noindex");
@@ -12224,13 +12685,13 @@ function topicPage(x, l) {
   const G = x[l], lmu = x.game === "lmu", L = (lmu ? LANDL : LAND)[l], game = lmu ? "lmu" : "iracing";
   const more = lmu ? lmuLinks(l).filter(([p]) => p !== G.path).concat(lmuToo(l).map((x2) => [x2.path, x2.h1])) : iracingLinks(l).filter(([p]) => p !== G.path).concat([[L.path, L.h1]]);
   const to = x.lmu ? x.lmu === "tel" ? LANDL[l] : x.lmu === "ov" ? OVLL[l] : TOPIC_BY[x.lmu] ? TOPIC_BY[x.lmu][l] : null : lmu ? TOPIC_BY.coach[l] : null;
-  const body = `<h1>${esc4(G.h1)}</h1><p class="lead">${esc4(G.lead)}</p>
-<div class="cta"><a class="btn p" href="/dl/PitlaneHQ-Setup.exe">${esc4(L.dl)}</a><a class="btn" href="/">${esc4(L.app)}</a></div>
-<div class="g">${G.secs.map(([h, p]) => `<section class="c"><h2>${esc4(h)}</h2><p>${esc4(p)}</p></section>`).join("")}</div>
+  const body = `<h1>${esc5(G.h1)}</h1><p class="lead">${esc5(G.lead)}</p>
+<div class="cta"><a class="btn p" href="/dl/PitlaneHQ-Setup.exe">${esc5(L.dl)}</a><a class="btn" href="/">${esc5(L.app)}</a></div>
+<div class="g">${G.secs.map(([h, p]) => `<section class="c"><h2>${esc5(h)}</h2><p>${esc5(p)}</p></section>`).join("")}</div>
 ${x.img ? shot(l, x.img) : ""}${x.phones ? phones(l, x.phones) : ""}
-${to ? `<p class="x">${esc4(T3[l].other[game])} <a href="${to.path}">${esc4(to.h1)} \u2192</a></p>` : ""}
-<h2>${esc4(L.faqT)}</h2>${G.faq.map(([q2, a]) => `<details open><summary>${esc4(q2)}</summary><p>${esc4(a)}</p></details>`).join("")}
-<h2>${esc4(GUIDES[l])}</h2><ul>${more.map(([p, h]) => `<li><a href="${p}">${esc4(h)}</a></li>`).join("")}</ul>`;
+${to ? `<p class="x">${esc5(T3[l].other[game])} <a href="${to.path}">${esc5(to.h1)} \u2192</a></p>` : ""}
+<h2>${esc5(L.faqT)}</h2>${G.faq.map(([q2, a]) => `<details open><summary>${esc5(q2)}</summary><p>${esc5(a)}</p></details>`).join("")}
+<h2>${esc5(GUIDES[l])}</h2><ul>${more.map(([p, h]) => `<li><a href="${p}">${esc5(h)}</a></li>`).join("")}</ul>`;
   const ld = [
     crumbs(lmu ? [["Pitlane HQ", LAND[l].path], ["Le Mans Ultimate", LANDL[l].path], [G.h1, G.path]] : [["Pitlane HQ", LAND[l].path], [G.h1, G.path]]),
     faqLd(G.faq),
@@ -12319,11 +12780,11 @@ var PR_CSS = `<style>.pz{display:grid;grid-template-columns:repeat(auto-fit,minm
 .af{margin:0;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--bg)}.sp{margin-top:14px;border-style:dashed;border-color:#ffb02e88}.sp h2{margin:0 0 8px}</style>`;
 function pricingPage(l) {
   const P2 = PRICE[l], L = LAND[l];
-  const card = /* @__PURE__ */ __name(([name2, price, per, list], cls, extra) => `<section class="c${cls}"><h2>${esc4(name2)}${cls ? `<span class="tg">${esc4(P2.tag)}</span>` : ""}</h2><div class="pp">${esc4(price)}<small>${esc4(per)}</small></div><ul class="ck">${list.map((x) => `<li>${esc4(x)}</li>`).join("")}</ul>${extra}</section>`, "card");
-  const body = `${PR_CSS}<h1>${esc4(P2.h1)}</h1><p class="lead">${esc4(P2.lead)}</p>
-<div class="pz">${card(P2.free, "", `<a class="btn p" href="/dl/PitlaneHQ-Setup.exe">${esc4(P2.start)}</a>`)}${card(P2.pro, " pro", `<p class="af">${esc4(P2.after)}</p>`)}</div>
-<section class="c sp"><h2>${esc4(P2.supH)}</h2><ul class="ck">${P2.sup.map((x) => `<li>${esc4(x)}</li>`).join("")}</ul><div class="cta" style="margin:14px 0 0"><a class="btn p" href="${DONATE}" rel="noopener">${esc4(P2.donate)}</a><a class="btn" href="/">${esc4(L.app)}</a></div></section>
-<h2>${esc4(P2.faqT)}</h2>${P2.faq.map(([q2, a]) => `<details open><summary>${esc4(q2)}</summary><p>${esc4(a)}</p></details>`).join("")}`;
+  const card = /* @__PURE__ */ __name(([name2, price, per, list], cls, extra) => `<section class="c${cls}"><h2>${esc5(name2)}${cls ? `<span class="tg">${esc5(P2.tag)}</span>` : ""}</h2><div class="pp">${esc5(price)}<small>${esc5(per)}</small></div><ul class="ck">${list.map((x) => `<li>${esc5(x)}</li>`).join("")}</ul>${extra}</section>`, "card");
+  const body = `${PR_CSS}<h1>${esc5(P2.h1)}</h1><p class="lead">${esc5(P2.lead)}</p>
+<div class="pz">${card(P2.free, "", `<a class="btn p" href="/dl/PitlaneHQ-Setup.exe">${esc5(P2.start)}</a>`)}${card(P2.pro, " pro", `<p class="af">${esc5(P2.after)}</p>`)}</div>
+<section class="c sp"><h2>${esc5(P2.supH)}</h2><ul class="ck">${P2.sup.map((x) => `<li>${esc5(x)}</li>`).join("")}</ul><div class="cta" style="margin:14px 0 0"><a class="btn p" href="${DONATE}" rel="noopener">${esc5(P2.donate)}</a><a class="btn" href="/">${esc5(L.app)}</a></div></section>
+<h2>${esc5(P2.faqT)}</h2>${P2.faq.map(([q2, a]) => `<details open><summary>${esc5(q2)}</summary><p>${esc5(a)}</p></details>`).join("")}`;
   const ld = [crumbs([["Pitlane HQ", LAND[l].path], [P2.h1, P2.path]]), faqLd(P2.faq)];
   return html(page3(l, { title: P2.title, desc: P2.desc, path: P2.path, alts: PRICE_ALTS, body, ld }));
 }
@@ -12349,7 +12810,7 @@ var STATIC_ALTS = [LAND_ALTS, LANDL_ALTS, OVL_ALTS, OVLL_ALTS, PRICE_ALTS, ...TO
 async function sitemap(env) {
   const [combos2, lmuCombos, D, DL] = await Promise.all([topCombos(env, 2e3), topCombos(env, 2e3, "lmu"), leaguesData(env), leaguesData(env, "lmu")]);
   const u = /* @__PURE__ */ __name((p, f, pr, alts, mod) => `<url><loc>${SITE5}${p}</loc>${mod ? `<lastmod>${mod}</lastmod>` : ""}<changefreq>${f}</changefreq><priority>${pr}</priority>${alts ? LANGS2.map((k) => `<xhtml:link rel="alternate" hreflang="${HLANG[k]}" href="${SITE5}${alts[k]}"/>`).join("") + `<xhtml:link rel="alternate" hreflang="x-default" href="${SITE5}${alts.en}"/>` : ""}</url>`, "u");
-  const newest = /* @__PURE__ */ __name((cs) => later2(SEO_DATE, day(Math.max(0, ...cs.map((x) => x.upd || 0)))), "newest");
+  const newest = /* @__PURE__ */ __name((cs) => later2(SEO_DATE, day2(Math.max(0, ...cs.map((x) => x.upd || 0)))), "newest");
   const s = [u("/", "weekly", "1.0", null, newest(combos2))];
   const all = /* @__PURE__ */ __name((alts, f, pr, mod) => {
     for (const k of LANGS2) s.push(u(alts[k], f, k === "en" ? pr : (pr - 0.1).toFixed(1), alts, mod));
@@ -12360,7 +12821,7 @@ async function sitemap(env) {
   all(OVLL_ALTS, "monthly", 0.8, SEO_DATE);
   all(PRICE_ALTS, "monthly", 0.7, SEO_DATE);
   for (const x of TOPICS) all(topicAlts(x), "monthly", 0.8, SEO_DATE);
-  const lgDay = /* @__PURE__ */ __name((d) => later2(SEO_DATE, day(d.updated)), "lgDay");
+  const lgDay = /* @__PURE__ */ __name((d) => later2(SEO_DATE, day2(d.updated)), "lgDay");
   all(LEAG_ALTS, "daily", 0.8, lgDay(D));
   const n = catCounts(D);
   for (const c of Object.keys(CAT2.en)) if ((n[c] || 0) >= LG_MIN) all(lgAlts(c), "daily", 0.7, lgDay(D));
@@ -12368,7 +12829,7 @@ async function sitemap(env) {
   all(REC_IDX.iracing, "daily", 0.8, newest(combos2));
   if (lmuCombos.length) all(REC_IDX.lmu, "daily", 0.8, newest(lmuCombos));
   s.push(u("/downloads", "weekly", "0.7", null, SEO_DATE), u("/changelog", "weekly", "0.4", null, SEO_DATE));
-  for (const [game, cs] of [["iracing", combos2], ["lmu", lmuCombos]]) for (const x of cs) all(recAlts(x, game), "daily", 0.6, day(x.upd) || SEO_DATE);
+  for (const [game, cs] of [["iracing", combos2], ["lmu", lmuCombos]]) for (const x of cs) all(recAlts(x, game), "daily", 0.6, day2(x.upd) || SEO_DATE);
   return new Response(`<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">
 ${s.join("\n")}
@@ -12429,12 +12890,12 @@ async function indexNow(env) {
   });
 }
 __name(indexNow, "indexNow");
-var mdLink = /* @__PURE__ */ __name(([path, h, d]) => `- [${h}](${SITE5}${path})${d ? ": " + d : ""}`, "mdLink");
+var mdLink = /* @__PURE__ */ __name(([path, h, d]) => `- [${h}](${/^https:/.test(path) ? path : SITE5 + path})${d ? ": " + d : ""}`, "mdLink");
 var about = /* @__PURE__ */ __name(() => WHAT.en.p.join(" ") + (DC ? " " + DCW.en.p + " " + DC : "") + " ACC and Assetto Corsa are in development. The pages are in English, Spanish and Portuguese (Brazil).", "about");
 var FACTS = [
-  ["Price", "Free. Everything in Pitlane HQ is free while it is in beta, with no card asked for. Sync and the whole lap history are part of the free account."],
+  ["Price", "Free. Everything in Pitlane HQ is free while it is in beta, with no card asked for. Sync and the whole lap history are part of the free account. After the beta Pro will cost $6 a month or $59 a year, and drivers who support Pitlane HQ during the beta keep Pro at half price."],
   ["Games", "iRacing, and Le Mans Ultimate (in beta). ACC and Assetto Corsa are in development."],
-  ["Devices", "Pitlane HQ Agent on Windows records the laps and draws the overlays. The web app at pitlanehq.app works on any computer or phone browser, and there is an Android app. One account on every device, with sign-up by email, Steam or Discord."],
+  ["Devices", "Pitlane HQ Agent on Windows records the laps and draws the overlays. It downloads from pitlanehq.app or the Microsoft Store, and a Steam version is coming. The web app at pitlanehq.app works on any computer or phone browser, and there is an Android app. One account on every device, with sign-up by email, Steam or Discord."],
   ["Telemetry", "Speed, throttle, brake, gear and steering of every lap, saved by itself with nothing to set up. Live telemetry on a phone or a browser while you drive, and a code to share it with a friend."],
   ["Overlays", "Relative, standings, radar, delta bar, fuel, tyres, track map, flags, braking markers, a live coach, weather and more, drawn natively over the game, in six looks, also in VR through SteamVR. In the Overlays tab you place them on a picture of your screen. Each overlay has a settings window with a live preview and its own frame rate, and can open by itself in every game it works with."],
   ["Coach", "Learns from the real laps of every driver on each car and track and from each of your sessions, apart for road, oval, dirt oval and dirt road. It compares your lap with the record and with the driver just ahead of your pace, shows corner by corner where the time goes, how consistent each corner is and how it improves over time, and gives a plan with each point marked on the track map, saying what happened, why it costs time and what to do instead. On the first laps of a track the coach overlay calls the braking points."],
@@ -12458,7 +12919,7 @@ function llmsTxt() {
   const other = LANGS2.filter((k) => k !== l).flatMap((k) => [[LAND[k].path, LAND[k].h1 + " (" + NAME[k] + ")"], [LANDL[k].path, LANDL[k].h1 + " (" + NAME[k] + ")"]]);
   return `# Pitlane HQ
 
-> Sim racing telemetry for iRacing and Le Mans Ultimate, all free during the beta, with a coach that learns from real laps, a lap analyzer, live overlays, sync with the whole lap history, leaderboards, friends, leagues and a Discord bot, on Windows, the web and Android.
+> Sim racing telemetry for iRacing and Le Mans Ultimate, all free during the beta, with a coach that learns from real laps, a lap analyzer, live overlays, sync with the whole lap history, leaderboards, friends, leagues and a Discord bot, on Windows (also on the Microsoft Store), the web and Android.
 
 ${about()}
 
@@ -12482,7 +12943,7 @@ ${lm.map(mdLink).join("\n")}
 
 ## Download
 
-${[["/downloads", "Download Pitlane HQ", "Pitlane HQ Agent for Windows and the Android app"], ["/changelog", "What's new", "the release notes of every version"], ["/pricing", "Pricing", "free during the beta, Pro and its price after it, and the supporters' offer"]].map(mdLink).join("\n")}
+${[["/downloads", "Download Pitlane HQ", "Pitlane HQ Agent for Windows and the Android app"], [MS_STORE, "Pitlane HQ on the Microsoft Store", "the same Windows app, updated by the Store"], ["/changelog", "What's new", "the release notes of every version"], ["/pricing", "Pricing", "free during the beta, Pro and its price after it, and the supporters' offer"]].map(mdLink).join("\n")}
 
 ## Optional
 
@@ -12752,262 +13213,28 @@ function hiText(k, a) {
       return [`No iPhone opened the app in these ${a[0]} days.`, `Ning\xFAn iPhone abri\xF3 la app en estos ${a[0]} d\xEDas.`, `Nenhum iPhone abriu o app nestes ${a[0]} dias.`];
     case "behind":
       return [`${a[0]} devices seen this week are not on the newest version.`, `${a[0]} dispositivos vistos esta semana no tienen la versi\xF3n m\xE1s nueva.`, `${a[0]} dispositivos vistos esta semana n\xE3o est\xE3o na vers\xE3o mais nova.`];
+    case "uninstalls":
+      return [`The agent was uninstalled ${a[0]} times in these ${a[1]} days.`, `El agente se desinstal\xF3 ${a[0]} veces en estos ${a[1]} d\xEDas.`, `O agente foi desinstalado ${a[0]} vezes nestes ${a[1]} dias.`];
+    case "uninstalls_why": {
+      const r4 = REASONS[a[2]] || REASONS.other;
+      return [`The agent was uninstalled ${a[0]} times in these ${a[1]} days, most often because "${r4.en}".`, `El agente se desinstal\xF3 ${a[0]} veces en estos ${a[1]} d\xEDas, sobre todo por "${r4.es}".`, `O agente foi desinstalado ${a[0]} vezes nestes ${a[1]} dias, mais por "${r4.pt}".`];
+    }
+    case "donations":
+      return [`${a[0]} donations came in through Stripe in these ${a[1]} days.`, `Llegaron ${a[0]} donaciones por Stripe en estos ${a[1]} d\xEDas.`, `Chegaram ${a[0]} doa\xE7\xF5es pelo Stripe nestes ${a[1]} dias.`];
     default:
       return null;
   }
 }
 __name(hiText, "hiText");
 
-// src/usagelib.js
-var DEVICES2 = ["web", "pc", "android", "ios"];
-var KEY_RE = /^(view|act|game):[a-z0-9_.-]{1,40}$/;
-var MAX_KEYS = 100;
-var MAX_N = 1e3;
-var MAX_DAYS = 90;
-var FEEDBACK_MAX = 4e3;
-var FEEDBACK_PER_DAY = 20;
-var ASK_USED = 6 * 36e5;
-var ASK_RACES = 2;
-var MAX_MS = 10 * 6e4;
-var OV_FIRST = 1;
-var OV_AGAIN = 6;
-var OV_GAMES = ["iracing", "lmu"];
-var OV_MAX = 30;
-var STYLE_RE = /^[a-z0-9_-]{1,20}$/;
-var OV_RE = /^[a-z]{2,12}$/;
-var USAGE_GAMES = ["iracing", "lmu", "acc", "ac"];
-var gameKeyOk = /* @__PURE__ */ __name((k) => !k.startsWith("game:") || USAGE_GAMES.includes(k.slice(5)), "gameKeyOk");
-var day2 = /* @__PURE__ */ __name((t) => new Date(t).toISOString().slice(0, 10), "day");
-var cleanV2 = /* @__PURE__ */ __name((v) => String(v == null ? "" : v).replace(/[^0-9a-zA-Z.+-]/g, "").slice(0, 24), "cleanV");
-function cleanUsage(b2) {
-  if (!b2 || typeof b2 !== "object") return { error: "missing body" };
-  const device = String(b2.device || "").toLowerCase();
-  if (!DEVICES2.includes(device)) return { error: "unknown device" };
-  const counts = [];
-  if (b2.counts && typeof b2.counts === "object" && !Array.isArray(b2.counts)) {
-    for (const [k0, n0] of Object.entries(b2.counts)) {
-      if (counts.length >= MAX_KEYS) break;
-      const k = String(k0).toLowerCase(), n = Math.floor(Number(n0));
-      if (!KEY_RE.test(k) || !gameKeyOk(k) || !(n > 0)) continue;
-      counts.push([k, Math.min(n, MAX_N)]);
-    }
-  }
-  const ms = Math.max(0, Math.min(MAX_MS, Math.floor(Number(b2.ms) || 0)));
-  return { device, v: cleanV2(b2.v), counts, ms };
-}
-__name(cleanUsage, "cleanUsage");
-function cleanFeedback(b2) {
-  if (!b2 || typeof b2 !== "object") return { error: "missing body" };
-  const text2 = String(b2.text == null ? "" : b2.text).replace(/\r\n?/g, "\n").replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f]/g, "").trim();
-  if (!text2) return { error: "write something first" };
-  if (text2.length > FEEDBACK_MAX) return { error: "too long (" + FEEDBACK_MAX + " characters at most)" };
-  let rating = null;
-  if (b2.rating != null && b2.rating !== "" && b2.rating !== 0) {
-    const r4 = Number(b2.rating);
-    if (!Number.isInteger(r4) || r4 < 1 || r4 > 5) return { error: "the rating goes from 1 to 5" };
-    rating = r4;
-  }
-  const kind = b2.kind === "overlays" ? "overlays" : "general";
-  let style = null;
-  if (kind === "overlays") {
-    style = cleanStyle(b2.style);
-    if (!style) return { error: "unknown overlay design" };
-  }
-  const device = String(b2.device || "").toLowerCase();
-  return { text: text2, rating, kind, style, device: DEVICES2.includes(device) ? device : "", v: cleanV2(b2.v), view: String(b2.view || "").replace(/[^a-z0-9_.:-]/gi, "").slice(0, 40) };
-}
-__name(cleanFeedback, "cleanFeedback");
-function cleanStyle(v) {
-  if (v == null || v === "") return "classic";
-  const s = String(v).toLowerCase();
-  return STYLE_RE.test(s) ? s : null;
-}
-__name(cleanStyle, "cleanStyle");
-function cleanOvRace(b2) {
-  if (!b2 || typeof b2 !== "object") return { error: "missing body" };
-  const style = cleanStyle(b2.style);
-  if (!style) return { error: "unknown overlay design" };
-  const game = String(b2.game || "").toLowerCase();
-  if (!OV_GAMES.includes(game)) return { error: "unknown game" };
-  const ovs = [...new Set((Array.isArray(b2.ovs) ? b2.ovs : []).map((x) => String(x).toLowerCase()).filter((x) => OV_RE.test(x)))].slice(0, OV_MAX);
-  if (!ovs.length) return { error: "no overlay was open" };
-  const sid = String(b2.sid == null ? "" : b2.sid).replace(/[^A-Za-z0-9._:-]/g, "").slice(0, 80);
-  return { style, game, ovs, sid };
-}
-__name(cleanOvRace, "cleanOvRace");
-var shouldAskOv = /* @__PURE__ */ __name((answered, races) => answered ? races >= OV_AGAIN : races >= OV_FIRST, "shouldAskOv");
-var shouldAsk = /* @__PURE__ */ __name((used, races) => used >= ASK_USED || races >= ASK_RACES, "shouldAsk");
-function analyticsOf(days, perDay, rows, presence, accounts2) {
-  const byDev = /* @__PURE__ */ new Map(), byKey = /* @__PURE__ */ new Map(), byGame = /* @__PURE__ */ new Map(), byUser = /* @__PURE__ */ new Map();
-  const add = /* @__PURE__ */ __name((m, k, acc, n) => {
-    let x = m.get(k);
-    if (!x) m.set(k, x = { n: 0, users: /* @__PURE__ */ new Set() });
-    x.n += n;
-    x.users.add(acc);
-  }, "add");
-  for (const r4 of rows) {
-    if (!gameKeyOk(r4.key)) continue;
-    add(byDev, r4.device, r4.account_id, r4.n);
-    if (r4.key.startsWith("game:")) add(byGame, r4.key.slice(5), r4.account_id, r4.n);
-    else add(byKey, r4.key, r4.account_id, r4.n);
-    let u = byUser.get(r4.account_id);
-    if (!u) byUser.set(r4.account_id, u = { n: 0, devices: /* @__PURE__ */ new Set(), keys: /* @__PURE__ */ new Map(), last: "" });
-    u.n += r4.n;
-    u.devices.add(r4.device);
-    u.keys.set(r4.key, (u.keys.get(r4.key) || 0) + r4.n);
-    if (r4.last > u.last) u.last = r4.last;
-  }
-  const seen2 = /* @__PURE__ */ new Map(), versions = /* @__PURE__ */ new Map();
-  for (const p of presence) {
-    if (!seen2.has(p.account_id) || p.last_seen > seen2.get(p.account_id)) seen2.set(p.account_id, p.last_seen);
-    if (p.app_version) {
-      const k = p.kind + "|" + p.app_version;
-      versions.set(k, (versions.get(k) || 0) + 1);
-    }
-  }
-  const list = /* @__PURE__ */ __name((m, name2) => [...m].map(([k, x]) => ({ [name2]: k, users: x.users.size, n: x.n })).sort((a, b2) => b2.n - a.n), "list");
-  return {
-    days,
-    active: perDay.map((x) => ({ day: x.day, users: x.users })),
-    byDevice: list(byDev, "device"),
-    top: list(byKey, "key").slice(0, 60),
-    games: list(byGame, "game"),
-    versions: [...versions].map(([k, n]) => ({ device: k.split("|")[0], v: k.split("|")[1], devices: n })).sort((a, b2) => b2.devices - a.devices),
-    users: [...byUser].map(([id2, u]) => ({
-      id: id2,
-      nick: (accounts2.get(id2) || {}).display || "",
-      lastSeen: seen2.get(id2) || (u.last ? Date.parse(u.last + "T12:00:00Z") : 0),
-      lastDay: u.last,
-      devices: [...u.devices],
-      n: u.n,
-      top: [...u.keys].map(([key2, n]) => ({ key: key2, n })).sort((a, b2) => b2.n - a.n).slice(0, 6)
-    })).sort((a, b2) => b2.lastSeen - a.lastSeen).slice(0, 300)
-  };
-}
-__name(analyticsOf, "analyticsOf");
-var LAPS_KEYS = /* @__PURE__ */ new Set(["view:laps", "view:telemetry", "view:cloudlaps", "view:session", "act:race_summary", "act:compare"]);
-var COACH_KEYS = /* @__PURE__ */ new Set(["act:coach_report", "view:coach", "act:open_in_coach", "act:coach_plan", "act:plan_to_overlay"]);
-var sesDay = /* @__PURE__ */ __name((t) => new Date(t).toISOString().slice(0, 10), "sesDay");
-function analyticsMore({ from, t0, actDays, rows, sessions, prevSessions, prevActive, accounts: accounts2, accountsAll }) {
-  const perDay = /* @__PURE__ */ new Map(), userDays = /* @__PURE__ */ new Map(), app = /* @__PURE__ */ new Map(), drove = /* @__PURE__ */ new Map();
-  const mark = /* @__PURE__ */ __name((m, d, id2) => {
-    let x = m.get(d);
-    if (!x) m.set(d, x = /* @__PURE__ */ new Set());
-    x.add(id2);
-  }, "mark");
-  for (const r4 of actDays) {
-    if (r4.day < from) continue;
-    mark(perDay, r4.day, r4.account_id);
-    mark(app, r4.day, r4.account_id);
-    mark(userDays, r4.account_id, r4.day);
-  }
-  const games = /* @__PURE__ */ new Map(), drivers = /* @__PURE__ */ new Set();
-  let nSes = 0, races = 0, laps = 0, secs = 0;
-  for (const s of sessions) {
-    const id2 = String(s.uploader || "").slice(5), d = s.day || sesDay(s.started || 0);
-    if (!id2 || d < from) continue;
-    mark(perDay, d, id2);
-    mark(drove, d, id2);
-    mark(userDays, id2, d);
-    drivers.add(id2);
-    let g = games.get(s.game);
-    if (!g) games.set(s.game, g = { game: s.game, drivers: /* @__PURE__ */ new Set(), sessions: 0, races: 0, laps: 0, secs: 0 });
-    g.drivers.add(id2);
-    g.sessions += s.n || 0;
-    g.races += s.races || 0;
-    g.laps += s.laps || 0;
-    g.secs += s.secs || 0;
-    nSes += s.n || 0;
-    races += s.races || 0;
-    laps += s.laps || 0;
-    secs += s.secs || 0;
-  }
-  const devices = /* @__PURE__ */ new Map(), keys = /* @__PURE__ */ new Map();
-  for (const r4 of rows) {
-    let d = devices.get(r4.account_id);
-    if (!d) devices.set(r4.account_id, d = /* @__PURE__ */ new Set());
-    d.add(r4.device);
-    let k = keys.get(r4.account_id);
-    if (!k) keys.set(r4.account_id, k = /* @__PURE__ */ new Set());
-    k.add(r4.key);
-  }
-  const fresh = accounts2.filter((a) => a.created >= t0);
-  const has = /* @__PURE__ */ __name((id2, set) => [...keys.get(id2) || []].some((k) => set.has(k)), "has");
-  const daysList = [...userDays.values()].map((x) => x.size);
-  const list = /* @__PURE__ */ __name((m) => [...m].sort((a, b2) => a[0] < b2[0] ? -1 : 1).map(([day4, u]) => ({ day: day4, users: u.size })), "list");
-  return {
-    active: list(perDay),
-    activeApp: list(app),
-    drove: list(drove),
-    signupsPerDay: [...fresh.reduce((m, a) => m.set(sesDay(a.created), (m.get(sesDay(a.created)) || 0) + 1), /* @__PURE__ */ new Map())].sort().map(([day4, n]) => ({ day: day4, n })),
-    totals: { active: userDays.size, newAccounts: fresh.length, accounts: accountsAll, drove: drivers.size, sessions: nSes, races, laps, secs: Math.round(secs), returning: daysList.filter((n) => n >= 2).length, multiDevice: [...devices.values()].filter((d) => d.size >= 2).length },
-    prev: { active: prevActive, newAccounts: accounts2.length - fresh.length, sessions: prevSessions.sessions || 0, drove: prevSessions.drivers || 0, secs: Math.round(prevSessions.secs || 0) },
-    funnel: { accounts: fresh.length, opened: fresh.filter((a) => keys.has(a.id)).length, drove: fresh.filter((a) => drivers.has(a.id)).length, laps: fresh.filter((a) => has(a.id, LAPS_KEYS)).length, coach: fresh.filter((a) => has(a.id, COACH_KEYS)).length },
-    comeback: { d1: daysList.filter((n) => n === 1).length, d23: daysList.filter((n) => n >= 2 && n <= 3).length, d4: daysList.filter((n) => n >= 4).length },
-    driven: [...games.values()].map((g) => ({ game: g.game, drivers: g.drivers.size, sessions: g.sessions, races: g.races, laps: g.laps, secs: Math.round(g.secs) })).sort((a, b2) => b2.sessions - a.sessions)
-  };
-}
-__name(analyticsMore, "analyticsMore");
-function highlightsOf(a) {
-  const out = [], t = a.totals || {}, pv = a.prev || {}, F2 = a.funnel || {}, act = t.active || 0, top = a.top || [];
-  if (pv.active) out.push({ k: t.active >= pv.active ? "active_more" : "active_fewer", tone: t.active >= pv.active ? "good" : "bad", a: [act, a.days, Math.abs(act - pv.active)] });
-  else out.push({ k: "active_first", tone: "good", a: [act, a.days, t.newAccounts || 0] });
-  if (F2.accounts >= 3) {
-    const w = [["no_app", F2.accounts - (F2.opened || 0)], ["no_drive", F2.accounts - (F2.drove || 0)]].sort((x, y) => y[1] - x[1])[0];
-    if (w[1] > 0) out.push({ k: w[0], tone: "bad", a: [w[1], F2.accounts, Math.round(w[1] / F2.accounts * 100)] });
-  }
-  const users = /* @__PURE__ */ __name((keys) => Math.max(0, ...keys.map((k) => (top.find((x) => x.key === k) || {}).users || 0)), "users");
-  const coach2 = users(["act:coach_report", "view:coach"]), laps = users(["view:telemetry", "view:laps"]);
-  if (act && laps && coach2 < laps * 0.6) out.push({ k: "coach_low", tone: "warn", a: [coach2, act, laps] });
-  const S3 = a.sources || {}, bs = (S3.bySource || []).filter((x) => x.signups && x.src !== "unknown").sort((x, y) => y.signups - x.signups)[0];
-  const bv = (S3.bySource || []).filter((x) => x.visits).sort((x, y) => y.visits - x.visits)[0];
-  if (bs) out.push({ k: "top_signups", tone: "blue", a: [bs.src, bs.signups] });
-  else if (bv) out.push({ k: "top_visits", tone: "blue", a: [bv.src, bv.visits, S3.visits] });
-  const g = (a.driven || []).filter((x) => x.drivers).map((x) => [x.game, x.sessions / x.drivers]).sort((x, y) => y[1] - x[1]);
-  if (g.length > 1 && g[0][1] >= g[g.length - 1][1] * 2) out.push({ k: "games", tone: "blue", a: [g[0][0], g[0][1].toFixed(1), g[g.length - 1][0], g[g.length - 1][1].toFixed(1)] });
-  const devs = new Map((a.byDevice || []).map((x) => [x.device, x.users]));
-  for (const d of ["android", "ios"]) if (act && !devs.get(d)) out.push({ k: "no_" + d, tone: "bad", a: [a.days] });
-  const vers = /* @__PURE__ */ new Map();
-  for (const v of a.versions || []) {
-    const k = v.device === "desktop" ? "pc" : v.device;
-    if (!vers.has(k)) vers.set(k, []);
-    vers.get(k).push(v);
-  }
-  const num4 = /* @__PURE__ */ __name((v) => String(v || "").split(/[^0-9]+/).filter(Boolean).slice(0, 3).map(Number), "num");
-  const cmp = /* @__PURE__ */ __name((x, y) => {
-    const p = num4(x), q2 = num4(y);
-    for (let i = 0; i < 3; i++) {
-      const d = (p[i] || 0) - (q2[i] || 0);
-      if (d) return d;
-    }
-    return 0;
-  }, "cmp");
-  let behind = 0;
-  for (const list of vers.values()) {
-    const newest = list.map((x) => x.v).sort(cmp).pop();
-    behind += list.filter((x) => cmp(x.v, newest)).reduce((s, x) => s + x.devices, 0);
-  }
-  if (behind) out.push({ k: "behind", tone: "warn", a: [behind] });
-  return out;
-}
-__name(highlightsOf, "highlightsOf");
-var SQL_SESSIONS_DAYS = "SELECT date(started/1000,'unixepoch') AS day, game, uploader, COUNT(*) AS n, SUM(COALESCE(laps,0)) AS laps, SUM(COALESCE(secs,0)) AS secs, SUM(CASE WHEN lower(COALESCE(kind,'')) LIKE '%race%' THEN 1 ELSE 0 END) AS races FROM sessions WHERE started>=?1 AND uploader LIKE 'acct:%' GROUP BY 1, game, uploader LIMIT 20000";
-var SQL_USAGE_ADD = "INSERT INTO usage_days (day, account_id, device, key, n) VALUES (?1,?2,?3,?4,?5) ON CONFLICT(day, account_id, device, key) DO UPDATE SET n=MIN(usage_days.n+excluded.n, 100000)";
-var SQL_ASK_USED = "INSERT INTO feedback_ask (account_id, shown, used) VALUES (?1,?2,?3) ON CONFLICT(account_id) DO UPDATE SET used=feedback_ask.used+excluded.used";
-var SQL_ASK_SEEN = "INSERT INTO feedback_ask (account_id, shown, used) VALUES (?1,?2,0) ON CONFLICT(account_id) DO UPDATE SET shown=excluded.shown, used=0";
-var SQL_RACES_SINCE = "SELECT COUNT(*) AS n FROM sessions WHERE uploader=?1 AND started>?2 AND lower(COALESCE(kind,'')) LIKE '%race%'";
-var SQL_OV_RACE = "INSERT INTO feedback_ask (account_id, shown, used, ov_races, ov_last_style, ov_last_sid) VALUES (?1,?2,0,1,?3,?4) ON CONFLICT(account_id) DO UPDATE SET ov_races=MIN(feedback_ask.ov_races+(CASE WHEN COALESCE(feedback_ask.ov_last_sid,'')=excluded.ov_last_sid THEN 0 ELSE 1 END), 1000), ov_last_style=excluded.ov_last_style, ov_last_sid=excluded.ov_last_sid";
-var SQL_OV_SEEN = "UPDATE feedback_ask SET ov_races=0 WHERE account_id=?1";
-var SQL_OV_ANSWERED = "INSERT INTO feedback_ask (account_id, shown, used, ov_races, ov_answered) VALUES (?1,?2,0,0,1) ON CONFLICT(account_id) DO UPDATE SET ov_races=0, ov_answered=1";
-
 // src/usage.js
-var json14 = /* @__PURE__ */ __name((o, s = 200) => new Response(JSON.stringify(o), { status: s, headers: { "content-type": "application/json", "cache-control": "no-store" } }), "json");
-var err10 = /* @__PURE__ */ __name((m, s) => json14({ error: m }, s), "err");
+var json15 = /* @__PURE__ */ __name((o, s = 200) => new Response(JSON.stringify(o), { status: s, headers: { "content-type": "application/json", "cache-control": "no-store" } }), "json");
+var err10 = /* @__PURE__ */ __name((m, s) => json15({ error: m }, s), "err");
 async function usageRoute(req, env, url) {
   const p = url.pathname, m = req.method;
   const ours = ["/community/usage", "/community/feedback", "/community/feedback/ask", "/community/feedback/seen", "/community/feedback/ovrace", "/community/admin/analytics", "/community/admin/feedback"];
   if (p === "/community/visit" && m === "POST") {
-    if (isBot(req.headers.get("user-agent"))) return json14({ ok: true });
+    if (isBot(req.headers.get("user-agent"))) return json15({ ok: true });
     let b2 = null;
     try {
       b2 = JSON.parse((await req.text()).slice(0, 4e3));
@@ -13015,8 +13242,8 @@ async function usageRoute(req, env, url) {
       b2 = null;
     }
     const v = visitOf(b2);
-    if (v.src) await env.DB.prepare(SQL_VISIT_ADD).bind(day2(Date.now()), v.src, countryOf(req.cf), v.page).run();
-    return json14({ ok: true });
+    if (v.src) await env.DB.prepare(SQL_VISIT_ADD).bind(day(Date.now()), v.src, countryOf(req.cf), v.page).run();
+    return json15({ ok: true });
   }
   if (!ours.includes(p) && !p.startsWith("/community/admin/feedback/")) return null;
   const acc = await sessionAccount(req, env);
@@ -13025,37 +13252,37 @@ async function usageRoute(req, env, url) {
   if (p === "/community/usage" && m === "POST") {
     const u = cleanUsage(await req.json().catch(() => null));
     if (u.error) return err10(u.error, 400);
-    const d = day2(now), st = [];
+    const d = day(now), st = [];
     for (const [k, n] of u.counts)
       st.push(env.DB.prepare(SQL_USAGE_ADD).bind(d, acc.id, u.device, k, n));
     if (u.ms) st.push(env.DB.prepare(SQL_ASK_USED).bind(acc.id, now, u.ms));
     if (st.length) await env.DB.batch(st);
-    return json14({ ok: true, kept: u.counts.length });
+    return json15({ ok: true, kept: u.counts.length });
   }
   if (p === "/community/feedback/ask" && m === "GET") {
     const r4 = await env.DB.prepare("SELECT shown, used, ov_races, ov_answered, ov_last_style FROM feedback_ask WHERE account_id=?1").bind(acc.id).first();
     if (!r4) {
       await env.DB.prepare("INSERT OR IGNORE INTO feedback_ask (account_id, shown, used) VALUES (?1,?2,0)").bind(acc.id, now).run();
-      return json14({ ask: false, ov: false });
+      return json15({ ask: false, ov: false });
     }
     let races = 0;
     if (r4.used < ASK_USED) {
       const c = await env.DB.prepare(SQL_RACES_SINCE).bind("acct:" + acc.id, r4.shown).first();
       races = c && c.n || 0;
     }
-    return json14({ ask: shouldAsk(r4.used, races), used: r4.used, races, ov: shouldAskOv(!!r4.ov_answered, r4.ov_races || 0), ovRaces: r4.ov_races || 0, ovStyle: r4.ov_last_style || "classic" });
+    return json15({ ask: shouldAsk(r4.used, races), used: r4.used, races, ov: shouldAskOv(!!r4.ov_answered, r4.ov_races || 0), ovRaces: r4.ov_races || 0, ovStyle: r4.ov_last_style || "classic" });
   }
   if (p === "/community/feedback/seen" && m === "POST") {
     const b2 = await req.json().catch(() => null);
     if (b2 && b2.kind === "overlays") await env.DB.prepare(SQL_OV_SEEN).bind(acc.id).run();
     else await env.DB.prepare(SQL_ASK_SEEN).bind(acc.id, now).run();
-    return json14({ ok: true });
+    return json15({ ok: true });
   }
   if (p === "/community/feedback/ovrace" && m === "POST") {
     const o = cleanOvRace(await req.json().catch(() => null));
     if (o.error) return err10(o.error, 400);
     await env.DB.prepare(SQL_OV_RACE).bind(acc.id, now, o.style, o.sid || crypto.randomUUID()).run();
-    return json14({ ok: true });
+    return json15({ ok: true });
   }
   if (p === "/community/feedback" && m === "POST") {
     const b2 = await req.json().catch(() => null), f = cleanFeedback(b2);
@@ -13073,7 +13300,7 @@ async function usageRoute(req, env, url) {
     const mailed = await sendFeedback(env, { ...f, nick: acc.display || "", accountId: acc.id, email: esc7 && esc7.email || "" }).catch(() => false);
     if (await discordFeedback(env, f).catch(() => 0) > 0) await env.DB.prepare("UPDATE feedback SET discord_at=?2 WHERE id=?1").bind(id2, now).run().catch(() => {
     });
-    return json14({ ok: true, id: id2, mailed });
+    return json15({ ok: true, id: id2, mailed });
   }
   if (!isAdmin(env, acc.id)) return err10("only the admins of this server can do this", 403);
   if (p === "/community/admin/feedback" && m === "GET") {
@@ -13082,36 +13309,36 @@ async function usageRoute(req, env, url) {
     const rated = items.filter((x) => x.rating);
     const np = await env.DB.prepare("SELECT COUNT(*) AS n FROM feedback WHERE discord_at IS NULL").first().catch(() => null);
     const fc = await env.DB.prepare("SELECT COUNT(*) AS n FROM discord_guilds WHERE feedback_channel IS NOT NULL").first().catch(() => null);
-    return json14({ notOnDiscord: fc && fc.n ? np && np.n || 0 : 0, items, count: items.length, avg: rated.length ? Math.round(rated.reduce((s, x) => s + x.rating, 0) / rated.length * 10) / 10 : null });
+    return json15({ notOnDiscord: fc && fc.n ? np && np.n || 0 : 0, items, count: items.length, avg: rated.length ? Math.round(rated.reduce((s, x) => s + x.rating, 0) / rated.length * 10) / 10 : null });
   }
   if (p.startsWith("/community/admin/feedback/") && m === "DELETE") {
     const id2 = decodeURIComponent(p.slice("/community/admin/feedback/".length));
     if (!/^[0-9a-f-]{8,40}$/i.test(id2)) return err10("bad id", 400);
     const r4 = await env.DB.prepare("DELETE FROM feedback WHERE id=?1").bind(id2).run();
-    return json14({ ok: true, deleted: r4.meta && r4.meta.changes || 0 });
+    return json15({ ok: true, deleted: r4.meta && r4.meta.changes || 0 });
   }
   if (p === "/community/admin/feedback/old" && m === "POST") {
     const b2 = await req.json().catch(() => ({})), days = Math.floor(Number(b2 && b2.days));
     if (!(days >= 1 && days <= 3650)) return err10("days from 1 to 3650", 400);
     const r4 = await env.DB.prepare("DELETE FROM feedback WHERE created<?1").bind(now - days * 864e5).run();
-    return json14({ ok: true, deleted: r4.meta && r4.meta.changes || 0 });
+    return json15({ ok: true, deleted: r4.meta && r4.meta.changes || 0 });
   }
   if (p === "/community/admin/feedback/discord" && m === "POST") {
     const rows = (await env.DB.prepare("SELECT id, device, v, rating, text, kind, style FROM feedback WHERE discord_at IS NULL ORDER BY created ASC LIMIT 8").all()).results || [];
     let posted = 0;
     for (const x of rows) {
       const n = await discordFeedback(env, x).catch(() => 0);
-      if (!n) return json14({ error: posted ? "Discord stopped answering, press it again in a minute" : "No Discord feedback forum is chosen, or Discord did not answer", posted }, posted ? 200 : 400);
+      if (!n) return json15({ error: posted ? "Discord stopped answering, press it again in a minute" : "No Discord feedback forum is chosen, or Discord did not answer", posted }, posted ? 200 : 400);
       await env.DB.prepare("UPDATE feedback SET discord_at=?2 WHERE id=?1").bind(x.id, Date.now()).run();
       posted++;
     }
     const left = await env.DB.prepare("SELECT COUNT(*) AS n FROM feedback WHERE discord_at IS NULL").first();
-    return json14({ ok: true, posted, left: left && left.n || 0 });
+    return json15({ ok: true, posted, left: left && left.n || 0 });
   }
   if (p === "/community/admin/analytics" && m === "GET") {
     const days = Math.max(1, Math.min(MAX_DAYS, Math.floor(Number(url.searchParams.get("days")) || 30)));
-    const t0 = Date.parse(day2(now - (days - 1) * 864e5) + "T00:00:00Z"), p0 = t0 - days * 864e5;
-    const from = day2(t0), pFrom = day2(p0);
+    const t0 = Date.parse(day(now - (days - 1) * 864e5) + "T00:00:00Z"), p0 = t0 - days * 864e5;
+    const from = day(t0), pFrom = day(p0);
     const q2 = /* @__PURE__ */ __name((sql, ...a) => env.DB.prepare(sql).bind(...a).all().then((r4) => r4.results || []), "q");
     const [actDays, rows, pres, ses, pSes, pAct, accs, allAcc, vis] = await Promise.all([
       q2("SELECT DISTINCT account_id, day FROM usage_days WHERE day>=?1 LIMIT 20000", from),
@@ -13124,6 +13351,13 @@ async function usageRoute(req, env, url) {
       q2("SELECT COUNT(*) AS n FROM accounts"),
       q2("SELECT day, src, country, page, n FROM visits_days WHERE day>=?1 LIMIT 20000", pFrom).catch(() => [])
     ]);
+    const [pcRows, unAns, badges, patrons, orders] = await Promise.all([
+      q2("SELECT day, kind, v, n FROM pc_days WHERE day>=?1 LIMIT 20000", pFrom).catch(() => []),
+      q2("SELECT created, v, style, text FROM feedback WHERE kind='uninstall' AND created>=?1 ORDER BY created DESC LIMIT 2000", p0).catch(() => []),
+      q2("SELECT supporter_src AS src, COUNT(*) AS n FROM accounts WHERE supporter=1 GROUP BY supporter_src").catch(() => []),
+      q2("SELECT COUNT(*) AS n FROM patreon_patrons WHERE active=1").catch(() => []),
+      q2("SELECT o.at, o.status, o.amount, o.currency, o.account_id, a.display AS name FROM pro_orders o LEFT JOIN accounts a ON a.id=o.account_id WHERE o.kind='supporter' AND o.at>=?1 ORDER BY o.at DESC LIMIT 2000", p0).catch(() => [])
+    ]);
     const ids = [.../* @__PURE__ */ new Set([...rows.map((x) => x.account_id), ...ses.map((x) => x.uploader.slice(5))])].slice(0, 300), accounts2 = /* @__PURE__ */ new Map();
     for (let i = 0; i < ids.length; i += 90) {
       const part = ids.slice(i, i + 90);
@@ -13133,15 +13367,17 @@ async function usageRoute(req, env, url) {
     const out = analyticsOf(days, [], rows, pres, accounts2);
     const more = analyticsMore({ from, t0, actDays, rows, sessions: ses, prevSessions: pSes[0] || {}, prevActive: (pAct[0] || {}).n || 0, accounts: accs, accountsAll: (allAcc[0] || {}).n || 0 });
     const vNow = vis.filter((x) => x.day >= from), vPrev = vis.filter((x) => x.day < from);
-    const all = { ...out, ...more, sources: sourcesOf(vNow, vPrev, accs.filter((a) => a.created >= t0), accs.filter((a) => a.created < t0)) };
+    const installs = installsOf({ from, pcRows, answers: unAns.map((x) => ({ ...x, day: day(x.created) })) });
+    const supporters = supportersOf({ t0, badges, patrons: (patrons[0] || {}).n || 0, orders });
+    const all = { ...out, ...more, installs, supporters, sources: sourcesOf(vNow, vPrev, accs.filter((a) => a.created >= t0), accs.filter((a) => a.created < t0)) };
     all.sources.bySource = all.sources.bySource.map((x) => ({ ...x, name: srcName(x.src), kindName: KIND_NAMES[x.kind] || KIND_NAMES.other }));
-    return json14({ ...all, highlights: highlightsOf(all).map((h) => ({ ...h, text: hiText(h.k, h.a) })), areas: areasOf(all.top || []) });
+    return json15({ ...all, highlights: highlightsOf(all).map((h) => ({ ...h, text: hiText(h.k, h.a) })), areas: areasOf(all.top || []) });
   }
   return err10("not found", 404);
 }
 __name(usageRoute, "usageRoute");
 async function pruneUsage(env) {
-  const old = day2(Date.now() - 400 * 864e5);
+  const old = day(Date.now() - 400 * 864e5);
   await env.DB.batch([env.DB.prepare("DELETE FROM usage_days WHERE day < ?1").bind(old), env.DB.prepare("DELETE FROM visits_days WHERE day < ?1").bind(old)]);
 }
 __name(pruneUsage, "pruneUsage");
@@ -13150,7 +13386,7 @@ __name(pruneUsage, "pruneUsage");
 var supportRoute = /* @__PURE__ */ __name((req, env, url) => handleSupport(req, env, url, { sessionAccount, isAdmin, openEscrow, sendSupportChat, sendSupportReply }), "supportRoute");
 
 // src/legal.js
-var esc5 = /* @__PURE__ */ __name((s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]), "esc");
+var esc6 = /* @__PURE__ */ __name((s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]), "esc");
 var MAIL = "support@pitlanehq.app";
 var UPDATED = "2026-10-31";
 var PRIVACY = {
@@ -13311,22 +13547,22 @@ function legalLang(req, url) {
 }
 __name(legalLang, "legalLang");
 var LN = { en: "English", es: "Espa\xF1ol", pt: "Portugu\xEAs" };
-var shell = /* @__PURE__ */ __name((l, path, title, body) => `<!doctype html><html lang="${l === "pt" ? "pt-BR" : l}"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc5(title)} \xB7 Pitlane HQ</title><link rel="canonical" href="https://pitlanehq.app${path}${l === "en" ? "" : "?lang=" + l}"><link rel="icon" href="/favicon.ico" sizes="any">
+var shell = /* @__PURE__ */ __name((l, path, title, body) => `<!doctype html><html lang="${l === "pt" ? "pt-BR" : l}"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc6(title)} \xB7 Pitlane HQ</title><link rel="canonical" href="https://pitlanehq.app${path}${l === "en" ? "" : "?lang=" + l}"><link rel="icon" href="/favicon.ico" sizes="any">
 <style>body{margin:0;background:#11151b;color:#e7ebf1;font:16px/1.6 system-ui,sans-serif}main{max-width:760px;margin:0 auto;padding:28px 16px 48px}h1{font-size:26px;margin:0 0 6px}h2{font-size:17px;margin:26px 0 8px;color:#ffb02e}p{color:#a9b4c3;margin:6px 0}ul,ol{padding-left:20px;color:#c9d2de}li{margin:6px 0}a{color:#ffb02e}.m{color:#8a97a9;font-size:13px}.top{display:flex;align-items:center;gap:10px;margin-bottom:18px}.top b{font-size:15px;letter-spacing:.06em}.top img{width:28px;height:28px;border-radius:7px}</style>
 <main><div class="top"><img src="/icon-192.png" alt=""><b>PITLANE HQ</b></div>${body}<p class="m" style="margin-top:28px">${Object.keys(LN).map((k) => `<a href="${path}?lang=${k}" hreflang="${k}">${LN[k]}</a>`).join(" \xB7 ")}</p></main></html>`, "shell");
 function privacyPage(l) {
   const p = PRIVACY[l] || PRIVACY.en;
-  return shell(l, "/privacy", p.title, `<h1>${esc5(p.title)}</h1><p class="m">${esc5(p.up)} ${UPDATED}</p><p>${esc5(p.intro)}</p>` + p.s.map(([h, items]) => `<h2>${esc5(h)}</h2>` + (items.length > 1 ? `<ul>${items.map((x) => `<li>${x}</li>`).join("")}</ul>` : `<p>${items[0]}</p>`)).join(""));
+  return shell(l, "/privacy", p.title, `<h1>${esc6(p.title)}</h1><p class="m">${esc6(p.up)} ${UPDATED}</p><p>${esc6(p.intro)}</p>` + p.s.map(([h, items]) => `<h2>${esc6(h)}</h2>` + (items.length > 1 ? `<ul>${items.map((x) => `<li>${x}</li>`).join("")}</ul>` : `<p>${items[0]}</p>`)).join(""));
 }
 __name(privacyPage, "privacyPage");
 function termsPage(l) {
   const p = TERMS[l] || TERMS.en, up = (PRIVACY[l] || PRIVACY.en).up;
-  return shell(l, "/terms", p.title, `<h1>${esc5(p.title)}</h1><p class="m">${esc5(up)} ${UPDATED}</p><p>${esc5(p.intro)}</p>` + p.s.map(([h, items]) => `<h2>${esc5(h)}</h2>` + items.map((x) => `<p>${x}</p>`).join("")).join(""));
+  return shell(l, "/terms", p.title, `<h1>${esc6(p.title)}</h1><p class="m">${esc6(up)} ${UPDATED}</p><p>${esc6(p.intro)}</p>` + p.s.map(([h, items]) => `<h2>${esc6(h)}</h2>` + items.map((x) => `<p>${x}</p>`).join("")).join(""));
 }
 __name(termsPage, "termsPage");
 function deletePage(l) {
   const d = DELETE[l] || DELETE.en;
-  return shell(l, "/delete-account", d.title, `<h1>${esc5(d.title)}</h1><h2>${esc5(d.h1)}</h2><ol>${d.steps.map((x) => `<li>${x}</li>`).join("")}</ol><h2>${esc5(d.h2)}</h2><ul>${d.what.map((x) => `<li>${esc5(x)}</li>`).join("")}</ul><p>${d.more}</p>`);
+  return shell(l, "/delete-account", d.title, `<h1>${esc6(d.title)}</h1><h2>${esc6(d.h1)}</h2><ol>${d.steps.map((x) => `<li>${x}</li>`).join("")}</ol><h2>${esc6(d.h2)}</h2><ul>${d.what.map((x) => `<li>${esc6(x)}</li>`).join("")}</ul><p>${d.more}</p>`);
 }
 __name(deletePage, "deletePage");
 function legal(req, url) {
@@ -13337,100 +13573,6 @@ function legal(req, url) {
   return new Response(page4(l), { headers: { "content-type": "text/html; charset=utf-8", "cache-control": "public, max-age=3600", vary: "Accept-Language" } });
 }
 __name(legal, "legal");
-
-// src/uninstall.js
-var esc6 = /* @__PURE__ */ __name((s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]), "esc");
-var json15 = /* @__PURE__ */ __name((o, s = 200) => new Response(JSON.stringify(o), { status: s, headers: { "content-type": "application/json", "cache-control": "no-store" } }), "json");
-var UNINSTALL_PER_DAY = 3;
-var UNINSTALL_ALL_DAY = 200;
-var REASONS = {
-  game: { en: "It does not work with my game", es: "No funciona con mi juego", pt: "N\xE3o funciona com o meu jogo" },
-  bugs: { en: "Bugs or crashes", es: "Errores o cierres", pt: "Erros ou travamentos" },
-  slow: { en: "It slows down my PC or my game", es: "Hace ir lento mi PC o mi juego", pt: "Deixa meu PC ou meu jogo lento" },
-  missing: { en: "It is missing something I need", es: "Le falta algo que necesito", pt: "Falta algo de que eu preciso" },
-  hard: { en: "Hard to use", es: "Dif\xEDcil de usar", pt: "Dif\xEDcil de usar" },
-  other_app: { en: "I use another app", es: "Uso otra app", pt: "Uso outro app" },
-  little: { en: "I do not race enough", es: "No corro lo suficiente", pt: "N\xE3o corro o suficiente" },
-  reinstall: { en: "I am going to install it again", es: "Lo voy a volver a instalar", pt: "Vou instalar de novo" },
-  other: { en: "Something else", es: "Otra cosa", pt: "Outra coisa" }
-};
-var TXT = {
-  en: { title: "Why did you uninstall Pitlane HQ?", more: "Anything else you want to tell us", send: "Send", thanks: "Thank you. We read every answer.", pick: "Choose a reason or write something first.", fail: "It could not be sent. Try again in a minute.", again: "Download Pitlane HQ" },
-  es: { title: "\xBFPor qu\xE9 has desinstalado Pitlane HQ?", more: "Algo m\xE1s que quieras contarnos", send: "Enviar", thanks: "Gracias. Leemos todas las respuestas.", pick: "Elige un motivo o escribe algo primero.", fail: "No se pudo enviar. Prueba otra vez en un minuto.", again: "Descargar Pitlane HQ" },
-  pt: { title: "Por que voc\xEA desinstalou o Pitlane HQ?", more: "Algo mais que queira nos contar", send: "Enviar", thanks: "Obrigado. Lemos todas as respostas.", pick: "Escolha um motivo ou escreva algo primeiro.", fail: "N\xE3o foi poss\xEDvel enviar. Tente de novo em um minuto.", again: "Baixar o Pitlane HQ" }
-};
-function uninstallLang(req, url) {
-  const q2 = (url.searchParams.get("lang") || "").slice(0, 2).toLowerCase();
-  if (TXT[q2]) return q2;
-  for (const part of (req.headers.get("accept-language") || "").toLowerCase().split(",")) {
-    const l = part.trim().slice(0, 2);
-    if (TXT[l]) return l;
-  }
-  return "en";
-}
-__name(uninstallLang, "uninstallLang");
-var cleanV3 = /* @__PURE__ */ __name((v) => String(v == null ? "" : v).replace(/[^0-9a-z.+-]/gi, "").slice(0, 20), "cleanV");
-function cleanUninstall(b2) {
-  if (!b2 || typeof b2 !== "object") return { error: "missing body" };
-  const got = Array.isArray(b2.reasons) ? b2.reasons.map((x) => String(x)) : [];
-  const reasons = Object.keys(REASONS).filter((k) => got.includes(k));
-  const text2 = String(b2.text == null ? "" : b2.text).replace(/\r\n?/g, "\n").replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f]/g, "").trim();
-  if (text2.length > FEEDBACK_MAX) return { error: "too long (" + FEEDBACK_MAX + " characters at most)" };
-  if (!reasons.length && !text2) return { error: "choose a reason or write something first" };
-  const said = [reasons.map((k) => REASONS[k].en).join(" \xB7 "), text2].filter(Boolean).join("\n\n");
-  return { reasons, text: said, rating: null, kind: "uninstall", style: reasons.join(",").slice(0, 100) || null, device: "pc", v: cleanV3(b2.v), view: "uninstall" };
-}
-__name(cleanUninstall, "cleanUninstall");
-function uninstallPage(l, v) {
-  const t = TXT[l] || TXT.en;
-  const chips = Object.entries(REASONS).map(([k, n]) => `<label class="c"><input type="checkbox" value="${k}"><span>${esc6(n[l] || n.en)}</span></label>`).join("");
-  return `<!doctype html><html lang="${l === "pt" ? "pt-BR" : l}"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><title>${esc6(t.title)} \xB7 Pitlane HQ</title><link rel="icon" href="/favicon.ico" sizes="any">
-<style>*{box-sizing:border-box}body{margin:0;background:#0d1116;color:#e7ebf1;font:16px/1.5 system-ui,sans-serif}main{max-width:640px;margin:0 auto;padding:28px 16px 48px}h1{font-size:24px;margin:0 0 18px}.top{display:flex;align-items:center;gap:10px;margin-bottom:22px}.top b{font-size:15px;letter-spacing:.06em}.top img{width:28px;height:28px;border-radius:7px}
-.cs{display:flex;flex-wrap:wrap;gap:8px}.c{cursor:pointer}.c input{position:absolute;opacity:0;pointer-events:none}.c span{display:inline-block;padding:9px 14px;border-radius:999px;background:#151c25;border:1px solid #263140;color:#c9d2de;font-size:14px}.c input:checked+span{background:#2a2112;border-color:#ffb02e;color:#ffb02e}.c input:focus-visible+span{outline:2px solid #ffb02e;outline-offset:2px}
-textarea{width:100%;min-height:110px;margin-top:16px;padding:12px;border-radius:12px;border:1px solid #263140;background:#151c25;color:#e7ebf1;font:inherit;resize:vertical}textarea:focus{outline:none;border-color:#ffb02e}
-button{margin-top:14px;padding:11px 22px;border:0;border-radius:10px;background:#ffb02e;color:#0d1116;font:600 15px system-ui,sans-serif;cursor:pointer}button:disabled{opacity:.6;cursor:default}#e{color:#ff7a6b;font-size:14px;min-height:20px;margin:10px 0 0}#ok{font-size:18px}a{color:#ffb02e}.m{color:#8a97a9;font-size:14px;margin-top:22px}</style>
-<main><div class="top"><img src="/icon-192.png" alt=""><b>PITLANE HQ</b></div>
-<form id="f"><h1>${esc6(t.title)}</h1><div class="cs">${chips}</div><textarea id="t" maxlength="${FEEDBACK_MAX}" placeholder="${esc6(t.more)}"></textarea><button id="s" type="submit">${esc6(t.send)}</button><p id="e" role="alert"></p></form>
-<div id="done" hidden><p id="ok">${esc6(t.thanks)}</p><p class="m"><a href="/downloads">${esc6(t.again)}</a></p></div></main>
-<script>(()=>{const f=document.getElementById("f"),e=document.getElementById("e"),s=document.getElementById("s"),V=${JSON.stringify(cleanV3(v))};
-f.onsubmit=async(ev)=>{ev.preventDefault();const reasons=[...f.querySelectorAll("input:checked")].map(x=>x.value),text=document.getElementById("t").value.trim();
-if(!reasons.length&&!text){e.textContent=${JSON.stringify(t.pick)};return}e.textContent="";s.disabled=true;
-try{const r=await fetch("/community/feedback/uninstall",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({reasons,text,v:V})});if(!r.ok)throw 0;f.hidden=true;document.getElementById("done").hidden=false}
-catch(x){e.textContent=${JSON.stringify(t.fail)};s.disabled=false}}})()<\/script></html>`;
-}
-__name(uninstallPage, "uninstallPage");
-async function netKey(req, now) {
-  const raw = "uninstall|" + new Date(now).toISOString().slice(0, 10) + "|" + (req.headers.get("cf-connecting-ip") || "");
-  const h = new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(raw)));
-  return "uninstall:" + [...h.slice(0, 8)].map((b2) => b2.toString(16).padStart(2, "0")).join("");
-}
-__name(netKey, "netKey");
-async function uninstallRoute(req, env, url, { send: send2 = /* @__PURE__ */ __name(async () => false, "send"), discord = /* @__PURE__ */ __name(async () => 0, "discord") } = {}) {
-  const p = url.pathname.replace(/\/+$/, "");
-  if (p === "/uninstalled" && req.method === "GET") {
-    return new Response(uninstallPage(uninstallLang(req, url), url.searchParams.get("v")), { headers: { "content-type": "text/html; charset=utf-8", "cache-control": "public, max-age=3600", vary: "Accept-Language" } });
-  }
-  if (p !== "/community/feedback/uninstall" || req.method !== "POST") return null;
-  if (isBot(req.headers.get("user-agent"))) return json15({ ok: true });
-  let b2 = null;
-  try {
-    b2 = JSON.parse((await req.text()).slice(0, 2e4));
-  } catch {
-    b2 = null;
-  }
-  const f = cleanUninstall(b2);
-  if (f.error) return json15({ error: f.error }, 400);
-  const now = Date.now(), who2 = await netKey(req, now);
-  const c = await env.DB.prepare("SELECT SUM(account_id=?1) AS mine, COUNT(*) AS n FROM feedback WHERE kind='uninstall' AND created>?2").bind(who2, now - 864e5).first();
-  if (c && (c.mine >= UNINSTALL_PER_DAY || c.n >= UNINSTALL_ALL_DAY)) return json15({ error: "thank you, that is enough for today" }, 429);
-  const id2 = crypto.randomUUID();
-  await env.DB.prepare("INSERT INTO feedback (id, account_id, created, device, v, rating, text, view, kind, style) VALUES (?1,?2,?3,?4,?5,NULL,?6,?7,?8,?9)").bind(id2, who2, now, f.device, f.v, f.text, f.view, f.kind, f.style).run();
-  const mailed = await send2(env, { ...f, nick: "", accountId: "" }).catch(() => false);
-  if (await discord(env, f).catch(() => 0) > 0) await env.DB.prepare("UPDATE feedback SET discord_at=?2 WHERE id=?1").bind(id2, now).run().catch(() => {
-  });
-  return json15({ ok: true, mailed });
-}
-__name(uninstallRoute, "uninstallRoute");
 
 // src/reportslib.js
 var APPS = ["pc", "web", "android", "ios"];

@@ -179,7 +179,8 @@ overlay windows' code and the Telemetry tab's settings window (`openWidgetCfg`);
   gap graph, incident log), Pace (timing, delta bar, coach, braking markers, mini-sectors, lap compare), Car (dash,
   inputs, fuel, tyres, engine, pit, DRS & push-to-pass) and More (weather, g-force, driving stats, telemetry,
   performance); a new overlay not listed there goes to More by itself. Each row: a dot (green while its window is
-  open), its name, "Auto" when it opens by itself, Beta for the experimental ones (the owner's choice, not a β) (not in `OV_BASIC`). A click chooses it
+  open), its name, Beta for the experimental ones (the owner's choice, not a β) and "Auto" on its right when it opens by
+  itself (its place kept on every row, so they line up) (not in `OV_BASIC`). A click chooses it
   (`pw.ovSel`, kept on this PC; the first open one, else the first on Auto, else the relative).
 - The screen: every open or Auto overlay where it sits on the PC (open ones solid, closed ones dashed, the chosen one
   in the accent): drag to move, the corner to resize, a click chooses it; the windows move as you drag

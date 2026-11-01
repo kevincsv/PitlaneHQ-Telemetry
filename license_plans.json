@@ -49,10 +49,6 @@
           "Todo lo de Gratis"
         ],
         [
-          "Voice engineer",
-          "Ingeniero por voz"
-        ],
-        [
           "Race analysis and braking coach",
           "Análisis de carrera y coach de frenada"
         ],
@@ -118,7 +114,6 @@
     "lifetime": "lifetime"
   },
   "proViews": [
-    "engineer",
     "races",
     "tracks",
     "coach",
@@ -128,8 +123,7 @@
     "cloud",
     "discord",
     "shiftBeep",
-    "brakeMarkers",
-    "voicePacks"
+    "brakeMarkers"
   ],
   "discordPro": [
     "coach",

@@ -71,9 +71,9 @@ function ovtThumb(w){
   return `<div class="ovt-th" aria-hidden="true">${(k[w]||(()=>rows(4)))()}</div>`}
 
 /* ---------- the parts of the list and the chosen overlay ---------- */
-// the games it works in, as badges (lit while it is on Auto; dashed where the game does not send what it needs)
-function ovtAutoPills(w){return `<span class="ovt-games">${VIEW_GAMES.map(g=>{const ok=gameHas(g,"widgets",w),on=ok&&autoIn(w,g);
-  return `<span class="ovt-gp${on?" on":""}${ok?"":" no"}"${ok?"":` title="${esc(gameLacks(g,"widgets",w))}"`}>${esc(GAME_SHORT[g])}</span>`}).join("")}</span>`}
+// the games it works in, as badges (gold for every game it works in; dashed where the game does not send what it needs)
+function ovtAutoPills(w){return `<span class="ovt-games">${VIEW_GAMES.map(g=>{const ok=gameHas(g,"widgets",w);
+  return `<span class="ovt-gp${ok?" on":" no"}"${ok?"":` title="${esc(gameLacks(g,"widgets",w))}"`}>${esc(GAME_SHORT[g])}</span>`}).join("")}</span>`}
 // Auto on or off in every game it works in (the card's switch and the settings window's)
 function ovtAutoToggle(w){const gs=ovtAutoGames(w);if(!gs.length)return false;const on=ovtAutoAny(w);if(!on&&!(CFG.autoWidgets||[]).includes(w)&&ovtProNeed(w))return false;
   gs.forEach(g=>{if(autoIn(w,g)===on)setAutoIn(w,g,!on)});saveCfg();return true}

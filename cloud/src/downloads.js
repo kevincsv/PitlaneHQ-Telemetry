@@ -48,7 +48,7 @@ export async function downloads(req, env, url) {
 ${row(t("Pitlane HQ for Windows", "Pitlane HQ para Windows"), t("Records your laps and uploads them so you can analyse them", "Graba tus vueltas y las sube para que las analices"), "PitlaneHQ-Setup.exe")}${MS_STORE ? `<a class="c" href="${esc(MS_STORE)}" rel="noopener"><b>Microsoft Store</b><span>${t("The same app, updated by the Store", "La misma app, actualizada por la Store")}</span></a>` : `<div class="c" style="opacity:.7"><b>Microsoft Store</b><span>${t("Coming soon", "Próximamente")}</span></div>`}<div class="c" style="opacity:.7"><b>Steam</b><span>${t("Coming soon", "Próximamente")}</span></div></div>
 <h2>${t("Phones", "Móviles")} ${ph.version ? `<small>v${esc(String(ph.version).replace(/^v/, "").replace(/-?beta$/i, ""))} beta</small>` : ""}</h2><div class="g">
 ${ph.apk ? row("Android", t("App (APK). Google Play soon", "App (APK). Pronto en Google Play"), ph.apk) : ""}<div class="c" style="opacity:.7"><b>iPhone</b><span>${t("Coming to the App Store", "Pronto en la App Store")}</span></div></div>
-<p class="n"><a href="/changelog">${t("What changed in each version", "Qué cambió en cada versión")}</a> · <a href="/">${t("Open the web app", "Abrir la app web")}</a></p>`;
+<p class="n"><a href="/changelog">${t("What changed in each version", "Qué cambió en cada versión")}</a> · <a href="${es ? "/es/precios" : "/pricing"}">${t("Pricing", "Precios")}</a> · <a href="/">${t("Open the web app", "Abrir la app web")}</a></p>`;
     return new Response(page(body, { lang: es ? "es" : "en" }), { headers: H });
   }
   if (p === "/changelog" || p === "/changelog/phones") {

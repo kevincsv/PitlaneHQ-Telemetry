@@ -29,6 +29,13 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
 - PRO badges (`proB()` in index.html, `ProBadge` on the phones): a small amber PRO on what will be part of Pro when the
   beta ends, while it is free for everyone: the coach plan chip on the map, "Compare with the community" (and the
   phones' next level, record and friend references), corner consistency, offs explained, race fuel, More charts, Ask
-  the coach and the experimental overlays. Pressing one says it is free during the beta and part of Pro after it. The
+  the coach and the experimental overlays. Pressing one opens a small window (`proInfo()`) saying it is free during the beta and part of Pro after it ($6 a month or $59 a year), with See pricing (the public `/pricing` page) and, where donations are offered, the supporters' offer and Support Pitlane HQ (a supporter reads that their 50% is locked in instead). The phones keep their own note without the offer (store rules). The
   sign-up form, the Support box and its inbox item say Pitlane HQ is free while it is in beta; so does the Discord
   bot's /help, whose commands are all free, always.
+
+- Prices after the beta and the supporters' offer (the owner's choice, Nov 1 2026; shown on the landing's Pricing section,
+  the public `/pricing` page in `cloud/src/seo.js`, the PRO window, the Support box and the inbox's Support item): Pro $6 a
+  month or $59 a year. Whoever supports Pitlane HQ during the beta (the ♥ Supporter badge) keeps Pro at 50% for as long as
+  they keep it ($3 a month or $29.50 a year), still if they come back within two months of stopping, and can buy Pro for
+  life for $29.99 within two months of the beta ending. A supporter's own profile says "You are a founding supporter. Your
+  50% off Pro is locked in." (PC, web and phones). None of it is built into the payments yet.

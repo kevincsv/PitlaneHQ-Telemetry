@@ -70,3 +70,5 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   `cloud/src/legal.js`, the addresses Google Play and the App Store ask for: English, Spanish or Portuguese by `?lang=` or
   the browser's language; what is kept, why and for how long, never how it is stored or protected
   (`cloud/test/legal.test.mjs`).
+
+- Pricing (`/pricing`, `/es/precios`, `/pt/precos`, aliases `/pro` and `/prices`): Free and Pro, the supporters' offer with the Stripe Support link, FAQ with FAQPage JSON-LD; in the sitemap, IndexNow, llms.txt, every public page's footer and `/downloads`.

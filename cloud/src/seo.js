@@ -14,7 +14,7 @@ import { foundLeagues } from "./leaguescan.js";
 const SITE = "https://pitlanehq.app";
 // SEO_VER: raised when the public pages change (new languages, new addresses, new texts): every page is sent to
 // IndexNow again once. SEO_DATE: the day their texts last changed, the sitemap's lastmod of the pages without data.
-const SEO_VER = "15", SEO_DATE = "2026-11-01";
+const SEO_VER = "16", SEO_DATE = "2026-11-01";
 const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
 const slug = (s) => String(s || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 80);
 const fmt = (t) => { if (!(t > 0)) return "–"; const m = Math.floor(t / 60), s = t - m * 60; return (m ? m + ":" + (s < 10 ? "0" : "") : "") + s.toFixed(3); };
@@ -165,7 +165,7 @@ ${hl}
 ${ld ? `<script type="application/ld+json">${JSON.stringify(ld).replace(/</g, "\\u003c")}</script>` : ""}</head><body>
 <header><div class="w"><a class="b" href="/">${LOGO}Pitlane HQ</a><nav><a href="${(game === "lmu" ? LANDL : LAND)[l].path}">${esc(t.tel[game])}</a><a href="${(game === "lmu" ? OVLL : OVL)[l].path}">${esc(t.ov)}</a><a href="${lg}">${esc(t.lgs)}</a><a href="${rc}">${esc(t.rec)}</a><a href="${(other === "lmu" ? LANDL : LAND)[l].path}">${esc(GNAME[other])}</a><a href="/downloads">${esc(t.dl)}</a><a href="/">${esc(t.app)}</a>${others}</nav></div></header>
 <main class="w">${body}${path && !noindex ? whatIs(l) : ""}</main>
-<footer><div class="w"><p class="m">${esc(GUIDES[l])} · iRacing · ${iracingLinks(l).map(([p, h]) => `<a href="${p}">${esc(h)}</a>`).join(" · ")}</p><p class="m">${esc(t.lmuH)} · ${lmuLinks(l).map(([p, h]) => `<a href="${p}">${esc(h)}</a>`).join(" · ")}</p>Pitlane HQ · ${esc(t.free)} · <a href="/downloads">${esc(t.dl)}</a> · <a href="mailto:support@pitlanehq.app">support@pitlanehq.app</a> · ${DC ? `<a href="${esc(DC)}" rel="noopener">Discord</a> · ` : ""}${LANGS.map((k) => `<a href="${LAND[k].path}" hreflang="${HLANG[k]}">${NAME[k]}</a>`).join(" · ")}</div></footer>${VISIT_JS}</body></html>`;
+<footer><div class="w"><p class="m">${esc(GUIDES[l])} · iRacing · ${iracingLinks(l).map(([p, h]) => `<a href="${p}">${esc(h)}</a>`).join(" · ")}</p><p class="m">${esc(t.lmuH)} · ${lmuLinks(l).map(([p, h]) => `<a href="${p}">${esc(h)}</a>`).join(" · ")}</p>Pitlane HQ · ${esc(t.free)} · <a href="/downloads">${esc(t.dl)}</a> · <a href="${PRICE[l].path}">${esc(PRICE[l].h1)}</a> · <a href="mailto:support@pitlanehq.app">support@pitlanehq.app</a> · ${DC ? `<a href="${esc(DC)}" rel="noopener">Discord</a> · ` : ""}${LANGS.map((k) => `<a href="${LAND[k].path}" hreflang="${HLANG[k]}">${NAME[k]}</a>`).join(" · ")}</div></footer>${VISIT_JS}</body></html>`;
 }
 // what Pitlane HQ is, in a few plain sentences at the end of every indexed page, so whoever lands on any one of them
 // (a person, a search engine or an AI assistant) reads the whole of it. Only what exists today, and free only "during
@@ -715,6 +715,66 @@ ${to ? `<p class="x">${esc(T[l].other[game])} <a href="${to.path}">${esc(to.h1)}
   return html(page(l, { title: G.title, desc: G.desc, path: G.path, alts: topicAlts(x), body, ld, game }));
 }
 
+// ---------- pricing ----------
+// what is free, what Pro will hold and cost when the beta ends, and the supporters' offer (the owner's prices, Nov 1
+// 2026; the same as the landing's Pricing section in web/dist/pitwall-tour.js and docs/spec/pro.md). Nothing is sold
+// while Pitlane HQ is in beta: the one button is the Stripe donation link (DONATE in this file)
+const DONATE = "https://buy.stripe.com/fZu00beDP64g0fK5LKcwg01";
+const PRICE = {
+  en: { path: "/pricing", title: "Pitlane HQ pricing · free during the beta", h1: "Pricing", desc: "Pitlane HQ is free while it is in beta, Pro included. After the beta Pro costs $6 a month or $59 a year, and whoever supports Pitlane HQ during the beta keeps Pro at half price.",
+    lead: "Every feature is free for everyone while Pitlane HQ is in beta. Pro arrives when the beta ends.",
+    free: ["Free", "$0", "forever", ["Every lap recorded and your own lap analysis", "Every standard overlay, in VR too", "Sync with your whole history on PC, web and phone", "Live telemetry on your phone", "Leaderboards, records and leagues", "The Discord bot with every command"]],
+    pro: ["Pro", "$0", "during the beta", ["Everything in Free", "The full coach with its plan on the track map", "Compare with friends, rivals and the fastest laps", "Race fuel, corner consistency and offs explained", "The experimental overlays"]],
+    after: "After the beta $6 a month or $59 a year.", tag: "Free in beta",
+    supH: "Support the beta and pay half, forever", sup: ["Pro at 50% for as long as you keep it, $3 a month or $29.50 a year", "Stop paying and you keep the 50% if you come back within two months", "The chance to buy Pro for life for $29.99 within two months of the beta ending", "Any amount counts, from $1"],
+    donate: "Support Pitlane HQ", start: "Download for Windows", faqT: "Questions",
+    faq: [["Is Pitlane HQ free?", "Yes. Everything is free while Pitlane HQ is in beta, Pro included. The Free plan stays free after the beta."],
+      ["How much will Pro cost?", "$6 a month or $59 a year once the beta ends."],
+      ["What do supporters get?", "Anyone who supports Pitlane HQ during the beta keeps Pro at half price for as long as they keep it, $3 a month or $29.50 a year, and can buy Pro for life for $29.99 within two months of the beta ending."],
+      ["What if I stop paying?", "Come back within two months and you keep the half price."],
+      ["Is sync free?", "Yes. Sync with your whole lap history on the PC, the web and the phone is always free."]] },
+  es: { path: "/es/precios", title: "Precios de Pitlane HQ · gratis durante la beta", h1: "Precios", desc: "Pitlane HQ es gratis mientras está en beta, Pro incluido. Después de la beta Pro cuesta $6 al mes o $59 al año, y quien apoye Pitlane HQ durante la beta mantiene Pro a mitad de precio.",
+    lead: "Todas las funciones son gratis para todos mientras Pitlane HQ está en beta. Pro llega cuando termine la beta.",
+    free: ["Free", "$0", "para siempre", ["Cada vuelta grabada y el análisis de tus vueltas", "Todos los overlays estándar, también en VR", "Sincronización con todo tu historial en PC, web y móvil", "Telemetría en vivo en el móvil", "Clasificaciones, récords y ligas", "El bot de Discord con todos los comandos"]],
+    pro: ["Pro", "$0", "durante la beta", ["Todo lo de Free", "El coach completo con su plan en el mapa", "Compara con amigos, rivales y las vueltas más rápidas", "Combustible de carrera, constancia por curva y salidas explicadas", "Los overlays experimentales"]],
+    after: "Después de la beta $6 al mes o $59 al año.", tag: "Gratis en beta",
+    supH: "Apoya la beta y paga la mitad, para siempre", sup: ["Pro al 50% mientras lo mantengas, $3 al mes o $29,50 al año", "Si dejas de pagar, conservas el 50% si vuelves en menos de dos meses", "La opción de comprar Pro de por vida por $29,99 en los dos meses tras el final de la beta", "Cualquier cantidad cuenta, desde $1"],
+    donate: "Apoya Pitlane HQ", start: "Descargar para Windows", faqT: "Preguntas",
+    faq: [["¿Pitlane HQ es gratis?", "Sí. Todo es gratis mientras Pitlane HQ está en beta, Pro incluido. El plan Free sigue gratis después de la beta."],
+      ["¿Cuánto costará Pro?", "$6 al mes o $59 al año cuando termine la beta."],
+      ["¿Qué reciben los supporters?", "Quien apoye Pitlane HQ durante la beta mantiene Pro a mitad de precio mientras lo tenga, $3 al mes o $29,50 al año, y puede comprar Pro de por vida por $29,99 en los dos meses tras el final de la beta."],
+      ["¿Y si dejo de pagar?", "Vuelve en menos de dos meses y conservas la mitad de precio."],
+      ["¿La sincronización es gratis?", "Sí. La sincronización con todo tu historial de vueltas en el PC, la web y el móvil es siempre gratis."]] },
+  pt: { path: "/pt/precos", title: "Preços do Pitlane HQ · grátis durante o beta", h1: "Preços", desc: "O Pitlane HQ é grátis enquanto está em beta, Pro incluído. Depois do beta o Pro custa $6 por mês ou $59 por ano, e quem apoiar o Pitlane HQ durante o beta mantém o Pro pela metade do preço.",
+    lead: "Todos os recursos são grátis para todos enquanto o Pitlane HQ está em beta. O Pro chega quando o beta terminar.",
+    free: ["Free", "$0", "para sempre", ["Cada volta gravada e a análise das suas voltas", "Todos os overlays padrão, também em VR", "Sincronização com todo o seu histórico no PC, web e celular", "Telemetria ao vivo no celular", "Classificações, recordes e ligas", "O bot do Discord com todos os comandos"]],
+    pro: ["Pro", "$0", "durante o beta", ["Tudo do Free", "O coach completo com o plano no mapa", "Compare com amigos, rivais e as voltas mais rápidas", "Combustível de corrida, consistência por curva e saídas explicadas", "Os overlays experimentais"]],
+    after: "Depois do beta $6 por mês ou $59 por ano.", tag: "Grátis no beta",
+    supH: "Apoie o beta e pague metade, para sempre", sup: ["Pro com 50% enquanto você mantiver, $3 por mês ou $29,50 por ano", "Se parar de pagar, você mantém os 50% se voltar em até dois meses", "A chance de comprar Pro vitalício por $29,99 nos dois meses depois do fim do beta", "Qualquer valor conta, a partir de $1"],
+    donate: "Apoie o Pitlane HQ", start: "Baixar para Windows", faqT: "Perguntas",
+    faq: [["O Pitlane HQ é grátis?", "Sim. Tudo é grátis enquanto o Pitlane HQ está em beta, Pro incluído. O plano Free continua grátis depois do beta."],
+      ["Quanto vai custar o Pro?", "$6 por mês ou $59 por ano quando o beta terminar."],
+      ["O que os apoiadores ganham?", "Quem apoiar o Pitlane HQ durante o beta mantém o Pro pela metade do preço enquanto tiver, $3 por mês ou $29,50 por ano, e pode comprar o Pro vitalício por $29,99 nos dois meses depois do fim do beta."],
+      ["E se eu parar de pagar?", "Volte em até dois meses e você mantém a metade do preço."],
+      ["A sincronização é grátis?", "Sim. A sincronização com todo o seu histórico de voltas no PC, na web e no celular é sempre grátis."]] },
+};
+const PRICE_ALTS = altsOf(PRICE);
+const PR_CSS = `<style>.pz{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px;margin-top:22px}.pz .c{display:flex;flex-direction:column;gap:12px}
+.pz .pro{border-color:#ffb02e88}.pz h2{margin:0;font-size:28px;display:flex;justify-content:space-between;align-items:center;gap:8px}.tg{font:600 11px 'IBM Plex Sans',sans-serif;letter-spacing:.04em;text-transform:uppercase;background:var(--acc);color:#11151b;border-radius:5px;padding:3px 8px}
+.pp{font:500 40px/1 'JetBrains Mono',ui-monospace,monospace}.pp small{font:14px 'IBM Plex Sans',sans-serif;color:var(--mut);margin-left:8px}
+.ck{list-style:none;margin:0;padding:0}.ck li{padding-left:24px;position:relative;margin:6px 0;color:#c9d1dc}.ck li::before{content:"✓";position:absolute;left:0;color:var(--acc);font-weight:700}
+.af{margin:0;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--bg)}.sp{margin-top:14px;border-style:dashed;border-color:#ffb02e88}.sp h2{margin:0 0 8px}</style>`;
+function pricingPage(l) {
+  const P = PRICE[l], L = LAND[l];
+  const card = ([name, price, per, list], cls, extra) => `<section class="c${cls}"><h2>${esc(name)}${cls ? `<span class="tg">${esc(P.tag)}</span>` : ""}</h2><div class="pp">${esc(price)}<small>${esc(per)}</small></div><ul class="ck">${list.map((x) => `<li>${esc(x)}</li>`).join("")}</ul>${extra}</section>`;
+  const body = `${PR_CSS}<h1>${esc(P.h1)}</h1><p class="lead">${esc(P.lead)}</p>
+<div class="pz">${card(P.free, "", `<a class="btn p" href="/dl/PitlaneHQ-Setup.exe">${esc(P.start)}</a>`)}${card(P.pro, " pro", `<p class="af">${esc(P.after)}</p>`)}</div>
+<section class="c sp"><h2>${esc(P.supH)}</h2><ul class="ck">${P.sup.map((x) => `<li>${esc(x)}</li>`).join("")}</ul><div class="cta" style="margin:14px 0 0"><a class="btn p" href="${DONATE}" rel="noopener">${esc(P.donate)}</a><a class="btn" href="/">${esc(L.app)}</a></div></section>
+<h2>${esc(P.faqT)}</h2>${P.faq.map(([q, a]) => `<details open><summary>${esc(q)}</summary><p>${esc(a)}</p></details>`).join("")}`;
+  const ld = [crumbs([["Pitlane HQ", LAND[l].path], [P.h1, P.path]]), faqLd(P.faq)];
+  return html(page(l, { title: P.title, desc: P.desc, path: P.path, alts: PRICE_ALTS, body, ld }));
+}
+
 // ---------- the addresses ----------
 // every page with its three languages, the function that draws it and the short addresses that lead to it (301)
 const PAGES = [
@@ -726,12 +786,13 @@ const PAGES = [
   { alts: LEAGL_ALTS, draw: (env, l) => leaguesPage(env, l, "", "lmu"), alias: { en: ["/lmu-leagues"], es: ["/es/ligas-lmu"], pt: ["/pt/ligas-lmu"] } },
   { alts: REC_IDX.iracing, draw: (env, l, cat) => recordsIndex(env, l, cat, "iracing"), alias: {} },
   { alts: REC_IDX.lmu, draw: (env, l, cat) => recordsIndex(env, l, cat, "lmu"), alias: { en: ["/lmu-records"], es: ["/es/records-lmu"], pt: ["/pt/recordes-lmu"] } },
+  { alts: PRICE_ALTS, draw: (env, l) => pricingPage(l), alias: { en: ["/prices", "/pro"], es: ["/es/pricing", "/es/pro"], pt: ["/pt/precos-pro", "/pt/pro", "/pt/pricing"] } },
   ...TOPICS.map((x) => ({ alts: topicAlts(x), draw: (env, l) => topicPage(x, l), alias: x.id === "lmu-coach" ? { en: ["/lmu-coach"], es: ["/es/coach-lmu"], pt: ["/pt/coach-lmu"] } : {} })),
 ];
 const AT = new Map(); // address → [page, language, canonical address]
 for (const pg of PAGES) for (const l of LANGS) { AT.set(pg.alts[l], [pg, l, pg.alts[l]]); for (const a of pg.alias[l] || []) AT.set(a, [pg, l, pg.alts[l]]); }
 // every page that never depends on data, for the sitemap and IndexNow
-const STATIC_ALTS = [LAND_ALTS, LANDL_ALTS, OVL_ALTS, OVLL_ALTS, ...TOPICS.map(topicAlts)];
+const STATIC_ALTS = [LAND_ALTS, LANDL_ALTS, OVL_ALTS, OVLL_ALTS, PRICE_ALTS, ...TOPICS.map(topicAlts)];
 
 async function sitemap(env) {
   const [combos, lmuCombos, D, DL] = await Promise.all([topCombos(env, 2000), topCombos(env, 2000, "lmu"), leaguesData(env), leaguesData(env, "lmu")]);
@@ -744,6 +805,7 @@ async function sitemap(env) {
   all(LANDL_ALTS, "weekly", 0.9, newest(lmuCombos));
   all(OVL_ALTS, "monthly", 0.8, SEO_DATE);
   all(OVLL_ALTS, "monthly", 0.8, SEO_DATE);
+  all(PRICE_ALTS, "monthly", 0.7, SEO_DATE);
   for (const x of TOPICS) all(topicAlts(x), "monthly", 0.8, SEO_DATE);
   const lgDay = (d) => later(SEO_DATE, day(d.updated));
   all(LEAG_ALTS, "daily", 0.8, lgDay(D));
@@ -850,7 +912,7 @@ ${lm.map(mdLink).join("\n")}
 
 ## Download
 
-${[["/downloads", "Download Pitlane HQ", "Pitlane HQ Agent for Windows and the Android app"], ["/changelog", "What's new", "the release notes of every version"]].map(mdLink).join("\n")}
+${[["/downloads", "Download Pitlane HQ", "Pitlane HQ Agent for Windows and the Android app"], ["/changelog", "What's new", "the release notes of every version"], ["/pricing", "Pricing", "free during the beta, Pro and its price after it, and the supporters' offer"]].map(mdLink).join("\n")}
 
 ## Optional
 

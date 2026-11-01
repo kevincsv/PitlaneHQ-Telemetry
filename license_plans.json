@@ -135,7 +135,7 @@
   "freeApps": 3,
   "donate": {
     "_help": "The Support button beside Patreon: buy is the Stripe Payment Link (customer chooses the amount), link its id (plink_...). A donation gives the Supporter badge, never Pro.",
-    "buy": "",
-    "link": ""
+    "buy": "https://buy.stripe.com/dRmdR1cvHdwIfaE6POcwg00",
+    "link": "plink_1UX1pj0v1vN4NxKYF0pQ3pc4"
   }
 }

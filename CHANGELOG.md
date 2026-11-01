@@ -8,6 +8,7 @@ improvements". 1.0.0 comes when the beta ends. Newest first.
 
 - A PRO badge marks what will be part of Pitlane HQ Pro when the beta ends. Tap it to see that it is free while Pitlane HQ is in beta.
 - You can support Pitlane HQ with a donation from $1, and the ♥ Supporter badge shows next to your name.
+- A driver's profile shows their 3 latest races, and Show more opens the rest.
 - Fixes and improvements.
 
 ## 0.9.7 beta

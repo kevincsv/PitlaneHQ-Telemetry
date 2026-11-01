@@ -2,9 +2,9 @@
   "versions": [
     {
       "v": "0.9.8",
-      "en": ["A PRO badge marks what will be part of Pitlane HQ Pro when the beta ends. Tap it to see that it is free while Pitlane HQ is in beta.", "You can support Pitlane HQ with a donation from $1, and the ♥ Supporter badge shows next to your name.", "Fixes and improvements."],
-      "es": ["Una insignia PRO marca lo que formará parte de Pitlane HQ Pro cuando acabe la beta. Tócala para ver que es gratis mientras Pitlane HQ está en beta.", "Puedes apoyar Pitlane HQ con una donación desde 1 $, y la insignia ♥ Supporter aparece junto a tu nombre.", "Correcciones y mejoras."],
-      "pt": ["Um selo PRO marca o que fará parte do Pitlane HQ Pro quando o beta acabar. Toque nele para ver que é grátis enquanto o Pitlane HQ está em beta.", "Você pode apoiar o Pitlane HQ com uma doação a partir de US$ 1, e o selo ♥ Supporter aparece ao lado do seu nome.", "Correções e melhorias."]
+      "en": ["A PRO badge marks what will be part of Pitlane HQ Pro when the beta ends. Tap it to see that it is free while Pitlane HQ is in beta.", "You can support Pitlane HQ with a donation from $1, and the ♥ Supporter badge shows next to your name.", "A driver's profile shows their 3 latest races, and Show more opens the rest.", "Fixes and improvements."],
+      "es": ["Una insignia PRO marca lo que formará parte de Pitlane HQ Pro cuando acabe la beta. Tócala para ver que es gratis mientras Pitlane HQ está en beta.", "Puedes apoyar Pitlane HQ con una donación desde 1 $, y la insignia ♥ Supporter aparece junto a tu nombre.", "El perfil de un piloto muestra sus 3 últimas carreras, y Mostrar más abre el resto.", "Correcciones y mejoras."],
+      "pt": ["Um selo PRO marca o que fará parte do Pitlane HQ Pro quando o beta acabar. Toque nele para ver que é grátis enquanto o Pitlane HQ está em beta.", "Você pode apoiar o Pitlane HQ com uma doação a partir de US$ 1, e o selo ♥ Supporter aparece ao lado do seu nome.", "O perfil de um piloto mostra as 3 últimas corridas, e Mostrar mais abre o resto.", "Correções e melhorias."]
     },
     {
       "v": "0.9.7",

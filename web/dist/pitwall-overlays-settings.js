@@ -79,11 +79,12 @@ function ovsPreview(w){const box=$("#ovsPv");if(!box)return;clearInterval(OVS_TI
 function ovsDraw(keepScroll){const w=OVS.w,d=$("#ovsDlg");if(!d||!w)return;const tabs=ovsTabs(w);if(!tabs.some(t=>t[0]===OVS.tab))OVS.tab=tabs[0][0];const k=ovsK(w);
   const sc=keepScroll&&$("#ovsPane")?$("#ovsPane").scrollTop:0,first=!d.querySelector("#ovsPv")||d.dataset.w!==w;d.dataset.w=w;
   const copy=[k==="rel"?["std",ovsT("Columns of the Standings","Columnas de la Clasificación","Colunas da Classificação")]:k==="std"?["rel",ovsT("Columns of the Relative","Columnas del Relative","Colunas do Relative")]:null,["__look",ovsT("This look to every overlay","Este aspecto a todos los overlays","Esta aparência a todos os overlays")]].filter(Boolean);
-  if(first)d.innerHTML=`<div class="ovs-pn" role="dialog" aria-modal="true" aria-labelledby="ovsT"><div class="ovs-h" data-ovw="${w}"><h2 id="ovsT">${esc(ovtName(w))}</h2>${ovtExpPill(w)}<span class="ovt-state">${ovtDot(w)}<span class="on-t">${esc(T3("Open","Abierto","Aberto"))}</span><span class="off-t">${esc(T3("Closed","Cerrado","Fechado"))}</span></span><button type="button" class="ovs-x" data-s="close" aria-label="${esc(ovsT("Close","Cerrar","Fechar"))}">✕</button></div>
+  if(first)d.innerHTML=`<div class="ovs-pn" role="dialog" aria-modal="true" aria-labelledby="ovsT"><div class="ovs-h" data-ovw="${w}"><h2 id="ovsT">${esc(ovtName(w))}</h2>${ovtExpPill(w)}<span class="ovs-auto"><span class="ovs-al">Auto</span><span id="ovsAuto"></span></span><span class="ovt-state">${ovtDot(w)}<span class="on-t">${esc(T3("Open","Abierto","Aberto"))}</span><span class="off-t">${esc(T3("Closed","Cerrado","Fechado"))}</span></span><button type="button" class="ovs-x" data-s="close" aria-label="${esc(ovsT("Close","Cerrar","Fechar"))}">✕</button></div>
     <div class="ovs-grid"><div class="ovs-left"><div class="ovs-pv" id="ovsPv"></div><div class="ovs-pva"><button type="button" class="btn small" data-s="reset">${esc(ovsT("Reset to default","Restablecer","Restaurar padrão"))}</button><select id="ovsCopy" aria-label="${esc(ovsT("Copy from","Copiar de","Copiar de"))}"><option value="">${esc(ovsT("Copy…","Copiar…","Copiar…"))}</option>${copy.map(([v,t])=>`<option value="${v}">${esc(t)}</option>`).join("")}</select></div></div>
     <div class="ovs-right"><div class="ovs-tabs" role="tablist" id="ovsTabs"></div><div class="ovs-pane" id="ovsPane"></div></div></div>
     <div class="ovs-end"><button type="button" class="btn primary" data-s="close">${esc(ovsT("Done","Listo","Pronto"))}</button></div></div>`;
   $("#ovsTabs").innerHTML=tabs.map(([t,n])=>`<button type="button" role="tab" data-tab="${t}" aria-selected="${OVS.tab===t}">${esc(n)}</button>`).join("");
+  $("#ovsAuto").innerHTML=ovtAutoPills(w);
   $("#ovsPane").innerHTML=ovsPane(w);$("#ovsPane").scrollTop=sc;
   if(first)ovsPreview(w);else{const p=$("#ovsPv");if(p)p.style.opacity=String(ovAlphaOf(w)/255)}
   if(typeof markOvOpen==="function")d.querySelectorAll("[data-ovw]").forEach(el=>el.classList.toggle("is-open",OV_OPEN.has(el.dataset.ovw)))}
@@ -99,6 +100,8 @@ function ovtSettings(w){if(!WIDGETS.includes(w))return;OVS.w=w;OVS.q="";if(!OVS.
 function ovsClose(){const d=$("#ovsDlg");if(!d)return;d.hidden=true;d.innerHTML="";clearInterval(OVS_TIMER);document.removeEventListener("keydown",ovsKey);OVS.w=null;if(typeof CUR_VIEW!=="undefined"&&CUR_VIEW==="overlays")renderOverlaysTab()}
 const ovsKey=e=>{if(e.key==="Escape"&&OVS.w){e.preventDefault();ovsClose()}};
 function ovsClick(e){const d=e.currentTarget;if(e.target===d)return ovsClose();const tb=e.target.closest("[data-tab]");if(tb){OVS.tab=tb.dataset.tab;OVS.q="";return ovsDraw()}
+  const au=e.target.closest('#ovsAuto [data-a="auto"]');if(au){if(au.disabled)return;const w=OVS.w,g=au.dataset.g,on=autoIn(w,g);
+    if(!on&&!(CFG.autoWidgets||[]).includes(w)&&ovtProNeed(w))return;setAutoIn(w,g,!on);saveCfg();return ovsDraw(true)}
   const b=e.target.closest("[data-s]");if(!b||b.disabled)return;const s=b.dataset.s,key=b.dataset.k,f=b.dataset.f,w=OVS.w;
   if(s==="close")return ovsClose();
   const c=key?ui(key):null,done=()=>{if(key==="tel"&&MODE==="bridge")connectBridge();ovsDraw(true)};
@@ -138,12 +141,13 @@ addEventListener("resize",()=>{if(OVS.w&&MODE!=="bridge")ovsPreview(OVS.w)});
 .ovs-bg{position:fixed;inset:0;z-index:60;display:flex;justify-content:center;align-items:flex-start;overflow:auto;background:rgba(3,6,10,.66);padding:4vh 16px}.ovs-bg[hidden]{display:none!important}
 .ovs-pn{width:min(1100px,100%);margin:auto 0;display:flex;flex-direction:column;background:var(--surface);border:1px solid var(--line2,var(--line));border-radius:var(--radius,12px);overflow:hidden;box-shadow:0 24px 60px rgba(0,0,0,.5)}
 .ovs-h{display:flex;align-items:center;gap:12px;padding:14px 18px;border-bottom:1px solid var(--line)}.ovs-h h2{flex:1;margin:0;font:700 22px var(--f-display,inherit);letter-spacing:.06em;text-transform:uppercase}
+.ovs-auto{display:inline-flex;align-items:center;gap:8px}.ovs-al{font:600 10px var(--f-data);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}@media(max-width:640px){.ovs-h{flex-wrap:wrap}.ovs-auto{order:5;flex:1 1 100%}}
 .ovs-h .ovt-state .on-t{display:none}.ovs-h.is-open .ovt-state .on-t{display:inline}.ovs-h.is-open .ovt-state .off-t{display:none}.ovs-h .ovt-state{display:inline-flex;align-items:center;gap:6px;font:600 10px var(--f-data);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
 .ovs-x{width:36px;height:36px;border-radius:8px;border:1px solid var(--line);background:var(--surface2);color:var(--muted);cursor:pointer}
-.ovs-grid{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr)}.ovs-grid>*{min-width:0}
-.ovs-left{padding:18px;border-right:1px solid var(--line);background:radial-gradient(120% 90% at 50% 0%,color-mix(in srgb,var(--surface2) 80%,#1a2230),var(--bg));display:flex;flex-direction:column;gap:12px;position:sticky;top:0;align-self:start}
-.ovs-pv{min-height:120px;max-width:100%;transition:opacity .15s}.ovs-pv .ovt-pf{position:relative;overflow:hidden}.ovs-pv iframe{border:0;transform-origin:0 0;background:transparent;pointer-events:none}
-.ovs-pva{display:flex;gap:8px;flex-wrap:wrap}.ovs-pva select{min-height:30px;font-size:12px}
+.ovs-grid{display:grid;grid-template-columns:minmax(0,1fr)}.ovs-grid>*{min-width:0}
+.ovs-left{padding:22px 18px 16px;border-bottom:1px solid var(--line);background:radial-gradient(120% 90% at 50% 0%,color-mix(in srgb,var(--surface2) 80%,#1a2230),var(--bg));display:flex;flex-direction:column;align-items:center;gap:12px}
+.ovs-pv{min-height:120px;width:100%;transition:opacity .15s}.ovs-pv .ovt-pic{margin:0 auto}.ovs-pv .ovt-pf{position:relative;overflow:hidden}.ovs-pv iframe{border:0;transform-origin:0 0;background:transparent;pointer-events:none}
+.ovs-pva{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}.ovs-pva select{min-height:30px;font-size:12px}
 .ovs-right{display:flex;flex-direction:column}
 .ovs-tabs{display:flex;gap:2px;padding:10px 14px 0;border-bottom:1px solid var(--line);overflow-x:auto}
 .ovs-tabs button{border:0;background:none;color:var(--muted);font:600 12px var(--f-body,inherit);letter-spacing:.04em;text-transform:uppercase;padding:9px 11px;border-bottom:2px solid transparent;white-space:nowrap;cursor:pointer}
@@ -164,5 +168,5 @@ addEventListener("resize",()=>{if(OVS.w&&MODE!=="bridge")ovsPreview(OVS.w)});
 .ovs-two{display:grid;grid-template-columns:1fr 1fr;gap:16px}
 #ovsQ{min-height:36px;width:100%}
 .ovs-end{display:flex;justify-content:flex-end;padding:12px 18px;border-top:1px solid var(--line)}
-@media (max-width:820px){.ovs-grid{grid-template-columns:minmax(0,1fr)}.ovs-left{border-right:0;border-bottom:1px solid var(--line);position:static}.ovs-two{grid-template-columns:minmax(0,1fr)}}
+@media (max-width:820px){.ovs-grid{grid-template-columns:minmax(0,1fr)}.ovs-two{grid-template-columns:minmax(0,1fr)}}
 `;document.head.appendChild(s)})();

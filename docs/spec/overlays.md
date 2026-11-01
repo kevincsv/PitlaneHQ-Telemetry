@@ -204,8 +204,10 @@ overlay windows' code and the Telemetry tab's settings window (`openWidgetCfg`);
 ### The settings window
 
 All settings opens `ovtSettings(w)` (`pitwall-overlays-settings.js`): a window with the overlay's name, open or closed
-and ✕, the overlay live on the left (as in the tab, at most its own size, staying in view) with Reset to default
-and Copy…, and every setting on the right in tabs; Done, ✕, Escape or a click outside close it. The window grows with
+and ✕, its own Auto per game (the same pills as the tab's "When I get in the car", the owner wants Auto set in each
+overlay's window), the overlay live across the top at its real size (smaller only when the window is narrower; the owner: it
+has to be seen properly) with Reset to default
+and Copy…, and every setting under it in tabs; Done, ✕, Escape or a click outside close it. The window grows with
 what it shows and the page scrolls (nothing scrolls inside it), and so does the preview (the owner's choice). Settings are not
 simple switches only: they are the same settings, under the same keys, as `openWidgetCfg` and `OV_OPTS`, none left
 out (the owner's rule: easy to change, never cut down).

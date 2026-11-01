@@ -3254,7 +3254,7 @@ function frameTick(){
   trackStats();if(lv("deltabar"))renderDeltaBar();
   if(now-lastGG>66){lastGG=now;if(lv("gg"))drawGG()}
   if(now-lastSt>250){lastSt=now;if(lv("stats"))renderStats()}
-  trackSectors();trackIncidents();sampleGaps();shiftTick();estTick();brakeTick();
+  trackSectors();trackIncidents();sampleGaps();shiftTick();estTick();brakeTick();focusTick();
   if(lv("brakes")&&now-(window._bmT||0)>66){window._bmT=now;renderBrakes()}
   if(now-lastPit>500){lastPit=now;ovOwnApply();if(lv("pit"))renderPit();if(lv("sectors"))renderSectors();if(lv("incidents"))renderIncidents();if(lv("gaps"))drawGaps();if(lv("coach"))renderCoachWidget();if(lv("weather"))renderWeather();if(lv("system"))renderSystem();if(view==="strategy"&&now-(window._stT||0)>5000){window._stT=now;renderStrategy()}}
   if(now-lastMap>66&&(view==="live")&&LIVE_SHOWN.has("map")||now-lastMap>66&&OV.on&&OV.list.includes("map")){lastMap=now;drawMap()}
@@ -7182,7 +7182,7 @@ function coachCornersHTML(cs,limit){const list=limit?cs.slice().sort((a,b)=>b.lo
   // how many drivers this tip helped on corners like this, when the admin lets the tips say it (coach_confidence)
   const conf=c=>{const b=c.kind&&c.lost>.03?tipConf(c.kind,c.cls):null;return b?`<div class="rb-hint">${esc(Tx(`This tip helped ${b.win} of ${b.n} drivers on corners like this`,`Este consejo ayudó a ${b.win} de ${b.n} pilotos en curvas así`,`Dieser Tipp half ${b.win} von ${b.n} Fahrern in solchen Kurven`,`Esta dica ajudou ${b.win} de ${b.n} pilotos em curvas assim`))}</div>`:""};if(!list.length)return`<p class="note">${esc(Tx("No corner loses more than 0.03 s against the reference. Nice lap.","Ninguna curva pierde más de 0,03 s frente a la referencia. Buena vuelta.","Keine Kurve verliert mehr als 0,03 s. Gute Runde.","Nenhuma curva perde mais de 0,03 s. Boa volta."))}</p>`;
   const tipX=c=>c.phase?`<div class="rb-tipx"><span class="coachtip">${esc(tipTx(c))}</span></div>`:`<div class="rb-tipx"><span class="good">${esc(Tx("Nothing to fix here","Nada que corregir aquí","Hier nichts zu tun","Nada a corrigir aqui"))}</span></div>`,phC={brake:"bad",entry:"blue",apex:"acc",exit:"good"};
-  return`<div class="rb-cards co-tips">${list.map(c=>`<div class="rb-c co-tip${c.lost>.03?" tip":""}"><div class="rb-h"><b class="mono co-tn">T${c.n}</b>${c.phase?`<span class="pill ${phC[c.phase]||"acc"}">${esc(phaseName(c.phase))}</span>`:""}<small class="muted mono">${Math.round(c.d)} m</small><span class="sp"></span><span class="mono ${c.lost>.02?"bad":c.lost<-.02?"good":"muted"}">${sgn(c.lost,2)} s</span></div>${tipX(c)}<div class="co-facts">
+  return`<div class="rb-cards co-tips">${list.map(c=>`<div class="rb-c co-tip${c.lost>.03?" tip":""}"><div class="rb-h"><b class="mono co-tn">T${c.n}</b>${c.phase?`<span class="pill ${phC[c.phase]||"acc"}">${esc(phaseName(c.phase))}</span>`:""}<small class="muted mono">${Math.round(c.d)} m</small><span class="sp"></span><button type="button" class="btn small co-prac" data-practise="${c.n}" title="${esc(Tx("Practise this corner on the coach overlay","Practicar esta curva en el overlay del coach",null,"Praticar esta curva no overlay do coach"))}">${esc(Tx("Practise","Practicar",null,"Praticar"))}</button><span class="mono ${c.lost>.02?"bad":c.lost<-.02?"good":"muted"}">${sgn(c.lost,2)} s</span></div>${tipX(c)}<div class="co-facts">
     <div class="rb-k"><span>${esc(Tx("Braking","Frenada","Bremsen","Frenagem"))}</span><b class="mono ${c.dd==null||Math.abs(c.dd)<5?"":c.dd>0?"good":"bad"}">${c.dd==null?"–":Math.abs(c.dd)<5?Tx("same point","mismo punto","gleicher Punkt","mesmo ponto"):(c.dd>0?Tx("later","más tarde","später","mais tarde"):Tx("earlier","antes","früher","antes"))+" "+Math.abs(Math.round(c.dd))+" m"}</b></div>
     <div class="rb-k"><span>${esc(Tx("Slowest","Más lento","Langsamster","Mais lento"))}</span><b class="mono">${c.vmin==null?"–":Math.round(c.vmin)} ${spdU()}</b><small class="muted mono">B ${Math.round(c.vminr)}</small></div>
     ${c.trailA!=null?`<div class="rb-k"><span>${esc(Tx("Trail / coast","Trail / inercia","Trail / Rollen","Trail / inércia"))}</span><b class="mono">${Math.round(c.trailA)} m · ${Math.round(c.coastA)} m</b><small class="muted mono">B ${Math.round(c.trailB)} · ${Math.round(c.coastB)}</small></div>`:""}
@@ -7372,6 +7372,7 @@ function renderCoach(){coachWeights();coachMe();const LP=coachLaps(),best=markAn
   box.querySelectorAll("[data-tiprate] button").forEach(b=>b.onclick=()=>{const apex=+b.parentNode.dataset.tiprate,k=c.cs.find(x=>Math.round(x.apex)===apex);if(!k)return;coachRate(A,k,+b.dataset.up);const on=(TIPRATE[(coachWhere(A)||{}).sid+":"+apex]||0);b.parentNode.querySelectorAll("button").forEach(x=>x.classList.toggle("on",+x.dataset.up===on))});
   box.querySelectorAll("[data-cref]").forEach(b=>b.onclick=()=>{rsel.value=b.dataset.cref;rsel.dataset.user="1";renderCoach()});
   const ac=$("#coachAllC");if(ac)ac.onclick=()=>{COACH_ALLC=!COACH_ALLC;renderCoach()}
+  box.querySelectorAll("[data-practise]").forEach(b=>b.onclick=e=>{e.stopPropagation();practiseCorner(+b.dataset.practise,b,A.trackId||TURN_TID)});
   const po=$("#coachPlanOv");if(po)po.onclick=()=>planToOverlay(c.plan,po,A.trackId||TURN_TID)}
 /* two columns: the pace and the plan go under the shorter of the corners and the map column, so neither leaves empty space */
 function coachBalance(box){const g=box&&box.querySelector(".co-cols");if(!g)return;const m=g.querySelector(".co-main"),sd=g.querySelector(".co-side");
@@ -7411,15 +7412,33 @@ function drawPlanLayer(box){const g=box&&box.querySelector(".planG"),PL=box&&box
     const many=ms.filter(m=>m.k==="apex"||m.k==="str");(many.length?many:[main(S)].filter(Boolean)).forEach(m=>{out+=badge(at(m.d),sel,"on").replace("</g>",`<title>${esc((m.n?"T"+m.n+" · ":"")+lbl(m))}</title></g>`)})}
   g.innerHTML=out;g.querySelectorAll("[data-psel]").forEach(b=>b.onclick=e=>{e.stopPropagation();const i=+b.dataset.psel;if(box._onPlanSel)box._onPlanSel(i);else{box._planSel=i;drawPlanLayer(box)}})}
 function planTurns(plan){const out=[];(plan||[]).slice(0,4).forEach(p=>(p.turns||[]).forEach(n=>{if(n>0&&!out.includes(n))out.push(n)}));return out}
-async function planToOverlay(plan,btn,track){const ns=planTurns(plan);if(!ns.length)return;const turns=ns.map(n=>"T"+n),list=turns.join(", "),turnsTrack=+track>0?+track:0;if(btn)btn.disabled=true;
-  try{setUI("coach",{turns,turnsTrack});
+/* "Practise" on a corner: the coach overlay shows that corner alone, its time on every lap, the best and the last five */
+function practiseCorner(n,btn,track){return planToOverlay(null,btn,track,n)}
+async function planToOverlay(plan,btn,track,focusN){const ns=focusN?[focusN]:planTurns(plan);if(!ns.length)return;const turns=ns.map(n=>"T"+n),list=turns.join(", "),turnsTrack=+track>0?+track:0,focus=!!focusN;if(btn)btn.disabled=true;
+  try{setUI("coach",{turns,turnsTrack,focus});
     if(pcOverlays()&&!REMOTE){let open=[];try{open=(await (await fetch("/api/overlay/list")).json()).open||[]}catch(e){}
       if(!open.includes("coach")&&!await openOverlayOnPC("coach"))return;OV_OPEN.add("coach");markOvOpen();
+      if(focus){toast(Tx(`The coach overlay shows ${list} alone now`,`El overlay del coach muestra ahora solo la ${list}`,null,`O overlay do coach mostra agora só a ${list}`));return}
       toast(Tx(`The coach overlay follows your plan now (${list})`,`El overlay del coach sigue ahora tu plan (${list})`,`Das Coach-Overlay folgt jetzt deinem Plan (${list})`,`O overlay do coach agora segue o seu plano (${list})`));return}
-    if(cpSetUI("coach",{turns,turnsTrack}))toast(Tx(`Your plan goes to the coach overlay on your PC (${list})`,`Tu plan va al overlay del coach de tu PC (${list})`,`Dein Plan geht ins Coach-Overlay auf deinem PC (${list})`,`Seu plano vai para o overlay do coach do seu PC (${list})`));
+    if(cpSetUI("coach",{turns,turnsTrack,focus}))toast(focus?Tx(`The coach overlay on your PC shows ${list} alone now`,`El overlay del coach de tu PC muestra ahora solo la ${list}`,null,`O overlay do coach do seu PC mostra agora só a ${list}`):Tx(`Your plan goes to the coach overlay on your PC (${list})`,`Tu plan va al overlay del coach de tu PC (${list})`,`Dein Plan geht ins Coach-Overlay auf deinem PC (${list})`,`Seu plano vai para o overlay do coach do seu PC (${list})`));
     else toast(Tx("Open the coach on your PC to take the plan to its overlay","Abre el coach en tu PC para llevar el plan a su overlay","Öffne den Coach auf deinem PC, um den Plan ins Overlay zu übernehmen","Abra o coach no seu PC para levar o plano ao overlay"))}
   finally{if(btn)btn.disabled=false}}
-function renderCoachWidget(){const box=$("#coachW");if(!box)return;if(OV.on){box.innerHTML=coachStyleHTML();return}const tips=coachTips(),LP=analysisLaps(),last=LP.at(-1);
+/* practising one corner (the coach's "Practise", ui.coach.focus with its turn): its time on every lap of the session,
+   timed live from 200 m before the official turn to 120 m after, like the PC's coach overlay (focusTick in ovnative4.go) */
+const FOCUS={turn:0,track:0,in:false,lap:0,t0:0,times:[]};
+function focusTurn(){const c=ui("coach");if(!c.focus||!Array.isArray(c.turns)||!c.turns.length)return 0;const tid=+((S.WeekendInfo||{}).TrackID)||0;if(+c.turnsTrack>0&&tid>0&&+c.turnsTrack!==tid)return 0;const n=parseInt(String(c.turns[0]).replace(/^T/,""),10);return n>0?n:0}
+function focusWindow(n){const tid=(S.WeekendInfo||{}).TrackID,t=tid?turnsFor(tid):null,L=trackLenM();if(!t||n<1||n>t.length||!(L>0))return null;const ap=t[n-1]*L;return[Math.max(10,ap-200),Math.min(L-10,ap+120)]}
+function focusTick(){const n=focusTurn(),tid=+((S.WeekendInfo||{}).TrackID)||0;if(n!==FOCUS.turn||tid!==FOCUS.track)Object.assign(FOCUS,{turn:n,track:tid,in:false,lap:0,t0:0,times:[]});if(!n)return;
+  const w=focusWindow(n);if(!w||w[1]-w[0]<50)return;const d=+T.LapDist,t=+T.LapCurrentLapTime,lp=+T.LapCompleted||0;if(!(d>=0)||!(t>=0))return;
+  if(!T.IsOnTrack||T.OnPitRoad){FOCUS.in=false;return}
+  if(!FOCUS.in&&d>=w[0]&&d<w[0]+40){FOCUS.in=true;FOCUS.lap=lp;FOCUS.t0=t}
+  else if(FOCUS.in&&d>=w[1]&&d<w[1]+80){if(lp===FOCUS.lap&&t>FOCUS.t0){FOCUS.times.push(t-FOCUS.t0);if(FOCUS.times.length>200)FOCUS.times.shift()}FOCUS.in=false}
+  else if(FOCUS.in&&(d<w[0]||d>w[1]+80||lp!==FOCUS.lap))FOCUS.in=false}
+function focusStats(x){if(!x.length)return null;const m=a=>a.reduce((s,v)=>s+v,0)/a.length,k=Math.min(5,x.length);return{last:x.at(-1),best:Math.min(...x),avg5:m(x.slice(-k)),first5:m(x.slice(0,k)),n:x.length}}
+function focusHTML(n){const st=focusStats(FOCUS.times),T=Tx;const h=`<div class="tiprow"><span class="cn">T${n}</span><b>${esc(T("Practising this corner","Practicando esta curva",null,"Praticando esta curva"))}</b><span class="sp"></span><button type="button" class="btn small" id="focusOff">${esc(T("Stop","Parar",null,"Parar"))}</button></div>`;
+  if(!st)return h+`<p class="note">${esc(T(`Your time through T${n} shows after the next pass.`,`Tu tiempo en la T${n} sale tras la próxima pasada.`,null,`Seu tempo na T${n} aparece após a próxima passagem.`))}</p>`;
+  const good=st.last<=st.best+.0005;return h+`<div class="stat-row" style="display:flex;gap:18px;flex-wrap:wrap;margin-top:6px"><div><div class="label">${esc(T("This lap","Esta vuelta",null,"Esta volta"))}</div><div class="mid mono ${good?"good":""}">${st.last.toFixed(2)}</div></div><div><div class="label">${esc(T("Best","Mejor",null,"Melhor"))}</div><div class="mid mono">${st.best.toFixed(2)}</div></div><div><div class="label">${esc(T("Last 5","Últimas 5",null,"Últimas 5"))}</div><div class="mid mono">${st.avg5.toFixed(2)}</div></div>${st.n>=6?`<div><div class="label">${esc(T("Since the start","Desde el inicio",null,"Desde o início"))}</div><div class="mid mono ${st.avg5<st.first5?"good":"bad"}">${sgn(st.avg5-st.first5,2)} s</div></div>`:""}</div>`}
+function renderCoachWidget(){const box=$("#coachW");if(!box)return;const fn=focusTurn();if(fn&&!OV.on&&focusWindow(fn)){box.innerHTML=focusHTML(fn);const o=$("#focusOff");if(o)o.onclick=()=>{setUI("coach",{focus:false});if(!pcOverlays()||REMOTE)cpSetUI("coach",{focus:false});renderCoachWidget()};return}if(OV.on){box.innerHTML=coachStyleHTML();return}const tips=coachTips(),LP=analysisLaps(),last=LP.at(-1);
   // no tips: say why (not enough laps yet, or the last lap loses nothing clear against the reference)
   box.innerHTML=tips.length?tips.map(c=>`<div class="tiprow"><span class="cn">${esc(Tx("C","C"))}${c.n}</span><span>${esc(tipTx(c))}</span><span class="mono bad">${sgn(c.lost,2)}</span></div>`).join(""):`<p class="note">${!last||!coachRef(last)||coachRef(last)===last?Lp("Tips appear after your second lap.","Los consejos aparecen tras tu segunda vuelta."):Lp("Your last lap loses nothing clear against the reference: keep it up.","Tu última vuelta no pierde nada claro frente a la referencia: sigue así.")}</p>`}
 
@@ -7611,7 +7630,7 @@ $("#setupQ").oninput=()=>renderSetups();$("#setupFolder").onclick=()=>MODE==="br
    PC itself (not the phone, not overlay windows), so they are not heard twice. */
 Object.assign(I18N,{"w.brakes":["Braking markers","Marcas de frenada"],"d.brakes":["Where to brake in the next corner, from your best lap, with beeps; brakes earlier with a car just ahead","Dónde frenar en la próxima curva según tu mejor vuelta, con pitidos; frena antes con un coche justo delante"]});
 UI_DEFAULTS.brakes={on:true,beeps:"count",traffic:true,vol:.7,speeds:true,fb:true};
-UI_DEFAULTS.coach={mode:"next",turnName:"both",ref:"level",turns:[],turnsTrack:0,hint:true,verdict:4,lead:300}; // the coach overlay (drawCoachOv in ovnative4.go): what it shows and which corners, chosen before the session
+UI_DEFAULTS.coach={mode:"next",turnName:"both",ref:"level",turns:[],turnsTrack:0,focus:false,hint:true,verdict:4,lead:300}; // the coach overlay (drawCoachOv in ovnative4.go): what it shows and which corners, chosen before the session
 function beepHere(){if(OV.on)return false;const v=store.get("pw.beepHere",null);if(v!=null)return v;return MODE==="local"||/^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname)}
 let ACTX=null;
 function beep(freq,ms,vol){try{ACTX=ACTX||new(window.AudioContext||window.webkitAudioContext)();if(ACTX.state==="suspended")ACTX.resume();

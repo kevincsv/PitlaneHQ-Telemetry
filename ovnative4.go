@@ -1673,6 +1673,182 @@ type ovCoachState struct {
 	watch   int             // the corner under way (its index in tips), -1 none
 	watchD0 float64
 	verdict *coachVerdict
+	focus   coachFocusState
+}
+
+// coachFocusState: practising one corner (the coach's "Practise this corner"): its time on every lap of the session
+type coachFocusState struct {
+	turn  int       // the corner practised (T4 = 4), 0 none
+	track int       // the track its times are from
+	in    bool      // the car is inside the corner's window
+	lap   int       // the lap the window started on
+	t0    float64   // LapCurrentLapTime at the window's start
+	times []float64 // the corner's time on each lap, oldest first
+	ref   float64   // the reference's time through the same window, 0 unknown
+	at    time.Time // when the last time came
+}
+
+// coachFocus: the corner the settings practise ("focus" with one chosen turn on this track), 0 none
+func (st *ovState) coachFocus(cfg map[string]any) int {
+	if !uiBool(cfg, "focus", false) {
+		return 0
+	}
+	turns := uiList(cfg, "turns", nil)
+	if len(turns) == 0 {
+		return 0
+	}
+	if tt := int(uiNum(cfg, "turnsTrack", 0)); tt > 0 && st.ses != nil && st.ses.TrackID > 0 && tt != st.ses.TrackID {
+		return 0
+	}
+	n, err := strconv.Atoi(strings.TrimPrefix(turns[0], "T"))
+	if err != nil || n < 1 {
+		return 0
+	}
+	return n
+}
+
+// focusWindow: the stretch of the lap timed for a practised corner, 200 m before its official turn to 120 m after
+func (st *ovState) focusWindow(n int) (float64, float64, bool) {
+	st.loadTurns()
+	t := st.ext.turns
+	if st.ses == nil || st.ses.TrackLen <= 0 || n < 1 || n > len(t) {
+		return 0, 0, false
+	}
+	L := st.ses.TrackLen
+	apex := t[n-1] * L
+	return math.Max(10, apex-200), math.Min(L-10, apex+120), true
+}
+
+// focusTick: times the practised corner on every lap
+func (st *ovState) focusTick(cfg map[string]any, R *ovLap) {
+	F := &st.ext.coach.focus
+	n := st.coachFocus(cfg)
+	tid := 0
+	if st.ses != nil {
+		tid = st.ses.TrackID
+	}
+	if n != F.turn || tid != F.track {
+		*F = coachFocusState{turn: n, track: tid}
+	}
+	if n == 0 {
+		return
+	}
+	i0, i1, ok := st.focusWindow(n)
+	if !ok || i1-i0 < 50 {
+		return
+	}
+	if R != nil {
+		if a, ok1 := timeAt(R.series(), i0); ok1 {
+			if b, ok2 := timeAt(R.series(), i1); ok2 && b > a {
+				F.ref = b - a
+			}
+		}
+	}
+	d, ok1 := st.num("LapDist")
+	t, ok2 := st.num("LapCurrentLapTime")
+	lp, _ := st.num("LapCompleted")
+	if !ok1 || !ok2 {
+		return
+	}
+	if v, _ := st.num("IsOnTrack"); v == 0 {
+		F.in = false
+		return
+	}
+	if v, _ := st.num("OnPitRoad"); v != 0 {
+		F.in = false
+		return
+	}
+	switch {
+	case !F.in && d >= i0 && d < i0+40:
+		F.in, F.lap, F.t0 = true, int(lp), t
+	case F.in && d >= i1 && d < i1+80:
+		if int(lp) == F.lap && t > F.t0 {
+			F.times = append(F.times, t-F.t0)
+			if len(F.times) > 200 {
+				F.times = F.times[len(F.times)-200:]
+			}
+			F.at = time.Now()
+		}
+		F.in = false
+	case F.in && (d < i0 || d > i1+80 || int(lp) != F.lap):
+		F.in = false
+	}
+}
+
+// focusStats: the practised corner's last time, best, the average of the last five and the first five
+func focusStats(x []float64) (last, best, avg5, first5 float64) {
+	if len(x) == 0 {
+		return
+	}
+	last, best = x[len(x)-1], x[0]
+	for _, v := range x {
+		best = math.Min(best, v)
+	}
+	mean := func(a []float64) float64 {
+		s := 0.0
+		for _, v := range a {
+			s += v
+		}
+		return s / float64(len(a))
+	}
+	k := 5
+	if len(x) < k {
+		k = len(x)
+	}
+	return last, best, mean(x[len(x)-k:]), mean(x[:k])
+}
+
+// drawCoachFocus: practising one corner. The corner, this lap's time through it (green when it beats the reference),
+// the best and the last five, and how much the corner improved since the first laps
+func drawCoachFocus(c *ovCanvas, st *ovState, z float64, n int) int {
+	F := &st.ext.coach.focus
+	W := float64(c.w)
+	pad := 14 * z
+	th := st.titleH("coach", z)
+	H := pad + th + 92*z + pad
+	panel(c, H, z)
+	if st.titleOn("coach") {
+		c.label(z, st.T("Practise", "Practicar")+" T"+strconv.Itoa(n), pad, pad+6*z, 0)
+	}
+	y := pad + th
+	big, sm, lb := ovFace(fkDataB, 30*z), ovFace(fkDataB, 13*z), ovFace(fkBody, 11.5*z)
+	if len(F.times) == 0 {
+		msg := st.T("Your time through T"+strconv.Itoa(n)+" shows after the next pass", "Tu tiempo en la T"+strconv.Itoa(n)+" sale tras la próxima pasada")
+		c.text(ovFace(fkBody, 13.5*z), ellipsis(ovFace(fkBody, 13.5*z), msg, W-2*pad), pad, y+30*z, colMuted, 1, 0)
+		return int(math.Ceil(H))
+	}
+	last, best, avg5, first5 := focusStats(F.times)
+	col := uint32(colText)
+	if F.ref > 0 {
+		if last <= F.ref+.005 {
+			col = colGood
+		} else {
+			col = colBad
+		}
+	} else if last <= best+.0005 {
+		col = colGood
+	}
+	c.text(big, fmt.Sprintf("%.2f", last), pad, y+20*z, col, 1, 0)
+	if F.ref > 0 {
+		v := "✓"
+		if last > F.ref+.005 {
+			v = signed(last-F.ref, 2)
+		}
+		c.text(ovFace(fkDataB, 18*z), v, W-pad, y+20*z, col, 1, 2)
+	}
+	row := func(x float64, lab, val string) {
+		c.text(lb, lab, x, y+52*z, colMuted, 1, 0)
+		c.text(sm, val, x, y+70*z, colText, 1, 0)
+	}
+	cw := (W - 2*pad) / 3
+	row(pad, st.T("Best", "Mejor"), fmt.Sprintf("%.2f", best))
+	row(pad+cw, st.T("Last 5", "Últimas 5"), fmt.Sprintf("%.2f", avg5))
+	if len(F.times) >= 6 {
+		row(pad+2*cw, st.T("Since the start", "Desde el inicio"), signed(avg5-first5, 2)+" s")
+	} else if F.ref > 0 {
+		row(pad+2*cw, st.T("Reference", "Referencia"), fmt.Sprintf("%.2f", F.ref))
+	}
+	return int(math.Ceil(H))
 }
 
 // coachRef: the reference the overlay measures against: the model's next level when it is faster than your best and the
@@ -1719,6 +1895,7 @@ func (st *ovState) coachTick(cfg map[string]any) {
 	E := &st.ext
 	C := &E.coach
 	A, R, name := st.coachRef(uiStr(cfg, "ref", "level"))
+	st.focusTick(cfg, R)
 	if A == nil || R == nil {
 		// nothing of yours to measure against yet (the first laps on a track): the track guide's calls, where the fast
 		// drivers brake, the gear and the apex speed, from the model's corner card
@@ -1966,6 +2143,12 @@ func drawCoachOv(c *ovCanvas, st *ovState, z float64) int {
 			c.text(pf, fmt.Sprintf("%d ▲ · %d ▼ · %s s", n, m, signed(sum, 2)), W-pad, y+r, col, 1, 1)
 		}
 		return 2*r + 10*z
+	}
+	// practising one corner: that corner's times only
+	if n := st.coachFocus(cfg); n > 0 {
+		if _, _, ok := st.focusWindow(n); ok {
+			return drawCoachFocus(c, st, z, n)
+		}
 	}
 	// nothing to measure yet
 	if len(C.tips) == 0 {

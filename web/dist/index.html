@@ -7348,7 +7348,7 @@ if(OV.on&&OV.preview){setTimeout(previewSampleTick,1200);setInterval(previewSamp
 /* beta.pitlanehq.app, the test version (cloud/src/beta.js): a bar on every screen; a driver who is not a tester is sent to pitlanehq.app */
 const BETA_HOST=/^beta\./.test(location.hostname);
 function betaBanner(){if(!BETA_HOST)return;let b=document.getElementById("betaBanner");
-  if(!b){b=document.createElement("div");b.id="betaBanner";b.style.cssText="position:sticky;top:0;z-index:61;background:#a970ff;color:#11151b;font:800 13px/1.4 ui-monospace,monospace;letter-spacing:.04em;padding:6px 16px;text-align:center";document.body.prepend(b)}
+  if(!b){b=document.createElement("div");b.id="betaBanner";b.style.cssText="position:sticky;top:0;z-index:61;margin:0 calc(50% - 50vw);box-sizing:border-box;background:#a970ff;color:#11151b;font:800 13px/1.4 ui-monospace,monospace;letter-spacing:.04em;padding:6px 16px;text-align:center";document.body.prepend(b)}
   const me=typeof ME!=="undefined"&&ME,out=me&&!me.tester&&!me.admin;
   b.innerHTML=esc(Tx("TEST VERSION","VERSIÓN DE PRUEBA","TEST VERSION","VERSÃO DE TESTE"))+(out?` · ${esc(Tx("Only testers can use it.","Solo la pueden usar los testers.","Only testers can use it.","Só os testers podem usar."))} <a href="https://pitlanehq.app/" style="color:inherit">pitlanehq.app</a>`:"")}
 function demoBanner(){betaBanner();let b=document.getElementById("demoBanner");const on=demoOn();if(!on){if(b)b.remove();return}

@@ -9,6 +9,7 @@ import { readFileSync, existsSync, readdirSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { seoPage } from "../src/seo.js";
 import { TOPICS } from "../src/seo-topics.js";
+import { downloads, MS_STORE } from "../src/downloads.js";
 
 const SITE = "https://pitlanehq.app";
 const DIST = fileURLToPath(new URL("../../web/dist/", import.meta.url));
@@ -54,7 +55,7 @@ function parse(html) {
   const ld = [...html.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)].map((m) => JSON.parse(m[1]));
   const main = pick(html, /<main class="w">([\s\S]*)<\/main>/) || "";
   return { title: unesc(pick(head, /<title>([^<]*)<\/title>/)), desc: unesc(pick(head, /<meta name="description" content="([^"]*)">/)), canon: pick(head, /<link rel="canonical" href="([^"]+)">/),
-    robots: pick(head, /<meta name="robots" content="([^"]+)">/), alts, ld: ld.flat(), h1: (main.match(/<h1[\s>]/g) || []).length, main,
+    robots: pick(head, /<meta name="robots" content="([^"]+)">/), alts, ld: ld.flat(), html, h1: (main.match(/<h1[\s>]/g) || []).length, main,
     text: unesc(main.replace(/<[^>]+>/g, " ")), links: [...html.matchAll(/href="(\/[^"#]*)"/g)].map((m) => unesc(m[1])), imgs: [...html.matchAll(/<img src="(\/[^"]+)"/g)].map((m) => m[1]) };
 }
 
@@ -253,6 +254,28 @@ for (const [path, p] of pages) assert.match(p.text, /What is Pitlane HQ|Qué es 
   }
   for (const f of ["/llms.txt", "/llms-full.txt"]) assert.ok((await (await get(dc, f)).text()).includes(INV), `${f} names the Discord server`);
   await get(world(), "/llms.txt");
+}
+// the Microsoft Store listing: the app's JSON-LD (install address and sameAs), the footer, "/" and llms.txt name it,
+// and the downloads page has a full head and its version in the JSON-LD
+{
+  assert.match(MS_STORE, /^https:\/\/apps\.microsoft\.com\/detail\/\w+$/);
+  for (const path of ["/iracing-telemetry", "/es/overlays-le-mans-ultimate", "/pt/coach-iracing"]) {
+    const p = pages.get(path);
+    const app = p.ld.find((x) => x["@type"] === "SoftwareApplication");
+    assert.ok(app && app.installUrl === MS_STORE && app.sameAs.includes(MS_STORE), `${path} SoftwareApplication names the Store`);
+    assert.ok(p.html.includes(`href="${MS_STORE}"`), `${path} links the Store`);
+  }
+  const ix = readFileSync(DIST + "index.html", "utf8");
+  assert.ok(ix.includes(`"installUrl":"${MS_STORE}"`) && ix.includes(`href="${MS_STORE}"`), '"/" names the Store');
+  assert.ok((await (await get(world(), "/llms.txt")).text()).includes(`(${MS_STORE})`), "llms.txt links the Store");
+  const files = { "version.json": JSON.stringify({ version: "0.9.12" }), "phones.json": "{}" };
+  const DL = { get: async (k) => (k in files ? { text: async () => files[k] } : null) };
+  const r = await downloads(new Request(SITE + "/downloads"), { DL }, new URL(SITE + "/downloads"));
+  const h = await r.text();
+  for (const re of [/<meta property="og:title" content="[^"]+">/, /<meta name="twitter:card"/, /<link rel="canonical" href="https:\/\/pitlanehq\.app\/downloads">/]) assert.match(h, re);
+  const ld = JSON.parse(pick(h, /<script type="application\/ld\+json">([\s\S]*?)<\/script>/));
+  assert.equal(ld.softwareVersion, "0.9.12"); assert.equal(ld.installUrl, MS_STORE);
+  assert.ok(pick(h, /<meta name="description" content="([^"]+)">/).length <= 160, "downloads description length");
 }
 // robots.txt shuts no robot out of the public pages (search engines and AI search alike) and names the sitemap
 {

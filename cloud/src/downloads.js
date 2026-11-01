@@ -15,7 +15,7 @@ const TYPES = { exe: "application/vnd.microsoft.portable-executable", zip: "appl
 
 // the Microsoft Store listing (apps.microsoft.com/detail/<Store ID>): "Coming soon" until it is set, the same address as
 // MS_STORE in web/dist/index.html and pitwall-tour.js
-const MS_STORE = "https://apps.microsoft.com/detail/9P3642QCS9ZG";
+export const MS_STORE = "https://apps.microsoft.com/detail/9P3642QCS9ZG";
 
 export async function downloads(req, env, url) {
   const p = url.pathname;
@@ -52,7 +52,7 @@ ${row(t("Pitlane HQ for Windows", "Pitlane HQ para Windows"), t("Records your la
 <h2>${t("Phones", "Móviles")} ${ph.version ? `<small>v${esc(String(ph.version).replace(/^v/, "").replace(/-?beta$/i, ""))} beta</small>` : ""}</h2><div class="g">
 ${ph.apk ? row("Android", t("App (APK). Google Play soon", "App (APK). Pronto en Google Play"), ph.apk) : ""}<div class="c" style="opacity:.7"><b>iPhone</b><span>${t("Coming to the App Store", "Pronto en la App Store")}</span></div></div>
 <p class="n"><a href="/changelog">${t("What changed in each version", "Qué cambió en cada versión")}</a> · <a href="${es ? "/es/precios" : "/pricing"}">${t("Pricing", "Precios")}</a> · <a href="/">${t("Open the web app", "Abrir la app web")}</a></p>`;
-    return new Response(page(body, { lang: es ? "es" : "en" }), { headers: H });
+    return new Response(page(body, { lang: es ? "es" : "en", ld: dlLd(pc) }), { headers: H });
   }
   if (p === "/changelog" || p === "/changelog/phones") {
     // the short notes for people (web/dist/whats-new.json), the same ones the apps show
@@ -85,7 +85,24 @@ function renderMd(md) {
 }
 
 // each page names itself (its own canonical address), never another one
-const page = (body, o = {}) => `<!doctype html><html lang="${o.lang || "en"}"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${o.title || "Download Pitlane HQ · iRacing and LMU telemetry for Windows"}</title><meta name="description" content="${o.desc || "Download Pitlane HQ Agent for Windows, which records your iRacing and Le Mans Ultimate laps, and the Android app. Free."}"><link rel="canonical" href="https://pitlanehq.app${o.path || "/downloads"}"><meta property="og:image" content="https://pitlanehq.app/og.png"><link rel="icon" href="/favicon.ico" sizes="any"><link rel="icon" href="/logo.svg" type="image/svg+xml">
+// the head every robot reads: title, description, canonical, Open Graph and Twitter cards, and the JSON-LD of the page
+const DL_TITLE = "Download Pitlane HQ · iRacing and LMU telemetry for Windows";
+const DL_DESC = "Download Pitlane HQ Agent for Windows, here or on the Microsoft Store, to record your iRacing and Le Mans Ultimate laps, and the Android app. Free.";
+function head(o) {
+  const title = esc(o.title || DL_TITLE), desc = esc(o.desc || DL_DESC), url = "https://pitlanehq.app" + (o.path || "/downloads");
+  const ld = o.ld ? `<script type="application/ld+json">${JSON.stringify(o.ld).replace(/</g, "\\u003c")}</script>` : "";
+  return `<title>${title}</title><meta name="description" content="${desc}"><link rel="canonical" href="${url}"><meta name="robots" content="index,follow,max-image-preview:large">`
+    + `<meta property="og:type" content="website"><meta property="og:site_name" content="Pitlane HQ"><meta property="og:title" content="${title}"><meta property="og:description" content="${desc}"><meta property="og:url" content="${url}">`
+    + `<meta property="og:image" content="https://pitlanehq.app/og.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta name="twitter:card" content="summary_large_image">`
+    + `<meta name="twitter:title" content="${title}"><meta name="twitter:description" content="${desc}"><meta name="twitter:image" content="https://pitlanehq.app/og.png">${ld}`;
+}
+// the app on the downloads page, with the version the PCs have now (version.json)
+export const dlLd = (pc) => ({ "@context": "https://schema.org", "@type": "SoftwareApplication", "@id": "https://pitlanehq.app/#app", name: "Pitlane HQ",
+  alternateName: ["PitlaneHQ", "Pitlane HQ Agent"], url: "https://pitlanehq.app/", applicationCategory: "SportsApplication", applicationSubCategory: "Sim racing telemetry",
+  operatingSystem: "Windows, Android, Web", ...(pc && pc.version ? { softwareVersion: String(pc.version).replace(/^v/, "") } : {}),
+  downloadUrl: "https://pitlanehq.app/downloads", installUrl: MS_STORE, sameAs: [MS_STORE], isAccessibleForFree: true,
+  offers: { "@type": "Offer", price: "0", priceCurrency: "USD" }, image: "https://pitlanehq.app/og.png", publisher: { "@type": "Organization", name: "Pitlane HQ", url: "https://pitlanehq.app/" } });
+const page = (body, o = {}) => `<!doctype html><html lang="${o.lang || "en"}"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">${head(o)}<link rel="icon" href="/favicon.ico" sizes="any"><link rel="icon" href="/logo.svg" type="image/svg+xml">
 <style>body{margin:0;background:#11151b;color:#e7ebf1;font:16px/1.55 system-ui,sans-serif}main{max-width:760px;margin:0 auto;padding:28px 16px 48px}h1{font-size:26px;letter-spacing:.04em;text-transform:uppercase;margin:0 0 6px}h2{font-size:18px;margin:26px 0 10px;letter-spacing:.03em}h2 small{color:#8a97a9;font-weight:600;font-size:12px;margin-left:8px}
 h3{font-size:14px;color:#ffb02e;margin:18px 0 4px}p{color:#a9b4c3;margin:6px 0}ul{padding-left:20px;color:#c9d2de}li{margin:4px 0}code{background:#19202a;padding:1px 5px;border-radius:4px;font-size:13px}a{color:#ffb02e}
 .g{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px}.c{display:grid;gap:3px;padding:14px;border:1px solid #2b3542;border-radius:12px;background:#19202a;text-decoration:none;color:#e7ebf1}.c:hover{border-color:#ffb02e}.c span{color:#8a97a9;font-size:13px}.n{margin-top:26px;font-size:14px}

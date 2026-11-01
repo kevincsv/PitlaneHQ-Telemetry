@@ -9,12 +9,13 @@ import { catMap, catOf } from "./categories.js";
 import { famId, famName } from "./carfamily.js";
 import { TOPICS, GUIDES } from "./seo-topics.js";
 import { VISIT_JS } from "./sourceslib.js";
+import { MS_STORE } from "./downloads.js";
 import { foundLeagues } from "./leaguescan.js";
 
 const SITE = "https://pitlanehq.app";
 // SEO_VER: raised when the public pages change (new languages, new addresses, new texts): every page is sent to
 // IndexNow again once. SEO_DATE: the day their texts last changed, the sitemap's lastmod of the pages without data.
-const SEO_VER = "16", SEO_DATE = "2026-11-01";
+const SEO_VER = "17", SEO_DATE = "2026-11-01";
 const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
 const slug = (s) => String(s || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 80);
 const fmt = (t) => { if (!(t > 0)) return "–"; const m = Math.floor(t / 60), s = t - m * 60; return (m ? m + ":" + (s < 10 ? "0" : "") : "") + s.toFixed(3); };
@@ -165,20 +166,20 @@ ${hl}
 ${ld ? `<script type="application/ld+json">${JSON.stringify(ld).replace(/</g, "\\u003c")}</script>` : ""}</head><body>
 <header><div class="w"><a class="b" href="/">${LOGO}Pitlane HQ</a><nav><a href="${(game === "lmu" ? LANDL : LAND)[l].path}">${esc(t.tel[game])}</a><a href="${(game === "lmu" ? OVLL : OVL)[l].path}">${esc(t.ov)}</a><a href="${lg}">${esc(t.lgs)}</a><a href="${rc}">${esc(t.rec)}</a><a href="${(other === "lmu" ? LANDL : LAND)[l].path}">${esc(GNAME[other])}</a><a href="/downloads">${esc(t.dl)}</a><a href="/">${esc(t.app)}</a>${others}</nav></div></header>
 <main class="w">${body}${path && !noindex ? whatIs(l) : ""}</main>
-<footer><div class="w"><p class="m">${esc(GUIDES[l])} · iRacing · ${iracingLinks(l).map(([p, h]) => `<a href="${p}">${esc(h)}</a>`).join(" · ")}</p><p class="m">${esc(t.lmuH)} · ${lmuLinks(l).map(([p, h]) => `<a href="${p}">${esc(h)}</a>`).join(" · ")}</p>Pitlane HQ · ${esc(t.free)} · <a href="/downloads">${esc(t.dl)}</a> · <a href="${PRICE[l].path}">${esc(PRICE[l].h1)}</a> · <a href="mailto:support@pitlanehq.app">support@pitlanehq.app</a> · ${DC ? `<a href="${esc(DC)}" rel="noopener">Discord</a> · ` : ""}${LANGS.map((k) => `<a href="${LAND[k].path}" hreflang="${HLANG[k]}">${NAME[k]}</a>`).join(" · ")}</div></footer>${VISIT_JS}</body></html>`;
+<footer><div class="w"><p class="m">${esc(GUIDES[l])} · iRacing · ${iracingLinks(l).map(([p, h]) => `<a href="${p}">${esc(h)}</a>`).join(" · ")}</p><p class="m">${esc(t.lmuH)} · ${lmuLinks(l).map(([p, h]) => `<a href="${p}">${esc(h)}</a>`).join(" · ")}</p>Pitlane HQ · ${esc(t.free)} · <a href="/downloads">${esc(t.dl)}</a> · <a href="${MS_STORE}" rel="noopener">Microsoft Store</a> · <a href="${PRICE[l].path}">${esc(PRICE[l].h1)}</a> · <a href="mailto:support@pitlanehq.app">support@pitlanehq.app</a> · ${DC ? `<a href="${esc(DC)}" rel="noopener">Discord</a> · ` : ""}${LANGS.map((k) => `<a href="${LAND[k].path}" hreflang="${HLANG[k]}">${NAME[k]}</a>`).join(" · ")}</div></footer>${VISIT_JS}</body></html>`;
 }
 // what Pitlane HQ is, in a few plain sentences at the end of every indexed page, so whoever lands on any one of them
 // (a person, a search engine or an AI assistant) reads the whole of it. Only what exists today, and free only "during
 // the beta" beyond what is free now
 const WHAT = {
   en: { t: "What is Pitlane HQ", p: ["Pitlane HQ (also written PitlaneHQ) is a free sim racing telemetry app for iRacing and Le Mans Ultimate. It is in beta, and everything in it is free during the beta.",
-    "Pitlane HQ Agent runs on the Windows PC where you race. It records every lap by itself and draws overlays on top of the game, also in VR. The web app and the Android app show your laps with a lap analyzer, lap comparison, sectors and braking points, and a coach that learns from real laps, shows corner by corner where you lose time and gives a plan marked on the track map.",
+    "Pitlane HQ Agent runs on the Windows PC where you race, and it is also on the Microsoft Store. It records every lap by itself and draws overlays on top of the game, also in VR. The web app and the Android app show your laps with a lap analyzer, lap comparison, sectors and braking points, and a coach that learns from real laps, shows corner by corner where you lose time and gives a plan marked on the track map.",
     "Every lap syncs to your account with your whole history. Pitlane HQ also has live telemetry on your phone, race summaries with the fuel of each stint, leaderboards by car and track, friends, leagues and a Discord bot."] },
   es: { t: "Qué es Pitlane HQ", p: ["Pitlane HQ (también escrito PitlaneHQ) es una app gratis de telemetría para sim racing en iRacing y Le Mans Ultimate. Está en beta, y durante la beta todo es gratis.",
-    "Pitlane HQ Agent funciona en el PC con Windows donde corres. Graba cada vuelta solo y dibuja overlays encima del juego, también en VR. La app web y la app de Android te enseñan tus vueltas con un analizador de vueltas, comparación de vueltas, sectores y puntos de frenada, y un coach que aprende de vueltas reales, te enseña curva a curva dónde pierdes tiempo y te da un plan marcado en el mapa.",
+    "Pitlane HQ Agent funciona en el PC con Windows donde corres, y también está en la Microsoft Store. Graba cada vuelta solo y dibuja overlays encima del juego, también en VR. La app web y la app de Android te enseñan tus vueltas con un analizador de vueltas, comparación de vueltas, sectores y puntos de frenada, y un coach que aprende de vueltas reales, te enseña curva a curva dónde pierdes tiempo y te da un plan marcado en el mapa.",
     "Cada vuelta se sincroniza con tu cuenta, con todo tu historial. Pitlane HQ también tiene telemetría en vivo en el móvil, resúmenes de carrera con el combustible de cada stint, clasificaciones por coche y circuito, amigos, ligas y un bot de Discord."] },
   pt: { t: "O que é o Pitlane HQ", p: ["O Pitlane HQ (também escrito PitlaneHQ) é um app grátis de telemetria para sim racing no iRacing e no Le Mans Ultimate. Ele está em beta, e durante a beta tudo é grátis.",
-    "O Pitlane HQ Agent roda no PC com Windows onde você corre. Ele grava cada volta sozinho e desenha overlays sobre o jogo, também em VR. O app web e o app de Android mostram suas voltas com um analisador de voltas, comparação de voltas, setores e pontos de frenagem, e um coach que aprende com voltas reais, mostra curva a curva onde você perde tempo e dá um plano marcado no mapa da pista.",
+    "O Pitlane HQ Agent roda no PC com Windows onde você corre, e também está na Microsoft Store. Ele grava cada volta sozinho e desenha overlays sobre o jogo, também em VR. O app web e o app de Android mostram suas voltas com um analisador de voltas, comparação de voltas, setores e pontos de frenagem, e um coach que aprende com voltas reais, mostra curva a curva onde você perde tempo e dá um plano marcado no mapa da pista.",
     "Cada volta sincroniza com a sua conta, com todo o seu histórico. O Pitlane HQ também tem telemetria ao vivo no celular, resumos de corrida com o combustível de cada stint, classificações por carro e pista, amigos, ligas e um bot de Discord."] },
 };
 const DCW = {
@@ -197,11 +198,11 @@ const webPageLd = (l, path, name, description, mod) => ({ "@context": "https://s
   inLanguage: HLANG[l], isPartOf: { "@id": SITE + "/#website" }, about: { "@id": SITE + "/#app" }, dateModified: mod || SEO_DATE });
 // the steps to start, shown on the landings (and as HowTo for search engines)
 const START = {
-  en: { t: "How to start", name: (gn) => `How to record your ${gn} telemetry with Pitlane HQ`, steps: (gn) => ["Download Pitlane HQ Agent and install it on the Windows PC where you race.",
+  en: { t: "How to start", name: (gn) => `How to record your ${gn} telemetry with Pitlane HQ`, steps: (gn) => ["Download Pitlane HQ Agent from pitlanehq.app or the Microsoft Store and install it on the Windows PC where you race.",
     "Open it and sign in, or create a free account.", `Drive in ${gn}. Every lap is saved by itself.`, "Open Analysis in the app, on the web or on your phone, to see where you lose time."] },
-  es: { t: "Cómo empezar", name: (gn) => `Cómo grabar tu telemetría de ${gn} con Pitlane HQ`, steps: (gn) => ["Descarga Pitlane HQ Agent e instálalo en el PC con Windows donde corres.",
+  es: { t: "Cómo empezar", name: (gn) => `Cómo grabar tu telemetría de ${gn} con Pitlane HQ`, steps: (gn) => ["Descarga Pitlane HQ Agent desde pitlanehq.app o la Microsoft Store e instálalo en el PC con Windows donde corres.",
     "Ábrelo e inicia sesión, o crea una cuenta gratis.", `Conduce en ${gn}. Cada vuelta se guarda sola.`, "Abre Análisis en la app, en la web o en el móvil para ver dónde pierdes tiempo."] },
-  pt: { t: "Como começar", name: (gn) => `Como gravar sua telemetria do ${gn} com o Pitlane HQ`, steps: (gn) => ["Baixe o Pitlane HQ Agent e instale no PC com Windows onde você corre.",
+  pt: { t: "Como começar", name: (gn) => `Como gravar sua telemetria do ${gn} com o Pitlane HQ`, steps: (gn) => ["Baixe o Pitlane HQ Agent em pitlanehq.app ou na Microsoft Store e instale no PC com Windows onde você corre.",
     "Abra e entre na sua conta, ou crie uma conta grátis.", `Pilote no ${gn}. Cada volta é salva sozinha.`, "Abra Análise no app, na web ou no celular para ver onde você perde tempo."] },
 };
 const howToLd = (l, gn, path) => ({ "@context": "https://schema.org", "@type": "HowTo", name: START[l].name(gn), inLanguage: HLANG[l],
@@ -214,7 +215,7 @@ const faqLd = (faq) => ({ "@context": "https://schema.org", "@type": "FAQPage", 
 const appLd = (l, desc, shots, features) => ({ "@context": "https://schema.org", "@type": "SoftwareApplication", "@id": SITE + "/#app", name: "Pitlane HQ", alternateName: ["PitlaneHQ", "Pitlane HQ Agent"], url: SITE + "/",
   applicationCategory: "SportsApplication", applicationSubCategory: "Sim racing telemetry", operatingSystem: "Windows, Android, Web", description: desc, inLanguage: HLANG[l], image: `${SITE}/og${l === "en" ? "" : "-" + l}.png`,
   ...(shots && shots.length ? { screenshot: shots.map((f) => ({ "@type": "ImageObject", url: SITE + imgSrc(l, f), width: (SHOT[f] || [])[0], height: (SHOT[f] || [])[1] })) } : {}),
-  ...(features && features.length ? { featureList: features } : {}), downloadUrl: SITE + "/downloads", isAccessibleForFree: true,
+  ...(features && features.length ? { featureList: features } : {}), downloadUrl: SITE + "/downloads", installUrl: MS_STORE, sameAs: [MS_STORE], isAccessibleForFree: true,
   offers: { "@type": "Offer", price: "0", priceCurrency: "USD" }, publisher: { "@id": SITE + "/#org" } });
 const siteLd = (l) => [
   { "@context": "https://schema.org", "@type": "WebSite", "@id": SITE + "/#website", name: "Pitlane HQ", alternateName: ["PitlaneHQ", "Pitlane"], url: SITE + "/", inLanguage: HLANG[l], publisher: { "@id": SITE + "/#org" } },
@@ -863,13 +864,13 @@ export async function indexNow(env) {
 // /llms.txt (llmstxt.org): what Pitlane HQ is and its pages, in Markdown, for AI assistants and AI search that read a
 // site before they answer about it; /llms-full.txt: the English pages' own texts, whole. Made from the same texts as
 // the pages, so they never say anything the pages do not. Plain facts, never hype; noindex (they are no page for people).
-const mdLink = ([path, h, d]) => `- [${h}](${SITE}${path})${d ? ": " + d : ""}`;
+const mdLink = ([path, h, d]) => `- [${h}](${/^https:/.test(path) ? path : SITE + path})${d ? ": " + d : ""}`;
 const about = () => WHAT.en.p.join(" ") + (DC ? " " + DCW.en.p + " " + DC : "") + " ACC and Assetto Corsa are in development. The pages are in English, Spanish and Portuguese (Brazil).";
 // the facts an assistant needs to describe Pitlane HQ whole, one line each (the pages say each of them too)
 const FACTS = [
-  ["Price", "Free. Everything in Pitlane HQ is free while it is in beta, with no card asked for. Sync and the whole lap history are part of the free account."],
+  ["Price", "Free. Everything in Pitlane HQ is free while it is in beta, with no card asked for. Sync and the whole lap history are part of the free account. After the beta Pro will cost $6 a month or $59 a year, and drivers who support Pitlane HQ during the beta keep Pro at half price."],
   ["Games", "iRacing, and Le Mans Ultimate (in beta). ACC and Assetto Corsa are in development."],
-  ["Devices", "Pitlane HQ Agent on Windows records the laps and draws the overlays. The web app at pitlanehq.app works on any computer or phone browser, and there is an Android app. One account on every device, with sign-up by email, Steam or Discord."],
+  ["Devices", "Pitlane HQ Agent on Windows records the laps and draws the overlays. It downloads from pitlanehq.app or the Microsoft Store, and a Steam version is coming. The web app at pitlanehq.app works on any computer or phone browser, and there is an Android app. One account on every device, with sign-up by email, Steam or Discord."],
   ["Telemetry", "Speed, throttle, brake, gear and steering of every lap, saved by itself with nothing to set up. Live telemetry on a phone or a browser while you drive, and a code to share it with a friend."],
   ["Overlays", "Relative, standings, radar, delta bar, fuel, tyres, track map, flags, braking markers, a live coach, weather and more, drawn natively over the game, in six looks, also in VR through SteamVR. In the Overlays tab you place them on a picture of your screen. Each overlay has a settings window with a live preview and its own frame rate, and can open by itself in every game it works with."],
   ["Coach", "Learns from the real laps of every driver on each car and track and from each of your sessions, apart for road, oval, dirt oval and dirt road. It compares your lap with the record and with the driver just ahead of your pace, shows corner by corner where the time goes, how consistent each corner is and how it improves over time, and gives a plan with each point marked on the track map, saying what happened, why it costs time and what to do instead. On the first laps of a track the coach overlay calls the braking points."],
@@ -888,7 +889,7 @@ function llmsTxt() {
   const other = LANGS.filter((k) => k !== l).flatMap((k) => [[LAND[k].path, LAND[k].h1 + " (" + NAME[k] + ")"], [LANDL[k].path, LANDL[k].h1 + " (" + NAME[k] + ")"]]);
   return `# Pitlane HQ
 
-> Sim racing telemetry for iRacing and Le Mans Ultimate, all free during the beta, with a coach that learns from real laps, a lap analyzer, live overlays, sync with the whole lap history, leaderboards, friends, leagues and a Discord bot, on Windows, the web and Android.
+> Sim racing telemetry for iRacing and Le Mans Ultimate, all free during the beta, with a coach that learns from real laps, a lap analyzer, live overlays, sync with the whole lap history, leaderboards, friends, leagues and a Discord bot, on Windows (also on the Microsoft Store), the web and Android.
 
 ${about()}
 
@@ -912,7 +913,7 @@ ${lm.map(mdLink).join("\n")}
 
 ## Download
 
-${[["/downloads", "Download Pitlane HQ", "Pitlane HQ Agent for Windows and the Android app"], ["/changelog", "What's new", "the release notes of every version"], ["/pricing", "Pricing", "free during the beta, Pro and its price after it, and the supporters' offer"]].map(mdLink).join("\n")}
+${[["/downloads", "Download Pitlane HQ", "Pitlane HQ Agent for Windows and the Android app"], [MS_STORE, "Pitlane HQ on the Microsoft Store", "the same Windows app, updated by the Store"], ["/changelog", "What's new", "the release notes of every version"], ["/pricing", "Pricing", "free during the beta, Pro and its price after it, and the supporters' offer"]].map(mdLink).join("\n")}
 
 ## Optional
 

@@ -15,4 +15,8 @@ func TestWebVersionMatchesApp(t *testing.T) {
 	if !strings.Contains(string(b), `const WEB_VERSION="`+appVersion+`",APP_STAGE="`+appStage+`"`) {
 		t.Fatalf("WEB_VERSION in web/dist/index.html must be %q like appVersion in main.go", appVersion)
 	}
+	// the JSON-LD search engines read says the same version
+	if !strings.Contains(string(b), `"softwareVersion":"`+appVersion+`"`) {
+		t.Fatalf("softwareVersion in index.html's JSON-LD must be %q like appVersion in main.go", appVersion)
+	}
 }

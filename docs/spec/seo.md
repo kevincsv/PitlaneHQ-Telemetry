@@ -58,8 +58,10 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   `sameAs` and llms.txt/llms-full.txt. Every indexed page ends with "What is Pitlane HQ" (`WHAT`, three short paragraphs in its language, the same text
   as the app's <noscript>), and every indexed page carries a WebPage node (its address, name, language and
   `dateModified`, `SEO_DATE` or a record's newest lap); the two landings show "How to start" (four steps, `START`) and carry
-  them as HowTo, never on a page where the steps do not show; the SoftwareApplication says `downloadUrl` and
-  `isAccessibleForFree`, and on the landings its `featureList` is their cards' titles. The robots noted for the admins
+  them as HowTo, never on a page where the steps do not show; the SoftwareApplication says `downloadUrl`, the Microsoft Store listing as `installUrl` and `sameAs` (`MS_STORE`
+  in `cloud/src/downloads.js`, also linked in every public page's footer, the "What is Pitlane HQ" text, the "How to start"
+  steps, "/"'s <noscript> and llms.txt) and
+  `isAccessibleForFree`, and index.html's says `softwareVersion` (equal to `appVersion`, checked by `webversion_test.go`), and on the landings its `featureList` is their cards' titles. The robots noted for the admins
   (`noteBot`, `bot_<name>` in app_state) include the AI crawlers.
   Titles, descriptions and texts name the brand as people search it (Pitlane HQ, PitlaneHQ; `alternateName` in the
   JSON-LD) and what it is (iRacing and Le Mans Ultimate telemetry, sim racing telemetry, lap analysis, overlays), plainly,
@@ -70,5 +72,9 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   `cloud/src/legal.js`, the addresses Google Play and the App Store ask for: English, Spanish or Portuguese by `?lang=` or
   the browser's language; what is kept, why and for how long, never how it is stored or protected
   (`cloud/test/legal.test.mjs`).
+
+- `/downloads` and `/changelog` (`cloud/src/downloads.js`) carry a full head (canonical, Open Graph and Twitter cards);
+  `/downloads` also carries the SoftwareApplication with the version the PCs have now (`version.json`) and the Store
+  listing. Steam shows "Coming soon" there and is named only as coming in llms.txt.
 
 - Pricing (`/pricing`, `/es/precios`, `/pt/precos`, aliases `/pro` and `/prices`): Free and Pro, the supporters' offer with the Stripe Support link, FAQ with FAQPage JSON-LD; in the sitemap, IndexNow, llms.txt, every public page's footer and `/downloads`.

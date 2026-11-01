@@ -321,17 +321,22 @@ async function candidates(env, game, trackId, carId) {
 // beside the coach's tips on every device, as a range of real laps, never one lap to compare with.
 const CORNER_FAST = 0.3, CORNER_MIN = 3, CORNER_MAX = 12, SAME_ZONE = 20; // the same corner: its braking point within 20 bins (100 m)
 // the braking zones of a lap, like the apps' brakeZones: the brake pressed (over 12 %) after being off, to the slowest
-// point before the throttle is back; bins [speed m/s, time s, throttle, brake, gear, steering] every 5 m
+// point before the throttle is back, or before the brake, released, comes again with the car faster than its slowest (the
+// next corner); bins [speed m/s, time s, throttle, brake, gear, steering] every 5 m
 function brakeZones(bins, n) {
   const out = [];
   for (let i = 1; i < n; i++) {
     const a = bins[i], b = bins[i - 1];
     if (!a || !b) continue;
     if (a[3] > 0.12 && b[3] <= 0.12) {
-      let k = i, vmin = a[0], imin = i;
-      while (k < n && k < i + 120 && bins[k] && !(bins[k][2] > 0.6 && bins[k][3] < 0.05)) { if (bins[k][0] < vmin) { vmin = bins[k][0]; imin = k; } k++; }
+      let k = i, vmin = a[0], imin = i, rel = false, next = false;
+      while (k < n && k < i + 120 && bins[k] && !(bins[k][2] > 0.6 && bins[k][3] < 0.05)) {
+        if (bins[k][3] < 0.05) rel = true; else if (rel && bins[k][3] > 0.12 && bins[k][0] > vmin + 2) { next = true; break; }
+        if (bins[k][0] < vmin) { vmin = bins[k][0]; imin = k; }
+        k++;
+      }
       if (a[0] - vmin > 4) out.push({ i, vmin, imin });
-      i = k;
+      i = next ? k - 1 : k;
     }
   }
   return out;

@@ -886,8 +886,16 @@ func brakeZones(s []*lapPt) []struct {
 			continue
 		}
 		if a[3] > .12 && b[3] <= .12 {
-			k, vmin, imin := i, a[0], i
+			// the zone ends when the throttle is back, or when the brake, released, comes again with the car faster than
+			// its slowest: the next corner (pitwall-analysis.js brakeZones does the same)
+			k, vmin, imin, rel, next := i, a[0], i, false, false
 			for k < len(s) && k < i+120 && s[k] != nil && !(s[k][2] > .6 && s[k][3] < .05) {
+				if s[k][3] < .05 {
+					rel = true
+				} else if rel && s[k][3] > .12 && s[k][0] > vmin+2 {
+					next = true
+					break
+				}
 				if s[k][0] < vmin {
 					vmin, imin = s[k][0], k
 				}
@@ -899,7 +907,11 @@ func brakeZones(s []*lapPt) []struct {
 					v, vmin float64
 				}{i, imin, a[0], vmin})
 			}
-			i = k
+			if next {
+				i = k - 1 // the next corner's braking starts at k
+			} else {
+				i = k
+			}
 		}
 	}
 	return out

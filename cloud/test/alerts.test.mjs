@@ -4,7 +4,7 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { DatabaseSync } from "node:sqlite";
-import { recordBeaten, handleAlerts, weeklyAlerts, weekNote, pruneAlerts, SQL_PBS } from "../src/alertslib.js";
+import { recordBeaten, testerAlert, handleAlerts, weeklyAlerts, weekNote, pruneAlerts, SQL_PBS } from "../src/alertslib.js";
 import { sessionSummary } from "../src/sessionsum.js";
 
 const db = new DatabaseSync(":memory:");
@@ -77,6 +77,11 @@ assert.equal(wk.kind, "week"); assert.equal(wk.title, "Tu semana en Pitlane HQ")
 assert.deepEqual(await weeklyAlerts(env, { sessionSummary }, now + 3600e3), { due: 0, written: 0 }, "once a week");
 await call("POST", "/community/alerts/on", { on: false }, "ana");
 assert.equal((await call("GET", "/community/alerts/on", null, "ana")).body.on, false);
+
+// an admin made Bo a tester: the app says so by the kind (the texts are the apps')
+await testerAlert(env, "bo", now);
+const ta = (await call("GET", "/community/alerts?since=" + (now - 1), null, "bo")).body.alerts.find((x) => x.kind === "tester");
+assert.ok(ta && ta.created === now, "the tester alert reaches the account");
 
 await pruneAlerts(env, now + 31 * day);
 assert.equal(db.prepare("SELECT COUNT(*) AS n FROM alerts").get().n, 0);

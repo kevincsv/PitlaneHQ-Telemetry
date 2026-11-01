@@ -13,12 +13,17 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   never synced): `wipAllowed()` is an admin's account and admin mode on, while what is not "in development" keeps
   reading the account (`realAdminSigned`: DRINKS, the LMU data capture). About also has the
   switch. The phones have their own admin mode (off by default) in Settings.
-- Testers (the Tester level): the account ids in `TESTERS` (cloud/wrangler.toml, like `ADMINS`) use everything in
+- Testers (the Tester level): the accounts an admin made testers in the admin page's Users list ("Make a tester" /
+  "Remove the tester level", POST /community/admin/tester, `accounts.tester` from migration 0086) and the account ids in
+  `TESTERS` (cloud/wrangler.toml, like `ADMINS`; those cannot be removed from the page) use everything in
   development on every device (the planner, the games and modes still being made, the SimHub plugin),
   always, with no admin mode and none of the admins' tools (the admin page, demo data, the .ibt import, deleting or
   editing others' things). The server says `tester` in /account/me and every sign-in (`isTester` in accounts.js); the
   page's `isTester()`/`wipOk()`, the agent's `plAcc.Tester`/`testerSigned()`/`wipOpen()`, and the
-  phones' `tester` follow it. The admin page's Users list marks them "Tester".
+  phones' `tester` follow it. The admin page's Users list marks them "Tester". A driver made a tester gets an alert of
+  kind "tester" (`testerAlert` in alertslib.js, never an email): the phones show it as a notification, and every device
+  shows "You are now a Pitlane HQ tester" in its inbox once (until dismissed), with a button to the support chat for
+  their feedback.
 - Admins: the admin page (on the PC, the web and the phones; `admSecs`/`admParts`/`wireAdminProfile` in index.html) is
   sections as tabs, each with its line of explanation: Summary (the key numbers, then the analytics), Users (every
   account with what it uses in the last 30 days, its devices and when it was seen, a name opening its detail,

@@ -2,7 +2,7 @@
 // want the whole lap trace) and race analyses. Reading is public; writing
 // needs the device token given at registration. Turn it on for the central
 // server with the variable COMMUNITY = "1".
-import { sessionAccount, isAdmin, isTester, nameTaken, purgeAccount, emailHash, cleanName } from "./accounts.js";
+import { sessionAccount, isAdmin, isTester, testersSet, nameTaken, purgeAccount, emailHash, cleanName } from "./accounts.js";
 import { mailReady, mailLog, mailDomain } from "./email.js";
 import { sealData, openData } from "./crypt.js";
 import { getModel, forCompound, getCarCard, markModel, forgetLap, pseudoId, PSEUDO_MIN, moveDriver, slowsOf } from "./model.js";
@@ -64,7 +64,7 @@ import { turnsFromPath } from "./trackgeo.js";
 import { turnCount, noteTurnCount, rebuildTrackMaps, traceLen, fitsLayout, layoutN } from "./trackmaps.js";
 import { estimateTrace } from "./pedals.js";
 import { discordLapAlert } from "./discord.js";
-import { recordBeaten } from "./alerts.js";
+import { recordBeaten, testerAlert } from "./alerts.js";
 import { addFound, editFound, foundLeagues, leagueGame, scanLeagues } from "./leaguescan.js";
 import { catMap, catOf, licOf, CATS } from "./categories.js";
 import { lmuClass, wetOf, clsParam, classLaps } from "./lmuclass.js";
@@ -557,7 +557,7 @@ export async function community(req, env, url, ctx) {
     if (!acc || !isAdmin(env, acc.id)) return err("only the admins of this server can do this", 403);
     if (p === "/admin/users") {
       const q = String(url.searchParams.get("q") || "").trim().slice(0, 60);
-      const r = await env.DB.prepare(`SELECT a.id, a.display, a.name_kind AS nameKind, a.anon, a.verified, a.created, a.member_since AS memberSince, a.totp_on AS twoFactor, a.supporter, a.supporter_src AS supporterSrc, a.supporter_hidden AS supporterHidden,
+      const r = await env.DB.prepare(`SELECT a.id, a.display, a.name_kind AS nameKind, a.anon, a.verified, a.created, a.member_since AS memberSince, a.totp_on AS twoFactor, a.supporter, a.supporter_src AS supporterSrc, a.supporter_hidden AS supporterHidden, a.tester,
         (SELECT COUNT(*) FROM sessions s WHERE s.uploader='acct:'||a.id) AS sessions,
         (SELECT MAX(started) FROM sessions s WHERE s.uploader='acct:'||a.id) AS lastSession,
         (SELECT COUNT(*) FROM community_laps l WHERE l.user_id=a.id) AS laps,
@@ -567,7 +567,7 @@ export async function community(req, env, url, ctx) {
         EXISTS (SELECT 1 FROM driver_links d WHERE d.account_id=a.id) AS driverLinked,
         (SELECT group_concat(d.game, ',') FROM driver_links d WHERE d.account_id=a.id) AS driverGames
         FROM accounts a ${q ? "WHERE a.display LIKE ?1 OR a.id LIKE ?1" : ""} ORDER BY a.created DESC LIMIT 500`).bind(...(q ? ["%" + q.replace(/[%_]/g, "") + "%"] : [])).all();
-      return json({ users: (r.results || []).map((x) => ({ ...x, admin: isAdmin(env, x.id), tester: isTester(env, x.id) })) });
+      return json({ users: (r.results || []).map((x) => ({ ...x, admin: isAdmin(env, x.id), tester: isTester(env, x.id, x), testerSet: testersSet(env, x.id) })) });
     }
     const q = (t, extra) => env.DB.prepare(`SELECT x.id, '${t}' AS kind, x.car, x.track, x.created, x.anon, COALESCE(x.shown,'nick') AS shown, ${extra}
       u.id AS userId, u.alias, u.iracing, u.owner, o.display AS ownerName, ac.display AS account
@@ -589,6 +589,18 @@ export async function community(req, env, url, ctx) {
     const id = String(body.id || "");
     const r = await env.DB.prepare("UPDATE accounts SET supporter=?2, supporter_src=?3 WHERE id=?1").bind(id, body.on ? 1 : 0, body.on ? "manual" : null).run();
     return r.meta && r.meta.changes ? json({ ok: true, supporter: !!body.on }) : err("account not found", 404);
+  }
+  // the tester level: an admin gives it and takes it away; a new tester hears it in the app (an alert, never an email)
+  if (p === "/admin/tester" && m === "POST") {
+    const acc = await sessionAccount(req, env);
+    if (!acc || !isAdmin(env, acc.id)) return err("only the admins of this server can do this", 403);
+    const id = String(body.id || "");
+    const was = await env.DB.prepare("SELECT tester FROM accounts WHERE id=?1").bind(id).first();
+    if (!was) return err("account not found", 404);
+    if (!body.on && testersSet(env, id)) return err("this driver is a tester in the server's settings (TESTERS)", 409);
+    await env.DB.prepare("UPDATE accounts SET tester=?2 WHERE id=?1").bind(id, body.on ? 1 : null).run();
+    if (body.on && !was.tester && !testersSet(env, id)) await testerAlert(env, id);
+    return json({ ok: true, tester: !!body.on });
   }
   // "in Pitlane HQ since" by hand (empty: the day the account was created)
   if (p === "/admin/since" && m === "POST") {
@@ -780,7 +792,7 @@ export async function community(req, env, url, ctx) {
     const lgGame = leagueGame(url.searchParams.get("game") || (m === "POST" && body && body.game));
     // the most active leagues are public (the landing, the public leagues page): anyone reads them, signed in or not
     if (lid === "found" && !sub && m === "GET") return json(await foundLeagues(env, admin, lgGame));
-    if (env.LEAGUES_OPEN !== "1" && !admin && !(who && isTester(env, who.id))) return err("leagues are in development", 403);
+    if (env.LEAGUES_OPEN !== "1" && !admin && !(who && isTester(env, who.id, who))) return err("leagues are in development", 403);
     // the most active leagues found in public posts (r/iRacing, r/iRacingLeagues; r/LeMansUltimateWEC for LMU) with their Discord; admins hide
     // one, edit its name, text and disciplines, or read the feeds again now
     if (lid === "found") {

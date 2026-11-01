@@ -2,7 +2,7 @@
 import { sessionAccount } from "./accounts.js";
 import { sessionSummary } from "./sessionsum.js";
 import { handleAlerts, weeklyAlerts as run } from "./alertslib.js";
-export { recordBeaten, pruneAlerts } from "./alertslib.js";
+export { recordBeaten, pruneAlerts, testerAlert } from "./alertslib.js";
 export { prunePushTokens } from "./pushlib.js";
 
 export const alertsRoute = (req, env, url) => handleAlerts(req, env, url, { sessionAccount });

@@ -386,8 +386,7 @@ html.sorting,html.sorting *{user-select:none!important;-webkit-user-select:none!
 .tile.dragging{position:fixed!important;z-index:60;pointer-events:none;opacity:.92;box-shadow:0 10px 30px rgba(0,0,0,.4)}
 .vn{font-size:14px}
 html.ov .grip{display:none}
-html.pvdemo body::before{content:"SAMPLE DATA";position:fixed;top:4px;right:6px;z-index:40;padding:2px 7px;border-radius:999px;background:color-mix(in srgb,var(--accent) 85%,transparent);color:#11151b;font:800 9px/1.4 var(--f-data);letter-spacing:.08em;pointer-events:none}
-html.pvdemo[lang=es] body::before{content:"DATOS DE EJEMPLO"}
+html.pvdemo body::before{content:var(--pvtag,"SAMPLE DATA");position:fixed;top:4px;right:6px;z-index:40;padding:2px 7px;border-radius:999px;background:color-mix(in srgb,var(--accent) 85%,transparent);color:#11151b;font:800 9px/1.4 var(--f-data);letter-spacing:.08em;pointer-events:none}
 .btn[disabled],.pin[disabled]{opacity:.45;cursor:default}
 /* components */
 .hstrip{display:flex;flex-wrap:wrap;gap:4px 16px;padding:6px 2px;font-size:13px}
@@ -7160,16 +7159,30 @@ function demoLiveTick(){const want=demoOn()&&!!(window.PITLANE_DEMO&&window.PITL
     DEMOLIVE=setInterval(()=>{try{onFrame(window.PITLANE_DEMO.liveFrame((performance.now()-t0)/1000+40))}catch(e){}},1000/30);if(CUR_VIEW==="live")show("live")}
   else if(!want&&DEMOLIVE){clearInterval(DEMOLIVE);DEMOLIVE=null;if(STATUS&&STATUS.demoWeb){STATUS={connected:false,companion:COMPANION};renderConn()}}}
 setInterval(demoLiveTick,1500);
-/* the settings window's preview (an overlay page with preview=1): with no real telemetry it runs the invented race
-   of the demo data, only inside that preview (nothing else sees it, nothing is uploaded), with a "Sample data" tag;
-   as soon as the game sends data the preview shows the real thing */
-var PVDEMO=null;
-function previewDemoTick(){const D=window.PITLANE_DEMO;if(!(OV.on&&OV.preview)||!D||!D.liveFrame)return;
-  if(PVDEMO||(STATUS&&STATUS.connected&&!STATUS.demoWeb))return;const t0=performance.now();STATUS={connected:true,source:"demo",demo:true,demoWeb:true};
-  try{const sh=D.liveShape&&D.liveShape();if(sh){const k="demo_"+sh.trackId;store.set("pw.map."+k,{key:k,name:sh.name,N:sh.x.length,src:"dr",geo:null,len:sh.len,laps:1,x:sh.x,y:sh.y});MAP.key=null}}catch(e){}
-  try{onSession(D.liveSession())}catch(e){}document.documentElement.classList.add("pvdemo");
-  PVDEMO=setInterval(()=>{if(STATUS&&STATUS.connected&&!STATUS.demoWeb){clearInterval(PVDEMO);PVDEMO=null;document.documentElement.classList.remove("pvdemo");return}try{onFrame(D.liveFrame((performance.now()-t0)/1000+420))}catch(e){}},1000/30)}
-if(OV.on&&OV.preview){setTimeout(previewDemoTick,1200);setInterval(previewDemoTick,2000)}
+/* an overlay's preview (an overlay page with preview=1) shows real data, never an invented race (docs/spec/overlays.md,
+   "The preview's data"): the game's own while it sends data; else the last 20 s you drove (the agent keeps them,
+   previewsample.go); else 20 s of another driver with every name taken out (the server's, through the agent on the PC
+   and straight from the server on the web). It plays them on a loop, 30 frames a second between the samples' 10, only
+   inside that preview (nothing else sees it, nothing is recorded or uploaded), tagged with whose they are. With none,
+   the overlay waits for the game like any other; the demo data's race plays only with Settings → About → Demo data on. */
+var PVDEMO=null,PVS={ask:0,s:null,src:""};
+function pvSampleFrame(s,t){const n=s.frames.length,hz=s.hz||10,x=(t*hz)%n,i=Math.floor(x),f=x-i,a=s.frames[i].v,b=s.frames[(i+1)%n].v,o={};
+  const mix=(p,q,wrap)=>{if(typeof p!=="number"||typeof q!=="number"||(Number.isInteger(p)&&Number.isInteger(q)))return p;let d=q-p;if(wrap){if(d>.5)d-=1;else if(d<-.5)d+=1}let v=p+d*f;if(wrap&&v<0)v+=1;if(wrap&&v>=1)v-=1;return v};
+  s.names.forEach((nm,k)=>{const p=a[k],q=b[k],wrap=/Pct$/.test(nm);o[nm]=Array.isArray(p)&&Array.isArray(q)?p.map((v,j)=>mix(v,q[j],wrap)):mix(p,q,wrap)});return o}
+function pvTag(src){const r=document.documentElement;r.style.setProperty("--pvtag",JSON.stringify(src==="mine"?T3("Your last session","Tu última sesión","Sua última sessão"):src==="community"?T3("Another driver","Otro piloto","Outro piloto"):T3("Sample data","Datos de ejemplo","Dados de exemplo")));r.classList.add("pvdemo")}
+function pvStart(play,src){const t0=performance.now();STATUS={connected:true,source:"sample",demo:true,demoWeb:true};pvTag(src);
+  PVDEMO=setInterval(()=>{if(STATUS&&STATUS.connected&&!STATUS.demoWeb){clearInterval(PVDEMO);PVDEMO=null;document.documentElement.classList.remove("pvdemo");return}try{onFrame(play((performance.now()-t0)/1000))}catch(e){}},1000/30)}
+async function previewSampleTick(){if(!(OV.on&&OV.preview)||PVDEMO||(STATUS&&STATUS.connected&&!STATUS.demoWeb))return;
+  if(!PVS.s&&Date.now()-PVS.ask>60000){PVS.ask=Date.now();
+    const get=async u=>{try{const r=await fetch(u,{cache:"no-store"});return r.ok?await r.json():null}catch(e){return null}};
+    const j=await get("/api/preview/sample");if(j&&j.sample&&(j.sample.frames||[]).length){PVS.s=j.sample;PVS.src=j.src}
+    else if(!j){const g=typeof aGame==="function"?aGame():"iracing",c=await get("/community/preview/sample?game="+(g==="lmu"?"lmu":"iracing"));if(c&&(c.frames||[]).length){PVS.s=c;PVS.src="community"}}}
+  if(PVDEMO||(STATUS&&STATUS.connected&&!STATUS.demoWeb))return;
+  const s=PVS.s;if(s&&Array.isArray(s.names)&&s.frames.length>1){try{onSession(s.session||"")}catch(e){}pvStart(t=>pvSampleFrame(s,t),PVS.src);return}
+  const D=window.PITLANE_DEMO;if(demoOn()&&D&&D.liveFrame){ // the invented race: only with the demo data on
+    try{const sh=D.liveShape&&D.liveShape();if(sh){const k="demo_"+sh.trackId;store.set("pw.map."+k,{key:k,name:sh.name,N:sh.x.length,src:"dr",geo:null,len:sh.len,laps:1,x:sh.x,y:sh.y});MAP.key=null}}catch(e){}
+    try{onSession(D.liveSession())}catch(e){}pvStart(t=>D.liveFrame(t+420),"demo")}}
+if(OV.on&&OV.preview){setTimeout(previewSampleTick,1200);setInterval(previewSampleTick,2000)}
 function demoBanner(){let b=document.getElementById("demoBanner");const on=demoOn();if(!on){if(b)b.remove();return}
   if(!b){b=document.createElement("div");b.id="demoBanner";b.style.cssText="position:sticky;top:0;z-index:60;background:var(--acc,#ffb02e);color:#11151b;font:800 14px/1.4 ui-monospace,monospace;letter-spacing:.04em;padding:10px 16px;text-align:center;box-shadow:0 2px 10px rgba(0,0,0,.35)";document.body.prepend(b)}
   if(sampleOn()&&!isAdmin()){b.innerHTML=`${esc(Tx("SAMPLE DATA","DATOS DE MUESTRA","BEISPIELDATEN","DADOS DE EXEMPLO"))}<span class="db-more"> · ${esc(Tx("invented laps, nothing is saved","vueltas inventadas, no se guarda nada","erfundene Runden, nichts wird gespeichert","voltas inventadas, nada é salvo"))}</span> · <a href="#" id="dbSign" style="color:inherit">${esc(Tx("Sign in to see your own","Inicia sesión para ver las tuyas","Anmelden für deine eigenen","Entre para ver as suas"))}</a>`;
@@ -9624,7 +9637,7 @@ async function askShare(){if(MODE!=="bridge"||REMOTE||COMPANION||OV.on||$("#shar
     try{COMM=await jpost("/api/community",{action:"save",nameKind:c.nameKind||"nick",alias:c.alias||"",url:"",shareTimes:on,shareTraces:on,shareReports:on,anonymous:k==="anon",deleteAfter:on?$("#saDA").value:""})}catch(e){toast(e.message)}m.remove()}}
 </script>
 
-<script src="pitwall-overlays.js"></script>
+<script src="pitwall-overlays.js"></script><script src="pitwall-overlays-settings.js"></script>
 <script src="pitwall-ui-v1.js"></script>
 <script src="pitwall-my-laps-v2.js"></script>
 <script src="pitwall-model.js"></script>

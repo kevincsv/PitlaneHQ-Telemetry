@@ -139,9 +139,10 @@ function ovtRenderInsp(){const w=OVT.sel,g=ui(w),own=(CFG.ui||{})[w]||{},alpha=o
     <div class="ovt-f"><span class="ovt-lab">${esc(T3("Text size","Tamaño del texto","Tamanho do texto"))}</span>${seg("ts",[[.85,"Small","Pequeño","Pequeno"],[1,"Normal","Normal","Normal"],[1.2,"Large","Grande","Grande"]],ts)}</div>
     <div class="ovt-f"><span class="ovt-lab">${esc(T3("Hide by itself","Ocultarse solo","Ocultar sozinho"))}</span>${seg("hide",[["","Never","Nunca","Nunca"],["car","Out of the car","Fuera del coche","Fora do carro"],["pits","And in the pits","Y en boxes","E nos boxes"]],hd)}</div>
     ${OV_TITLED.includes(w)?`<div class="ovt-f"><button type="button" class="ovt-chip${g.title!==false?" on":""}" data-a="title" aria-pressed="${g.title!==false}">${esc(T3("Show the title","Mostrar el título","Mostrar o título"))}</button></div>`:""}`}
-/* the chosen overlay's live preview: the overlay page itself on the PC (scaled to the column), its picture elsewhere */
-function ovtPreview(w){const box=$("#ovtPrev");if(!box)return;const live=MODE==="bridge"&&!REMOTE,sz=OVSZ[w]||[460,260];
-  if(OVT.prevW!==w||!box.firstChild){OVT.prevW=w;box.innerHTML=live?`<div class="ovt-pf"><iframe title="${esc(ovtName(w))}" src="/?overlay=${w}&preview=1" style="width:${sz[0]}px;height:${sz[1]}px" tabindex="-1"></iframe></div>`:ovtThumb(w)}
+/* the chosen overlay's live preview: the overlay page itself (scaled to the column), playing the game's data or a real
+   sample of it (previewSampleTick in index.html) */
+function ovtPreview(w){const box=$("#ovtPrev");if(!box)return;const live=!REMOTE,sz=OVSZ[w]||[460,260];
+  if(OVT.prevW!==w||!box.firstChild){OVT.prevW=w;box.innerHTML=live?`<div class="ovt-pf"><iframe title="${esc(ovtName(w))}" src="${MODE==="bridge"?"/":""}?overlay=${w}&preview=1" style="width:${sz[0]}px;height:${sz[1]}px" tabindex="-1"></iframe></div>`:ovtThumb(w)}
   const f=box.querySelector("iframe");if(f){const k=Math.min(1,(box.clientWidth||280)/sz[0]);f.style.transform=`scale(${k})`;f.parentElement.style.height=Math.round(sz[1]*k)+"px"}
   box.style.opacity=String(ovAlphaOf(w)/255)}
 
@@ -151,12 +152,15 @@ const ovtBackToLive=w=>{if(HIDDEN.has(w)){HIDDEN.delete(w);store.set("pw.hiddenW
 async function ovtToggleOpen(w){if(!OV_OPEN.has(w)){if(ovtProNeed(w))return;await popOut(w);OV_OPEN.add(w);markOvOpen();setTimeout(refreshScreenRects,600);return}
   OV_OPEN.delete(w);ovtBackToLive(w);markOvOpen();fetch(`/api/overlay/close?w=${w}`,{method:"POST"}).catch(()=>{}).finally(()=>setTimeout(refreshScreenRects,400))}
 function ovtSelect(w){if(!WIDGETS.includes(w))return;OVT.sel=w;store.set("pw.ovSel",w);ovtRenderScreen();markOvOpen();markGameGaps();renderScreenEditor()}
+// the previews follow the settings at once: the PC's overlay pages hear them from the agent, the web's are told here
+function ovtSyncPreview(){if(MODE==="bridge")return;document.querySelectorAll("#ovtPrev iframe,#ovsPv iframe").forEach(f=>{try{const cw=f.contentWindow;if(cw&&cw.applyServerCfg)cw.applyServerCfg(JSON.parse(JSON.stringify(CFG)),true)}catch(e){}})}
+["click","change"].forEach(t=>document.addEventListener(t,()=>{if(typeof CUR_VIEW!=="undefined"&&CUR_VIEW==="overlays")setTimeout(ovtSyncPreview,0)}));
 async function ovtClick(e){const b=e.target.closest("[data-a]");if(!b||b.disabled||!e.currentTarget.contains(b))return;const a=b.dataset.a,w=b.dataset.w,k=b.dataset.k;
   if(a==="sel")return ovtSelect(w);
   if(a==="auto"){const g=b.dataset.g;if(!gameHas(g,"widgets",w))return;const on=autoIn(w,g);if(!on&&!(CFG.autoWidgets||[]).includes(w)&&ovtProNeed(w))return;setAutoIn(w,g,!on);saveCfg();renderOverlaysTab();return}
   if(a==="open")return ovtToggleOpen(w);
   if(a==="here"){window.open(`/?overlay=${w}`,"_blank");return}
-  if(a==="cfg"){CFG_BACK=()=>{closeDrawer();renderOverlaysTab()};openWidgetCfg(w,true);return}
+  if(a==="cfg")return ovtSettings(w);
   if(a==="style"){CFG.ui=CFG.ui||{};if(k===OV_DEFAULT_STYLE)delete CFG.ui.ovstyle;else CFG.ui.ovstyle=k;saveCfg();renderOverlaysTab();return}
   if(a==="preset")return ovtApplyPreset(OVT_PRESETS[k]||[]);
   if(a==="mypreset"){const l=ovtMyPresets()[k];if(l)ovtApplyPreset(l);return}

@@ -106,8 +106,7 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   The relative always has the rows you chose ahead and behind (empty when no car).
   A widget's or overlay's settings open in a floating window you drag by its title (`floatDrawer`), not a side
   panel, with its live preview always in view on the left and the settings on the right (`.cfgsplit`; stacked on a phone). Changing tab closes the side panel and any open window (`closeOpenPanels`), on the PC as on the web.
-  Its live preview is the overlay itself; with no real telemetry it runs the demo data's invented race only inside
-  the preview, tagged "Sample data" (`previewDemoTick`), and switches to the real data once the game sends it.
+  Its live preview is the overlay itself, playing real data (see "The preview's data" below).
     What the overlays show beyond the basics (`ovnative6.go` keeps the memory): the flags show the start lights (ready,
   set, go), a green for 4 s only, debris, 10 and 5 to go, one lap to green, disqualified; the delta bar a ▲/▼ for the
   last second's trend; the relative and the standings colour the car number by class when several race and offer a
@@ -156,7 +155,8 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
 The PC app's Overlays tab (and Pitlane HQ Desktop, which shows the same page) is `web/dist/pitwall-overlays.js`, loaded
 after index.html's main script: `renderOverlaysTab`, the screen (`renderScreenEditor`, `refreshScreenRects`), `markOvOpen`
 and the presets all live there, with their own CSS (`#ovtCss`). Index.html keeps only the section (`#ovTab`), the
-overlay windows' code and the settings window (`openWidgetCfg`). The rules:
+overlay windows' code and the Telemetry tab's settings window (`openWidgetCfg`); the Overlays tab's settings window is
+`web/dist/pitwall-overlays-settings.js`. The rules:
 
 - One layout, the screen (the owner's choice after trying three; the Gallery and List layouts were dropped): the
   overlay list on the left, your screen in the middle and the chosen overlay on the right.
@@ -176,8 +176,8 @@ overlay windows' code and the settings window (`openWidgetCfg`). The rules:
   (`/api/overlay/move`), never smaller than `OV_MINW`/`OV_MINH`, and the screen follows the windows dragged on the
   PC itself (`/api/overlay/list` every 1.5 s).
 - The chosen overlay: its name, "Experimental" when it is, open or closed, its live preview (the overlay page itself
-  with `preview=1`, scaled to the column, at its opacity; a small picture of it, `ovtThumb`, away from the PC), Open or
-  Close (its window; "Open here" in a browser on the PC's address; nothing on the web), All settings (`openWidgetCfg`),
+  with `preview=1`, scaled to the column, at its opacity, on the web too), Open or
+  Close (its window; "Open here" in a browser on the PC's address; nothing on the web), All settings (`ovtSettings`),
   When I get in the car per game (iRacing, LMU: `autoIn`/`setAutoIn`; a game that does not send what it needs is
   dashed and says so on hover), its own design, opacity, text size, Hide by itself and Show the title (the same keys as
   its settings window: `ui.<overlay>.style`, `alpha`, `textScale`, `hide`, `title`). The experimental ones ask for Pro
@@ -188,4 +188,47 @@ overlay windows' code and the settings window (`openWidgetCfg`). The rules:
   when I get in the car and Close them when the game closes. The preset that matches the Auto list is lit.
 - The tab's subtitle is only the counts ("2 open · 9 on Auto"). The one note is the line that the overlay windows
   need Pitlane HQ Agent on Windows, shown only away from it. No other text explains the tab.
-- The tab redraws its parts, not its frame: the preview keeps its page while settings change.
+- The tab redraws its parts, not its frame: the preview keeps its page while settings change. On the PC the preview
+  hears the new settings from the agent; on the web the tab hands them to it at once (`ovtSyncPreview`).
+
+### The settings window
+
+All settings opens `ovtSettings(w)` (`pitwall-overlays-settings.js`): a window with the overlay's name, open or closed
+and ✕, the overlay live on the left (the overlay page with `preview=1`, up to 1.25× its size) with Reset to default
+and Copy…, and every setting on the right in tabs; Done, ✕, Escape or a click outside close it. Settings are not
+simple switches only: they are the same settings, under the same keys, as `openWidgetCfg` and `OV_OPTS`, none left
+out (the owner's rule: easy to change, never cut down).
+- Relative and Standings: Columns (the chosen ones in order: drag a row or ↑ ↓, ✕ to take one out, Remove all, + to
+  add any of `COLS`; a column the chosen game does not send is dimmed and the ones only some games send carry their
+  games), Header and footer (the same editor for `ITEMS`), Rows (the relative's Cars ahead and Cars behind, 0 to 8; the
+  standings' Top positions 0 to 30, Around me 0 to 10 and Only my class), Show (their `OV_OPTS` and Country flags) and
+  Look.
+- The others: Options (their own settings: the radar's range and hiding, the delta bar's and timing's comparison, bar
+  range and predicted lap, the inputs' parts, bars and trace, the pit loss, the gap graph's minutes and cars, the
+  coach's reference, mode, corner names, corners, hint, verdict and lead, DRS hiding; then their `OV_OPTS`), the
+  telemetry's Values (the chosen values in order and a search over every value the game sends) and Look.
+- Look: design (or the same as all), opacity, text size, Hide by itself and the title (the overlays that have one).
+- Numbers go with − and + inside their limits; one-of choices and several-of choices are chips; on/off settings are
+  switches. Reset to default (asks first) puts the overlay's settings and look back as they come. Copy… copies the
+  other table's columns, header and footer (Relative and Standings), or this look to every overlay.
+- Stacked on a phone-width window (preview on top).
+
+### The preview's data
+
+An overlay's preview never shows an invented race. It plays, in this order:
+1. the game's own data, as soon as the game sends it;
+2. the last 20 s you drove in that game: the agent keeps a ring of the values the overlays read (`LIVE_VARS` and the
+   tyres', `previewVarNames`), 10 a second, while you are on track, off the pit road, moving and not in a replay, and
+   once it has a whole 20 s writes them with the session to `<data>/preview/<game>.json.gz`, at most every 10 minutes
+   (`previewsample.go`);
+3. 20 s of another driver: each agent also sends its sample with every driver's name, initials, team, ids, club,
+   flair, car number and paint taken out (`previewAnon`: "Driver 4", track, cars, classes, licences and iRating kept)
+   to POST /community/preview/sample (`previewsample.js`: iRacing and Le Mans Ultimate only, checked, at most 4 MB and
+   400 frames, one per driver and game, replaced at most once an hour, in R2 under `preview-samples/`); GET
+   /community/preview/sample?game= hands out the newest one of the last month (public, cached 10 minutes). The agent
+   asks it through GET /api/preview/sample (yours first, the community's after, kept 30 minutes); the web asks the
+   server straight away.
+The page (`previewSampleTick`) plays the sample on a loop at 30 frames a second, blending between its frames (the
+`*Pct` values wrap), only inside that preview (`STATUS.demo`: nothing recorded or uploaded), tagged in its corner "Your
+last session" or "Another driver". With none of them the overlay waits for the game like any other; the demo data's
+race plays there only with Settings → About → Demo data on.

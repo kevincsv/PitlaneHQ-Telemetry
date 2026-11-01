@@ -8,6 +8,7 @@ import { sealData, openData } from "./crypt.js";
 import { getModel, forCompound, getCarCard, likeFor, markModel, forgetLap, pseudoId, PSEUDO_MIN, moveDriver, slowsOf } from "./model.js";
 import { linkDriver, unlinkDriver } from "./driverlinks.js";
 import { recordSeen, seenSummary } from "./seasonseen.js";
+import { storeSample, pickSample } from "./previewsample.js";
 const JSONH = { "content-type": "application/json; charset=utf-8", "cache-control": "no-store", "access-control-allow-origin": "*" };
 const json = (v, status = 200) => new Response(JSON.stringify(v), { status, headers: JSONH });
 const err = (msg, status) => json({ error: msg }, status);
@@ -1035,6 +1036,11 @@ export async function community(req, env, url, ctx) {
     return json({ id: s.id, alias: s.alias, carPath: s.car_path, car: s.car, track: s.track, name: s.name, notes: s.notes, sha: s.sha, data: s.data });
   }
 
+  // the overlay previews' sample from another driver, with nobody's name in it (previewsample.js)
+  if (p === "/preview/sample" && m === "GET") {
+    const t = await pickSample(env, game);
+    return t ? new Response(t, { headers: { ...JSONH, "cache-control": "public, max-age=600" } }) : json({ frames: [] });
+  }
   // everything below needs the driver's token
   let u = await me(req, env);
   if (!u) return err("wrong or missing token", 401);
@@ -1095,6 +1101,11 @@ export async function community(req, env, url, ctx) {
     return json({ free: !(await nameTaken(env, cleanAlias(body.name), u.id)) });
   }
   // an official race this PC is in: when it really started (no driver, only the season, track and minute)
+  // this PC's 20 s of driving for the others' overlay previews, its names taken out on the PC
+  if (p === "/preview/sample" && m === "POST") {
+    const r = await storeSample(env, u.id, body);
+    return r.error ? err(r.error, r.status) : json(r);
+  }
   if (p === "/season/seen" && m === "POST") {
     const r = await recordSeen(env, u.id, body);
     return r.error ? err(r.error, r.status) : json(r);

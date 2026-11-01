@@ -548,6 +548,7 @@ func main() {
 	go keepAlive("healthWatcher", healthWatcher)
 	// the laps already on the PC (iRacing's telemetry files) go to the account by themselves
 	go keepAlive("ibtImporter", ibtImporter)
+	go keepAlive("previewRecorder", previewLoop)
 	go func() { // programs you chose to start with Pitlane HQ
 		time.Sleep(2 * time.Second)
 		launchGroup("pitwall")
@@ -556,6 +557,7 @@ func main() {
 	sub, _ := fs.Sub(webFS, "web/dist")
 	mux := http.NewServeMux()
 	mux.HandleFunc("/api/stream", handleStream)
+	registerPreviewRoutes(mux)
 	mux.HandleFunc("/api/info", func(w http.ResponseWriter, r *http.Request) {
 		st := currentStatus()
 		host, _ := os.Hostname()

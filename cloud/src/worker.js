@@ -10,6 +10,7 @@ import { patreonWebhook } from "./patreon.js";
 import { lemonWebhook } from "./lemon.js";
 import { news } from "./news.js";
 import { sealData, openData } from "./crypt.js";
+import { traceHole } from "./laphealth.js";
 import { gameOf } from "./games.js";
 import { noteCar } from "./carfamily.js";
 import VIEWER from "./viewer.html";
@@ -122,6 +123,20 @@ async function addLap(env, sessionId, l) {
   const plain = l.trace ? JSON.stringify(l.trace) : null;
   if (plain && plain.length > 900000) return "lap trace too large";
   const trace = await sealData(env, plain); // telemetry is sealed at rest
+  // the same lap read again from the game's telemetry file (repair): it replaces the account's copy, not valid, only
+  // when that copy has a hole the live recording left (never a lap the driver really drove off the track)
+  if (l.repair === true) {
+    const old = await env.DB.prepare("SELECT id, trace FROM laps WHERE session_id=?1 AND n=?2 AND abs(time-?3)<0.0006 AND valid=0 LIMIT 1").bind(sessionId, Math.round(l.n), l.time).first()
+      || await env.DB.prepare("SELECT l.id, l.trace FROM laps l JOIN sessions s ON s.id=l.session_id JOIN sessions t ON t.id=?1 WHERE s.uploader=t.uploader AND s.track=t.track AND s.car=t.car AND abs(l.time-?2)<0.0006 AND l.valid=0 AND abs(s.started-t.started)<43200000 LIMIT 1").bind(sessionId, l.time).first();
+    if (!old) return null;
+    let tr = null;
+    try { tr = old.trace ? JSON.parse(await openData(env, old.trace)) : null; } catch (e) { tr = null; }
+    if (!traceHole(tr) || l.valid === false || !plain) return null;
+    const sectors = Array.isArray(l.sectors) ? JSON.stringify(l.sectors.filter((x) => typeof x === "number").slice(0, 40)) : null;
+    await env.DB.prepare("UPDATE laps SET trace=?2, valid=1, sectors=COALESCE(?3, sectors), inc=?4 WHERE id=?1").bind(old.id, trace, sectors, Math.max(0, Math.round(num(l.inc) || 0))).run();
+    await env.DB.prepare(SESSION_SUMS).bind(sessionId).run().catch(() => {});
+    return null;
+  }
   const sectors = Array.isArray(l.sectors) ? JSON.stringify(l.sectors.filter((x) => typeof x === "number").slice(0, 40)) : null;
   await env.DB.batch([
     env.DB.prepare(
@@ -161,7 +176,7 @@ async function api(req, env, url, ctx) {
         `SELECT l.time FROM laps l JOIN sessions s ON s.id=l.session_id WHERE s.uploader=?1 AND s.track=?2 AND s.car=?3 AND s.started BETWEEN ?4 AND ?5`
       ).bind(me.name, str(body.session.track), str(body.session.car), st - 12 * 3600e3, st + 12 * 3600e3).all().catch(() => ({ results: [] }));
       const times = (have.results || []).map((x) => x.time);
-      body.laps = body.laps.filter((l) => !(l && num(l.time) && times.some((t) => Math.abs(t - l.time) < 0.0006)));
+      body.laps = body.laps.filter((l) => l && (l.repair === true || !(num(l.time) && times.some((t) => Math.abs(t - l.time) < 0.0006))));
       if (!body.laps.length) return json({ ok: true, shared: false, duplicate: true });
     }
     let e = await upsertSession(env, body.session, me.name);

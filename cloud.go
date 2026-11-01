@@ -68,6 +68,9 @@ type cloudLap struct {
 	Inc     int       `json:"inc,omitempty"` // incident points during the lap (they do not make it invalid)
 	Drv     string    `json:"drv,omitempty"` // DRINKS mode: the friend who drove most of the lap ("" you)
 	Trace   *lapTrace `json:"trace,omitempty"`
+	// read again from the game's telemetry file (ibtimport.go): this copy replaces the account's copy of the same lap,
+	// which the live recording left with a hole (the server checks the hole before it replaces anything)
+	Repair bool `json:"repair,omitempty"`
 }
 
 type lapTrace struct {
@@ -80,6 +83,7 @@ type lapTrace struct {
 	IncK []string     `json:"incK,omitempty"` // what each incident was: "off", "loss", "light" (light contact) or "contact"
 	Src  string       `json:"src,omitempty"`  // "field": another car's lap from its position on track (speed real, pedals estimated); "real": another car's lap with the pedals the game itself gave of it (Le Mans Ultimate), a real lap
 	F    []string     `json:"f,omitempty"`    // what this lap was driven in: "traffic" (a car within a second ahead for a fifth of the lap), "cold" (the first lap of a run, tyres cold), "wet" (the track at least lightly wet at some point, TrackWetness 4 or more), "damp" (at most mostly dry or very lightly wet, 2 or 3, never wet; a note only), "rain" (it rained at some point: Precipitation over 0 or the track declared wet; a note only), "cmp:<n>" (the tyre compound when the car has several); the coach leaves traffic, cold and wet laps aside, the model traffic and wet ones
+	H    *lapHealth   `json:"h,omitempty"`    // how well the lap was recorded (lapHealth)
 }
 
 type cloudItem struct {
@@ -558,6 +562,18 @@ type lapRec struct {
 	drv                map[string]int // DRINKS mode: who was at the wheel, sampled once a second ("" you)
 	drvAt              time.Time
 	driver             string // who drove most of the lap, set when it ends
+	// the recording's health: the samples taken and the session time of the first one (the rate they came at)
+	samples int
+	firstS  float64
+}
+
+// lapHealth: how well a lap was recorded, carried in its trace (h): the longest stretch with no telemetry (m), the share
+// of its 5 m points that had a sample of their own and the samples a second. The server repairs a lap from the game's
+// telemetry file only when its copy had a hole, and the model leaves a lap recorded badly aside
+type lapHealth struct {
+	Gap  int     `json:"gap"`
+	Seen float64 `json:"seen"`
+	Hz   float64 `json:"hz"`
 }
 
 // noteDriver counts who is driving (DRINKS mode), once a second: the lap is theirs who drove most of it, so a
@@ -760,20 +776,22 @@ func (ls *lapStream) endSession() {
 	}
 }
 
+// lapRecorder steps the lap recorder through every frame the game wrote since it last looked (lapfeed.go), 30 times a
+// second: a late look reads the frames that waited, so a lap never gets a hole because the PC was busy
 func lapRecorder() {
 	ls := newLapStream(liveLapEnv{})
 	t := time.NewTicker(time.Second / 30)
-	var v []float64 // the sample's storage, kept: step never holds on to it
 	for range t.C {
 		st := currentStatus()
 		if !st.connected() || (st.Demo && !cloudDemo) {
 			ls.reset()
+			lapQ.reset()
 			simhubLapLive(nil)
 			continue
 		}
-		v = telNumsInto(v, lapVars)
-		ls.step(v)
-		simhubLapLive(ls.cur)
+		if lapQ.drain(ls.step) > 0 {
+			simhubLapLive(ls.cur)
+		}
 	}
 }
 
@@ -916,6 +934,10 @@ func (ls *lapStream) step(v []float64) {
 		lt = v[14] - cur.st0
 	}
 	cur.add(dist, lt, speed, [4]float64{v[4], v[5], v[6], v[7]})
+	if cur.samples == 0 {
+		cur.firstS = v[14]
+	}
+	cur.samples++
 	cur.lastPct, cur.lastS = pct, v[14]
 	cur.vmax = math.Max(cur.vmax, speed)
 	if v[10] > 0 {
@@ -1157,6 +1179,7 @@ func buildLap(r *lapRec, s cloudSession, fuelNow, lt float64) (cloudLap, bool) {
 		return cloudLap{}, false
 	}
 	maxGap := r.markHoles()
+	health := r.health(maxGap)
 	// holes (lost samples) are filled in a straight line between the points around them
 	prev := -1
 	for i := range r.bins {
@@ -1186,7 +1209,7 @@ func buildLap(r *lapRec, s cloudSession, fuelNow, lt float64) (cloudLap, bool) {
 	// valid means the same here as in the race summary: the car stayed on the track (no cut).
 	// A pit lane lap or one with a hole in its telemetry is still a lap, just never a best.
 	l := cloudLap{ID: fmt.Sprintf("%s-%d", s.ID, r.n), N: r.n, Time: round(lt, 3), Valid: !r.invalid(), Pit: r.pit,
-		Fuel: round(r.fuel0-fuelNow, 3), Vmax: round(r.vmax, 2), Drv: r.driver, Trace: &lapTrace{Bin: lapBin, D: r.bins}}
+		Fuel: round(r.fuel0-fuelNow, 3), Vmax: round(r.vmax, 2), Drv: r.driver, Trace: &lapTrace{Bin: lapBin, D: r.bins, H: &health}}
 	if x, y := r.shape(maxGap); x != nil {
 		l.Trace.X, l.Trace.Y = x, y
 		if r.geo {
@@ -1226,6 +1249,24 @@ func buildLap(r *lapRec, s cloudSession, fuelNow, lt float64) (cloudLap, bool) {
 		l.Fuel = 0
 	}
 	return l, true
+}
+
+// health: how well the lap was recorded (before its holes are filled)
+func (r *lapRec) health(maxGap int) lapHealth {
+	seen := 0
+	for i := range r.bins {
+		if r.bins[i][0] >= 0 {
+			seen++
+		}
+	}
+	h := lapHealth{Gap: maxGap * lapBin}
+	if len(r.bins) > 0 {
+		h.Seen = round(float64(seen)/float64(len(r.bins)), 3)
+	}
+	if d := r.lastS - r.firstS; d > 1 && r.samples > 1 {
+		h.Hz = round(float64(r.samples-1)/d, 1)
+	}
+	return h
 }
 
 // shape: the lap's x/y at every 5 m point, closed into a loop (the small drift of dead

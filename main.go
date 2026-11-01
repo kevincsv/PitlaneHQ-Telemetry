@@ -202,6 +202,7 @@ func reader(forceDemo bool) {
 		tel.buf = tel.buf[:len(buf)]
 		copy(tel.buf, buf)
 		tel.tick = tick
+		lapQ.pushLocked() // every frame reaches the lap recorder, even when it is late (lapfeed.go)
 		tel.mu.Unlock()
 	}
 }

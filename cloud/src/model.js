@@ -52,6 +52,8 @@ export function goodLap(time, tr) {
   if (Array.isArray(tr.f) && tr.f.includes("traffic")) return null;
   // a wet lap teaches braking points of another track state: the model knows one, the dry track
   if (Array.isArray(tr.f) && tr.f.includes("wet")) return null;
+  // a lap the PC recorded badly (a hole of more than 40 m filled in a straight line, or under 90 % of its points seen)
+  if (tr.h && typeof tr.h === "object" && ((+tr.h.gap || 0) > 40 || (+tr.h.seen || 1) < 0.9)) return null;
   const bins = tr.d.map((x) => [+x[0], +x[5], Math.min(1, Math.max(0, +x[1] || 0)), Math.min(1, Math.max(0, +x[2] || 0)), +x[3], +x[4]]);
   let back = 0, jumps = 0, prev = -1, prevV = null;
   for (const b of bins) {

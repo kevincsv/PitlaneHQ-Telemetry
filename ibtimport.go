@@ -476,8 +476,9 @@ type acctSession struct {
 }
 
 type acctLap struct {
-	N    int     `json:"n"`
-	Time float64 `json:"time"`
+	N     int     `json:"n"`
+	Time  float64 `json:"time"`
+	Valid *int    `json:"valid"` // 1 valid, 0 not (a hole in the live recording, an Off Track…), nil when not said
 }
 
 // localID: a session's id as the PC names it (the server puts the account's name before it)
@@ -548,6 +549,13 @@ func dedupe(is *ibtSession, fetch func(path string) ([]byte, error)) error {
 		keep := is.laps[:0]
 		for _, l := range is.laps {
 			if t, ok := haveN[l.N]; (ok && math.Abs(t-l.Time) < 0.0006) || sameLapTime(got.Laps, l.Time) {
+				// the account has this lap, not valid, and the file has it whole and valid: the live recording lost part
+				// of it (a stall, a missed start of the lap). The file's copy goes up to repair it (the server replaces
+				// it only when the account's copy really has a hole)
+				if l.Valid && l.Trace != nil && repairable(got.Laps, l) {
+					l.Repair = true
+					keep = append(keep, l)
+				}
 				continue
 			}
 			keep = append(keep, l)
@@ -564,6 +572,16 @@ func dedupe(is *ibtSession, fetch func(path string) ([]byte, error)) error {
 		}
 	}
 	return nil
+}
+
+// repairable: the account's copy of this lap (same number and time, or the same time) is not valid
+func repairable(have []acctLap, l cloudLap) bool {
+	for _, h := range have {
+		if math.Abs(h.Time-l.Time) < 0.0006 && h.Valid != nil && *h.Valid == 0 {
+			return true
+		}
+	}
+	return false
 }
 
 func sameLapTime(have []acctLap, t float64) bool {

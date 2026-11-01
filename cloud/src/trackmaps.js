@@ -56,7 +56,7 @@ export async function layoutN(env, game, trackId) {
 export function geoPath(tr) {
   if (!tr || !Array.isArray(tr.g) || tr.g.length !== 2 || !tr.g.every((v) => typeof v === "number" && isFinite(v))) return null;
   const x = tr.x, y = tr.y;
-  if (!Array.isArray(x) || !Array.isArray(y) || x.length !== y.length || x.length < 100 || x.length > 3000) return null;
+  if (!Array.isArray(x) || !Array.isArray(y) || x.length !== y.length || x.length < 100 || x.length > 6000) return null; // 6000 points: 30 km, the Nürburgring's combined layout fits
   const ok = (v) => typeof v === "number" && isFinite(v) && Math.abs(v) < 30000;
   if (!x.every(ok) || !y.every(ok)) return null;
   const r1 = (v) => Math.round(v * 10) / 10;

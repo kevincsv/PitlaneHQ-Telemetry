@@ -22,8 +22,10 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   tells which (`discipline` in journal.go). A race left on the estimate takes the real change from your next race of
   the same discipline (`chainRealIR`); races spoiled by another category go back to the estimate (`repairRealIR`).
 - What makes a lap not valid, and only that (`invalid()` in cloud.go, the same verdict for the race summary's laps):
-  leaving the track (an Off Track incident, or all four wheels out for a third of a second) or lost connection (a hole
-  of more than 40 m in its telemetry, or not the whole circuit). A Loss of Control (2x) or a Car Contact (4x) counts
+  leaving the track (an Off Track incident, or all four wheels out for a third of a second, added up in the game's time
+  so 60 frames a second, a telemetry file read at 30 and Le Mans Ultimate's own rate give the same verdict, `offTrackSec`)
+  or lost connection (a hole of more than 40 m in its telemetry, or not the whole circuit). A lap keeps up to 6000 points
+  (30 km, `lapMaxBins`), so the Nürburgring's combined layout records whole. A Loss of Control (2x) or a Car Contact (4x) counts
   only when it takes the car off the track; a lap through the pit lane is valid, a rival's too (field.go). Incidents
   are named as iRacing names them, by their points: 1x Off Track, 2x Loss of Control, 4x Car Contact, 0x Light
   Contact (never seen in the count); never "spin". The game's own verdict counts too: Le Mans Ultimate's `LapCountFlag` (the game says the lap's time does not count, the pit lane aside) and iRacing's own best lap (`gameAccepts`: a lap faster than iRacing's best of the session that iRacing does not take as its best was not accepted, so it is not valid; a slower lap, or no best yet, says nothing).
@@ -59,3 +61,8 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
 - The .ibt import repairs a live lap: a lap the account has as not valid that the file has whole and valid goes up again
   marked `repair`, and the server replaces the account's copy only when that copy really has a hole (`traceHole`,
   laphealth.js: by its `h`, or, without one, when it was not judged off the track).
+- Golden tests: `TestLapRecorderGolden` (laprec_golden_test.go) drives realistic laps through the recorder at 60 and 30
+  frames a second (clean, 1x/2x/4x, grass and kerbs, a reset, lost telemetry, the Nürburgring combined) and locks what
+  each lap becomes in `testdata/laprec/golden.json`; `cloud/test/recorded.test.mjs` runs the clean drive's laps through
+  the coach and locks its answers. A change meant to change them rewrites them (`-update-golden`, `--capture`) and says
+  why in the commit.

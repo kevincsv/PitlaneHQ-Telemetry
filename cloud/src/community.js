@@ -1357,7 +1357,7 @@ export async function community(req, env, url, ctx) {
   }
   if (p === "/pitlane" && m === "POST") {
     const trackId = int(body.trackId), n = int(body.n), pts = body.pts;
-    if (!trackId || !(n >= 60 && n <= 4000) || !Array.isArray(pts) || pts.length < 10 || pts.length > 2000) return err("pit lane needs trackId, n and its points", 400);
+    if (!trackId || !(n >= 60 && n <= 6000) || !Array.isArray(pts) || pts.length < 10 || pts.length > 2000) return err("pit lane needs trackId, n and its points", 400);
     const ok = pts.every(q => Array.isArray(q) && q.length === 2 && Number.isInteger(q[0]) && q[0] >= 0 && q[0] < n && typeof q[1] === "number" && isFinite(q[1]) && Math.abs(q[1]) <= 80);
     if (!ok) return err("pit lane points out of range", 400);
     if (!(await countUpload(env, u))) return err("too many uploads today", 429);

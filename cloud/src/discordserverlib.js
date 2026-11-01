@@ -42,7 +42,7 @@ export const LAYOUT = [
     { key: "bugs", name: "🐞・bug-reports", type: T.forum, topic: "One post per bug. Say the device (Windows agent, web, Android, iOS), the game, what you did and what happened. Screenshots help.",
       tags: ["Windows agent", "Web", "Android", "iOS", "Overlays", "Coach", "iRacing", "Le Mans Ultimate", { name: "Fixed", moderated: true }, { name: "Known", moderated: true }] },
     { key: "feedback", name: "💡・feedback", type: T.forum, topic: "One post per idea. React to the ideas you want.",
-      tags: ["Coach", "Overlays", "Analysis", "Phones", "Community", "Discord bot", { name: "Planned", moderated: true }, { name: "Done", moderated: true }] },
+      tags: ["Coach", "Overlays", "Analysis", "Phones", "Community", "Discord bot", "Uninstall", { name: "Planned", moderated: true }, { name: "Done", moderated: true }] },
     { key: "laps", name: "🏆・laps-and-records", type: T.text, kind: "read", topic: "New best laps and records from this server's drivers." },
     { key: "bot", name: "🤖・bot-commands", type: T.text, topic: "Try /record, /driver, /track and /board here." },
   ] },

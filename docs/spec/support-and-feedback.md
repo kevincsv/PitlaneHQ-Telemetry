@@ -59,3 +59,17 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   message stays). On the PC and the web, "Delete the ones older than 30 days" (POST `/community/admin/feedback/old`) and,
   while a Discord feedback forum is chosen (discord.md) and some answers were never posted there, "Post the N earlier ones
   on Discord" (POST `/community/admin/feedback/discord`, 8 per request, oldest first; `feedback.discord_at`, migration 0093).
+- "Why did you uninstall Pitlane HQ?" (the PC only): the uninstaller opens https://pitlanehq.app/uninstalled?v=&lang=
+  in the browser once Pitlane HQ is gone, never in a silent uninstall (`CurUninstallStepChanged` in
+  installer/PitlaneHQ.iss). The page (`cloud/src/uninstall.js`, English, Spanish or Portuguese by ?lang= or the
+  browser's, noindex): the title, the reasons as chips to pick any of (`REASONS`: it does not work with my game, bugs
+  or crashes, it slows down my PC or my game, it is missing something I need, hard to use, I use another app, I do not
+  race enough, I am going to install it again, something else), an optional text box and Send, then "Thank you. We
+  read every answer." with a link to download it again. POST `/community/feedback/uninstall` {reasons, text, v}, no
+  sign-in (robots are ignored), at least one reason or some text: a `feedback` row of kind "uninstall" (device pc, view
+  "uninstall", the reason codes in `style`, the text the reasons' English names on the first line then what they
+  wrote), its `account_id` a hash of the network and the day (never the address), 3 a day each and 200 a day in all.
+  It is emailed to support@ ("Pitlane HQ uninstalled · version x") and posted in the Discord feedback forum
+  ("Uninstalled" in the footer, the "Uninstall" tag when the forum has it). GET `/community/admin/feedback` gives it
+  `accountId` null, and the Feedback tab shows it as "Uninstalled" with no Profile or support chat, filtered with
+  Uninstalls (All, General, Overlays, Uninstalls; the phones' admin panel lists it with the others).

@@ -24,7 +24,7 @@ import { fillSectors } from "./lapsectors.js";
 import { accounts, sessionAccount, emailHash } from "./accounts.js";
 import { live } from "./live.js";
 import { seoPage, indexNow, notFound } from "./seo.js";
-import { discordInteraction, discordOAuth, discordWeekly } from "./discord.js";
+import { discordInteraction, discordOAuth, discordWeekly, discordFeedback } from "./discord.js";
 import { steamReturn } from "./steam.js";
 import { googleOAuth } from "./google.js";
 import { scanLeagues } from "./leaguescan.js";
@@ -34,6 +34,8 @@ import { supportRoute } from "./support.js";
 import { sessionSummary, SESSION_SUMS, ALL_SESSION_SUMS } from "./sessionsum.js";
 import { pruneSeen } from "./seasonseen.js";
 import { legal } from "./legal.js";
+import { uninstallRoute } from "./uninstall.js";
+import { sendFeedback } from "./email.js";
 import { alertsRoute, weeklyAlerts, pruneAlerts, prunePushTokens } from "./alerts.js";
 import { reportsRoute, pruneReports, countingDB, flushUsage, routeKey } from "./reports.js";
 export { LiveRoom } from "./live.js";
@@ -583,6 +585,11 @@ async function handle(req, env, ctx) {
     { const sp = await seoPage(req, env, url, ctx).catch(() => null); if (sp) return sp; }
     // the privacy policy and how to delete an account, the addresses the app stores ask for (legal.js)
     { const lp = legal(req, url); if (lp) return lp; }
+    // what a driver says when they uninstall the agent: the page the uninstaller opens and its answer (uninstall.js)
+    if (url.pathname.startsWith("/uninstalled") || url.pathname === "/community/feedback/uninstall") {
+      const r = await uninstallRoute(req, env, url, { send: sendFeedback, discord: discordFeedback }).catch((e) => new Response(JSON.stringify({ error: "server error: " + (e && e.message) }), { status: 500, headers: { "content-type": "application/json" } }));
+      if (r) return r;
+    }
     if (url.pathname.startsWith("/dl/") || url.pathname.startsWith("/downloads") || url.pathname.startsWith("/changelog")) return downloads(req, env, url);
     // the admin page's Discord server tool: builds the community server with the bot (discordserver.js)
     if (url.pathname === "/community/admin/discord-server") return discordServerRoute(req, env, url);

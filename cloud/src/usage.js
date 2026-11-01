@@ -19,6 +19,7 @@
 // POST /community/feedback/ovrace (signed in, the PC)  {style, ovs, game, sid}  a race ended with overlays open
 // GET  /community/admin/feedback (admins)  every answer, newest first; DELETE /community/admin/feedback/:id one;
 // POST /community/admin/feedback/old {days} the older ones; POST /community/admin/feedback/discord the earlier ones to Discord
+//   (the uninstall answers, uninstall.js, come with no account: accountId null)
 // Every answer is also a driver's message of their support chat (support.js, migration 0075).
 import { sessionAccount, isAdmin } from "./accounts.js";
 import { srcName, KIND_NAMES, hiText, areasOf } from "./usagenames.js";
@@ -103,7 +104,7 @@ export async function usageRoute(req, env, url) {
   }
   if (!isAdmin(env, acc.id)) return err("only the admins of this server can do this", 403);
   if (p === "/community/admin/feedback" && m === "GET") {
-    const r = await env.DB.prepare("SELECT f.id, f.account_id AS accountId, f.created, f.device, f.v, f.rating, f.text, f.view, f.kind, f.style, f.discord_at AS discordAt, a.display AS nick FROM feedback f LEFT JOIN accounts a ON a.id=f.account_id ORDER BY f.created DESC LIMIT 300").all();
+    const r = await env.DB.prepare("SELECT f.id, CASE WHEN f.kind='uninstall' THEN NULL ELSE f.account_id END AS accountId, f.created, f.device, f.v, f.rating, f.text, f.view, f.kind, f.style, f.discord_at AS discordAt, a.display AS nick FROM feedback f LEFT JOIN accounts a ON a.id=f.account_id ORDER BY f.created DESC LIMIT 300").all();
     const items = r.results || [];
     const rated = items.filter((x) => x.rating);
     const np = await env.DB.prepare("SELECT COUNT(*) AS n FROM feedback WHERE discord_at IS NULL").first().catch(() => null);

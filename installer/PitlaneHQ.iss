@@ -168,9 +168,15 @@ begin
     RemovePreview();
 end;
 
-// before [UninstallRun]'s taskkill: Pitlane HQ quits by itself first
+// before [UninstallRun]'s taskkill: Pitlane HQ quits by itself first; once everything is gone, the browser opens the
+// page that asks why (cloud/src/uninstall.js), in the uninstaller's language, never in a silent uninstall (the
+// preview's, RemovePreview)
 procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);
+var
+  Code: Integer;
 begin
   if CurUninstallStep = usUninstall then
     QuitPitlaneHQ();
+  if (CurUninstallStep = usPostUninstall) and not UninstallSilent then
+    ShellExec('open', 'https://pitlanehq.app/uninstalled?v={#AppVersion}&lang=' + ActiveLanguage, '', '', SW_SHOWNORMAL, ewNoWait, Code);
 end;

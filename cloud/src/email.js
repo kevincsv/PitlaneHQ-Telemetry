@@ -165,7 +165,9 @@ export const sendReset = (env, to, link, l) => send(env, to, T.resetSubject[lang
 // (kind "overlays") say so in the subject and name the overlay design they were about.
 export function feedbackMail(f) {
   const stars = f.rating ? "★".repeat(f.rating) + "☆".repeat(5 - f.rating) + " (" + f.rating + "/5)" : "no stars";
-  const ov = f.kind === "overlays";
+  const ov = f.kind === "overlays", un = f.kind === "uninstall";
+  // an uninstall answer (uninstall.js) has no account: no name, no stars, no email to answer
+  if (un) return { subject: "Pitlane HQ uninstalled · version " + (f.v || "–"), text: [f.text, "", "Sent from the page the uninstaller opens · version " + (f.v || "–"), "No account, nobody to reply to"].join("\n") };
   const subject = (ov ? "Pitlane HQ overlay feedback · " : "Pitlane HQ feedback · ") + (f.nick || "a driver") + (f.rating ? " · " + f.rating + "/5" : "");
   const text = [f.text, "", ...(ov ? ["About the overlays · design " + (f.style || "classic")] : []), "From " + (f.nick || "–") + " (" + (f.accountId || "–") + ")", "Device " + (f.device || "–") + " · version " + (f.v || "–") + " · asked in " + (f.view || "–"), stars, f.email ? "Reply to answer " + f.email : "No email known for this account"].join("\n");
   return { subject, text };

@@ -591,7 +591,7 @@ export async function discordFeedback(env, f) {
   const gs = (await env.DB.prepare("SELECT feedback_channel AS ch FROM discord_guilds WHERE feedback_channel IS NOT NULL").all().catch(() => ({ results: [] }))).results || [];
   const H = { authorization: "Bot " + env.DISCORD_BOT_TOKEN, "content-type": "application/json" };
   const stars = f.rating ? "★".repeat(f.rating) + "☆".repeat(5 - f.rating) : "";
-  const foot = [FB_DEV[f.device], f.v ? "v" + f.v : "", f.kind === "overlays" ? "Overlays" + (f.style ? " · " + f.style : "") : ""].filter(Boolean).join(" · ");
+  const foot = [FB_DEV[f.device], f.v ? "v" + f.v : "", f.kind === "overlays" ? "Overlays" + (f.style ? " · " + f.style : "") : "", f.kind === "uninstall" ? "Uninstalled" : ""].filter(Boolean).join(" · ");
   const embed = { color: AMBER, description: f.text.slice(0, 4000), ...(stars ? { title: stars } : {}), ...(foot ? { footer: { text: foot } } : {}) };
   let n = 0;
   for (const g of gs) {
@@ -599,7 +599,7 @@ export async function discordFeedback(env, f) {
     if (!c) continue;
     if (c.type === 15) {
       const norm = (x) => String(x || "").toLowerCase().replace(/[^a-z0-9]/g, "");
-      const want = [FB_TAGS[f.device], f.kind === "overlays" ? "overlays" : ""].filter(Boolean);
+      const want = [FB_TAGS[f.device], f.kind === "overlays" ? "overlays" : "", f.kind === "uninstall" ? "uninstall" : ""].filter(Boolean);
       const tags = (c.available_tags || []).filter((t) => want.includes(norm(t.name))).map((t) => t.id).slice(0, 5);
       const name = (f.text.split("\n")[0].trim() || "Feedback").slice(0, 90);
       const r = await fetch(`${API}/channels/${g.ch}/threads`, { method: "POST", headers: H,

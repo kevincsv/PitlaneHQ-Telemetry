@@ -51,6 +51,10 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   black window on the screen; opening it uncloaks it and centres it.
 - Uninstalling PitlaneHQ.exe removes everything it keeps on the PC (`[UninstallDelete]` in
   installer/PitlaneHQ.iss); nothing on the server is touched (the account, the leaderboards, the model).
+- Once it is uninstalled (not a silent uninstall), the browser opens https://pitlanehq.app/uninstalled with the
+  version and the uninstaller's language ("Why did you uninstall Pitlane HQ?", `CurUninstallStepChanged` in the
+  .iss), see support-and-feedback.md. The phones have no such page (Android and iOS tell an app nothing when it is
+  removed).
 - Pitlane HQ never shows Windows notifications (nothing in the action centre; `notify` only logs, and the PC app
   schedules no browser notifications): what it has to say shows inside the app.
 - PitlaneHQ.exe checks for updates every 10 minutes, and at once when the server's answer to its minute sync names a

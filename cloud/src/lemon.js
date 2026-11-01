@@ -32,7 +32,7 @@ export function proOf(a) {
 // may be on Auto without Pro
 export async function proOffer(env) {
   const gate = await proGate(env), L = PLANS.lifetime || {};
-  return { gate, beta: !gate, freeApps: PLANS.freeApps || 3, lifetime: { price: gate ? L.full : L.beta, full: L.full, beta: L.beta, currency: L.currency || "EUR", buy: L.buy || "" } };
+  return { gate, beta: !gate, freeApps: PLANS.freeApps || 3, lifetime: { price: gate ? L.full : L.beta, full: L.full, beta: L.beta, currency: L.currency || "EUR", buy: L.buy || "" }, donate: (PLANS.donate && PLANS.donate.buy) || "" };
 }
 
 async function hmacHex(secret, body) {
@@ -75,7 +75,10 @@ export async function lemonWebhook(req, env) {
 
 // a new account whose email already bought Pro
 export async function proOnRegister(env, id, eh) {
-  const o = await env.DB.prepare("SELECT kind, until FROM pro_orders WHERE email_hash=?1 AND status='on' ORDER BY (kind='lifetime') DESC, until DESC LIMIT 1").bind(eh).first().catch(() => null);
+  // a donation on Stripe before the account existed: the ♥ Supporter badge (stripe.js)
+  const d = await env.DB.prepare("SELECT 1 AS y FROM pro_orders WHERE email_hash=?1 AND kind='supporter' AND status='on' LIMIT 1").bind(eh).first().catch(() => null);
+  if (d) await env.DB.prepare("UPDATE accounts SET supporter=1, supporter_src=COALESCE(supporter_src,'stripe') WHERE id=?1").bind(id).run();
+  const o = await env.DB.prepare("SELECT kind, until FROM pro_orders WHERE email_hash=?1 AND status='on' AND kind<>'supporter' ORDER BY (kind='lifetime') DESC, until DESC LIMIT 1").bind(eh).first().catch(() => null);
   if (o && (!o.until || o.until > Date.now())) await env.DB.prepare("UPDATE accounts SET pro=1, pro_src=?2, pro_until=?3, pro_since=?4 WHERE id=?1").bind(id, o.kind, o.until || 0, Date.now()).run();
 }
 
@@ -129,7 +132,7 @@ export async function proRoutes(req, env, p, m, body) {
     return r.meta && r.meta.changes ? json({ ok: true }) : err("account not found, or its Pro was bought (only a Pro given by hand is taken away here)", 404);
   }
   const c = await env.DB.prepare("SELECT COUNT(*) AS n, SUM(pro_src='lifetime') AS life, SUM(pro_src='subscription') AS sub, SUM(pro_src='manual') AS man FROM accounts WHERE pro=1 AND (pro_until=0 OR pro_until>?1)").bind(Date.now()).first().catch(() => ({}));
-  const waiting = await env.DB.prepare("SELECT COUNT(*) AS n FROM pro_orders WHERE account_id IS NULL AND status='on'").first().catch(() => ({ n: 0 }));
+  const waiting = await env.DB.prepare("SELECT COUNT(*) AS n FROM pro_orders WHERE account_id IS NULL AND status='on' AND kind<>'supporter'").first().catch(() => ({ n: 0 }));
   return json({ ...(await proOffer(env)), counts: { pro: c.n || 0, lifetime: c.life || 0, subscription: c.sub || 0, manual: c.man || 0, waiting: waiting.n || 0 },
     store: PLANS.provider === "stripe"
       ? { provider: "stripe", webhook: !!env.STRIPE_WEBHOOK_SECRET, secret: "STRIPE_WEBHOOK_SECRET", checkout: !!(PLANS.lifetime && PLANS.lifetime.buy), url: "https://pitlanehq.app/stripe/webhook" }

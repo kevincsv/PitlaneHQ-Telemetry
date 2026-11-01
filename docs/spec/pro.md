@@ -17,7 +17,7 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   it until then. A subscription or refund never takes away a lifetime or a Pro given by hand (`setPro` in prostore.js).
   Lemon Squeezy (`lemon.js`, POST `/lemonsqueezy/webhook`, LEMONSQUEEZY_WEBHOOK_SECRET) still works for what was bought
   there; `provider` in license_plans.json says which one the admin page checks. A buyer without an account gets Pro
-  when they sign up with that email (pro_orders). Pro can also be given by hand on the admin page. Patreon donations are still welcome beside it (Account → Pitlane HQ Pro). The Account card is hidden for now
+  when they sign up with that email (pro_orders). Pro can also be given by hand on the admin page. Donations: Patreon, and a Stripe Support link beside it (`donate.buy` in license_plans.json, `donateUrl()` in index.html, on the About panel's Support box, the Account card and the inbox's Support item; PC and web only, since the phone stores do not allow outside payments). A Stripe donation (client_reference_id `support-<account id>`, or the session's payment_link equal to `donate.link`) gives the ♥ Supporter badge (supporter_src 'stripe'), never Pro, and a donor without an account gets it when they sign up. No Pro, subscription or lifetime is sold while Pitlane HQ is in beta (the owner's choice). The Account card is hidden for now
   (`PRO_CARD_ON` false in index.html) until the owner says otherwise.
   Pro limits only the PC (its experimental overlays and the programs it starts); the web and the phones only receive and always have
   everything. Pro lives on one PC at a time (`pcid.go`: a hash of Windows' MachineGuid, sent as `?pc=` on `/community/pro`

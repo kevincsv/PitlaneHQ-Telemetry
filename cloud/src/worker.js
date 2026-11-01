@@ -11,6 +11,7 @@ import { catMap, catOf, licOf } from "./categories.js";
 import { patreonWebhook } from "./patreon.js";
 import { lemonWebhook } from "./lemon.js";
 import { stripeWebhook } from "./stripe.js";
+import PLANS from "../../license_plans.json";
 import { news } from "./news.js";
 import { sealData, openData } from "./crypt.js";
 import { traceHole } from "./laphealth.js";
@@ -672,7 +673,7 @@ async function handle(req, env, ctx) {
     // Lemon Squeezy tells the server about purchases: Pitlane HQ Pro on the account
     if (url.pathname === "/lemonsqueezy/webhook" && req.method === "POST") return lemonWebhook(req, env);
     // Stripe tells the server about Pro purchases (stripe.js)
-    if (url.pathname === "/stripe/webhook" && req.method === "POST") return stripeWebhook(req, env, emailHash);
+    if (url.pathname === "/stripe/webhook" && req.method === "POST") return stripeWebhook(req, env, emailHash, { supportLink: (PLANS.donate && PLANS.donate.link) || "" });
     if (url.pathname === "/voice/ice" && req.method === "GET") return voiceIce(env);
     // the admin page: the app opened on it (only the admins see anything there)
     if (url.pathname === "/admin" && req.method === "GET") return Response.redirect(url.origin + "/app#admin", 302);

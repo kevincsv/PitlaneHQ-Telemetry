@@ -89,4 +89,19 @@ const sec = (ms) => Math.floor(ms / 1000), DAY = 86400e3;
   await send("checkout.session.completed", { mode: "payment", payment_status: "paid", payment_intent: "pi_10", client_reference_id: "nope-not-an-account", customer_details: { email: "new@x.io" } });
   assert.equal(pro("acct000004").pro, 1, "an unknown account id falls back to the email");
 }
+// donations (the Support link): the Supporter badge, never Pro; a refund leaves it; a donor without an account gets it on sign-up
+{
+  acct("acct000005", "d@x.io");
+  const sup = (id) => db.prepare("SELECT supporter, supporter_src, pro FROM accounts WHERE id=?").get(id);
+  await send("checkout.session.completed", { id: "cs_d1", mode: "payment", payment_status: "paid", payment_intent: "pi_d1", client_reference_id: "support-acct000005" });
+  assert.deepEqual({ ...sup("acct000005") }, { supporter: 1, supporter_src: "stripe", pro: 0 });
+  await send("charge.refunded", { refunded: true, payment_intent: "pi_d1" });
+  assert.equal(sup("acct000005").supporter, 1);
+  const r = await stripeWebhook(new Request("https://x", { method: "POST", body: JSON.stringify({ type: "checkout.session.completed", data: { object: { id: "cs_d2", mode: "payment", payment_status: "paid", payment_link: "plink_support", customer_details: { email: "later@x.io" } } } }), headers: {} }), env, emailHash, { supportLink: "plink_support" }).catch(() => null);
+  assert.equal(r.status, 401, "unsigned");
+  const body = JSON.stringify({ type: "checkout.session.completed", data: { object: { id: "cs_d2", mode: "payment", payment_status: "paid", payment_link: "plink_support", customer_details: { email: "later@x.io" } } } });
+  await stripeWebhook(new Request("https://x", { method: "POST", body, headers: { "stripe-signature": sign(body) } }), env, emailHash, { supportLink: "plink_support" });
+  const o = db.prepare("SELECT kind, account_id FROM pro_orders WHERE id='stripe:don:cs_d2'").get();
+  assert.deepEqual({ ...o }, { kind: "supporter", account_id: null }, "kept for a later account, not as Pro");
+}
 console.log("stripe.test: ok");

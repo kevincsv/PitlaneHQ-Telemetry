@@ -7,6 +7,9 @@
 // - customer.subscription.created / updated / deleted: the subscription's state and the end of the paid period
 //   (+3 days of grace for the renewal); a cancelled subscription keeps Pro until the period it paid for ends
 // - charge.refunded: a fully refunded lifetime payment takes the lifetime away
+// - a donation (the Support link: client_reference_id "support-<account id>", or the session's payment_link is
+//   donate.link of license_plans.json) gives the ♥ Supporter badge, like Patreon, never Pro; a donor without an account
+//   gets it when they sign up with that email (pro_orders kind 'supporter')
 // The account comes from client_reference_id; without it the buyer's email is matched by its hash, now or when they
 // sign up (pro_orders, proOnRegister in lemon.js). A subscription's events find their account through its order.
 import { setPro } from "./prostore.js";
@@ -38,9 +41,10 @@ export async function stripeSigned(secret, header, body, nowSec = Math.floor(Dat
 
 const subOrder = (id) => "stripe:sub:" + id;
 const payOrder = (id) => "stripe:pay:" + id;
-const orderRow = (env, id) => env.DB.prepare("SELECT account_id, email_hash, until, status FROM pro_orders WHERE id=?1").bind(id).first().catch(() => null);
+const donOrder = (id) => "stripe:don:" + id;
+const orderRow = (env, id) => env.DB.prepare("SELECT account_id, email_hash, kind, until, status FROM pro_orders WHERE id=?1").bind(id).first().catch(() => null);
 
-export async function stripeWebhook(req, env, emailHash) {
+export async function stripeWebhook(req, env, emailHash, opts = {}) {
   if (!env.STRIPE_WEBHOOK_SECRET) return err("Stripe is not set up on this server", 404);
   const body = await req.text();
   if (body.length > 300000) return err("too large", 413);
@@ -50,10 +54,20 @@ export async function stripeWebhook(req, env, emailHash) {
   const ev = String(j.type || ""), o = (j.data && j.data.object) || {}, now = Date.now();
 
   if (ev === "checkout.session.completed" || ev === "checkout.session.async_payment_succeeded") {
-    let accountId = /^[\w-]{6,80}$/.test(String(o.client_reference_id || "")) ? String(o.client_reference_id) : null;
+    let ref = String(o.client_reference_id || "");
+    const support = ref.startsWith("support-") || !!(opts.supportLink && o.payment_link === opts.supportLink);
+    if (ref.startsWith("support-")) ref = ref.slice(8);
+    let accountId = /^[\w-]{6,80}$/.test(ref) ? ref : null;
     if (accountId) { const a = await env.DB.prepare("SELECT id FROM accounts WHERE id=?1").bind(accountId).first().catch(() => null); if (!a) accountId = null; }
     const email = String((o.customer_details && o.customer_details.email) || o.customer_email || "").trim().toLowerCase();
     const eh = email ? await emailHash(env, email) : null;
+    if (support) {
+      if (o.payment_status !== "paid") return json({ ok: true, skipped: "not paid yet" });
+      if (!accountId && eh) { const a = await env.DB.prepare("SELECT id FROM accounts WHERE email_hash=?1").bind(eh).first().catch(() => null); if (a) accountId = a.id; }
+      await env.DB.prepare("INSERT INTO pro_orders (id, account_id, email_hash, kind, status, until, at) VALUES (?1,?2,?3,'supporter','on',0,?4) ON CONFLICT(id) DO NOTHING").bind(donOrder(o.id), accountId, eh, now).run();
+      if (accountId) await env.DB.prepare("UPDATE accounts SET supporter=1, supporter_src=COALESCE(supporter_src,'stripe') WHERE id=?1").bind(accountId).run();
+      return json({ ok: true, supporter: !!accountId });
+    }
     if (o.mode === "subscription" && o.subscription) {
       const id = subOrder(typeof o.subscription === "string" ? o.subscription : o.subscription.id);
       const had = await orderRow(env, id);
@@ -86,7 +100,7 @@ export async function stripeWebhook(req, env, emailHash) {
   if (ev === "charge.refunded" && o.refunded && o.payment_intent) {
     const pi = typeof o.payment_intent === "string" ? o.payment_intent : o.payment_intent.id;
     const had = await orderRow(env, payOrder(pi));
-    if (!had) return json({ ok: true, skipped: "not a lifetime payment" });
+    if (!had || had.kind !== "lifetime") return json({ ok: true, skipped: "not a lifetime payment" });
     await setPro(env, { accountId: had.account_id, eh: had.email_hash, kind: "lifetime", until: 0, on: false, order: payOrder(pi) });
     return json({ ok: true, lifetime: false });
   }

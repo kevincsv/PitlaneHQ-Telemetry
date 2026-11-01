@@ -51,7 +51,8 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   newer build (`X-Pitlane-Build`, from version.json; `updateNudge`), notifies once per build and installs by itself
   when no sim is connected (unless switched off in Settings → About). A required update (the PC's version is older
   than version.json's `min`, `appMinVersion`) installs as soon as the car is not on the track, whatever that switch,
-  never while driving. The client tag (`clientTag`, `X-Pitlane-Client`) carries the build, shown in Admin → Users → Online now.
+  never while driving. The server never serves a `min` below `PC_MIN` (downloads.js, kept equal to `appMinVersion`;
+  0.9.0 since 1 Nov 2026), so raising it there forces every older PC to update without a new Windows build. The client tag (`clientTag`, `X-Pitlane-Client`) carries the build, shown in Admin → Users → Online now.
 - Crashes (reports.go): each long-lived part of the agent (the game reader, the recorder, the uploader, the watchers)
   runs under `keepAlive`, so a panic is logged, reported to the server (POST `/community/crash`, once per kind and run)
   and that part starts again (2 s, then longer, at most 20 times a run); the race summary's notices run under `safeGo`.

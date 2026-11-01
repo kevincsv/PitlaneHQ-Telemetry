@@ -18,6 +18,7 @@ export async function downloads(req, env, url) {
     if (!/^[A-Za-z0-9._-]{1,80}$/.test(name)) return new Response("not found", { status: 404 });
     const o = await env.DL.get(name);
     if (!o) return new Response("not found", { status: 404 });
+    if (name === "version.json") return pcVersion(await o.text());
     const ext = name.split(".").pop().toLowerCase();
     const h = new Headers({ "content-type": TYPES[ext] || "application/octet-stream", "cache-control": ext === "json" || ext === "md" ? "no-cache" : "public, max-age=300", "x-content-type-options": "nosniff", "access-control-allow-origin": "*" });
     if (o.httpEtag) h.set("etag", o.httpEtag);
@@ -78,6 +79,26 @@ h3{font-size:14px;color:#ffb02e;margin:18px 0 4px}p{color:#a9b4c3;margin:6px 0}u
 .g{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px}.c{display:grid;gap:3px;padding:14px;border:1px solid #2b3542;border-radius:12px;background:#19202a;text-decoration:none;color:#e7ebf1}.c:hover{border-color:#ffb02e}.c span{color:#8a97a9;font-size:13px}.n{margin-top:26px;font-size:14px}
 .top{display:flex;align-items:center;gap:10px;margin-bottom:18px}.top b{font-size:15px;letter-spacing:.06em}.top img{width:28px;height:28px;border-radius:7px}</style>
 <main><div class="top"><img src="/icon-192.png" alt=""><b>PITLANE HQ</b></div>${body}</main></html>`;
+
+// PC_MIN: the oldest PitlaneHQ.exe the server still lets run, whatever version.json says. A PC older than the "min" it
+// reads updates as soon as the car is not on the track and its update notice has no "later" (update.go), so raising
+// this makes every older PC update without a new Windows build. Kept equal to appMinVersion in main.go.
+export const PC_MIN = "0.9.0";
+const vparts = (v) => String(v || "0").replace(/^v/, "").split("+")[0].split(".").map((x) => parseInt(x, 10) || 0);
+export function versionLess(a, b) {
+  const x = vparts(a), y = vparts(b);
+  for (let i = 0; i < Math.max(x.length, y.length); i++) if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) < (y[i] || 0);
+  return false;
+}
+// version.json as the updater reads it, its "min" never below PC_MIN
+export function pcVersion(text) {
+  let body = text;
+  try {
+    const v = JSON.parse(text);
+    if (v && typeof v === "object" && versionLess(v.min, PC_MIN)) body = JSON.stringify({ ...v, min: PC_MIN });
+  } catch (e) {}
+  return new Response(body, { headers: { "content-type": TYPES.json, "cache-control": "no-cache", "x-content-type-options": "nosniff", "access-control-allow-origin": "*" } });
+}
 
 // latestBuild: the Windows build's commit in version.json, read from the bucket at most once a minute per isolate:
 // the server tells it to every PC (X-Pitlane-Build on the account's answers) so a PC behind checks for its update

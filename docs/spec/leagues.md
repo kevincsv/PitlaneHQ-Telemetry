@@ -26,6 +26,6 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   their days and start, then the most active ones; one page per discipline, /iracing-leagues/oval, /es/ligas-iracing/ovalo…,
   only for a discipline with leagues; in the sitemap, the footers, the landings' guides and the app's <noscript>).
   Never iRacing's members site (its terms forbid scraping) nor another
-  directory's data without its permission. Up to 3 leagues per driver, 10 for a supporter (Patreon or by hand; `LEAGUES_FREE`/`LEAGUES_SUPPORTER`,
+  directory's data without its permission. Up to 3 leagues per driver, 10 for a supporter (a donation, Patreon or by hand; `LEAGUES_FREE`/`LEAGUES_SUPPORTER`,
   `limit` in the list): under "Post the league" the form says how many you have posted and, to the rest, that supporters
-  post up to 10, with a small "♥ Support on Patreon" link.
+  post up to 10, with a small "♥ Donate" link (PC and web; the phones show no link).

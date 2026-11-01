@@ -39,8 +39,8 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   standings (native overlays, the app, Pitlane HQ Desktop) and in the race summary, where you mark them (✎; the phone
   apps tap the driver and write the account's bundle); Analysis → My races lists them.
 - Driver profiles show the nickname only (never the iRacing name); anonymous laps open no profile and
-  never show on one (admins see them). The supporter badge comes by itself to Patreon patrons with
-  the same email (`/patreon/webhook`, secret PATREON_WEBHOOK_SECRET) or by hand from the admin
+  never show on one (admins see them). The supporter badge comes by itself with a Stripe donation (`docs/spec/pro.md`), to Patreon patrons with
+  the same email (`/patreon/webhook`, secret PATREON_WEBHOOK_SECRET; Patreon is no longer linked from any app) or by hand from the admin
   profile (a manual one stays); a supporter can hide their own. Badges show wherever your name does.
   A main tab always opens on its first sub-tab. The main menu: Home, Analysis, Telemetry (was Live; the
   same name in the phone apps), Overlays (its own tab, only on the PC), Community (just before Account), Account and, on the web and the phone browser at any width or orientation (not the PC), the

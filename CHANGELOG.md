@@ -7,6 +7,7 @@ improvements". 1.0.0 comes when the beta ends. Newest first.
 ## 0.9.9 beta
 
 - In the Overlays tab the tag that says whose data the preview plays sits next to Open or Closed, so it no longer covers the overlay.
+- The Discord bot's /pro shows what will be part of Pitlane HQ Pro when the beta ends and what stays free.
 - Fixes and improvements.
 
 ## 0.9.8 beta

@@ -17,7 +17,8 @@
 // POST /community/feedback/seen (signed in)  the window was shown and put off (Not now): it waits again; with
 //   {kind: "overlays"} the overlay window, which waits for the next races with overlays
 // POST /community/feedback/ovrace (signed in, the PC)  {style, ovs, game, sid}  a race ended with overlays open
-// GET  /community/admin/feedback (admins)  every answer, newest first
+// GET  /community/admin/feedback (admins)  every answer, newest first; DELETE /community/admin/feedback/:id one;
+// POST /community/admin/feedback/old {days} the older ones; POST /community/admin/feedback/discord the earlier ones to Discord
 // Every answer is also a driver's message of their support chat (support.js, migration 0075).
 import { sessionAccount, isAdmin } from "./accounts.js";
 import { srcName, KIND_NAMES, hiText, areasOf } from "./usagenames.js";
@@ -44,7 +45,7 @@ export async function usageRoute(req, env, url) {
     if (v.src) await env.DB.prepare(SQL_VISIT_ADD).bind(day(Date.now()), v.src, countryOf(req.cf), v.page).run();
     return json({ ok: true });
   }
-  if (!ours.includes(p)) return null;
+  if (!ours.includes(p) && !p.startsWith("/community/admin/feedback/")) return null;
   const acc = await sessionAccount(req, env);
   if (!acc) return err("sign in with your Pitlane HQ account", 401);
   const now = Date.now();
@@ -97,15 +98,44 @@ export async function usageRoute(req, env, url) {
     const esc = await openEscrow(env, acc.escrow).catch(() => null);
     const mailed = await sendFeedback(env, { ...f, nick: acc.display || "", accountId: acc.id, email: (esc && esc.email) || "" }).catch(() => false);
     // and in the Discord feedback forum an admin chose, without the driver's name (discord.js)
-    await discordFeedback(env, f).catch(() => 0);
+    if ((await discordFeedback(env, f).catch(() => 0)) > 0) await env.DB.prepare("UPDATE feedback SET discord_at=?2 WHERE id=?1").bind(id, now).run().catch(() => {});
     return json({ ok: true, id, mailed });
   }
   if (!isAdmin(env, acc.id)) return err("only the admins of this server can do this", 403);
   if (p === "/community/admin/feedback" && m === "GET") {
-    const r = await env.DB.prepare("SELECT f.id, f.account_id AS accountId, f.created, f.device, f.v, f.rating, f.text, f.view, f.kind, f.style, a.display AS nick FROM feedback f LEFT JOIN accounts a ON a.id=f.account_id ORDER BY f.created DESC LIMIT 300").all();
+    const r = await env.DB.prepare("SELECT f.id, f.account_id AS accountId, f.created, f.device, f.v, f.rating, f.text, f.view, f.kind, f.style, f.discord_at AS discordAt, a.display AS nick FROM feedback f LEFT JOIN accounts a ON a.id=f.account_id ORDER BY f.created DESC LIMIT 300").all();
     const items = r.results || [];
     const rated = items.filter((x) => x.rating);
-    return json({ items, count: items.length, avg: rated.length ? Math.round((rated.reduce((s, x) => s + x.rating, 0) / rated.length) * 10) / 10 : null });
+    const np = await env.DB.prepare("SELECT COUNT(*) AS n FROM feedback WHERE discord_at IS NULL").first().catch(() => null);
+    const fc = await env.DB.prepare("SELECT COUNT(*) AS n FROM discord_guilds WHERE feedback_channel IS NOT NULL").first().catch(() => null);
+    return json({ notOnDiscord: (fc && fc.n) ? (np && np.n) || 0 : 0, items, count: items.length, avg: rated.length ? Math.round((rated.reduce((s, x) => s + x.rating, 0) / rated.length) * 10) / 10 : null });
+  }
+  // an answer deleted, or every answer older than `days` (from the admin panel); its support chat message stays
+  if (p.startsWith("/community/admin/feedback/") && m === "DELETE") {
+    const id = decodeURIComponent(p.slice("/community/admin/feedback/".length));
+    if (!/^[0-9a-f-]{8,40}$/i.test(id)) return err("bad id", 400);
+    const r = await env.DB.prepare("DELETE FROM feedback WHERE id=?1").bind(id).run();
+    return json({ ok: true, deleted: (r.meta && r.meta.changes) || 0 });
+  }
+  if (p === "/community/admin/feedback/old" && m === "POST") {
+    const b = await req.json().catch(() => ({})), days = Math.floor(Number(b && b.days));
+    if (!(days >= 1 && days <= 3650)) return err("days from 1 to 3650", 400);
+    const r = await env.DB.prepare("DELETE FROM feedback WHERE created<?1").bind(now - days * 86400e3).run();
+    return json({ ok: true, deleted: (r.meta && r.meta.changes) || 0 });
+  }
+  // the answers sent before the Discord feedback forum was chosen, posted there oldest first, 8 at a time (the page
+  // asks again while some are left)
+  if (p === "/community/admin/feedback/discord" && m === "POST") {
+    const rows = (await env.DB.prepare("SELECT id, device, v, rating, text, kind, style FROM feedback WHERE discord_at IS NULL ORDER BY created ASC LIMIT 8").all()).results || [];
+    let posted = 0;
+    for (const x of rows) {
+      const n = await discordFeedback(env, x).catch(() => 0);
+      if (!n) return json({ error: posted ? "Discord stopped answering, press it again in a minute" : "No Discord feedback forum is chosen, or Discord did not answer", posted }, posted ? 200 : 400);
+      await env.DB.prepare("UPDATE feedback SET discord_at=?2 WHERE id=?1").bind(x.id, Date.now()).run();
+      posted++;
+    }
+    const left = await env.DB.prepare("SELECT COUNT(*) AS n FROM feedback WHERE discord_at IS NULL").first();
+    return json({ ok: true, posted, left: (left && left.n) || 0 });
   }
   if (p === "/community/admin/analytics" && m === "GET") {
     const days = Math.max(1, Math.min(MAX_DAYS, Math.floor(Number(url.searchParams.get("days")) || 30)));

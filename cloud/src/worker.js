@@ -589,7 +589,7 @@ async function handle(req, env, ctx) {
     // the admin page's Online tab: who is on the web, the PC or the phones now (presence.js)
     if (url.pathname === "/community/admin/online" && req.method === "GET") return onlineRoute(req, env).catch((e) => new Response(JSON.stringify({ error: "server error: " + (e && e.message) }), { status: 500, headers: { "content-type": "application/json" } }));
     // what the drivers use and what they tell us (usage.js): the usage batches, the feedback window, the visits, the admin's analytics
-    if (url.pathname.startsWith("/community/usage") || url.pathname.startsWith("/community/feedback") || url.pathname === "/community/visit" || url.pathname === "/community/admin/analytics" || url.pathname === "/community/admin/feedback") {
+    if (url.pathname.startsWith("/community/usage") || url.pathname.startsWith("/community/feedback") || url.pathname === "/community/visit" || url.pathname === "/community/admin/analytics" || url.pathname.startsWith("/community/admin/feedback")) {
       const r = await usageRoute(req, env, url).catch((e) => new Response(JSON.stringify({ error: "server error: " + (e && e.message) }), { status: 500, headers: { "content-type": "application/json" } }));
       if (r) return r;
     }

@@ -55,3 +55,7 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   N KB" to the chat (kind "logs", view "log:<id>"). In the support inbox an admin opens it ("Open the logs", GET
   `/community/admin/support/logs/:id`, Copy and Download). Logs older than 30 days go, and deleting the account deletes
   them. The phones send their own log the same way.
+- The admin panel's answers (PC, web, phones): Delete takes one off (DELETE `/community/admin/feedback/:id`; its support chat
+  message stays). On the PC and the web, "Delete the ones older than 30 days" (POST `/community/admin/feedback/old`) and,
+  while a Discord feedback forum is chosen (discord.md) and some answers were never posted there, "Post the N earlier ones
+  on Discord" (POST `/community/admin/feedback/discord`, 8 per request, oldest first; `feedback.discord_at`, migration 0093).

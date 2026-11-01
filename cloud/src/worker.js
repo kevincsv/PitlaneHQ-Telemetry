@@ -1,5 +1,6 @@
 // Pitlane HQ cloud: receives sessions and laps from PitlaneHQ.exe (the
 // agent) and serves the web viewer. Runs on Cloudflare Workers with D1.
+import { discordServerRoute } from "./discordserver.js";
 import { voiceIce } from "./voiceice.js";
 import { downloads, latestBuild } from "./downloads.js";
 import { markModel, rebuildDirty, reconcileIds, buildOvalKinds } from "./model.js";
@@ -583,6 +584,8 @@ async function handle(req, env, ctx) {
     // the privacy policy and how to delete an account, the addresses the app stores ask for (legal.js)
     { const lp = legal(req, url); if (lp) return lp; }
     if (url.pathname.startsWith("/dl/") || url.pathname.startsWith("/downloads") || url.pathname.startsWith("/changelog")) return downloads(req, env, url);
+    // the admin page's Discord server tool: builds the community server with the bot (discordserver.js)
+    if (url.pathname === "/community/admin/discord-server") return discordServerRoute(req, env, url);
     // the admin page's Online tab: who is on the web, the PC or the phones now (presence.js)
     if (url.pathname === "/community/admin/online" && req.method === "GET") return onlineRoute(req, env).catch((e) => new Response(JSON.stringify({ error: "server error: " + (e && e.message) }), { status: 500, headers: { "content-type": "application/json" } }));
     // what the drivers use and what they tell us (usage.js): the usage batches, the feedback window, the visits, the admin's analytics

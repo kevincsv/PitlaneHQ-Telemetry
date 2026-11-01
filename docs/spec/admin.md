@@ -36,7 +36,7 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   opens its laps one by one with their top speed and sectors, and an admin marks a lap not valid or valid again:
   `admSessionLaps`, `/api/laps/:id/valid`; the session's best, the driver's share and the model follow), Coach (the
   coach's buckets) and Server (the server's emails and the domain's records, the tools: rebuild the coach models, the
-  blocked sign-ins one by one, by email or all, the .ibt import, demo data, admin mode; and Pro) and Health (below). Networks are only ever a
+  blocked sign-ins one by one, by email or all, the .ibt import, demo data, admin mode; Pro; and the Discord server, see discord.md) and Health (below). Networks are only ever a
   hash of their address.
 - What the drivers use (`cloud/src/usage.js`, the pure part in `usagelib.js`, migration 0070 `usage_days`): every app
   counts the views it opens (`view:<name>`), its notable actions (`act:<name>`: race summary opened, plan to the coach

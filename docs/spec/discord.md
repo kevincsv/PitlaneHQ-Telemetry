@@ -31,3 +31,12 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   `week_at`): every server with alerts on gets "The week's best laps" in its alerts channel (with its league's name when
   linked), each of its drivers' laps of the last seven days with the place on the leaderboard, the best places first,
   at most 10. Nothing is posted in a week without laps.
+- The community server (admin page → Server → Discord server, `discordserver.js` + `discordserverlib.js`,
+  `/community/admin/discord-server`): lists the servers the bot is in and whether it has Administrator there, and builds the
+  Pitlane HQ server with the bot's own token. Roles Admin, Tester, ♥ Supporter, Driver, iRacing, Le Mans Ultimate;
+  categories START HERE (welcome, rules, announcements, changelog, read-only), PITLANE HQ (general, support, the
+  bug-reports and feedback forums with tags, laps-and-records for the bot, bot-commands), SIM RACING, SUPPORTERS and
+  TESTERS (hidden from others), STAFF, VOICE; Community on, onboarding "What do you drive?" giving Driver and the game's
+  role; the bot posts the welcome, the rules and the newest whats-new.json notes once. Preview lists the changes; Build
+  runs three steps (roles, channels, then Community, forums, posts and onboarding), each its own request. Nothing is ever
+  deleted: channels and roles of the same name are reused. After it, /setup in the server and Administrator taken off the bot.

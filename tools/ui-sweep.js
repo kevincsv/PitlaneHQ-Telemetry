@@ -3,6 +3,8 @@
 // full-page screenshot of each view in <outdir>/ui/. Serve web/dist first (python3 -m http.server 8799 from
 // web/dist, or another port given as SWEEP_PORT); needs Playwright (npm i playwright, and its Chromium). Run: node tools/ui-sweep.js <outdir>
 const { chromium } = require('playwright');
+const OUT = process.argv[2] || require('path').join(require('os').tmpdir(), 'pitlanehq-ui-sweep'); // never a folder named "undefined" in the repository
+require('fs').mkdirSync(OUT + '/ui', { recursive: true });
 const views=["home","laps","coach","cloudlaps","races","live","overlays","community","leagues","me","settings","admin"];
 const ADMIN_SECS=["summary","users","feedback","content","sessions","coach","health","server"]; // the admin page's sections, each checked too
 (async () => {
@@ -20,12 +22,12 @@ const ADMIN_SECS=["summary","users","feedback","content","sessions","coach","hea
       await p.evaluate(v=>show(v), v); await p.waitForTimeout(1600);
       const info = await p.evaluate(()=>{const W=innerWidth,bad=[];for(const el of document.querySelectorAll('body *')){const r=el.getBoundingClientRect();if(r.width&&r.height&&r.right>W+1&&getComputedStyle(el).visibility!=='hidden'&&el.closest('[hidden]')==null){const s=el.tagName.toLowerCase()+(el.id?'#'+el.id:'')+(el.className&&typeof el.className==='string'?'.'+el.className.trim().split(/\s+/).slice(0,2).join('.'):'');if(!bad.some(x=>x.startsWith(s)))bad.push(s+' r='+Math.round(r.right))}if(bad.length>6)break}return {sw:document.documentElement.scrollWidth,W,bad}});
       console.log(width, v, 'overflow:', info.sw>info.W?info.sw:'ok', info.bad.slice(0,4).join(' | '));
-      await p.screenshot({path:`${process.argv[2]}/ui/shot-${width}-${v}.png`, fullPage:true});
+      await p.screenshot({path:`${OUT}/ui/shot-${width}-${v}.png`, fullPage:true});
       if (v==="admin") for (const sec of ADMIN_SECS) {
         await p.evaluate(sec=>{const b=document.querySelector(`[data-admsec="${sec}"]`);if(b)b.click()}, sec); await p.waitForTimeout(1200);
         const a = await p.evaluate(()=>{const W=innerWidth,bad=[];for(const el of document.querySelectorAll('#v-admin *')){const r=el.getBoundingClientRect();if(r.width&&r.height&&r.right>W+1&&el.closest('[hidden]')==null){bad.push(el.tagName.toLowerCase()+(el.className&&typeof el.className==='string'?'.'+el.className.trim().split(/\s+/)[0]:'')+' r='+Math.round(r.right));if(bad.length>4)break}}return {sw:document.documentElement.scrollWidth,W,bad}});
         console.log(width, 'admin/'+sec, 'overflow:', a.sw>a.W?a.sw:'ok', a.bad.join(' | '));
-        await p.screenshot({path:`${process.argv[2]}/ui/shot-${width}-admin-${sec}.png`, fullPage:true});
+        await p.screenshot({path:`${OUT}/ui/shot-${width}-admin-${sec}.png`, fullPage:true});
       }
       if (v==="laps"||v==="coach") { await p.evaluate(()=>{try{closeOpenPanels()}catch(e){} const d=document.querySelector('#sesPick,#pickWin,.pickwin');}); }
     }

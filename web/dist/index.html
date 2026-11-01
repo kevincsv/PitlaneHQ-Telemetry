@@ -476,6 +476,7 @@ nav.subtabs button[aria-selected="true"]{color:var(--fg);border-bottom-color:var
 nav.subtabs button:hover:not([aria-selected="true"]){color:var(--fg)}
 nav.subtabs[hidden]{display:none}
 .subbar{display:flex;align-items:flex-end;gap:12px;margin:0 0 14px;border-bottom:1px solid var(--line)}.subbar>nav.subtabs{flex:1 1 auto;min-width:0;margin:0;border-bottom:0}.subbar:has(>nav.subtabs[hidden]){border-bottom:0;margin-bottom:0}.subbar:has(>nav.subtabs[hidden])>.gseg{margin-bottom:0}.subbar:has(>nav.subtabs[hidden]):has(>#gameView[hidden]){display:none}
+.live-off{display:flex;align-items:center;justify-content:flex-end;flex:none;gap:10px;margin:0 0 0 auto;white-space:nowrap;font:600 12px/1.2 var(--f-ui);color:var(--muted)}.live-off[hidden],html.ov .live-off{display:none!important}.live-off .lo-who::before{content:"";display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--good);margin-right:7px;vertical-align:1px}.subbar>.live-off:not([hidden])~.gseg{margin-left:0}@media (max-width:820px){.live-off{justify-content:space-between;margin:0}}
 .gseg{flex:none;margin:0 0 6px auto}.gseg button{font-size:12px;padding:7px 11px;display:inline-flex;align-items:center;gap:2px;white-space:nowrap}.gseg .live{color:var(--good)}.gseg button[aria-pressed="true"] .live{color:inherit}.gseg button[aria-pressed="true"] .pill{background:none;color:inherit;border-color:currentColor}html.ov #gameView{display:none!important}
 @media (max-width:820px){.subbar{flex-direction:column;align-items:stretch;gap:8px;border-bottom:0;margin:0 0 12px}.subbar>nav.subtabs{margin:0}.gseg{order:-1;align-self:flex-end;margin:0}}
 html.ov nav.subtabs{display:none!important}
@@ -1922,7 +1923,7 @@ html .hl-sec{padding:0 0 12px;border-radius:var(--radius);display:flex;flex-dire
 </header>
 <div class="winedge" id="winEdge" hidden><i data-e="topleft"></i><i data-e="top"></i><i data-e="topright"></i></div>
 
-<div class="subbar" id="subbar"><nav class="subtabs" id="subtabs" aria-label="Pages"></nav><div class="seg gseg" id="gameView" role="group" hidden></div></div>
+<div class="subbar" id="subbar"><nav class="subtabs" id="subtabs" aria-label="Pages"></nav><div class="live-off" id="liveOff" role="status" hidden><span class="lo-who"></span><button type="button" class="btn small danger" id="liveOffBtn"></button></div><div class="seg gseg" id="gameView" role="group" hidden></div></div>
 
 <!-- LIVE -->
 <section class="view" id="v-live">
@@ -3079,7 +3080,7 @@ async function cpLiveOpen(m){const b=cpUnb64(m.slice(2));const z=await crypto.su
 function cpLiveWant(){if(CPLIVE.mode==="own"&&CPLIVE.ask!=="ok")return;cpLiveSend("want",{vars:wantAll?[]:streamVars(),all:wantAll})}
 /* hello to your PC: it asks you there (Accept / Decline); again every 20 s while connected, so it knows you still watch */
 function cpLiveHello(fresh){if(CPLIVE.mode!=="own")return;if(fresh){CPLIVE.ask="wait";CPLIVE.askAt=Date.now();setTimeout(()=>{if(CPLIVE.ask==="wait"&&$("#pcBody")&&!$("#v-pc").hidden)renderPC()},61000)}cpLiveSend("hello",{id:LIVE_DEV.id,name:LIVE_DEV.name,again:!!fresh});if(fresh)CPLIVE.declined=0}
-function cpLiveSet(on){if(on===CPLIVE.on)return;if(on&&CPLIVE.mode==="idle")return;CPLIVE.on=on;if(!on)VOICE.avail=false;setTimeout(voiceUI,0);if(!on){STATUS={connected:false,companion:true}}renderConn();
+function cpLiveSet(on){if(on===CPLIVE.on)return;if(on&&CPLIVE.mode==="idle")return;CPLIVE.on=on;if(!on)VOICE.avail=false;setTimeout(voiceUI,0);setTimeout(liveOffUI,0);if(!on){STATUS={connected:false,companion:true}}renderConn();
   if(typeof CUR_VIEW==="string"&&CUR_VIEW&&groupOf(CUR_VIEW)==="race"){show.back=true;show(CUR_VIEW)}if(typeof renderPC==="function"&&$("#pcBody")&&!$("#v-pc").hidden)renderPC()}
 async function cpLive(){await cpReady;if(!COMPANION||!CP.server||CPLIVE.ws||CPLIVE.paused)return;const mode=CPLIVE.mode;if(mode!=="code"&&!CP.acc)return;
   let q0="";try{if(mode==="code"){if(!CPLIVE.codeKey)CPLIVE.codeKey=await liveCodeKey(CPLIVE.code);CPLIVE.key=CPLIVE.codeKey;q0="&share="+await liveCodeRoom(CPLIVE.code)}
@@ -3273,7 +3274,7 @@ function renderPC(){const box=$("#pcBody");if(!box)return;
       :`<p>${esc(T("Type the code the driver gives you (Pitlane HQ → Telemetry → Phone & sharing on their PC) to watch their live telemetry. You only watch: nothing of yours is sent.","Escribe el código que te da el piloto (Pitlane HQ → Telemetría → Móvil y compartir en su PC) para ver su telemetría en vivo. Solo miras: no se envía nada tuyo.","Gib den Code ein, den dir der Fahrer gibt (Pitlane HQ → Telemetrie → Handy & Teilen an seinem PC), um seine Live-Telemetrie zu sehen. Du siehst nur zu: nichts von dir wird gesendet.","Digite o código que o piloto te dá (Pitlane HQ → Telemetria → Celular e compartilhar no PC dele) para ver a telemetria ao vivo. Você só olha: nada seu é enviado."))}</p>
       <form id="pcCodeForm" class="pc-form"><input id="pcCodeIn" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="ABCD-EFGH-JK" maxlength="14" aria-label="${esc(T("Code","Código","Code","Código"))}"><button class="btn primary" type="submit">${esc(T("Watch","Ver","Ansehen","Ver"))}</button></form><div id="pcCodeErr" class="note err">${esc(CPLIVE.err||"")}</div>`}</div>`;
   box.innerHTML=relay+other+dl;
-  {const b=$("#pcOn");if(b)b.onclick=()=>liveMode("own")}{const b=$("#pcOff");if(b)b.onclick=()=>liveMode("idle")}{const b=$("#pcAskAgain");if(b)b.onclick=()=>{cpLiveHello(true);renderPC()}}{const b=$("#pcCodeStop");if(b)b.onclick=()=>liveMode(CP.acc&&CPLIVE.wasOwn?"own":"idle")}
+  {const b=$("#pcOn");if(b)b.onclick=()=>liveMode("own")}{const b=$("#pcOff");if(b)b.onclick=()=>liveMode("idle")}{const b=$("#pcAskAgain");if(b)b.onclick=()=>{cpLiveHello(true);renderPC()}}{const b=$("#pcCodeStop");if(b)b.onclick=liveStop}
   {const b=$("#pcCodeOn");if(b)b.onclick=()=>cpLiveSend("share",{on:true})}{const b=$("#pcCodeNew");if(b)b.onclick=()=>cpLiveSend("share",{on:true,new:true})}{const b=$("#pcCodeOff");if(b)b.onclick=()=>cpLiveSend("share",{on:false})}
   {const i=$("#pcCodeIn");if(i)i.oninput=()=>{const c=liveCodeNorm(i.value).slice(0,10),v=c.replace(/^(.{4})(.{1,4})?(.{1,2})?$/,(m,a,b,d)=>a+(b?"-"+b:"")+(d?"-"+d:""));if(v!==i.value){i.value=v;i.setSelectionRange(v.length,v.length)}}}
   {const f=$("#pcCodeForm");if(f)f.onsubmit=e=>{e.preventDefault();const c=liveCodeNorm($("#pcCodeIn").value);if(!liveCodeOk(c)){$("#pcCodeErr").textContent=Tx("The code has 10 letters and numbers, like ABCD-EFGH-JK.","El código tiene 10 letras y números, como ABCD-EFGH-JK.","Der Code hat 10 Buchstaben und Zahlen, z. B. ABCD-EFGH-JK.","O código tem 10 letras e números, como ABCD-EFGH-JK.");return}CPLIVE.wasOwn=CPLIVE.mode==="own";liveMode("code",c)}}
@@ -6513,7 +6514,12 @@ const VIEW_LABEL={leagues:"tab.leagues",fulltelemetry:"tab.fulltelemetry",cloudl
 function renderSubtabs(v){const g=groupOf(v),box=$("#subtabs"),list=GROUPS[g];box.hidden=list.length<2||OV.on;
   const short=matchMedia("(max-width:820px)").matches,SH={laps:["Laps","Vueltas","Runden","Voltas"],coach:["Coach","Coach","Coach","Coach"],cloudlaps:["My sessions","Mis sesiones","Meine Sitzungen","Minhas sessões"],tyres:["Tyres","Neumáticos","Reifen","Pneus"]}; /* the phone's sub-tabs keep the PC's names (Standings, never "Field") */
   box.innerHTML=list.map(x=>`<button type="button" role="tab" data-v="${x}" aria-selected="${x===v}">${short&&SH[x]?esc(Tx(...SH[x])):L(VIEW_LABEL[x],true)}</button>`).join("");
-  box.querySelectorAll("button").forEach(b=>b.onclick=()=>show(b.dataset.v))}
+  box.querySelectorAll("button").forEach(b=>b.onclick=()=>show(b.dataset.v));liveOffUI()}
+/* watching a PC live (yours or a code): Disconnect stays above Telemetry, Standings and the rest of the race tabs */
+function liveOffUI(){const b=$("#liveOff");if(!b)return;const on=COMPANION&&!OV.on&&CPLIVE.on&&CPLIVE.mode!=="idle"&&typeof CUR_VIEW==="string"&&!!CUR_VIEW&&groupOf(CUR_VIEW)==="race";b.hidden=!on;if(!on)return;const T=Tx;
+  b.querySelector(".lo-who").textContent=CPLIVE.mode==="code"?T("Watching","Viendo","Du siehst","Vendo")+" · "+CPLIVE.code.replace(/^(.{4})(.{4})(.{2})$/,"$1-$2-$3"):T("Watching your PC","Viendo tu PC","Du siehst deinen PC","Vendo seu PC");
+  const x=$("#liveOffBtn");x.textContent=T("Disconnect","Desconectar","Trennen","Desconectar");x.onclick=liveStop}
+function liveStop(){liveMode(CPLIVE.mode==="code"?(CP.acc&&CPLIVE.wasOwn?"own":"idle"):"idle")}
 var VIEW_HIST=[];
 /* phone gestures: swipe from the left edge = back; swipe left/right = next/previous tab of the section */
 (function(){if(!("ontouchstart" in window))return;let t0=null;

@@ -60,4 +60,7 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   accept; an accepted device is remembered while Pitlane HQ runs. A declined device is not asked again by its automatic
   retries for two minutes, but pressing Connect again always asks the PC again (`again` in the hello). No Wi-Fi pairing panel and no
   encryption wording on the Live card. The Live page is: your PC, watch another driver (the code gets
-  its dashes as you type), then the download, with the same gap between the boxes.
+  its dashes as you type), then the download, with the same gap between the boxes. While a device watches live (your PC or a code), a
+  "Watching your PC" / "Watching · code" line with Disconnect stays beside the sub-tabs of Telemetry, Standings, Tyres and
+  the rest (`liveOffUI`; on the phones under the status above the sub-tabs), since the Live page is not reachable while the
+  telemetry shows. It does what the Live page's Disconnect does (`liveStop`).

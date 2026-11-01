@@ -129,5 +129,6 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
 - Home (and the phones' Home) shows "Your week" once the account drove since Monday (`homeWeekHTML`, GET
   `/api/sessions/summary?from=<Monday>&pbs=1`, which adds the cars and tracks whose best this week beats every one
   before, `pbsOf` in alertslib.js, the account's own only): sessions, laps, time on track, races, the new bests with
-  what they gained. Share copies it as text (the phone's share sheet on the web and the phones).
+  what they gained, each with "Share card" (the lap card, `shareLapCard`, with "New personal best" and the gain where a
+  leaderboard place would be). Share copies the week as text (the phone's share sheet on the web and the phones).
 

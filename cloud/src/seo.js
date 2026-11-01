@@ -14,7 +14,7 @@ import { foundLeagues } from "./leaguescan.js";
 const SITE = "https://pitlanehq.app";
 // SEO_VER: raised when the public pages change (new languages, new addresses, new texts): every page is sent to
 // IndexNow again once. SEO_DATE: the day their texts last changed, the sitemap's lastmod of the pages without data.
-const SEO_VER = "14", SEO_DATE = "2026-11-01";
+const SEO_VER = "15", SEO_DATE = "2026-11-01";
 const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
 const slug = (s) => String(s || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 80);
 const fmt = (t) => { if (!(t > 0)) return "–"; const m = Math.floor(t / 60), s = t - m * 60; return (m ? m + ":" + (s < 10 ? "0" : "") : "") + s.toFixed(3); };
@@ -136,10 +136,11 @@ async function readHas(env) {
 
 const TOPIC_BY = Object.fromEntries(TOPICS.map((x) => [x.id, x]));
 // the guides of both games that the Le Mans Ultimate pages list too
-const LMU_TOO = ["phone", "free"];
+const LMU_TOO = ["phone", "free", "shift"];
 // their names on the Le Mans Ultimate pages, without the iRacing of their h1
 const LMU_TOO_H = { phone: { en: "Telemetry on your phone", es: "La telemetría en tu móvil", pt: "A telemetria no seu celular" },
-  free: { en: "Free telemetry", es: "Telemetría gratis", pt: "Telemetria grátis" } };
+  free: { en: "Free telemetry", es: "Telemetría gratis", pt: "Telemetria grátis" },
+  shift: { en: "A shift beep", es: "Un pitido de cambio de marcha", pt: "Um bipe de troca de marcha" } };
 const lmuToo = (l) => LMU_TOO.map((id) => ({ ...TOPIC_BY[id][l], h1: LMU_TOO_H[id][l] }));
 // the Le Mans Ultimate pages a page links to (only the ones that exist)
 const lmuLinks = (l) => [[LANDL[l].path, LANDL[l].h1], [OVLL[l].path, OVLL[l].h1], ...TOPICS.filter((x) => x.game === "lmu").map((x) => [x[l].path, x[l].h1]),

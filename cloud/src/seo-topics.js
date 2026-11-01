@@ -1,6 +1,6 @@
 // The guides: one public page per thing people search for (the coach, comparing laps, braking points, the racing
 // line, the iRating, the shift beep, telemetry on the phone, free telemetry, fuel, and for Le Mans Ultimate the coach,
-// comparing laps and braking points), in
+// comparing laps, braking points and virtual energy), in
 // English, Spanish and Portuguese, each naming the other two. Plain words about what Pitlane HQ really does, never
 // hype, and no text that joins two phrases with a colon; seo.js draws them.
 // img: a screenshot of the app (web/dist/landing/<lang>/), shown under the cards; phones: the phone app's own screens.
@@ -710,6 +710,66 @@ export const TOPICS = [
         ["De onde vêm as voltas de referência?", "Das voltas dos pilotos do Pitlane HQ e dos seus rivais no mesmo carro e pista. Quanto mais gente corre uma combinação, mais perto do seu ritmo fica o próximo nível."],
         ["Funciona com Hypercar, LMP2 e LMGT3?", "Sim. Cada carro é comparado com voltas do mesmo carro na mesma pista."],
         ["É grátis?", "Sim."],
+      ],
+    },
+  },
+  {
+    id: "lmu-energy", game: "lmu", lmu: "tel",
+    en: {
+      path: "/le-mans-ultimate-virtual-energy", title: "Le Mans Ultimate virtual energy per lap · Pitlane HQ",
+      desc: "See the virtual energy and fuel your Le Mans Ultimate car uses each lap, how many laps they last and which one runs out first. Free, in beta.",
+      h1: "Virtual energy and fuel per lap in Le Mans Ultimate",
+      lead: "Hypercars and LMGT3 cars race on an energy allowance as well as a tank, and the energy often runs out first. Pitlane HQ measures both on every green lap and tells you how long each lasts.",
+      secs: [
+        ["Energy used each lap", "The virtual energy a lap takes, the average of your last clean laps. Laps through the pits are left out."],
+        ["Laps left on energy and on fuel", "How many laps the energy and the tank still last, side by side in the fuel overlay."],
+        ["Which one runs out first", "The line turns amber when the energy will not reach the finish or runs out before the fuel, so you know when to save."],
+        ["Fuel to add at the stop", "From your real use per lap and the laps to go, with the safety margin you choose."],
+        ["On the phone too", "The same numbers on the phone or a tablet next to the wheel, with TC, ABS, engine map and brake bias."],
+      ],
+      faq: [
+        ["Do I have to type anything in?", "No. Everything is measured from your own laps while you drive."],
+        ["Which cars have virtual energy?", "The cars the game gives an energy allowance to. For the others only the fuel line shows."],
+        ["What do I need?", "Pitlane HQ Agent on Windows and, in the game, Settings → Gameplay → Enable Plugins turned on."],
+        ["Is it free?", "Yes. Le Mans Ultimate support is in beta and free."],
+      ],
+    },
+    es: {
+      path: "/es/energia-virtual-le-mans-ultimate", title: "Energía virtual por vuelta en Le Mans Ultimate · Pitlane HQ",
+      desc: "Mira la energía virtual y el combustible que gasta tu coche de Le Mans Ultimate en cada vuelta, cuántas vueltas duran y cuál se acaba antes. Gratis, en beta.",
+      h1: "Energía virtual y combustible por vuelta en Le Mans Ultimate",
+      lead: "Los Hypercar y los LMGT3 corren con un límite de energía además del depósito, y muchas veces se acaba antes la energía. Pitlane HQ mide las dos en cada vuelta en verde y te dice cuánto dura cada una.",
+      secs: [
+        ["La energía de cada vuelta", "La energía virtual que gasta una vuelta, la media de tus últimas vueltas limpias. Las vueltas que pasan por boxes no cuentan."],
+        ["Vueltas de energía y de combustible", "Cuántas vueltas aguantan aún la energía y el depósito, una junto a otra en el overlay de combustible."],
+        ["Cuál se acaba antes", "La línea se pone ámbar cuando la energía no llega al final o se acaba antes que el combustible, así sabes cuándo ahorrar."],
+        ["El combustible que añadir en la parada", "Con tu consumo real por vuelta y las vueltas que quedan, con el margen que elijas."],
+        ["También en el móvil", "Los mismos números en el móvil o una tablet junto al volante, con TC, ABS, mapa motor y reparto de frenada."],
+      ],
+      faq: [
+        ["¿Tengo que escribir algo?", "No. Todo se mide con tus propias vueltas mientras conduces."],
+        ["¿Qué coches tienen energía virtual?", "Los coches a los que el juego da un límite de energía. En los demás solo se ve la línea del combustible."],
+        ["¿Qué necesito?", "Pitlane HQ Agent en Windows y, en el juego, Settings → Gameplay → Enable Plugins activado."],
+        ["¿Es gratis?", "Sí. El soporte de Le Mans Ultimate está en beta y es gratis."],
+      ],
+    },
+    pt: {
+      path: "/pt/energia-virtual-le-mans-ultimate", title: "Energia virtual por volta no Le Mans Ultimate · Pitlane HQ",
+      desc: "Veja a energia virtual e o combustível que seu carro do Le Mans Ultimate gasta em cada volta, quantas voltas duram e qual acaba antes. Grátis, em beta.",
+      h1: "Energia virtual e combustível por volta no Le Mans Ultimate",
+      lead: "Os Hypercars e os LMGT3 correm com um limite de energia além do tanque, e muitas vezes a energia acaba primeiro. O Pitlane HQ mede os dois em cada volta em bandeira verde e diz quanto dura cada um.",
+      secs: [
+        ["A energia de cada volta", "A energia virtual que uma volta gasta, a média das suas últimas voltas limpas. As voltas que passam pelos boxes ficam de fora."],
+        ["Voltas de energia e de combustível", "Quantas voltas a energia e o tanque ainda aguentam, lado a lado no overlay de combustível."],
+        ["Qual acaba antes", "A linha fica âmbar quando a energia não chega ao final ou acaba antes do combustível, assim você sabe quando economizar."],
+        ["O combustível a pôr na parada", "Com o seu consumo real por volta e as voltas que faltam, com a margem que você escolher."],
+        ["No celular também", "Os mesmos números no celular ou num tablet ao lado do volante, com TC, ABS, mapa do motor e balanço de freio."],
+      ],
+      faq: [
+        ["Preciso digitar alguma coisa?", "Não. Tudo é medido com as suas próprias voltas enquanto você pilota."],
+        ["Quais carros têm energia virtual?", "Os carros a que o jogo dá um limite de energia. Nos outros só aparece a linha do combustível."],
+        ["Do que preciso?", "Do Pitlane HQ Agent no Windows e, no jogo, de Settings → Gameplay → Enable Plugins ativado."],
+        ["É grátis?", "Sim. O suporte ao Le Mans Ultimate está em beta e é grátis."],
       ],
     },
   },

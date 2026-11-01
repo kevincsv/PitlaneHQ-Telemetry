@@ -126,7 +126,7 @@ function renderOverlaysTab(){const root=ovtFrame();if(!root)return;const remote=
 /* the list, the screen and the chosen overlay */
 function ovtPick(){if(WIDGETS.includes(OVT.sel))return OVT.sel;return WIDGETS.find(w=>OV_OPEN.has(w))||WIDGETS.find(ovtAutoAny)||"relative"}
 function ovtRenderScreen(){const sel=ovtPick();OVT.sel=sel;
-  $("#ovtNav").innerHTML=ovtGroups().map(([g,ws])=>`<div class="ovt-ng"><span class="ovt-gh">${esc(T3(...OVT_GROUP_NAMES[g]))}</span>${ws.map(w=>`<button type="button" class="ovt-ni${w===sel?" sel":""}" data-a="sel" data-w="${w}" data-ovw="${w}" aria-current="${w===sel}">${ovtDot(w)}<span class="nm">${esc(ovtName(w))}</span>${ovtAutoAny(w)?`<span class="ovt-auto">Auto</span>`:""}${ovtExp(w)?`<span class="ovt-x" title="${esc(T3("Experimental","Experimental","Experimental"))}">β</span>`:""}</button>`).join("")}</div>`).join("");
+  $("#ovtNav").innerHTML=ovtGroups().map(([g,ws])=>`<div class="ovt-ng"><span class="ovt-gh">${esc(T3(...OVT_GROUP_NAMES[g]))}</span>${ws.map(w=>`<button type="button" class="ovt-ni${w===sel?" sel":""}" data-a="sel" data-w="${w}" data-ovw="${w}" aria-current="${w===sel}">${ovtDot(w)}<span class="nm">${esc(ovtName(w))}</span>${ovtAutoAny(w)?`<span class="ovt-auto">Auto</span>`:""}${ovtExp(w)?`<span class="ovt-x">Beta</span>`:""}</button>`).join("")}</div>`).join("");
   $("#ovtStageBar").innerHTML=`${ovtDesignHTML()}<span class="ovt-legend"><i class="open"></i>${esc(T3("Open","Abierto","Aberto"))}<i class="closed"></i>${esc(T3("Closed","Cerrado","Fechado"))}</span><button type="button" class="btn small" data-a="reset"${ovtRemote()?"":" disabled"}>${L("resetPos",true)}</button>`;
   ovtRenderInsp()}
 function ovtRenderInsp(){const w=OVT.sel,g=ui(w),own=(CFG.ui||{})[w]||{},alpha=ovAlphaOf(w),ts=g.textScale||1,hd=g.hide||"";
@@ -291,7 +291,7 @@ setInterval(refreshScreenRects,1500);
 .ovt-ni{display:flex;align-items:center;gap:10px;min-height:34px;padding:0 10px;border:0;border-radius:7px;background:none;color:var(--muted);font:500 13px var(--f-body);cursor:pointer;text-align:left}
 .ovt-ni .nm{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.ovt-ni:hover,.ovt-ni.is-open{color:var(--fg)}
 .ovt-ni.sel{background:color-mix(in srgb,var(--accent) 16%,transparent);color:var(--accent)}
-.ovt-auto{font:600 9px var(--f-data);letter-spacing:.06em;text-transform:uppercase;color:var(--accent)}.ovt-x{font:600 11px var(--f-data);color:#b794f6}
+.ovt-auto{font:600 9px var(--f-data);letter-spacing:.06em;text-transform:uppercase;color:var(--accent)}.ovt-x{font:600 9px var(--f-data);letter-spacing:.06em;text-transform:uppercase;color:#b794f6;padding:1px 5px;border:1px solid color-mix(in srgb,#b794f6 45%,transparent);border-radius:4px}.ovt-auto+.ovt-x{margin-left:6px}
 .ovt-stage{flex:999 1 480px;min-width:0;display:flex;flex-direction:column;gap:10px}
 .ovt-stagebar{display:flex;flex-wrap:wrap;align-items:center;gap:12px}.ovt-stagebar .btn{margin-left:auto}
 .ovt-legend{display:inline-flex;align-items:center;gap:6px;font:500 11px var(--f-data);color:var(--muted)}.ovt-legend i{width:12px;height:8px;border-radius:2px;margin-left:6px}

@@ -1437,8 +1437,8 @@ html .cl-rlist{padding:4px 16px}.cl-rrow{padding:12px 0}
 #meBody .panel{border-radius:var(--radius);padding:14px 16px}
 #meBody .me-idc{margin:0}#meBody .me-danger>.panel{margin-top:14px}.me-links{display:grid;gap:14px;min-width:0}
 #meBody .me-cols{gap:14px}#meBody .me-col{gap:14px}
-/* the account and security on the left, Steam, Discord and the devices on the right: two columns that each flow on their own, so no empty space; one column on a phone in that order */
-.me-all{grid-template-columns:repeat(2,minmax(0,1fr))}
+/* the account and security on the left, Steam, Discord and the devices on the right: two columns that each flow on their own, the last card of each stretched so both end on one line; one column on a phone in that order */
+.me-all{grid-template-columns:repeat(2,minmax(0,1fr));align-items:stretch}.me-all .me-col{display:flex;flex-direction:column}.me-all .me-col>:last-child:not([hidden]){flex-grow:1}
 @media (max-width:820px){.me-all{display:flex;flex-direction:column}.me-all>.me-col{display:contents}.me-all>.me-col>*{width:100%}.me-all .me-idc{order:1}.me-all .me-links{order:2}.me-all .me-sec2{order:3}.me-all .me-sync{order:4}}
 #meBody .me-grp{font:500 10px/1.3 var(--f-body);letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin:4px 0 -4px}
 #meBody .sa-av{border-radius:10px}#meBody .sa-name{font:600 18px/1.2 var(--f-body)}

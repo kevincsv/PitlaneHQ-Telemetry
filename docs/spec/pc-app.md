@@ -104,7 +104,8 @@ Testers are the Tester level (`isTester`, given in Admin → Users or in `TESTER
   version reaches the one it has). A promoted build keeps the test build's commit as its `build`, so a tester's PC is
   not updated again.
 - The web and the server: `beta.pitlanehq.app` is the Worker `pitlanehq-beta` (`BETA = "1"`, `cloud/src/beta.js`) on the
-  same database and files. Signed-in requests of anyone but testers and admins get 403 `beta_only`; the public pages go
+  same database and files. Only testers and admins can sign in there: anyone else's sign-in or sign-up gets 403
+  `beta_only` and its new session is removed at once (`betaSignIn`), and any other session of theirs is refused too; the public pages go
   to pitlanehq.app; `server.json` answers its own address; every answer is `noindex`; it runs no timed jobs, holds no
   webhooks or Discord commands, and its live room is its own (the PCs stay on pitlanehq.app's). It never changes the
   database: a branch with migrations production does not have stops unless `apply_migrations` is ticked (the owner's

@@ -3,7 +3,7 @@
 import { discordServerRoute } from "./discordserver.js";
 import { voiceIce } from "./voiceice.js";
 import { downloads, latestBuild } from "./downloads.js";
-import { betaGate, betaHeaders, isBeta } from "./beta.js";
+import { betaGate, betaHeaders, betaSignIn, isBeta } from "./beta.js";
 import { markModel, rebuildDirty, reconcileIds, buildOvalKinds } from "./model.js";
 import { fillCats } from "./coachtips.js";
 import { shadowRun, answerRun } from "./coachlearn.js";
@@ -630,7 +630,7 @@ async function handle(req, env, ctx) {
       try {
         {
           // the PC's minute sync carries the newest Windows build, so a PC behind checks for its update at once
-          const res = await accounts(req, env, url);
+          const res = await betaSignIn(await accounts(req, env, url), env); // the test version: testers and admins only
           if (res && url.pathname === "/account/sync/meta") { try { const b = await latestBuild(env); if (b) res.headers.set("X-Pitlane-Build", b); } catch (e) {} }
           return res;
         }

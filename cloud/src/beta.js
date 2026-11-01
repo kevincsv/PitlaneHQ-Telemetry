@@ -3,7 +3,7 @@
 // Only testers and admins use it: a signed-in request from anyone else is refused, the public pages (landing, SEO,
 // legal, webhooks, sign-in returns) go to pitlanehq.app, search engines never index it, and its timed jobs never run
 // (the production Worker runs them). docs/spec/pc-app.md, "Test builds".
-import { sessionAccount, isAdmin, isTester } from "./accounts.js";
+import { sessionAccount, isAdmin, isTester, sha256 } from "./accounts.js";
 
 export const isBeta = (env) => env.BETA === "1";
 const PROD = "https://pitlanehq.app";
@@ -22,10 +22,24 @@ export async function betaGate(req, env, url) {
     try { a = await sessionAccount(req, env, true); } catch (e) { a = null; }
     // signing in and the public reads (no account yet) go through; the answer says tester/admin, and the app stops there
     if (!a || isAdmin(env, a.id) || isTester(env, a.id, a)) return null;
-    return new Response(JSON.stringify({ error: "The test version is for testers.", code: "beta_only" }), { status: 403, headers: { "content-type": "application/json; charset=utf-8", "cache-control": "no-store", "access-control-allow-origin": "*" } });
+    return NO();
   }
   if (req.method === "GET" || req.method === "HEAD") return Response.redirect(PROD + p + url.search, 302);
   return new Response("not found", { status: 404 });
+}
+
+const NO = () => new Response(JSON.stringify({ error: "Only testers can sign in to the test version.", code: "beta_only" }), { status: 403, headers: { "content-type": "application/json; charset=utf-8", "cache-control": "no-store", "access-control-allow-origin": "*" } });
+
+/** A sign-in or sign-up on the test version (an answer with a session token): anyone but a tester or an admin is
+ * refused and the new session is removed at once, so only testers and admins can sign in there. */
+export async function betaSignIn(res, env) {
+  if (!isBeta(env) || !res || !res.ok || !(res.headers.get("content-type") || "").includes("json")) return res;
+  let j;
+  try { j = await res.clone().json(); } catch (e) { return res; }
+  if (!j || typeof j.token !== "string" || !j.id) return res;
+  if (isAdmin(env, j.id) || j.tester || isTester(env, j.id, null)) return res;
+  try { await env.DB.prepare("DELETE FROM account_sessions WHERE token_hash=?1").bind(await sha256(j.token)).run(); } catch (e) { /* it expires by itself */ }
+  return NO();
 }
 
 /** Every answer of the test version stays out of search engines. */

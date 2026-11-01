@@ -93,10 +93,12 @@ const sec = (ms) => Math.floor(ms / 1000), DAY = 86400e3;
 {
   acct("acct000005", "d@x.io");
   const sup = (id) => db.prepare("SELECT supporter, supporter_src, pro FROM accounts WHERE id=?").get(id);
-  await send("checkout.session.completed", { id: "cs_d1", mode: "payment", payment_status: "paid", payment_intent: "pi_d1", client_reference_id: "support-acct000005" });
+  await send("checkout.session.completed", { id: "cs_d1", mode: "payment", payment_status: "paid", payment_intent: "pi_d1", client_reference_id: "support-acct000005", amount_total: 500, currency: "USD" });
   assert.deepEqual({ ...sup("acct000005") }, { supporter: 1, supporter_src: "stripe", pro: 0 });
+  assert.deepEqual({ ...db.prepare("SELECT amount, currency, ref, status FROM pro_orders WHERE id='stripe:don:cs_d1'").get() }, { amount: 500, currency: "usd", ref: "pi_d1", status: "on" }, "the amount for the Analytics");
   await send("charge.refunded", { refunded: true, payment_intent: "pi_d1" });
   assert.equal(sup("acct000005").supporter, 1);
+  assert.equal(db.prepare("SELECT status FROM pro_orders WHERE id='stripe:don:cs_d1'").get().status, "refunded", "a refunded donation no longer counts");
   const r = await stripeWebhook(new Request("https://x", { method: "POST", body: JSON.stringify({ type: "checkout.session.completed", data: { object: { id: "cs_d2", mode: "payment", payment_status: "paid", payment_link: "plink_support", customer_details: { email: "later@x.io" } } } }), headers: {} }), env, emailHash, { supportLink: "plink_support" }).catch(() => null);
   assert.equal(r.status, 401, "unsigned");
   const body = JSON.stringify({ type: "checkout.session.completed", data: { object: { id: "cs_d2", mode: "payment", payment_status: "paid", payment_link: "plink_support", customer_details: { email: "later@x.io" } } } });

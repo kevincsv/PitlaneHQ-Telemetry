@@ -191,6 +191,10 @@ export function highlightsOf(a) {
   let behind = 0;
   for (const list of vers.values()) { const newest = list.map((x) => x.v).sort(cmp).pop(); behind += list.filter((x) => cmp(x.v, newest)).reduce((s, x) => s + x.devices, 0); }
   if (behind) out.push({ k: "behind", tone: "warn", a: [behind] });
+  // uninstalls and donations (pcstats.js)
+  const I = a.installs || {}, Su = a.supporters || {};
+  if (I.uninstalls) out.push({ k: (I.reasons || []).length ? "uninstalls_why" : "uninstalls", tone: "bad", a: [I.uninstalls, a.days, ((I.reasons || [])[0] || {}).k || ""] });
+  if (Su.donations) out.push({ k: "donations", tone: "good", a: [Su.donations, a.days] });
   return out;
 }
 export const SQL_SESSIONS_DAYS = "SELECT date(started/1000,'unixepoch') AS day, game, uploader, COUNT(*) AS n, SUM(COALESCE(laps,0)) AS laps, SUM(COALESCE(secs,0)) AS secs, SUM(CASE WHEN lower(COALESCE(kind,'')) LIKE '%race%' THEN 1 ELSE 0 END) AS races FROM sessions WHERE started>=?1 AND uploader LIKE 'acct:%' GROUP BY 1, game, uploader LIMIT 20000";

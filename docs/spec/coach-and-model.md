@@ -283,3 +283,14 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
     (provider, key, model, Test lists the models the key can use, Remove key, Get a key). Phones: under the coach's gap
     and Account → AI coach. No key: "Add your API key" opens the settings. The coach's learning never reads the AI's
     answers.
+
+## Watch in replay (in development: testers, admins in admin mode)
+
+- Every live iRacing lap carries the session time it started at (`trace.st`, `startS` in cloud.go). The coach's corners
+  and the offs explained get "▶ Replay" (`replayBtn`/`replayGo` in index.html) while iRacing runs on the PC (GET
+  `/api/replay`, replay.go): it asks iRacing to seek its replay to 3 s before that moment of the lap and play it
+  (`irBroadcast`, ReplaySearchSessionTime then ReplaySetPlaySpeed, replay_windows.go). From the web or a phone it goes
+  to the PC through the live link ("replay", liverelay.go). The session number is the end of the session id
+  (`ir-…-2`). It works while the session is open in iRacing or its saved replay is loaded; laps recorded before have
+  no start time and no button.
+

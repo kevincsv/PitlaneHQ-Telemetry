@@ -86,6 +86,7 @@ type lapTrace struct {
 	F    []string     `json:"f,omitempty"`    // what this lap was driven in: "traffic" (a car within a second ahead for a fifth of the lap), "cold" (the first lap of a run, tyres cold), "wet" (the track at least lightly wet at some point, TrackWetness 4 or more), "damp" (at most mostly dry or very lightly wet, 2 or 3, never wet; a note only), "rain" (it rained at some point: Precipitation over 0 or the track declared wet; a note only), "cmp:<n>" (the tyre compound when the car has several); the coach leaves traffic, cold and wet laps aside, the model traffic and wet ones
 	H    *lapHealth   `json:"h,omitempty"`    // how well the lap was recorded (lapHealth)
 	TT   []float64    `json:"tt,omitempty"`   // the tyres' carcass temperatures over the lap (°C, the lap's average): LF inner/left, middle, right, then RF, LR and RR the same; only where the game gives them
+	ST   float64      `json:"st,omitempty"`   // the session time the lap started at (s): a moment of the lap is ST plus its lap time there ("Watch in replay")
 	Bat  []float64    `json:"bat,omitempty"`  // the hybrid battery's charge (%) every batBin (50) m from the line; only a car with one (Le Mans Ultimate's hybrids)
 }
 
@@ -585,6 +586,7 @@ type lapRec struct {
 	// the recording's health: the samples taken and the session time of the first one (the rate they came at)
 	samples int
 	firstS  float64
+	startS  float64 // the session time the lap started at (its St: "Watch in replay")
 	// the tyres' carcass temperatures summed over the lap's samples (tyreVar0 on), and how many samples had them
 	tyreSum [12]float64
 	tyreN   int
@@ -958,6 +960,7 @@ func (ls *lapStream) step(v []float64) {
 	cur.add(dist, lt, speed, [4]float64{v[4], v[5], v[6], v[7]})
 	if cur.samples == 0 {
 		cur.firstS = v[14]
+		cur.startS = v[14] - lt
 	}
 	cur.samples++
 	cur.lastPct, cur.lastS = pct, v[14]
@@ -1309,6 +1312,9 @@ func buildLap(r *lapRec, s cloudSession, fuelNow, lt float64) (cloudLap, bool) {
 	// A pit lane lap or one with a hole in its telemetry is still a lap, just never a best.
 	l := cloudLap{ID: fmt.Sprintf("%s-%d", s.ID, r.n), N: r.n, Time: round(lt, 3), Valid: !r.invalid(), Pit: r.pit,
 		Fuel: round(r.fuel0-fuelNow, 3), Vmax: round(r.vmax, 2), Drv: r.driver, Trace: &lapTrace{Bin: lapBin, D: r.bins, H: &health}}
+	if r.startS > 0 {
+		l.Trace.ST = round(r.startS, 2)
+	}
 	if x, y := r.shape(maxGap); x != nil {
 		l.Trace.X, l.Trace.Y = x, y
 		if r.geo {

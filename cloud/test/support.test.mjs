@@ -69,6 +69,7 @@ const call = async (who, method, path, body) => {
   return r && { status: r.status, body: await r.json() };
 };
 assert.equal(await call("mart", "GET", "/community/other"), null, "not its path");
+assert.equal(await call("adm", "POST", "/community/admin/supporter", { id: "mart", on: true }), null, "the supporter badge is not the support chat");
 assert.equal((await call(null, "GET", "/community/support")).status, 401);
 assert.deepEqual((await call("mart", "GET", "/community/support/unread")).body, { n: 0 });
 assert.deepEqual((await call("ana", "GET", "/community/support/unread")).body, { n: 0 }, "no conversation yet");

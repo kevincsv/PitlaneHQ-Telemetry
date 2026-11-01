@@ -90,7 +90,9 @@ export const driverMessage = (env, accId, id, now, m) => [
  *  the emails, handed in by support.js so the test runs the routes on SQLite. */
 export async function handleSupport(req, env, url, { sessionAccount, isAdmin, openEscrow, sendSupportChat, sendSupportReply }) {
   const p = url.pathname, m = req.method;
-  if (p !== "/community/support" && p !== "/community/support/unread" && !p.startsWith("/community/admin/support")) return null;
+  // the admins' side is /community/admin/support and what is under it, never /community/admin/supporter (the badge)
+  const adminSide = p === "/community/admin/support" || p.startsWith("/community/admin/support/");
+  if (p !== "/community/support" && p !== "/community/support/unread" && !adminSide) return null;
   const acc = await sessionAccount(req, env);
   if (!acc) return err("sign in with your Pitlane HQ account", 401);
   const now = Date.now();
@@ -116,7 +118,7 @@ export async function handleSupport(req, env, url, { sessionAccount, isAdmin, op
     const mailed = await sendSupportChat(env, { ...f, nick: acc.display || "", accountId: acc.id, email: (esc && esc.email) || "" }).catch(() => false);
     return json({ ok: true, mailed, msg: { id, me: true, text: f.text, created: now, kind: "chat" } });
   }
-  if (!p.startsWith("/community/admin/support")) return err("not found", 404);
+  if (!adminSide) return err("not found", 404);
   if (!isAdmin(env, acc.id)) return err("only the admins of this server can do this", 403);
   if (p === "/community/admin/support/unread" && m === "GET") {
     const r = await env.DB.prepare(SQL_UNREAD_ADMIN).first();

@@ -15,7 +15,7 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   switch. The phones have their own admin mode (off by default) in Settings.
 - Testers (the Tester level): the accounts an admin made testers in the admin page's Users list ("Make a tester" /
   "Remove the tester level", POST /community/admin/tester, `accounts.tester` from migration 0086) and the account ids in
-  `TESTERS` (cloud/wrangler.toml, like `ADMINS`; those cannot be removed from the page) use everything in
+  `TESTERS` (cloud/wrangler.toml, like `ADMINS`; the page's "Remove the tester level" works for those too, it stores `tester=0`, which wins over `TESTERS`) use everything in
   development on every device (the planner, the games and modes still being made),
   always, with no admin mode and none of the admins' tools (the admin page, demo data, the .ibt import, deleting or
   editing others' things). The server says `tester` in /account/me and every sign-in (`isTester` in accounts.js); the

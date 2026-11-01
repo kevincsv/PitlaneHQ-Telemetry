@@ -1211,6 +1211,29 @@
     return out;
   }
 
+  /* the race in order (the race report: start, laps with their position, pits, incidents): the start, every lap that
+     gained or lost places, the pit stops, the incidents with their points and where, and the finish. Each line is
+     {lap, k: "start" | "gain" | "loss" | "pit" | "inc" | "finish", text} */
+  function raceStory(r, ctx) {
+    const Tx = txOf(ctx), laps = (r && Array.isArray(r.laps) ? r.laps : []).filter((l) => l && l.p > 0), out = [];
+    if (!laps.length || !(r.start > 0)) return out;
+    const pl = (n) => n === 1 ? Tx("1 place", "1 puesto", "1 posição") : Tx(`${n} places`, `${n} puestos`, `${n} posições`);
+    const p1 = laps[0].p, d1 = r.start - p1;
+    out.push({ lap: laps[0].n, k: "start", text: d1 > 0 ? Tx(`Start from P${r.start}, P${p1} after lap 1 (${pl(d1)} gained)`, `Salida desde P${r.start}, P${p1} tras la vuelta 1 (${pl(d1)} ganados)`, `Largada de P${r.start}, P${p1} após a volta 1 (${pl(d1)} ganhas)`) : d1 < 0 ? Tx(`Start from P${r.start}, P${p1} after lap 1 (${pl(-d1)} lost)`, `Salida desde P${r.start}, P${p1} tras la vuelta 1 (${pl(-d1)} perdidos)`, `Largada de P${r.start}, P${p1} após a volta 1 (${pl(-d1)} perdidas)`) : Tx(`Start from P${r.start}, still P${p1} after lap 1`, `Salida desde P${r.start}, sigues P${p1} tras la vuelta 1`, `Largada de P${r.start}, ainda P${p1} após a volta 1`) });
+    const incs = Array.isArray(r.incidents) ? r.incidents : [], kindTx = { off: Tx("off track", "salida de pista", "saída de pista"), loss: Tx("loss of control", "pérdida de control", "perda de controle"), light: Tx("light contact", "contacto leve", "contato leve"), contact: Tx("contact", "contacto", "contato") };
+    for (let i = 0; i < laps.length; i++) {
+      const L = laps[i], prev = i ? laps[i - 1].p : null;
+      if (L.pit) out.push({ lap: L.n, k: "pit", text: Tx(`Lap ${L.n}. Pit stop, P${L.p} after it`, `Vuelta ${L.n}. Parada en boxes, P${L.p} después`, `Volta ${L.n}. Pit stop, P${L.p} depois`) });
+      for (const x of incs.filter((x) => x.lap === L.n && x.pts > 0)) out.push({ lap: L.n, k: "inc", text: Tx(`Lap ${L.n}. ${x.pts}x ${kindTx[x.kind] || Tx("incident", "incidente", "incidente")} at ${Math.round(x.d)} m`, `Vuelta ${L.n}. ${x.pts}x ${kindTx[x.kind] || "incidente"} a ${Math.round(x.d)} m`, `Volta ${L.n}. ${x.pts}x ${kindTx[x.kind] || "incidente"} a ${Math.round(x.d)} m`) });
+      if (prev != null && !L.pit && L.p !== prev) {
+        const d = prev - L.p;
+        out.push({ lap: L.n, k: d > 0 ? "gain" : "loss", text: d > 0 ? Tx(`Lap ${L.n}. Up to P${L.p} (${pl(d)} gained)`, `Vuelta ${L.n}. Subes a P${L.p} (${pl(d)} ganados)`, `Volta ${L.n}. Sobe para P${L.p} (${pl(d)} ganhas)`) : Tx(`Lap ${L.n}. Down to P${L.p} (${pl(-d)} lost)`, `Vuelta ${L.n}. Bajas a P${L.p} (${pl(-d)} perdidos)`, `Volta ${L.n}. Cai para P${L.p} (${pl(-d)} perdidas)`) });
+      }
+    }
+    if (r.finish > 0) { const d = r.start - r.finish; out.push({ lap: laps[laps.length - 1].n, k: "finish", text: r.dnf ? Tx(`Out of the race, P${r.finish}`, `Fuera de carrera, P${r.finish}`, `Fora da corrida, P${r.finish}`) : Tx(`Finish P${r.finish}${d ? ` (${d > 0 ? "+" : "−"}${Math.abs(d)} from the start)` : ""}`, `Llegada P${r.finish}${d ? ` (${d > 0 ? "+" : "−"}${Math.abs(d)} desde la salida)` : ""}`, `Chegada P${r.finish}${d ? ` (${d > 0 ? "+" : "−"}${Math.abs(d)} desde a largada)` : ""}`) }); }
+    return out;
+  }
+
   function insights(A, B, ctx) {
     ctx = ctx || {};
     const laps = Array.isArray(ctx.laps) ? ctx.laps : [];
@@ -1221,7 +1244,7 @@
   const api = { VERSION, BIN, lapSeries, serOf, lapShape, sameFrame, lineOffsets, cornerLine, lineTip, brakeZones, PHASES, phaseName, turnNo, COACH_GEN, cornerClass, cornerZones,
     OVAL_KINDS, ovalOf, liftZones, ovalZones, dirtLineTip, coachCompare, cornerConsistency, pairSecs, lapDriving, kindName, stepName, tipMain, tipShort, tipTodo, coachPlan, stepText, analyzerFacts, analyse,
     estOf, failedOf, progressLines, followUp, trackGuide, cornerRanks, clsLines, racePace, edgeUse, notesOf, guideItems, likeOf, likeSteps, catGroup,
-    turnLab, lapSpread, cornerSpread, offsExplained, ggOf, steerOf, understeer, tyreLaps, fuelUse, fuelPlan, insights, pedalCheck, slopeOf, sessionGoals };
+    turnLab, lapSpread, cornerSpread, offsExplained, ggOf, steerOf, understeer, tyreLaps, fuelUse, fuelPlan, insights, pedalCheck, slopeOf, sessionGoals, raceStory };
   root.PW_ANALYSIS = api;
   if (typeof module !== "undefined" && module.exports) module.exports = api;
 })(typeof window !== "undefined" ? window : typeof globalThis !== "undefined" ? globalThis : this);

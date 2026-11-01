@@ -100,3 +100,11 @@ console.log("pedal check ok");
   assert.equal(PW.sessionGoals(cur, [], ctx).length, 0);
 }
 console.log("session goals ok");
+
+// the race story: the start, places won and lost, the stop, an incident and the finish, in order
+{
+  const r = { start: 8, finish: 5, laps: [{ n: 1, p: 6 }, { n: 2, p: 6 }, { n: 3, p: 7 }, { n: 4, p: 9, pit: true }, { n: 5, p: 5 }], incidents: [{ lap: 3, d: 1200, pts: 2, kind: "loss" }] };
+  const st = PW.raceStory(r, ctx).map((x) => x.k);
+  assert.deepEqual(st, ["start", "inc", "loss", "pit", "gain", "finish"]);
+}
+console.log("race story ok");

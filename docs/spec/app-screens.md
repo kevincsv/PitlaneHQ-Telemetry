@@ -118,3 +118,9 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   session's best lap lost the most to its own best pass there (from 200 m before the turn to 120 m after). Each goal
   shows ✓ once a lap of this session reaches it.
 
+## Race story
+
+- A race's summary opens with "Race story" (`raceStoryHTML` in index.html, `raceStory` in pitwall-analysis.js; the
+  phones' race page the same): the start and the places after lap 1, every lap that won or lost places, the pit stops,
+  each incident with its points, its kind and where on the lap, and the finish against the start.
+

@@ -4757,19 +4757,22 @@ async function combos(env, q2, n) {
   const squash = "replace(replace(replace(replace(lower(l.track||l.car),' ',''),'-',''),'.',''),'\xB7','')";
   const where = words.map((_, i) => `AND ${squash} LIKE ?${i + 2}`).join(" ");
   const r4 = await env.DB.prepare(
-    `SELECT l.track_id AS t, MAX(l.track) AS track, l.car_id AS c, MAX(l.car) AS car, COUNT(DISTINCT l.user_id) AS drivers, MIN(l.time) AS best
-       FROM community_laps l WHERE l.game='iracing' AND l.track_id>0 AND l.car_id>0 AND ${NOT_MODEL} ${where}
-      GROUP BY l.track_id, l.car_id ORDER BY drivers DESC, best LIMIT ?1`
+    `SELECT l.game AS g, l.track_id AS t, MAX(l.track) AS track, l.car_id AS c, MAX(l.car) AS car, COUNT(DISTINCT l.user_id) AS drivers, MIN(l.time) AS best
+       FROM community_laps l WHERE l.game IN ('iracing','lmu') AND l.track_id>0 AND l.car_id>0 AND ${NOT_MODEL} ${where}
+      GROUP BY l.game, l.track_id, l.car_id ORDER BY drivers DESC, best LIMIT ?1`
   ).bind(n, ...words.map((w) => "%" + w + "%")).all();
-  return (r4.results || []).map((x) => ({ ...x, car: famName("iracing", x.c, x.car) }));
+  return (r4.results || []).map((x) => ({ ...x, car: famName(x.g, x.c, x.car) }));
 }
 __name(combos, "combos");
+var gPre = /* @__PURE__ */ __name((g) => g === "lmu" ? "LMU \xB7 " : "", "gPre");
+var gTitle = /* @__PURE__ */ __name((g) => g === "lmu" ? "Le Mans Ultimate \xB7 " : "", "gTitle");
+var gVal = /* @__PURE__ */ __name((g, v) => (g === "lmu" ? "lmu:" : "") + v, "gVal");
 async function comboOf(env, v) {
-  const m = /^(\d+)-(\d+)$/.exec(String(v || ""));
+  const m = /^(lmu:)?(\d+)-(\d+)$/.exec(String(v || ""));
   if (m) {
-    const c = await famId(env, "iracing", m[2]);
-    const r4 = await env.DB.prepare("SELECT MAX(track) AS track, MAX(car) AS car FROM community_laps WHERE track_id=?1 AND car_id=?2 AND game='iracing'").bind(+m[1], c).first();
-    if (r4 && r4.track) return { t: +m[1], c, track: r4.track, car: famName("iracing", c, r4.car) };
+    const g = m[1] ? "lmu" : "iracing", c = await famId(env, g, m[3]);
+    const r4 = await env.DB.prepare("SELECT MAX(track) AS track, MAX(car) AS car FROM community_laps WHERE track_id=?1 AND car_id=?2 AND game=?3").bind(+m[2], c, g).first();
+    if (r4 && r4.track) return { g, t: +m[2], c, track: r4.track, car: famName(g, c, r4.car) };
   }
   return (await combos(env, v, 1))[0] || null;
 }
@@ -4789,8 +4792,8 @@ var accountOf = /* @__PURE__ */ __name((env, id2) => env.DB.prepare("SELECT a.id
 async function suggest(env, it) {
   const f = (it.data.options || []).find((o) => o.focused);
   if (!f) return [];
-  if (f.name === "car_track") return (await combos(env, f.value, 25)).map((x) => ({ name: `${fix(x.track)} \xB7 ${fix(x.car)}`.slice(0, 100), value: `${x.t}-${x.c}` }));
-  if (f.name === "track") return (await tracks(env, f.value, 25)).map((x) => ({ name: fix(x.track).slice(0, 100), value: String(x.t) }));
+  if (f.name === "car_track") return (await combos(env, f.value, 25)).map((x) => ({ name: `${gPre(x.g)}${fix(x.track)} \xB7 ${fix(x.car)}`.slice(0, 100), value: gVal(x.g, `${x.t}-${x.c}`) }));
+  if (f.name === "track") return (await tracks(env, f.value, 25)).map((x) => ({ name: (gPre(x.g) + fix(x.track)).slice(0, 100), value: gVal(x.g, String(x.t)) }));
   if (f.name === "league") {
     const r5 = await env.DB.prepare("SELECT id, name FROM leagues WHERE lower(name) LIKE ?1 ORDER BY updated DESC LIMIT 25").bind("%" + String(f.value || "").trim().toLowerCase().replace(/[%_]/g, "") + "%").all();
     return (r5.results || []).map((x) => ({ name: fix(x.name).slice(0, 100), value: x.id }));
@@ -4808,25 +4811,25 @@ async function record(x) {
   if (!k) return noCombo(x);
   const r4 = await x.env.DB.prepare(
     `SELECT l.user_id AS uid, ${SHOWN} AS alias, l.time FROM community_laps l JOIN community_users u ON u.id=l.user_id LEFT JOIN accounts ac ON ac.id=l.user_id
-      WHERE l.track_id=?1 AND l.car_id=?2 AND l.game='iracing' AND ${NOT_MODEL} ORDER BY l.time LIMIT 10`
-  ).bind(k.t, k.c).all();
+      WHERE l.track_id=?1 AND l.car_id=?2 AND l.game=?3 AND ${NOT_MODEL} ORDER BY l.time LIMIT 10`
+  ).bind(k.t, k.c, k.g).all();
   const laps = r4.results || [];
   if (!laps.length) return noCombo(x);
-  const all = (await x.env.DB.prepare(`SELECT COUNT(*) AS n FROM community_laps l WHERE l.track_id=?1 AND l.car_id=?2 AND l.game='iracing' AND ${NOT_MODEL}`).bind(k.t, k.c).first()).n;
+  const all = (await x.env.DB.prepare(`SELECT COUNT(*) AS n FROM community_laps l WHERE l.track_id=?1 AND l.car_id=?2 AND l.game=?3 AND ${NOT_MODEL}`).bind(k.t, k.c, k.g).first()).n;
   const medal = ["\u{1F947}", "\u{1F948}", "\u{1F949}"];
   const lines = laps.map((v, i) => `${medal[i] || `\`${String(i + 1).padStart(2)}\``} \`${fmt(v.time)}\` ${i ? `\`${gap(v.time - laps[0].time)}\` ` : ""}${md(v.alias || anonName(x.l))}`);
   if (x.account && !await isAnon(x.env, x.account)) {
-    const mine = await x.env.DB.prepare("SELECT time, anon FROM community_laps WHERE user_id=?1 AND track_id=?2 AND car_id=?3 AND game='iracing'").bind(x.account, k.t, k.c).first();
+    const mine = await x.env.DB.prepare("SELECT time, anon FROM community_laps WHERE user_id=?1 AND track_id=?2 AND car_id=?3 AND game=?4").bind(x.account, k.t, k.c, k.g).first();
     if (mine && !mine.anon && !laps.some((v) => v.uid === x.account)) {
-      const pos = (await x.env.DB.prepare(`SELECT COUNT(*) AS n FROM community_laps l WHERE l.track_id=?1 AND l.car_id=?2 AND l.game='iracing' AND ${NOT_MODEL} AND l.time<?3`).bind(k.t, k.c, mine.time).first()).n + 1;
+      const pos = (await x.env.DB.prepare(`SELECT COUNT(*) AS n FROM community_laps l WHERE l.track_id=?1 AND l.car_id=?2 AND l.game=?4 AND ${NOT_MODEL} AND l.time<?3`).bind(k.t, k.c, mine.time, k.g).first()).n + 1;
       lines.push("", tr(x.l, `You: **P${pos}** \`${fmt(mine.time)}\` \`${gap(mine.time - laps[0].time)}\``, `T\xFA: **P${pos}** \`${fmt(mine.time)}\` \`${gap(mine.time - laps[0].time)}\``, `Voc\xEA: **P${pos}** \`${fmt(mine.time)}\` \`${gap(mine.time - laps[0].time)}\``));
     }
   }
   return say({
     embeds: [{
       color: AMBER,
-      title: fix(k.car).slice(0, 250),
-      url: recUrl(x.l, k),
+      title: (gTitle(k.g) + fix(k.car)).slice(0, 250),
+      url: recUrl(x.l, k, k.g),
       description: `**${md(fix(k.track))}**
 
 ` + lines.join("\n"),
@@ -5077,12 +5080,12 @@ async function coach(x) {
   if (!x.account) return needLink(x);
   const k = await comboOf(x.env, x.opt.car_track);
   if (!k) return noCombo(x);
-  const mine = await x.env.DB.prepare("SELECT time FROM community_laps WHERE user_id=?1 AND track_id=?2 AND car_id=?3 AND game='iracing'").bind(x.account, k.t, k.c).first();
+  const mine = await x.env.DB.prepare("SELECT time FROM community_laps WHERE user_id=?1 AND track_id=?2 AND car_id=?3 AND game=?4").bind(x.account, k.t, k.c, k.g).first();
   if (!mine) return text(tr(x.l, "You have no lap on this car and track yet (test drives do not count).", "A\xFAn no tienes vuelta en este coche y circuito (las pruebas libres no cuentan).", "Voc\xEA ainda n\xE3o tem volta neste carro e pista (test drives n\xE3o contam)."));
   return later(x, true, async () => {
-    const m = await getModel(x.env, "iracing", k.t, k.c);
+    const m = await getModel(x.env, k.g, k.t, k.c);
     let times = (m.times || []).slice();
-    if (!times.length) times = ((await x.env.DB.prepare("SELECT time FROM community_laps WHERE track_id=?1 AND car_id=?2 AND game='iracing' AND COALESCE(shown,'')<>'model' AND time>10 AND COALESCE(official,1)<>0").bind(k.t, k.c).all()).results || []).map((v) => v.time);
+    if (!times.length) times = ((await x.env.DB.prepare("SELECT time FROM community_laps WHERE track_id=?1 AND car_id=?2 AND game=?3 AND COALESCE(shown,'')<>'model' AND time>10 AND COALESCE(official,1)<>0").bind(k.t, k.c, k.g).all()).results || []).map((v) => v.time);
     const me2 = mine.time;
     if (!times.some((t) => Math.abs(t - me2) < 5e-4)) times.push(me2);
     times.sort((a, b2) => a - b2);
@@ -5099,7 +5102,7 @@ async function coach(x) {
     return {
       embeds: [{
         color: AMBER,
-        title: `${fix(k.car)} \xB7 ${fix(k.track)}`.slice(0, 250),
+        title: `${gTitle(k.g)}${fix(k.car)} \xB7 ${fix(k.track)}`.slice(0, 250),
         fields,
         description: tr(x.l, "Where you lose the time, corner by corner: the coach in the app.", "D\xF3nde pierdes el tiempo, curva a curva: el coach en la app.", "Onde voc\xEA perde tempo, curva a curva: o coach no app.")
       }],
@@ -5114,7 +5117,7 @@ async function compare(x) {
   if (!b2) return text(tr(x.l, "No driver by that name (anonymous drivers have no profile).", "No hay ning\xFAn piloto con ese nombre (los pilotos an\xF3nimos no tienen perfil).", "N\xE3o h\xE1 nenhum piloto com esse nome (pilotos an\xF4nimos n\xE3o t\xEAm perfil)."));
   if (b2.id === x.account) return text(tr(x.l, "That is you.", "Ese eres t\xFA.", "Esse \xE9 voc\xEA."));
   const r4 = await x.env.DB.prepare(
-    `SELECT a.track, a.car, a.time AS mine, b.time AS theirs, MAX(a.created, b.created) AS at
+    `SELECT a.game, a.track, a.car, a.time AS mine, b.time AS theirs, MAX(a.created, b.created) AS at
        FROM community_laps a JOIN community_laps b ON b.track_id=a.track_id AND b.car_id=a.car_id AND b.game=a.game
       WHERE a.user_id=?1 AND b.user_id=?2 AND b.anon=0 AND COALESCE(a.shown,'')<>'model' AND COALESCE(b.shown,'')<>'model'
       ORDER BY at DESC LIMIT 300`
@@ -5123,7 +5126,7 @@ async function compare(x) {
   const eph = await isAnon(x.env, x.account);
   if (!rows.length) return text(tr(x.l, `You and **${md(b2.alias)}** have no car and track in common yet.`, `T\xFA y **${md(b2.alias)}** a\xFAn no ten\xE9is ning\xFAn coche y circuito en com\xFAn.`, `Voc\xEA e **${md(b2.alias)}** ainda n\xE3o t\xEAm nenhum carro e pista em comum.`), eph);
   const won = rows.filter((v) => v.mine < v.theirs).length;
-  const lines = rows.slice(0, 12).map((v) => `${v.mine < v.theirs ? "\u{1F7E2}" : v.mine > v.theirs ? "\u{1F534}" : "\u26AA"} \`${gap(v.mine - v.theirs)}\` ${md(fix(v.car))} \xB7 ${md(fix(v.track))}`);
+  const lines = rows.slice(0, 12).map((v) => `${v.mine < v.theirs ? "\u{1F7E2}" : v.mine > v.theirs ? "\u{1F534}" : "\u26AA"} \`${gap(v.mine - v.theirs)}\` ${md(fix(v.car))} \xB7 ${md(fix(v.track))}${v.game === "lmu" ? " \xB7 LMU" : ""}`);
   return say({
     embeds: [{
       color: AMBER,
@@ -5143,9 +5146,9 @@ async function board(x) {
        (SELECT COUNT(*) FROM community_laps o WHERE o.track_id=l.track_id AND o.car_id=l.car_id AND o.game=l.game AND COALESCE(o.shown,'')<>'model' AND o.time<l.time)+1 AS pos
        FROM discord_members m JOIN discord_links dl ON dl.discord_id=m.discord_id JOIN community_laps l ON l.user_id=dl.account_id
        JOIN community_users u ON u.id=l.user_id JOIN accounts ac ON ac.id=l.user_id
-      WHERE m.guild_id=?1 AND l.track_id=?2 AND l.car_id=?3 AND l.game='iracing' AND l.anon=0 AND ac.anon=0 AND ${NOT_MODEL}
+      WHERE m.guild_id=?1 AND l.track_id=?2 AND l.car_id=?3 AND l.game=?4 AND l.anon=0 AND ac.anon=0 AND ${NOT_MODEL}
       ORDER BY l.time LIMIT 20`
-  ).bind(x.guild, k.t, k.c).all();
+  ).bind(x.guild, k.t, k.c, k.g).all();
   const rows = r4.results || [];
   if (!rows.length) return text(tr(
     x.l,
@@ -5155,7 +5158,7 @@ async function board(x) {
   ), false);
   const lines = rows.map((v, i) => `\`${String(i + 1).padStart(2)}\` \`${fmt(v.time)}\` ${i ? `\`${gap(v.time - rows[0].time)}\` ` : ""}<@${v.did}> ${md(v.alias)} \xB7 P${v.pos} ${tr(x.l, "overall", "general", "geral")}`);
   return say({
-    embeds: [{ color: AMBER, title: `${fix(k.car)}`.slice(0, 250), url: recUrl(x.l, k), description: `**${md(fix(k.track))}** \xB7 ${tr(x.l, "this server", "este servidor", "este servidor")}
+    embeds: [{ color: AMBER, title: `${gTitle(k.g)}${fix(k.car)}`.slice(0, 250), url: recUrl(x.l, k, k.g), description: `**${md(fix(k.track))}** \xB7 ${tr(x.l, "this server", "este servidor", "este servidor")}
 
 ` + lines.join("\n") }]
   });
@@ -5200,29 +5203,29 @@ async function tracks(env, q2, n) {
   const words = String(q2 || "").toLowerCase().split(/\s+/).map((w) => w.replace(/[^\p{L}\p{N}]/gu, "")).filter(Boolean).slice(0, 5);
   const squash = "replace(replace(replace(lower(l.track),' ',''),'-',''),'.','')";
   const where = words.map((_, i) => `AND ${squash} LIKE ?${i + 2}`).join(" ");
-  const r4 = await env.DB.prepare(`SELECT l.track_id AS t, MAX(l.track) AS track, COUNT(DISTINCT l.user_id) AS drivers FROM community_laps l
-    WHERE l.game='iracing' AND l.track_id>0 AND ${NOT_MODEL} ${where} GROUP BY l.track_id ORDER BY drivers DESC LIMIT ?1`).bind(n, ...words.map((w) => "%" + w + "%")).all();
+  const r4 = await env.DB.prepare(`SELECT l.game AS g, l.track_id AS t, MAX(l.track) AS track, COUNT(DISTINCT l.user_id) AS drivers FROM community_laps l
+    WHERE l.game IN ('iracing','lmu') AND l.track_id>0 AND ${NOT_MODEL} ${where} GROUP BY l.game, l.track_id ORDER BY drivers DESC LIMIT ?1`).bind(n, ...words.map((w) => "%" + w + "%")).all();
   return r4.results || [];
 }
 __name(tracks, "tracks");
 async function track(x) {
   const v = String(x.opt.track || "");
-  const t = /^\d+$/.test(v) ? { t: +v } : (await tracks(x.env, v, 1))[0];
+  const tm = /^(lmu:)?(\d+)$/.exec(v), t = tm ? { g: tm[1] ? "lmu" : "iracing", t: +tm[2] } : (await tracks(x.env, v, 1))[0];
   if (!t) return text(tr(x.l, "No laps on that track yet. Pick one from the list as you type.", "A\xFAn no hay vueltas en ese circuito. Elige uno de la lista mientras escribes.", "Ainda n\xE3o h\xE1 voltas nessa pista. Escolha uma da lista enquanto digita."));
   const r4 = await x.env.DB.prepare(`SELECT l.car_id AS c, MAX(l.car) AS car, MAX(l.track) AS track, MIN(l.time) AS best, COUNT(DISTINCT l.user_id) AS drivers FROM community_laps l
-    WHERE l.track_id=?1 AND l.game='iracing' AND ${NOT_MODEL} GROUP BY l.car_id ORDER BY drivers DESC LIMIT 10`).bind(t.t).all();
+    WHERE l.track_id=?1 AND l.game=?2 AND ${NOT_MODEL} GROUP BY l.car_id ORDER BY drivers DESC LIMIT 10`).bind(t.t, t.g).all();
   const cars = r4.results || [];
   if (!cars.length) return text(tr(x.l, "No laps on that track yet.", "A\xFAn no hay vueltas en ese circuito.", "Ainda n\xE3o h\xE1 voltas nessa pista."));
   const name2 = fix(cars[0].track);
-  const lines = cars.map((c) => `\`${fmt(c.best)}\` ${md(famName("iracing", c.c, fix(c.car)))} \xB7 ${c.drivers} ${tr(x.l, "drivers", "pilotos", "pilotos")}`);
+  const lines = cars.map((c) => `\`${fmt(c.best)}\` ${md(famName(t.g, c.c, fix(c.car)))} \xB7 ${c.drivers} ${tr(x.l, "drivers", "pilotos", "pilotos")}`);
   if (x.account && !await isAnon(x.env, x.account)) {
     const mine = (await x.env.DB.prepare(`SELECT l.car, l.car_id AS c, l.time, (SELECT COUNT(*) FROM community_laps o WHERE o.track_id=l.track_id AND o.car_id=l.car_id AND o.game=l.game AND COALESCE(o.shown,'')<>'model' AND o.time<l.time)+1 AS pos
-      FROM community_laps l WHERE l.user_id=?1 AND l.track_id=?2 AND l.game='iracing' AND l.anon=0 AND ${NOT_MODEL} ORDER BY pos LIMIT 3`).bind(x.account, t.t).all()).results || [];
-    if (mine.length) lines.push("", tr(x.l, "**You**", "**T\xFA**", "**Voc\xEA**"), ...mine.map((m) => `**P${m.pos}** \`${fmt(m.time)}\` ${md(famName("iracing", m.c, fix(m.car)))}`));
+      FROM community_laps l WHERE l.user_id=?1 AND l.track_id=?2 AND l.game=?3 AND l.anon=0 AND ${NOT_MODEL} ORDER BY pos LIMIT 3`).bind(x.account, t.t, t.g).all()).results || [];
+    if (mine.length) lines.push("", tr(x.l, "**You**", "**T\xFA**", "**Voc\xEA**"), ...mine.map((m) => `**P${m.pos}** \`${fmt(m.time)}\` ${md(famName(t.g, m.c, fix(m.car)))}`));
   }
   return say({ embeds: [{
     color: AMBER,
-    title: name2.slice(0, 250),
+    title: (gTitle(t.g) + name2).slice(0, 250),
     description: lines.join("\n").slice(0, 4e3),
     footer: { text: tr(x.l, "The record on each car \xB7 the most driven cars first \xB7 Pitlane HQ", "El r\xE9cord en cada coche \xB7 primero los coches m\xE1s usados \xB7 Pitlane HQ", "O recorde em cada carro \xB7 primeiro os carros mais usados \xB7 Pitlane HQ") }
   }] });
@@ -5262,15 +5265,15 @@ async function discordWeekly(env, now = Date.now()) {
   for (const g of gs) {
     await env.DB.prepare("UPDATE discord_guilds SET week_at=?2 WHERE guild_id=?1").bind(g.guild_id, now).run();
     if (!await isPro(env, g.set_by)) continue;
-    const rows = (await env.DB.prepare(`SELECT dl.discord_id AS did, u.alias, l.track, l.car, l.car_id AS c, l.time,
+    const rows = (await env.DB.prepare(`SELECT dl.discord_id AS did, u.alias, l.game, l.track, l.car, l.car_id AS c, l.time,
         (SELECT COUNT(*) FROM community_laps o WHERE o.track_id=l.track_id AND o.car_id=l.car_id AND o.game=l.game AND COALESCE(o.shown,'')<>'model' AND o.time<l.time)+1 AS pos
         FROM discord_members m JOIN discord_links dl ON dl.discord_id=m.discord_id JOIN community_laps l ON l.user_id=dl.account_id
         JOIN community_users u ON u.id=l.user_id JOIN accounts ac ON ac.id=l.user_id
-       WHERE m.guild_id=?1 AND l.created>=?2 AND l.game='iracing' AND l.anon=0 AND ac.anon=0 AND ${NOT_MODEL} ORDER BY pos, l.time LIMIT 10`).bind(g.guild_id, now - 7 * 864e5).all()).results || [];
+       WHERE m.guild_id=?1 AND l.created>=?2 AND l.game IN ('iracing','lmu') AND l.anon=0 AND ac.anon=0 AND ${NOT_MODEL} ORDER BY pos, l.time LIMIT 10`).bind(g.guild_id, now - 7 * 864e5).all()).results || [];
     if (!rows.length) continue;
     const l = ["es", "pt"].includes(g.lang) ? g.lang : "en";
     const lines = rows.map((v) => `**P${v.pos}** \`${fmt(v.time)}\` <@${v.did}> ${md(v.alias)}
-${md(famName("iracing", v.c, fix(v.car)))} \xB7 ${md(fix(v.track))}`);
+${md(famName(v.game, v.c, fix(v.car)))} \xB7 ${md(fix(v.track))}${v.game === "lmu" ? " \xB7 LMU" : ""}`);
     if (await post(env, g.alerts_channel, { embeds: [{
       color: AMBER,
       title: tr(l, "\u{1F5D3}\uFE0F The week's best laps", "\u{1F5D3}\uFE0F Las mejores vueltas de la semana", "\u{1F5D3}\uFE0F As melhores voltas da semana") + (g.league ? " \xB7 " + fix(g.league) : ""),
@@ -6987,7 +6990,7 @@ async function downloads(req, env, url) {
 ${row(t("Pitlane HQ for Windows", "Pitlane HQ para Windows"), t("Records your laps and uploads them so you can analyse them", "Graba tus vueltas y las sube para que las analices"), "PitlaneHQ-Setup.exe")}${MS_STORE ? `<a class="c" href="${esc3(MS_STORE)}" rel="noopener"><b>Microsoft Store</b><span>${t("The same app, updated by the Store", "La misma app, actualizada por la Store")}</span></a>` : `<div class="c" style="opacity:.7"><b>Microsoft Store</b><span>${t("Coming soon", "Pr\xF3ximamente")}</span></div>`}<div class="c" style="opacity:.7"><b>Steam</b><span>${t("Coming soon", "Pr\xF3ximamente")}</span></div></div>
 <h2>${t("Phones", "M\xF3viles")} ${ph.version ? `<small>v${esc3(String(ph.version).replace(/^v/, "").replace(/-?beta$/i, ""))} beta</small>` : ""}</h2><div class="g">
 ${ph.apk ? row("Android", t("App (APK). Google Play soon", "App (APK). Pronto en Google Play"), ph.apk) : ""}<div class="c" style="opacity:.7"><b>iPhone</b><span>${t("Coming to the App Store", "Pronto en la App Store")}</span></div></div>
-<p class="n"><a href="/changelog">${t("What changed in each version", "Qu\xE9 cambi\xF3 en cada versi\xF3n")}</a> \xB7 <a href="/">${t("Open the web app", "Abrir la app web")}</a></p>`;
+<p class="n"><a href="/changelog">${t("What changed in each version", "Qu\xE9 cambi\xF3 en cada versi\xF3n")}</a> \xB7 <a href="${es ? "/es/precios" : "/pricing"}">${t("Pricing", "Precios")}</a> \xB7 <a href="/">${t("Open the web app", "Abrir la app web")}</a></p>`;
     return new Response(page2(body, { lang: es ? "es" : "en" }), { headers: H });
   }
   if (p === "/changelog" || p === "/changelog/phones") {
@@ -11073,13 +11076,78 @@ var TOPICS = [
         ["\xC9 gr\xE1tis?", "Sim."]
       ]
     }
+  },
+  {
+    id: "lmu-energy",
+    game: "lmu",
+    lmu: "tel",
+    en: {
+      path: "/le-mans-ultimate-virtual-energy",
+      title: "Le Mans Ultimate virtual energy per lap \xB7 Pitlane HQ",
+      desc: "See the virtual energy and fuel your Le Mans Ultimate car uses each lap, how many laps they last and which one runs out first. Free, in beta.",
+      h1: "Virtual energy and fuel per lap in Le Mans Ultimate",
+      lead: "Hypercars and LMGT3 cars race on an energy allowance as well as a tank, and the energy often runs out first. Pitlane HQ measures both on every green lap and tells you how long each lasts.",
+      secs: [
+        ["Energy used each lap", "The virtual energy a lap takes, the average of your last clean laps. Laps through the pits are left out."],
+        ["Laps left on energy and on fuel", "How many laps the energy and the tank still last, side by side in the fuel overlay."],
+        ["Which one runs out first", "The line turns amber when the energy will not reach the finish or runs out before the fuel, so you know when to save."],
+        ["Fuel to add at the stop", "From your real use per lap and the laps to go, with the safety margin you choose."],
+        ["On the phone too", "The same numbers on the phone or a tablet next to the wheel, with TC, ABS, engine map and brake bias."]
+      ],
+      faq: [
+        ["Do I have to type anything in?", "No. Everything is measured from your own laps while you drive."],
+        ["Which cars have virtual energy?", "The cars the game gives an energy allowance to. For the others only the fuel line shows."],
+        ["What do I need?", "Pitlane HQ Agent on Windows and, in the game, Settings \u2192 Gameplay \u2192 Enable Plugins turned on."],
+        ["Is it free?", "Yes. Le Mans Ultimate support is in beta and free."]
+      ]
+    },
+    es: {
+      path: "/es/energia-virtual-le-mans-ultimate",
+      title: "Energ\xEDa virtual por vuelta en Le Mans Ultimate \xB7 Pitlane HQ",
+      desc: "Mira la energ\xEDa virtual y el combustible que gasta tu coche de Le Mans Ultimate en cada vuelta, cu\xE1ntas vueltas duran y cu\xE1l se acaba antes. Gratis, en beta.",
+      h1: "Energ\xEDa virtual y combustible por vuelta en Le Mans Ultimate",
+      lead: "Los Hypercar y los LMGT3 corren con un l\xEDmite de energ\xEDa adem\xE1s del dep\xF3sito, y muchas veces se acaba antes la energ\xEDa. Pitlane HQ mide las dos en cada vuelta en verde y te dice cu\xE1nto dura cada una.",
+      secs: [
+        ["La energ\xEDa de cada vuelta", "La energ\xEDa virtual que gasta una vuelta, la media de tus \xFAltimas vueltas limpias. Las vueltas que pasan por boxes no cuentan."],
+        ["Vueltas de energ\xEDa y de combustible", "Cu\xE1ntas vueltas aguantan a\xFAn la energ\xEDa y el dep\xF3sito, una junto a otra en el overlay de combustible."],
+        ["Cu\xE1l se acaba antes", "La l\xEDnea se pone \xE1mbar cuando la energ\xEDa no llega al final o se acaba antes que el combustible, as\xED sabes cu\xE1ndo ahorrar."],
+        ["El combustible que a\xF1adir en la parada", "Con tu consumo real por vuelta y las vueltas que quedan, con el margen que elijas."],
+        ["Tambi\xE9n en el m\xF3vil", "Los mismos n\xFAmeros en el m\xF3vil o una tablet junto al volante, con TC, ABS, mapa motor y reparto de frenada."]
+      ],
+      faq: [
+        ["\xBFTengo que escribir algo?", "No. Todo se mide con tus propias vueltas mientras conduces."],
+        ["\xBFQu\xE9 coches tienen energ\xEDa virtual?", "Los coches a los que el juego da un l\xEDmite de energ\xEDa. En los dem\xE1s solo se ve la l\xEDnea del combustible."],
+        ["\xBFQu\xE9 necesito?", "Pitlane HQ Agent en Windows y, en el juego, Settings \u2192 Gameplay \u2192 Enable Plugins activado."],
+        ["\xBFEs gratis?", "S\xED. El soporte de Le Mans Ultimate est\xE1 en beta y es gratis."]
+      ]
+    },
+    pt: {
+      path: "/pt/energia-virtual-le-mans-ultimate",
+      title: "Energia virtual por volta no Le Mans Ultimate \xB7 Pitlane HQ",
+      desc: "Veja a energia virtual e o combust\xEDvel que seu carro do Le Mans Ultimate gasta em cada volta, quantas voltas duram e qual acaba antes. Gr\xE1tis, em beta.",
+      h1: "Energia virtual e combust\xEDvel por volta no Le Mans Ultimate",
+      lead: "Os Hypercars e os LMGT3 correm com um limite de energia al\xE9m do tanque, e muitas vezes a energia acaba primeiro. O Pitlane HQ mede os dois em cada volta em bandeira verde e diz quanto dura cada um.",
+      secs: [
+        ["A energia de cada volta", "A energia virtual que uma volta gasta, a m\xE9dia das suas \xFAltimas voltas limpas. As voltas que passam pelos boxes ficam de fora."],
+        ["Voltas de energia e de combust\xEDvel", "Quantas voltas a energia e o tanque ainda aguentam, lado a lado no overlay de combust\xEDvel."],
+        ["Qual acaba antes", "A linha fica \xE2mbar quando a energia n\xE3o chega ao final ou acaba antes do combust\xEDvel, assim voc\xEA sabe quando economizar."],
+        ["O combust\xEDvel a p\xF4r na parada", "Com o seu consumo real por volta e as voltas que faltam, com a margem que voc\xEA escolher."],
+        ["No celular tamb\xE9m", "Os mesmos n\xFAmeros no celular ou num tablet ao lado do volante, com TC, ABS, mapa do motor e balan\xE7o de freio."]
+      ],
+      faq: [
+        ["Preciso digitar alguma coisa?", "N\xE3o. Tudo \xE9 medido com as suas pr\xF3prias voltas enquanto voc\xEA pilota."],
+        ["Quais carros t\xEAm energia virtual?", "Os carros a que o jogo d\xE1 um limite de energia. Nos outros s\xF3 aparece a linha do combust\xEDvel."],
+        ["Do que preciso?", "Do Pitlane HQ Agent no Windows e, no jogo, de Settings \u2192 Gameplay \u2192 Enable Plugins ativado."],
+        ["\xC9 gr\xE1tis?", "Sim. O suporte ao Le Mans Ultimate est\xE1 em beta e \xE9 gr\xE1tis."]
+      ]
+    }
   }
 ];
 var GUIDES = { en: "Guides", es: "Gu\xEDas", pt: "Guias" };
 
 // src/seo.js
 var SITE5 = "https://pitlanehq.app";
-var SEO_VER = "14";
+var SEO_VER = "16";
 var SEO_DATE = "2026-11-01";
 var esc4 = /* @__PURE__ */ __name((s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]), "esc");
 var slug2 = /* @__PURE__ */ __name((s) => String(s || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 80), "slug");
@@ -11308,10 +11376,11 @@ async function readHas(env) {
 }
 __name(readHas, "readHas");
 var TOPIC_BY = Object.fromEntries(TOPICS.map((x) => [x.id, x]));
-var LMU_TOO = ["phone", "free"];
+var LMU_TOO = ["phone", "free", "shift"];
 var LMU_TOO_H = {
   phone: { en: "Telemetry on your phone", es: "La telemetr\xEDa en tu m\xF3vil", pt: "A telemetria no seu celular" },
-  free: { en: "Free telemetry", es: "Telemetr\xEDa gratis", pt: "Telemetria gr\xE1tis" }
+  free: { en: "Free telemetry", es: "Telemetr\xEDa gratis", pt: "Telemetria gr\xE1tis" },
+  shift: { en: "A shift beep", es: "Un pitido de cambio de marcha", pt: "Um bipe de troca de marcha" }
 };
 var lmuToo = /* @__PURE__ */ __name((l) => LMU_TOO.map((id2) => ({ ...TOPIC_BY[id2][l], h1: LMU_TOO_H[id2][l] })), "lmuToo");
 var lmuLinks = /* @__PURE__ */ __name((l) => [
@@ -11339,7 +11408,7 @@ ${hl}
 ${ld ? `<script type="application/ld+json">${JSON.stringify(ld).replace(/</g, "\\u003c")}<\/script>` : ""}</head><body>
 <header><div class="w"><a class="b" href="/">${LOGO}Pitlane HQ</a><nav><a href="${(game === "lmu" ? LANDL : LAND)[l].path}">${esc4(t.tel[game])}</a><a href="${(game === "lmu" ? OVLL : OVL)[l].path}">${esc4(t.ov)}</a><a href="${lg}">${esc4(t.lgs)}</a><a href="${rc}">${esc4(t.rec)}</a><a href="${(other === "lmu" ? LANDL : LAND)[l].path}">${esc4(GNAME[other])}</a><a href="/downloads">${esc4(t.dl)}</a><a href="/">${esc4(t.app)}</a>${others}</nav></div></header>
 <main class="w">${body}${path && !noindex ? whatIs(l) : ""}</main>
-<footer><div class="w"><p class="m">${esc4(GUIDES[l])} \xB7 iRacing \xB7 ${iracingLinks(l).map(([p, h]) => `<a href="${p}">${esc4(h)}</a>`).join(" \xB7 ")}</p><p class="m">${esc4(t.lmuH)} \xB7 ${lmuLinks(l).map(([p, h]) => `<a href="${p}">${esc4(h)}</a>`).join(" \xB7 ")}</p>Pitlane HQ \xB7 ${esc4(t.free)} \xB7 <a href="/downloads">${esc4(t.dl)}</a> \xB7 <a href="mailto:support@pitlanehq.app">support@pitlanehq.app</a> \xB7 ${DC ? `<a href="${esc4(DC)}" rel="noopener">Discord</a> \xB7 ` : ""}${LANGS2.map((k) => `<a href="${LAND[k].path}" hreflang="${HLANG[k]}">${NAME[k]}</a>`).join(" \xB7 ")}</div></footer>${VISIT_JS}</body></html>`;
+<footer><div class="w"><p class="m">${esc4(GUIDES[l])} \xB7 iRacing \xB7 ${iracingLinks(l).map(([p, h]) => `<a href="${p}">${esc4(h)}</a>`).join(" \xB7 ")}</p><p class="m">${esc4(t.lmuH)} \xB7 ${lmuLinks(l).map(([p, h]) => `<a href="${p}">${esc4(h)}</a>`).join(" \xB7 ")}</p>Pitlane HQ \xB7 ${esc4(t.free)} \xB7 <a href="/downloads">${esc4(t.dl)}</a> \xB7 <a href="${PRICE[l].path}">${esc4(PRICE[l].h1)}</a> \xB7 <a href="mailto:support@pitlanehq.app">support@pitlanehq.app</a> \xB7 ${DC ? `<a href="${esc4(DC)}" rel="noopener">Discord</a> \xB7 ` : ""}${LANGS2.map((k) => `<a href="${LAND[k].path}" hreflang="${HLANG[k]}">${NAME[k]}</a>`).join(" \xB7 ")}</div></footer>${VISIT_JS}</body></html>`;
 }
 __name(page3, "page");
 var WHAT = {
@@ -12115,6 +12184,95 @@ ${to ? `<p class="x">${esc4(T3[l].other[game])} <a href="${to.path}">${esc4(to.h
   return html(page3(l, { title: G.title, desc: G.desc, path: G.path, alts: topicAlts(x), body, ld, game }));
 }
 __name(topicPage, "topicPage");
+var DONATE = "https://buy.stripe.com/fZu00beDP64g0fK5LKcwg01";
+var PRICE = {
+  en: {
+    path: "/pricing",
+    title: "Pitlane HQ pricing \xB7 free during the beta",
+    h1: "Pricing",
+    desc: "Pitlane HQ is free while it is in beta, Pro included. After the beta Pro costs $6 a month or $59 a year, and whoever supports Pitlane HQ during the beta keeps Pro at half price.",
+    lead: "Every feature is free for everyone while Pitlane HQ is in beta. Pro arrives when the beta ends.",
+    free: ["Free", "$0", "forever", ["Every lap recorded and your own lap analysis", "Every standard overlay, in VR too", "Sync with your whole history on PC, web and phone", "Live telemetry on your phone", "Leaderboards, records and leagues", "The Discord bot with every command"]],
+    pro: ["Pro", "$0", "during the beta", ["Everything in Free", "The full coach with its plan on the track map", "Compare with friends, rivals and the fastest laps", "Race fuel, corner consistency and offs explained", "The experimental overlays"]],
+    after: "After the beta $6 a month or $59 a year.",
+    tag: "Free in beta",
+    supH: "Support the beta and pay half, forever",
+    sup: ["Pro at 50% for as long as you keep it, $3 a month or $29.50 a year", "Stop paying and you keep the 50% if you come back within two months", "The chance to buy Pro for life for $29.99 within two months of the beta ending", "Any amount counts, from $1"],
+    donate: "Support Pitlane HQ",
+    start: "Download for Windows",
+    faqT: "Questions",
+    faq: [
+      ["Is Pitlane HQ free?", "Yes. Everything is free while Pitlane HQ is in beta, Pro included. The Free plan stays free after the beta."],
+      ["How much will Pro cost?", "$6 a month or $59 a year once the beta ends."],
+      ["What do supporters get?", "Anyone who supports Pitlane HQ during the beta keeps Pro at half price for as long as they keep it, $3 a month or $29.50 a year, and can buy Pro for life for $29.99 within two months of the beta ending."],
+      ["What if I stop paying?", "Come back within two months and you keep the half price."],
+      ["Is sync free?", "Yes. Sync with your whole lap history on the PC, the web and the phone is always free."]
+    ]
+  },
+  es: {
+    path: "/es/precios",
+    title: "Precios de Pitlane HQ \xB7 gratis durante la beta",
+    h1: "Precios",
+    desc: "Pitlane HQ es gratis mientras est\xE1 en beta, Pro incluido. Despu\xE9s de la beta Pro cuesta $6 al mes o $59 al a\xF1o, y quien apoye Pitlane HQ durante la beta mantiene Pro a mitad de precio.",
+    lead: "Todas las funciones son gratis para todos mientras Pitlane HQ est\xE1 en beta. Pro llega cuando termine la beta.",
+    free: ["Free", "$0", "para siempre", ["Cada vuelta grabada y el an\xE1lisis de tus vueltas", "Todos los overlays est\xE1ndar, tambi\xE9n en VR", "Sincronizaci\xF3n con todo tu historial en PC, web y m\xF3vil", "Telemetr\xEDa en vivo en el m\xF3vil", "Clasificaciones, r\xE9cords y ligas", "El bot de Discord con todos los comandos"]],
+    pro: ["Pro", "$0", "durante la beta", ["Todo lo de Free", "El coach completo con su plan en el mapa", "Compara con amigos, rivales y las vueltas m\xE1s r\xE1pidas", "Combustible de carrera, constancia por curva y salidas explicadas", "Los overlays experimentales"]],
+    after: "Despu\xE9s de la beta $6 al mes o $59 al a\xF1o.",
+    tag: "Gratis en beta",
+    supH: "Apoya la beta y paga la mitad, para siempre",
+    sup: ["Pro al 50% mientras lo mantengas, $3 al mes o $29,50 al a\xF1o", "Si dejas de pagar, conservas el 50% si vuelves en menos de dos meses", "La opci\xF3n de comprar Pro de por vida por $29,99 en los dos meses tras el final de la beta", "Cualquier cantidad cuenta, desde $1"],
+    donate: "Apoya Pitlane HQ",
+    start: "Descargar para Windows",
+    faqT: "Preguntas",
+    faq: [
+      ["\xBFPitlane HQ es gratis?", "S\xED. Todo es gratis mientras Pitlane HQ est\xE1 en beta, Pro incluido. El plan Free sigue gratis despu\xE9s de la beta."],
+      ["\xBFCu\xE1nto costar\xE1 Pro?", "$6 al mes o $59 al a\xF1o cuando termine la beta."],
+      ["\xBFQu\xE9 reciben los supporters?", "Quien apoye Pitlane HQ durante la beta mantiene Pro a mitad de precio mientras lo tenga, $3 al mes o $29,50 al a\xF1o, y puede comprar Pro de por vida por $29,99 en los dos meses tras el final de la beta."],
+      ["\xBFY si dejo de pagar?", "Vuelve en menos de dos meses y conservas la mitad de precio."],
+      ["\xBFLa sincronizaci\xF3n es gratis?", "S\xED. La sincronizaci\xF3n con todo tu historial de vueltas en el PC, la web y el m\xF3vil es siempre gratis."]
+    ]
+  },
+  pt: {
+    path: "/pt/precos",
+    title: "Pre\xE7os do Pitlane HQ \xB7 gr\xE1tis durante o beta",
+    h1: "Pre\xE7os",
+    desc: "O Pitlane HQ \xE9 gr\xE1tis enquanto est\xE1 em beta, Pro inclu\xEDdo. Depois do beta o Pro custa $6 por m\xEAs ou $59 por ano, e quem apoiar o Pitlane HQ durante o beta mant\xE9m o Pro pela metade do pre\xE7o.",
+    lead: "Todos os recursos s\xE3o gr\xE1tis para todos enquanto o Pitlane HQ est\xE1 em beta. O Pro chega quando o beta terminar.",
+    free: ["Free", "$0", "para sempre", ["Cada volta gravada e a an\xE1lise das suas voltas", "Todos os overlays padr\xE3o, tamb\xE9m em VR", "Sincroniza\xE7\xE3o com todo o seu hist\xF3rico no PC, web e celular", "Telemetria ao vivo no celular", "Classifica\xE7\xF5es, recordes e ligas", "O bot do Discord com todos os comandos"]],
+    pro: ["Pro", "$0", "durante o beta", ["Tudo do Free", "O coach completo com o plano no mapa", "Compare com amigos, rivais e as voltas mais r\xE1pidas", "Combust\xEDvel de corrida, consist\xEAncia por curva e sa\xEDdas explicadas", "Os overlays experimentais"]],
+    after: "Depois do beta $6 por m\xEAs ou $59 por ano.",
+    tag: "Gr\xE1tis no beta",
+    supH: "Apoie o beta e pague metade, para sempre",
+    sup: ["Pro com 50% enquanto voc\xEA mantiver, $3 por m\xEAs ou $29,50 por ano", "Se parar de pagar, voc\xEA mant\xE9m os 50% se voltar em at\xE9 dois meses", "A chance de comprar Pro vital\xEDcio por $29,99 nos dois meses depois do fim do beta", "Qualquer valor conta, a partir de $1"],
+    donate: "Apoie o Pitlane HQ",
+    start: "Baixar para Windows",
+    faqT: "Perguntas",
+    faq: [
+      ["O Pitlane HQ \xE9 gr\xE1tis?", "Sim. Tudo \xE9 gr\xE1tis enquanto o Pitlane HQ est\xE1 em beta, Pro inclu\xEDdo. O plano Free continua gr\xE1tis depois do beta."],
+      ["Quanto vai custar o Pro?", "$6 por m\xEAs ou $59 por ano quando o beta terminar."],
+      ["O que os apoiadores ganham?", "Quem apoiar o Pitlane HQ durante o beta mant\xE9m o Pro pela metade do pre\xE7o enquanto tiver, $3 por m\xEAs ou $29,50 por ano, e pode comprar o Pro vital\xEDcio por $29,99 nos dois meses depois do fim do beta."],
+      ["E se eu parar de pagar?", "Volte em at\xE9 dois meses e voc\xEA mant\xE9m a metade do pre\xE7o."],
+      ["A sincroniza\xE7\xE3o \xE9 gr\xE1tis?", "Sim. A sincroniza\xE7\xE3o com todo o seu hist\xF3rico de voltas no PC, na web e no celular \xE9 sempre gr\xE1tis."]
+    ]
+  }
+};
+var PRICE_ALTS = altsOf(PRICE);
+var PR_CSS = `<style>.pz{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px;margin-top:22px}.pz .c{display:flex;flex-direction:column;gap:12px}
+.pz .pro{border-color:#ffb02e88}.pz h2{margin:0;font-size:28px;display:flex;justify-content:space-between;align-items:center;gap:8px}.tg{font:600 11px 'IBM Plex Sans',sans-serif;letter-spacing:.04em;text-transform:uppercase;background:var(--acc);color:#11151b;border-radius:5px;padding:3px 8px}
+.pp{font:500 40px/1 'JetBrains Mono',ui-monospace,monospace}.pp small{font:14px 'IBM Plex Sans',sans-serif;color:var(--mut);margin-left:8px}
+.ck{list-style:none;margin:0;padding:0}.ck li{padding-left:24px;position:relative;margin:6px 0;color:#c9d1dc}.ck li::before{content:"\u2713";position:absolute;left:0;color:var(--acc);font-weight:700}
+.af{margin:0;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--bg)}.sp{margin-top:14px;border-style:dashed;border-color:#ffb02e88}.sp h2{margin:0 0 8px}</style>`;
+function pricingPage(l) {
+  const P2 = PRICE[l], L = LAND[l];
+  const card = /* @__PURE__ */ __name(([name2, price, per, list], cls, extra) => `<section class="c${cls}"><h2>${esc4(name2)}${cls ? `<span class="tg">${esc4(P2.tag)}</span>` : ""}</h2><div class="pp">${esc4(price)}<small>${esc4(per)}</small></div><ul class="ck">${list.map((x) => `<li>${esc4(x)}</li>`).join("")}</ul>${extra}</section>`, "card");
+  const body = `${PR_CSS}<h1>${esc4(P2.h1)}</h1><p class="lead">${esc4(P2.lead)}</p>
+<div class="pz">${card(P2.free, "", `<a class="btn p" href="/dl/PitlaneHQ-Setup.exe">${esc4(P2.start)}</a>`)}${card(P2.pro, " pro", `<p class="af">${esc4(P2.after)}</p>`)}</div>
+<section class="c sp"><h2>${esc4(P2.supH)}</h2><ul class="ck">${P2.sup.map((x) => `<li>${esc4(x)}</li>`).join("")}</ul><div class="cta" style="margin:14px 0 0"><a class="btn p" href="${DONATE}" rel="noopener">${esc4(P2.donate)}</a><a class="btn" href="/">${esc4(L.app)}</a></div></section>
+<h2>${esc4(P2.faqT)}</h2>${P2.faq.map(([q2, a]) => `<details open><summary>${esc4(q2)}</summary><p>${esc4(a)}</p></details>`).join("")}`;
+  const ld = [crumbs([["Pitlane HQ", LAND[l].path], [P2.h1, P2.path]]), faqLd(P2.faq)];
+  return html(page3(l, { title: P2.title, desc: P2.desc, path: P2.path, alts: PRICE_ALTS, body, ld }));
+}
+__name(pricingPage, "pricingPage");
 var PAGES = [
   { alts: LAND_ALTS, draw: /* @__PURE__ */ __name((env, l) => landing(env, l, "iracing"), "draw"), alias: { en: ["/telemetry"], es: ["/es/telemetria", "/es"], pt: ["/pt/telemetria", "/pt", "/pt-br"] } },
   { alts: LANDL_ALTS, draw: /* @__PURE__ */ __name((env, l) => landing(env, l, "lmu"), "draw"), alias: { en: ["/lmu-telemetry", "/le-mans-ultimate", "/lmu"], es: ["/es/telemetria-lmu", "/es/le-mans-ultimate", "/es/lmu"], pt: ["/pt/telemetria-lmu", "/pt/le-mans-ultimate", "/pt/lmu"] } },
@@ -12124,6 +12282,7 @@ var PAGES = [
   { alts: LEAGL_ALTS, draw: /* @__PURE__ */ __name((env, l) => leaguesPage(env, l, "", "lmu"), "draw"), alias: { en: ["/lmu-leagues"], es: ["/es/ligas-lmu"], pt: ["/pt/ligas-lmu"] } },
   { alts: REC_IDX.iracing, draw: /* @__PURE__ */ __name((env, l, cat) => recordsIndex(env, l, cat, "iracing"), "draw"), alias: {} },
   { alts: REC_IDX.lmu, draw: /* @__PURE__ */ __name((env, l, cat) => recordsIndex(env, l, cat, "lmu"), "draw"), alias: { en: ["/lmu-records"], es: ["/es/records-lmu"], pt: ["/pt/recordes-lmu"] } },
+  { alts: PRICE_ALTS, draw: /* @__PURE__ */ __name((env, l) => pricingPage(l), "draw"), alias: { en: ["/prices", "/pro"], es: ["/es/pricing", "/es/pro"], pt: ["/pt/precos-pro", "/pt/pro", "/pt/pricing"] } },
   ...TOPICS.map((x) => ({ alts: topicAlts(x), draw: /* @__PURE__ */ __name((env, l) => topicPage(x, l), "draw"), alias: x.id === "lmu-coach" ? { en: ["/lmu-coach"], es: ["/es/coach-lmu"], pt: ["/pt/coach-lmu"] } : {} }))
 ];
 var AT = /* @__PURE__ */ new Map();
@@ -12131,7 +12290,7 @@ for (const pg of PAGES) for (const l of LANGS2) {
   AT.set(pg.alts[l], [pg, l, pg.alts[l]]);
   for (const a of pg.alias[l] || []) AT.set(a, [pg, l, pg.alts[l]]);
 }
-var STATIC_ALTS = [LAND_ALTS, LANDL_ALTS, OVL_ALTS, OVLL_ALTS, ...TOPICS.map(topicAlts)];
+var STATIC_ALTS = [LAND_ALTS, LANDL_ALTS, OVL_ALTS, OVLL_ALTS, PRICE_ALTS, ...TOPICS.map(topicAlts)];
 async function sitemap(env) {
   const [combos2, lmuCombos, D, DL] = await Promise.all([topCombos(env, 2e3), topCombos(env, 2e3, "lmu"), leaguesData(env), leaguesData(env, "lmu")]);
   const u = /* @__PURE__ */ __name((p, f, pr, alts, mod) => `<url><loc>${SITE5}${p}</loc>${mod ? `<lastmod>${mod}</lastmod>` : ""}<changefreq>${f}</changefreq><priority>${pr}</priority>${alts ? LANGS2.map((k) => `<xhtml:link rel="alternate" hreflang="${HLANG[k]}" href="${SITE5}${alts[k]}"/>`).join("") + `<xhtml:link rel="alternate" hreflang="x-default" href="${SITE5}${alts.en}"/>` : ""}</url>`, "u");
@@ -12144,6 +12303,7 @@ async function sitemap(env) {
   all(LANDL_ALTS, "weekly", 0.9, newest(lmuCombos));
   all(OVL_ALTS, "monthly", 0.8, SEO_DATE);
   all(OVLL_ALTS, "monthly", 0.8, SEO_DATE);
+  all(PRICE_ALTS, "monthly", 0.7, SEO_DATE);
   for (const x of TOPICS) all(topicAlts(x), "monthly", 0.8, SEO_DATE);
   const lgDay = /* @__PURE__ */ __name((d) => later2(SEO_DATE, day(d.updated)), "lgDay");
   all(LEAG_ALTS, "daily", 0.8, lgDay(D));
@@ -12267,7 +12427,7 @@ ${lm.map(mdLink).join("\n")}
 
 ## Download
 
-${[["/downloads", "Download Pitlane HQ", "Pitlane HQ Agent for Windows and the Android app"], ["/changelog", "What's new", "the release notes of every version"]].map(mdLink).join("\n")}
+${[["/downloads", "Download Pitlane HQ", "Pitlane HQ Agent for Windows and the Android app"], ["/changelog", "What's new", "the release notes of every version"], ["/pricing", "Pricing", "free during the beta, Pro and its price after it, and the supporters' offer"]].map(mdLink).join("\n")}
 
 ## Optional
 

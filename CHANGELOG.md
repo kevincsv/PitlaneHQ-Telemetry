@@ -4,6 +4,15 @@ Pitlane HQ is in **beta**. Pitlane HQ Agent (the PC app), the web app and the ph
 number, `0.MINOR.PATCH`. A MINOR version brings a set of new features, and fixes go in as "Fixes and
 improvements". 1.0.0 comes when the beta ends. Newest first.
 
+## 0.9.12 beta
+
+- Le Mans Ultimate shows the virtual energy you use per lap and how many laps it lasts.
+- Live on the phones shows the car's electronics and Le Mans Ultimate's virtual energy.
+- Supporters get a founding supporter line on their profile, and the help button has Donate under Chat with support.
+- A Pricing page shows what Pitlane HQ Pro will cost after the beta. Everything stays free during the beta.
+- The Discord bot works with Le Mans Ultimate in /record, /coach, /board, /track, /compare and the weekly post.
+- Fixes and improvements.
+
 ## 0.9.11 beta
 
 - Testers get each new version first, and it reaches everyone once it has been tested.

@@ -1,6 +1,12 @@
 {
   "versions": [
     {
+      "v": "0.9.12",
+      "en": ["Le Mans Ultimate shows the virtual energy you use per lap and how many laps it lasts.", "Live on the phones shows the car's electronics and Le Mans Ultimate's virtual energy.", "Supporters get a founding supporter line on their profile, and the help button has Donate under Chat with support.", "A Pricing page shows what Pitlane HQ Pro will cost after the beta. Everything stays free during the beta.", "The Discord bot works with Le Mans Ultimate in /record, /coach, /board, /track, /compare and the weekly post.", "Fixes and improvements."],
+      "es": ["Le Mans Ultimate muestra la energía virtual que usas por vuelta y cuántas vueltas te dura.", "Live en los móviles muestra la electrónica del coche y la energía virtual de Le Mans Ultimate.", "Los supporters tienen una línea de supporter fundador en su perfil, y el botón de ayuda tiene Donar debajo de Chat con soporte.", "Una página de Precios muestra lo que costará Pitlane HQ Pro después de la beta. Todo sigue gratis durante la beta.", "El bot de Discord funciona con Le Mans Ultimate en /record, /coach, /board, /track, /compare y el post semanal.", "Arreglos y mejoras."],
+      "pt": ["O Le Mans Ultimate mostra a energia virtual que você usa por volta e quantas voltas ela dura.", "O Live nos celulares mostra a eletrônica do carro e a energia virtual do Le Mans Ultimate.", "Os apoiadores têm uma linha de apoiador fundador no perfil, e o botão de ajuda tem Doar abaixo de Chat com o suporte.", "Uma página de Preços mostra quanto o Pitlane HQ Pro vai custar depois da beta. Tudo continua grátis durante a beta.", "O bot do Discord funciona com o Le Mans Ultimate em /record, /coach, /board, /track, /compare e no post semanal.", "Correções e melhorias."]
+    },
+    {
       "v": "0.9.11",
       "en": ["Testers get each new version first, and it reaches everyone once it has been tested.", "The Pitlane HQ folder on your PC is tidier, with the window as a single file.", "The Discord bot posts Le Mans Ultimate laps in its alerts too.", "Fixes and improvements."],
       "es": ["Los testers reciben cada versión nueva primero, y llega a todos cuando ya se ha probado.", "La carpeta de Pitlane HQ en tu PC está más ordenada, con la ventana en un solo archivo.", "El bot de Discord también publica las vueltas de Le Mans Ultimate en sus avisos.", "Arreglos y mejoras."],

@@ -327,7 +327,7 @@
   },
   {
    "n": 2,
-   "valid": false,
+   "valid": true,
    "time": 82.979,
    "points": 840,
    "sectors": [
@@ -816,69 +816,72 @@
   {
    "n": 1,
    "valid": false,
-   "time": 0,
-   "points": 0,
+   "time": 14,
+   "points": 5076,
    "health": {
-    "gap": 0,
-    "seen": 0,
-    "hz": 0
+    "gap": 25075,
+    "seen": 0.012,
+    "hz": 60
    },
+   "flags": [
+    "cold"
+   ],
    "path": false,
-   "hash": "no lap"
+   "hash": "1f87d9a4c4ad"
   },
   {
    "n": 2,
    "valid": true,
    "time": 380.515,
-   "points": 4001,
+   "points": 5076,
    "sectors": [
-    100.515,
-    100.553,
-    179.446
+    126.356,
+    127.17,
+    126.989
    ],
    "health": {
     "gap": 0,
     "seen": 1,
     "hz": 60
    },
-   "path": false,
-   "hash": "58dd97ed384a"
+   "path": true,
+   "hash": "e2b2803cb8f2"
   },
   {
    "n": 3,
    "valid": true,
    "time": 382.413,
-   "points": 4001,
+   "points": 5076,
    "sectors": [
-    101.013,
-    101.117,
-    180.284
+    126.983,
+    127.798,
+    127.632
    ],
    "health": {
     "gap": 0,
     "seen": 1,
     "hz": 60
    },
-   "path": false,
-   "hash": "fbf682db24ef"
+   "path": true,
+   "hash": "df4f8a3c6c7a"
   },
   {
    "n": 4,
    "valid": true,
    "time": 382.425,
-   "points": 4001,
+   "points": 5076,
    "sectors": [
-    101.002,
-    101.122,
-    180.301
+    126.997,
+    127.791,
+    127.638
    ],
    "health": {
     "gap": 0,
     "seen": 1,
     "hz": 60
    },
-   "path": false,
-   "hash": "16358238a74a"
+   "path": true,
+   "hash": "ee1431f7d3f8"
   }
  ]
 }

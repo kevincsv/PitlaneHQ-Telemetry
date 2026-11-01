@@ -20,7 +20,7 @@ import (
 
 const fieldBin = 10.0 // metres
 
-// fieldOffTime: a third of a second off the track makes a rival's lap not valid, as offTrackSamples does for your own
+// fieldOffTime: a third of a second off the track makes a rival's lap not valid, as offTrackSec does for your own
 // laps; counted in the game's time, so it means the same whether the game updates the car 60 or 5 times a second
 const fieldOffTime = 1.0 / 3
 

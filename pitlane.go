@@ -30,7 +30,7 @@ type pitLap struct {
 // markPit: this point of the lap (and the ones since the last pit-road point, when close) is on the pit road
 func (r *lapRec) markPit(d float64) {
 	b := int(d / lapBin)
-	if b < 0 || b > 4000 {
+	if b < 0 || b > lapMaxBins {
 		return
 	}
 	for len(r.pitB) <= b {

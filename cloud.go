@@ -544,13 +544,17 @@ const lapBin = 5 // metres
 // lapHoleM: more than this many metres of a lap with no telemetry is lost connection, and the lap is not valid
 const lapHoleM = 40
 
+// lapMaxBins: the most 5 m points a lap keeps, 30 km: the Nürburgring's combined layout (25.4 km) and the Nordschleife
+// alone (20.8 km) fit; with 4000 (20 km) their laps lost their last kilometres, and their sectors and path with them
+const lapMaxBins = 6000
+
 type lapRec struct {
 	n                    int
 	bins                 [][6]float64 // speed, throttle, brake, gear, steering, lap time at the 5 m point
 	fuel0, vmax          float64
 	inc0                 float64
 	pit, bad             bool
-	off                  int // samples with the car off the track (cutting a corner)
+	offS                 float64 // seconds with the car off the track (cutting a corner), by the game's clock
 	hasLast              bool
 	lastD, lastT, lastSp float64
 	// where the car was at every 5 m point: from the game's position (Lat/Lon, exact, geo set) or, without it, from
@@ -705,7 +709,7 @@ func (r *lapRec) add(d, t, speed float64, ch [4]float64) {
 		r.hasLast = false
 	}
 	b := int(d / lapBin)
-	if b > 4000 {
+	if b > lapMaxBins {
 		return
 	}
 	for len(r.bins) <= b {
@@ -762,14 +766,15 @@ type lapStream struct {
 	lastLL           float64 // LapLastLapTime one sample before, to tell when iRacing updates it
 	lastST           float64 // SessionTime one sample before
 	trackM           float64 // the track's length as the samples say it (LapDist / LapDistPct), 0 while unknown
-	tick             int
+	trafAt           float64 // the session time traffic was last looked at (twice a second)
+	placeAt          float64 // the session time the game's live place was last read (once a second)
+	placeOn          bool    // placeAt was set in this session
 	// the session's place (sessionplace.go): the YAML of its event as last seen, the game's live place of the player
 	// (sampled once a second), the laps that ended in it and the place they carried
 	sessY            string
 	livePos, liveCls int
 	sessLaps         int
 	sentPlace        sessPlace
-	placeTick        int
 }
 
 // drivable: the car could have driven from the lap's last sample to here (pct, forward along the lap and over the
@@ -859,8 +864,11 @@ func (ls *lapStream) step(v []float64) {
 		ls.sess = env.meta(y, sn)
 		ls.sess.AirTemp, ls.sess.TrackTemp = v[15], v[16]
 		ls.sessY, ls.livePos, ls.liveCls, ls.sentPlace = y, 0, 0, sessPlace{}
+		ls.placeOn, ls.trafAt = false, 0
 	}
-	if ls.placeTick++; ls.placeTick%30 == 1 { // the game's live place, once a second (in the pits too)
+	// the game's live place, once a second by the session's clock (in the pits too), whatever rate the frames come at
+	if st := v[14]; !ls.placeOn || st-ls.placeAt >= 1 || st < ls.placeAt {
+		ls.placeOn, ls.placeAt = true, st
 		if p, c := env.livePlace(); p > 0 {
 			ls.livePos, ls.liveCls = p, c
 		}
@@ -914,8 +922,9 @@ func (ls *lapStream) step(v []float64) {
 	}
 	ls.cur = cur
 	cur.noteDriver(now, env.driver)
-	// twice a second: a car within one second ahead (by its place on the lap) is traffic
-	if ls.tick++; ls.tick%15 == 0 && speed > 5 && pct > 0.02 && dist > 0 {
+	// twice a second by the session's clock: a car within one second ahead (by its place on the lap) is traffic
+	if st := v[14]; (st-ls.trafAt >= 0.5 || st < ls.trafAt) && speed > 5 && pct > 0.02 && dist > 0 {
+		ls.trafAt = st
 		if near, ok := env.carsAhead(dist, pct, speed, int(v[25])); ok {
 			cur.trafficS++
 			if near {
@@ -967,6 +976,15 @@ func (ls *lapStream) step(v []float64) {
 		lt = v[14] - cur.st0
 	}
 	cur.add(dist, lt, speed, [4]float64{v[4], v[5], v[6], v[7]})
+	// how long since the sample before, by the session's clock: what the time off the track adds up (the game sends 60
+	// frames a second, a telemetry file read at 30, Le Mans Ultimate its own rate); a first sample or a jump counts as
+	// one frame at 60
+	dt := 1.0 / 60
+	if cur.samples > 0 {
+		if g := v[14] - cur.lastS; g > 0 && g <= 0.1 {
+			dt = g
+		}
+	}
 	if cur.samples == 0 {
 		cur.firstS = v[14]
 		cur.startS = v[14] - lt
@@ -1022,7 +1040,7 @@ func (ls *lapStream) step(v []float64) {
 	// painted run-off or a concrete apron: with the material under the car known, only grass, dirt, sand and gravel
 	// count (without it, every sample off the track does, as before)
 	if v[18] == 0 && env.has("PlayerTrackSurface") && !(hasMat && pavedMaterial(int(v[28]))) {
-		if cur.off++; cur.off >= offTrackSamples {
+		if cur.offS += dt; cur.offS >= offTrackSec {
 			cur.bad = true
 		}
 	}
@@ -1280,7 +1298,7 @@ func fullLap(seen, bins int) bool { return bins > 0 && float64(seen) >= 0.9*floa
 // whole circuit). A Loss of Control or a Car Contact counts only when it takes the car off the track; a lap through the
 // pit lane is valid.
 func (r *lapRec) invalid() bool {
-	return r.bad || r.off >= offTrackSamples
+	return r.bad || r.offS >= offTrackSec
 }
 
 func finishLap(r *lapRec, s cloudSession, fuelNow, lt float64) {
@@ -1490,8 +1508,9 @@ func (r *lapRec) shape(maxGap int) ([]float64, []float64) {
 	return x, y
 }
 
-// offTrackSamples: a third of a second off the track (at 30 samples a second) makes the lap invalid.
-const offTrackSamples = 10
+// offTrackSec: a third of a second off the track makes the lap invalid, at whatever rate the samples come (ten at 30 a
+// second, twenty at 60); a little under a third so ten samples 1/30 s apart always reach it
+const offTrackSec = 0.32
 
 // which laps were cut (left the track), measured once here at 30 Hz and read by the race report, so
 // the report, the lap analyzer and sharing always agree

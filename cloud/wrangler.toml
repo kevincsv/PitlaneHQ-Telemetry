@@ -47,7 +47,7 @@ TESTERS = "88407bb0034daced71a27d3f,210b905aaa95b846b8b0bcfd"
 
 # the invite of the Pitlane HQ community server on Discord (one that never expires): the public pages, llms.txt and the
 # JSON-LD name it only while it is set
-DISCORD_INVITE = ""
+DISCORD_INVITE = "https://discord.gg/BaMF3gaSg7"
 
 # the full app (web/dist) is served at /app/ by the worker
 [assets]

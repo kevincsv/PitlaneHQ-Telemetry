@@ -124,3 +124,10 @@ Testers are the Tester level (`isTester`, given in Admin → Users or in `TESTER
   a phone is never offered a lower build (`Updates.pick`). Google Play installs keep Play's updates (internal testing
   track later). iOS: TestFlight once the Apple developer account exists; until then nothing changes there.
 - The Microsoft Store package and Steam: their own flights and beta branch once they are listed.
+
+## The web app offline
+
+- On pitlanehq.app (and beta.), never on the PC app or in a frame, the page registers `web/dist/sw.js` (served from the
+  root, `isAppFile` in worker.js). It keeps the app's own files (the page, `pitwall-*.js`, fonts, icons, the two news
+  files) and asks the server first every time; when the answer takes over 3 s or the network is gone, the kept copy
+  answers. Account, sync, community and live answers are never kept by it. A new `CACHE` name drops the old copies.

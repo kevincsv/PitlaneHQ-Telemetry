@@ -4,6 +4,18 @@ Pitlane HQ is in **beta**. Pitlane HQ Agent (the PC app), the web app and the ph
 number, `0.MINOR.PATCH`. A MINOR version brings a set of new features, and fixes go in as "Fixes and
 improvements". 1.0.0 comes when the beta ends. Newest first.
 
+## 0.9.6 beta
+
+- The track guide shows where the fast drivers brake, their gear and their speed in every corner.
+- On your first laps of a track, the coach overlay calls the guide's braking points.
+- The coach checks the plan from your last session and says how much time you still lose there.
+- Each corner shows how your time ranks against every driver, with your strengths and weaknesses.
+- The coach tells you when you leave track unused on the exit of a corner.
+- Race pace shows the average lap and the gap of the cars around you in the race.
+- Lap compare has a replay where both laps drive together on the map.
+- A lap with a hole in its recording is repaired from the iRacing .ibt file.
+- Fixes and improvements.
+
 ## 0.9.5 beta
 
 - The coach's plan marks each point it talks about on the track map. Press a step to see where you brake, where the reference brakes and the corner.

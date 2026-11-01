@@ -933,9 +933,219 @@
     return opts && opts.json ? JSON.stringify(out) : out;
   }
 
+  /* ---------- beyond one lap: each corner lap after lap, the offs, more charts and the race fuel ---------- */
+  const meanOf = (a) => a.reduce((p, v) => p + v, 0) / a.length;
+  const sdOf = (a) => { const m = meanOf(a); return Math.sqrt(a.reduce((p, v) => p + (v - m) * (v - m), 0) / a.length); };
+  const r3 = (x) => Math.round(x * 1000) / 1000, r1 = (x) => Math.round(x * 10) / 10;
+  /* the laps that say how you drive: valid, with their points, not through the pits and not a DRINKS friend's */
+  const cleanLaps = (laps) => (laps || []).filter((l) => l && l.valid !== false && !l.pit && !l.drv && l.time > 0 && Array.isArray(l.bins) && l.bins.length > 20);
+  /* how much the lap times spread: the valid laps within 3 % of the best (a lap in traffic or a slow one left out), at
+     least five, the same as the server keeps on each session (sessions.cons, the "Most consistent session"):
+     {sd, n, avg, best} or null */
+  function lapSpread(laps) {
+    const ts = (laps || []).filter((l) => l && l.valid !== false && !l.drv && l.time > 0).map((l) => l.time);
+    if (!ts.length) return null;
+    const best = Math.min(...ts), c = ts.filter((t) => t <= best * 1.03);
+    return c.length < 5 ? null : { sd: r3(sdOf(c)), n: c.length, avg: r3(meanOf(c)), best: r3(best) };
+  }
+  /* every corner of the session lap after lap: the time from just before its braking point to 150 m after its slowest
+     point on each clean lap (the corners found on the session's best lap), how much it changes (sd), its best, average
+     and worst, the time lost on average against your best there (cost) and how much the slowest speed changes (vsd, in
+     ctx's units). The corners that cost the most come first. {rows: [{n, d, apex, sd, best, avg, worst, cost, vsd, laps,
+     text}], laps} or null with fewer than three clean laps */
+  function cornerSpread(laps, ctx) {
+    const Tx = txOf(ctx), U = unitsOf(ctx), L = cleanLaps(laps);
+    if (L.length < 3) return null;
+    const ref = L.reduce((a, l) => (l.time < a.time ? l : a)), sb = serOf(ref), n = sb.length, turns = turnsOf(ctx);
+    const zs = cornerZones(sb, n, turns, ctx && ctx.oval);
+    const rows = [];
+    zs.forEach((z, k) => {
+      const i0 = Math.max(0, z.i - 10), i1 = Math.min(n - 1, z.imin + 30), ts = [], vs = [];
+      L.forEach((l) => {
+        const s = serOf(l);
+        if (!s[i0] || !s[i1]) return;
+        const t = s[i1][1] - s[i0][1];
+        if (!(t > 0 && t < 60)) return;
+        ts.push(t);
+        let vm = Infinity;
+        for (let i = z.i; i <= Math.min(s.length - 1, z.imin + 10); i++) if (s[i] && s[i][0] < vm) vm = s[i][0];
+        if (isFinite(vm)) vs.push(U.spd(vm));
+      });
+      if (ts.length < 3) return;
+      const best = Math.min(...ts), avg = meanOf(ts), sd = sdOf(ts), cost = avg - best, num = z.turn != null ? z.turn + 1 : turnNo(turns, z.imin * BIN, n * BIN, k + 1);
+      rows.push({ n: num, d: z.i * BIN, apex: z.imin * BIN, sd: r3(sd), best: r3(best), avg: r3(avg), worst: r3(Math.max(...ts)), cost: r3(cost), vsd: vs.length >= 3 ? r1(sdOf(vs)) : null, laps: ts.length,
+        text: Tx(`T${num} changes ±${sd.toFixed(2)} s from lap to lap and costs you ${cost.toFixed(2)} s a lap on average against your best there`,
+          `T${num} cambia ±${sd.toFixed(2)} s de una vuelta a otra y te cuesta ${cost.toFixed(2)} s por vuelta de media frente a tu mejor paso por ella`,
+          `T${num} muda ±${sd.toFixed(2)} s de uma volta para outra e custa ${cost.toFixed(2)} s por volta em média contra sua melhor passagem nela`) });
+    });
+    rows.sort((a, b) => b.cost - a.cost);
+    return { rows, laps: L.length, unit: U.spdU() };
+  }
+
+  /* ---------- offs explained ---------- */
+  /* every Off Track and Loss of Control of the session on the lap it happened, with what that lap did just before it
+     against your best clean lap of the session there: braked harder than ever there (a lock-up), braked later, too fast
+     at turn-in or on the throttle early; when none of them stands out, the line took you off.
+     [{lap, d, k, pts, n, why, v, text}]; why "lock", "late", "fast", "throttle" or "line" */
+  function offsExplained(laps, ctx) {
+    const Tx = txOf(ctx), U = unitsOf(ctx), turns = turnsOf(ctx), all = (laps || []).filter((l) => l && Array.isArray(l.bins) && l.bins.length > 20), clean = cleanLaps(all), out = [];
+    all.forEach((L) => {
+      const a = L.incAt || [], ks = L.incK || [];
+      for (let i = 0; i + 1 < a.length; i += 2) {
+        const pts = a[i + 1], k = ks[i / 2] || (pts >= 4 ? "contact" : pts >= 2 ? "loss" : "off");
+        if (k !== "off" && k !== "loss") continue;
+        const R = clean.filter((x) => x !== L).reduce((p, x) => (!p || x.time < p.time ? x : p), null);
+        if (!R) continue;
+        const o = offWhy(L, R, a[i], ctx);
+        const n = o.n || turnNo(turns, a[i], serOf(R).length * BIN, 0);
+        const at = n ? `T${n}` : `${Math.round(a[i])} m`, v = o.v, sp = (x) => Math.round(x) + " " + U.spdU();
+        const text = o.why === "lock" ? Tx(`${at} · lock-up. You braked harder than on your best lap there (${Math.round(v * 100)} % against ${Math.round(o.r * 100)} %)`, `${at} · bloqueo. Frenaste más fuerte que en tu mejor vuelta ahí (${Math.round(v * 100)} % frente a ${Math.round(o.r * 100)} %)`, `${at} · travamento. Você freou mais forte que na sua melhor volta ali (${Math.round(v * 100)} % contra ${Math.round(o.r * 100)} %)`)
+          : o.why === "late" ? Tx(`${at} · braked ${Math.round(v)} m later than on your best lap`, `${at} · frenaste ${Math.round(v)} m más tarde que en tu mejor vuelta`, `${at} · freou ${Math.round(v)} m mais tarde que na sua melhor volta`)
+          : o.why === "fast" ? Tx(`${at} · too fast at turn-in, ${sp(v)} more than on your best lap`, `${at} · demasiado rápido al girar, ${sp(v)} más que en tu mejor vuelta`, `${at} · rápido demais na entrada, ${sp(v)} a mais que na sua melhor volta`)
+          : o.why === "throttle" ? Tx(`${at} · early throttle, ${Math.round(v)} m before your best lap`, `${at} · acelerador pronto, ${Math.round(v)} m antes que en tu mejor vuelta`, `${at} · acelerador cedo, ${Math.round(v)} m antes da sua melhor volta`)
+          : Tx(`${at} · speed and pedals like your best lap there, so the line took you off`, `${at} · velocidad y pedales como en tu mejor vuelta ahí, así que fue la trazada`, `${at} · velocidade e pedais como na sua melhor volta ali, então foi o traçado`);
+        out.push({ lap: L.n, d: Math.round(a[i]), k, pts, n, why: o.why, v: Math.round(v * 10) / 10, text });
+      }
+    });
+    return out;
+  }
+  /* what lap L did before the off at d (m) against lap R: the corner before it on R (its braking zone within 300 m), then
+     each cause scored by how far it is from R (10 m later braking, 4 km/h at turn-in, 15 m earlier throttle and a tenth
+     more brake count as one); the biggest one over one wins */
+  function offWhy(L, R, d, ctx) {
+    const U = unitsOf(ctx), sl = serOf(L), sr = serOf(R), n = Math.min(sl.length, sr.length), j = Math.min(n - 1, Math.max(0, Math.round(d / BIN)));
+    // the corners as cornerSpread finds them (their numbers the same where the track has no official turns)
+    const all = cornerZones(sr, sr.length, turnsOf(ctx), ctx && ctx.oval);
+    let zi = -1; all.forEach((q, k) => { if (q.i <= j + 2 && j - q.i <= 60) zi = k; });
+    const z = zi >= 0 ? all[zi] : null, num = z ? (z.turn != null ? z.turn + 1 : zi + 1) : 0;
+    const at = (s, i, c) => (s[i] ? s[i][c] : null);
+    const c = [];
+    if (z) {
+      const apex = z.imin, from = Math.max(1, z.i - 30), to = Math.min(apex, j);
+      const onset = (s) => { for (let i = from; i <= to; i++) if (at(s, i, 3) > .1) return i; return -1; };
+      const oL = onset(sl), oR = onset(sr);
+      if (oL >= 0 && oR >= 0) c.push({ why: "late", v: (oL - oR) * BIN, s: (oL - oR) * BIN / 10 });
+      const peak = (s, a, b) => { let m = 0; for (let i = a; i <= b; i++) m = Math.max(m, at(s, i, 3) || 0); return m; };
+      if (oL >= 0) { const pL = peak(sl, oL, to), pR = peak(sr, Math.max(from, oR), to); if (pL >= .9) c.push({ why: "lock", v: pL, r: pR, s: (pL - pR) / .1 }); }
+      // turn-in: where R lets go of the brake before the apex (else 30 m before it)
+      let ti = Math.max(z.i, apex - 6);
+      for (let i = z.i; i < apex; i++) if (at(sr, i, 3) != null && at(sr, i, 3) < .1 && i > (oR >= 0 ? oR : z.i)) { ti = i; break; }
+      ti = Math.min(ti, j);
+      if (at(sl, ti, 0) != null && at(sr, ti, 0) != null) { const dv = U.spd(at(sl, ti, 0)) - U.spd(at(sr, ti, 0)); c.push({ why: "fast", v: dv, s: dv / 4 }); }
+      if (j >= apex - 4) {
+        const thr = (s) => { for (let i = Math.max(0, apex - 10); i <= Math.min(n - 1, apex + 40); i++) if (at(s, i, 2) > .5 && !(at(s, i, 3) > .1)) return i; return -1; };
+        const tL = thr(sl), tR = thr(sr);
+        if (tL >= 0 && tR >= 0 && tL <= j) c.push({ why: "throttle", v: (tR - tL) * BIN, s: (tR - tL) * BIN / 15 });
+      }
+    } else {
+      // a fast bend taken without braking: the speed 50 m before the off
+      const q = Math.max(0, j - 10);
+      if (at(sl, q, 0) != null && at(sr, q, 0) != null) { const dv = U.spd(at(sl, q, 0)) - U.spd(at(sr, q, 0)); c.push({ why: "fast", v: dv, s: dv / 4 }); }
+    }
+    const top = c.filter((x) => x.s >= 1).sort((a, b) => b.s - a.s)[0];
+    return top ? { ...top, n: num } : { why: "line", v: 0, n: num };
+  }
+
+  /* ---------- more charts ---------- */
+  /* a lap's g-forces from its points: along the car from how its speed changes over time, across it from its speed and
+     how much its path bends (only with a path). {pts: [[lat, long]…] every 10 m, lat + to the left, long + speeding up,
+     max: {lat, brake, acc}} or null */
+  function ggOf(l) { const g = ggRaw(l); return g ? { pts: g.pts, max: g.max } : null; }
+  function ggRaw(l) {
+    const s = serOf(l), n = s.length, xy = l && l.xy;
+    if (!xy || !Array.isArray(xy.x) || xy.x.length < 20 || n < 20) return null;
+    const N = xy.x.length, P = (i) => { const q = Math.max(0, Math.min(N - 1, Math.round(i * N / n))); return [xy.x[q], xy.y[q]]; };
+    const pts = [], idx = []; let mLat = 0, mBr = 0, mAc = 0;
+    for (let i = 4; i < n - 4; i += 2) {
+      const a = s[i - 2], b = s[i + 2], m = s[i];
+      if (!a || !b || !m) continue;
+      const dt = b[1] - a[1], v = m[0];
+      if (!(dt > 0.01 && dt < 5) || !(v > 5)) continue;
+      const lg = (b[0] - a[0]) / dt / 9.81;
+      const p0 = P(i - 4), p1 = P(i), p2 = P(i + 4);
+      const ax = p1[0] - p0[0], ay = p1[1] - p0[1], bx = p2[0] - p1[0], by = p2[1] - p1[1], cx = p2[0] - p0[0], cy = p2[1] - p0[1];
+      const la = Math.hypot(ax, ay), lb = Math.hypot(bx, by), lc = Math.hypot(cx, cy);
+      if (!(la > 1 && lb > 1 && lc > 1)) continue;
+      const k = 2 * (ax * by - ay * bx) / (la * lb * lc), lat = v * v * k / 9.81;
+      if (!isFinite(lat) || !isFinite(lg) || Math.abs(lat) > 5 || Math.abs(lg) > 5) continue;
+      pts.push([Math.round(lat * 100) / 100, Math.round(lg * 100) / 100]); idx.push(i);
+      mLat = Math.max(mLat, Math.abs(lat)); mBr = Math.max(mBr, -lg); mAc = Math.max(mAc, lg);
+    }
+    const r2 = (x) => Math.round(x * 100) / 100;
+    return pts.length < 20 ? null : { pts, idx, max: { lat: r2(mLat), brake: r2(mBr), acc: r2(mAc) } };
+  }
+  /* the steering against the speed in the corners (more than 3° of wheel): [[speed in ctx's units, degrees]…] every 10 m */
+  function steerOf(l, ctx) {
+    const U = unitsOf(ctx), s = serOf(l), out = [];
+    for (let i = 0; i < s.length; i += 2) { const b = s[i]; if (!b || !(b[0] > 5) || !isFinite(b[5])) continue; const deg = Math.abs(b[5]) * 180 / Math.PI; if (deg > 3) out.push([Math.round(U.spd(b[0])), Math.round(deg * 10) / 10]); }
+    return out;
+  }
+  /* understeer, lap A against lap B: the wheel each needs for the same cornering force (degrees per g where the car turns
+     at more than half a g); A needing a tenth more than B says A pushes. {a, b, text} or null */
+  function understeer(A, B, ctx) {
+    const Tx = txOf(ctx), per = (l) => {
+      const g = ggRaw(l), s = serOf(l), xs = [];
+      if (!g) return null;
+      g.idx.forEach((i, q) => { const m = s[i], lat = Math.abs(g.pts[q][0]); if (m && lat > .5 && isFinite(m[5]) && m[5] !== 0) xs.push(Math.abs(m[5]) * 180 / Math.PI / lat); });
+      return xs.length >= 10 ? xs.sort((x, y) => x - y)[Math.floor(xs.length / 2)] : null;
+    };
+    const a = per(A), b = B ? per(B) : null;
+    if (a == null) return null;
+    const out = { a: r1(a), b: b == null ? null : r1(b) };
+    if (b != null && b > 0) {
+      const f = a / b - 1;
+      out.text = f >= .1 ? Tx(`A needs ${Math.round(f * 100)} % more steering than B for the same grip, so A pushes (understeer)`, `A necesita un ${Math.round(f * 100)} % más de volante que B para el mismo agarre, así que A empuja (subviraje)`, `A precisa de ${Math.round(f * 100)} % mais volante que B para a mesma aderência, então A empurra (subesterço)`)
+        : f <= -.1 ? Tx(`A needs ${Math.round(-f * 100)} % less steering than B for the same grip, so the rear moves more (oversteer)`, `A necesita un ${Math.round(-f * 100)} % menos de volante que B para el mismo agarre, así que la trasera se mueve más (sobreviraje)`, `A precisa de ${Math.round(-f * 100)} % menos volante que B para a mesma aderência, então a traseira se mexe mais (sobresterço)`)
+        : Tx("A and B need the same steering for the same grip", "A y B necesitan el mismo volante para el mismo agarre", "A e B precisam do mesmo volante para a mesma aderência");
+    }
+    return out;
+  }
+  /* the tyres' carcass temperatures lap by lap, where the game gives them (a lap's tt: LF left, middle, right, then RF,
+     LR, RR): [{n, tt, avg: [LF, RF, LR, RR]}] */
+  function tyreLaps(laps) {
+    return (laps || []).filter((l) => l && Array.isArray(l.tt) && l.tt.length === 12).map((l) => ({ n: l.n, tt: l.tt, avg: [0, 1, 2, 3].map((w) => r1((l.tt[w * 3] + l.tt[w * 3 + 1] + l.tt[w * 3 + 2]) / 3)) }));
+  }
+
+  /* ---------- race fuel and stints ---------- */
+  /* the fuel a lap takes from the session's laps (not through the pits, within 7 % of the best, so a lap behind the safety
+     car or in traffic is left out): {perLap, maxLap, lapTime, laps, tank} or null with fewer than two such laps */
+  function fuelUse(laps, ctx) {
+    const ls = (laps || []).filter((l) => l && l.fuel > 0 && !l.pit && l.time > 0);
+    if (ls.length < 2) return null;
+    const best = Math.min(...ls.map((l) => l.time)), ok = ls.filter((l) => l.time <= best * 1.07);
+    if (ok.length < 2) return null;
+    const tank = ctx && ctx.tank > 0 ? ctx.tank : null;
+    return { perLap: r3(meanOf(ok.map((l) => l.fuel))), maxLap: r3(Math.max(...ok.map((l) => l.fuel))), lapTime: r3(meanOf(ok.map((l) => l.time))), laps: ok.length, tank };
+  }
+  /* a race of raceLaps laps, or of raceMin minutes (counted at lapTime, plus the lap under way when the time runs out),
+     with a tank of tank litres and one lap of fuel kept spare: the laps, the fuel the race needs, the laps a full tank
+     lasts, the stops and the fuel each one adds (the same over every stop), and the fuel to start with. The phones do the
+     same sums. */
+  function fuelPlan(u, race) {
+    if (!u || !(u.perLap > 0)) return null;
+    const tank = race && race.tank > 0 ? race.tank : u.tank, spare = race && race.spare != null ? race.spare : 1;
+    let laps = race && race.laps > 0 ? Math.ceil(race.laps) : 0;
+    if (!laps && race && race.min > 0 && u.lapTime > 0) laps = Math.floor(race.min * 60 / u.lapTime) + 1;
+    if (!laps) return null;
+    const need = (laps + spare) * u.perLap, perTank = tank ? Math.floor(tank / u.perLap) : null;
+    const stops = tank ? Math.max(0, Math.ceil(need / tank) - 1) : null;
+    const add = stops ? (need - tank) / stops : 0;
+    return { laps, need: r1(need), perTank, stops, add: r1(add), start: r1(stops ? tank : need), stint: stops != null ? Math.ceil(laps / (stops + 1)) : null, tank: tank || null };
+  }
+
+  /* everything beyond one lap at once, for the phones: lap A against lap B and the session's laps (ctx.laps) →
+     {spread, lapSpread, offs, gg: {a, b}, steer: {a, b}, us, tyres, fuel} */
+  function insights(A, B, ctx) {
+    ctx = ctx || {};
+    const laps = Array.isArray(ctx.laps) ? ctx.laps : [];
+    return { spread: cornerSpread(laps, ctx), lapSpread: lapSpread(laps), offs: offsExplained(laps, ctx), gg: { a: A ? ggOf(A) : null, b: B ? ggOf(B) : null },
+      steer: { a: A ? steerOf(A, ctx) : [], b: B ? steerOf(B, ctx) : [] }, us: A ? understeer(A, B, ctx) : null, tyres: tyreLaps(laps), fuel: fuelUse(laps, ctx) };
+  }
+
   const api = { VERSION, BIN, lapSeries, serOf, lapShape, sameFrame, lineOffsets, cornerLine, lineTip, brakeZones, PHASES, phaseName, turnNo, COACH_GEN, cornerClass, cornerZones,
     OVAL_KINDS, ovalOf, liftZones, ovalZones, dirtLineTip, coachCompare, cornerConsistency, pairSecs, lapDriving, kindName, stepName, tipMain, tipShort, tipTodo, coachPlan, stepText, analyzerFacts, analyse,
-    estOf, failedOf, progressLines, followUp, trackGuide, cornerRanks, clsLines, racePace, edgeUse, notesOf, guideItems, likeOf, likeSteps, catGroup };
+    estOf, failedOf, progressLines, followUp, trackGuide, cornerRanks, clsLines, racePace, edgeUse, notesOf, guideItems, likeOf, likeSteps, catGroup,
+    lapSpread, cornerSpread, offsExplained, ggOf, steerOf, understeer, tyreLaps, fuelUse, fuelPlan, insights };
   root.PW_ANALYSIS = api;
   if (typeof module !== "undefined" && module.exports) module.exports = api;
 })(typeof window !== "undefined" ? window : typeof globalThis !== "undefined" ? globalThis : this);

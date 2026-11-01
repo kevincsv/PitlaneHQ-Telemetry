@@ -1,0 +1,78 @@
+// node cloud/test/insights.test.mjs: the analysis beyond one lap in pitwall-analysis.js, the same on every device: each
+// corner lap after lap (corner consistency) and the laps' spread (the most consistent session), every off explained by
+// what the lap did just before it, the g-forces, the steering against the speed and understeer, the tyres lap by lap and
+// the race fuel and stints
+import assert from "node:assert/strict";
+import { createRequire } from "node:module";
+const require = createRequire(import.meta.url);
+const PW = require("../../web/dist/pitwall-analysis.js");
+
+// a lap of 400 points (2 km) round a circle-ish track: one braking zone into a slow corner at 220 (the apex); o moves the
+// braking point (bp), the speed at the apex (vmin), the brake pressure (brk) and where the throttle comes back (thr)
+function lap(n, o = {}) {
+  const bp = o.bp ?? 190, vmin = o.vmin ?? 27, brk = o.brk ?? 0.8, thrAt = o.thr ?? 220, bins = [], x = [], y = [];
+  let t = 0, h = 0, px = 0, py = 0;
+  for (let i = 0; i < 400; i++) {
+    let v = 60, thr = 1, br = 0, g = 6, st = 0.01;
+    if (i >= bp && i < 220) { v = Math.max(vmin, 60 - (i - bp) * ((60 - vmin) / (220 - bp))); thr = 0; br = i < 212 ? brk : 0.05; g = 3; st = 0.15; }
+    else if (i >= 220 && i < 250) { v = vmin + (i - 220) * ((60 - vmin) / 30); thr = i >= thrAt ? 1 : 0.2; g = 3; st = 0.12; }
+    if (i >= thrAt && i < 220) thr = 0.8;
+    bins.push([v, 0, thr, br, g, st, null]);
+    // the path: straight, then the corner bends 90° over 60 m around the apex
+    if (i >= 205 && i < 235) h += (Math.PI / 2) / 30;
+    px += 5 * Math.cos(h); py += 5 * Math.sin(h); x.push(px); y.push(py);
+  }
+  for (const b of bins) { t += 5 / b[0]; b[1] = t; }
+  return { n, time: t + (o.slow || 0), bins, maxBin: 399, valid: o.valid !== false, fuel: o.fuel ?? 2.5, xy: { x, y, g: null }, incAt: o.incAt || [], incK: o.incK || [], tt: o.tt };
+}
+const ctx = { lang: "en", units: "metric" };
+
+// the laps' spread: five laps within 3 % of the best at least
+assert.equal(PW.lapSpread([lap(1), lap(2), lap(3)]), null, "too few laps for a spread");
+const sp = PW.lapSpread([lap(1), lap(2, { slow: 0.2 }), lap(3, { slow: 0.4 }), lap(4, { slow: 0.1 }), lap(5, { slow: 0.3 }), lap(6, { slow: 20 })]);
+assert.equal(sp.n, 5, "a lap 20 s slower is left out");
+assert.ok(Math.abs(sp.sd - 0.141) < 0.002, "sd " + sp.sd);
+
+// corner consistency: the corner taken differently every lap costs time against your best there
+const laps = [lap(1, { bp: 190 }), lap(2, { bp: 185, vmin: 25 }), lap(3, { bp: 192, vmin: 24 }), lap(4, { bp: 188, vmin: 26 })];
+const cs = PW.cornerSpread(laps, ctx);
+assert.equal(cs.rows.length, 1);
+const c = cs.rows[0];
+assert.ok(c.sd > 0.05 && c.cost > 0.05 && c.worst > c.best && c.vsd > 0, JSON.stringify(c));
+assert.match(c.text, /^T1 changes ±/);
+assert.equal(PW.cornerSpread(laps.slice(0, 2), ctx), null, "three clean laps at least");
+
+// offs explained: braking 40 m later than the best lap, too fast at turn-in, early throttle, harder on the brake
+const best = lap(1), why = (o) => PW.offsExplained([best, lap(2), lap(3, { slow: 0.5 }), lap(9, { ...o, valid: false, incAt: [1110, 1], incK: ["off"] })], ctx)[0];
+assert.equal(why({ bp: 198 }).why, "late");
+assert.equal(why({ bp: 190, vmin: 36 }).why, "fast");
+assert.equal(why({ thr: 214 }).why, "throttle");
+assert.equal(why({ brk: 1 }).why, "lock");
+assert.equal(why({}).why, "line", "the same lap: the line took you off");
+assert.match(why({ bp: 198 }).text, /braked 40 m later than on your best lap/);
+assert.equal(PW.offsExplained([best, lap(2, { incAt: [600, 4], incK: ["contact"] })], ctx).length, 0, "a car contact is no off");
+
+// more charts: the g-forces from the speed and the path, the steering in the corners
+const gg = PW.ggOf(best);
+assert.ok(gg && gg.pts.length > 50 && gg.max.lat > 1 && gg.max.brake > 0.5, JSON.stringify(gg && gg.max));
+assert.equal(PW.ggOf({ ...best, xy: null }), null, "no path, no g across the car");
+assert.ok(PW.steerOf(best, ctx).every((p) => p[1] > 3));
+const pushes = lap(2); pushes.bins.forEach((b) => (b[5] *= 1.3));
+assert.match(PW.understeer(pushes, best, ctx).text, /A needs 30 % more steering than B/);
+// the tyres lap by lap where the game gives them
+const tt = [80, 82, 84, 81, 83, 85, 70, 72, 74, 71, 73, 75];
+assert.deepEqual(PW.tyreLaps([lap(1, { tt }), lap(2)]), [{ n: 1, tt, avg: [82, 83, 72, 73] }]);
+
+// race fuel: 2.5 l a lap, a 60 l tank (24 laps), a 50-lap race needs 127.5 l with one lap spare: two stops of 33.8 l
+const u = PW.fuelUse([lap(1), lap(2, { fuel: 2.4 }), lap(3, { fuel: 2.6 }), lap(4, { fuel: 9, slow: 30 })], { tank: 60 });
+assert.deepEqual([u.perLap, u.maxLap, u.laps, u.tank], [2.5, 2.6, 3, 60], "a slow lap behind the safety car is left out");
+assert.deepEqual(PW.fuelPlan(u, { laps: 50 }), { laps: 50, need: 127.5, perTank: 24, stops: 2, add: 33.8, start: 60, stint: 17, tank: 60 });
+const shortRace = PW.fuelPlan(u, { laps: 10 });
+assert.equal(shortRace.stops, 0); assert.equal(shortRace.start, 27.5);
+assert.equal(PW.fuelPlan(u, { min: 30 }).laps, Math.floor(1800 / u.lapTime) + 1, "a timed race counts its laps at your pace");
+assert.equal(PW.fuelPlan({ ...u, tank: null }, { laps: 50 }).stops, null, "no tank, no stops");
+
+// all at once, for the phones: plain JSON
+const all = JSON.parse(JSON.stringify(PW.insights(best, lap(2), { ...ctx, laps: [best, lap(2), lap(3), lap(4, { valid: false, bp: 198, incAt: [1110, 1], incK: ["off"] })], tank: 60 })));
+assert.ok(all.spread && all.offs.length === 1 && all.gg.a && all.steer.a.length && all.fuel.perLap === 2.5);
+console.log("insights ok");

@@ -78,12 +78,12 @@ const offlineAI = (s) => gameOf(s.game) === "iracing" && /(^|:)t-/.test(String(s
 async function upsertSession(env, s, uploader) {
   if (!idOk(s.id) || !num(s.started) || !s.track || !s.car) return "session needs id, started, track and car";
   await env.DB.prepare(
-    `INSERT INTO sessions (id, started, track, track_config, car, kind, series, driver, air_temp, track_temp, uploader, game, track_id, car_id, official, lic, cat, ai, pos, field, pos_cls)
-     VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14,?15,?16,?17,?18,?19,?20,?21)
-     ON CONFLICT(id) DO UPDATE SET kind=excluded.kind, air_temp=excluded.air_temp, track_temp=excluded.track_temp, track_id=COALESCE(excluded.track_id, track_id), car_id=COALESCE(excluded.car_id, car_id), official=COALESCE(excluded.official, official), ai=COALESCE(excluded.ai, ai),
+    `INSERT INTO sessions (id, started, track, track_config, car, kind, series, driver, air_temp, track_temp, uploader, game, track_id, car_id, official, lic, cat, ai, pos, field, pos_cls, tank)
+     VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14,?15,?16,?17,?18,?19,?20,?21,?22)
+     ON CONFLICT(id) DO UPDATE SET kind=excluded.kind, tank=COALESCE(excluded.tank, tank), air_temp=excluded.air_temp, track_temp=excluded.track_temp, track_id=COALESCE(excluded.track_id, track_id), car_id=COALESCE(excluded.car_id, car_id), official=COALESCE(excluded.official, official), ai=COALESCE(excluded.ai, ai),
        lic=COALESCE(excluded.lic, lic), cat=COALESCE(excluded.cat, cat),
        pos=COALESCE(excluded.pos, pos), field=CASE WHEN excluded.pos IS NULL THEN field ELSE excluded.field END, pos_cls=CASE WHEN excluded.pos IS NULL THEN pos_cls ELSE excluded.pos_cls END`
-  ).bind(s.id, Math.round(s.started), str(s.track), str(s.trackConfig), str(s.car), str(s.kind, 40), str(s.series), str(s.driver, 80), num(s.airTemp), num(s.trackTemp), uploader, gameOf(s.game), posInt(s.trackId), posInt(s.carId), typeof s.official === "boolean" ? (s.official ? 1 : 0) : null, licOf(s.lic), str(s.cat, 20), s.ai === true || offlineAI(s) ? 1 : null, ...placeOf(s)).run();
+  ).bind(s.id, Math.round(s.started), str(s.track), str(s.trackConfig), str(s.car), str(s.kind, 40), str(s.series), str(s.driver, 80), num(s.airTemp), num(s.trackTemp), uploader, gameOf(s.game), posInt(s.trackId), posInt(s.carId), typeof s.official === "boolean" ? (s.official ? 1 : 0) : null, licOf(s.lic), str(s.cat, 20), s.ai === true || offlineAI(s) ? 1 : null, ...placeOf(s), num(s.tank) > 0 && s.tank < 1000 ? Math.round(s.tank * 10) / 10 : null).run();
   return null;
 }
 
@@ -254,7 +254,8 @@ async function api(req, env, url, ctx) {
       // the other games race sports cars only (LMU), as /combos and /records say
       const ir = (x.game || "iracing") === "iracing";
       const c = ir ? catOf(cm, x.track_id, x.car_id, cat, x.track + (x.track_config ? " · " + x.track_config : ""), x.car) : "sports_car";
-      return { ...x, cat: c, lic: lic || (ir && c && lics[c]) || null }; // the licence is iRacing's: never on another game's session
+      // cons: how much its lap times spread (s), from the variance SESSION_SUMS keeps (the "Most consistent session")
+      return { ...x, cons: x.cons != null && x.cons >= 0 ? Math.round(Math.sqrt(x.cons) * 1000) / 1000 : null, cat: c, lic: lic || (ir && c && lics[c]) || null }; // the licence is iRacing's: never on another game's session
     }));
   }
 
@@ -380,7 +381,7 @@ async function api(req, env, url, ctx) {
       const a = await env.DB.prepare("SELECT display FROM accounts WHERE id=?1").bind(String(s.uploader).slice(5)).first().catch(() => null);
       who = (a && a.display) || "";
     }
-    return json({ session: { ...placeOut(s), ...(who !== undefined ? { other: true, who } : {}) }, laps });
+    return json({ session: { ...placeOut(s), cons: s.cons != null && s.cons >= 0 ? Math.round(Math.sqrt(s.cons) * 1000) / 1000 : null, ...(who !== undefined ? { other: true, who } : {}) }, laps });
   }
 
   // fastest valid lap of anyone in the team for a track, layout and car

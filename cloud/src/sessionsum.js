@@ -31,9 +31,16 @@ export const bestSql = (game, uploader) => `WITH s AS (${base(game, uploader, fa
 // a session's lap count, its best (the account's own laps only: a friend's lap in DRINKS mode is never yours), its time
 // on track and its friends' names, read from its laps in one pass and kept on the session (migration 0078): My sessions
 // and Home's numbers (below), asked by every open app about once a minute, never read the laps (D1 limits the rows read per day)
+// and how much its lap times spread (cons, migration 0090): the variance of the account's own valid laps within 3 % of
+// the session's best, with five of them at least (else null), the same laps as the analysis module's lapSpread; the
+// apps show its square root and the session with the smallest of each car and track is the "Most consistent session".
+// Only on a change of the session (the migration filled the old ones): the daily pass would read every lap twice more
+const CLEAN = (t) => `${t}valid=1 AND ${t}drv IS NULL AND ${t}time>0 AND ${t}time<3600`;
+export const CONS_OF = (sid) => `(SELECT CASE WHEN COUNT(*)>=5 THEN MAX(0, AVG(c.time*c.time)-AVG(c.time)*AVG(c.time)) END FROM laps c
+       WHERE c.session_id=${sid} AND ${CLEAN("c.")} AND c.time<=1.03*(SELECT MIN(m.time) FROM laps m WHERE m.session_id=${sid} AND ${CLEAN("m.")}))`;
 const SUMS_OF = (sid) => `(SELECT COUNT(*), MIN(CASE WHEN valid=1 AND drv IS NULL THEN time END),
        SUM(CASE WHEN time>0 AND time<3600 THEN time END), group_concat(DISTINCT drv) FROM laps WHERE session_id=${sid})`;
-export const SESSION_SUMS = `UPDATE sessions SET (laps, best, secs, drvs)=${SUMS_OF("?1")} WHERE id=?1`;
+export const SESSION_SUMS = `UPDATE sessions SET (laps, best, secs, drvs)=${SUMS_OF("?1")}, cons=${CONS_OF("?1")} WHERE id=?1`;
 // every session again once a day: whatever changed its laps without SESSION_SUMS is right by the next morning
 export const ALL_SESSION_SUMS = `UPDATE sessions SET (laps, best, secs, drvs)=${SUMS_OF("sessions.id")}`;
 

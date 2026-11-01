@@ -17,7 +17,7 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   (no "share" button), under the public name or as Anonymous. The discipline symbols are our own
   (`DISC_IC`), never copied; the same discipline cards are in Community and in "Choose a session".
   Sharing is never optional (no switches to keep the times, the traces, the rivals' laps or the live link to
-  yourself): only the public name and Anonymous are chosen. Community on the web and the PC is three parts (`CMV`, `cl-*` in index.html, the "clean data" design): Summary
+  yourself): only the public name and Anonymous are chosen. Community on the web and the PC is four parts (`CMV`, `cl-*` in index.html, the "clean data" design): Summary
   (your numbers, your leaderboards with the record of each and how your best came down over your last sessions:
   `rec` and `trend` on /profile?me=1; the latest records; you in the community), Leaderboards (the table with the
   sectors and the track map coloured by sector against your lap, or the record when you have none: the shape and
@@ -100,3 +100,14 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   the hour), never the alert's text; the phone then reads GET `/community/alerts`. A token Firebase no longer knows is
   deleted, an unused one after 270 days (daily), all of them with the account. Without the secret nothing is sent and the
   phones' background check finds the alerts as before.
+
+## Friends
+
+- Follow drivers (`cloud/src/friends.js`, table `follows`, migration 0090): "Follow" on a driver's public profile
+  (`canFollow`, `following` on /community/profile; never on an anonymous one, never yourself, 200 at most). Community's
+  fourth part, Friends (`drawFriends`; the phones' Community → Friends), lists the drivers you follow with their newest
+  laps of the chosen game that are not anonymous, each with Compare (the community lap as lap B against your own session
+  on that track, `loadCommLap`) and Leaderboard, and Profile (a friend's profile opens by their id, which the server
+  allows only to their followers and the admins). The comparator's community laps (`pickCommLap*`) list every friend's
+  lap on that car and track first, marked ★, wherever it sits on the board (`/community/friends/laps`), then the fastest
+  fifteen. A friend who goes anonymous drops out of the list; only their laps that are not anonymous ever show.

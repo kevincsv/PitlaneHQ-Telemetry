@@ -49,6 +49,7 @@ type cloudSession struct {
 	Official    *bool   `json:"official,omitempty"` // a session of an official series: those teach the model
 	AI          bool    `json:"ai,omitempty"`       // a session with iRacing's AI drivers: its people's laps teach the model too
 	Imported    bool    `json:"imported,omitempty"` // read afterwards from a telemetry file on the PC (ibtimport.go), not driven now
+	Tank        float64 `json:"tank,omitempty"`     // the litres the car's tank takes in this session (DriverCarFuelMaxLtr times DriverCarMaxFuelPct): the race fuel helper
 	// where you finished (or stand) in the session and how many cars it had (sessionplace.go): practice, qualifying and
 	// warmup by the best lap, a race by its order; Cls when it is the place in your class (a multiclass session)
 	Pos   int  `json:"pos,omitempty"`
@@ -84,6 +85,7 @@ type lapTrace struct {
 	Src  string       `json:"src,omitempty"`  // "field": another car's lap from its position on track (speed real, pedals estimated); "real": another car's lap with the pedals the game itself gave of it (Le Mans Ultimate), a real lap
 	F    []string     `json:"f,omitempty"`    // what this lap was driven in: "traffic" (a car within a second ahead for a fifth of the lap), "cold" (the first lap of a run, tyres cold), "wet" (the track at least lightly wet at some point, TrackWetness 4 or more), "damp" (at most mostly dry or very lightly wet, 2 or 3, never wet; a note only), "rain" (it rained at some point: Precipitation over 0 or the track declared wet; a note only), "cmp:<n>" (the tyre compound when the car has several); the coach leaves traffic, cold and wet laps aside, the model traffic and wet ones
 	H    *lapHealth   `json:"h,omitempty"`    // how well the lap was recorded (lapHealth)
+	TT   []float64    `json:"tt,omitempty"`   // the tyres' carcass temperatures over the lap (°C, the lap's average): LF inner/left, middle, right, then RF, LR and RR the same; only where the game gives them
 }
 
 type cloudItem struct {
@@ -481,6 +483,10 @@ func sessionMetaGame(y string, sessionNum int, started time.Time, game string) c
 		off := !s.AI
 		s.Official = &off
 	}
+	s.Tank = round(atof(yamlField(y, "DriverCarFuelMaxLtr")), 1)
+	if p := atof(yamlField(y, "DriverCarMaxFuelPct")); p > 0 && p < 1 {
+		s.Tank = round(s.Tank*p, 1)
+	}
 	if si := listItem(y, "SessionNum", fmt.Sprint(sessionNum)); si != "" {
 		s.Kind = yamlField(si, "SessionType")
 	}
@@ -510,7 +516,12 @@ var lapVars = []string{"Lap", "LapDist", "LapDistPct", "Speed", "Throttle", "Bra
 	// first three, Le Mans Ultimate makes all four in lmu.go; a source without one reads 0 (env.has says which exist)
 	"PlayerTrackSurfaceMaterial", "TrackWetness", "PlayerTireCompound", "PlayerNumPenalties",
 	// whether it rains: iRacing's precipitation and the steward's wet declaration (Le Mans Ultimate makes both from its rain)
-	"Precipitation", "WeatherDeclaredWet"}
+	"Precipitation", "WeatherDeclaredWet",
+	// the tyres' carcass temperatures, left, middle and right of each tyre (34 to 45): the "More charts" tyre chart
+	"LFtempCL", "LFtempCM", "LFtempCR", "RFtempCL", "RFtempCM", "RFtempCR", "LRtempCL", "LRtempCM", "LRtempCR", "RRtempCL", "RRtempCM", "RRtempCR"}
+
+// tyreVar0: where the tyre temperatures start in lapVars
+const tyreVar0 = 34
 
 const lapBin = 5 // metres
 
@@ -565,6 +576,9 @@ type lapRec struct {
 	// the recording's health: the samples taken and the session time of the first one (the rate they came at)
 	samples int
 	firstS  float64
+	// the tyres' carcass temperatures summed over the lap's samples (tyreVar0 on), and how many samples had them
+	tyreSum [12]float64
+	tyreN   int
 }
 
 // lapHealth: how well a lap was recorded, carried in its trace (h): the longest stretch with no telemetry (m), the share
@@ -974,6 +988,9 @@ func (ls *lapStream) step(v []float64) {
 		cur.rain = true
 	}
 	cur.cmp = int(v[30])
+	if env.has("LFtempCM") && len(v) >= tyreVar0+12 {
+		cur.addTyres(v[tyreVar0 : tyreVar0+12])
+	}
 	// an incident alone does not make a lap invalid; leaving the track for a third of a second (all four wheels out,
 	// cutting a corner) does, so it is never shared; only where the game reports the surface, and never on a kerb, a
 	// painted run-off or a concrete apron: with the material under the car known, only grass, dirt, sand and gravel
@@ -983,6 +1000,32 @@ func (ls *lapStream) step(v []float64) {
 			cur.bad = true
 		}
 	}
+}
+
+// addTyres sums one sample of the tyres' carcass temperatures; a sample without them (all 0, or a game that reads
+// nothing there) is not counted
+func (r *lapRec) addTyres(t []float64) {
+	for _, x := range t {
+		if !(x > 1 && x < 250) {
+			return
+		}
+	}
+	for i, x := range t {
+		r.tyreSum[i] += x
+	}
+	r.tyreN++
+}
+
+// tyres: the lap's average carcass temperatures (nil when the game gave none for most of the lap)
+func (r *lapRec) tyres() []float64 {
+	if r.tyreN < 30 || r.tyreN*2 < r.samples {
+		return nil
+	}
+	out := make([]float64, 12)
+	for i := range out {
+		out[i] = round(r.tyreSum[i]/float64(r.tyreN), 1)
+	}
+	return out
 }
 
 // pavedMaterial: a surface the car may have all four wheels on without leaving the track, by iRacing's irsdk_TrkSurf:
@@ -1230,6 +1273,7 @@ func buildLap(r *lapRec, s cloudSession, fuelNow, lt float64) (cloudLap, bool) {
 	if r.rain { // informational only: a lap in the rain on a track not wet yet stays the model's and the coach's
 		l.Trace.F = append(l.Trace.F, "rain")
 	}
+	l.Trace.TT = r.tyres()
 	if r.cmp > 0 { // the compound only when the car has several (the first, or the only one, is 0)
 		l.Trace.F = append(l.Trace.F, fmt.Sprintf("cmp:%d", r.cmp))
 	}

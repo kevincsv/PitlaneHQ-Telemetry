@@ -73,3 +73,31 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
 - The lap compare map (Analysis and the coach, every device) has "▶ Replay": A and B drive the map together on the same
   clock, four times as fast, with the gap in metres and seconds and a bar to scrub (`cmpReplay`; the phones' TrackMap).
 - The race summary has "Race pace" against the cars around you (coach-and-model.md, `racePace`).
+
+## Beyond one lap: corner consistency, offs explained, race fuel, more charts
+
+- Under the lap comparison (Analysis → Laps on the PC and the web, `renderLapMore`; the phones' Laps) every device runs
+  the same functions of `pitwall-analysis.js` over lap A's session: "Corner consistency" (`cornerSpread`: each corner's
+  time from just before its braking point to 150 m after its slowest point on every clean lap, how much it changes lap to
+  lap, the time lost a lap on average against your best there, best, worst and how much the slowest speed changes; the
+  corners that cost most first, the top three in red), with the laps' spread over the session (`lapSpread`: valid laps of
+  your own within 3 % of the best, five at least) and the "Most consistent session" of that car and track. The server
+  keeps each session's spread (`sessions.cons`, the variance, from SESSION_SUMS; migration 0090 filled the old ones; the
+  apps get its square root as `cons`), and the session with the smallest one of each car and track carries a "Most
+  consistent" pill in My sessions (`consSessions`). No composite or optimal lap is ever made from the corners.
+- "Offs explained" (`offsExplained`): every Off Track and Loss of Control of the session, on the lap it happened, with
+  what that lap did just before it against your best clean lap there: braked harder than ever there (a lock-up; there
+  is no wheel speed, so a brake peak of 90 % or more and a tenth above the best lap's), braked later, too fast at turn-in
+  or on the throttle early (each scored by 10 m, 4 km/h, 15 m and a tenth of brake; the biggest over one wins), else the
+  line took you off. It shows in the map's incident marks (their title and the map's reading) and as a list under the map.
+- "Race fuel" (`fuelUse`, `fuelPlan`): fuel per lap and the most in a lap from the session's laps (not through the pits,
+  within 7 % of the best), the laps a tank lasts, and for a race in laps or minutes (timed: the laps at your pace plus
+  the one under way) the fuel it needs with one lap spare, the stops, the fuel to start with and to add at each stop
+  (the same at every stop) and the stints. The tank comes from the session (`tank`, the agent's DriverCarFuelMaxLtr
+  times DriverCarMaxFuelPct, `sessions.tank`), else what the driver typed for that car (`pw.tank.<car>`).
+- "More charts" (a switch, off by default, `LAPV.more`; the phones the same): a G-G chart (`ggOf`: g along the car from
+  how the speed changes over time, across it from the speed and how much the path bends; only laps with a path), the
+  steering against the speed in the corners (`steerOf`) with one line on understeer (`understeer`: the wheel A needs per
+  g of cornering against B's, 10 % apart or more), and the tyre temperatures lap by lap where the game gives them
+  (`tyreLaps`: the agent records each tyre's carcass temperature left, middle and right, averaged over the lap, as the
+  trace's `tt`) with lap A's three temperatures of each tyre.

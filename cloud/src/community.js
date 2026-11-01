@@ -70,6 +70,7 @@ import { addFound, editFound, foundLeagues, leagueGame, scanLeagues } from "./le
 import { catMap, catOf, licOf, CATS, groupFor } from "./categories.js";
 import { lmuClass, wetOf, clsParam, classLaps } from "./lmuclass.js";
 import { sealedSectors } from "./lapsectors.js";
+import { friendRoutes, follows } from "./friends.js";
 
 // one shared lap per driver, car and track: a faster lap replaces the slower one, and a slower lap
 // replaces a faster one only when it brings the telemetry the faster one lacks
@@ -297,6 +298,7 @@ export async function community(req, env, url, ctx) {
   // every list is for one game: laps and analyses of different games are never mixed
   const game = gameOf(url.searchParams.get("game") || body.game);
   { const ct = await coachTipRoutes(req, env, p, m, body, game); if (ct) return ct; } // the coach learns from its tips: coachtips.js
+  if (p.startsWith("/friends")) return friendRoutes(req, env, p, m, body, url, game, await sessionAccount(req, env).catch(() => null)); // the drivers you follow: friends.js
   if (p === "/combos" && m === "GET") {
     const r = await env.DB.prepare(
       "SELECT track_id AS trackId, MAX(track) AS track, car_id AS carId, MAX(car) AS car, COUNT(*) AS laps, MIN(time) AS best, MAX(cat) AS hint FROM community_laps WHERE game=?1 AND COALESCE(shown,'')<>'model' GROUP BY track_id, car_id ORDER BY laps DESC LIMIT 500"
@@ -914,7 +916,7 @@ export async function community(req, env, url, ctx) {
     const viewer = await sessionAccount(req, env).catch(() => null), admin = !!viewer && isAdmin(env, viewer.id);
     let uid = null, fromAnon = false;
     if (url.searchParams.get("me") === "1") uid = viewer ? viewer.id : null;
-    else if (admin && /^[A-Za-z0-9]{8,40}$/.test(url.searchParams.get("id") || "")) uid = url.searchParams.get("id"); // the admin panel
+    else if (/^[A-Za-z0-9]{8,40}$/.test(url.searchParams.get("id") || "") && (admin || await follows(env, viewer && viewer.id, url.searchParams.get("id")))) uid = url.searchParams.get("id"); // the admin panel, and a friend's (Community → Friends)
     else {
       const l = await env.DB.prepare("SELECT user_id, anon FROM community_laps WHERE id=?1").bind(String(url.searchParams.get("lap") || "")).first();
       if (l) { uid = l.user_id; fromAnon = l.anon === 1; }
@@ -967,6 +969,8 @@ export async function community(req, env, url, ctx) {
     }
     return json({
       name: a.alias || "Driver", since: a.member_since || a.created, mine, admin, anonymous: !!a.anon,
+      // Follow on the profile: a signed-in driver on someone else's public profile (friends.js)
+      canFollow: !!viewer && !mine && !a.anon, following: !!viewer && !mine && await follows(env, viewer.id, a.id),
       shownAs: admin || mine ? (a.anon ? "anonymous" : a.name_kind === "iracing" ? "iracing" : "nick") : undefined, // how the account shows itself
       discord: dc ? { id: dc.discord_id, handle: dc.handle || "" } : undefined,
       steam: sl ? { id: sl.steamid, persona: sl.persona || "" } : undefined,

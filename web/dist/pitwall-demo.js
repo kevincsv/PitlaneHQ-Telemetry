@@ -158,6 +158,10 @@
     if (p === "/api/community/setups") return { setups: setups() };
     // the admin page's analytics and feedback, invented (admins only, like every demo answer)
     if (p === "/community/records") return get("/api/community/records");
+    // the drivers you follow: two of the board's drivers, their laps the board's own (Compare opens them)
+    if (p === "/community/friends") return { friends: [6, 8].map((k, n) => ({ id: "demofriend" + n, name: NAMES[k], sup: n === 0, since: NOW - 30 * DAY,
+      laps: COMBOS.slice(0, 3).map((c, i) => { const l = board(c.trackId, c.carId)[k]; return l && { id: l.id, track: c.track, car: c.car, trackId: c.trackId, carId: c.carId, time: l.time, game: "iracing", created: NOW - (i + n) * DAY }; }).filter(Boolean) })) };
+    if (p === "/community/friends/laps") return { laps: [6, 8].map((k) => board(q.get("trackId"), q.get("carId"))[k]).filter(Boolean).map((l) => ({ id: l.id, alias: l.alias, time: l.time, sectors: l.sectors })) };
     if (p === "/community/admin/analytics") {
       const days = Math.max(1, Math.min(90, +q.get("days") || 30)), r = rng(7), d = (i) => new Date(NOW - i * DAY).toISOString().slice(0, 10);
       const keys = ["view:home", "view:laps", "view:coach", "view:live", "view:community", "view:races", "view:overlays", "act:race_summary", "act:coach_report", "act:leaderboard", "act:overlay_open", "act:track_page"];

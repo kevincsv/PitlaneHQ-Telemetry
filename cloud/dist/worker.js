@@ -4,7 +4,7 @@ var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
 var __getOwnPropNames = Object.getOwnPropertyNames;
 var __getProtoOf = Object.getPrototypeOf;
 var __hasOwnProp = Object.prototype.hasOwnProperty;
-var __name = (target, value) => __defProp(target, "name", { value, configurable: true });
+var __name = (target2, value) => __defProp(target2, "name", { value, configurable: true });
 var __commonJS = (cb, mod) => function __require() {
   try {
     return mod || (0, cb[__getOwnPropNames(cb)[0]])((mod = { exports: {} }).exports, mod), mod.exports;
@@ -20,12 +20,12 @@ var __copyProps = (to, from, except, desc) => {
   }
   return to;
 };
-var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__getProtoOf(mod)) : {}, __copyProps(
+var __toESM = (mod, isNodeMode, target2) => (target2 = mod != null ? __create(__getProtoOf(mod)) : {}, __copyProps(
   // If the importer is in node compatibility mode or this is not an ESM
   // file that has been converted to a CommonJS file using a Babel-
   // compatible transform (i.e. "__esModule" has not been set), then set
   // "default" to the CommonJS "module.exports" for node compatibility.
-  isNodeMode || !mod || !mod.__esModule ? __defProp(target, "default", { value: mod, enumerable: true }) : target,
+  isNodeMode || !mod || !mod.__esModule ? __defProp(target2, "default", { value: mod, enumerable: true }) : target2,
   mod
 ));
 
@@ -1287,6 +1287,21 @@ var require_pitwall_analysis = __commonJS({
         return { rows, lines };
       }
       __name(racePace, "racePace");
+      function notesOf(o, ctx) {
+        const Tx = txOf(ctx), out = [];
+        if (o.followup && o.followup.length) out.push({ k: "followup", title: Tx("Your last session's plan", "El plan de tu \xFAltima sesi\xF3n", "O plano da sua \xFAltima sess\xE3o"), items: o.followup.map((x) => ({ t: (x.ok > 0 ? "\u2713 " : x.ok < 0 ? "\u2717 " : "= ") + x.t, text: x.text, tone: x.ok > 0 ? "good" : x.ok < 0 ? "bad" : "" })) });
+        const st = [...(o.ranks || []).map((x) => ({ t: `T${x.n}`, text: Tx(`top ${x.top} % among ${x.drivers} drivers`, `top ${x.top} % entre ${x.drivers} pilotos`, `top ${x.top} % entre ${x.drivers} pilotos`), tone: x.top <= 25 ? "good" : x.top >= 60 ? "bad" : "" })), ...(o.cls || []).map((x) => ({ t: x.t, text: x.text, tone: "" }))];
+        if (st.length) out.push({ k: "stand", title: Tx("Strengths and weaknesses", "Puntos fuertes y d\xE9biles", "Pontos fortes e fracos"), items: st });
+        if (o.edges && o.edges.length) out.push({ k: "edges", title: Tx("Track left unused", "Pista sin usar", "Pista sem usar"), items: o.edges.map((x) => ({ t: `T${x.n}`, text: x.text, tone: "bad" })) });
+        if (o.guide && o.guide.corners.length) out.push({ k: "guide", title: Tx("Track guide", "Gu\xEDa del circuito", "Guia da pista"), items: guideItems(o.guide) });
+        return out;
+      }
+      __name(notesOf, "notesOf");
+      function guideItems(g) {
+        const tone = /* @__PURE__ */ __name((c) => c.level === "hard" ? "bad" : c.level === "easy" ? "good" : "", "tone");
+        return g.corners.map((c) => ({ t: `T${c.n} \xB7 ${c.levelText}`, text: c.lines.join(" "), tone: tone(c) }));
+      }
+      __name(guideItems, "guideItems");
       function analyse(A, B, ctx, opts) {
         ctx = ctx || {};
         const Tx = txOf(ctx), withText = /* @__PURE__ */ __name((c) => ({ ...c, text: c.tip[0] ? Tx(c.tip[0], c.tip[1], c.tip[2]) : "", todo: tipTodo(c, ctx) }), "withText");
@@ -1304,9 +1319,248 @@ var require_pitwall_analysis = __commonJS({
           const eu = edgeUse(A, ctx.map, ctx);
           if (eu.length) out.edges = eu;
         }
+        out.notes = notesOf(out, ctx);
         return opts && opts.json ? JSON.stringify(out) : out;
       }
       __name(analyse, "analyse");
+      const meanOf = /* @__PURE__ */ __name((a) => a.reduce((p, v) => p + v, 0) / a.length, "meanOf");
+      const sdOf = /* @__PURE__ */ __name((a) => {
+        const m = meanOf(a);
+        return Math.sqrt(a.reduce((p, v) => p + (v - m) * (v - m), 0) / a.length);
+      }, "sdOf");
+      const r32 = /* @__PURE__ */ __name((x) => Math.round(x * 1e3) / 1e3, "r3"), r1 = /* @__PURE__ */ __name((x) => Math.round(x * 10) / 10, "r1");
+      const cleanLaps2 = /* @__PURE__ */ __name((laps) => (laps || []).filter((l) => l && l.valid !== false && !l.pit && !l.drv && l.time > 0 && Array.isArray(l.bins) && l.bins.length > 20), "cleanLaps");
+      function lapSpread(laps) {
+        const ts = (laps || []).filter((l) => l && l.valid !== false && !l.drv && l.time > 0).map((l) => l.time);
+        if (!ts.length) return null;
+        const best = Math.min(...ts), c = ts.filter((t) => t <= best * 1.03);
+        return c.length < 5 ? null : { sd: r32(sdOf(c)), n: c.length, avg: r32(meanOf(c)), best: r32(best) };
+      }
+      __name(lapSpread, "lapSpread");
+      function cornerSpread(laps, ctx) {
+        const Tx = txOf(ctx), U = unitsOf(ctx), L = cleanLaps2(laps);
+        if (L.length < 3) return null;
+        const ref = L.reduce((a, l) => l.time < a.time ? l : a), sb = serOf(ref), n = sb.length, turns = turnsOf(ctx);
+        const zs = cornerZones(sb, n, turns, ctx && ctx.oval);
+        const rows = [];
+        zs.forEach((z, k) => {
+          const i0 = Math.max(0, z.i - 10), i1 = Math.min(n - 1, z.imin + 30), ts = [], vs = [];
+          L.forEach((l) => {
+            const s = serOf(l);
+            if (!s[i0] || !s[i1]) return;
+            const t = s[i1][1] - s[i0][1];
+            if (!(t > 0 && t < 60)) return;
+            ts.push(t);
+            let vm = Infinity;
+            for (let i = z.i; i <= Math.min(s.length - 1, z.imin + 10); i++) if (s[i] && s[i][0] < vm) vm = s[i][0];
+            if (isFinite(vm)) vs.push(U.spd(vm));
+          });
+          if (ts.length < 3) return;
+          const best = Math.min(...ts), avg = meanOf(ts), sd2 = sdOf(ts), cost = avg - best, num4 = z.turn != null ? z.turn + 1 : turnNo(turns, z.imin * BIN2, n * BIN2, k + 1);
+          rows.push({
+            n: num4,
+            d: z.i * BIN2,
+            apex: z.imin * BIN2,
+            sd: r32(sd2),
+            best: r32(best),
+            avg: r32(avg),
+            worst: r32(Math.max(...ts)),
+            cost: r32(cost),
+            vsd: vs.length >= 3 ? r1(sdOf(vs)) : null,
+            laps: ts.length,
+            text: Tx(
+              `T${num4} changes \xB1${sd2.toFixed(2)} s from lap to lap and costs you ${cost.toFixed(2)} s a lap on average against your best there`,
+              `T${num4} cambia \xB1${sd2.toFixed(2)} s de una vuelta a otra y te cuesta ${cost.toFixed(2)} s por vuelta de media frente a tu mejor paso por ella`,
+              `T${num4} muda \xB1${sd2.toFixed(2)} s de uma volta para outra e custa ${cost.toFixed(2)} s por volta em m\xE9dia contra sua melhor passagem nela`
+            )
+          });
+        });
+        rows.sort((a, b) => b.cost - a.cost);
+        return { rows, laps: L.length, unit: U.spdU() };
+      }
+      __name(cornerSpread, "cornerSpread");
+      function offsExplained(laps, ctx) {
+        const Tx = txOf(ctx), U = unitsOf(ctx), turns = turnsOf(ctx), all = (laps || []).filter((l) => l && Array.isArray(l.bins) && l.bins.length > 20), clean2 = cleanLaps2(all), out = [];
+        all.forEach((L) => {
+          const a = L.incAt || [], ks = L.incK || [];
+          for (let i = 0; i + 1 < a.length; i += 2) {
+            const pts = a[i + 1], k = ks[i / 2] || (pts >= 4 ? "contact" : pts >= 2 ? "loss" : "off");
+            if (k !== "off" && k !== "loss") continue;
+            const R = clean2.filter((x) => x !== L).reduce((p, x) => !p || x.time < p.time ? x : p, null);
+            if (!R) continue;
+            const o = offWhy(L, R, a[i], ctx);
+            const n = o.n || turnNo(turns, a[i], serOf(R).length * BIN2, 0);
+            const at2 = n ? `T${n}` : `${Math.round(a[i])} m`, v = o.v, sp = /* @__PURE__ */ __name((x) => Math.round(x) + " " + U.spdU(), "sp");
+            const text2 = o.why === "lock" ? Tx(`${at2} \xB7 lock-up. You braked harder than on your best lap there (${Math.round(v * 100)} % against ${Math.round(o.r * 100)} %)`, `${at2} \xB7 bloqueo. Frenaste m\xE1s fuerte que en tu mejor vuelta ah\xED (${Math.round(v * 100)} % frente a ${Math.round(o.r * 100)} %)`, `${at2} \xB7 travamento. Voc\xEA freou mais forte que na sua melhor volta ali (${Math.round(v * 100)} % contra ${Math.round(o.r * 100)} %)`) : o.why === "late" ? Tx(`${at2} \xB7 braked ${Math.round(v)} m later than on your best lap`, `${at2} \xB7 frenaste ${Math.round(v)} m m\xE1s tarde que en tu mejor vuelta`, `${at2} \xB7 freou ${Math.round(v)} m mais tarde que na sua melhor volta`) : o.why === "fast" ? Tx(`${at2} \xB7 too fast at turn-in, ${sp(v)} more than on your best lap`, `${at2} \xB7 demasiado r\xE1pido al girar, ${sp(v)} m\xE1s que en tu mejor vuelta`, `${at2} \xB7 r\xE1pido demais na entrada, ${sp(v)} a mais que na sua melhor volta`) : o.why === "throttle" ? Tx(`${at2} \xB7 early throttle, ${Math.round(v)} m before your best lap`, `${at2} \xB7 acelerador pronto, ${Math.round(v)} m antes que en tu mejor vuelta`, `${at2} \xB7 acelerador cedo, ${Math.round(v)} m antes da sua melhor volta`) : Tx(`${at2} \xB7 speed and pedals like your best lap there, so the line took you off`, `${at2} \xB7 velocidad y pedales como en tu mejor vuelta ah\xED, as\xED que fue la trazada`, `${at2} \xB7 velocidade e pedais como na sua melhor volta ali, ent\xE3o foi o tra\xE7ado`);
+            out.push({ lap: L.n, d: Math.round(a[i]), k, pts, n, why: o.why, v: Math.round(v * 10) / 10, text: text2 });
+          }
+        });
+        return out;
+      }
+      __name(offsExplained, "offsExplained");
+      function offWhy(L, R, d, ctx) {
+        const U = unitsOf(ctx), sl = serOf(L), sr = serOf(R), n = Math.min(sl.length, sr.length), j = Math.min(n - 1, Math.max(0, Math.round(d / BIN2)));
+        const all = cornerZones(sr, sr.length, turnsOf(ctx), ctx && ctx.oval);
+        let zi = -1;
+        all.forEach((q2, k) => {
+          if (q2.i <= j + 2 && j - q2.i <= 60) zi = k;
+        });
+        const z = zi >= 0 ? all[zi] : null, num4 = z ? z.turn != null ? z.turn + 1 : zi + 1 : 0;
+        const at2 = /* @__PURE__ */ __name((s, i, c2) => s[i] ? s[i][c2] : null, "at");
+        const c = [];
+        if (z) {
+          const apex = z.imin, from = Math.max(1, z.i - 30), to = Math.min(apex, j);
+          const onset = /* @__PURE__ */ __name((s) => {
+            for (let i = from; i <= to; i++) if (at2(s, i, 3) > 0.1) return i;
+            return -1;
+          }, "onset");
+          const oL = onset(sl), oR = onset(sr);
+          if (oL >= 0 && oR >= 0) c.push({ why: "late", v: (oL - oR) * BIN2, s: (oL - oR) * BIN2 / 10 });
+          const peak = /* @__PURE__ */ __name((s, a, b) => {
+            let m = 0;
+            for (let i = a; i <= b; i++) m = Math.max(m, at2(s, i, 3) || 0);
+            return m;
+          }, "peak");
+          if (oL >= 0) {
+            const pL = peak(sl, oL, to), pR = peak(sr, Math.max(from, oR), to);
+            if (pL >= 0.9) c.push({ why: "lock", v: pL, r: pR, s: (pL - pR) / 0.1 });
+          }
+          let ti = Math.max(z.i, apex - 6);
+          for (let i = z.i; i < apex; i++) if (at2(sr, i, 3) != null && at2(sr, i, 3) < 0.1 && i > (oR >= 0 ? oR : z.i)) {
+            ti = i;
+            break;
+          }
+          ti = Math.min(ti, j);
+          if (at2(sl, ti, 0) != null && at2(sr, ti, 0) != null) {
+            const dv = U.spd(at2(sl, ti, 0)) - U.spd(at2(sr, ti, 0));
+            c.push({ why: "fast", v: dv, s: dv / 4 });
+          }
+          if (j >= apex - 4) {
+            const thr = /* @__PURE__ */ __name((s) => {
+              for (let i = Math.max(0, apex - 10); i <= Math.min(n - 1, apex + 40); i++) if (at2(s, i, 2) > 0.5 && !(at2(s, i, 3) > 0.1)) return i;
+              return -1;
+            }, "thr");
+            const tL = thr(sl), tR = thr(sr);
+            if (tL >= 0 && tR >= 0 && tL <= j) c.push({ why: "throttle", v: (tR - tL) * BIN2, s: (tR - tL) * BIN2 / 15 });
+          }
+        } else {
+          const q2 = Math.max(0, j - 10);
+          if (at2(sl, q2, 0) != null && at2(sr, q2, 0) != null) {
+            const dv = U.spd(at2(sl, q2, 0)) - U.spd(at2(sr, q2, 0));
+            c.push({ why: "fast", v: dv, s: dv / 4 });
+          }
+        }
+        const top = c.filter((x) => x.s >= 1).sort((a, b) => b.s - a.s)[0];
+        return top ? { ...top, n: num4 } : { why: "line", v: 0, n: num4 };
+      }
+      __name(offWhy, "offWhy");
+      function ggOf(l) {
+        const g = ggRaw(l);
+        return g ? { pts: g.pts, max: g.max } : null;
+      }
+      __name(ggOf, "ggOf");
+      function ggRaw(l) {
+        const s = serOf(l), n = s.length, xy = l && l.xy;
+        if (!xy || !Array.isArray(xy.x) || xy.x.length < 20 || n < 20) return null;
+        const N = xy.x.length, P = /* @__PURE__ */ __name((i) => {
+          const q2 = Math.max(0, Math.min(N - 1, Math.round(i * N / n)));
+          return [xy.x[q2], xy.y[q2]];
+        }, "P");
+        const pts = [], idx = [];
+        let mLat = 0, mBr = 0, mAc = 0;
+        for (let i = 4; i < n - 4; i += 2) {
+          const a = s[i - 2], b = s[i + 2], m = s[i];
+          if (!a || !b || !m) continue;
+          const dt = b[1] - a[1], v = m[0];
+          if (!(dt > 0.01 && dt < 5) || !(v > 5)) continue;
+          const lg = (b[0] - a[0]) / dt / 9.81;
+          const p0 = P(i - 4), p1 = P(i), p2 = P(i + 4);
+          const ax = p1[0] - p0[0], ay = p1[1] - p0[1], bx = p2[0] - p1[0], by = p2[1] - p1[1], cx = p2[0] - p0[0], cy = p2[1] - p0[1];
+          const la = Math.hypot(ax, ay), lb = Math.hypot(bx, by), lc = Math.hypot(cx, cy);
+          if (!(la > 1 && lb > 1 && lc > 1)) continue;
+          const k = 2 * (ax * by - ay * bx) / (la * lb * lc), lat = v * v * k / 9.81;
+          if (!isFinite(lat) || !isFinite(lg) || Math.abs(lat) > 5 || Math.abs(lg) > 5) continue;
+          pts.push([Math.round(lat * 100) / 100, Math.round(lg * 100) / 100]);
+          idx.push(i);
+          mLat = Math.max(mLat, Math.abs(lat));
+          mBr = Math.max(mBr, -lg);
+          mAc = Math.max(mAc, lg);
+        }
+        const r2 = /* @__PURE__ */ __name((x) => Math.round(x * 100) / 100, "r2");
+        return pts.length < 20 ? null : { pts, idx, max: { lat: r2(mLat), brake: r2(mBr), acc: r2(mAc) } };
+      }
+      __name(ggRaw, "ggRaw");
+      function steerOf(l, ctx) {
+        const U = unitsOf(ctx), s = serOf(l), out = [];
+        for (let i = 0; i < s.length; i += 2) {
+          const b = s[i];
+          if (!b || !(b[0] > 5) || !isFinite(b[5])) continue;
+          const deg = Math.abs(b[5]) * 180 / Math.PI;
+          if (deg > 3) out.push([Math.round(U.spd(b[0])), Math.round(deg * 10) / 10]);
+        }
+        return out;
+      }
+      __name(steerOf, "steerOf");
+      function understeer(A, B, ctx) {
+        const Tx = txOf(ctx), per = /* @__PURE__ */ __name((l) => {
+          const g = ggRaw(l), s = serOf(l), xs = [];
+          if (!g) return null;
+          g.idx.forEach((i, q2) => {
+            const m = s[i], lat = Math.abs(g.pts[q2][0]);
+            if (m && lat > 0.5 && isFinite(m[5]) && m[5] !== 0) xs.push(Math.abs(m[5]) * 180 / Math.PI / lat);
+          });
+          return xs.length >= 10 ? xs.sort((x, y) => x - y)[Math.floor(xs.length / 2)] : null;
+        }, "per");
+        const a = per(A), b = B ? per(B) : null;
+        if (a == null) return null;
+        const out = { a: r1(a), b: b == null ? null : r1(b) };
+        if (b != null && b > 0) {
+          const f = a / b - 1;
+          out.text = f >= 0.1 ? Tx(`A needs ${Math.round(f * 100)} % more steering than B for the same grip, so A pushes (understeer)`, `A necesita un ${Math.round(f * 100)} % m\xE1s de volante que B para el mismo agarre, as\xED que A empuja (subviraje)`, `A precisa de ${Math.round(f * 100)} % mais volante que B para a mesma ader\xEAncia, ent\xE3o A empurra (subester\xE7o)`) : f <= -0.1 ? Tx(`A needs ${Math.round(-f * 100)} % less steering than B for the same grip, so the rear moves more (oversteer)`, `A necesita un ${Math.round(-f * 100)} % menos de volante que B para el mismo agarre, as\xED que la trasera se mueve m\xE1s (sobreviraje)`, `A precisa de ${Math.round(-f * 100)} % menos volante que B para a mesma ader\xEAncia, ent\xE3o a traseira se mexe mais (sobrester\xE7o)`) : Tx("A and B need the same steering for the same grip", "A y B necesitan el mismo volante para el mismo agarre", "A e B precisam do mesmo volante para a mesma ader\xEAncia");
+        }
+        return out;
+      }
+      __name(understeer, "understeer");
+      function tyreLaps(laps) {
+        return (laps || []).filter((l) => l && Array.isArray(l.tt) && l.tt.length === 12).map((l) => ({ n: l.n, tt: l.tt, avg: [0, 1, 2, 3].map((w) => r1((l.tt[w * 3] + l.tt[w * 3 + 1] + l.tt[w * 3 + 2]) / 3)) }));
+      }
+      __name(tyreLaps, "tyreLaps");
+      function fuelUse(laps, ctx) {
+        const ls = (laps || []).filter((l) => l && l.fuel > 0 && !l.pit && l.time > 0);
+        if (ls.length < 2) return null;
+        const best = Math.min(...ls.map((l) => l.time)), ok = ls.filter((l) => l.time <= best * 1.07);
+        if (ok.length < 2) return null;
+        const tank = ctx && ctx.tank > 0 ? ctx.tank : null;
+        return { perLap: r32(meanOf(ok.map((l) => l.fuel))), maxLap: r32(Math.max(...ok.map((l) => l.fuel))), lapTime: r32(meanOf(ok.map((l) => l.time))), laps: ok.length, tank };
+      }
+      __name(fuelUse, "fuelUse");
+      function fuelPlan(u, race) {
+        if (!u || !(u.perLap > 0)) return null;
+        const tank = race && race.tank > 0 ? race.tank : u.tank, spare = race && race.spare != null ? race.spare : 1;
+        let laps = race && race.laps > 0 ? Math.ceil(race.laps) : 0;
+        if (!laps && race && race.min > 0 && u.lapTime > 0) laps = Math.floor(race.min * 60 / u.lapTime) + 1;
+        if (!laps) return null;
+        const need = (laps + spare) * u.perLap, perTank = tank ? Math.floor(tank / u.perLap) : null;
+        const stops = tank ? Math.max(0, Math.ceil(need / tank) - 1) : null;
+        const add = stops ? (need - tank) / stops : 0;
+        return { laps, need: r1(need), perTank, stops, add: r1(add), start: r1(stops ? tank : need), stint: stops != null ? Math.ceil(laps / (stops + 1)) : null, tank: tank || null };
+      }
+      __name(fuelPlan, "fuelPlan");
+      function insights(A, B, ctx) {
+        ctx = ctx || {};
+        const laps = Array.isArray(ctx.laps) ? ctx.laps : [];
+        return {
+          spread: cornerSpread(laps, ctx),
+          lapSpread: lapSpread(laps),
+          offs: offsExplained(laps, ctx),
+          gg: { a: A ? ggOf(A) : null, b: B ? ggOf(B) : null },
+          steer: { a: A ? steerOf(A, ctx) : [], b: B ? steerOf(B, ctx) : [] },
+          us: A ? understeer(A, B, ctx) : null,
+          tyres: tyreLaps(laps),
+          fuel: fuelUse(laps, ctx)
+        };
+      }
+      __name(insights, "insights");
       const api2 = {
         VERSION,
         BIN: BIN2,
@@ -1348,7 +1602,19 @@ var require_pitwall_analysis = __commonJS({
         cornerRanks,
         clsLines,
         racePace,
-        edgeUse
+        edgeUse,
+        notesOf,
+        guideItems,
+        lapSpread,
+        cornerSpread,
+        offsExplained,
+        ggOf,
+        steerOf,
+        understeer,
+        tyreLaps,
+        fuelUse,
+        fuelPlan,
+        insights
       };
       root.PW_ANALYSIS = api2;
       if (typeof module !== "undefined" && module.exports) module.exports = api2;
@@ -1388,6 +1654,7 @@ async function downloads(req, env, url) {
     if (!/^[A-Za-z0-9._-]{1,80}$/.test(name2)) return new Response("not found", { status: 404 });
     const o = await env.DL.get(name2);
     if (!o) return new Response("not found", { status: 404 });
+    if (name2 === "version.json") return pcVersion(await o.text());
     const ext = name2.split(".").pop().toLowerCase();
     const h = new Headers({ "content-type": TYPES[ext] || "application/octet-stream", "cache-control": ext === "json" || ext === "md" ? "no-cache" : "public, max-age=300", "x-content-type-options": "nosniff", "access-control-allow-origin": "*" });
     if (o.httpEtag) h.set("etag", o.httpEtag);
@@ -1399,7 +1666,7 @@ async function downloads(req, env, url) {
     const o = await env.DL.get(n);
     return o ? o.text() : null;
   }, "read");
-  const json14 = /* @__PURE__ */ __name(async (n) => {
+  const json15 = /* @__PURE__ */ __name(async (n) => {
     try {
       return JSON.parse(await read(n) || "null");
     } catch (e) {
@@ -1409,7 +1676,7 @@ async function downloads(req, env, url) {
   const es = (req.headers.get("accept-language") || "").toLowerCase().startsWith("es");
   if (p === "/downloads/" || p === "/changelog/") return Response.redirect("https://pitlanehq.app" + p.slice(0, -1), 301);
   if (p === "/downloads") {
-    const pc = await json14("version.json") || {}, ph = await json14("phones.json") || {};
+    const pc = await json15("version.json") || {}, ph = await json15("phones.json") || {};
     const t = /* @__PURE__ */ __name((en, s) => es ? s : en, "t");
     const row = /* @__PURE__ */ __name((title, sub, file) => `<a class="c" href="/dl/${esc(file)}"><b>${esc(title)}</b><span>${esc(sub)}</span></a>`, "row");
     const body = `<h1>${t("Download Pitlane HQ", "Descargar Pitlane HQ")}</h1><p>${t("Free. One account for the PC, the web and the phone apps.", "Gratis. Una cuenta para el PC, la web y las apps de m\xF3vil.")}</p>
@@ -1442,6 +1709,24 @@ h3{font-size:14px;color:#ffb02e;margin:18px 0 4px}p{color:#a9b4c3;margin:6px 0}u
 .g{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px}.c{display:grid;gap:3px;padding:14px;border:1px solid #2b3542;border-radius:12px;background:#19202a;text-decoration:none;color:#e7ebf1}.c:hover{border-color:#ffb02e}.c span{color:#8a97a9;font-size:13px}.n{margin-top:26px;font-size:14px}
 .top{display:flex;align-items:center;gap:10px;margin-bottom:18px}.top b{font-size:15px;letter-spacing:.06em}.top img{width:28px;height:28px;border-radius:7px}</style>
 <main><div class="top"><img src="/icon-192.png" alt=""><b>PITLANE HQ</b></div>${body}</main></html>`, "page");
+var PC_MIN = "0.9.0";
+var vparts = /* @__PURE__ */ __name((v) => String(v || "0").replace(/^v/, "").split("+")[0].split(".").map((x) => parseInt(x, 10) || 0), "vparts");
+function versionLess(a, b) {
+  const x = vparts(a), y = vparts(b);
+  for (let i = 0; i < Math.max(x.length, y.length); i++) if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) < (y[i] || 0);
+  return false;
+}
+__name(versionLess, "versionLess");
+function pcVersion(text2) {
+  let body = text2;
+  try {
+    const v = JSON.parse(text2);
+    if (v && typeof v === "object" && versionLess(v.min, PC_MIN)) body = JSON.stringify({ ...v, min: PC_MIN });
+  } catch (e) {
+  }
+  return new Response(body, { headers: { "content-type": TYPES.json, "cache-control": "no-cache", "x-content-type-options": "nosniff", "access-control-allow-origin": "*" } });
+}
+__name(pcVersion, "pcVersion");
 var buildCache = { at: 0, build: "" };
 async function latestBuild(env) {
   const now = Date.now();
@@ -3619,29 +3904,29 @@ var same = /* @__PURE__ */ __name((a, b) => {
   return r2 === 0;
 }, "same");
 async function patreonWebhook(req, env) {
-  const json14 = /* @__PURE__ */ __name((o, s = 200) => new Response(JSON.stringify(o), { status: s, headers: { "content-type": "application/json" } }), "json");
-  if (!env.PATREON_WEBHOOK_SECRET) return json14({ error: "Patreon is not set up on this server" }, 404);
+  const json15 = /* @__PURE__ */ __name((o, s = 200) => new Response(JSON.stringify(o), { status: s, headers: { "content-type": "application/json" } }), "json");
+  if (!env.PATREON_WEBHOOK_SECRET) return json15({ error: "Patreon is not set up on this server" }, 404);
   const body = await req.text();
-  if (body.length > 2e5) return json14({ error: "too large" }, 413);
+  if (body.length > 2e5) return json15({ error: "too large" }, 413);
   const sig = (req.headers.get("x-patreon-signature") || "").toLowerCase();
-  if (!sig || !same(sig, hmacMd5Hex(env.PATREON_WEBHOOK_SECRET, body))) return json14({ error: "bad signature" }, 401);
+  if (!sig || !same(sig, hmacMd5Hex(env.PATREON_WEBHOOK_SECRET, body))) return json15({ error: "bad signature" }, 401);
   let j = null;
   try {
     j = JSON.parse(body);
   } catch (e) {
-    return json14({ error: "not JSON" }, 400);
+    return json15({ error: "not JSON" }, 400);
   }
   const ev = req.headers.get("x-patreon-event") || "";
   const at2 = j && j.data && j.data.attributes || {};
   const email = String(at2.email || "").trim().toLowerCase();
-  if (!email) return json14({ ok: true, skipped: "no email" });
+  if (!email) return json15({ ok: true, skipped: "no email" });
   const active = !/delete/.test(ev) && at2.patron_status === "active_patron";
   const eh = await emailHash(env, email), now = Date.now();
   await env.DB.batch([
     env.DB.prepare("INSERT INTO patreon_patrons (email_hash, active, updated) VALUES (?1,?2,?3) ON CONFLICT(email_hash) DO UPDATE SET active=excluded.active, updated=excluded.updated").bind(eh, active ? 1 : 0, now),
     active ? env.DB.prepare("UPDATE accounts SET supporter=1, supporter_src=COALESCE(supporter_src,'patreon') WHERE email_hash=?1").bind(eh) : env.DB.prepare("UPDATE accounts SET supporter=0, supporter_src=NULL WHERE email_hash=?1 AND supporter_src='patreon'").bind(eh)
   ]);
-  return json14({ ok: true, active });
+  return json15({ ok: true, active });
 }
 __name(patreonWebhook, "patreonWebhook");
 async function patreonOnRegister(env, id2, eh) {
@@ -5061,9 +5346,9 @@ async function prunePresence(env) {
 }
 __name(prunePresence, "prunePresence");
 async function onlineRoute(req, env) {
-  const json14 = /* @__PURE__ */ __name((o, s = 200) => new Response(JSON.stringify(o), { status: s, headers: { "content-type": "application/json", "cache-control": "no-store" } }), "json");
+  const json15 = /* @__PURE__ */ __name((o, s = 200) => new Response(JSON.stringify(o), { status: s, headers: { "content-type": "application/json", "cache-control": "no-store" } }), "json");
   const acc = await sessionAccount(req, env);
-  if (!acc || !isAdmin(env, acc.id)) return json14({ error: "only the admins of this server can do this" }, 403);
+  if (!acc || !isAdmin(env, acc.id)) return json15({ error: "only the admins of this server can do this" }, 403);
   const now = Date.now(), on = now - 3 * 6e4;
   const r2 = await env.DB.prepare(
     `SELECT p.account_id AS accountId, p.kind, p.name AS device, p.app_version AS version, p.last_seen AS lastSeen, a.display AS nick
@@ -5080,7 +5365,7 @@ async function onlineRoute(req, env) {
     return { ...c, accounts: accs.size, devices: list.length };
   }, "count");
   const online = rows.filter((x) => x.lastSeen > on), recent2 = rows.filter((x) => x.lastSeen <= on);
-  return json14({ now, online, recent: recent2, counts: { online: count(online), recent: count(rows) } });
+  return json15({ now, online, recent: recent2, counts: { online: count(online), recent: count(rows) } });
 }
 __name(onlineRoute, "onlineRoute");
 
@@ -5399,7 +5684,8 @@ async function freeName(env, want) {
 }
 __name(freeName, "freeName");
 var isAdmin = /* @__PURE__ */ __name((env, id2) => env.LOCAL === "1" || String(env.ADMINS || env.SEASON_UPLOADERS || "").split(",").map((x) => x.trim()).filter(Boolean).includes(id2), "isAdmin");
-var isTester = /* @__PURE__ */ __name((env, id2) => !!id2 && String(env.TESTERS || "").split(",").map((x) => x.trim()).filter(Boolean).includes(id2), "isTester");
+var testersSet = /* @__PURE__ */ __name((env, id2) => !!id2 && String(env.TESTERS || "").split(",").map((x) => x.trim()).filter(Boolean).includes(id2), "testersSet");
+var isTester = /* @__PURE__ */ __name((env, id2, row) => !!id2 && (!!(row && row.tester) || testersSet(env, id2)), "isTester");
 async function accounts(req, env, url) {
   if (env.COMMUNITY !== "1") return err3("accounts are not enabled on this server", 404);
   const p = url.pathname.replace(/^\/account/, ""), m = req.method;
@@ -5503,7 +5789,7 @@ async function accounts(req, env, url) {
     const token = await newSession(env, id2, body.device);
     return json6({ id: id2, token, display, nameKind: body.nameKind === "iracing" ? "iracing" : "nick", wrappedKey: body.wrappedKey, keyTag: await keyTag(body.wrappedKey), admin: isAdmin(env, id2), tester: isTester(env, id2), verified: false, mailed, escrow: false, ...taken });
   }
-  const signedIn = /* @__PURE__ */ __name(async (a2, token, social) => json6({ id: a2.id, token, display: a2.display, nameKind: a2.name_kind, anon: !!a2.anon, wrappedKey: social ? void 0 : a2.wrapped_key, keyTag: await keyTag(a2.wrapped_key), admin: isAdmin(env, a2.id), tester: isTester(env, a2.id), verified: !!a2.verified, twoFactor: !!a2.totp_on, escrow: !!a2.escrow, noPassword: noPassword(a2) || void 0, ...social ? await escrowLogin(env, a2) : {} }), "signedIn");
+  const signedIn = /* @__PURE__ */ __name(async (a2, token, social) => json6({ id: a2.id, token, display: a2.display, nameKind: a2.name_kind, anon: !!a2.anon, wrappedKey: social ? void 0 : a2.wrapped_key, keyTag: await keyTag(a2.wrapped_key), admin: isAdmin(env, a2.id), tester: isTester(env, a2.id, a2), verified: !!a2.verified, twoFactor: !!a2.totp_on, escrow: !!a2.escrow, noPassword: noPassword(a2) || void 0, ...social ? await escrowLogin(env, a2) : {} }), "signedIn");
   if (p === "/steam/login/start" && (m === "GET" || m === "POST")) {
     if (await tooMany(env, ["steam:" + ip], [30])) return err3("too many tries: wait 15 minutes", 429);
     await fail(env, ["steam:" + ip]);
@@ -5653,7 +5939,7 @@ async function accounts(req, env, url) {
     await env.DB.prepare("UPDATE accounts SET escrow=?2 WHERE id=?1").bind(a.id, r2.value).run();
     return json6({ ok: true, escrow: true });
   }
-  if (p === "/me" && m === "GET") return json6({ id: a.id, display: a.display, nameKind: a.name_kind, anon: !!a.anon, created: a.created, admin: isAdmin(env, a.id), tester: isTester(env, a.id), supporter: !!a.supporter, supporterHidden: !!a.supporter_hidden, ...proOf(a), ...await proHere(env, a, url.searchParams), proGate: await proGate(env), verified: !!a.verified, mail: mailReady(env), twoFactor: !!a.totp_on, escrow: !!a.escrow, noPassword: noPassword(a) || void 0, gated: gated || void 0, google: !!await env.DB.prepare("SELECT 1 FROM google_links WHERE account_id=?1").bind(a.id).first(), recoveryLeft: a.totp_on ? (await env.DB.prepare("SELECT COUNT(*) AS n FROM recovery_codes WHERE account_id=?1").bind(a.id).first() || {}).n || 0 : 0 });
+  if (p === "/me" && m === "GET") return json6({ id: a.id, display: a.display, nameKind: a.name_kind, anon: !!a.anon, created: a.created, admin: isAdmin(env, a.id), tester: isTester(env, a.id, a), supporter: !!a.supporter, supporterHidden: !!a.supporter_hidden, ...proOf(a), ...await proHere(env, a, url.searchParams), proGate: await proGate(env), verified: !!a.verified, mail: mailReady(env), twoFactor: !!a.totp_on, escrow: !!a.escrow, noPassword: noPassword(a) || void 0, gated: gated || void 0, google: !!await env.DB.prepare("SELECT 1 FROM google_links WHERE account_id=?1").bind(a.id).first(), recoveryLeft: a.totp_on ? (await env.DB.prepare("SELECT COUNT(*) AS n FROM recovery_codes WHERE account_id=?1").bind(a.id).first() || {}).n || 0 : 0 });
   if (p === "/2fa/setup" && m === "POST") {
     if (noPassword(a)) return SOCIAL_ONLY();
     if (await tooMany(env, ["login:" + a.email_hash], [5])) return err3("too many wrong passwords: wait 15 minutes", 429);
@@ -5844,7 +6130,7 @@ async function quickRegister(env, body, ip) {
   }
   const a = await env.DB.prepare("SELECT * FROM accounts WHERE id=?1").bind(id2).first();
   const token = await newSession(env, id2, cleanName(body.device) || g.device || "PC");
-  return json6({ id: a.id, token, display: a.display, nameKind: "nick", anon: false, keyTag: await keyTag(a.wrapped_key), admin: isAdmin(env, a.id), tester: isTester(env, a.id), verified: true, twoFactor: false, escrow: true, noPassword: true, created: true, dataKey: key, email: email || void 0 });
+  return json6({ id: a.id, token, display: a.display, nameKind: "nick", anon: false, keyTag: await keyTag(a.wrapped_key), admin: isAdmin(env, a.id), tester: isTester(env, a.id, a), verified: true, twoFactor: false, escrow: true, noPassword: true, created: true, dataKey: key, email: email || void 0 });
 }
 __name(quickRegister, "quickRegister");
 
@@ -6404,9 +6690,12 @@ var summarySql = /* @__PURE__ */ __name((game, uploader) => `WITH s AS (${base(g
   FROM s`, "summarySql");
 var bestSql = /* @__PURE__ */ __name((game, uploader) => `WITH s AS (${base(game, uploader, false)}) SELECT pos, field, pos_cls, track, track_config, car, started FROM s
   WHERE race=1 AND pos>0 ORDER BY pos, started DESC LIMIT 1`, "bestSql");
+var CLEAN = /* @__PURE__ */ __name((t) => `${t}valid=1 AND ${t}drv IS NULL AND ${t}time>0 AND ${t}time<3600`, "CLEAN");
+var CONS_OF = /* @__PURE__ */ __name((sid) => `(SELECT CASE WHEN COUNT(*)>=5 THEN MAX(0, AVG(c.time*c.time)-AVG(c.time)*AVG(c.time)) END FROM laps c
+       WHERE c.session_id=${sid} AND ${CLEAN("c.")} AND c.time<=1.03*(SELECT MIN(m.time) FROM laps m WHERE m.session_id=${sid} AND ${CLEAN("m.")}))`, "CONS_OF");
 var SUMS_OF = /* @__PURE__ */ __name((sid) => `(SELECT COUNT(*), MIN(CASE WHEN valid=1 AND drv IS NULL THEN time END),
        SUM(CASE WHEN time>0 AND time<3600 THEN time END), group_concat(DISTINCT drv) FROM laps WHERE session_id=${sid})`, "SUMS_OF");
-var SESSION_SUMS = `UPDATE sessions SET (laps, best, secs, drvs)=${SUMS_OF("?1")} WHERE id=?1`;
+var SESSION_SUMS = `UPDATE sessions SET (laps, best, secs, drvs)=${SUMS_OF("?1")}, cons=${CONS_OF("?1")} WHERE id=?1`;
 var ALL_SESSION_SUMS = `UPDATE sessions SET (laps, best, secs, drvs)=${SUMS_OF("sessions.id")}`;
 var TZ_MAX = 14 * 60;
 function monthStart(now, tz) {
@@ -6647,6 +6936,11 @@ async function weeklyAlerts(env, { sessionSummary: sessionSummary2 }, now = Date
   return { due: due.length, written };
 }
 __name(weeklyAlerts, "weeklyAlerts");
+async function testerAlert(env, acc, now = Date.now()) {
+  await env.DB.prepare(SQL_ALERT_ADD).bind(rid6(), acc, "tester", now, "{}").run();
+  await wake(env, acc);
+}
+__name(testerAlert, "testerAlert");
 var pruneAlerts = /* @__PURE__ */ __name((env, now = Date.now()) => env.DB.prepare(SQL_ALERT_PRUNE).bind(now - ALERT_DAYS * 864e5).run(), "pruneAlerts");
 
 // src/alerts.js
@@ -6979,10 +7273,83 @@ async function fillSectors(env, limit = 100) {
 }
 __name(fillSectors, "fillSectors");
 
-// src/community.js
+// src/friends.js
 var JSONH7 = { "content-type": "application/json; charset=utf-8", "cache-control": "no-store", "access-control-allow-origin": "*" };
 var json10 = /* @__PURE__ */ __name((v, status = 200) => new Response(JSON.stringify(v), { status, headers: JSONH7 }), "json");
 var err6 = /* @__PURE__ */ __name((msg, status) => json10({ error: msg }, status), "err");
+var FOLLOW_MAX = 200;
+var ID_RE = /^[A-Za-z0-9]{8,40}$/;
+async function follows(env, account, id2) {
+  if (!account || !ID_RE.test(String(id2 || ""))) return false;
+  return !!await env.DB.prepare("SELECT 1 AS x FROM follows WHERE account_id=?1 AND driver_id=?2").bind(account, id2).first().catch(() => null);
+}
+__name(follows, "follows");
+async function target(env, b) {
+  let id2 = null;
+  if (typeof b.lap === "string" && b.lap) {
+    const l = await env.DB.prepare("SELECT user_id, anon FROM community_laps WHERE id=?1").bind(b.lap.slice(0, 80)).first();
+    if (!l || l.anon === 1) return null;
+    id2 = l.user_id;
+  } else if (ID_RE.test(String(b.id || ""))) id2 = b.id;
+  if (!id2) return null;
+  const a = await env.DB.prepare("SELECT id, anon FROM accounts WHERE id=?1").bind(id2).first();
+  return a && !a.anon ? a.id : null;
+}
+__name(target, "target");
+async function friendRoutes(req, env, p, m, body, url, game, acc) {
+  if (!p.startsWith("/friends")) return null;
+  if (!acc) return err6("sign in with your Pitlane HQ account to follow drivers", 401);
+  if ((p === "/friends/follow" || p === "/friends/unfollow") && m === "POST") {
+    const id2 = await target(env, body || {});
+    if (p === "/friends/unfollow") {
+      const del = id2 || (ID_RE.test(String((body || {}).id || "")) ? body.id : null);
+      if (del) await env.DB.prepare("DELETE FROM follows WHERE account_id=?1 AND driver_id=?2").bind(acc.id, del).run();
+      return json10({ following: false });
+    }
+    if (!id2) return err6("this driver is anonymous", 404);
+    if (id2 === acc.id) return err6("that is you", 400);
+    const n = await env.DB.prepare("SELECT COUNT(*) AS n FROM follows WHERE account_id=?1").bind(acc.id).first();
+    if (n && n.n >= FOLLOW_MAX) return err6(`you follow ${FOLLOW_MAX} drivers already`, 400);
+    await env.DB.prepare("INSERT OR IGNORE INTO follows (account_id, driver_id, created) VALUES (?1,?2,?3)").bind(acc.id, id2, Date.now()).run();
+    return json10({ following: true, id: id2 });
+  }
+  if (p === "/friends" && m === "GET") {
+    const fr = (await env.DB.prepare(
+      `SELECT f.driver_id AS id, u.alias AS name, (COALESCE(a.supporter,0)=1 AND COALESCE(a.supporter_hidden,0)=0) AS sup, f.created
+       FROM follows f JOIN accounts a ON a.id=f.driver_id JOIN community_users u ON u.id=f.driver_id
+       WHERE f.account_id=?1 AND COALESCE(a.anon,0)=0 ORDER BY f.created DESC LIMIT ${FOLLOW_MAX}`
+    ).bind(acc.id).all()).results || [];
+    const laps = fr.length ? (await env.DB.prepare(
+      `SELECT id, user_id AS uid, track, car, track_id AS trackId, car_id AS carId, time, game, created, wet FROM community_laps
+       WHERE user_id IN (SELECT driver_id FROM follows WHERE account_id=?1) AND anon=0 AND COALESCE(shown,'')<>'model'
+       ORDER BY created DESC LIMIT 600`
+    ).bind(acc.id).all()).results || [] : [];
+    const by = /* @__PURE__ */ new Map();
+    for (const l of laps) {
+      const k = by.get(l.uid) || [];
+      if (k.length < 8) k.push(l);
+      by.set(l.uid, k);
+    }
+    return json10({ friends: fr.map((f) => ({ id: f.id, name: f.name || "Driver", sup: !!f.sup, since: f.created, laps: (by.get(f.id) || []).map(({ uid, ...l }) => l) })) });
+  }
+  if (p === "/friends/laps" && m === "GET") {
+    const t = +url.searchParams.get("trackId"), c = await famId(env, game, url.searchParams.get("carId"));
+    if (!t || !c) return err6("trackId and carId", 400);
+    const r2 = await env.DB.prepare(
+      `SELECT l.id, l.user_id AS fid, u.alias, l.time, l.sectors, l.wet FROM community_laps l JOIN community_users u ON u.id=l.user_id JOIN accounts a ON a.id=l.user_id
+       WHERE l.track_id=?1 AND l.car_id=?2 AND l.game=?3 AND l.anon=0 AND COALESCE(a.anon,0)=0 AND COALESCE(l.shown,'')<>'model'
+         AND l.user_id IN (SELECT driver_id FROM follows WHERE account_id=?4) ORDER BY l.time LIMIT ${FOLLOW_MAX}`
+    ).bind(t, c, game, acc.id).all();
+    return json10({ laps: (r2.results || []).map((x) => ({ ...x, sectors: x.sectors ? JSON.parse(x.sectors) : null })) });
+  }
+  return err6("not found", 404);
+}
+__name(friendRoutes, "friendRoutes");
+
+// src/community.js
+var JSONH8 = { "content-type": "application/json; charset=utf-8", "cache-control": "no-store", "access-control-allow-origin": "*" };
+var json11 = /* @__PURE__ */ __name((v, status = 200) => new Response(JSON.stringify(v), { status, headers: JSONH8 }), "json");
+var err7 = /* @__PURE__ */ __name((msg, status) => json11({ error: msg }, status), "err");
 var str3 = /* @__PURE__ */ __name((v, max = 120) => typeof v === "string" ? v.slice(0, max) : v == null ? null : String(v).slice(0, max), "str");
 var num2 = /* @__PURE__ */ __name((v) => typeof v === "number" && isFinite(v) ? v : null, "num");
 var int3 = /* @__PURE__ */ __name((v) => Number.isInteger(v) && v > 0 && v < 1e9 ? v : null, "int");
@@ -7221,9 +7588,9 @@ async function minuteCache(env, k, fn) {
 }
 __name(minuteCache, "minuteCache");
 async function community(req, env, url, ctx) {
-  if (env.COMMUNITY !== "1") return err6("the community is not enabled on this server", 404);
+  if (env.COMMUNITY !== "1") return err7("the community is not enabled on this server", 404);
   const p = url.pathname.replace(/^\/community/, ""), m = req.method;
-  if (m === "OPTIONS") return new Response(null, { headers: { ...JSONH7, "access-control-allow-methods": "GET,POST,DELETE", "access-control-max-age": "86400", "access-control-allow-headers": "authorization,content-type" } });
+  if (m === "OPTIONS") return new Response(null, { headers: { ...JSONH8, "access-control-allow-methods": "GET,POST,DELETE", "access-control-max-age": "86400", "access-control-allow-headers": "authorization,content-type" } });
   {
     const la = await lmuApiRoutes(req, env, p, m, url);
     if (la) return la;
@@ -7232,7 +7599,7 @@ async function community(req, env, url, ctx) {
   if (p === "/register" && m === "POST") {
     const id2 = rid7(), token = rid7() + rid7();
     await env.DB.prepare("INSERT INTO community_users (id, token_hash, alias, created) VALUES (?1,?2,?3,?4)").bind(id2, await sha2562(token), cleanAlias(body.alias), Date.now()).run();
-    return json10({ id: id2, token });
+    return json11({ id: id2, token });
   }
   {
     const pr = await proRoutes(req, env, p, m, body);
@@ -7243,27 +7610,28 @@ async function community(req, env, url, ctx) {
     const ct = await coachTipRoutes(req, env, p, m, body, game);
     if (ct) return ct;
   }
+  if (p.startsWith("/friends")) return friendRoutes(req, env, p, m, body, url, game, await sessionAccount(req, env).catch(() => null));
   if (p === "/combos" && m === "GET") {
     const r2 = await env.DB.prepare(
       "SELECT track_id AS trackId, MAX(track) AS track, car_id AS carId, MAX(car) AS car, COUNT(*) AS laps, MIN(time) AS best, MAX(cat) AS hint FROM community_laps WHERE game=?1 AND COALESCE(shown,'')<>'model' GROUP BY track_id, car_id ORDER BY laps DESC LIMIT 500"
     ).bind(game).all();
     const cm = game === "iracing" ? await catMap(env) : { tc: {}, c: {} };
     const fams = await famGroups(env, game);
-    return json10({ combos: (r2.results || []).map(({ hint, ...x }) => ({ ...x, ...fams.has(x.carId) ? { ids: [...fams.get(x.carId)] } : {}, car: famName(game, x.carId, x.car), cat: game === "iracing" ? catOf(cm, x.trackId, x.carId, hint, x.track, x.car) : "sports_car" })) });
+    return json11({ combos: (r2.results || []).map(({ hint, ...x }) => ({ ...x, ...fams.has(x.carId) ? { ids: [...fams.get(x.carId)] } : {}, car: famName(game, x.carId, x.car), cat: game === "iracing" ? catOf(cm, x.trackId, x.carId, hint, x.track, x.car) : "sports_car" })) });
   }
   if (p === "/model" && m === "GET") {
     const t = +url.searchParams.get("trackId"), c = await famId(env, game, url.searchParams.get("carId"));
-    if (!t || !c) return err6("trackId and carId", 400);
+    if (!t || !c) return err7("trackId and carId", 400);
     const cq = url.searchParams.get("cmp"), tq = url.searchParams.get("temp");
     const md2 = forCompound(await getModel(env, game, t, c), cq != null && /^\d{1,2}$/.test(cq) ? +cq : null, tq != null && /^-?\d{1,2}(\.\d+)?$/.test(tq) ? +tq : null);
     const rivals = seesRivals(req, env, await me(req, env).catch(() => null));
     const fs = await env.DB.prepare(`SELECT l.time, ${shownName("l", "u", rivals)} AS alias FROM community_laps l JOIN community_users u ON u.id=l.user_id WHERE l.track_id=?1 AND l.car_id=?2 AND l.game=?3 AND COALESCE(l.shown,'')<>'model' ORDER BY l.time LIMIT 1`).bind(t, c, game).first();
-    return json10({ ...md2, car: await getCarCard(env, game, c).catch(() => null), fastShared: fs || null });
+    return json11({ ...md2, car: await getCarCard(env, game, c).catch(() => null), fastShared: fs || null });
   }
   if (p === "/car" && m === "GET") {
     const c = await famId(env, game, url.searchParams.get("carId"));
-    if (!c) return err6("carId", 400);
-    return json10(await getCarCard(env, game, c).catch(() => null) || {});
+    if (!c) return err7("carId", 400);
+    return json11(await getCarCard(env, game, c).catch(() => null) || {});
   }
   if (p === "/records" && m === "GET") {
     const lim = Math.min(100, Math.max(1, +url.searchParams.get("limit") || 40));
@@ -7283,11 +7651,11 @@ async function community(req, env, url, ctx) {
        WHERE l.rk=1 ORDER BY l.created DESC LIMIT ?2`
     ).bind(game, lim).all());
     const cm = all || game === "iracing" ? await catMap(env) : null;
-    return json10({ records: (r2.results || []).map(({ uid, hint, prevTime, prevAlias, ...x }) => ({ ...x, game: gameOf(x.game), car: famName(gameOf(x.game), x.carId, x.car), cat: cm && gameOf(x.game) === "iracing" ? catOf(cm, x.trackId, x.carId, hint, x.track, x.car) : "sports_car", prof: !!x.prof, sup: !!x.sup, hasTrace: !!x.hasTrace, mine: !!who2 && uid === who2.id, field: String(uid).startsWith("o:"), prev: prevTime ? { time: prevTime, alias: prevAlias } : null })) });
+    return json11({ records: (r2.results || []).map(({ uid, hint, prevTime, prevAlias, ...x }) => ({ ...x, game: gameOf(x.game), car: famName(gameOf(x.game), x.carId, x.car), cat: cm && gameOf(x.game) === "iracing" ? catOf(cm, x.trackId, x.carId, hint, x.track, x.car) : "sports_car", prof: !!x.prof, sup: !!x.sup, hasTrace: !!x.hasTrace, mine: !!who2 && uid === who2.id, field: String(uid).startsWith("o:"), prev: prevTime ? { time: prevTime, alias: prevAlias } : null })) });
   }
   if (p === "/track" && m === "GET") {
     const t = +url.searchParams.get("trackId");
-    if (!t) return err6("trackId", 400);
+    if (!t) return err7("trackId", 400);
     const who2 = await me(req, env).catch(() => null);
     const [lay, tu, r2, tot] = await Promise.all([
       env.DB.prepare("SELECT track, n, len, pts FROM track_maps WHERE game=?1 AND track_id=?2").bind(game, t).first(),
@@ -7307,7 +7675,7 @@ async function community(req, env, url, ctx) {
     const cm = game === "iracing" ? await catMap(env) : null;
     const pts = lay && lay.pts ? JSON.parse(lay.pts) : null;
     const name2 = tot && tot.track || lay && lay.track || "";
-    return json10({
+    return json11({
       trackId: t,
       game,
       track: name2,
@@ -7323,10 +7691,10 @@ async function community(req, env, url, ctx) {
     if (cq && +url.searchParams.get("trackId")) {
       const who3 = await me(req, env).catch(() => null);
       const rows = await classLaps(env, +url.searchParams.get("trackId"), cq, { admin: !!who3 && isAdmin(env, who3.id), rivals: seesRivals(req, env, who3), acctTrace: ACCT_TRACE });
-      return json10({ cat: "sports_car", cls: cq, laps: rows.map(({ uid, ...x }) => ({ ...x, car: famName(game, x.carId, x.car), lic: licOf(x.lic), prof: !!x.prof, sup: !!x.sup, mine: !!who3 && uid === who3.id, field: String(uid).startsWith("o:"), hasTrace: !!x.hasTrace, sectors: x.sectors ? JSON.parse(x.sectors) : null })) });
+      return json11({ cat: "sports_car", cls: cq, laps: rows.map(({ uid, ...x }) => ({ ...x, car: famName(game, x.carId, x.car), lic: licOf(x.lic), prof: !!x.prof, sup: !!x.sup, mine: !!who3 && uid === who3.id, field: String(uid).startsWith("o:"), hasTrace: !!x.hasTrace, sectors: x.sectors ? JSON.parse(x.sectors) : null })) });
     }
     const t = +url.searchParams.get("trackId"), c = await famId(env, game, url.searchParams.get("carId"));
-    if (!t || !c) return err6("trackId and carId", 400);
+    if (!t || !c) return err7("trackId and carId", 400);
     const who2 = await me(req, env).catch(() => null);
     const h = await env.DB.prepare("SELECT MAX(cat) AS hint, MAX(track) AS track, MAX(car) AS car, MAX(cls) AS cls FROM community_laps WHERE track_id=?1 AND car_id=?2 AND game=?3").bind(t, c, game).first().catch(() => null);
     const cat = game === "iracing" ? catOf(await catMap(env), t, c, h && h.hint, h && h.track, h && h.car) : "sports_car";
@@ -7337,12 +7705,12 @@ async function community(req, env, url, ctx) {
        FROM community_laps l JOIN community_users u ON u.id=l.user_id LEFT JOIN accounts ac ON ac.id=l.user_id
        WHERE l.track_id=?1 AND l.car_id=?2 AND l.game=?3 AND COALESCE(l.shown,'')<>'model' ORDER BY l.time LIMIT 200`
     ).bind(t, c, game, cat).all();
-    return json10({ cat, cls: game === "lmu" ? h && h.cls || lmuClass(null, h && h.car) : null, laps: (r2.results || []).map(({ uid, ...x }) => ({ ...x, lic: licOf(x.lic), prof: !!x.prof, sup: !!x.sup, mine: !!who2 && uid === who2.id, field: String(uid).startsWith("o:"), hasTrace: !!x.hasTrace, sectors: x.sectors ? JSON.parse(x.sectors) : null })) });
+    return json11({ cat, cls: game === "lmu" ? h && h.cls || lmuClass(null, h && h.car) : null, laps: (r2.results || []).map(({ uid, ...x }) => ({ ...x, lic: licOf(x.lic), prof: !!x.prof, sup: !!x.sup, mine: !!who2 && uid === who2.id, field: String(uid).startsWith("o:"), hasTrace: !!x.hasTrace, sectors: x.sectors ? JSON.parse(x.sectors) : null })) });
   }
   if (p.startsWith("/laps/") && m === "GET") {
     const rivals = seesRivals(req, env, await me(req, env).catch(() => null));
     const l = await env.DB.prepare(`SELECT l.*, ${shownName("l", "u", rivals)} AS alias FROM community_laps l JOIN community_users u ON u.id=l.user_id WHERE l.id=?1`).bind(p.slice(6)).first();
-    if (!l) return err6("not found", 404);
+    if (!l) return err7("not found", 404);
     let trace = l.trace;
     if (!trace) {
       const a = await env.DB.prepare(`SELECT a.trace FROM laps a JOIN sessions s ON s.id=a.session_id WHERE ${ACCT_TRACE_WHERE} LIMIT 1`).bind(l.user_id, l.time, l.game).first();
@@ -7353,7 +7721,7 @@ async function community(req, env, url, ctx) {
       const card = await getCarCard(env, l.game, l.car_id).catch(() => null);
       tr2 = estimateTrace(tr2, card && card.pedals, card && card.shifts);
     }
-    return json10({ id: l.id, alias: l.alias, game: l.game, time: l.time, car: famName(l.game, l.car_id, l.car), track: l.track, carId: l.car_id, trackId: l.track_id, sectors: l.sectors ? JSON.parse(l.sectors) : null, trace: tr2 });
+    return json11({ id: l.id, alias: l.alias, game: l.game, time: l.time, car: famName(l.game, l.car_id, l.car), track: l.track, carId: l.car_id, trackId: l.track_id, sectors: l.sectors ? JSON.parse(l.sectors) : null, trace: tr2 });
   }
   if (p === "/reports" && m === "GET") {
     const t = +url.searchParams.get("trackId"), c = +url.searchParams.get("carId");
@@ -7365,16 +7733,16 @@ async function community(req, env, url, ctx) {
        FROM community_reports r JOIN community_users u ON u.id=r.user_id WHERE (?1=0 OR r.track_id=?1) AND (?2=0 OR r.car_id IN (${fam.map((n) => +n || 0).join(",")})) AND r.game=?3 ORDER BY r.created DESC LIMIT 100`
     ).bind(t || 0, c || 0, game).all();
     const who2 = await me(req, env).catch(() => null);
-    return json10({ reports: (r2.results || []).map(({ uid, ...x }) => ({ ...x, car: famName(game, c, x.car), mine: !!who2 && uid === who2.id })) });
+    return json11({ reports: (r2.results || []).map(({ uid, ...x }) => ({ ...x, car: famName(game, c, x.car), mine: !!who2 && uid === who2.id })) });
   }
   if (p === "/trackmaps" && m === "GET") {
     const t = +url.searchParams.get("trackId");
-    if (!t) return err6("trackId", 400);
+    if (!t) return err7("trackId", 400);
     const [r2, ed] = await Promise.all([
       env.DB.prepare("SELECT track, n, len, pts, time, created, geo FROM track_maps WHERE game=?1 AND track_id=?2").bind(game, t).first(),
       env.DB.prepare("SELECT n, laps, data FROM track_edges WHERE game=?1 AND track_id=?2").bind(game, t).first().catch(() => null)
     ]);
-    if (!r2) return err6("no layout for this track yet", 404);
+    if (!r2) return err7("no layout for this track yet", 404);
     let edges = null;
     try {
       const e = ed && ed.n === r2.n ? JSON.parse(ed.data) : null;
@@ -7389,11 +7757,11 @@ async function community(req, env, url, ctx) {
     } catch (e) {
       g = null;
     }
-    return new Response(JSON.stringify({ trackId: t, game, track: r2.track, n: r2.n, len: r2.len, x: pts.x, y: pts.y, g, time: r2.time, updated: r2.created, ...edges ? { edges } : {} }), { headers: { ...JSONH7, "cache-control": "public, max-age=3600" } });
+    return new Response(JSON.stringify({ trackId: t, game, track: r2.track, n: r2.n, len: r2.len, x: pts.x, y: pts.y, g, time: r2.time, updated: r2.created, ...edges ? { edges } : {} }), { headers: { ...JSONH8, "cache-control": "public, max-age=3600" } });
   }
   if (p === "/turns" && m === "GET") {
     const t = +url.searchParams.get("trackId");
-    if (!t) return err6("trackId", 400);
+    if (!t) return err7("trackId", 400);
     const r2 = await env.DB.prepare("SELECT turns, updated FROM track_turns WHERE game=?1 AND track_id=?2").bind(game, t).first();
     let turns = [], auto = false, count = 0;
     try {
@@ -7414,49 +7782,49 @@ async function community(req, env, url, ctx) {
       }
       if (want) count = want;
     }
-    return new Response(JSON.stringify({ trackId: t, game, turns, auto, ...count ? { count } : {}, updated: r2 ? r2.updated : 0 }), { headers: { ...JSONH7, "cache-control": "public, max-age=300" } });
+    return new Response(JSON.stringify({ trackId: t, game, turns, auto, ...count ? { count } : {}, updated: r2 ? r2.updated : 0 }), { headers: { ...JSONH8, "cache-control": "public, max-age=300" } });
   }
   if (p === "/pitlane" && m === "GET") {
     const t = +url.searchParams.get("trackId");
-    if (!t) return err6("trackId", 400);
+    if (!t) return err7("trackId", 400);
     const r2 = await env.DB.prepare("SELECT n, pts, updated FROM track_pits WHERE game=?1 AND track_id=?2").bind(game, t).first();
     const pts = r2 ? Object.entries(JSON.parse(r2.pts)).map(([i, v]) => [+i, v]).sort((a, b) => a[0] - b[0]) : [];
-    return new Response(JSON.stringify({ trackId: t, game, n: r2 ? r2.n : 0, pts, updated: r2 ? r2.updated : 0 }), { headers: { ...JSONH7, "cache-control": "public, max-age=600" } });
+    return new Response(JSON.stringify({ trackId: t, game, n: r2 ? r2.n : 0, pts, updated: r2 ? r2.updated : 0 }), { headers: { ...JSONH8, "cache-control": "public, max-age=600" } });
   }
   if (p === "/turns" && m === "POST") {
     const acc = await sessionAccount(req, env);
-    if (!acc || !isAdmin(env, acc.id)) return err6("only the admins of this server can do this", 403);
+    if (!acc || !isAdmin(env, acc.id)) return err7("only the admins of this server can do this", 403);
     const b = body;
     const t = +b.trackId, g = String(b.game || "iracing").slice(0, 20);
     const turns = Array.isArray(b.turns) ? b.turns.map(Number).filter((x) => isFinite(x) && x >= 0 && x < 1).slice(0, 60) : null;
-    if (!t || !turns) return err6("trackId and turns", 400);
+    if (!t || !turns) return err7("trackId and turns", 400);
     if (!turns.length) await env.DB.prepare("DELETE FROM track_turns WHERE game=?1 AND track_id=?2").bind(g, t).run();
     else await env.DB.prepare("INSERT INTO track_turns (game, track_id, turns, updated) VALUES (?1, ?2, ?3, ?4) ON CONFLICT(game, track_id) DO UPDATE SET turns=excluded.turns, updated=excluded.updated").bind(g, t, JSON.stringify(turns.map((x) => Math.round(x * 1e5) / 1e5)), Date.now()).run();
-    return json10({ ok: true, trackId: t, game: g, turns });
+    return json11({ ok: true, trackId: t, game: g, turns });
   }
   const um = p.match(/^\/admin\/reports\/([A-Za-z0-9_.:-]{1,64})\/uncut$/);
   if (um && m === "POST") {
     const acc = await sessionAccount(req, env);
-    if (!acc || !isAdmin(env, acc.id)) return err6("only the admins of this server can do this", 403);
+    if (!acc || !isAdmin(env, acc.id)) return err7("only the admins of this server can do this", 403);
     const r2 = await env.DB.prepare("SELECT data FROM community_reports WHERE id=?1").bind(um[1]).first();
-    if (!r2) return err6("not found", 404);
+    if (!r2) return err7("not found", 404);
     const d = JSON.parse(await openData(env, r2.data));
     if (Array.isArray(d.laps)) d.laps = d.laps.map((l) => l.i ? l : { ...l, cut: false });
     await env.DB.prepare("UPDATE community_reports SET data=?2 WHERE id=?1").bind(um[1], await sealData(env, JSON.stringify(d))).run();
-    return json10({ ok: true });
+    return json11({ ok: true });
   }
   const du = p.match(/^\/admin\/users\/([A-Za-z0-9]{8,40})$/);
   if (du && m === "DELETE") {
     const acc = await sessionAccount(req, env);
-    if (!acc || !isAdmin(env, acc.id)) return err6("only the admins of this server can do this", 403);
+    if (!acc || !isAdmin(env, acc.id)) return err7("only the admins of this server can do this", 403);
     const id2 = du[1];
-    if (id2 === acc.id || isAdmin(env, id2)) return err6("an admin account cannot be deleted from here", 400);
+    if (id2 === acc.id || isAdmin(env, id2)) return err7("an admin account cannot be deleted from here", 400);
     await purgeAccount(env, id2);
-    return json10({ deleted: true });
+    return json11({ deleted: true });
   }
   if (m === "GET" && p === "/admin/status") {
     const acc = await sessionAccount(req, env);
-    if (!acc || !isAdmin(env, acc.id)) return err6("only the admins of this server can do this", 403);
+    if (!acc || !isAdmin(env, acc.id)) return err7("only the admins of this server can do this", 403);
     const st = await env.DB.prepare("SELECT k, v, at FROM app_state WHERE k IN ('mail_error','mail_ok')").all().catch(() => ({ results: [] }));
     const get = /* @__PURE__ */ __name((k) => (st.results || []).find((x) => x.k === k), "get");
     const e = get("mail_error"), ok = get("mail_ok");
@@ -7470,7 +7838,7 @@ async function community(req, env, url, ctx) {
       (SELECT COUNT(*) FROM leagues) AS leagues, (SELECT COUNT(*) FROM accounts WHERE supporter=1) AS supporters, (SELECT COUNT(*) FROM accounts WHERE supporter=1 AND supporter_src='patreon') AS supportersPatreon,
       (SELECT COUNT(*) FROM patreon_patrons WHERE active=1) AS patrons, (SELECT MAX(updated) FROM patreon_patrons) AS patreonLast,
       (SELECT COUNT(*) FROM auth_fails) AS authFails`).bind(d7, d30, d1).first().catch((x) => ({ error: String(x && x.message || x) }));
-    return json10({
+    return json11({
       mail: { ready: mailReady(env), via: env.RESEND_API_KEY ? "resend" : "", from: env.EMAIL_FROM || "", lastOk: ok ? ok.at : 0, lastError: e && (!ok || e.at > ok.at) ? { at: e.at, ...JSON.parse(e.v || "{}") } : null },
       counts,
       config: { patreon: !!env.PATREON_WEBHOOK_SECRET, leaguesOpen: env.LEAGUES_OPEN === "1", community: env.COMMUNITY !== "0", dataKey: !!env.DATA_KEY, pepper: !!env.EMAIL_PEPPER, admins: String(env.ADMINS || env.SEASON_UPLOADERS || "").split(",").filter(Boolean).length }
@@ -7478,23 +7846,23 @@ async function community(req, env, url, ctx) {
   }
   if (m === "GET" && p === "/admin/mail") {
     const acc = await sessionAccount(req, env);
-    if (!acc || !isAdmin(env, acc.id)) return err6("only the admins of this server can do this", 403);
+    if (!acc || !isAdmin(env, acc.id)) return err7("only the admins of this server can do this", 403);
     const [items, domain] = await Promise.all([mailLog(env), mailDomain(env).catch(() => null)]);
-    return json10({ items, domain });
+    return json11({ items, domain });
   }
   if (m === "GET" && p === "/admin/guests") {
     const acc = await sessionAccount(req, env);
-    if (!acc || !isAdmin(env, acc.id)) return err6("only the admins of this server can do this", 403);
+    if (!acc || !isAdmin(env, acc.id)) return err7("only the admins of this server can do this", 403);
     const r2 = await env.DB.prepare(`SELECT g.id, g.alias, g.created, g.owner, o.display AS ownerName, (SELECT COUNT(*) FROM community_laps l WHERE l.user_id=g.id) AS laps, gl.account_id AS linked, la.display AS linkedName
       FROM community_users g LEFT JOIN accounts o ON o.id=g.owner LEFT JOIN guest_links gl ON gl.gid=g.id LEFT JOIN accounts la ON la.id=gl.account_id WHERE g.id LIKE 'guest-%' ORDER BY g.created DESC LIMIT 300`).all();
-    return json10({ guests: (r2.results || []).map((x) => ({ id: x.id, name: x.alias, created: x.created, owner: x.owner, ownerName: x.ownerName || "", laps: x.laps || 0, linked: x.linked || null, linkedName: x.linkedName || null })) });
+    return json11({ guests: (r2.results || []).map((x) => ({ id: x.id, name: x.alias, created: x.created, owner: x.owner, ownerName: x.ownerName || "", laps: x.laps || 0, linked: x.linked || null, linkedName: x.linkedName || null })) });
   }
   if (m === "GET" && (p === "/admin/uploads" || p === "/admin/users")) {
     const acc = await sessionAccount(req, env);
-    if (!acc || !isAdmin(env, acc.id)) return err6("only the admins of this server can do this", 403);
+    if (!acc || !isAdmin(env, acc.id)) return err7("only the admins of this server can do this", 403);
     if (p === "/admin/users") {
       const q3 = String(url.searchParams.get("q") || "").trim().slice(0, 60);
-      const r4 = await env.DB.prepare(`SELECT a.id, a.display, a.name_kind AS nameKind, a.anon, a.verified, a.created, a.member_since AS memberSince, a.totp_on AS twoFactor, a.supporter, a.supporter_src AS supporterSrc, a.supporter_hidden AS supporterHidden,
+      const r4 = await env.DB.prepare(`SELECT a.id, a.display, a.name_kind AS nameKind, a.anon, a.verified, a.created, a.member_since AS memberSince, a.totp_on AS twoFactor, a.supporter, a.supporter_src AS supporterSrc, a.supporter_hidden AS supporterHidden, a.tester,
         (SELECT COUNT(*) FROM sessions s WHERE s.uploader='acct:'||a.id) AS sessions,
         (SELECT MAX(started) FROM sessions s WHERE s.uploader='acct:'||a.id) AS lastSession,
         (SELECT COUNT(*) FROM community_laps l WHERE l.user_id=a.id) AS laps,
@@ -7504,7 +7872,7 @@ async function community(req, env, url, ctx) {
         EXISTS (SELECT 1 FROM driver_links d WHERE d.account_id=a.id) AS driverLinked,
         (SELECT group_concat(d.game, ',') FROM driver_links d WHERE d.account_id=a.id) AS driverGames
         FROM accounts a ${q3 ? "WHERE a.display LIKE ?1 OR a.id LIKE ?1" : ""} ORDER BY a.created DESC LIMIT 500`).bind(...q3 ? ["%" + q3.replace(/[%_]/g, "") + "%"] : []).all();
-      return json10({ users: (r4.results || []).map((x) => ({ ...x, admin: isAdmin(env, x.id), tester: isTester(env, x.id) })) });
+      return json11({ users: (r4.results || []).map((x) => ({ ...x, admin: isAdmin(env, x.id), tester: isTester(env, x.id, x), testerSet: testersSet(env, x.id) })) });
     }
     const q2 = /* @__PURE__ */ __name((t, extra) => env.DB.prepare(`SELECT x.id, '${t}' AS kind, x.car, x.track, x.created, x.anon, COALESCE(x.shown,'nick') AS shown, ${extra}
       u.id AS userId, u.alias, u.iracing, u.owner, o.display AS ownerName, ac.display AS account
@@ -7518,26 +7886,37 @@ async function community(req, env, url, ctx) {
       via: !x.owner ? "account" : String(x.userId).startsWith("o:") ? "rival" : "drinks",
       realUploader: !x.owner ? x.account || x.alias : String(x.userId).startsWith("o:") ? `${x.alias} (race rival \xB7 shared by ${x.ownerName || x.owner})` : `${x.alias} (Drinks \xB7 ${x.ownerName || x.owner})`
     }));
-    return json10({ items });
+    return json11({ items });
   }
   if (p === "/admin/supporter" && m === "POST") {
     const acc = await sessionAccount(req, env);
-    if (!acc || !isAdmin(env, acc.id)) return err6("only the admins of this server can do this", 403);
+    if (!acc || !isAdmin(env, acc.id)) return err7("only the admins of this server can do this", 403);
     const id2 = String(body.id || "");
     const r2 = await env.DB.prepare("UPDATE accounts SET supporter=?2, supporter_src=?3 WHERE id=?1").bind(id2, body.on ? 1 : 0, body.on ? "manual" : null).run();
-    return r2.meta && r2.meta.changes ? json10({ ok: true, supporter: !!body.on }) : err6("account not found", 404);
+    return r2.meta && r2.meta.changes ? json11({ ok: true, supporter: !!body.on }) : err7("account not found", 404);
+  }
+  if (p === "/admin/tester" && m === "POST") {
+    const acc = await sessionAccount(req, env);
+    if (!acc || !isAdmin(env, acc.id)) return err7("only the admins of this server can do this", 403);
+    const id2 = String(body.id || "");
+    const was = await env.DB.prepare("SELECT tester FROM accounts WHERE id=?1").bind(id2).first();
+    if (!was) return err7("account not found", 404);
+    if (!body.on && testersSet(env, id2)) return err7("this driver is a tester in the server's settings (TESTERS)", 409);
+    await env.DB.prepare("UPDATE accounts SET tester=?2 WHERE id=?1").bind(id2, body.on ? 1 : null).run();
+    if (body.on && !was.tester && !testersSet(env, id2)) await testerAlert(env, id2);
+    return json11({ ok: true, tester: !!body.on });
   }
   if (p === "/admin/since" && m === "POST") {
     const acc = await sessionAccount(req, env);
-    if (!acc || !isAdmin(env, acc.id)) return err6("only the admins of this server can do this", 403);
+    if (!acc || !isAdmin(env, acc.id)) return err7("only the admins of this server can do this", 403);
     const since = body.since == null || body.since === "" ? null : Number(body.since);
-    if (since !== null && !(isFinite(since) && since > 9466848e5 && since < Date.now() + 864e5)) return err6("that date is not valid", 400);
+    if (since !== null && !(isFinite(since) && since > 9466848e5 && since < Date.now() + 864e5)) return err7("that date is not valid", 400);
     const r2 = await env.DB.prepare("UPDATE accounts SET member_since=?2 WHERE id=?1").bind(String(body.id || ""), since === null ? null : Math.round(since)).run();
-    return r2.meta && r2.meta.changes ? json10({ ok: true, since }) : err6("account not found", 404);
+    return r2.meta && r2.meta.changes ? json11({ ok: true, since }) : err7("account not found", 404);
   }
   if (p === "/admin/turns-check" && m === "GET") {
     const acc = await sessionAccount(req, env);
-    if (!acc || !isAdmin(env, acc.id)) return err6("only the admins of this server can do this", 403);
+    if (!acc || !isAdmin(env, acc.id)) return err7("only the admins of this server can do this", 403);
     const rows = (await env.DB.prepare(
       `SELECT m.game, m.track_id, m.track, m.n, m.pts, i.nturns, t.turns FROM track_maps m
        LEFT JOIN track_info i ON i.game=m.game AND i.track_id=m.track_id LEFT JOIN track_turns t ON t.game=m.game AND t.track_id=m.track_id
@@ -7562,24 +7941,24 @@ async function community(req, env, url, ctx) {
     }
     const bad = /* @__PURE__ */ __name((x) => (x.placed ? 0 : 2) + (x.official && x.fitted !== x.official ? 1 : 0), "bad");
     out.sort((a, b) => bad(b) - bad(a) || a.track.localeCompare(b.track));
-    return json10({ tracks: out });
+    return json11({ tracks: out });
   }
   if (p === "/admin/trackmaps-rebuild" && m === "POST") {
     const acc = await sessionAccount(req, env);
-    if (!acc || !isAdmin(env, acc.id)) return err6("only the admins of this server can do this", 403);
-    return json10({ ok: true, ...await rebuildTrackMaps(env, { all: true }) });
+    if (!acc || !isAdmin(env, acc.id)) return err7("only the admins of this server can do this", 403);
+    return json11({ ok: true, ...await rebuildTrackMaps(env, { all: true }) });
   }
   if (p === "/admin/models" && m === "POST") {
     const acc = await sessionAccount(req, env);
-    if (!acc || !isAdmin(env, acc.id)) return err6("only the admins of this server can do this", 403);
+    if (!acc || !isAdmin(env, acc.id)) return err7("only the admins of this server can do this", 403);
     const r2 = await env.DB.prepare("UPDATE model_cache SET dirty=1").run();
     await env.DB.prepare("UPDATE car_cards SET dirty=1").run().catch(() => {
     });
-    return json10({ ok: true, models: r2.meta && r2.meta.changes || 0 });
+    return json11({ ok: true, models: r2.meta && r2.meta.changes || 0 });
   }
   if (p === "/admin/blocked" && m === "GET") {
     const acc = await sessionAccount(req, env);
-    if (!acc || !isAdmin(env, acc.id)) return err6("only the admins of this server can do this", 403);
+    if (!acc || !isAdmin(env, acc.id)) return err7("only the admins of this server can do this", 403);
     const since = Date.now() - 15 * 6e4;
     const rows = (await env.DB.prepare("SELECT k, COUNT(*) AS n, MAX(t) AS last FROM auth_fails WHERE t>=?1 GROUP BY k ORDER BY last DESC LIMIT 200").bind(since).all()).results || [];
     const hashes = rows.map((x) => /^(login|mail):([0-9a-f]{64})$/.exec(x.k)).filter(Boolean).map((x) => x[2]), ids = rows.map((x) => /^2fa:(.+)$/.exec(x.k)).filter(Boolean).map((x) => x[1]);
@@ -7594,7 +7973,7 @@ async function community(req, env, url, ctx) {
     }
     const mask2 = /* @__PURE__ */ __name((v) => /^ip:[0-9a-f]{6}/.test(v) ? "#" + v.slice(3, 9) : "#" + String(v).slice(0, 6), "mask");
     const limit = { login: 5, "2fa": 5, mail: 3, reset: 10, reg: 5, ip: 30 };
-    return json10({ blocked: rows.map((x) => {
+    return json11({ blocked: rows.map((x) => {
       const m2 = /^(login|mail|2fa|reset|reg):(.+)$/.exec(x.k), kind = m2 ? m2[1] : "ip", v = m2 ? m2[2] : x.k, a = who2[v];
       const net = kind === "ip" || (kind === "mail" || kind === "reset" || kind === "reg") && !/^[0-9a-f]{64}$/.test(v);
       return { k: x.k, kind, n: x.n, last: x.last, account: a ? { id: a.id, display: a.display } : null, net: net ? mask2(v) : null, blocked: x.n >= (net && kind === "mail" ? 10 : limit[kind] || 5) };
@@ -7602,26 +7981,26 @@ async function community(req, env, url, ctx) {
   }
   if (p === "/admin/unlock" && m === "POST") {
     const acc = await sessionAccount(req, env);
-    if (!acc || !isAdmin(env, acc.id)) return err6("only the admins of this server can do this", 403);
+    if (!acc || !isAdmin(env, acc.id)) return err7("only the admins of this server can do this", 403);
     let r2;
     if (typeof body.k === "string" && body.k) r2 = await env.DB.prepare("DELETE FROM auth_fails WHERE k=?1").bind(body.k.slice(0, 200)).run();
     else if (typeof body.account === "string" && /^[A-Za-z0-9]{8,40}$/.test(body.account)) {
       const a = await env.DB.prepare("SELECT id, email_hash FROM accounts WHERE id=?1").bind(body.account).first();
-      if (!a) return err6("account not found", 404);
+      if (!a) return err7("account not found", 404);
       r2 = await env.DB.prepare("DELETE FROM auth_fails WHERE k IN (?1, ?2, ?3)").bind("login:" + a.email_hash, "mail:" + a.email_hash, "2fa:" + a.id).run();
     } else if (typeof body.email === "string" && body.email.includes("@")) {
       const eh = await emailHash(env, body.email), a = await env.DB.prepare("SELECT id FROM accounts WHERE email_hash=?1").bind(eh).first();
       r2 = await env.DB.prepare("DELETE FROM auth_fails WHERE k IN (?1, ?2, ?3)").bind("login:" + eh, "mail:" + eh, "2fa:" + (a ? a.id : "-")).run();
     } else if (body.all === true) r2 = await env.DB.prepare("DELETE FROM auth_fails").run();
-    else return err6("say what to unblock", 400);
-    return json10({ ok: true, cleared: r2.meta && r2.meta.changes || 0 });
+    else return err7("say what to unblock", 400);
+    return json11({ ok: true, cleared: r2.meta && r2.meta.changes || 0 });
   }
   const ua = p.match(/^\/admin\/users\/([A-Za-z0-9]{8,40})\/(verify|2fa-off|signout|rename|unlink-driver|link-guest|unlink-guest)$/);
   if (ua && m === "POST") {
     const acc = await sessionAccount(req, env);
-    if (!acc || !isAdmin(env, acc.id)) return err6("only the admins of this server can do this", 403);
+    if (!acc || !isAdmin(env, acc.id)) return err7("only the admins of this server can do this", 403);
     const id2 = ua[1], a = await env.DB.prepare("SELECT id FROM accounts WHERE id=?1").bind(id2).first();
-    if (!a) return err6("account not found", 404);
+    if (!a) return err7("account not found", 404);
     if (ua[2] === "verify") await env.DB.prepare("UPDATE accounts SET verified=1 WHERE id=?1").bind(id2).run();
     if (ua[2] === "2fa-off") await env.DB.batch([env.DB.prepare("UPDATE accounts SET totp=NULL, totp_on=0, totp_pending=NULL WHERE id=?1").bind(id2), env.DB.prepare("DELETE FROM recovery_codes WHERE account_id=?1").bind(id2)]);
     if (ua[2] === "signout") await env.DB.prepare("DELETE FROM account_sessions WHERE account_id=?1").bind(id2).run();
@@ -7631,23 +8010,23 @@ async function community(req, env, url, ctx) {
     }
     if (ua[2] === "link-guest" || ua[2] === "unlink-guest") {
       const want = String(body.guest || body.name || "").trim();
-      if (!want) return err6("which DRINKS driver?", 400);
+      if (!want) return err7("which DRINKS driver?", 400);
       const g = want.startsWith("guest-") ? await env.DB.prepare("SELECT id, alias FROM community_users WHERE id=?1 AND id LIKE 'guest-%'").bind(want).first() : await env.DB.prepare("SELECT id, alias FROM community_users WHERE id LIKE 'guest-%' AND lower(alias)=lower(?1) ORDER BY (owner=?2) DESC LIMIT 1").bind(cleanAlias(want), acc.id).first();
-      if (!g) return err6("DRINKS driver not found", 404);
+      if (!g) return err7("DRINKS driver not found", 404);
       if (ua[2] === "unlink-guest") {
         await env.DB.prepare("DELETE FROM guest_links WHERE gid=?1 AND account_id=?2").bind(g.id, id2).run();
-        return json10({ ok: true, name: g.alias });
+        return json11({ ok: true, name: g.alias });
       }
       const had = await env.DB.prepare("SELECT account_id FROM guest_links WHERE gid=?1").bind(g.id).first();
-      if (had && had.account_id !== id2) return err6("this DRINKS driver is already joined to another account", 409);
-      const target = await env.DB.prepare("SELECT anon, name_kind FROM accounts WHERE id=?1").bind(id2).first();
-      const shown = target && target.name_kind === "iracing" ? "iracing" : "nick";
+      if (had && had.account_id !== id2) return err7("this DRINKS driver is already joined to another account", 409);
+      const target2 = await env.DB.prepare("SELECT anon, name_kind FROM accounts WHERE id=?1").bind(id2).first();
+      const shown = target2 && target2.name_kind === "iracing" ? "iracing" : "nick";
       const laps = (await env.DB.prepare("SELECT id, car_id, track_id, time, game, trace IS NOT NULL AS traced FROM community_laps WHERE user_id=?1").bind(g.id).all()).results || [];
       const q2 = [], combos2 = /* @__PURE__ */ new Set();
       for (const l of laps) {
         const mine = await env.DB.prepare("SELECT id, time, trace IS NOT NULL AS traced FROM community_laps WHERE user_id=?1 AND car_id=?2 AND track_id=?3").bind(id2, l.car_id, l.track_id).first();
         combos2.add(l.game + "|" + l.track_id + "|" + l.car_id);
-        const take = env.DB.prepare("UPDATE community_laps SET user_id=?2, anon=?3, shown=?4 WHERE id=?1").bind(l.id, id2, target && target.anon ? 1 : 0, shown);
+        const take = env.DB.prepare("UPDATE community_laps SET user_id=?2, anon=?3, shown=?4 WHERE id=?1").bind(l.id, id2, target2 && target2.anon ? 1 : 0, shown);
         if (!mine) {
           q2.push(take);
           continue;
@@ -7666,32 +8045,32 @@ async function community(req, env, url, ctx) {
         await markModel(env, gm, +t, +cId).catch(() => {
         });
       }
-      return json10({ ok: true, name: g.alias, moved: laps.length });
+      return json11({ ok: true, name: g.alias, moved: laps.length });
     }
     if (ua[2] === "rename") {
       const display = cleanName(body.name);
-      if (!display) return err6("choose a public name", 400);
-      if (await nameTaken(env, display, id2)) return err6("this nickname is already taken", 409);
+      if (!display) return err7("choose a public name", 400);
+      if (await nameTaken(env, display, id2)) return err7("this nickname is already taken", 409);
       await env.DB.batch([env.DB.prepare("UPDATE accounts SET display=?2, name_kind='nick' WHERE id=?1").bind(id2, display), env.DB.prepare("UPDATE community_users SET alias=?2 WHERE id=?1").bind(id2, display)]);
     }
-    return json10({ ok: true });
+    return json11({ ok: true });
   }
   if (p === "/admin/sessions" && m === "GET") {
     const acc = await sessionAccount(req, env);
-    if (!acc || !isAdmin(env, acc.id)) return err6("only the admins of this server can do this", 403);
+    if (!acc || !isAdmin(env, acc.id)) return err7("only the admins of this server can do this", 403);
     const r2 = await env.DB.prepare(`SELECT s.id, s.started, s.track, s.track_config AS trackConfig, s.car, s.kind, s.laps, s.game, s.official, s.cat, a.display AS who, a.id AS accountId
       FROM sessions s LEFT JOIN accounts a ON 'acct:'||a.id=s.uploader ORDER BY s.started DESC LIMIT 100`).all();
-    return json10({ sessions: r2.results || [] });
+    return json11({ sessions: r2.results || [] });
   }
   if (p === "/profile/badge" && m === "POST") {
     const who2 = await sessionAccount(req, env);
-    if (!who2) return err6("sign in with your Pitlane HQ account", 401);
+    if (!who2) return err7("sign in with your Pitlane HQ account", 401);
     await env.DB.prepare("UPDATE accounts SET supporter_hidden=?2 WHERE id=?1").bind(who2.id, body.hidden ? 1 : 0).run();
-    return json10({ ok: true, hidden: !!body.hidden });
+    return json11({ ok: true, hidden: !!body.hidden });
   }
   if (p === "/profile/races" && m === "POST") {
     const who2 = await sessionAccount(req, env);
-    if (!who2) return err6("sign in with your Pitlane HQ account", 401);
+    if (!who2) return err7("sign in with your Pitlane HQ account", 401);
     const n = /* @__PURE__ */ __name((v, lo, hi) => typeof v === "number" && isFinite(v) && v >= lo && v <= hi ? v : null, "n");
     const list = (Array.isArray(body.races) ? body.races : []).slice(0, 30).map((x) => x && typeof x.id === "string" && /^[A-Za-z0-9_.:-]{1,80}$/.test(x.id) && n(x.when, 1e12, 1e13) ? {
       id: x.id,
@@ -7717,29 +8096,29 @@ async function community(req, env, url, ctx) {
       env.DB.prepare("DELETE FROM profile_races WHERE account_id=?1").bind(who2.id),
       ...list.map((x) => env.DB.prepare("INSERT INTO profile_races (account_id, id, at, data) VALUES (?1,?2,?3,?4) ON CONFLICT DO NOTHING").bind(who2.id, x.id, x.when, JSON.stringify(x)))
     ]);
-    return json10({ ok: true, races: list.length });
+    return json11({ ok: true, races: list.length });
   }
   if (p === "/leagues" || p.startsWith("/leagues/")) {
     const who2 = await sessionAccount(req, env).catch(() => null), admin = !!who2 && isAdmin(env, who2.id);
     const parts = p.slice(9).split("/").filter(Boolean), lid = parts[0] || "", sub = parts[1] || "";
     const lgGame = leagueGame(url.searchParams.get("game") || m === "POST" && body && body.game);
-    if (lid === "found" && !sub && m === "GET") return json10(await foundLeagues(env, admin, lgGame));
-    if (env.LEAGUES_OPEN !== "1" && !admin && !(who2 && isTester(env, who2.id))) return err6("leagues are in development", 403);
+    if (lid === "found" && !sub && m === "GET") return json11(await foundLeagues(env, admin, lgGame));
+    if (env.LEAGUES_OPEN !== "1" && !admin && !(who2 && isTester(env, who2.id, who2))) return err7("leagues are in development", 403);
     if (lid === "found") {
-      if (m === "GET") return json10(await foundLeagues(env, admin, lgGame));
-      if (m !== "POST" || !admin) return err6("only the admins can do this", 403);
-      if (sub && "edit" in body) return await editFound(env, sub, body.edit) ? json10(await foundLeagues(env, admin, lgGame)) : err6("league not found", 404);
+      if (m === "GET") return json11(await foundLeagues(env, admin, lgGame));
+      if (m !== "POST" || !admin) return err7("only the admins can do this", 403);
+      if (sub && "edit" in body) return await editFound(env, sub, body.edit) ? json11(await foundLeagues(env, admin, lgGame)) : err7("league not found", 404);
       if (sub) {
         await env.DB.prepare("UPDATE league_found SET hidden=?2 WHERE guild=?1").bind(sub, body.hidden ? 1 : 0).run();
-        return json10({ ok: true });
+        return json11({ ok: true });
       }
       if (body.invite) {
         const r2 = await addFound(env, body.invite, body.game);
-        if (r2.error) return err6(r2.error, 400);
-        return json10(await foundLeagues(env, admin, lgGame));
+        if (r2.error) return err7(r2.error, 400);
+        return json11(await foundLeagues(env, admin, lgGame));
       }
       await scanLeagues(env, true);
-      return json10(await foundLeagues(env, admin, lgGame));
+      return json11(await foundLeagues(env, admin, lgGame));
     }
     const lst = /* @__PURE__ */ __name((v) => {
       try {
@@ -7788,10 +8167,10 @@ async function community(req, env, url, ctx) {
       const r2 = await env.DB.prepare("SELECT l.*, u.alias, EXISTS (SELECT 1 FROM discord_guilds g WHERE g.league_id=l.id) AS bot FROM leagues l LEFT JOIN community_users u ON u.id=l.owner WHERE l.game=?1 ORDER BY l.updated DESC LIMIT 300").bind(lgGame).all();
       const limit2 = await leagueLimit();
       const mineN = who2 ? (await env.DB.prepare("SELECT COUNT(*) AS n FROM leagues WHERE owner=?1").bind(who2.id).first().catch(() => null) || {}).n || 0 : 0;
-      return json10({ game: lgGame, posted: mineN, leagues: (r2.results || []).map(row), admin, open: env.LEAGUES_OPEN === "1", limit: limit2, supporter: limit2 === LEAGUES_SUPPORTER, limits: { free: LEAGUES_FREE, supporter: LEAGUES_SUPPORTER } });
+      return json11({ game: lgGame, posted: mineN, leagues: (r2.results || []).map(row), admin, open: env.LEAGUES_OPEN === "1", limit: limit2, supporter: limit2 === LEAGUES_SUPPORTER, limits: { free: LEAGUES_FREE, supporter: LEAGUES_SUPPORTER } });
     }
     const cur = lid ? await env.DB.prepare("SELECT l.*, u.alias FROM leagues l LEFT JOIN community_users u ON u.id=l.owner WHERE l.id=?1").bind(lid).first() : null;
-    if (lid && !cur) return err6("league not found", 404);
+    if (lid && !cur) return err7("league not found", 404);
     if (m === "GET") {
       const o = row(cur);
       let days2 = [];
@@ -7800,17 +8179,17 @@ async function community(req, env, url, ctx) {
         const r2 = await env.DB.prepare("SELECT day, views, clicks FROM league_days WHERE league_id=?1 AND day>=?2 ORDER BY day").bind(lid, since).all();
         days2 = (r2.results || []).map((d) => ({ day: d.day, views: d.views || 0, clicks: d.clicks || 0 }));
       }
-      return json10({ league: o, days: days2 });
+      return json11({ league: o, days: days2 });
     }
-    if (m !== "POST") return err6("not found", 404);
+    if (m !== "POST") return err7("not found", 404);
     if (lid && sub === "hit") {
       const kind = ["view", "discord", "web"].includes(body.kind) ? body.kind : "";
-      if (!kind) return err6("what was it", 400);
-      if (who2 && who2.id === cur.owner) return json10({ ok: true, counted: false });
+      if (!kind) return err7("what was it", 400);
+      if (who2 && who2.id === cur.owner) return json11({ ok: true, counted: false });
       const viewer = who2 ? "a:" + who2.id : "n:" + (await sha2562("league-viewer|" + (env.DATA_KEY || "") + "|" + (req.headers.get("cf-connecting-ip") || "") + "|" + (req.headers.get("user-agent") || ""))).slice(0, 24);
       const day4 = (/* @__PURE__ */ new Date()).toISOString().slice(0, 10);
       const ins = await env.DB.prepare("INSERT OR IGNORE INTO league_hits (league_id, viewer, day, kind) VALUES (?1,?2,?3,?4)").bind(lid, viewer, day4, kind).run();
-      if (!(ins.meta && ins.meta.changes)) return json10({ ok: true, counted: false });
+      if (!(ins.meta && ins.meta.changes)) return json11({ ok: true, counted: false });
       const col = kind === "view" ? "views" : "clicks";
       const q2 = [
         env.DB.prepare(`UPDATE leagues SET ${col}=${col}+1 WHERE id=?1`).bind(lid),
@@ -7818,17 +8197,17 @@ async function community(req, env, url, ctx) {
       ];
       if (Math.random() < 0.02) q2.push(env.DB.prepare("DELETE FROM league_hits WHERE day < ?1").bind(new Date(Date.now() - 45 * 864e5).toISOString().slice(0, 10)));
       await env.DB.batch(q2);
-      return json10({ ok: true, counted: true });
+      return json11({ ok: true, counted: true });
     }
-    if (!who2) return err6("sign in with your Pitlane HQ account", 401);
-    if (lid && cur.owner !== who2.id && !admin) return err6("league not found", 404);
+    if (!who2) return err7("sign in with your Pitlane HQ account", 401);
+    if (lid && cur.owner !== who2.id && !admin) return err7("league not found", 404);
     if (lid && body.delete) {
       await env.DB.batch([
         env.DB.prepare("DELETE FROM league_hits WHERE league_id=?1").bind(lid),
         env.DB.prepare("DELETE FROM league_days WHERE league_id=?1").bind(lid),
         env.DB.prepare("DELETE FROM leagues WHERE id=?1").bind(lid)
       ]);
-      return json10({ ok: true, deleted: true });
+      return json11({ ok: true, deleted: true });
     }
     const txt = /* @__PURE__ */ __name((v, n2) => typeof v === "string" ? v.replace(/[\u0000-\u001f\u007f]/g, " ").replace(/\s+/g, " ").trim().slice(0, n2) : "", "txt");
     const link = /* @__PURE__ */ __name((v, re) => {
@@ -7838,10 +8217,10 @@ async function community(req, env, url, ctx) {
     const discord = link(body.discord, /^https:\/\/(discord\.gg|(www\.)?discord\.com\/invite)\/[A-Za-z0-9-]{2,40}\/?$/);
     const web = link(body.web, /^https:\/\/[^\s"'<>]{4,190}$/);
     const name2 = txt(body.name, 60);
-    if (name2.length < 3) return err6("the league needs a name", 400);
-    if (txt(body.discord, 200) && !discord) return err6("the Discord link must be an invite: https://discord.gg/\u2026 or https://discord.com/invite/\u2026", 400);
-    if (txt(body.web, 200) && !web) return err6("the website must be an https:// address", 400);
-    if (!discord && !web) return err6("give drivers a way in: a Discord invite or a website", 400);
+    if (name2.length < 3) return err7("the league needs a name", 400);
+    if (txt(body.discord, 200) && !discord) return err7("the Discord link must be an invite: https://discord.gg/\u2026 or https://discord.com/invite/\u2026", 400);
+    if (txt(body.web, 200) && !web) return err7("the website must be an https:// address", 400);
+    if (!discord && !web) return err7("give drivers a way in: a Discord invite or a website", 400);
     const cats = Array.isArray(body.cats) ? [...new Set(body.cats.filter((c) => CATS.includes(c)))] : CATS.includes(body.cat) ? [body.cat] : [];
     const days = Array.isArray(body.days) ? [...new Set(body.days.map(Number).filter((d) => Number.isInteger(d) && d >= 0 && d <= 6))].sort((a, b) => a - b) : [];
     const time = /^([01]\d|2[0-3]):[0-5]\d$/.test(String(body.time || "")) ? String(body.time) : "";
@@ -7870,20 +8249,20 @@ async function community(req, env, url, ctx) {
     const now = Date.now();
     if (cur) {
       await env.DB.prepare("UPDATE leagues SET name=?2, about=?3, cat=?4, cats=?5, days=?6, time=?7, tz=?8, open=?9, discord=?10, web=?11, schedule=?12, cars=?13, lang=?14, updated=?15, game=?16 WHERE id=?1").bind(lid, x.name, x.about, x.cat, x.cats, x.days, x.time, x.tz, x.open, x.discord, x.web, x.schedule, x.cars, x.lang, now, x.game).run();
-      return json10({ ok: true, id: lid });
+      return json11({ ok: true, id: lid });
     }
     const n = await env.DB.prepare("SELECT COUNT(*) AS n FROM leagues WHERE owner=?1").bind(who2.id).first();
     const limit = await leagueLimit();
-    if (n && n.n >= limit && !admin) return err6(limit === LEAGUES_SUPPORTER ? `you can post up to ${limit} leagues` : `you can post up to ${limit} leagues (${LEAGUES_SUPPORTER} as a supporter)`, 429);
+    if (n && n.n >= limit && !admin) return err7(limit === LEAGUES_SUPPORTER ? `you can post up to ${limit} leagues` : `you can post up to ${limit} leagues (${LEAGUES_SUPPORTER} as a supporter)`, 429);
     const id2 = rid7();
     await env.DB.prepare("INSERT INTO leagues (id, owner, name, about, cat, cats, days, time, tz, open, discord, web, schedule, cars, lang, created, updated, game) VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14,?15,?16,?16,?17)").bind(id2, who2.id, x.name, x.about, x.cat, x.cats, x.days, x.time, x.tz, x.open, x.discord, x.web, x.schedule, x.cars, x.lang, now, x.game).run();
-    return json10({ ok: true, id: id2, game: x.game });
+    return json11({ ok: true, id: id2, game: x.game });
   }
   if (p === "/profile" && m === "GET") {
     const viewer = await sessionAccount(req, env).catch(() => null), admin = !!viewer && isAdmin(env, viewer.id);
     let uid = null, fromAnon = false;
     if (url.searchParams.get("me") === "1") uid = viewer ? viewer.id : null;
-    else if (admin && /^[A-Za-z0-9]{8,40}$/.test(url.searchParams.get("id") || "")) uid = url.searchParams.get("id");
+    else if (/^[A-Za-z0-9]{8,40}$/.test(url.searchParams.get("id") || "") && (admin || await follows(env, viewer && viewer.id, url.searchParams.get("id")))) uid = url.searchParams.get("id");
     else {
       const l = await env.DB.prepare("SELECT user_id, anon FROM community_laps WHERE id=?1").bind(String(url.searchParams.get("lap") || "")).first();
       if (l) {
@@ -7893,7 +8272,7 @@ async function community(req, env, url, ctx) {
     }
     const a = uid ? await env.DB.prepare("SELECT a.id, a.anon, a.name_kind, a.created, a.member_since, a.supporter, a.supporter_hidden, u.alias, u.lics FROM accounts a JOIN community_users u ON u.id=a.id WHERE a.id=?1").bind(uid).first() : null;
     const mine = !!a && !!viewer && viewer.id === a.id;
-    if (!a || (fromAnon || a.anon) && !admin && !mine) return err6("this driver is anonymous", 404);
+    if (!a || (fromAnon || a.anon) && !admin && !mine) return err7("this driver is anonymous", 404);
     const laps = (await env.DB.prepare(
       `SELECT id, track, car, track_id AS trackId, car_id AS carId, time, created, anon, game, cat, lic,
          (SELECT COUNT(*) FROM community_laps o WHERE o.track_id=l.track_id AND o.car_id=l.car_id AND o.game=l.game AND COALESCE(o.shown,'')<>'model' AND o.time<l.time)+1 AS pos,
@@ -7934,12 +8313,15 @@ async function community(req, env, url, ctx) {
         if (run.length > 1) trend[k] = run.slice(-8).map((v) => Math.round(v * 1e3) / 1e3);
       }
     }
-    return json10({
+    return json11({
       name: a.alias || "Driver",
       since: a.member_since || a.created,
       mine,
       admin,
       anonymous: !!a.anon,
+      // Follow on the profile: a signed-in driver on someone else's public profile (friends.js)
+      canFollow: !!viewer && !mine && !a.anon,
+      following: !!viewer && !mine && await follows(env, viewer.id, a.id),
       shownAs: admin || mine ? a.anon ? "anonymous" : a.name_kind === "iracing" ? "iracing" : "nick" : void 0,
       // how the account shows itself
       discord: dc ? { id: dc.discord_id, handle: dc.handle || "" } : void 0,
@@ -7956,7 +8338,7 @@ async function community(req, env, url, ctx) {
   const am = p.match(/^\/admin\/(laps|reports|setups|trackmaps)\/([A-Za-z0-9_.:-]{1,64})$/);
   if (am && m === "DELETE") {
     const acc = await sessionAccount(req, env);
-    if (!acc || !isAdmin(env, acc.id)) return err6("only the admins of this server can do this", 403);
+    if (!acc || !isAdmin(env, acc.id)) return err7("only the admins of this server can do this", 403);
     const [, kind, id2] = am;
     const q2 = {
       laps: ["DELETE FROM community_laps WHERE id=?1", id2],
@@ -7965,31 +8347,31 @@ async function community(req, env, url, ctx) {
       trackmaps: ["DELETE FROM track_maps WHERE track_id=?1 AND game=?2", +id2 || 0, game]
     }[kind];
     const r2 = await env.DB.prepare(q2[0]).bind(...q2.slice(1)).run();
-    return json10({ deleted: !!(r2.meta && r2.meta.changes) });
+    return json11({ deleted: !!(r2.meta && r2.meta.changes) });
   }
   if (p.startsWith("/reports/") && m === "GET") {
     const r2 = await env.DB.prepare("SELECT r.*, CASE WHEN r.anon=1 THEN 'Anonymous' WHEN r.shown='iracing' AND COALESCE(u.iracing,'')<>'' THEN u.iracing ELSE u.alias END AS alias FROM community_reports r JOIN community_users u ON u.id=r.user_id WHERE r.id=?1").bind(p.slice(9)).first();
-    if (!r2) return err6("not found", 404);
+    if (!r2) return err7("not found", 404);
     const data = JSON.parse(await openData(env, r2.data));
     const rivals = seesRivals(req, env, await me(req, env).catch(() => null));
     for (const k of ["results", "brakes"]) if (Array.isArray(data[k])) data[k] = data[k].map((x) => !x ? x : x.me ? r2.anon ? { ...x, name: "Anonymous" } : x : rivals ? x : { ...x, name: "Anonymous" });
-    return json10({ ...data, id: r2.id, alias: r2.alias, game: r2.game, shared: true });
+    return json11({ ...data, id: r2.id, alias: r2.alias, game: r2.game, shared: true });
   }
   if (p === "/season/info" && m === "GET") {
     const c = await env.DB.prepare("SELECT updated FROM season_cache WHERE k='current'").first();
     const i = await env.DB.prepare("SELECT data FROM season_chunks WHERE k='info' AND idx=0").first();
-    return json10({ updated: c ? c.updated : null, ...i ? JSON.parse(i.data) : {} });
+    return json11({ updated: c ? c.updated : null, ...i ? JSON.parse(i.data) : {} });
   }
   if (p === "/season" && m === "GET") {
     const c = await env.DB.prepare("SELECT updated, chunks FROM season_cache WHERE k='current'").first();
-    if (!c) return err6("no season schedule on this server yet", 404);
+    if (!c) return err7("no season schedule on this server yet", 404);
     const r2 = await env.DB.prepare("SELECT data FROM season_chunks WHERE k='current' AND idx<?1 ORDER BY idx").bind(c.chunks).all();
     const seen2 = await seenSummary(env).catch(() => ({}));
-    return new Response('{"updated":' + c.updated + ',"seen":' + JSON.stringify(seen2) + ',"season":' + (r2.results || []).map((x) => x.data).join("") + "}", { headers: { ...JSONH7, "cache-control": "public, max-age=900" } });
+    return new Response('{"updated":' + c.updated + ',"seen":' + JSON.stringify(seen2) + ',"season":' + (r2.results || []).map((x) => x.data).join("") + "}", { headers: { ...JSONH8, "cache-control": "public, max-age=900" } });
   }
   if (p === "/setups/cars" && m === "GET") {
     const r2 = await env.DB.prepare("SELECT car_path AS carPath, MAX(car) AS car, COUNT(*) AS n FROM community_setups WHERE game=?1 GROUP BY car_path ORDER BY n DESC LIMIT 500").bind(game).all();
-    return json10({ cars: r2.results || [] });
+    return json11({ cars: r2.results || [] });
   }
   if (p === "/setups" && m === "GET") {
     const car = url.searchParams.get("car") || "", track2 = (url.searchParams.get("track") || "").slice(0, 80), q2 = (url.searchParams.get("q") || "").slice(0, 60);
@@ -7998,28 +8380,28 @@ async function community(req, env, url, ctx) {
        WHERE (?1='' OR s.car_path=?1) AND (?2='' OR s.track LIKE '%'||?2||'%') AND (?3='' OR s.name LIKE '%'||?3||'%' OR s.car LIKE '%'||?3||'%' OR s.track LIKE '%'||?3||'%') AND s.game=?4
        ORDER BY s.downloads DESC, s.created DESC LIMIT 200`
     ).bind(car, track2, q2, game).all();
-    return json10({ setups: r2.results || [] });
+    return json11({ setups: r2.results || [] });
   }
   if (p.startsWith("/setups/") && p !== "/setups/mine" && m === "GET") {
     const id2 = p.slice(8);
     const s = await env.DB.prepare("SELECT s.*, u.alias FROM community_setups s JOIN community_users u ON u.id=s.user_id WHERE s.id=?1").bind(id2).first();
-    if (!s) return err6("not found", 404);
+    if (!s) return err7("not found", 404);
     await env.DB.prepare("UPDATE community_setups SET downloads=downloads+1 WHERE id=?1").bind(id2).run();
-    return json10({ id: s.id, alias: s.alias, carPath: s.car_path, car: s.car, track: s.track, name: s.name, notes: s.notes, sha: s.sha, data: s.data });
+    return json11({ id: s.id, alias: s.alias, carPath: s.car_path, car: s.car, track: s.track, name: s.name, notes: s.notes, sha: s.sha, data: s.data });
   }
   let u = await me(req, env);
-  if (!u) return err6("wrong or missing token", 401);
+  if (!u) return err7("wrong or missing token", 401);
   if (p === "/guests" && m === "GET") {
-    if (!u.account || !isAdmin(env, u.id)) return err6("only the admins of this server can do this", 403);
+    if (!u.account || !isAdmin(env, u.id)) return err7("only the admins of this server can do this", 403);
     const r2 = await env.DB.prepare("SELECT g.id, g.alias, g.created, (SELECT COUNT(*) FROM community_laps l WHERE l.user_id=g.id) AS laps, (SELECT a.display FROM guest_links gl JOIN accounts a ON a.id=gl.account_id WHERE gl.gid=g.id) AS linked FROM community_users g WHERE g.owner=?1 AND g.id LIKE 'guest-%' ORDER BY g.created DESC LIMIT 60").bind(u.id).all();
-    return json10({ guests: (r2.results || []).map((x) => ({ id: x.id, name: x.alias, laps: x.laps || 0, created: x.created, linked: x.linked || null })) });
+    return json11({ guests: (r2.results || []).map((x) => ({ id: x.id, name: x.alias, laps: x.laps || 0, created: x.created, linked: x.linked || null })) });
   }
   if (m === "POST" && (p === "/laps" || p === "/reports") && typeof body.guest === "string" && body.guest.trim()) {
-    if (!u.account || !isAdmin(env, u.id)) return err6("only the admins of this server can share laps for other drivers", 403);
+    if (!u.account || !isAdmin(env, u.id)) return err7("only the admins of this server can share laps for other drivers", 403);
     const name2 = cleanAlias(body.guest);
     const had = await env.DB.prepare("SELECT id FROM community_users WHERE owner=?1 AND id LIKE 'guest-%' AND lower(alias)=lower(?2)").bind(u.id, name2).first();
     const gid = had ? had.id : "guest-" + (await sha2562(u.id + ":" + name2.toLowerCase())).slice(0, 20);
-    if (await nameTaken(env, name2, u.id)) return json10({ error: `"${name2}" is already used by another driver on Pitlane HQ, choose another name`, code: "name_taken" }, 409);
+    if (await nameTaken(env, name2, u.id)) return json11({ error: `"${name2}" is already used by another driver on Pitlane HQ, choose another name`, code: "name_taken" }, 409);
     await env.DB.prepare("INSERT INTO community_users (id, token_hash, alias, created, owner) VALUES (?1,?2,?3,?4,?5) ON CONFLICT(id) DO UPDATE SET alias=excluded.alias, owner=excluded.owner").bind(gid, await sha2562("guest:" + gid + ":" + rid7()), name2, Date.now(), u.id).run();
     const gl = await env.DB.prepare("SELECT l.account_id AS id, a.anon, a.name_kind FROM guest_links l JOIN accounts a ON a.id=l.account_id WHERE l.gid=?1").bind(gid).first();
     const to = gl ? await env.DB.prepare("SELECT id, alias, uploads_day, uploads FROM community_users WHERE id=?1").bind(gl.id).first() : null;
@@ -8033,35 +8415,35 @@ async function community(req, env, url, ctx) {
   if (shownAs === "iracing" && typeof body.iracingName === "string" && body.iracingName.trim())
     await env.DB.prepare("UPDATE community_users SET iracing=?2 WHERE id=?1").bind(u.id, cleanAlias(body.iracingName)).run();
   if (p === "/guest-rename" && m === "POST") {
-    if (!u.account || !isAdmin(env, u.id)) return err6("only the admins of this server can do this", 403);
+    if (!u.account || !isAdmin(env, u.id)) return err7("only the admins of this server can do this", 403);
     const from = cleanAlias(body.from || ""), to = cleanAlias(body.to || "");
-    if (!from || !to) return err6("both names are needed", 400);
-    if (await nameTaken(env, to, u.id)) return json10({ error: `"${to}" is already used by another driver on Pitlane HQ, choose another name`, code: "name_taken" }, 409);
+    if (!from || !to) return err7("both names are needed", 400);
+    if (await nameTaken(env, to, u.id)) return json11({ error: `"${to}" is already used by another driver on Pitlane HQ, choose another name`, code: "name_taken" }, 409);
     const row = await env.DB.prepare("SELECT id FROM community_users WHERE owner=?1 AND id LIKE 'guest-%' AND lower(alias)=lower(?2)").bind(u.id, from).first();
     if (from.toLowerCase() !== to.toLowerCase()) {
       const clash = await env.DB.prepare("SELECT id FROM community_users WHERE owner=?1 AND id LIKE 'guest-%' AND lower(alias)=lower(?2)").bind(u.id, to).first();
-      if (clash) return json10({ error: `You already have a driver called "${to}"`, code: "name_taken" }, 409);
+      if (clash) return json11({ error: `You already have a driver called "${to}"`, code: "name_taken" }, 409);
     }
     if (row) await env.DB.prepare("UPDATE community_users SET alias=?2 WHERE id=?1").bind(row.id, to).run();
     await env.DB.prepare("UPDATE laps SET drv=?3 WHERE lower(drv)=lower(?2) AND session_id IN (SELECT id FROM sessions WHERE uploader=?1)").bind("acct:" + u.id, from, to).run().catch(() => {
     });
     await env.DB.prepare("UPDATE sessions SET drvs=(SELECT group_concat(DISTINCT drv) FROM laps WHERE session_id=sessions.id) WHERE uploader=?1 AND drvs IS NOT NULL").bind("acct:" + u.id).run().catch(() => {
     });
-    return json10({ ok: true, renamed: !!row, name: to });
+    return json11({ ok: true, renamed: !!row, name: to });
   }
   if (p === "/name-check" && m === "POST") {
-    if (!u.account || !isAdmin(env, u.id)) return err6("only the admins of this server can do this", 403);
-    return json10({ free: !await nameTaken(env, cleanAlias(body.name), u.id) });
+    if (!u.account || !isAdmin(env, u.id)) return err7("only the admins of this server can do this", 403);
+    return json11({ free: !await nameTaken(env, cleanAlias(body.name), u.id) });
   }
   if (p === "/season/seen" && m === "POST") {
     const r2 = await recordSeen(env, u.id, body);
-    return r2.error ? err6(r2.error, r2.status) : json10(r2);
+    return r2.error ? err7(r2.error, r2.status) : json11(r2);
   }
   if ((p === "/season" || p === "/admin/season") && m === "POST") {
     const allowed = String(env.SEASON_UPLOADERS || env.ADMINS || "").split(",").map((x) => x.trim()).filter(Boolean);
-    if (!u.account || !(allowed.includes(u.id) || isAdmin(env, u.id))) return err6("this account cannot publish the season schedule", 403);
+    if (!u.account || !(allowed.includes(u.id) || isAdmin(env, u.id))) return err7("this account cannot publish the season schedule", 403);
     const data = JSON.stringify(body.season || null);
-    if (data.length < 100 || data.length > 12e6 || !Array.isArray(body.season.seasons)) return err6("season schedule missing or too large", 400);
+    if (data.length < 100 || data.length > 12e6 || !Array.isArray(body.season.seasons)) return err7("season schedule missing or too large", 400);
     const parts = [];
     for (let i = 0; i < data.length; i += 9e5) parts.push(data.slice(i, i + 9e5));
     await env.DB.batch([
@@ -8071,36 +8453,36 @@ async function community(req, env, url, ctx) {
       // what the admin page's Season says about it without reading the whole season
       env.DB.prepare("INSERT INTO season_chunks (k, idx, data) VALUES ('info',0,?1) ON CONFLICT(k, idx) DO UPDATE SET data=excluded.data").bind(JSON.stringify(seasonInfo(body.season, u.id)))
     ]);
-    return json10({ published: true, size: data.length });
+    return json11({ published: true, size: data.length });
   }
   if (p === "/setups/mine" && m === "GET") {
     const r2 = await env.DB.prepare("SELECT id, car_path AS carPath, car, track, name, notes, size, downloads, created FROM community_setups WHERE user_id=?1 ORDER BY created DESC").bind(u.id).all();
-    return json10({ setups: (r2.results || []).map((x) => ({ ...x, alias: u.alias, mine: true })) });
+    return json11({ setups: (r2.results || []).map((x) => ({ ...x, alias: u.alias, mine: true })) });
   }
   if (p === "/setups" && m === "POST") {
-    if (typeof body.carPath !== "string" || !CAR_RE.test(body.carPath) || body.carPath.includes("..")) return err6("unknown car folder", 400);
-    if (typeof body.data !== "string" || !/^[A-Za-z0-9+/=]+$/.test(body.data) || body.data.length > 56e4) return err6("setup missing or too large (400 KB max)", 400);
-    if (typeof body.sha !== "string" || !/^[0-9a-f]{64}$/.test(body.sha)) return err6("missing checksum", 400);
+    if (typeof body.carPath !== "string" || !CAR_RE.test(body.carPath) || body.carPath.includes("..")) return err7("unknown car folder", 400);
+    if (typeof body.data !== "string" || !/^[A-Za-z0-9+/=]+$/.test(body.data) || body.data.length > 56e4) return err7("setup missing or too large (400 KB max)", 400);
+    if (typeof body.sha !== "string" || !/^[0-9a-f]{64}$/.test(body.sha)) return err7("missing checksum", 400);
     const bytes = Uint8Array.from(atob(body.data), (c) => c.charCodeAt(0));
-    if (await crypto.subtle.digest("SHA-256", bytes).then((b) => [...new Uint8Array(b)].map((x) => x.toString(16).padStart(2, "0")).join("")) !== body.sha) return err6("checksum does not match", 400);
-    if (!await countUpload(env, u)) return err6("too many uploads today", 429);
+    if (await crypto.subtle.digest("SHA-256", bytes).then((b) => [...new Uint8Array(b)].map((x) => x.toString(16).padStart(2, "0")).join("")) !== body.sha) return err7("checksum does not match", 400);
+    if (!await countUpload(env, u)) return err7("too many uploads today", 429);
     const id2 = rid7();
     const r2 = await env.DB.prepare(
       "INSERT INTO community_setups (id, user_id, car_path, car, track, name, notes, data, sha, size, created, game) VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12) ON CONFLICT(user_id, sha) DO NOTHING"
     ).bind(id2, u.id, body.carPath, str3(body.car), str3(body.track, 80), cleanFile(body.name), str3(body.notes, 1e3), body.data, body.sha, bytes.length, Date.now(), game).run();
-    if (!r2.meta || !r2.meta.changes) return json10({ kept: "you already shared this setup" });
-    return json10({ shared: true, id: id2 });
+    if (!r2.meta || !r2.meta.changes) return json11({ kept: "you already shared this setup" });
+    return json11({ shared: true, id: id2 });
   }
   if (p.startsWith("/setups/") && m === "DELETE") {
     await env.DB.prepare("DELETE FROM community_setups WHERE id=?1 AND user_id=?2").bind(p.slice(8), u.id).run();
-    return json10({ deleted: true });
+    return json11({ deleted: true });
   }
   if (p === "/adopt" && m === "POST") {
-    if (!u.account) return err6("sign in with your Pitlane HQ account", 401);
+    if (!u.account) return err7("sign in with your Pitlane HQ account", 401);
     const t = typeof body.token === "string" ? body.token.trim() : "";
-    if (t.length < 20) return err6("missing token", 400);
+    if (t.length < 20) return err7("missing token", 400);
     const d = await env.DB.prepare("SELECT id FROM community_users WHERE token_hash=?1").bind(await sha2562(t)).first();
-    if (!d || d.id === u.id || /^(o:|guest-)/.test(d.id) || await env.DB.prepare("SELECT 1 FROM accounts WHERE id=?1").bind(d.id).first()) return json10({ adopted: 0 });
+    if (!d || d.id === u.id || /^(o:|guest-)/.test(d.id) || await env.DB.prepare("SELECT 1 FROM accounts WHERE id=?1").bind(d.id).first()) return json11({ adopted: 0 });
     const laps = (await env.DB.prepare("SELECT id, car_id, track_id, time, game, trace IS NOT NULL AS traced FROM community_laps WHERE user_id=?1").bind(d.id).all()).results || [];
     const q2 = [], combos2 = /* @__PURE__ */ new Set();
     for (const l of laps) {
@@ -8127,10 +8509,10 @@ async function community(req, env, url, ctx) {
       const [g, tr2, ca] = c.split("|");
       await markModel(env, g, +tr2, +ca);
     }
-    return json10({ adopted: laps.length });
+    return json11({ adopted: laps.length });
   }
   if (p === "/rival-names" && m === "POST") {
-    if (!u.account) return err6("sign in with your Pitlane HQ account", 401);
+    if (!u.account) return err7("sign in with your Pitlane HQ account", 401);
     const items = (Array.isArray(body.items) ? body.items : []).slice(0, 600);
     let named = 0;
     for (const x of items) {
@@ -8146,16 +8528,16 @@ async function community(req, env, url, ctx) {
       await env.DB.prepare("UPDATE community_users SET alias=?2 WHERE id=?1 AND (alias='Anonymous' OR alias=?3)").bind(ids[0], full, short).run();
       named++;
     }
-    return json10({ named });
+    return json11({ named });
   }
   if (p === "/link-driver" && m === "POST") {
-    if (!u.account) return err6("sign in with your Pitlane HQ account", 401);
-    if (typeof body.key !== "string" || !/^[0-9a-f]{16,64}$/i.test(body.key)) return err6("missing key", 400);
+    if (!u.account) return err7("sign in with your Pitlane HQ account", 401);
+    if (typeof body.key !== "string" || !/^[0-9a-f]{16,64}$/i.test(body.key)) return err7("missing key", 400);
     const r2 = await linkDriver(env, u.id, await otherId(env, body.key), game);
-    return r2.error ? err6(r2.error, r2.status) : json10(r2);
+    return r2.error ? err7(r2.error, r2.status) : json11(r2);
   }
   if (p === "/lics" && m === "POST") {
-    if (!u.account) return err6("sign in with your Pitlane HQ account", 401);
+    if (!u.account) return err7("sign in with your Pitlane HQ account", 401);
     const row = await env.DB.prepare("SELECT lics FROM community_users WHERE id=?1").bind(u.id).first();
     let out = {};
     try {
@@ -8170,14 +8552,14 @@ async function community(req, env, url, ctx) {
         n++;
       }
     }
-    if (!n) return err6("no license classes", 400);
+    if (!n) return err7("no license classes", 400);
     await env.DB.prepare("UPDATE community_users SET lics=?2 WHERE id=?1").bind(u.id, JSON.stringify(out)).run();
-    return json10({ ok: true, lics: out });
+    return json11({ ok: true, lics: out });
   }
   if (p === "/me" && m === "POST") {
-    if (u.account) return err6("change your public name in your account", 400);
+    if (u.account) return err7("change your public name in your account", 400);
     await env.DB.prepare("UPDATE community_users SET alias=?2 WHERE id=?1").bind(u.id, cleanAlias(body.alias)).run();
-    return json10({ ok: true });
+    return json11({ ok: true });
   }
   if (p === "/me" && m === "DELETE") {
     await env.DB.batch([
@@ -8186,101 +8568,101 @@ async function community(req, env, url, ctx) {
       env.DB.prepare("DELETE FROM community_setups WHERE user_id=?1").bind(u.id),
       ...u.account ? [] : [env.DB.prepare("DELETE FROM community_users WHERE id=?1").bind(u.id)]
     ]);
-    return json10({ deleted: true });
+    return json11({ deleted: true });
   }
   if (p === "/share-lap" && m === "POST") {
-    if (!u.account) return err6("sign in with your Pitlane HQ account", 401);
+    if (!u.account) return err7("sign in with your Pitlane HQ account", 401);
     const s = await env.DB.prepare("SELECT * FROM sessions WHERE id=?1 AND uploader=?2").bind(String(body.sessionId || ""), "acct:" + u.id).first();
-    if (!s) return err6("session not found in your account", 404);
+    if (!s) return err7("session not found in your account", 404);
     const lap = body.lapId ? await env.DB.prepare("SELECT time, sectors, trace, valid FROM laps WHERE id=?1 AND session_id=?2 AND drv IS NULL").bind(String(body.lapId), s.id).first() : await env.DB.prepare("SELECT time, sectors, trace FROM laps WHERE session_id=?1 AND valid=1 AND drv IS NULL AND time>0 AND trace IS NOT NULL ORDER BY time LIMIT 1").bind(s.id).first() || await env.DB.prepare("SELECT time, sectors, trace FROM laps WHERE session_id=?1 AND valid=1 AND drv IS NULL AND time>0 ORDER BY time LIMIT 1").bind(s.id).first();
-    if (!lap || !(lap.time > 10)) return err6("this session has no valid lap to share", 404);
-    if (body.lapId && lap.valid !== 1) return err6("this lap is not valid (off track or the pit lane): it cannot be shared", 400);
+    if (!lap || !(lap.time > 10)) return err7("this session has no valid lap to share", 404);
+    if (body.lapId && lap.valid !== 1) return err7("this lap is not valid (off track or the pit lane): it cannot be shared", 400);
     const name2 = s.track + (s.track_config ? " \xB7 " + s.track_config : "");
     const g = s.game || "iracing";
     const { trackId, carId } = await comboIds(env, s, name2, g, u.id, body);
     const r2 = await keepBestLap(env, u.id, { game: g, carId, trackId, car: s.car, track: name2, time: lap.time, sectors: lap.sectors, trace: lap.trace, anon: !!body.anon, shown: shownAs, count: /* @__PURE__ */ __name(() => countUpload(env, u), "count"), ctx });
-    if (r2.limit) return err6("too many uploads today", 429);
-    if (r2.kept) return json10({ kept: "your faster lap is already shared", traced: r2.traced });
-    return json10({ shared: true, traced: r2.traced });
+    if (r2.limit) return err7("too many uploads today", 429);
+    if (r2.kept) return json11({ kept: "your faster lap is already shared", traced: r2.traced });
+    return json11({ shared: true, traced: r2.traced });
   }
   if (p === "/laps" && m === "POST") {
     const carId = int3(body.carId), trackId = int3(body.trackId), time = num2(body.time);
-    if (!carId || !trackId || !time || time <= 10 || time > 3600) return err6("lap needs carId, trackId and time", 400);
-    if (isTestDrive(body.kind)) return json10({ kept: "laps of a test drive are not shared" });
+    if (!carId || !trackId || !time || time <= 10 || time > 3600) return err7("lap needs carId, trackId and time", 400);
+    if (isTestDrive(body.kind)) return json11({ kept: "laps of a test drive are not shared" });
     const sectors = Array.isArray(body.sectors) ? JSON.stringify(body.sectors.filter((x) => typeof x === "number").slice(0, 10)) : null;
     if (typeof body.other === "string" && /^[0-9a-f]{16,64}$/i.test(body.other)) {
-      if (!u.account) return err6("sign in with your Pitlane HQ account to share other drivers' times", 401);
+      if (!u.account) return err7("sign in with your Pitlane HQ account to share other drivers' times", 401);
       const oid = await otherId(env, body.other);
       const plain2 = body.trace && Array.isArray(body.trace.d) && body.trace.d.length >= 60 ? JSON.stringify({ ...body.trace, src: body.trace.src === "real" ? "real" : "field" }) : null;
-      if (plain2 && plain2.length > 9e5) return err6("lap trace too large", 400);
+      if (plain2 && plain2.length > 9e5) return err7("lap trace too large", 400);
       const link = await env.DB.prepare("SELECT l.account_id AS id, a.anon, a.name_kind FROM driver_links l JOIN accounts a ON a.id=l.account_id WHERE l.oid=?1 AND l.game=?2").bind(oid, game).first();
       if (link) {
         const r5 = await keepBestLap(env, link.id, { game, carId, trackId, car: body.car, track: body.track, time, sectors, trace: await sealData(env, plain2), len: traceLen(body.trace), cls: body.cls, wet: wetOf(body.trace && body.trace.f), anon: !!link.anon, shown: link.name_kind === "iracing" ? "iracing" : "nick", lic: body.lic, cat: body.cat, official: body.official, ai: body.ai === true, count: /* @__PURE__ */ __name(() => countUpload(env, u), "count"), ctx });
-        if (r5.limit) return err6("too many uploads today", 429);
-        return json10(r5.kept ? { kept: "a faster lap of this driver is already shared" } : { shared: true });
+        if (r5.limit) return err7("too many uploads today", 429);
+        return json11(r5.kept ? { kept: "a faster lap of this driver is already shared" } : { shared: true });
       }
       const short = driverName(body.name || body.short);
       await env.DB.prepare("INSERT INTO community_users (id, token_hash, alias, created, owner) VALUES (?1,?2,?5,?3,?4) ON CONFLICT(id) DO UPDATE SET alias=excluded.alias WHERE excluded.alias<>'Anonymous'").bind(oid, "other:" + oid, Date.now(), u.id, short || "Anonymous").run();
       const r4 = await keepBestLap(env, oid, { game, carId, trackId, car: body.car, track: body.track, time, sectors, trace: await sealData(env, plain2), len: traceLen(body.trace), cls: body.cls, wet: wetOf(body.trace && body.trace.f), anon: true, shown: "nick", lic: body.lic, cat: body.cat, official: body.official, ai: body.ai === true, count: /* @__PURE__ */ __name(() => countUpload(env, u), "count") });
-      if (r4.limit) return err6("too many uploads today", 429);
-      return json10(r4.kept ? { kept: "a faster lap of this driver is already shared" } : { shared: true });
+      if (r4.limit) return err7("too many uploads today", 429);
+      return json11(r4.kept ? { kept: "a faster lap of this driver is already shared" } : { shared: true });
     }
     const plainTrace = body.trace ? JSON.stringify(body.trace) : null;
-    if (plainTrace && plainTrace.length > 9e5) return err6("lap trace too large", 400);
+    if (plainTrace && plainTrace.length > 9e5) return err7("lap trace too large", 400);
     const trace = await sealData(env, plainTrace);
     const r2 = await keepBestLap(env, u.id, { game, carId, trackId, car: body.car, track: body.track, time, sectors, trace, len: traceLen(body.trace), cls: body.cls, wet: wetOf(body.trace && body.trace.f), anon: !!body.anon, shown: shownAs, lic: body.lic, cat: body.cat, official: body.official, ai: body.ai === true, count: /* @__PURE__ */ __name(() => countUpload(env, u), "count"), ctx });
-    if (r2.limit) return err6("too many uploads today", 429);
-    return json10(r2.kept ? { kept: "your faster lap is already shared" } : { shared: true });
+    if (r2.limit) return err7("too many uploads today", 429);
+    return json11(r2.kept ? { kept: "your faster lap is already shared" } : { shared: true });
   }
   if (p === "/trackinfo" && m === "POST") {
     const trackId = int3(body.trackId);
-    if (!trackId || !(Number.isInteger(body.nturns) && body.nturns >= 1 && body.nturns <= 60)) return err6("trackInfo needs trackId and nturns", 400);
-    return json10({ ok: true, changed: await noteTurnCount(env, game, trackId, str3(body.track), body.nturns) });
+    if (!trackId || !(Number.isInteger(body.nturns) && body.nturns >= 1 && body.nturns <= 60)) return err7("trackInfo needs trackId and nturns", 400);
+    return json11({ ok: true, changed: await noteTurnCount(env, game, trackId, str3(body.track), body.nturns) });
   }
   if (p === "/trackmaps" && m === "POST") {
     const trackId = int3(body.trackId), time = num2(body.time), n = int3(body.n);
     if (trackId && Number.isInteger(body.nturns)) await noteTurnCount(env, game, trackId, str3(body.track), body.nturns).catch(() => {
     });
     const x = body.x, y = body.y;
-    if (!trackId || !time || time <= 10 || time > 3600) return err6("layout needs trackId and the lap time", 400);
-    if (body.clean !== true) return err6("only laps without incidents", 400);
-    if (!(n >= 100 && n <= 3e3) || !Array.isArray(x) || !Array.isArray(y) || x.length !== n || y.length !== n) return err6("layout points missing", 400);
+    if (!trackId || !time || time <= 10 || time > 3600) return err7("layout needs trackId and the lap time", 400);
+    if (body.clean !== true) return err7("only laps without incidents", 400);
+    if (!(n >= 100 && n <= 3e3) || !Array.isArray(x) || !Array.isArray(y) || x.length !== n || y.length !== n) return err7("layout points missing", 400);
     const ok = /* @__PURE__ */ __name((v) => typeof v === "number" && isFinite(v) && Math.abs(v) < 3e4, "ok");
-    if (!x.every(ok) || !y.every(ok)) return err6("layout points out of range", 400);
+    if (!x.every(ok) || !y.every(ok)) return err7("layout points out of range", 400);
     const g = Array.isArray(body.g) && body.g.length === 2 && body.g.every((v) => typeof v === "number" && isFinite(v)) && Math.abs(body.g[0]) <= 90 && Math.abs(body.g[1]) <= 180 ? body.g.map((v) => Math.round(v * 1e5) / 1e5) : null;
     const r2 = /* @__PURE__ */ __name((v) => Math.round(v * 10) / 10, "r2");
     const old = await env.DB.prepare("SELECT time, geo FROM track_maps WHERE game=?1 AND track_id=?2").bind(game, trackId).first();
-    if (old && old.geo && !g) return json10({ kept: "a layout from the game's position already draws this track" });
-    if (old && old.time <= time && !(g && !old.geo)) return json10({ kept: "a faster clean lap already drew this track" });
-    if (!await countUpload(env, u)) return err6("too many uploads today", 429);
+    if (old && old.geo && !g) return json11({ kept: "a layout from the game's position already draws this track" });
+    if (old && old.time <= time && !(g && !old.geo)) return json11({ kept: "a faster clean lap already drew this track" });
+    if (!await countUpload(env, u)) return err7("too many uploads today", 429);
     await env.DB.prepare(
       `INSERT INTO track_maps (game, track_id, track, n, len, pts, time, user_id, created, geo) VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10)
        ON CONFLICT(game, track_id) DO UPDATE SET track=excluded.track, n=excluded.n, len=excluded.len, pts=excluded.pts, time=excluded.time, user_id=excluded.user_id, created=excluded.created, geo=excluded.geo`
     ).bind(game, trackId, str3(body.track), n, num2(body.len), JSON.stringify({ x: x.map(r2), y: y.map(r2) }), time, u.id, Date.now(), g ? JSON.stringify(g) : null).run();
-    return json10({ shared: true });
+    return json11({ shared: true });
   }
   if (p === "/pitlane" && m === "POST") {
     const trackId = int3(body.trackId), n = int3(body.n), pts = body.pts;
-    if (!trackId || !(n >= 60 && n <= 4e3) || !Array.isArray(pts) || pts.length < 10 || pts.length > 2e3) return err6("pit lane needs trackId, n and its points", 400);
+    if (!trackId || !(n >= 60 && n <= 4e3) || !Array.isArray(pts) || pts.length < 10 || pts.length > 2e3) return err7("pit lane needs trackId, n and its points", 400);
     const ok = pts.every((q2) => Array.isArray(q2) && q2.length === 2 && Number.isInteger(q2[0]) && q2[0] >= 0 && q2[0] < n && typeof q2[1] === "number" && isFinite(q2[1]) && Math.abs(q2[1]) <= 80);
-    if (!ok) return err6("pit lane points out of range", 400);
-    if (!await countUpload(env, u)) return err6("too many uploads today", 429);
+    if (!ok) return err7("pit lane points out of range", 400);
+    if (!await countUpload(env, u)) return err7("too many uploads today", 429);
     const old = await env.DB.prepare("SELECT n, pts FROM track_pits WHERE game=?1 AND track_id=?2").bind(game, trackId).first();
     const keep = old && Math.abs(old.n - n) <= 4 ? JSON.parse(old.pts) : {};
     for (const [i, v] of pts) keep[i] = keep[i] == null ? v : Math.round((keep[i] * 0.6 + v * 0.4) * 10) / 10;
     await env.DB.prepare(`INSERT INTO track_pits (game, track_id, n, pts, updated) VALUES (?1,?2,?3,?4,?5)
        ON CONFLICT(game, track_id) DO UPDATE SET n=excluded.n, pts=excluded.pts, updated=excluded.updated`).bind(game, trackId, n, JSON.stringify(keep), Date.now()).run();
-    return json10({ shared: true, points: Object.keys(keep).length });
+    return json11({ shared: true, points: Object.keys(keep).length });
   }
   if (p === "/reports" && m === "POST") {
     const data = JSON.stringify(body.report || {});
-    if (data.length < 20 || data.length > 9e5) return err6("report missing or too large", 400);
-    if (!await countUpload(env, u)) return err6("too many uploads today", 429);
+    if (data.length < 20 || data.length > 9e5) return err7("report missing or too large", 400);
+    if (!await countUpload(env, u)) return err7("too many uploads today", 429);
     const r2 = body.report;
     await env.DB.prepare("INSERT INTO community_reports (id, user_id, car_id, car, track_id, track, data, created, anon, game, finish, field, best, shown) VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14)").bind(rid7(), u.id, int3(r2.carId), str3(r2.car), int3(r2.trackId), str3(r2.track), await sealData(env, data), Date.now(), body.anon ? 1 : 0, gameOf(body.game || r2.game), int3(r2.finish), int3(r2.field), num2(r2.best), shownAs).run();
-    return json10({ shared: true });
+    return json11({ shared: true });
   }
-  return err6("not found", 404);
+  return err7("not found", 404);
 }
 __name(community, "community");
 function seasonInfo(season, by) {
@@ -10463,55 +10845,55 @@ var SQL_OV_SEEN = "UPDATE feedback_ask SET ov_races=0 WHERE account_id=?1";
 var SQL_OV_ANSWERED = "INSERT INTO feedback_ask (account_id, shown, used, ov_races, ov_answered) VALUES (?1,?2,0,0,1) ON CONFLICT(account_id) DO UPDATE SET ov_races=0, ov_answered=1";
 
 // src/usage.js
-var json11 = /* @__PURE__ */ __name((o, s = 200) => new Response(JSON.stringify(o), { status: s, headers: { "content-type": "application/json", "cache-control": "no-store" } }), "json");
-var err7 = /* @__PURE__ */ __name((m, s) => json11({ error: m }, s), "err");
+var json12 = /* @__PURE__ */ __name((o, s = 200) => new Response(JSON.stringify(o), { status: s, headers: { "content-type": "application/json", "cache-control": "no-store" } }), "json");
+var err8 = /* @__PURE__ */ __name((m, s) => json12({ error: m }, s), "err");
 async function usageRoute(req, env, url) {
   const p = url.pathname, m = req.method;
   const ours = ["/community/usage", "/community/feedback", "/community/feedback/ask", "/community/feedback/seen", "/community/feedback/ovrace", "/community/admin/analytics", "/community/admin/feedback"];
   if (!ours.includes(p)) return null;
   const acc = await sessionAccount(req, env);
-  if (!acc) return err7("sign in with your Pitlane HQ account", 401);
+  if (!acc) return err8("sign in with your Pitlane HQ account", 401);
   const now = Date.now();
   if (p === "/community/usage" && m === "POST") {
     const u = cleanUsage(await req.json().catch(() => null));
-    if (u.error) return err7(u.error, 400);
+    if (u.error) return err8(u.error, 400);
     const d = day2(now), st = [];
     for (const [k, n] of u.counts)
       st.push(env.DB.prepare(SQL_USAGE_ADD).bind(d, acc.id, u.device, k, n));
     if (u.ms) st.push(env.DB.prepare(SQL_ASK_USED).bind(acc.id, now, u.ms));
     if (st.length) await env.DB.batch(st);
-    return json11({ ok: true, kept: u.counts.length });
+    return json12({ ok: true, kept: u.counts.length });
   }
   if (p === "/community/feedback/ask" && m === "GET") {
     const r2 = await env.DB.prepare("SELECT shown, used, ov_races, ov_answered, ov_last_style FROM feedback_ask WHERE account_id=?1").bind(acc.id).first();
     if (!r2) {
       await env.DB.prepare("INSERT OR IGNORE INTO feedback_ask (account_id, shown, used) VALUES (?1,?2,0)").bind(acc.id, now).run();
-      return json11({ ask: false, ov: false });
+      return json12({ ask: false, ov: false });
     }
     let races = 0;
     if (r2.used < ASK_USED) {
       const c = await env.DB.prepare(SQL_RACES_SINCE).bind("acct:" + acc.id, r2.shown).first();
       races = c && c.n || 0;
     }
-    return json11({ ask: shouldAsk(r2.used, races), used: r2.used, races, ov: shouldAskOv(!!r2.ov_answered, r2.ov_races || 0), ovRaces: r2.ov_races || 0, ovStyle: r2.ov_last_style || "classic" });
+    return json12({ ask: shouldAsk(r2.used, races), used: r2.used, races, ov: shouldAskOv(!!r2.ov_answered, r2.ov_races || 0), ovRaces: r2.ov_races || 0, ovStyle: r2.ov_last_style || "classic" });
   }
   if (p === "/community/feedback/seen" && m === "POST") {
     const b = await req.json().catch(() => null);
     if (b && b.kind === "overlays") await env.DB.prepare(SQL_OV_SEEN).bind(acc.id).run();
     else await env.DB.prepare(SQL_ASK_SEEN).bind(acc.id, now).run();
-    return json11({ ok: true });
+    return json12({ ok: true });
   }
   if (p === "/community/feedback/ovrace" && m === "POST") {
     const o = cleanOvRace(await req.json().catch(() => null));
-    if (o.error) return err7(o.error, 400);
+    if (o.error) return err8(o.error, 400);
     await env.DB.prepare(SQL_OV_RACE).bind(acc.id, now, o.style, o.sid || crypto.randomUUID()).run();
-    return json11({ ok: true });
+    return json12({ ok: true });
   }
   if (p === "/community/feedback" && m === "POST") {
     const b = await req.json().catch(() => null), f = cleanFeedback(b);
-    if (f.error) return err7(f.error, 400);
+    if (f.error) return err8(f.error, 400);
     const c = await env.DB.prepare("SELECT COUNT(*) AS n FROM feedback WHERE account_id=?1 AND created>?2").bind(acc.id, now - 864e5).first();
-    if (c && c.n >= FEEDBACK_PER_DAY) return err7("thank you, that is enough for today", 429);
+    if (c && c.n >= FEEDBACK_PER_DAY) return err8("thank you, that is enough for today", 429);
     const id2 = crypto.randomUUID();
     await env.DB.batch([
       env.DB.prepare("INSERT INTO feedback (id, account_id, created, device, v, rating, text, view, kind, style) VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10)").bind(id2, acc.id, now, f.device, f.v, f.rating, f.text, f.view, f.kind, f.style),
@@ -10521,14 +10903,14 @@ async function usageRoute(req, env, url) {
     ]);
     const esc6 = await openEscrow(env, acc.escrow).catch(() => null);
     const mailed = await sendFeedback(env, { ...f, nick: acc.display || "", accountId: acc.id, email: esc6 && esc6.email || "" }).catch(() => false);
-    return json11({ ok: true, id: id2, mailed });
+    return json12({ ok: true, id: id2, mailed });
   }
-  if (!isAdmin(env, acc.id)) return err7("only the admins of this server can do this", 403);
+  if (!isAdmin(env, acc.id)) return err8("only the admins of this server can do this", 403);
   if (p === "/community/admin/feedback" && m === "GET") {
     const r2 = await env.DB.prepare("SELECT f.id, f.account_id AS accountId, f.created, f.device, f.v, f.rating, f.text, f.view, f.kind, f.style, a.display AS nick FROM feedback f LEFT JOIN accounts a ON a.id=f.account_id ORDER BY f.created DESC LIMIT 300").all();
     const items = r2.results || [];
     const rated = items.filter((x) => x.rating);
-    return json11({ items, count: items.length, avg: rated.length ? Math.round(rated.reduce((s, x) => s + x.rating, 0) / rated.length * 10) / 10 : null });
+    return json12({ items, count: items.length, avg: rated.length ? Math.round(rated.reduce((s, x) => s + x.rating, 0) / rated.length * 10) / 10 : null });
   }
   if (p === "/community/admin/analytics" && m === "GET") {
     const days = Math.max(1, Math.min(MAX_DAYS, Math.floor(Number(url.searchParams.get("days")) || 30)));
@@ -10544,9 +10926,9 @@ async function usageRoute(req, env, url) {
       const a = await env.DB.prepare(`SELECT id, display FROM accounts WHERE id IN (${part.map((_, j) => "?" + (j + 1)).join(",")})`).bind(...part).all();
       for (const x of a.results || []) accounts2.set(x.id, x);
     }
-    return json11(analyticsOf(days, perDay.results || [], R, pres.results || [], accounts2));
+    return json12(analyticsOf(days, perDay.results || [], R, pres.results || [], accounts2));
   }
-  return err7("not found", 404);
+  return err8("not found", 404);
 }
 __name(usageRoute, "usageRoute");
 async function pruneUsage(env) {
@@ -10815,35 +11197,35 @@ function routeKey(method, path) {
   return (method || "GET") + " " + (segs.join("/").slice(0, 80) || "/");
 }
 __name(routeKey, "routeKey");
-var json12 = /* @__PURE__ */ __name((o, s = 200) => new Response(JSON.stringify(o), { status: s, headers: { "content-type": "application/json", "cache-control": "no-store" } }), "json");
-var err8 = /* @__PURE__ */ __name((m, s) => json12({ error: m }, s), "err");
+var json13 = /* @__PURE__ */ __name((o, s = 200) => new Response(JSON.stringify(o), { status: s, headers: { "content-type": "application/json", "cache-control": "no-store" } }), "json");
+var err9 = /* @__PURE__ */ __name((m, s) => json13({ error: m }, s), "err");
 async function handleReports(req, env, url, { sessionAccount: sessionAccount2, isAdmin: isAdmin2 }) {
   const p = url.pathname, m = req.method, now = Date.now();
   if (p === "/community/crash" && m === "POST") {
     const raw = await req.text().catch(() => "");
-    if (raw.length > STACK_MAX * 2) return err8("too big", 413);
+    if (raw.length > STACK_MAX * 2) return err9("too big", 413);
     let b = null;
     try {
       b = JSON.parse(raw);
     } catch (e) {
     }
     const c = cleanCrash(b);
-    if (c.error) return err8(c.error, 400);
+    if (c.error) return err9(c.error, 400);
     const acc2 = await sessionAccount2(req, env).catch(() => null);
     await env.DB.prepare(SQL_CRASH_ADD).bind(c.sig, c.app, c.v, c.os, c.where, c.msg, c.stack, now, acc2 ? acc2.id : null).run();
-    return json12({ ok: true });
+    return json13({ ok: true });
   }
   const ours = p === "/community/support/logs" || p === "/community/admin/crashes" || p.startsWith("/community/admin/crashes/") || p.startsWith("/community/admin/support/logs/") || p === "/community/admin/d1";
   if (!ours) return null;
   const acc = await sessionAccount2(req, env);
-  if (!acc) return err8("sign in with your Pitlane HQ account", 401);
+  if (!acc) return err9("sign in with your Pitlane HQ account", 401);
   if (p === "/community/support/logs" && m === "POST") {
     const b = await req.json().catch(() => null) || {};
     const text2 = clean(b.text, LOG_MAX + 1).replace(/\r\n?/g, "\n");
-    if (!text2.trim()) return err8("the log is empty", 400);
-    if (text2.length > LOG_MAX) return err8("the log is too big", 413);
+    if (!text2.trim()) return err9("the log is empty", 400);
+    if (text2.length > LOG_MAX) return err9("the log is too big", 413);
     const c = await env.DB.prepare(SQL_LOGS_SINCE).bind(acc.id, now - 864e5).first();
-    if (c && c.n >= LOGS_PER_DAY) return err8("that is enough for today, we answer soon", 429);
+    if (c && c.n >= LOGS_PER_DAY) return err9("that is enough for today, we answer soon", 429);
     const id2 = crypto.randomUUID(), mid = crypto.randomUUID(), device = APPS.includes(String(b.device)) ? String(b.device) : "", v = cleanV3(b.v);
     const kb = Math.max(1, Math.round(text2.length / 1024));
     const line = "Logs sent, " + kb + " KB";
@@ -10851,28 +11233,28 @@ async function handleReports(req, env, url, { sessionAccount: sessionAccount2, i
       env.DB.prepare(SQL_LOG_ADD).bind(id2, acc.id, now, device, v, text2.length, text2),
       ...driverMessage(env, acc.id, mid, now, { text: line, device, v, view: "log:" + id2, kind: "logs" })
     ]);
-    return json12({ ok: true, msg: { id: mid, me: true, text: line, created: now, kind: "logs" } });
+    return json13({ ok: true, msg: { id: mid, me: true, text: line, created: now, kind: "logs" } });
   }
-  if (!isAdmin2(env, acc.id)) return err8("only the admins of this server can do this", 403);
+  if (!isAdmin2(env, acc.id)) return err9("only the admins of this server can do this", 403);
   const days = Math.min(90, Math.max(1, parseInt(url.searchParams.get("days") || "7", 10) || 7));
   if (p === "/community/admin/crashes" && m === "GET") {
     const r2 = await env.DB.prepare(SQL_CRASHES).bind(now - days * 864e5).all();
-    return json12({ items: (r2.results || []).map((x) => ({ sig: x.sig, app: x.app, v: x.v, os: x.os, where: x.at_where, msg: x.msg, stack: x.stack, first: x.first, last: x.last, n: x.n, nick: x.nick || "" })) });
+    return json13({ items: (r2.results || []).map((x) => ({ sig: x.sig, app: x.app, v: x.v, os: x.os, where: x.at_where, msg: x.msg, stack: x.stack, first: x.first, last: x.last, n: x.n, nick: x.nick || "" })) });
   }
   if (p.startsWith("/community/admin/crashes/") && m === "DELETE") {
     await env.DB.prepare(SQL_CRASH_DEL).bind(decodeURIComponent(p.slice(25))).run();
-    return json12({ ok: true });
+    return json13({ ok: true });
   }
   if (p.startsWith("/community/admin/support/logs/") && m === "GET") {
     const r2 = await env.DB.prepare(SQL_LOG_GET).bind(decodeURIComponent(p.slice(30))).first();
-    if (!r2) return err8("not found", 404);
-    return json12({ id: r2.id, accountId: r2.account_id, created: r2.created, device: r2.device || "", v: r2.v || "", bytes: r2.bytes, text: r2.text });
+    if (!r2) return err9("not found", 404);
+    return json13({ id: r2.id, accountId: r2.account_id, created: r2.created, device: r2.device || "", v: r2.v || "", bytes: r2.bytes, text: r2.text });
   }
   if (p === "/community/admin/d1" && m === "GET") {
     const r2 = await env.DB.prepare(SQL_USAGE_DAYS).bind(day3(now - (days - 1) * 864e5)).all();
-    return json12(usageOf(r2.results || []));
+    return json13(usageOf(r2.results || []));
   }
-  return err8("not found", 404);
+  return err9("not found", 404);
 }
 __name(handleReports, "handleReports");
 var pruneReports = /* @__PURE__ */ __name((env, now = Date.now()) => env.DB.batch([
@@ -10941,9 +11323,9 @@ __name(flushUsage, "flushUsage");
 var reportsRoute = /* @__PURE__ */ __name((req, env, url) => handleReports(req, env, url, { sessionAccount, isAdmin }), "reportsRoute");
 
 // src/worker.js
-var JSONH8 = { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" };
-var json13 = /* @__PURE__ */ __name((v, status = 200) => new Response(JSON.stringify(v), { status, headers: JSONH8 }), "json");
-var err9 = /* @__PURE__ */ __name((msg, status) => json13({ error: msg }, status), "err");
+var JSONH9 = { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" };
+var json14 = /* @__PURE__ */ __name((v, status = 200) => new Response(JSON.stringify(v), { status, headers: JSONH9 }), "json");
+var err10 = /* @__PURE__ */ __name((msg, status) => json14({ error: msg }, status), "err");
 function same4(a, b) {
   if (typeof a !== "string" || typeof b !== "string" || !a || a.length !== b.length) return false;
   let d = 0;
@@ -10976,12 +11358,12 @@ var offlineAI = /* @__PURE__ */ __name((s) => gameOf(s.game) === "iracing" && /(
 async function upsertSession(env, s, uploader) {
   if (!idOk(s.id) || !num3(s.started) || !s.track || !s.car) return "session needs id, started, track and car";
   await env.DB.prepare(
-    `INSERT INTO sessions (id, started, track, track_config, car, kind, series, driver, air_temp, track_temp, uploader, game, track_id, car_id, official, lic, cat, ai, pos, field, pos_cls)
-     VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14,?15,?16,?17,?18,?19,?20,?21)
-     ON CONFLICT(id) DO UPDATE SET kind=excluded.kind, air_temp=excluded.air_temp, track_temp=excluded.track_temp, track_id=COALESCE(excluded.track_id, track_id), car_id=COALESCE(excluded.car_id, car_id), official=COALESCE(excluded.official, official), ai=COALESCE(excluded.ai, ai),
+    `INSERT INTO sessions (id, started, track, track_config, car, kind, series, driver, air_temp, track_temp, uploader, game, track_id, car_id, official, lic, cat, ai, pos, field, pos_cls, tank)
+     VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14,?15,?16,?17,?18,?19,?20,?21,?22)
+     ON CONFLICT(id) DO UPDATE SET kind=excluded.kind, tank=COALESCE(excluded.tank, tank), air_temp=excluded.air_temp, track_temp=excluded.track_temp, track_id=COALESCE(excluded.track_id, track_id), car_id=COALESCE(excluded.car_id, car_id), official=COALESCE(excluded.official, official), ai=COALESCE(excluded.ai, ai),
        lic=COALESCE(excluded.lic, lic), cat=COALESCE(excluded.cat, cat),
        pos=COALESCE(excluded.pos, pos), field=CASE WHEN excluded.pos IS NULL THEN field ELSE excluded.field END, pos_cls=CASE WHEN excluded.pos IS NULL THEN pos_cls ELSE excluded.pos_cls END`
-  ).bind(s.id, Math.round(s.started), str4(s.track), str4(s.trackConfig), str4(s.car), str4(s.kind, 40), str4(s.series), str4(s.driver, 80), num3(s.airTemp), num3(s.trackTemp), uploader, gameOf(s.game), posInt(s.trackId), posInt(s.carId), typeof s.official === "boolean" ? s.official ? 1 : 0 : null, licOf(s.lic), str4(s.cat, 20), s.ai === true || offlineAI(s) ? 1 : null, ...placeOf(s)).run();
+  ).bind(s.id, Math.round(s.started), str4(s.track), str4(s.trackConfig), str4(s.car), str4(s.kind, 40), str4(s.series), str4(s.driver, 80), num3(s.airTemp), num3(s.trackTemp), uploader, gameOf(s.game), posInt(s.trackId), posInt(s.carId), typeof s.official === "boolean" ? s.official ? 1 : 0 : null, licOf(s.lic), str4(s.cat, 20), s.ai === true || offlineAI(s) ? 1 : null, ...placeOf(s), num3(s.tank) > 0 && s.tank < 1e3 ? Math.round(s.tank * 10) / 10 : null).run();
   return null;
 }
 __name(upsertSession, "upsertSession");
@@ -11044,19 +11426,19 @@ async function addLap(env, sessionId, l) {
 __name(addLap, "addLap");
 async function api(req, env, url, ctx) {
   const me2 = await who(req, env);
-  if (!me2) return err9(env.PITLANE_KEY ? "wrong or missing key" : "sign in with your Pitlane HQ account (this server has no PITLANE_KEY)", 401);
+  if (!me2) return err10(env.PITLANE_KEY ? "wrong or missing key" : "sign in with your Pitlane HQ account (this server has no PITLANE_KEY)", 401);
   const role = me2.role;
   const p = url.pathname;
   const m = req.method;
-  if (p === "/api/me") return json13({ role, name: me2.name, display: me2.display });
+  if (p === "/api/me") return json14({ role, name: me2.name, display: me2.display });
   const admins = (env.ADMINS || env.SEASON_UPLOADERS || "").split(",").map((x) => x.trim()).filter(Boolean);
   const admin = role === "account" && admins.includes(me2.name.replace(/^acct:/, ""));
   const own = role === "account" ? me2.name : null;
   const ownRead = admin ? null : own;
   if (p === "/api/upload" && m === "POST") {
-    if (role === "viewer") return err9("this key can only read", 403);
+    if (role === "viewer") return err10("this key can only read", 403);
     const body = await req.json().catch(() => null);
-    if (!body || !body.session) return err9("bad upload", 400);
+    if (!body || !body.session) return err10("bad upload", 400);
     if ((role === "member" || role === "account") && body.session.id) body.session.id = (me2.name.replace(/[^A-Za-z0-9_.-]/g, "_") + ":" + body.session.id).slice(0, 80);
     if (body.session.imported === true && Array.isArray(body.laps) && body.laps.length) {
       const st = Number(body.session.started) || 0;
@@ -11065,7 +11447,7 @@ async function api(req, env, url, ctx) {
       ).bind(me2.name, str4(body.session.track), str4(body.session.car), st - 12 * 36e5, st + 12 * 36e5).all().catch(() => ({ results: [] }));
       const times = (have.results || []).map((x) => x.time);
       body.laps = body.laps.filter((l) => l && (l.repair === true || !(num3(l.time) && times.some((t) => Math.abs(t - l.time) < 6e-4))));
-      if (!body.laps.length) return json13({ ok: true, shared: false, duplicate: true });
+      if (!body.laps.length) return json14({ ok: true, shared: false, duplicate: true });
     }
     let e = await upsertSession(env, body.session, me2.name);
     if (!e && posInt(body.session.trackId) && posInt(body.session.carId)) await reconcileIds(env, gameOf(body.session.game), str4(body.session.track), str4(body.session.trackConfig), str4(body.session.car), posInt(body.session.trackId), posInt(body.session.carId)).catch(() => {
@@ -11073,10 +11455,10 @@ async function api(req, env, url, ctx) {
     if (!e && posInt(body.session.carId)) await noteCar(env, gameOf(body.session.game), posInt(body.session.carId), str4(body.session.car)).catch(() => {
     });
     if (role === "member" || role === "account") body.laps = (body.laps || []).map((l) => ({ ...l, id: (me2.name.replace(/[^A-Za-z0-9_.-]/g, "_") + ":" + l.id).slice(0, 80) }));
-    if (e) return err9(e, 400);
+    if (e) return err10(e, 400);
     for (const l of (body.laps || []).slice(0, 50)) {
       e = await addLap(env, body.session.id, l);
-      if (e) return err9(e, 400);
+      if (e) return err10(e, 400);
     }
     const dropped = await dropImpossibleLaps(env, body.session.id).catch(() => 0);
     if (dropped && role === "account") await unshareInvalid(env, me2.name.slice(5), body.session.id).catch(() => {
@@ -11085,14 +11467,14 @@ async function api(req, env, url, ctx) {
     let shared = null;
     const imported = body.session.imported === true;
     if (role === "account") shared = await autoShare(env, me2.name.slice(5), body.session.id, body.laps, { trackId: body.session.trackId, carId: body.session.carId, lic: body.session.lic, cat: body.session.cat, imported }, imported ? null : ctx).catch(() => null);
-    return json13({ ok: true, shared: !!(shared && shared.shared) });
+    return json14({ ok: true, shared: !!(shared && shared.shared) });
   }
   if (p === "/api/sessions/summary" && m === "GET") {
     const q2 = url.searchParams;
-    return json13(await sessionSummary(env.DB, { from: q2.get("from"), tz: q2.get("tz"), game: q2.get("game") ? gameOf(q2.get("game")) : null, uploader: own || q2.get("who") || null }));
+    return json14(await sessionSummary(env.DB, { from: q2.get("from"), tz: q2.get("tz"), game: q2.get("game") ? gameOf(q2.get("game")) : null, uploader: own || q2.get("who") || null }));
   }
   if (p === "/api/sessions-owned" && m === "GET") {
-    if (!own) return json13({ tracks: [], cars: [] });
+    if (!own) return json14({ tracks: [], cars: [] });
     const { results } = await env.DB.prepare(
       "SELECT DISTINCT track, track_config, car FROM sessions WHERE uploader=?1 AND COALESCE(game,'iracing')='iracing' AND LOWER(COALESCE(kind,'')) NOT LIKE '%test%' LIMIT 2000"
     ).bind(own).all();
@@ -11102,7 +11484,7 @@ async function api(req, env, url, ctx) {
       if (r2.track) tracks2.set(r2.track + "\0" + cfg, [r2.track, cfg]);
       if (r2.car) cars.add(r2.car);
     }
-    return json13({ tracks: [...tracks2.values()], cars: [...cars] });
+    return json14({ tracks: [...tracks2.values()], cars: [...cars] });
   }
   if (p === "/api/sessions" && m === "GET") {
     const q2 = url.searchParams;
@@ -11136,10 +11518,10 @@ async function api(req, env, url, ctx) {
       } catch (e) {
       }
     }
-    return json13((results || []).map(placeOut).map(({ cat, lic, ...x }) => {
+    return json14((results || []).map(placeOut).map(({ cat, lic, ...x }) => {
       const ir = (x.game || "iracing") === "iracing";
       const c = ir ? catOf(cm, x.track_id, x.car_id, cat, x.track + (x.track_config ? " \xB7 " + x.track_config : ""), x.car) : "sports_car";
-      return { ...x, cat: c, lic: lic || ir && c && lics[c] || null };
+      return { ...x, cons: x.cons != null && x.cons >= 0 ? Math.round(Math.sqrt(x.cons) * 1e3) / 1e3 : null, cat: c, lic: lic || ir && c && lics[c] || null };
     }));
   }
   if (p === "/api/bests" && m === "GET") {
@@ -11156,12 +11538,12 @@ async function api(req, env, url, ctx) {
        FROM laps l JOIN sessions s ON s.id=l.session_id WHERE l.valid=1 AND l.drv IS NULL AND (?1 IS NULL OR s.uploader=?1)
        GROUP BY s.game, s.track, s.track_config, s.car, who ORDER BY last DESC LIMIT 600`
     ).bind(own).all();
-    return json13(results);
+    return json14(results);
   }
   let mm = p.match(/^\/api\/sessions\/([A-Za-z0-9_.:-]+)\/validate$/);
   if (mm && m === "POST") {
     const admins2 = (env.ADMINS || env.SEASON_UPLOADERS || "").split(",").map((x) => x.trim()).filter(Boolean);
-    if (role !== "account" || !admins2.includes(me2.name.replace(/^acct:/, ""))) return err9("only the admins of this server can do this", 403);
+    if (role !== "account" || !admins2.includes(me2.name.replace(/^acct:/, ""))) return err10("only the admins of this server can do this", 403);
     const sid = decodeURIComponent(mm[1]);
     const ls = (await env.DB.prepare("SELECT id, time, sectors, COALESCE(inc,0) AS inc FROM laps WHERE session_id=?1 AND time>0").bind(sid).all()).results || [];
     const secs = /* @__PURE__ */ __name((l) => {
@@ -11188,26 +11570,26 @@ async function api(req, env, url, ctx) {
     const ok = ls.filter((l) => !l.inc && secs(l) && mt > 0 && l.time >= 0.85 * mt && secs(l).every((v, k) => v >= 0.5 * ms[k]));
     if (ok.length) await env.DB.batch(ok.map((l) => env.DB.prepare("UPDATE laps SET valid=1 WHERE id=?1").bind(l.id)));
     await validityChanged(env, sid);
-    return json13({ ok: true, laps: ok.length });
+    return json14({ ok: true, laps: ok.length });
   }
   mm = p.match(/^\/api\/sessions\/([A-Za-z0-9_.:-]+)\/driver$/);
   if (mm && m === "POST") {
     const sid = decodeURIComponent(mm[1]);
     const s = await env.DB.prepare("SELECT uploader FROM sessions WHERE id=?1").bind(sid).first();
-    if (!s || role === "viewer" || own && s.uploader !== own) return err9("not found", 404);
+    if (!s || role === "viewer" || own && s.uploader !== own) return err10("not found", 404);
     const b = await req.json().catch(() => ({}));
     const n = Math.round(num3(b.n) || 0);
-    if (!n) return err9("which lap?", 400);
+    if (!n) return err10("which lap?", 400);
     await env.DB.batch([env.DB.prepare("UPDATE laps SET drv=?3 WHERE session_id=?1 AND n=?2").bind(sid, n, lapDrv(b)), env.DB.prepare(SESSION_SUMS).bind(sid)]);
     if (String(s.uploader).startsWith("acct:")) await reshareSession(env, String(s.uploader).slice(5), sid).catch(() => {
     });
-    return json13({ ok: true });
+    return json14({ ok: true });
   }
   mm = p.match(/^\/api\/sessions\/([A-Za-z0-9_.:-]+)\/incidents$/);
   if (mm && m === "POST") {
     const sid = decodeURIComponent(mm[1]);
     const s = await env.DB.prepare("SELECT uploader FROM sessions WHERE id=?1").bind(sid).first();
-    if (!s || role === "viewer" || own && s.uploader !== own) return err9("not found", 404);
+    if (!s || role === "viewer" || own && s.uploader !== own) return err10("not found", 404);
     const b = await req.json().catch(() => ({}));
     const laps = Array.isArray(b.laps) ? b.laps.slice(0, 200) : [];
     const stmts = [];
@@ -11231,30 +11613,30 @@ async function api(req, env, url, ctx) {
       stmts.push(env.DB.prepare("UPDATE laps SET inc=?3, trace=?4 WHERE session_id=?1 AND n=?2 AND COALESCE(inc,0)=0").bind(sid, n, inc, trace));
     }
     if (stmts.length) await env.DB.batch(stmts);
-    return json13({ ok: true, laps: stmts.length });
+    return json14({ ok: true, laps: stmts.length });
   }
   mm = p.match(/^\/api\/laps\/([A-Za-z0-9_.:-]+)\/valid$/);
   if (mm && m === "POST") {
     const admins2 = (env.ADMINS || env.SEASON_UPLOADERS || "").split(",").map((x) => x.trim()).filter(Boolean);
-    if (role !== "account" || !admins2.includes(me2.name.replace(/^acct:/, ""))) return err9("only the admins of this server can do this", 403);
+    if (role !== "account" || !admins2.includes(me2.name.replace(/^acct:/, ""))) return err10("only the admins of this server can do this", 403);
     const b = await req.json().catch(() => ({}));
     const lid = decodeURIComponent(mm[1]);
     const r2 = await env.DB.prepare("UPDATE laps SET valid=?2 WHERE id=?1").bind(lid, b.valid === false ? 0 : 1).run();
     const lr = await env.DB.prepare("SELECT session_id FROM laps WHERE id=?1").bind(lid).first();
     if (lr) await validityChanged(env, lr.session_id);
-    return json13({ ok: true, changed: r2.meta ? r2.meta.changes : void 0, valid: b.valid !== false });
+    return json14({ ok: true, changed: r2.meta ? r2.meta.changes : void 0, valid: b.valid !== false });
   }
   mm = p.match(/^\/api\/sessions\/([A-Za-z0-9_.:-]+)$/);
   if (mm) {
     if (m === "DELETE") {
       const own2 = await env.DB.prepare("SELECT uploader FROM sessions WHERE id=?1").bind(mm[1]).first();
-      if (role === "viewer" || (role === "member" || role === "account") && (!own2 || own2.uploader !== me2.name)) return err9("you can only delete your own sessions", 403);
+      if (role === "viewer" || (role === "member" || role === "account") && (!own2 || own2.uploader !== me2.name)) return err10("you can only delete your own sessions", 403);
       await env.DB.batch([env.DB.prepare("DELETE FROM laps WHERE session_id=?1").bind(mm[1]), env.DB.prepare("DELETE FROM sessions WHERE id=?1").bind(mm[1])]);
-      return json13({ ok: true });
+      return json14({ ok: true });
     }
     const sid = decodeURIComponent(mm[1]);
     const s = await env.DB.prepare("SELECT * FROM sessions WHERE id=?1").bind(sid).first();
-    if (!s || ownRead && s.uploader !== ownRead) return err9("not found", 404);
+    if (!s || ownRead && s.uploader !== ownRead) return err10("not found", 404);
     const withTraces = url.searchParams.get("traces") === "1";
     const { results } = await env.DB.prepare(`SELECT id, n, time, valid, fuel, vmax, sectors, inc, drv${withTraces ? ", trace" : ""} FROM laps WHERE session_id=?1 ORDER BY n`).bind(sid).all();
     const laps = [];
@@ -11264,47 +11646,47 @@ async function api(req, env, url, ctx) {
       const a = await env.DB.prepare("SELECT display FROM accounts WHERE id=?1").bind(String(s.uploader).slice(5)).first().catch(() => null);
       who2 = a && a.display || "";
     }
-    return json13({ session: { ...placeOut(s), ...who2 !== void 0 ? { other: true, who: who2 } : {} }, laps });
+    return json14({ session: { ...placeOut(s), cons: s.cons != null && s.cons >= 0 ? Math.round(Math.sqrt(s.cons) * 1e3) / 1e3 : null, ...who2 !== void 0 ? { other: true, who: who2 } : {} }, laps });
   }
   if (p === "/api/teambest" && m === "GET") {
     const q2 = url.searchParams;
     const l = await env.DB.prepare(
       `SELECT l.id FROM laps l JOIN sessions s ON s.id=l.session_id WHERE l.valid=1 AND l.drv IS NULL AND l.trace IS NOT NULL AND s.track=?1 AND COALESCE(s.track_config,'')=?2 AND s.car=?3 AND (?4 IS NULL OR s.uploader=?4) AND s.game=?5 ORDER BY l.time LIMIT 1`
     ).bind(q2.get("track") || "", q2.get("config") || "", q2.get("car") || "", own, gameOf(q2.get("game"))).first();
-    return json13(l || {});
+    return json14(l || {});
   }
   if (p === "/api/team") {
-    if (role === "account") return json13({ members: [], me: me2.display || me2.name, role });
+    if (role === "account") return json14({ members: [], me: me2.display || me2.name, role });
     if (m === "GET") {
       const { results } = await env.DB.prepare("SELECT name, created FROM members ORDER BY name").all();
-      return json13({ members: results, me: me2.name, role });
+      return json14({ members: results, me: me2.name, role });
     }
-    if (role !== "owner") return err9("only the owner manages the team", 403);
+    if (role !== "owner") return err10("only the owner manages the team", 403);
     if (m === "POST") {
       const b = await req.json().catch(() => ({}));
       const name2 = str4(b.name, 40);
-      if (!name2 || !/^[\p{L}\p{N} _.'-]{2,40}$/u.test(name2) || name2 === "owner" || name2 === "viewer") return err9("choose a name of 2 to 40 letters", 400);
+      if (!name2 || !/^[\p{L}\p{N} _.'-]{2,40}$/u.test(name2) || name2 === "owner" || name2 === "viewer") return err10("choose a name of 2 to 40 letters", 400);
       const key = [...crypto.getRandomValues(new Uint8Array(24))].map((x) => x.toString(16).padStart(2, "0")).join("");
       try {
         await env.DB.prepare("INSERT INTO members (name, key_hash, created) VALUES (?1,?2,?3)").bind(name2, await sha2563(key), Date.now()).run();
       } catch (e) {
-        return err9("that name is already in the team", 400);
+        return err10("that name is already in the team", 400);
       }
-      return json13({ name: name2, key });
+      return json14({ name: name2, key });
     }
   }
   mm = p.match(/^\/api\/team\/(.+)$/);
   if (mm && m === "DELETE") {
-    if (role !== "owner") return err9("only the owner manages the team", 403);
+    if (role !== "owner") return err10("only the owner manages the team", 403);
     await env.DB.prepare("DELETE FROM members WHERE name=?1").bind(decodeURIComponent(mm[1])).run();
-    return json13({ ok: true });
+    return json14({ ok: true });
   }
   mm = p.match(/^\/api\/laps\/([A-Za-z0-9_.:-]+)\/valid$/);
   if (mm && m === "POST") {
-    if (!admin) return err9("only the admins of this server can do this", 403);
+    if (!admin) return err10("only the admins of this server can do this", 403);
     const b = await req.json().catch(() => ({}));
     const l = await env.DB.prepare("SELECT l.session_id, s.uploader FROM laps l JOIN sessions s ON s.id=l.session_id WHERE l.id=?1").bind(decodeURIComponent(mm[1])).first();
-    if (!l) return err9("not found", 404);
+    if (!l) return err10("not found", 404);
     await env.DB.batch([env.DB.prepare("UPDATE laps SET valid=?2 WHERE id=?1").bind(decodeURIComponent(mm[1]), b.valid ? 1 : 0), env.DB.prepare(SESSION_SUMS).bind(l.session_id)]);
     if (String(l.uploader).startsWith("acct:")) {
       const uid = String(l.uploader).slice(5);
@@ -11313,16 +11695,16 @@ async function api(req, env, url, ctx) {
       else await unshareInvalid(env, uid, l.session_id).catch(() => {
       });
     }
-    return json13({ ok: true });
+    return json14({ ok: true });
   }
   mm = p.match(/^\/api\/laps\/([A-Za-z0-9_.:-]+)$/);
   if (mm && m === "GET") {
     const lid = decodeURIComponent(mm[1]);
     const l = await env.DB.prepare("SELECT l.*, s.track, s.car, s.started, s.driver, s.uploader FROM laps l JOIN sessions s ON s.id=l.session_id WHERE l.id=?1").bind(lid).first();
-    if (!l || ownRead && l.uploader !== ownRead) return err9("not found", 404);
-    return json13({ ...l, trace: l.trace ? JSON.parse(await openData(env, l.trace)) : null, sectors: l.sectors ? JSON.parse(l.sectors) : null });
+    if (!l || ownRead && l.uploader !== ownRead) return err10("not found", 404);
+    return json14({ ...l, trace: l.trace ? JSON.parse(await openData(env, l.trace)) : null, sectors: l.sectors ? JSON.parse(l.sectors) : null });
   }
-  return err9("not found", 404);
+  return err10("not found", 404);
 }
 __name(api, "api");
 function traceLapTime(t) {
@@ -11524,7 +11906,7 @@ async function handle(req, env, ctx) {
         return res;
       }
     } catch (e) {
-      return err9("server error: " + (e && e.message), 500);
+      return err10("server error: " + (e && e.message), 500);
     }
   }
   if (url.pathname === "/app" || url.pathname.startsWith("/app/")) {
@@ -11540,7 +11922,7 @@ async function handle(req, env, ctx) {
   }
   const isAppFile = /^\/(fonts\.css|pitwall-[a-z0-9-]+\.js|app-news\.json|whats-new\.json|server\.json|manifest\.webmanifest|favicon\.ico|favicon-32\.png|icon-\d+\.png|logo\.svg|bimi\.svg|og(?:-es|-pt)?\.png|robots\.txt|landing\/(?:en\/|es\/|pt\/)?[a-z0-9-]+\.(?:jpg|png)|landing\/live-lap\.json)$/.test(url.pathname);
   if (url.pathname === "/" && url.searchParams.get("embed") !== "1" || isAppFile) {
-    if (!env.ASSETS) return err9("the app is not published on this server", 404);
+    if (!env.ASSETS) return err10("the app is not published on this server", 404);
     if (url.pathname === "/server.json" && env.LOCAL === "1") return new Response(JSON.stringify({ url: url.origin }), { headers: { "content-type": "application/json", "cache-control": "no-cache" } });
     const r2 = await env.ASSETS.fetch(new Request(new URL(url.pathname, url.origin), req));
     const h = new Headers(r2.headers);
@@ -11555,7 +11937,7 @@ async function handle(req, env, ctx) {
     try {
       return await discordInteraction(req, env, ctx);
     } catch (e) {
-      return err9("server error", 500);
+      return err10("server error", 500);
     }
   }
   if (url.pathname === "/discord/oauth" && req.method === "GET") return discordOAuth(req, env, url).catch(() => Response.redirect("https://pitlanehq.app/?discordLogin=0", 302));
@@ -11569,7 +11951,7 @@ async function handle(req, env, ctx) {
     try {
       return await api(req, env, url, ctx);
     } catch (e) {
-      return err9("server error: " + (e && e.message), 500);
+      return err10("server error: " + (e && e.message), 500);
     }
   }
   if (url.pathname !== "/" && url.pathname.replace(/\/+$/, "") !== "/laps") {

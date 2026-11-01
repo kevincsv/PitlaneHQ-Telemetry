@@ -24,9 +24,20 @@ const lap = (id, sid, n, time, valid, drv = null) => db.prepare("INSERT INTO lap
 lap("l1", "s1", 1, 140, 1); lap("l2", "s1", 2, 138.5, 1); lap("l3", "s1", 3, 137, 0); lap("l4", "s1", 4, 136, 1, "Juan"); lap("l5", "s2", 1, 139, 1);
 // the migration fills the old sessions, SESSION_SUMS keeps them
 db.exec(readFileSync(new URL("../migrations/0078_sessions_read_less.sql", import.meta.url), "utf8"));
+db.exec(readFileSync(new URL("../migrations/0090_friends_consistency_tank.sql", import.meta.url), "utf8"));
 assert.deepEqual({ ...db.prepare("SELECT secs, drvs FROM sessions WHERE id='s1'").get() }, { secs: 551.5, drvs: "Juan" });
 await stmt(SESSION_SUMS).bind("s1").run();
 assert.deepEqual({ ...db.prepare("SELECT laps, best, secs, drvs FROM sessions WHERE id='s1'").get() }, { laps: 4, best: 138.5, secs: 551.5, drvs: "Juan" }, "a friend's lap and an invalid one are never the best");
+// the lap times' spread (the most consistent session): five valid laps of your own within 3 % of the best at least
+db.prepare("INSERT INTO sessions (id, started, track, car, kind, uploader, game) VALUES (?,?,?,?,?,?,?)").run("s3", m0 - 864e5 * 40, "Spa", "GT3", "Practice", "acct:c", "iracing");
+[[1, 140], [2, 138.5], [3, 138.7]].forEach(([n, t]) => lap("c" + n, "s3", n, t, 1));
+await stmt(SESSION_SUMS).bind("s3").run();
+assert.equal(db.prepare("SELECT cons FROM sessions WHERE id='s3'").get().cons, null, "too few laps for a spread");
+[[4, 138.9], [5, 138.6], [6, 160], [7, 137, 0], [8, 138, 1, "Juan"]].forEach(([n, t, v = 1, d = null]) => lap("c" + n, "s3", n, t, v, d));
+await stmt(SESSION_SUMS).bind("s3").run();
+const sd = Math.sqrt(db.prepare("SELECT cons FROM sessions WHERE id='s3'").get().cons), ts = [140, 138.5, 138.7, 138.9, 138.6], mu = ts.reduce((a, b) => a + b, 0) / 5;
+const want = Math.sqrt(ts.reduce((a, t) => a + (t - mu) ** 2, 0) / 5);
+assert.ok(Math.abs(sd - want) < 1e-6, `spread ${sd} against ${want}: the 160 s lap, the invalid one and the friend's are left out`);
 await stmt(ALL_SESSION_SUMS).run();
 assert.equal(db.prepare("SELECT laps FROM sessions WHERE id='s2'").get().laps, 1);
 // the account's own sessions by its index, never every driver's of the month

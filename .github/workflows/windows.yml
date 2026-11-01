@@ -49,6 +49,8 @@ jobs:
     # when these secrets are set (Settings → Secrets and variables → Actions); without them the build is unsigned as before
     env:
       SIGN_ACCOUNT: ${{ secrets.AZURE_SIGNING_ACCOUNT }}
+      # the Microsoft Store package (msix/) is built when the app's identity from Partner Center is set
+      STORE_NAME: ${{ secrets.STORE_IDENTITY_NAME }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-dotnet@v4
@@ -123,6 +125,33 @@ jobs:
         with:
           name: PitlaneHQ-Setup
           path: dist-installer/PitlaneHQ-Setup.exe
+      - name: Build the Microsoft Store package (MSIX)
+        # uploaded on the run page only (Actions → this run → Artifacts → PitlaneHQ-Store), for a Partner Center
+        # submission: the Store signs it and updates the PCs that installed it from there; never on the downloads page
+        if: env.STORE_NAME != ''
+        shell: pwsh
+        env:
+          STORE_PUBLISHER: ${{ secrets.STORE_PUBLISHER }}
+          STORE_PUBLISHER_NAME: ${{ secrets.STORE_PUBLISHER_NAME }}
+        run: |
+          $ver = (Select-String -Path main.go -Pattern 'appVersion\s*=\s*"([^"]+)"').Matches[0].Groups[1].Value
+          $esc = { param($v) [System.Security.SecurityElement]::Escape($v) }
+          # the Store wants four numbers with the last one 0
+          $m = (Get-Content msix/AppxManifest.xml -Raw).Replace('__NAME__', (& $esc $env:STORE_NAME)).Replace('__PUBLISHER_NAME__', (& $esc $env:STORE_PUBLISHER_NAME)).Replace('__PUBLISHER__', (& $esc $env:STORE_PUBLISHER)).Replace('__VERSION__', "$ver.0")
+          New-Item -ItemType Directory -Force pkg | Out-Null
+          Copy-Item out-desktop/* pkg/ -Recurse
+          Copy-Item msix/Assets pkg/Assets -Recurse
+          Set-Content -Path pkg/AppxManifest.xml -Value $m -Encoding utf8
+          $mk = Get-ChildItem "${env:ProgramFiles(x86)}\Windows Kits\10\bin\*\x64\makeappx.exe" | Sort-Object FullName -Descending | Select-Object -First 1
+          if (-not $mk) { Write-Error "makeappx.exe not found"; exit 1 }
+          New-Item -ItemType Directory -Force dist-store | Out-Null
+          & $mk.FullName pack /d pkg /p "dist-store/PitlaneHQ-$ver.msix" /o
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+      - uses: actions/upload-artifact@v4
+        if: env.STORE_NAME != ''
+        with:
+          name: PitlaneHQ-Store
+          path: dist-store/*.msix
       - uses: actions/setup-node@v4
         with:
           node-version: 22

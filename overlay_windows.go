@@ -269,6 +269,9 @@ func setOverlayVisible(name string, on bool) {
 }
 
 func setStartWithWindows(on bool) error {
+	if storeApp() {
+		return nil // from the Microsoft Store: Windows' startup task, which the window follows (Store.cs)
+	}
 	// one entry, the installer's own name ("PitlaneHQ"); the old "PitWall" one goes, so Windows never starts it
 	// twice (the second copy would bring the window to the front); it starts minimized in the taskbar
 	key := `HKCU\Software\Microsoft\Windows\CurrentVersion\Run`

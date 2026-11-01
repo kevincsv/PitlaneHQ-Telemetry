@@ -18,6 +18,8 @@ public partial class MainWindow : Window
     private readonly Engine _engine = new();
     private readonly DispatcherTimer _poll = new() { Interval = TimeSpan.FromSeconds(2) };
     private readonly DispatcherTimer _fast = new() { Interval = TimeSpan.FromMilliseconds(100) };
+    // from the Microsoft Store: Windows' startup task follows "Start with Windows", also when the app's page changes it
+    private readonly DispatcherTimer _storeStart = new() { Interval = TimeSpan.FromSeconds(30) };
     private readonly CancellationTokenSource _cts = new();
     private bool _webReady, _webStarted, _busyFast, _busyPoll;
     private string _view = "home";
@@ -184,6 +186,11 @@ public partial class MainWindow : Window
             _ = EnsureWebAsync();
             _poll.Start();
             _fast.Start();
+            if (Store.IsPackaged)
+            {
+                _storeStart.Tick += async (_, _) => { try { var c = await _engine.GetAsync("/api/config"); await Store.FollowAsync(Bo(c?["config"]?["startWithWindows"])); } catch { } };
+                _storeStart.Start();
+            }
             await RefreshAsync();
             ShowView(_view);
         }
@@ -1146,6 +1153,7 @@ public partial class MainWindow : Window
             _set = conf?["config"]?.AsObject();
             if (_set == null) return;
             SetStart.IsChecked = Bo(_set["startWithWindows"]);
+            _ = Store.FollowAsync(SetStart.IsChecked == true);
             SetCloseOv.IsChecked = Bo(_set["closeOnExit"]);
             var vrc = _set["ui"]?["vr"];
             SetVR.IsChecked = Bo(vrc?["on"]);
@@ -1155,6 +1163,7 @@ public partial class MainWindow : Window
             SetVRDist.IsEnabled = SetVRSize.IsEnabled = SetVRHeight.IsEnabled = SetVR.IsChecked == true;
             OnSetVRShow(this, new RoutedPropertyChangedEventArgs<double>(0, 0));
             var u = await _engine.GetAsync("/api/update");
+            SetUpdCard.Visibility = Bo(u?["store"]) ? Visibility.Collapsed : Visibility.Visible; // the Microsoft Store updates it
             var latest = S(u?["latest"]?["version"]);
             SetUpdV.Text = T("This version: ", "Esta versión: ") + S(u?["version"]) + (Bo(u?["available"]) && latest != "" ? T($" · {latest} is ready", $" · la {latest} está lista") : T(" · up to date", " · al día"));
             SetUpdAuto.IsChecked = Bo(u?["auto"]);
@@ -1203,7 +1212,7 @@ public partial class MainWindow : Window
         SetVRDistV.Text = SetVRDist.Value.ToString("0.00") + " m"; SetVRSizeV.Text = SetVRSize.Value.ToString("0.00") + " m"; SetVRHeightV.Text = SetVRHeight.Value.ToString("0.00") + " m";
     }
 
-    private async void OnSetStart(object sender, RoutedEventArgs e) { if (_set == null) return; _set["startWithWindows"] = SetStart.IsChecked == true; await SaveSettingsAsync(); }
+    private async void OnSetStart(object sender, RoutedEventArgs e) { if (_set == null) return; _set["startWithWindows"] = SetStart.IsChecked == true; await SaveSettingsAsync(); await Store.FollowAsync(SetStart.IsChecked == true); }
     private async void OnSetCloseOv(object sender, RoutedEventArgs e) { if (_set == null) return; _set["closeOnExit"] = SetCloseOv.IsChecked == true; await SaveSettingsAsync(); }
     // the rev beep is set per car in the app's Telemetry → Rev beep (its table of gears), the app plays it
     private void OnSetRevBeep(object sender, RoutedEventArgs e) => OpenInApp("revbeep");

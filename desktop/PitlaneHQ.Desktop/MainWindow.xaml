@@ -470,7 +470,7 @@
                                 </StackPanel>
                             </StackPanel>
                         </Border>
-                        <Border Style="{StaticResource Card}">
+                        <Border x:Name="SetUpdCard" Style="{StaticResource Card}">
                             <StackPanel>
                                 <TextBlock x:Name="SetUpdT" Style="{StaticResource CardTitle}" Text="UPDATES"/>
                                 <TextBlock x:Name="SetUpdV" Style="{StaticResource Note}"/>

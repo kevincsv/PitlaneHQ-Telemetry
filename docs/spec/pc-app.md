@@ -2,6 +2,18 @@
 
 How this part of Pitlane HQ behaves. Read it before changing this area; keep it up to date when the behaviour changes.
 
+- Microsoft Store version (beside the downloads page's installer, the driver picks either): an MSIX package
+  (`msix/AppxManifest.xml`, `msix/Assets/`) of the same app folder, built by `windows.yml` as the run's
+  `PitlaneHQ-Store` artifact when the secrets `STORE_IDENTITY_NAME`, `STORE_PUBLISHER` and `STORE_PUBLISHER_NAME`
+  (Partner Center → Product identity) are set, version `appVersion` + ".0", uploaded to Partner Center by hand (the
+  Store signs it); never on the downloads page or the release. Installed from there (`storeApp()` in store_windows.go,
+  `Store.IsPackaged` in Store.cs: the process has a package), the app's updater is off (no checks, no banner, no
+  Update now; Settings says "The Microsoft Store keeps Pitlane HQ up to date" and the window hides its Updates card),
+  and Start with Windows is the package's startup task (`PitlaneHQStartup`, off until turned on): the agent writes no
+  Run entry and the window turns the task on and off to follow the setting (when it changes in the window, at start
+  and every 30 seconds); started by it, the window starts in the notification area as with `-minimized`. Windows puts
+  the new files it writes in AppData in the package's own folder (MSIX redirection), removed with the app. One of
+  the two on a PC: both at once would run two agents.
 - Code signing: the Windows build signs PitlaneHQ.exe, PitlaneHQ.Desktop.exe and PitlaneHQ-Setup.exe with Azure
   Artifact Signing (formerly Trusted Signing, `azure/trusted-signing-action` in `windows.yml`, timestamped) when the
   secrets `AZURE_TENANT_ID`, `AZURE_CLIENT_ID`, `AZURE_CLIENT_SECRET`, `AZURE_SIGNING_ENDPOINT`, `AZURE_SIGNING_ACCOUNT`

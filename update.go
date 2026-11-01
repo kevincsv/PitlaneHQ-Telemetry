@@ -116,9 +116,9 @@ func updateStatus() map[string]any {
 	avail := updLatest != nil && buildID != "dev" && updLatest.Build != buildID
 	// required: this version is older than the newest one's minimum, so it no longer works properly
 	required := avail && updLatest.Min != "" && versionLess(appVersion, updLatest.Min)
-	on := updateSupported && buildID != "dev" && localServer() == "" && !underSteam() // local mode: no updates (the local server has none); under Steam, Steam updates
+	on := updateSupported && buildID != "dev" && localServer() == "" && !underSteam() && !storeApp() // local mode: no updates (the local server has none); under Steam, Steam updates; from the Microsoft Store, the Store
 	m := map[string]any{"version": appVersion, "build": buildID, "available": avail, "required": required, "busy": updBusy, "error": updErr, "supported": on,
-		"auto": !loadUpdPrefs().Manual, "autoWorks": on && (!engineMode || desktopNext() != "")}
+		"auto": !loadUpdPrefs().Manual, "autoWorks": on && (!engineMode || desktopNext() != ""), "store": storeApp()}
 	if updLatest != nil {
 		m["latest"] = updLatest
 	}
@@ -138,7 +138,7 @@ var (
 )
 
 func updateNudge(build string) bool {
-	return nudgeBuild(build, updateSupported && localServer() == "" && !underSteam())
+	return nudgeBuild(build, updateSupported && localServer() == "" && !underSteam() && !storeApp())
 }
 
 // nudgeBuild: updateNudge's decision, with "updates work here" given (tests)
@@ -175,7 +175,7 @@ func nudgeBuild(build string, on bool) bool {
 // on the new version with its windows.
 func updateWatcher() {
 	cleanOldFiles()
-	if localServer() != "" || underSteam() { // local mode: nothing to check, no internet; under Steam, Steam keeps the files
+	if localServer() != "" || underSteam() || storeApp() { // local mode: nothing to check, no internet; under Steam or from the Microsoft Store, they keep the files
 		return
 	}
 	if os.Getenv("PITLANE_UPDATED") != "" && buildID != "dev" {
@@ -263,6 +263,9 @@ func cleanOldFiles() {
 // applyUpdate downloads the new version, puts its files next to the running
 // .exe and starts it. The current files are kept as .old until the next start.
 func applyUpdate() error {
+	if storeApp() {
+		return errors.New("the Microsoft Store keeps Pitlane HQ up to date")
+	}
 	if !updateSupported || buildID == "dev" || localServer() != "" || underSteam() {
 		return errors.New("updates work in the Windows app downloaded from the downloads page")
 	}

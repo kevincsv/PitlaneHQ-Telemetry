@@ -571,7 +571,7 @@ func main() {
 			writeJSON(w, map[string]any{"app": "PitWall", "host": host, "version": appVersion, "stage": appStage, "status": currentStatus(), "remote": true, "account": map[string]any{"loggedIn": false}, "overlays": false})
 			return
 		}
-		writeJSON(w, map[string]any{"app": "PitWall", "host": host, "version": appVersion, "stage": appStage, "status": st, "urls": lanURLs(), "os": runtime.GOOS, "account": accountStatus(), "overlays": overlaysSupported, "steam": underSteam(), "profile": activeID(), "profileName": activeName(), "desktop": engineMode})
+		writeJSON(w, map[string]any{"app": "PitWall", "host": host, "version": appVersion, "stage": appStage, "status": st, "urls": lanURLs(), "os": runtime.GOOS, "account": accountStatus(), "overlays": overlaysSupported, "steam": underSteam(), "store": storeApp(), "profile": activeID(), "profileName": activeName(), "desktop": engineMode})
 	})
 	// what is on screen right now, for the native desktop window (desktop/): the game and its track and car
 	mux.HandleFunc("/api/now", func(w http.ResponseWriter, r *http.Request) {

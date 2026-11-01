@@ -34,7 +34,7 @@ public partial class App : Application
     protected override void OnStartup(StartupEventArgs e)
     {
         var args = e.Args;
-        StartMinimized = args.Any(a => a.Equals("-minimized", StringComparison.OrdinalIgnoreCase));
+        StartMinimized = args.Any(a => a.Equals("-minimized", StringComparison.OrdinalIgnoreCase)) || Store.StartedByWindows();
         int ri = Array.FindIndex(args, a => a.Equals("-replace", StringComparison.OrdinalIgnoreCase));
         int oldPid = 0;
         bool replace = ri >= 0 && ri + 1 < args.Length && int.TryParse(args[ri + 1], out oldPid);

@@ -95,3 +95,23 @@ func TestCoachPickedTrack(t *testing.T) {
 		t.Fatal("no track: the chosen corners")
 	}
 }
+
+// no lap of yours yet: the coach calls the track guide (the model's corner card), the hardest corners first
+func TestCoachGuideTips(t *testing.T) {
+	st := ovTestState(t, map[string]any{})
+	st.ses = &ovSession{TrackID: 12}
+	st.ext.modelCor = []ovCorner{{D: 300, Apex: 420, B0: 290, B1: 310, V0: 25, V1: 27, Spread: .2, N: 8, G: []int{3, 3}},
+		{D: 1200, Apex: 1300, B0: 1190, B1: 1220, V0: 40, V1: 44, Spread: .05, N: 6}, {Apex: 2000, N: 2}}
+	g := st.guideTips()
+	if len(g) != 2 || g[0].d != 300 || g[0].cueEn != "BRAKE 120 M" || g[0].lost <= g[1].lost {
+		t.Fatalf("guide %+v", g)
+	}
+	if want := "in gear 3"; len(g[0].en) < len(want) || g[0].en[len(g[0].en)-len(want):] != want {
+		t.Fatalf("gear %q", g[0].en)
+	}
+	cfg := map[string]any{}
+	st.ext.coach.tips = g
+	if !st.coachPicked(cfg, g[0]) || !st.coachPicked(cfg, g[1]) {
+		t.Fatal("the guide's corners are called")
+	}
+}

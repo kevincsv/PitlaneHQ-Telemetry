@@ -82,11 +82,33 @@ type carLapProf struct {
 	pendS   []float64
 	pendSAt float64
 	lapsS   []lapSecs
+	// every lap the game timed, in order (the race summary's pace against the cars around you)
+	times   []paceLap
+	pendN   int
+	pendPit bool
 }
 
 type lapSecs struct {
 	time float64
 	s    []float64
+}
+
+// paceLap: one timed lap of a car, for the race pace (Bad: off the track, through the pits or not counted)
+type paceLap struct {
+	N   int     `json:"n"`
+	T   float64 `json:"t"`
+	Bad bool    `json:"x,omitempty"`
+}
+
+// fieldPace: every lap of a car the watcher saw timed, in order
+func fieldPace(carIdx int) []paceLap {
+	fieldMu.Lock()
+	defer fieldMu.Unlock()
+	c := fieldCars[carIdx]
+	if c == nil || len(c.times) == 0 {
+		return nil
+	}
+	return append([]paceLap{}, c.times...)
 }
 
 // fieldSectors: the sector times of a car's lap of that time (its best lap, for the race table and
@@ -617,6 +639,7 @@ func (c *carLapProf) endLap(t, gameBest float64) {
 		return
 	}
 	c.pend, c.pendB, c.pendAt, c.pendBad, c.pendBest0, c.pendLT, c.pendWet = true, c.b, t, !c.valid || (c.cntD >= 0 && (c.pitD < 0 || c.pitD-c.cntD > 200)), gameBest, 0, c.wet
+	c.pendN, c.pendPit = c.lap, c.pit
 }
 
 // settle: the lap just finished gets its time 2 s after the line (never the lap before's: a lap the game never times,
@@ -640,6 +663,9 @@ func (c *carLapProf) settle(s *fieldSample, i int, t float64) {
 			return
 		}
 		c.pendLT, c.prevLT = lt, lt
+		if len(c.times) < 1000 {
+			c.times = append(c.times, paceLap{N: c.pendN, T: round(lt, 3), Bad: c.pendBad || c.pendPit})
+		}
 		switch {
 		case c.pendBad:
 			c.noteBad(lt)

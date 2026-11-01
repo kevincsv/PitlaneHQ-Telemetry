@@ -128,6 +128,24 @@ assert.deepEqual(PW.lapDriving(PW.lapSeries(Aest), PW.lapSeries(Best), 400, { ..
 const pe = PW.coachPlan(Aest, Best, [], ctx).plan;
 assert.ok(pe.every((p) => p.k !== "trail" && p.k !== "gears"), "nor trail braking or gear steps in the plan");
 assert.ok(PW.estOf({ field: true }) && PW.estOf(null, { estB: true }) && !PW.estOf({}), "a rival's lap from its place on track");
+// the race pace: P2 faster in the second half, P4 slower, your pace fading more than theirs
+{
+  const laps = (base, fade, n = 12) => Array.from({ length: n }, (_, k) => base + (k >= n / 2 ? fade : 0) + (k % 2) * 0.05);
+  const me = laps(90, 0.4);
+  const r = { laps: me.map((t, k) => ({ n: k + 1, t: k === 0 ? 110 : t, pit: k === 7 })), results: [
+    { cpos: 2, name: "A", pace: laps(89.9, 0).map((t, k) => ({ n: k + 1, t, x: k === 3 })) },
+    { cpos: 3, me: true, name: "Me" },
+    { cpos: 4, name: "B", pace: laps(90.6, 0.1).map((t, k) => ({ n: k + 1, t })) },
+    { cpos: 5, name: "C", pace: [{ n: 1, t: 90 }] }] };
+  const p = PW.racePace(r, { lang: "en" });
+  assert.equal(p.rows.length, 3);
+  const a = p.rows.find((x) => x.name === "A"), b = p.rows.find((x) => x.name === "B");
+  assert.ok(a.late < -0.3 && b.late > 0, JSON.stringify(p.rows));
+  assert.match(p.lines[0].t, /^P2 was 0\.\d\d s a lap faster than you in the second half$/);
+  assert.ok(p.lines.some((l) => /dropped/.test(l.t)), JSON.stringify(p.lines));
+  for (const l of p.lines) assert.ok(!/[;:]/.test(l.t));
+  assert.equal(PW.racePace({ laps: [], results: [] }), null);
+}
 console.log("coach guide: ok");
 
 // the admin's check of the coach on real laps: the share of laps each tip and step appears in

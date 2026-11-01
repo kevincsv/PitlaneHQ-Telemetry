@@ -674,6 +674,46 @@
     return (Array.isArray(byCls) ? byCls : []).filter((x) => N[x.cls] && x.n >= 5).sort((a, b) => b.avg - a.avg).map((x) => ({ cls: x.cls, avg: x.avg, n: x.n, t: Tx(...N[x.cls]), text: Tx(`${Math.round(x.avg * 100) / 100} s lost on average (${x.n} corners)`, `${Math.round(x.avg * 100) / 100} s perdidos de media (${x.n} curvas)`, `${Math.round(x.avg * 100) / 100} s perdidos em média (${x.n} curvas)`) }));
   }
 
+  /* ---------- race pace against the cars around you ---------- */
+  /* a race report's laps against the cars that finished around you (results[].pace, every lap the PC saw them time): each
+     one's pace on clean laps (the first lap, the pits, the laps off the track and the slow ones in traffic or under yellow
+     left out), its spread, the gap a lap to yours over the race and over its second half, and the line that matters most.
+     { rows: [{pos, name, me, avg, sd, gap, late, fade, n}], lines: [{t, good}] }, null with too few laps */
+  function racePace(r, ctx) {
+    ctx = ctx || {};
+    const Tx = txOf(ctx), PACE_MIN = 4, rr = (x) => Math.round(x * 1000) / 1000;
+    const stats = (ts) => {
+      ts = ts.filter((t) => t > 0);
+      if (ts.length < PACE_MIN) return null;
+      const m = ts.slice().sort((a, b) => a - b)[Math.floor(ts.length / 2)];
+      const c = ts.filter((t) => t <= m * 1.03);
+      if (c.length < PACE_MIN) return null;
+      const avg = c.reduce((a, t) => a + t, 0) / c.length, sd = Math.sqrt(c.reduce((a, t) => a + (t - avg) ** 2, 0) / c.length);
+      const h = Math.floor(c.length / 2), mean = (x) => x.reduce((a, t) => a + t, 0) / x.length;
+      return { avg, sd, early: mean(c.slice(0, h)), late: mean(c.slice(h)), n: c.length };
+    };
+    const mine = stats((r.laps || []).filter((l) => l.n > 1 && !l.pit && !l.cut).map((l) => l.t));
+    if (!mine) return null;
+    const res = r.results || [], rows = [];
+    res.forEach((x, i) => {
+      const s = x.me ? mine : stats((x.pace || []).filter((l, k) => k > 0 && !l.x).map((l) => l.t));
+      if (!s) return;
+      rows.push({ pos: x.cpos || i + 1, name: x.name || "", me: !!x.me, avg: rr(s.avg), sd: rr(s.sd), gap: x.me ? 0 : rr(s.avg - mine.avg), late: x.me ? 0 : rr(s.late - mine.late), fade: rr(s.late - s.early), n: s.n });
+    });
+    if (rows.length < 2) return null;
+    const lines = [], others = rows.filter((x) => !x.me);
+    const fast = others.slice().sort((a, b) => a.late - b.late)[0];
+    if (fast && fast.late <= -0.1) lines.push({ good: false, t: Tx(`P${fast.pos} was ${(-fast.late).toFixed(2)} s a lap faster than you in the second half`, `P${fast.pos} fue ${(-fast.late).toFixed(2)} s por vuelta más rápido que tú en la segunda mitad`, `P${fast.pos} foi ${(-fast.late).toFixed(2)} s por volta mais rápido que você na segunda metade`) });
+    const slow = others.slice().sort((a, b) => b.late - a.late)[0];
+    if (slow && slow.late >= 0.1) lines.push({ good: true, t: Tx(`You were ${slow.late.toFixed(2)} s a lap faster than P${slow.pos} in the second half`, `Fuiste ${slow.late.toFixed(2)} s por vuelta más rápido que P${slow.pos} en la segunda mitad`, `Você foi ${slow.late.toFixed(2)} s por volta mais rápido que P${slow.pos} na segunda metade`) });
+    const me = rows.find((x) => x.me), fades = others.map((x) => x.fade).sort((a, b) => a - b), fm = fades.length ? fades[Math.floor(fades.length / 2)] : null;
+    if (me && fm != null && me.fade - fm >= 0.15) lines.push({ good: false, t: Tx(`Your pace dropped ${(me.fade - fm).toFixed(2)} s a lap more than theirs from the first half to the second`, `Tu ritmo cayó ${(me.fade - fm).toFixed(2)} s por vuelta más que el suyo de la primera mitad a la segunda`, `Seu ritmo caiu ${(me.fade - fm).toFixed(2)} s por volta mais que o deles da primeira metade para a segunda`) });
+    const sds = others.map((x) => x.sd).sort((a, b) => a - b), sm = sds.length ? sds[Math.floor(sds.length / 2)] : null;
+    if (me && sm != null && me.sd - sm >= 0.15) lines.push({ good: false, t: Tx(`Your laps spread ${me.sd.toFixed(2)} s against ${sm.toFixed(2)} s for the cars around you`, `Tus vueltas varían ${me.sd.toFixed(2)} s frente a ${sm.toFixed(2)} s de los coches de tu alrededor`, `Suas voltas variam ${me.sd.toFixed(2)} s contra ${sm.toFixed(2)} s dos carros ao seu redor`) });
+    else if (me && sm != null && sm - me.sd >= 0.1) lines.push({ good: true, t: Tx(`More consistent than the cars around you, ${me.sd.toFixed(2)} s against ${sm.toFixed(2)} s`, `Más regular que los coches de tu alrededor, ${me.sd.toFixed(2)} s frente a ${sm.toFixed(2)} s`, `Mais regular que os carros ao seu redor, ${me.sd.toFixed(2)} s contra ${sm.toFixed(2)} s`) });
+    return { rows, lines };
+  }
+
   /* ---------- everything at once, for the phones ---------- */
   /* the analyzer's and the coach's answers for lap A against lap B as plain JSON (a string with opts.json): the gap, every
      corner (tip in en, es and pt, text in ctx.lang), the coach's plan with its corners, phases, sectors and areas, and the
@@ -692,7 +732,7 @@
 
   const api = { VERSION, BIN, lapSeries, serOf, lapShape, sameFrame, lineOffsets, cornerLine, lineTip, brakeZones, PHASES, phaseName, turnNo, COACH_GEN, cornerClass, cornerZones,
     OVAL_KINDS, ovalOf, liftZones, ovalZones, dirtLineTip, coachCompare, cornerConsistency, pairSecs, lapDriving, kindName, stepName, tipMain, tipShort, tipTodo, coachPlan, stepText, analyzerFacts, analyse,
-    estOf, followUp, trackGuide, cornerRanks, clsLines };
+    estOf, followUp, trackGuide, cornerRanks, clsLines, racePace };
   root.PW_ANALYSIS = api;
   if (typeof module !== "undefined" && module.exports) module.exports = api;
 })(typeof window !== "undefined" ? window : typeof globalThis !== "undefined" ? globalThis : this);

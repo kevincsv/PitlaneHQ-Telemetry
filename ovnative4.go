@@ -1651,8 +1651,9 @@ func coachGeneric(en string) bool {
 // reference, what it shows, which corners, the hint, the verdict's seconds, how far ahead it speaks.
 
 type ovCorner struct {
-	Apex, B0, B1, V0, V1 float64
-	N                    int
+	D, Apex, B0, B1, V0, V1, Spread float64
+	N                               int
+	G                               []int // the gears the fast drivers take the apex in (low, high), when known
 }
 
 type coachVerdict struct {
@@ -1719,11 +1720,18 @@ func (st *ovState) coachTick(cfg map[string]any) {
 	C := &E.coach
 	A, R, name := st.coachRef(uiStr(cfg, "ref", "level"))
 	if A == nil || R == nil {
-		C.tips, C.ref, C.refLap = nil, "", nil
-		return
-	}
-	key := fmt.Sprintf("%d|%.3f|%.3f|%s", len(E.laps), A.time, R.time, E.driver)
-	if C.key != key {
+		// nothing of yours to measure against yet (the first laps on a track): the track guide's calls, where the fast
+		// drivers brake, the gear and the apex speed, from the model's corner card
+		st.loadModelRef()
+		g := st.guideTips()
+		if len(g) == 0 {
+			C.tips, C.ref, C.refLap = nil, "", nil
+			return
+		}
+		if key := fmt.Sprintf("guide|%d|%d", len(g), len(E.laps)); C.key != key {
+			C.key, C.ref, C.refLap, C.lapA, C.tips, C.watch = key, st.T("Track guide", "Guía del circuito"), nil, nil, g, -1
+		}
+	} else if key := fmt.Sprintf("%d|%.3f|%.3f|%s", len(E.laps), A.time, R.time, E.driver); C.key != key {
 		C.key, C.ref, C.refLap, C.lapA = key, name, R, A
 		C.tips = st.compareLaps(A, R, 1000)
 		sort.Slice(C.tips, func(i, j int) bool { return C.tips[i].d < C.tips[j].d })
@@ -1762,6 +1770,41 @@ func (st *ovState) coachTick(cfg map[string]any) {
 			C.watch = -1
 		}
 	}
+}
+
+// guideTips: the model's corner card as the coach's calls, for a driver with no lap to compare yet. The corners that
+// spread the drivers' times the most come first (coachPicked keeps the three hardest unless turns are chosen)
+func (st *ovState) guideTips() []coachTip {
+	var out []coachTip
+	for k, c := range st.ext.modelCor {
+		if c.N < 3 || c.Apex <= 0 {
+			continue
+		}
+		bd := math.Round((c.Apex-(c.B0+c.B1)/2)/5) * 5
+		v := int(math.Round(st.spd((c.V0 + c.V1) / 2)))
+		n := k + 1
+		if tn, err := strconv.Atoi(strings.TrimPrefix(st.turnName(c.Apex, k+1), "T")); err == nil {
+			n = tn
+		}
+		en := fmt.Sprintf("The fast drivers brake about %d m before the apex and take it at %d %s", int(bd), v, st.spdU())
+		es := fmt.Sprintf("Los rápidos frenan unos %d m antes del vértice y lo pasan a %d %s", int(bd), v, st.spdU())
+		if len(c.G) == 2 && c.G[0] >= 1 {
+			gEn, gEs := fmt.Sprintf("in gear %d", c.G[0]), fmt.Sprintf("en %da", c.G[0])
+			if c.G[1] != c.G[0] {
+				gEn, gEs = fmt.Sprintf("in gear %d or %d", c.G[0], c.G[1]), fmt.Sprintf("en %da o %da", c.G[0], c.G[1])
+			}
+			en += " " + gEn
+			es += " " + gEs
+		}
+		d := c.D
+		if d <= 0 {
+			d = c.B0
+		}
+		out = append(out, coachTip{n: n, d: d, apex: c.Apex, lost: .04 + c.Spread, en: en, es: es,
+			cueEn: fmt.Sprintf("BRAKE %d M", int(bd)), cueEs: fmt.Sprintf("FRENA A %d M", int(bd))})
+	}
+	sort.Slice(out, func(i, j int) bool { return out[i].d < out[j].d })
+	return out
 }
 
 // coachPicked: whether the settings want this corner: the chosen turns ("T4") on the track they were chosen for
@@ -1955,7 +1998,9 @@ func drawCoachOv(c *ovCanvas, st *ovState, z float64) int {
 	hl := ""
 	if !verdict && next != nil && dTo <= lead {
 		lines = wrapLines(tf, tipText(next), W-2*pad-10*z, 2)
-		hl = hint(next)
+		if C.refLap != nil { // the track guide's call already says the fast drivers' numbers
+			hl = hint(next)
+		}
 	}
 	H := pad + th + 56*z + 10*z
 	if verdict {

@@ -1183,3 +1183,42 @@ func TestFieldLapCountFlagOnlyADrop(t *testing.T) {
 	}
 	resetField()
 }
+
+// the race pace: every lap the game timed, in order, the one off the track marked
+func TestFieldPace(t *testing.T) {
+	resetField()
+	m := newSim("pace")
+	m.surf = func(lap int, d float64) float64 {
+		if lap == 2 && d >= 1000 && d < 1030 {
+			return 0
+		}
+		return 3
+	}
+	m.run(4)
+	p := fieldPace(0)
+	if len(p) < 3 {
+		t.Fatalf("pace %+v", p)
+	}
+	bad := 0
+	for _, x := range p {
+		found := false
+		for _, mt := range m.times {
+			if math.Abs(mt-x.T) < 0.002 {
+				found = true
+			}
+		}
+		if !found {
+			t.Fatalf("a time the game never showed %+v (%v)", x, m.times)
+		}
+		if x.Bad {
+			bad++
+			if math.Abs(x.T-m.times[1]) > 0.002 {
+				t.Fatalf("the lap off the track %+v", x)
+			}
+		}
+	}
+	if bad != 1 || fieldPace(9) != nil {
+		t.Fatalf("pace %+v", p)
+	}
+	resetField()
+}

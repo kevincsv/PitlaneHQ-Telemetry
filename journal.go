@@ -411,6 +411,7 @@ type raceResult struct {
 	K        string    `json:"k,omitempty"`     // the driver's opaque key (driverKey): your notes on them find them by it
 	CC       string    `json:"cc,omitempty"`    // the driver's country, ISO 3166 alpha-2 in lower case (or a region, gb-sct), from flagCode
 	Flair    string    `json:"flair,omitempty"` // iRacing's FlairName as the game gives it
+	Pace     []paceLap `json:"pace,omitempty"`  // the laps of the cars around you (3 places either side), each timed
 	carIdx   int
 	key      string // an opaque key of the driver (never their id or name): the same driver gets the same key
 	AI       bool   `json:"ai,omitempty"` // an AI driver (or the pace car): marked in the summary; never shared, never on a leaderboard nor in the model
@@ -929,9 +930,20 @@ func buildReport(y string, t *raceTrack, dnf bool) *raceReport {
 			}
 		}
 	}
+	me := -1
 	for i := range cls {
 		if !cls[i].Me {
 			cls[i].Sectors = fieldSectors(cls[i].carIdx, cls[i].Best)
+		} else {
+			me = i
+		}
+	}
+	// the race pace: every lap time of the cars that finished around you (your own laps are the report's)
+	if me >= 0 && !r.AI {
+		for i := max(0, me-3); i < len(cls) && i <= me+3; i++ {
+			if i != me && !cls[i].AI {
+				cls[i].Pace = fieldPace(cls[i].carIdx)
+			}
 		}
 	}
 	r.Field, r.SOF, r.Results = len(cls), strengthOfField(irs), cls

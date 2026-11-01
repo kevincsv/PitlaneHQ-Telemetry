@@ -36,3 +36,6 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   one to let by), else of a slower class within 3 s ahead; a class's pace is the best lap of any of its cars this
   session, faster by more than 1 %, a car in the pits left out. It is in the footer by default in Le Mans Ultimate only
   (until the driver sets their own footer); in iRacing it is there to add. ACC and Assetto Corsa lack it (`PW_GAMES`).
+- Damage: the agent turns the game's eight dents round the body (0 none, 1 some, 2 more) into `CarDamagePct` (a share of
+  the worst) and a part or a wheel off into `CarPartsOff`; the dash row (native `dcItems`, web `renderDC`, phones
+  `liveDC`) shows Damage and "part off" only while there is any.

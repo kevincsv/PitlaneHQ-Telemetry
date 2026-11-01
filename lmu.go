@@ -63,6 +63,10 @@ func lmuVarDefs() []demoVar {
 		{name: "VirtualEnergyPct", desc: "Virtual energy left (Le Mans Ultimate)", unit: "%", typ: TypeFloat},
 		// the virtual energy a green lap takes (the average of the last ones, lmuEnergy), so the fuel overlay, the web and
 		// the phones say the laps it lasts and whether it runs out before the fuel
+		// the car's damage as the game counts it (eight dents round the body, 0 none, 1 some, 2 more) and whether a part
+		// came off: the dash shows it while there is any
+		{name: "CarDamagePct", desc: "Body damage, the game's eight dents as a share of the worst (Le Mans Ultimate)", unit: "%", typ: TypeFloat},
+		{name: "CarPartsOff", desc: "A part of the car or a wheel came off (Le Mans Ultimate)", typ: TypeInt},
 		{name: "FuelUsePerLap", desc: "Fuel used per lap, the average of the last laps", unit: "l", typ: TypeFloat},
 		{name: "VirtualEnergyPerLap", desc: "Virtual energy used per lap, the average of the last laps (Le Mans Ultimate)", unit: "%", typ: TypeFloat},
 		{name: "WindVel", desc: "Wind velocity at start/finish line", unit: "m/s", typ: TypeFloat},
@@ -510,6 +514,18 @@ func (e *lmuEnergy) perLap() float64 {
 	return sum / float64(k)
 }
 
+// lmuDamage: the game's eight dents round the body (0 none, 1 some, 2 more) as a share of the worst, 0 … 1
+func lmuDamage(d []byte) float64 {
+	sum := 0
+	for _, v := range d {
+		if v > 2 {
+			v = 2
+		}
+		sum += int(v)
+	}
+	return float64(sum) / float64(2*len(d))
+}
+
 // lmuDriverID: a stable id for a driver of Le Mans Ultimate, from the name the game shows (the game gives no id):
 // the same driver takes the same id in every session, two drivers never the same one in practice, and far above
 // iRacing's ids, so their rivals never meet on the server (driverKey hashes it as "pitlanehq-other|<id>")
@@ -881,6 +897,14 @@ func (s *lmuSource) playerTelemetry(b []byte, to int, cars []lmuCar, player int)
 	if rb := lf64(b, to+vt_mRearBrakeBias); rb > 0 && rb < 1 {
 		m.set("dcBrakeBias", (1-rb)*100)
 	}
+	m.set("CarDamagePct", lmuDamage(b[to+vt_mDentSeverity:to+vt_mDentSeverity+8]))
+	partsOff := lu8(b, to+vt_mDetached) != 0
+	for k := 0; k < 4; k++ {
+		if lu8(b, to+vt_mWheels+k*lmuWheelSize+wh_mDetached) != 0 {
+			partsOff = true
+		}
+	}
+	m.setBool("CarPartsOff", partsOff)
 	if ve := lf32(b, to+vt_mVirtualEnergy); ve > 0 {
 		m.set("VirtualEnergyPct", ve)
 		if player >= 0 {

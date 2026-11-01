@@ -33,7 +33,7 @@ func gaugeVars(name string, st *ovState) []string {
 		return []string{"SessionFlags"}
 	case "dash":
 		return []string{"Gear", "Speed", "RPM", "Throttle", "Brake", "Clutch", "PlayerCarSLShiftRPM", "dcTractionControl", "dcTractionControlMax", "dcTractionControl2", "dcTractionControl2Max",
-			"dcABS", "dcABSMax", "dcEngineMap", "dcEngineMapMax", "dcBrakeBias", "VirtualEnergyPct", "EnergyERSBatteryPct", "BrakeABSactive", "Lap", "PlayerCarPosition", "PlayerCarMyIncidentCount",
+			"dcABS", "dcABSMax", "dcEngineMap", "dcEngineMapMax", "dcBrakeBias", "VirtualEnergyPct", "EnergyERSBatteryPct", "CarDamagePct", "CarPartsOff", "BrakeABSactive", "Lap", "PlayerCarPosition", "PlayerCarMyIncidentCount",
 			"LapDeltaToBestLap", "LapDeltaToBestLap_OK", "LapDeltaToSessionBestLap", "LapDeltaToSessionBestLap_OK", "LapDeltaToOptimalLap", "LapDeltaToOptimalLap_OK", "LapDeltaToSessionOptimalLap", "LapDeltaToSessionOptimalLap_OK"}
 	case "timing":
 		return []string{"LapCurrentLapTime", "LapBestLapTime", "LapLastLapTime", "LapDistPct", "LapDeltaToBestLap", "LapDeltaToBestLap_OK", "LapDeltaToSessionBestLap", "LapDeltaToSessionBestLap_OK",
@@ -722,6 +722,16 @@ func (st *ovState) dcItems() [][3]string {
 	}
 	if v, _ := st.num("EnergyERSBatteryPct"); v > 0 {
 		out = append(out, [3]string{st.T("BATTERY", "BATERÍA"), strconv.Itoa(int(math.Round(v * 100))), "%"})
+	}
+	// Le Mans Ultimate's damage, only while there is any: the dents as a share of the worst, and a part off
+	dmg, _ := st.num("CarDamagePct")
+	off, _ := st.num("CarPartsOff")
+	if dmg > 0 || off != 0 {
+		after := "%"
+		if off != 0 {
+			after += st.T(" · PART OFF", " · PIEZA FUERA")
+		}
+		out = append(out, [3]string{st.T("DAMAGE", "DAÑOS"), strconv.Itoa(int(math.Round(dmg * 100))), after})
 	}
 	return out
 }

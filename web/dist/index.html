@@ -7271,29 +7271,43 @@ function openInCoach(){const a=$("#lapA").value,b=$("#lapB").value;if(!lapOf(a)|
    the driver's own API key (Anthropic, OpenAI or Google Gemini). pitwall-aicoach.js (PW_AICOACH, the same file the phones
    run) builds what is sent and reads the answers. The key never goes to the server nor into the account: on the PC app
    the agent keeps it (/api/aicoach, sealed with the Windows user's key) and makes the request; on the web it stays in this
-   browser (localStorage "pwai.key.<provider>" when remembered, else sessionStorage) and the request goes straight to the
+   browser (sealed in IndexedDB with a key the browser cannot hand out, aiKeyGet/aiKeySet) and the request goes straight to the
    provider. What goes: the coach's analysis of the two laps, the driver's own name, lap B as what it is (your lap, the
    record, the next level, P3), the raw traces of the corners a question names (all of them on the first question: the two
    that cost the most). Never another driver's name. */
 const AIC=window.PW_AICOACH;
 const aiAgent=()=>MODE==="bridge"&&!REMOTE&&!COMPANION;
 const AI={cfg:null,loading:null,chat:{key:"",msgs:[],busy:false,err:""}};
-function aiStoreGet(k){try{return localStorage.getItem(k)||sessionStorage.getItem(k)||""}catch(e){return""}}
-function aiStoreSet(k,v,remember){try{localStorage.removeItem(k);sessionStorage.removeItem(k);if(v)(remember?localStorage:sessionStorage).setItem(k,v)}catch(e){}}
+/* the key on the web: sealed (AES-GCM) with a key this browser made that cannot be read out (a non-extractable CryptoKey in
+   IndexedDB "pwai"), only the sealed copy is stored; not remembered, it lives in this page's memory until it closes.
+   Never in localStorage or sessionStorage (an older plain copy there is sealed and removed). Without WebCrypto (a page
+   that is not https), memory only */
+const AI_MEM={},AIDB={db:null};
+function aiDb(){return new Promise((ok,no)=>{const r=indexedDB.open("pwai",1);r.onupgradeneeded=()=>r.result.createObjectStore("k");r.onsuccess=()=>ok(r.result);r.onerror=()=>no(r.error)})}
+async function aiIdb(op,k,v){const db=AIDB.db||(AIDB.db=await aiDb());return new Promise((ok,no)=>{const tx=db.transaction("k",op==="get"?"readonly":"readwrite"),st=tx.objectStore("k"),r=op==="get"?st.get(k):op==="del"?st.delete(k):st.put(v,k);r.onsuccess=()=>ok(r.result);r.onerror=()=>no(r.error)})}
+const aiSealOk=()=>!!(window.crypto&&crypto.subtle&&window.indexedDB);
+async function aiWrap(){let k=await aiIdb("get","wrap");if(!k){k=await crypto.subtle.generateKey({name:"AES-GCM",length:256},false,["encrypt","decrypt"]);await aiIdb("put","wrap",k)}return k}
+async function aiKeyGet(p){if(AI_MEM[p])return AI_MEM[p];if(!aiSealOk())return"";
+  try{const old=localStorage.getItem("pwai.key."+p)||sessionStorage.getItem("pwai.key."+p);if(old){localStorage.removeItem("pwai.key."+p);sessionStorage.removeItem("pwai.key."+p);await aiKeySet(p,old,true)}}catch(e){}
+  try{const b=await aiIdb("get","key."+p);if(!b)return"";return new TextDecoder().decode(await crypto.subtle.decrypt({name:"AES-GCM",iv:b.iv},await aiWrap(),b.ct))}catch(e){return""}}
+async function aiKeySet(p,v,remember){delete AI_MEM[p];try{localStorage.removeItem("pwai.key."+p);sessionStorage.removeItem("pwai.key."+p)}catch(e){}
+  if(aiSealOk())try{await aiIdb("del","key."+p)}catch(e){}if(!v)return;
+  if(!remember||!aiSealOk()){AI_MEM[p]=v;return}
+  const iv=crypto.getRandomValues(new Uint8Array(12)),ct=await crypto.subtle.encrypt({name:"AES-GCM",iv},await aiWrap(),new TextEncoder().encode(v));await aiIdb("put","key."+p,{iv,ct})}
 /* the settings: {p, model, has, last4, remember}; on the PC app from the agent (which never hands the key back) */
 async function aiCfg(force){if(AI.cfg&&!force)return AI.cfg;if(AI.loading&&!force)return AI.loading;
   AI.loading=(async()=>{let c={p:"anthropic",model:"",has:false,last4:"",remember:true};
     if(aiAgent()){try{const j=await (await fetch("/api/aicoach/config")).json();c={...c,...j}}catch(e){}}
-    else{const s=store.get("pw.aicoach",{});c.p=AIC&&AIC.PROVIDERS[s.p]?s.p:"anthropic";c.model=s.model||"";c.remember=s.remember!==false;const k=aiStoreGet("pwai.key."+c.p);c.has=!!k;c.last4=k?k.slice(-4):""}
+    else{const s=store.get("pw.aicoach",{});c.p=AIC&&AIC.PROVIDERS[s.p]?s.p:"anthropic";c.model=s.model||"";c.remember=s.remember!==false;const k=await aiKeyGet(c.p);c.has=!!k;c.last4=k?k.slice(-4):""}
     AI.cfg=c;AI.loading=null;return c})();return AI.loading}
 async function aiSave(p,model,key,remember){
   if(aiAgent()){const r=await fetch("/api/aicoach/config",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({p,model,key:key==null?undefined:key})});const j=await r.json().catch(()=>({}));if(!r.ok)throw new Error(j.error||("HTTP "+r.status))}
-  else{store.set("pw.aicoach",{p,model,remember});if(key!=null)aiStoreSet("pwai.key."+p,key,remember);else{const k=aiStoreGet("pwai.key."+p);if(k)aiStoreSet("pwai.key."+p,k,remember)}}
+  else{store.set("pw.aicoach",{p,model,remember});if(key!=null)await aiKeySet(p,key,remember);else{const k=await aiKeyGet(p);if(k)await aiKeySet(p,k,remember)}}
   return aiCfg(true)}
 /* one request to the provider: {status, text} */
 async function aiFetch(op,p,model,body){
   if(aiAgent()){const r=await fetch("/api/aicoach/send",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({op,p,model,body:body||""})});const j=await r.json().catch(()=>({}));if(!r.ok&&j.error&&!j.status)throw new Error(j.error);return{status:j.status||r.status,text:j.text||""}}
-  const key=aiStoreGet("pwai.key."+p);if(!key)throw new Error("nokey");
+  const key=await aiKeyGet(p);if(!key)throw new Error("nokey");
   const q=op==="models"?AIC.modelsRequest(p,key):{...AIC.request(p,model,key,"",[]),body};
   const ctl=new AbortController(),tm=setTimeout(()=>ctl.abort(),120000);
   try{const r=await fetch(q.url,{method:q.method,headers:q.headers,body:q.method==="GET"?undefined:q.body,signal:ctl.signal});return{status:r.status,text:await r.text()}}finally{clearTimeout(tm)}}
@@ -7349,7 +7363,7 @@ function renderAiPanel(){const box=$("#aiPanel");if(!box)return;if(!wipOk()||!AI
       <label><span class="label">${esc(Tx("API key","Clave de API",null,"Chave de API"))}</span><input type="password" id="aiKey" autocomplete="off" spellcheck="false" placeholder="${esc(saved?"•••• "+c.last4:pv.keyHint)}"></label>
       <label><span class="label">${esc(Tx("Model","Modelo",null,"Modelo"))}</span><select id="aiModel">${models.map(m=>`<option value="${esc(m)}"${m===cur?" selected":""}>${esc(m)}</option>`).join("")}</select></label>
       ${aiAgent()?"":`<label class="chk"><input type="checkbox" id="aiRem"${c.remember!==false?" checked":""}> <span>${esc(Tx("Remember on this browser","Recordar en este navegador",null,"Lembrar neste navegador"))}</span></label>`}
-      <div class="err" id="aiErr" role="alert"></div><p class="note" id="aiOk"></p>
+      <p class="note">${esc(Tx("Set a monthly spend limit on your AI account.","Pon un límite de gasto mensual en tu cuenta de IA.",null,"Defina um limite de gasto mensal na sua conta de IA."))}</p><div class="err" id="aiErr" role="alert"></div><p class="note" id="aiOk"></p>
       <div class="controls"><button class="btn primary" type="submit">${esc(Tx("Save","Guardar",null,"Salvar"))}</button><button class="btn" type="button" id="aiTest"${saved?"":" disabled"}>${esc(Tx("Test","Probar",null,"Testar"))}</button>${saved?`<button class="btn" type="button" id="aiDel">${esc(Tx("Remove key","Quitar clave",null,"Remover chave"))}</button>`:""}<a class="acc" href="${esc(pv.keys)}" target="_blank" rel="noopener" style="margin-left:auto">${esc(Tx("Get a key","Conseguir una clave",null,"Obter uma chave"))}</a></div>
     </form>`;
   box.querySelectorAll("[data-aip]").forEach(b=>b.onclick=()=>{box.dataset.p=b.dataset.aip;renderAiPanel()});
@@ -7359,7 +7373,7 @@ function renderAiPanel(){const box=$("#aiPanel");if(!box)return;if(!wipOk()||!AI
   const t=$("#aiTest");if(t)t.onclick=async()=>{err.textContent="";ok.textContent="…";t.disabled=true;
     try{const r=await aiFetch("models",sel,"",null),m=AIC.parseModels(sel,r.status,r.text);if(m.error){ok.textContent="";err.textContent=aiErrText(m)}else{AI.models=AI.models||{};const fav=pv.models.filter(x=>m.models.includes(x));AI.models[sel]=[...fav,...m.models.filter(x=>!fav.includes(x))].slice(0,40);renderAiPanel();const o=$("#aiOk");if(o)o.textContent=Tx(`Your key works · ${m.models.length} models`,`Tu clave funciona · ${m.models.length} modelos`,null,`Sua chave funciona · ${m.models.length} modelos`)}}
     catch(x){ok.textContent="";err.textContent=aiErrText({error:String(x.message||x)})}finally{if(t.isConnected)t.disabled=false}};
-  const d=$("#aiDel");if(d)d.onclick=async()=>{if(aiAgent())await fetch("/api/aicoach/config",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({p:sel,model:$("#aiModel").value,key:""})}).catch(()=>{});else aiStoreSet("pwai.key."+sel,"",false);await aiCfg(true);renderAiPanel()}}
+  const d=$("#aiDel");if(d)d.onclick=async()=>{if(aiAgent())await fetch("/api/aicoach/config",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({p:sel,model:$("#aiModel").value,key:""})}).catch(()=>{});else await aiKeySet(sel,"",false);await aiCfg(true);renderAiPanel()}}
 function renderCoach(){coachWeights();coachMe();const LP=coachLaps(),best=markAnalysisBest(LP),bestEx=x=>LP.reduce((a,b)=>b!==x&&(!a||b.time<a.time)?b:a,null);coachCloudBar();const cc=$("#coachComm");if(cc){cc.textContent=Tx("Compare with the community","Comparar con la comunidad");cc.removeAttribute("onclick");cc.onclick=pickCommLap;}const box=$("#coachBody");if(!box)return;
   const sub=$("#coachSub");if(sub)sub.textContent=Tx("Your lap against a reference: what to work on first and where, and your pace among the drivers of this car and track.","Tu vuelta frente a una referencia: qué trabajar primero y dónde, y tu ritmo entre los pilotos de este coche y circuito.","Deine Runde gegen eine Referenz: woran zuerst arbeiten und wo, und dein Tempo unter den Fahrern dieses Autos und dieser Strecke.","Sua volta contra uma referência: o que trabalhar primeiro e onde, e seu ritmo entre os pilotos deste carro e pista.");
   if(LP.length<2&&!G61REF&&!(LP.length&&coachCloudOn()&&LAPF.extra&&(CLOUD.lapsB||[]).length)){box.innerHTML=`<div class="panel empty">${coachCloudOn()?esc(CLOUD.busy?Tx("Loading your laps…","Cargando tus vueltas…","Deine Runden werden geladen…","Carregando suas voltas…"):CLOUD.err||(CLOUD.sessions&&!CLOUD.sessions.length?Tx("No laps in your account yet. On the PC: Account → keep my laps in my account, and drive.","Aún no hay vueltas en tu cuenta. En el PC: Cuenta → guardar mis vueltas en mi cuenta, y da unas vueltas.","Noch keine Runden in deinem Konto. Am PC: Konto → Runden im Konto behalten, und fahre.","Ainda não há voltas na sua conta. No PC: Conta → guardar minhas voltas na conta, e dê umas voltas."):Tx("Choose a session with two or more laps.","Elige una sesión con dos o más vueltas.","Wähle eine Sitzung mit zwei oder mehr Runden.","Escolha uma sessão com duas ou mais voltas."))):Lp("Drive two laps and the coach compares them corner by corner.","Da dos vueltas y el coach las compara curva a curva.")}</div>`;return}

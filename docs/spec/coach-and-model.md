@@ -269,8 +269,11 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   - The key never reaches the Pitlane HQ server nor the account's sync. PC app: the agent keeps it (`aicoach.go`,
     ai-coach.json in the data folder sealed with DPAPI, only the last four characters handed back) and makes the
     request (`/api/aicoach/config`, `/api/aicoach/send`, this PC's page only: loopback, JSON, no other site's Origin; only
-    the three providers' addresses). Web: this browser only (localStorage `pwai.key.<provider>` with "Remember on this
-    browser", else sessionStorage), the request straight to the provider. Phones: Android Keystore (`pitlane-ai`
+    the three providers' addresses). Web: this browser only, sealed with AES-GCM under a non-extractable
+    CryptoKey the browser made (IndexedDB `pwai`, `aiKeyGet`/`aiKeySet`); never in localStorage or sessionStorage (an older
+    plain copy there is sealed and removed); without "Remember on this browser" (or without WebCrypto) it lives in the
+    page's memory only. The request goes straight to the provider. Every device says under the key "Set a monthly spend
+    limit on your AI account." Phones: Android Keystore (`pitlane-ai`
     preferences) and the iOS Keychain (`com.pitlanehq.ai`), the request from the phone.
   - Where: web and PC, under the coach's gap ("Ask the coach", chips, a box, New chat) and Settings → General → AI coach
     (provider, key, model, Test lists the models the key can use, Remove key, Get a key). Phones: under the coach's gap

@@ -65,7 +65,9 @@ export async function friendRoutes(req, env, p, m, body, url, game, acc) {
     ).bind(acc.id).all()).results) || [] : [];
     const by = new Map();
     for (const l of laps) { const k = by.get(l.uid) || []; if (k.length < 8) k.push(l); by.set(l.uid, k); }
-    return json({ friends: fr.map((f) => ({ id: f.id, name: f.name || "Driver", sup: !!f.sup, since: f.created, laps: (by.get(f.id) || []).map(({ uid, ...l }) => l) })) });
+    // "Invite a friend": the account's own link; whoever makes an account from it and this account follow each other
+    // (inviteFollow in accounts.js)
+    return json({ invite: "https://pitlanehq.app/?ref=invite-" + acc.id, friends: fr.map((f) => ({ id: f.id, name: f.name || "Driver", sup: !!f.sup, since: f.created, laps: (by.get(f.id) || []).map(({ uid, ...l }) => l) })) });
   }
   if (p === "/friends/laps" && m === "GET") {
     const t = +url.searchParams.get("trackId"), c = await famId(env, game, url.searchParams.get("carId"));

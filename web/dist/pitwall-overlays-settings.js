@@ -23,7 +23,7 @@ const OVS_OWN={
   coach:{opt:[["c","ref",["Reference","Referencia","Referência"],[["level","▲ Next level","▲ Siguiente nivel","▲ Próximo nível"],["best","My best lap","Mi mejor vuelta","Minha melhor volta"]]],
     ["c","mode",["What it shows","Qué muestra","O que mostra"],[["next","Card","Tarjeta","Cartão"],["column","Column","Columna","Coluna"],["curve","Corner drawn","Curva dibujada","Curva desenhada"],["big","Big, for VR","Grande, para VR","Grande, para VR"],["text","Tip only","Solo el consejo","Só a dica"]]],
     ["c","turnName",["How it names the corner","Cómo nombra la curva","Como nomeia a curva"],[["both","Next turn (T7)","Próxima curva (T7)","Próxima curva (T7)"],["words","Next turn","Próxima curva","Próxima curva"],["num","T7","T7","T7"]]],
-    ["turns","turns",["Corners","Curvas","Curvas"]],["b","hint",["The fast drivers' braking and apex speed","La frenada y el vértice de los rápidos","A frenagem e o ápice dos rápidos"]],
+    ["turns","turns",["Corners","Curvas","Curvas"]],["t","focus",["Practise one corner (the first one chosen, its time on every lap)","Practicar una curva (la primera elegida, su tiempo en cada vuelta)","Praticar uma curva (a primeira escolhida, seu tempo em cada volta)"]],["b","hint",["The fast drivers' braking and apex speed","La frenada y el vértice de los rápidos","A frenagem e o ápice dos rápidos"]],
     ["c","verdict",["Verdict after each corner","Veredicto tras cada curva","Veredito após cada curva"],[[0,"Off","Apagado","Desligado"],[4,"4 s"],[8,"8 s"]]],["c","lead",["Speaks from","Avisa desde","Avisa a partir de"],[[200,"200 m"],[300,"300 m"],[500,"500 m"]]]]}};
 const ovsChoices=ch=>(typeof ch==="function"?ch():ch).map(x=>[x[0],x.length>2?T3(x[1],x[2],x[3]):x[1]]);
 const ovsK=w=>CONFIGURABLE[w]||null;

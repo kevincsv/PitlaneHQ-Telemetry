@@ -33,6 +33,7 @@ import { onlineRoute, prunePresence } from "./presence.js";
 import { usageRoute, pruneUsage } from "./usage.js";
 import { supportRoute } from "./support.js";
 import { sessionSummary, SESSION_SUMS, ALL_SESSION_SUMS } from "./sessionsum.js";
+import { SQL_PBS, pbsOf } from "./alertslib.js";
 import { pruneSeen } from "./seasonseen.js";
 import { legal } from "./legal.js";
 import { uninstallRoute } from "./uninstall.js";
@@ -216,7 +217,10 @@ async function api(req, env, url, ctx) {
   // Home's four numbers over every session of the account since the device's start of the month (sessionsum.js)
   if (p === "/api/sessions/summary" && m === "GET") {
     const q = url.searchParams;
-    return json(await sessionSummary(env.DB, { from: q.get("from"), tz: q.get("tz"), game: q.get("game") ? gameOf(q.get("game")) : null, uploader: own || q.get("who") || null }));
+    const sum = await sessionSummary(env.DB, { from: q.get("from"), tz: q.get("tz"), game: q.get("game") ? gameOf(q.get("game")) : null, uploader: own || q.get("who") || null });
+    // ?pbs=1 (Home's "Your week", own account only): the cars and tracks whose best this period beats every one before
+    if (q.get("pbs") === "1" && own) sum.pbs = pbsOf(((await env.DB.prepare(SQL_PBS).bind(own, sum.from).all().catch(() => ({ results: [] }))).results) || []).map((r) => ({ track: r.track, track_config: r.track_config || null, car: r.car, best: r.b, before: r.before }));
+    return json(sum);
   }
 
   // the iRacing tracks and cars the account has driven outside a test drive (official, hosted, league or AI sessions all
@@ -650,7 +654,7 @@ async function handle(req, env, ctx) {
     }
     // one address for the app: /index.html is "/"
     if (url.pathname === "/index.html") { const to = new URL(req.url); to.pathname = "/"; return Response.redirect(to.href, 301); }
-    const isAppFile = /^\/(fonts\.css|pitwall-[a-z0-9-]+\.js|app-news\.json|whats-new\.json|server\.json|manifest\.webmanifest|favicon\.ico|favicon-32\.png|icon-\d+\.png|logo\.svg|bimi\.svg|og(?:-es|-pt)?\.png|robots\.txt|landing\/(?:en\/|es\/|pt\/)?[a-z0-9-]+\.(?:jpg|png)|landing\/live-lap\.json)$/.test(url.pathname);
+    const isAppFile = /^\/(sw\.js|fonts\.css|pitwall-[a-z0-9-]+\.js|app-news\.json|whats-new\.json|server\.json|manifest\.webmanifest|favicon\.ico|favicon-32\.png|icon-\d+\.png|logo\.svg|bimi\.svg|og(?:-es|-pt)?\.png|robots\.txt|landing\/(?:en\/|es\/|pt\/)?[a-z0-9-]+\.(?:jpg|png)|landing\/live-lap\.json)$/.test(url.pathname);
     if ((url.pathname === "/" && url.searchParams.get("embed") !== "1") || isAppFile) {
       if (!env.ASSETS) return err("the app is not published on this server", 404);
       // a local server (wrangler dev --var LOCAL:1, tools/local.cmd): the app served by it uses it, not pitlanehq.app

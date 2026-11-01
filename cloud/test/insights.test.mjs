@@ -76,3 +76,35 @@ assert.equal(PW.fuelPlan({ ...u, tank: null }, { laps: 50 }).stops, null, "no ta
 const all = JSON.parse(JSON.stringify(PW.insights(best, lap(2), { ...ctx, laps: [best, lap(2), lap(3), lap(4, { valid: false, bp: 198, incAt: [1110, 1], incK: ["off"] })], tank: 60 })));
 assert.ok(all.spread && all.offs.length === 1 && all.gg.a && all.steer.a.length && all.fuel.perLap === 2.5);
 console.log("insights ok");
+
+// the pedal and wheel check: good laps say nothing; a brake that never passes 55 %, a throttle that reads with the foot
+// on the brake and a wheel off centre on the straights are found on every lap
+{
+  const good = [1, 2, 3].map((n) => lap(n));
+  assert.deepEqual(PW.pedalCheck(good, ctx), []);
+  const bad = [1, 2, 3].map((n) => { const l = lap(n, { brk: 0.55 }); for (const b of l.bins) { if (b[3] > 0.3) b[2] = 0.06; if (b[2] > 0.97) b[5] = 0.07; } return l; });
+  const ks = PW.pedalCheck(bad, ctx).map((x) => x.k);
+  assert.ok(ks.includes("brakeMax") && ks.includes("thrFloor") && ks.includes("steerOff"), ks.join(","));
+  assert.equal(PW.pedalCheck(bad.slice(0, 2), ctx).length, 0, "needs three laps");
+}
+console.log("pedal check ok");
+
+// session goals: beat last time's best, five clean laps in a row and the corner where last time's best lap lost the most
+{
+  const prev = [lap(1), lap(2, { bp: 200 }), lap(3, { vmin: 25 })];
+  const g0 = PW.sessionGoals([], prev, { ...ctx, turns: [0.1, 220 * 5 / 2000], trackLen: 2000 });
+  assert.equal(g0.find((g) => g.k === "best").done, false);
+  const cur = [1, 2, 3, 4, 5].map((n) => lap(n, { bp: 205 }));
+  const g = PW.sessionGoals(cur, prev, { ...ctx, turns: [0.1, 220 * 5 / 2000], trackLen: 2000 });
+  assert.equal(g.find((x) => x.k === "clean").done, true);
+  assert.equal(PW.sessionGoals(cur, [], ctx).length, 0);
+}
+console.log("session goals ok");
+
+// the race story: the start, places won and lost, the stop, an incident and the finish, in order
+{
+  const r = { start: 8, finish: 5, laps: [{ n: 1, p: 6 }, { n: 2, p: 6 }, { n: 3, p: 7 }, { n: 4, p: 9, pit: true }, { n: 5, p: 5 }], incidents: [{ lap: 3, d: 1200, pts: 2, kind: "loss" }] };
+  const st = PW.raceStory(r, ctx).map((x) => x.k);
+  assert.deepEqual(st, ["start", "inc", "loss", "pit", "gain", "finish"]);
+}
+console.log("race story ok");

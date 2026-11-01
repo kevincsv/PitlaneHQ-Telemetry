@@ -4,6 +4,8 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
 
 - The admin panel is its own page, only for admins (pitlanehq.app/admin → `/app#admin`, `v-admin`), reached from the
   header's Admin button with admin mode on (Account shows its button only then).
+  Its code is its own file, `web/dist/pitwall-admin.js` (`admSecs`, `wireAdminProfile`, `admUserDetail`…), loaded the
+  first time the page opens (`admJs`, `renderAdminPage` in index.html), so drivers never download it.
 - Admin mode (the owner's choice): an admin sees Pitlane HQ exactly as everyone does by default, on every device. The
   header's Admin button (`#viewTg`, a shield, only for admins; `renderViewToggle`) turns admin mode on for that device
   (`pw.adminMode` in localStorage, `adminMode()`/`setAdminMode` in index.html; `isAdmin()` = an admin's account and admin

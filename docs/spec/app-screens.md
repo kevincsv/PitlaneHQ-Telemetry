@@ -101,3 +101,41 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   g of cornering against B's, 10 % apart or more), and the tyre temperatures lap by lap where the game gives them
   (`tyreLaps`: the agent records each tyre's carcass temperature left, middle and right, averaged over the lap, as the
   trace's `tt`) with lap A's three temperatures of each tyre.
+
+## Pedal and wheel check (in development: testers, admins in admin mode)
+
+- Home shows "Pedal and wheel check" (`pedalCheckHTML` in index.html, the phones' Home the same) when the last
+  session's own laps (three or more, pedals not estimated) show the same hardware problem on every lap
+  (`pedalCheck` in pitwall-analysis.js): the brake never past 60 %, the throttle never at 95 %, the throttle reading 3 %
+  or more while braking, the brake reading 3 % or more on full throttle, the wheel 2.5° or more off centre on the
+  straights. "Got it" hides those problems on that device (`pw.pedalSeen`).
+
+## Goals for this session
+
+- Home (and the phones' Home) shows "Goals for this session" during a session and for four hours after it, when the
+  driver has an earlier session on the same car and track (`goalsHTML` in index.html, `sessionGoals` in
+  pitwall-analysis.js): beat that session's best lap, five clean laps in a row, and the official turn where that
+  session's best lap lost the most to its own best pass there (from 200 m before the turn to 120 m after). Each goal
+  shows ✓ once a lap of this session reaches it.
+
+## Race story
+
+- A race's summary opens with "Race story" (`raceStoryHTML` in index.html, `raceStory` in pitwall-analysis.js; the
+  phones' race page the same): the start and the places after lap 1, every lap that won or lost places, the pit stops,
+  each incident with its points, its kind and where on the lap, and the finish against the start.
+
+## Your week
+
+- Home (and the phones' Home) shows "Your week" once the account drove since Monday (`homeWeekHTML`, GET
+  `/api/sessions/summary?from=<Monday>&pbs=1`, which adds the cars and tracks whose best this week beats every one
+  before, `pbsOf` in alertslib.js, the account's own only): sessions, laps, time on track, races, the new bests with
+  what they gained, each with "Share card" (the lap card, `shareLapCard`, with "New personal best" and the gain where a
+  leaderboard place would be). Share copies the week as text (the phone's share sheet on the web and the phones).
+
+## Search, CSV and keys
+
+- My sessions' search also finds the date ("26 October"). The lap analysis has "Export CSV" beside More charts
+  (`lapCsv`): lap A every 5 m with distance, lap time, speed, throttle, brake, gear, steering and the height when the lap
+  has it. On the lap screen of the PC app and the web, [ and ] go to the lap before and after, S swaps A and B and the
+  space bar plays the map's replay.
+

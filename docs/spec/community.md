@@ -106,6 +106,15 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
 
 ## Friends
 
+- "Invite a friend" at the top of Friends (every device) shares or copies the account's link,
+  `https://pitlanehq.app/?ref=invite-<account id>` (`invite` in GET /community/friends). That first visit is one source,
+  "invite", in the admin Analytics (`visitOf` keeps the inviter); an account made in that browser and the inviter
+  follow each other (`inviteFollow` in accounts.js, both sign-up paths).
+
+- Head to head: each friend's lap row shows your best on that car and track (your sessions' bests, `myBestOn`) with
+  the gap, and the friend's card "You 3–2", the tracks where you are faster against those where you are not (`h2hPill`).
+  The phones' Friends tab the same.
+
 - Follow drivers (`cloud/src/friends.js`, table `follows`, migration 0090): "Follow" on a driver's public profile
   (`canFollow`, `following` on /community/profile; never on an anonymous one, never yourself, 200 at most). Community's
   fourth part, Friends (`drawFriends`; the phones' Community → Friends), lists the drivers you follow with their newest

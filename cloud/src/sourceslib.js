@@ -30,7 +30,7 @@ export const SRC_KIND = {
   chatgpt: "ai", perplexity: "ai", claude: "ai", gemini: "ai", copilot: "ai",
   reddit: "community", discord: "community", iracing: "community", overtake: "community", steam: "community", simhub: "community", github: "community",
   youtube: "social", facebook: "social", instagram: "social", x: "social", tiktok: "social", twitch: "social", whatsapp: "social", telegram: "social", linkedin: "social",
-  direct: "direct",
+  direct: "direct", invite: "community",
 };
 export const kindOf = (src) => SRC_KIND[src] || (/-app$/.test(src) ? "app" : src === "unknown" ? "unknown" : "other");
 
@@ -79,6 +79,9 @@ export function visitOf(b) {
   const campaign = cleanSrc(b.uc).slice(0, 40);
   // a tag is a short name (utm_source=reddit) or a site's address (utm_source=reddit.com, which reads as reddit)
   const src = tag ? (SRC_KIND[tag] ? tag : SITES.some(([re]) => re.test(tag)) ? siteOf("https://" + tag + "/") : tag) : siteOf(b.ref);
+  // "Invite a friend" (?ref=invite-<the inviter's account id>): one source, "invite", and who sent it
+  const inv = /^invite-([0-9a-z]{8,32})$/.exec(src);
+  if (inv) return { src: "invite", page: pageOf(b.page), campaign, inviter: inv[1] };
   return { src: src === "" || SRC_RE.test(src) ? src : "direct", page: pageOf(b.page), campaign };
 }
 

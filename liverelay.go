@@ -588,6 +588,16 @@ func liveRunWith(c *wsConn, key []byte, share func() bool) {
 			if share != nil && ev != "want" { // with a code you only watch
 				continue
 			}
+			if ev == "replay" { // "Watch in replay" from your phone or browser (replay.go, testers)
+				var d struct {
+					Session string  `json:"session"`
+					T       float64 `json:"t"`
+				}
+				if json.Unmarshal(data, &d) == nil {
+					go replayJump(replaySessionNum(d.Session), d.T)
+				}
+				continue
+			}
 			if ev == "share" { // your phone or browser starts, renews or stops the share code
 				var d struct {
 					On  bool `json:"on"`

@@ -126,3 +126,12 @@ assert.deepEqual(A.map((a) => [a.k, a.rows.map((x) => x.key)]), [["coach", ["act
 assert.ok(readFileSync(new URL("../../web/dist/index.html", import.meta.url), "utf8").includes(VISIT_JS), "index.html carries VISIT_JS as it is in sourceslib.js");
 
 console.log("sources ok");
+
+// "Invite a friend": the inviter's link is one source, "invite", and keeps who sent it
+{
+  const v = visitOf({ ref: "", page: "/", us: "invite-88407bb0034daced71a27d3f" });
+  assert.equal(v.src, "invite");
+  assert.equal(v.inviter, "88407bb0034daced71a27d3f");
+  assert.equal(visitOf({ ref: "", page: "/", us: "reddit" }).inviter, undefined);
+  console.log("invite source ok");
+}

@@ -34,7 +34,7 @@ func nativeOverlay(name string) bool {
 	case "radar", "deltabar", "relative", "standings":
 		return true
 	}
-	return gaugeOverlay(name) || sessionOverlay(name) || lapOverlay(name) || extraOverlay(name)
+	return gaugeOverlay(name) || sessionOverlay(name) || lapOverlay(name) || extraOverlay(name) || spotterOverlay(name)
 }
 
 // the width each overlay is designed for: the window's width scales everything from it
@@ -42,7 +42,7 @@ var ovDesign = map[string]float64{"radar": 260, "deltabar": 520, "relative": 600
 	"flag": 520, "dash": 560, "timing": 440, "fuel": 420, "engine": 320, "tyres": 420, "inputs": 560, "boost": 360, "telemetry": 420, "gg": 280,
 	"stats": 420, "pit": 440, "sectors": 560, "gaps": 560, "incidents": 380,
 	"map": 440, "compare": 680, "brakes": 480, "coach": 520,
-	"weather": 360, "trackbar": 700, "system": 320}
+	"weather": 360, "trackbar": 700, "system": 320, "spotter": 520}
 
 // ---------- the picture ----------
 
@@ -1419,6 +1419,8 @@ func ovDraw(name string, c *ovCanvas, st *ovState, now time.Time) int {
 			h = drawLapOv(name, c, st, z, now)
 		} else if extraOverlay(name) {
 			h = drawExtraOv(name, c, st, z, now)
+		} else if spotterOverlay(name) {
+			h = drawSpotterOv(c, st, z)
 		} else {
 			h = drawGauge(name, c, st, z, now)
 		}
@@ -2663,6 +2665,9 @@ func ovVars(name string, st *ovState) []string {
 	}
 	if lapOverlay(name) {
 		return append(base, lapOvVars(name)...)
+	}
+	if spotterOverlay(name) {
+		return append(base, spotterVars()...)
 	}
 	if extraOverlay(name) {
 		return append(base, extraVars(name)...)

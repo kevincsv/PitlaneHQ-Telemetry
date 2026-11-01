@@ -78,3 +78,19 @@ func TestAutoForGame(t *testing.T) {
 		t.Errorf("lmu %v", got)
 	}
 }
+
+// a saved overlay set chosen for ovals opens instead of the Auto ones on an oval; the game's choice comes first
+func TestAutoKindFor(t *testing.T) {
+	c := Config{AutoWidgets: []string{"relative", "fuel"}, UI: map[string]any{
+		"autoKind":   map[string]any{"oval": "Ovals", "lmu": "Endurance"},
+		"ovpresets": map[string]any{"list": map[string]any{"Ovals": []any{"spotter", "relative"}, "Endurance": []any{"fuel", "standings"}}}}}
+	if got := autoKindFor(c, "iracing", "Oval"); len(got) != 2 || got[0] != "spotter" {
+		t.Fatalf("oval %v", got)
+	}
+	if got := autoKindFor(c, "iracing", "Road"); len(got) != 2 || got[0] != "relative" {
+		t.Fatalf("road %v", got)
+	}
+	if got := autoKindFor(c, "lmu", "Road"); len(got) != 2 || got[0] != "fuel" {
+		t.Fatalf("lmu %v", got)
+	}
+}

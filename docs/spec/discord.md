@@ -13,8 +13,8 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   (PC, web, Pitlane HQ Desktop, phones; `/account/discord`, actions `discord*` in /api/sync) links the Discord account
   with Discord's sign-in (`/discord/oauth`, DISCORD_APP_ID + DISCORD_CLIENT_SECRET, only "identify") and shows it on the
   public profile only when the driver says (`shown`, off by default), so other drivers can find them there (the
-  profile's "Discord: @handle", /driver too). Free: /record, /driver, /link, /unlink, /download, /help, /language, /setup; Pro (`discordPro` in license_plans.json, open to
-  everyone while `enforce` is false): /coach, /compare, /board (the server's ranking), /alerts (a channel for the
+  profile's "Discord: @handle", /driver too). Every command is free for everyone, always (the owner's choice; `discordPro` in license_plans.json is empty and
+  `isPro` says yes): /record, /driver, /link, /unlink, /download, /help, /language, /setup, /coach, /compare, /board (the server's ranking), /alerts (a channel for the
   server's new best laps and records, `discordLapAlert` from autoShare, `/laps` and `reshareSession`). /link gives a
   one-use button to pitlanehq.app (`?discord=`) where the signed-in web app confirms (`discordLinkAsk`). It shows
   what the public pages show: nicknames; race rivals, anonymous laps and accounts as
@@ -30,4 +30,4 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
 - The weekly post (`discordWeekly`, Monday from 09:00 UTC, up to 20 servers each hourly run, each once a week,
   `week_at`): every server with alerts on gets "The week's best laps" in its alerts channel (with its league's name when
   linked), each of its drivers' laps of the last seven days with the place on the leaderboard, the best places first,
-  at most 10, while the account that set the alerts up has Pro. Nothing is posted in a week without laps.
+  at most 10. Nothing is posted in a week without laps.

@@ -125,12 +125,7 @@
     "shiftBeep",
     "brakeMarkers"
   ],
-  "discordPro": [
-    "coach",
-    "compare",
-    "board",
-    "alerts"
-  ],
+  "discordPro": [],
   "lifetime": {
     "beta": 12,
     "full": 24,

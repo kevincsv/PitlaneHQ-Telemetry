@@ -25,3 +25,10 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   account is told where it is and offers "Move to this PC" (`/community/pro/pc`; the other PC goes back to free). The
   Auto list goes with the account and is never trimmed: the agent opens only what this PC may (`proAutoList`: the
   basic overlays; `proAppsAllowed`: the first 3 programs of the list), and the app asks for Pro on a fourth program.
+
+- PRO badges (`proB()` in index.html, `ProBadge` on the phones): a small amber PRO on what will be part of Pro when the
+  beta ends, while it is free for everyone: the coach plan chip on the map, "Compare with the community" (and the
+  phones' next level, record and friend references), corner consistency, offs explained, race fuel, More charts, Ask
+  the coach and the experimental overlays. Pressing one says it is free during the beta and part of Pro after it. The
+  sign-up form, the Support box and its inbox item say Pitlane HQ is free while it is in beta; so does the Discord
+  bot's /help, whose commands are all free, always.

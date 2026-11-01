@@ -4,10 +4,10 @@
 // What it shows follows the public pages: the accounts' nicknames (never their iRacing names), race rivals
 // (who did not join Pitlane HQ), anonymous laps and accounts as "Anonymous", and an anonymous account's
 // own answers only to itself. It answers in English, Spanish or Portuguese (Brazil), the Discord user's language.
-// The Pro commands are the "discordPro" list of license_plans.json: everyone has them while the
-// subscription is off (enforce: false); then admins, supporters (Patreon) and Pro accounts.
+// Every command is free for everyone, always (the owner's choice, also once the beta ends): the "discordPro" list of
+// license_plans.json is empty and isPro says yes.
 import PLANS from "../../license_plans.json";
-import { isAdmin, sha256 } from "./accounts.js";
+import { sha256 } from "./accounts.js";
 import { getModel } from "./model.js";
 import { famId, famName } from "./carfamily.js";
 import { CATS, licOf } from "./categories.js";
@@ -60,12 +60,9 @@ async function signed(req, env, body) {
   }
 }
 
-export async function isPro(env, accountId) {
-  if (!PLANS.enforce) return true;
-  if (!accountId) return false;
-  if (isAdmin(env, accountId)) return true;
-  const a = await env.DB.prepare("SELECT supporter FROM accounts WHERE id=?1").bind(accountId).first();
-  return !!a && a.supporter === 1;
+// the bot is free for everyone, always (the owner's choice); kept so the callers stay as they are
+export async function isPro() {
+  return true;
 }
 
 export async function discordInteraction(req, env, ctx) {
@@ -285,15 +282,14 @@ function help(x) {
   const pro = tr(x.l,
     "`/coach` your best lap against the next level and the record\n`/compare` your laps against another driver's\n`/board` this server's ranking on a car and track\n`/alerts` this server's new best laps and records, posted in a channel",
     "`/coach` tu mejor vuelta contra el siguiente nivel y el récord\n`/compare` tus vueltas contra las de otro piloto\n`/board` el ranking de este servidor en un coche y circuito\n`/alerts` las mejores vueltas y récords de este servidor, en un canal", "`/coach` a sua melhor volta contra o próximo nível e o recorde\n`/compare` as suas voltas contra as de outro piloto\n`/board` o ranking deste servidor em um carro e pista\n`/alerts` as melhores voltas e recordes deste servidor, em um canal");
-  const open = PLANS.enforce ? "" : tr(x.l, "\n*Open to everyone for now.*", "\n*Abierto a todos por ahora.*", "\n*Aberto a todos por enquanto.*");
   return say({
     embeds: [{ color: AMBER, title: "Pitlane HQ", url: SITE,
-      fields: [{ name: tr(x.l, "Free", "Gratis", "Grátis"), value: free }, { name: "Pro", value: pro + open },
+      fields: [{ name: tr(x.l, "Commands", "Comandos", "Comandos"), value: free + "\n" + pro },
         { name: tr(x.l, "For the server's managers", "Para quien gestiona el servidor", "Para quem gerencia o servidor"),
           value: tr(x.l, "`/setup` the channels the bot answers in, the channels for best laps and records, and their language\n`/league` this server's league in the leagues hub",
             "`/setup` los canales donde responde el bot, los de mejores vueltas y récords, y su idioma\n`/league` la liga de este servidor en el hub de ligas",
             "`/setup` os canais onde o bot responde, os das melhores voltas e recordes, e o idioma deles\n`/league` a liga deste servidor no hub de ligas") }],
-      footer: { text: tr(x.l, "Your laps reach the bot once Pitlane HQ for Windows records them.", "Tus vueltas llegan al bot cuando Pitlane HQ para Windows las graba.", "As suas voltas chegam ao bot quando o Pitlane HQ para Windows as grava.") } }],
+      footer: { text: tr(x.l, "Your laps reach the bot once Pitlane HQ for Windows records them. Everything is free while Pitlane HQ is in beta.", "Tus vueltas llegan al bot cuando Pitlane HQ para Windows las graba. Todo es gratis mientras Pitlane HQ está en beta.", "As suas voltas chegam ao bot quando o Pitlane HQ para Windows as grava. Tudo é grátis enquanto o Pitlane HQ está em beta.") } }],
   }, true);
 }
 

@@ -86,7 +86,7 @@ function ovtOpenBtn(w){const op=OV_OPEN.has(w);
   if(MODE==="bridge")return `<button type="button" class="btn small ovt-open" data-a="here" data-w="${w}">${L("openHere",true)}</button>`;
   return ""}
 const ovtCfgBtn=w=>`<button type="button" class="btn small ovt-cfg" data-a="cfg" data-w="${w}" aria-label="${esc(L("configure",true)+" · "+ovtName(w))}" title="${esc(L("configure",true))}">${ovtIcon.cfg}</button>`;
-const ovtExpPill=w=>ovtExp(w)?`<span class="ovt-exp">${esc(T3("Experimental","Experimental","Experimental"))}</span>`:"";
+const ovtExpPill=w=>ovtExp(w)?`<span class="ovt-exp">${esc(T3("Experimental","Experimental","Experimental"))}</span>${typeof proB==="function"?proB():""}`:"";
 const ovtDot=w=>`<span class="ovt-dot" aria-hidden="true"></span>`;
 const ovtStyleAll=()=>ovStyleOk((CFG.ui||{}).ovstyle)?CFG.ui.ovstyle:OV_DEFAULT_STYLE;
 

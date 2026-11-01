@@ -188,8 +188,9 @@ overlay windows' code and the Telemetry tab's settings window (`openWidgetCfg`);
 - The chosen overlay: its name, "Experimental" when it is, open or closed, its live preview (on the PC the overlay
   drawn by its own code, `ovtPic`; on the web the overlay page with `preview=1`; scaled to the column, at its opacity), Open or
   Close (its window; "Open here" in a browser on the PC's address; nothing on the web), All settings (`ovtSettings`),
-  When I get in the car per game (iRacing, LMU: `autoIn`/`setAutoIn`; a game that does not send what it needs is
-  dashed and says so on hover), its own design, opacity, text size, Hide by itself and Show the title (the same keys as
+  the Auto switch "Open by itself" (`ovtAutoSwitch`, the owner's choice: one clear setting per overlay; on, it opens
+  when you get in the car in every game it works in), and while it is on the games one by one (iRacing, LMU: `autoIn`/
+  `setAutoIn`; a game that does not send what it needs is dashed and says so on hover), its own design, opacity, text size, Hide by itself and Show the title (the same keys as
   its settings window: `ui.<overlay>.style`, `alpha`, `textScale`, `hide`, `title`). The experimental ones ask for Pro
   only when `proGated()`.
 - Presets: the four built in (Race, Qualifying, Endurance, Engineer) and your own (`CFG.ui.ovpresets`, so they go with
@@ -204,7 +205,7 @@ overlay windows' code and the Telemetry tab's settings window (`openWidgetCfg`);
 ### The settings window
 
 All settings opens `ovtSettings(w)` (`pitwall-overlays-settings.js`): a window with the overlay's name, open or closed
-and ✕, its own Auto per game (the same pills as the tab's "When I get in the car", the owner wants Auto set in each
+and ✕, its own Auto per game (the same as the tab's Auto, the owner wants Auto set in each
 overlay's window), the overlay live on the left (as in the tab, at most its own size, staying in view; the owner preferred this to
 the overlay across the top) with Reset to default
 and Copy…, and every setting on the right in tabs; Done, ✕, Escape or a click outside close it. The window grows with

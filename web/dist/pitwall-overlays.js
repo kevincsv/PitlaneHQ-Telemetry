@@ -73,6 +73,9 @@ function ovtThumb(w){
 /* ---------- the parts of the list and the chosen overlay ---------- */
 function ovtAutoPills(w){return `<span class="ovt-games">${VIEW_GAMES.map(g=>{const ok=gameHas(g,"widgets",w),on=ok&&autoIn(w,g);
   return `<button type="button" class="ovt-gp${on?" on":""}" data-a="auto" data-w="${w}" data-g="${g}" aria-pressed="${on}"${ok?"":` disabled title="${esc(gameLacks(g,"widgets",w))}"`} aria-label="${esc(ovtName(w)+" · "+GAME_NAMES[g]+" · "+T3("when I get in the car","al entrar al coche","ao entrar no carro"))}">${esc(GAME_SHORT[g])}</button>`}).join("")}</span>`}
+// Auto on the card: one switch (open it by itself when I get in the car, in every game it works in), then the games
+function ovtAutoSwitch(w){const on=ovtAutoAny(w),ok=ovtAutoGames(w).length>0;
+  return `<button type="button" class="ovs-sw" data-a="autoall" data-w="${w}" aria-pressed="${on}"${ok?"":" disabled"}><span><b class="ovt-autob">Auto</b> ${esc(T3("Open by itself","Abrirse solo","Abrir sozinho"))}</span><span class="ovs-tg${on?" on":""}"><i></i></span></button>`}
 function ovtOpenBtn(w){const op=OV_OPEN.has(w);
   if(ovtRemote())return `<button type="button" class="btn small ovt-open${op?" on":""}" data-a="open" data-w="${w}">${esc(op?T3("Close","Cerrar","Fechar"):T3("Open","Abrir","Abrir"))}</button>`;
   if(MODE==="bridge")return `<button type="button" class="btn small ovt-open" data-a="here" data-w="${w}">${L("openHere",true)}</button>`;
@@ -131,7 +134,7 @@ function ovtRenderInsp(){const w=OVT.sel,g=ui(w),own=(CFG.ui||{})[w]||{},alpha=o
   ovtPreview(w);
   const seg=(a,list,cur)=>`<div class="seg3 ovt-seg3">${list.map(([v,...n])=>`<button type="button" data-a="${a}" data-k="${v}" aria-pressed="${String(cur)===String(v)}">${esc(T3(...n))}</button>`).join("")}</div>`;
   $("#ovtInsp").innerHTML=`<div class="ovt-row2" data-ovw="${w}">${ovtOpenBtn(w)}${ovtCfgBtn(w).replace('class="btn small ovt-cfg"','class="btn small ovt-cfg wide"').replace(ovtIcon.cfg,ovtIcon.cfg+`<span>${esc(T3("All settings","Todos los ajustes","Todos os ajustes"))}</span>`)}</div>
-    <div class="ovt-f"><span class="ovt-lab">${esc(T3("When I get in the car","Al entrar al coche","Ao entrar no carro"))}</span>${ovtAutoPills(w)}</div>
+    <div class="ovt-f">${ovtAutoSwitch(w)}${ovtAutoAny(w)&&ovtAutoGames(w).length>1?ovtAutoPills(w):""}</div>
     <label class="ovt-f"><span class="ovt-lab">${esc(T3("Design","Diseño","Design"))}</span><select data-c="ovstyle" data-w="${w}"><option value="">${esc(T3("Same as all","Igual que todos","Igual a todos"))} · ${esc(ovStyleLabel(ovtStyleAll()))}</option>${OV_STYLES.map(([k])=>`<option value="${k}"${own.style===k?" selected":""}>${esc(ovStyleLabel(k))}${k==="classic"?"":" · Beta"}</option>`).join("")}</select></label>
     <label class="ovt-f"><span class="ovt-lab">${esc(T3("Opacity","Opacidad","Opacidade"))} <b id="ovtAlphaV">${Math.round(alpha/255*100)}%</b></span><input type="range" min="60" max="255" step="5" value="${alpha}" data-c="alpha" data-w="${w}"></label>
     <div class="ovt-f"><span class="ovt-lab">${esc(T3("Text size","Tamaño del texto","Tamanho do texto"))}</span>${seg("ts",[[.85,"Small","Pequeño","Pequeno"],[1,"Normal","Normal","Normal"],[1.2,"Large","Grande","Grande"]],ts)}</div>
@@ -173,6 +176,8 @@ function ovtSyncPreview(){if(MODE==="bridge")return;document.querySelectorAll("#
 async function ovtClick(e){const b=e.target.closest("[data-a]");if(!b||b.disabled||!e.currentTarget.contains(b))return;const a=b.dataset.a,w=b.dataset.w,k=b.dataset.k;
   if(a==="sel")return ovtSelect(w);
   if(a==="auto"){const g=b.dataset.g;if(!gameHas(g,"widgets",w))return;const on=autoIn(w,g);if(!on&&!(CFG.autoWidgets||[]).includes(w)&&ovtProNeed(w))return;setAutoIn(w,g,!on);saveCfg();renderOverlaysTab();return}
+  if(a==="autoall"){const gs=ovtAutoGames(w);if(!gs.length)return;const on=ovtAutoAny(w);if(!on&&!(CFG.autoWidgets||[]).includes(w)&&ovtProNeed(w))return;
+    gs.forEach(g=>{if(autoIn(w,g)===on)setAutoIn(w,g,!on)});saveCfg();renderOverlaysTab();return}
   if(a==="open")return ovtToggleOpen(w);
   if(a==="here"){window.open(`/?overlay=${w}`,"_blank");return}
   if(a==="cfg")return ovtSettings(w);
@@ -248,6 +253,7 @@ setInterval(refreshScreenRects,1500);
 .ovt-exp{flex:none;font:600 9px/1 var(--f-data);letter-spacing:.06em;text-transform:uppercase;color:#b794f6;border:1px solid color-mix(in srgb,#b794f6 45%,transparent);border-radius:4px;padding:3px 5px}
 .ovt-dot{flex:none;width:8px;height:8px;border-radius:50%;box-sizing:border-box;border:1.5px solid var(--line2,var(--muted))}
 .is-open .ovt-dot,.is-open>.ovt-dot{background:var(--good);border-color:var(--good)}
+.ovt-autob{font:700 11px var(--f-data);letter-spacing:.08em;text-transform:uppercase;color:var(--accent);margin-right:6px}.ovs-sw[disabled]{opacity:.45;cursor:default}
 .ovt-games{display:inline-flex;flex-wrap:wrap;gap:6px}
 .ovt-gp{min-height:28px;padding:0 10px;border-radius:999px;border:1px solid var(--line);background:none;color:var(--muted);font:600 11px var(--f-data);cursor:pointer}
 .ovt-gp:hover{color:var(--fg)}.ovt-gp.on{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 14%,transparent);color:var(--accent)}

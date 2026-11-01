@@ -102,7 +102,8 @@ r = await call("adm", "POST", "/community/admin/support/ana", { text: "Analysis 
 assert.deepEqual([r.body.mailed, mails.length], [false, 0], "no email known, no email");
 assert.deepEqual((await call("adm", "GET", "/community/admin/support/unread")).body, { n: 0 }, "answering is reading");
 r = await call("adm", "GET", "/community/admin/support");
-assert.deepEqual(r.body.items.map((x) => [x.accountId, x.lastSupport, x.unread]), [["ana", true, 0], ["mart", true, 0]]);
+// both answers can land in the same millisecond, so the order between them is not checked here
+assert.deepEqual(r.body.items.map((x) => [x.accountId, x.lastSupport, x.unread]).sort(), [["ana", true, 0], ["mart", true, 0]]);
 assert.equal((await call("adm", "POST", "/community/admin/support/nobody", { text: "x" })).status, 404);
 assert.equal((await call("adm", "GET", "/community/admin/support/a%20b")).status, 404);
 // the driver reads it

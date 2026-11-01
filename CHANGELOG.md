@@ -4,6 +4,21 @@ Pitlane HQ is in **beta**. Pitlane HQ Agent (the PC app), the web app and the ph
 number, `0.MINOR.PATCH`. A MINOR version brings a set of new features, and fixes go in as "Fixes and
 improvements". 1.0.0 comes when the beta ends. Newest first.
 
+## 0.9.7 beta
+
+- The Overlays tab is redesigned, with the screen drawn as the view from the car and a settings window with a live preview.
+- Each overlay can open by itself in every game it works with, and has its own frame rate.
+- The coach learns from every session and shows how your corners improve over time.
+- When a tip does not pay off, the coach suggests another approach.
+- The coach learns road, oval, dirt oval and dirt road apart, and helps on a new track with what it learned on others.
+- Each corner shows how consistent you are lap after lap and what it costs against your best.
+- Every off shows on the map with what the lap did just before it.
+- More charts adds the G-G chart, steering against speed and the tyre temperatures lap by lap.
+- Race fuel shows the fuel per lap and your stints.
+- You can follow your friends from their profile and see their newest laps in Community.
+- You can disconnect while you watch live telemetry.
+- Fixes and improvements.
+
 ## 0.9.6 beta
 
 - The track guide shows where the fast drivers brake, their gear and their speed in every corner.

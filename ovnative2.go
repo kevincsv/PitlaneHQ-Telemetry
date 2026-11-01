@@ -39,7 +39,7 @@ func gaugeVars(name string, st *ovState) []string {
 		return []string{"LapCurrentLapTime", "LapBestLapTime", "LapLastLapTime", "LapDistPct", "LapDeltaToBestLap", "LapDeltaToBestLap_OK", "LapDeltaToSessionBestLap", "LapDeltaToSessionBestLap_OK",
 			"LapDeltaToOptimalLap", "LapDeltaToOptimalLap_OK", "LapDeltaToSessionOptimalLap", "LapDeltaToSessionOptimalLap_OK", "SessionTime", "IsOnTrack"}
 	case "fuel":
-		return []string{"FuelLevel", "FuelLevelPct", "FuelUsePerHour", "LapLastLapTime", "LapCompleted", "LapDistPct", "OnPitRoad", "SessionLapsRemainEx", "SessionTimeRemain"}
+		return []string{"FuelLevel", "FuelLevelPct", "FuelUsePerHour", "LapLastLapTime", "LapCompleted", "LapDistPct", "OnPitRoad", "SessionLapsRemainEx", "SessionTimeRemain", "VirtualEnergyPct", "VirtualEnergyPerLap"}
 	case "engine":
 		return []string{"WaterTemp", "OilTemp", "OilPress", "FuelPress", "Voltage", "AirTemp", "TrackTempCrew", "EngineWarnings"}
 	case "tyres":
@@ -884,6 +884,26 @@ func (st *ovState) lapsToGo() (float64, bool) {
 	return 0, false
 }
 
+// energyLine: Le Mans Ultimate's virtual energy left, its use per lap and the laps it lasts, amber when it runs out
+// before the fuel (then the energy, not the tank, sets the stint)
+func energyLine(st *ovState, ve, fuel, per float64, hasFuel bool, left float64, hasLeft bool) (string, uint32) {
+	s := st.T("Energy ", "Energía ") + strconv.Itoa(int(math.Round(ve*100))) + "%"
+	u, _ := st.num("VirtualEnergyPerLap")
+	if u <= 0 {
+		return s + st.T(" · use per lap after a full lap", " · consumo por vuelta tras una vuelta completa"), colMuted
+	}
+	laps := ve / u
+	s += " · " + strconv.FormatFloat(u*100, 'f', 1, 64) + st.T("% a lap · ", "% por vuelta · ") + strconv.FormatFloat(laps, 'f', 1, 64) + st.T(" laps", " vueltas")
+	if hasLeft && left > 0.5 && laps < left {
+		n := strconv.FormatFloat(left-laps, 'f', 1, 64)
+		return s + " · " + st.T(n+" laps short of the finish", "faltan "+n+" vueltas para acabar"), colWarn
+	}
+	if hasFuel && per > 0 && laps < fuel/per {
+		return s + st.T(" · runs out before the fuel", " · se acaba antes que el combustible"), colWarn
+	}
+	return s, colText
+}
+
 func drawFuelOv(c *ovCanvas, st *ovState, z float64) int {
 	ton, th := st.titleOn("fuel"), st.titleH("fuel", z)
 	W := float64(c.w)
@@ -916,6 +936,12 @@ func drawFuelOv(c *ovCanvas, st *ovState, z float64) int {
 	}
 	if uiHas(show, "last") {
 		H += 18 * z
+	}
+	// Le Mans Ultimate's virtual energy (only a car that has it sends it): one more line with its use and laps
+	ve, hasVE := st.num("VirtualEnergyPct")
+	hasVE = hasVE && ve > 0
+	if hasVE {
+		H += 22 * z
 	}
 	panel(c, H, z)
 	if ton {
@@ -965,6 +991,11 @@ func drawFuelOv(c *ovCanvas, st *ovState, z float64) int {
 	}
 	nf := ovFace(fkBody, 13*z)
 	left, ok := st.lapsToGo()
+	if hasVE {
+		s, col := energyLine(st, ve, fuel, per, has, left, ok)
+		c.text(nf, ellipsis(nf, s, W-2*pad), pad, y+10*z, col, 1, 0)
+		y += 22 * z
+	}
 	if uiHas(show, "finish") {
 		switch {
 		case per > 0 && ok && has:

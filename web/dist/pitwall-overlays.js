@@ -135,8 +135,8 @@ function ovtRenderScreen(){const sel=ovtPick();OVT.sel=sel;
   $("#ovtStageBar").innerHTML=`${ovtDesignHTML()}<span class="ovt-legend"><i class="open"></i>${esc(T3("Open","Abierto","Aberto"))}<i class="closed"></i>${esc(T3("Closed","Cerrado","Fechado"))}</span><button type="button" class="btn small" data-a="reset"${ovtRemote()?"":" disabled"}>${L("resetPos",true)}</button>`;
   ovtRenderInsp()}
 function ovtRenderInsp(){const w=OVT.sel,g=ui(w),own=(CFG.ui||{})[w]||{},alpha=ovAlphaOf(w),ts=g.textScale||1,hd=g.hide||"";
-  $("#ovtInspHead").innerHTML=`<div class="ovt-ih" data-ovw="${w}"><h2>${esc(ovtName(w))}</h2>${ovtExpPill(w)}<span class="ovt-state">${ovtDot(w)}<span class="on-t">${esc(T3("Open","Abierto","Aberto"))}</span><span class="off-t">${esc(T3("Closed","Cerrado","Fechado"))}</span></span></div>${ovtCompat(w)}`;
-  ovtPreview(w);
+  $("#ovtInspHead").innerHTML=`<div class="ovt-ih" data-ovw="${w}"><h2>${esc(ovtName(w))}</h2>${ovtExpPill(w)}<span class="ovt-pvtag" hidden></span><span class="ovt-state">${ovtDot(w)}<span class="on-t">${esc(T3("Open","Abierto","Aberto"))}</span><span class="off-t">${esc(T3("Closed","Cerrado","Fechado"))}</span></span></div>${ovtCompat(w)}`;
+  ovtPreview(w);ovtTagShow($("#ovtPrev"));
   const seg=(a,list,cur)=>`<div class="seg3 ovt-seg3">${list.map(([v,...n])=>`<button type="button" data-a="${a}" data-k="${v}" aria-pressed="${String(cur)===String(v)}">${esc(T3(...n))}</button>`).join("")}</div>`;
   $("#ovtInsp").innerHTML=`<div class="ovt-row2" data-ovw="${w}">${ovtOpenBtn(w)}${ovtCfgBtn(w).replace('class="btn small ovt-cfg"','class="btn small ovt-cfg wide"').replace(ovtIcon.cfg,ovtIcon.cfg+`<span>${esc(T3("All settings","Todos los ajustes","Todos os ajustes"))}</span>`)}</div>
     <div class="ovt-f">${ovtAutoSwitch(w)}</div>
@@ -149,19 +149,24 @@ function ovtRenderInsp(){const w=OVT.sel,g=ui(w),own=(CFG.ui||{})[w]||{},alpha=o
    sample of it (previewSampleTick in index.html) */
 function ovtPreview(w){const box=$("#ovtPrev");if(!box)return;
   if(MODE==="bridge")ovtPic(box,w);
-  else{const sz=OVSZ[w]||[460,260];if(OVT.prevW!==w||!box.querySelector("iframe")){OVT.prevW=w;box.innerHTML=`<div class="ovt-pf"><iframe title="${esc(ovtName(w))}" src="?overlay=${w}&preview=1" style="width:${sz[0]}px;height:${sz[1]}px" tabindex="-1"></iframe></div>`}
+  else{const sz=OVSZ[w]||[460,260];if(OVT.prevW!==w||!box.querySelector("iframe")){OVT.prevW=w;box.dataset.pvtag="";box.innerHTML=`<div class="ovt-pf"><iframe title="${esc(ovtName(w))}" src="?overlay=${w}&preview=1" style="width:${sz[0]}px;height:${sz[1]}px" tabindex="-1"></iframe></div>`}
     const f=box.querySelector("iframe"),k=Math.min(1,(box.clientWidth||280)/sz[0]);f.style.transform=`scale(${k})`;f.parentElement.style.height=Math.round(sz[1]*k)+"px"}
   box.style.opacity=String(ovAlphaOf(w)/255)}
 /* on the PC the preview is the overlay drawn by its own code, the picture its window shows (GET
    /api/overlay/preview.png, ovpreview.go), several times a second while it is on the screen, with its settings as they
    are now: it grows with the columns and rows it has to show. Its tag says whose data it plays when not the game's. */
+/* the tag sits in the header beside Open/Closed, never on the picture, so it never covers the overlay's numbers; the
+   web's preview (an overlay page in a frame) hands its tag here (pvTag in index.html) */
+const ovtTagEl=box=>!box?null:box.id==="ovtPrev"?$("#ovtInspHead .ovt-pvtag"):box.id==="ovsPv"?$("#ovsDlg .ovs-h .ovt-pvtag"):null;
+function ovtTagShow(box){const tag=ovtTagEl(box);if(!tag)return;const t=box.dataset.pvtag||"";tag.hidden=!t;tag.textContent=t}
+function ovtPvTag(frame,t){const box=frame&&frame.closest&&frame.closest("#ovtPrev,#ovsPv");if(!box||!ovtTagEl(box))return false;box.dataset.pvtag=t||"";ovtTagShow(box);return true}
 function ovtPic(box,w){let img=box.querySelector("img.ovt-pic");
-  if(!img||img.dataset.w!==w){box.innerHTML=`<div class="ovt-picw"><img class="ovt-pic" data-w="${w}" alt="${esc(ovtName(w))}"><span class="ovt-pvtag" hidden></span></div>`;img=box.querySelector("img.ovt-pic")}
-  if(img._loop)return;img._loop=true;const tag=box.querySelector(".ovt-pvtag");
+  if(!img||img.dataset.w!==w){box.dataset.pvtag="";box.innerHTML=`<div class="ovt-picw"><img class="ovt-pic" data-w="${w}" alt="${esc(ovtName(w))}"></div>`;img=box.querySelector("img.ovt-pic");ovtTagShow(box)}
+  if(img._loop)return;img._loop=true;
   const tick=async()=>{if(!img.isConnected)return;
     if(!document.hidden){try{const r=await fetch(`/api/overlay/preview.png?w=${encodeURIComponent(w)}&t=${Date.now()}`,{cache:"no-store"});
       if(r.ok){const src=r.headers.get("X-Preview-Src")||"",u=URL.createObjectURL(await r.blob()),old=img.src;img.onload=()=>{if(old.startsWith("blob:"))URL.revokeObjectURL(old)};img.src=u;
-        const t=src==="mine"?T3("Your last session","Tu última sesión","Sua última sessão"):src==="community"?T3("Another driver","Otro piloto","Outro piloto"):"";tag.hidden=!t;tag.textContent=t}}catch(e){}}
+        const t=src==="mine"?T3("Your last session","Tu última sesión","Sua última sessão"):src==="community"?T3("Another driver","Otro piloto","Outro piloto"):"";if((box.dataset.pvtag||"")!==t||(ovtTagEl(box)&&ovtTagEl(box).textContent!==t)){box.dataset.pvtag=t;ovtTagShow(box)}}}catch(e){}}
     setTimeout(tick,120)};
   tick()}
 
@@ -313,7 +318,7 @@ setInterval(refreshScreenRects,1500);
 .ovt-ih{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.ovt-ih h2{margin:0;font:700 22px/1 var(--f-display);letter-spacing:.06em;text-transform:uppercase;margin-right:auto}
 .ovt-state{display:inline-flex;align-items:center;gap:6px;font:600 10px var(--f-data);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
 .ovt-state .on-t{display:none}.is-open .ovt-state{color:var(--good)}.is-open .ovt-state .on-t{display:inline}.is-open .ovt-state .off-t{display:none}
-.ovt-prev{border-radius:8px;overflow:hidden;min-height:60px}.ovt-picw{position:relative}.ovt-pic{display:block;max-width:100%;height:auto;margin:0 auto}.ovt-pvtag{position:absolute;top:4px;right:6px;padding:2px 7px;border-radius:999px;background:color-mix(in srgb,var(--accent) 85%,transparent);color:#11151b;font:800 9px/1.4 var(--f-data);letter-spacing:.08em;text-transform:uppercase;pointer-events:none}.ovt-pvtag[hidden]{display:none}.ovt-pf{position:relative;overflow:hidden;border-radius:8px}.ovt-pf iframe{position:absolute;left:0;top:0;border:0;transform-origin:0 0;pointer-events:none;background:transparent}
+.ovt-prev{border-radius:8px;overflow:hidden;min-height:60px}.ovt-picw{position:relative}.ovt-pic{display:block;max-width:100%;height:auto;margin:0 auto}.ovt-pvtag{padding:2px 7px;white-space:nowrap;border-radius:999px;background:color-mix(in srgb,var(--accent) 85%,transparent);color:#11151b;font:800 9px/1.4 var(--f-data);letter-spacing:.08em;text-transform:uppercase;pointer-events:none}.ovt-pvtag[hidden]{display:none}.ovt-pf{position:relative;overflow:hidden;border-radius:8px}.ovt-pf iframe{position:absolute;left:0;top:0;border:0;transform-origin:0 0;pointer-events:none;background:transparent}
 #ovtInsp{display:flex;flex-direction:column;gap:14px}.ovt-row2{display:flex;gap:8px}.ovt-row2 .btn{flex:1;min-height:36px}.ovt-cfg.wide{flex:2}
 .ovt-f{display:flex;flex-direction:column;gap:7px;min-width:0}.ovt-f select{min-height:34px}.ovt-f input[type=range]{accent-color:var(--accent);width:100%}
 .ovt-f .ovt-lab b{color:var(--fg);font-weight:600;float:right}

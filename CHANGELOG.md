@@ -4,6 +4,11 @@ Pitlane HQ is in **beta**. Pitlane HQ Agent (the PC app), the web app and the ph
 number, `0.MINOR.PATCH`. A MINOR version brings a set of new features, and fixes go in as "Fixes and
 improvements". 1.0.0 comes when the beta ends. Newest first.
 
+## 0.9.9 beta
+
+- In the Overlays tab the tag that says whose data the preview plays sits next to Open or Closed, so it no longer covers the overlay.
+- Fixes and improvements.
+
 ## 0.9.8 beta
 
 - A PRO badge marks what will be part of Pitlane HQ Pro when the beta ends. Tap it to see that it is free while Pitlane HQ is in beta.

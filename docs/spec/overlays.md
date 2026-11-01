@@ -253,6 +253,8 @@ On the PC the Overlays tab's previews are the overlays drawn by their own code (
 `ovpreview.go`: `ovDraw` with the settings as they are, at the overlay's normal width, cut to the height it needs,
 several times a second; the header X-Preview-Src says live, mine or community), so they are exactly the windows the
 driver gets. On the web the preview is the overlay page: it (`previewSampleTick`) plays the sample on a loop at 30 frames a second, blending between its frames (the
-`*Pct` values wrap), only inside that preview (`STATUS.demo`: nothing recorded or uploaded), tagged in its corner "Your
-last session" or "Another driver". With none of them the overlay waits for the game like any other; the demo data's
+`*Pct` values wrap), only inside that preview (`STATUS.demo`: nothing recorded or uploaded). Whose data it plays, "Your
+last session" or "Another driver", is a tag in the header beside Open/Closed (the chosen overlay's and its settings
+window's), never on the preview, so it never covers the numbers (`ovtPvTag`/`ovtTagShow`; the web's preview page hands
+its tag to the tab, `pvTag`); a preview shown anywhere else keeps it in its own corner. With none of them the overlay waits for the game like any other; the demo data's
 race plays there only with Settings → About → Demo data on.

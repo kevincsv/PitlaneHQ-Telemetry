@@ -1,6 +1,12 @@
 {
   "versions": [
     {
+      "v": "0.9.11",
+      "en": ["Testers get each new version first, and it reaches everyone once it has been tested.", "The Pitlane HQ folder on your PC is tidier, with the window as a single file.", "The Discord bot posts Le Mans Ultimate laps in its alerts too.", "Fixes and improvements."],
+      "es": ["Los testers reciben cada versión nueva primero, y llega a todos cuando ya se ha probado.", "La carpeta de Pitlane HQ en tu PC está más ordenada, con la ventana en un solo archivo.", "El bot de Discord también publica las vueltas de Le Mans Ultimate en sus avisos.", "Arreglos y mejoras."],
+      "pt": ["Os testers recebem cada versão nova primeiro, e ela chega a todos depois de testada.", "A pasta do Pitlane HQ no seu PC está mais organizada, com a janela em um único arquivo.", "O bot do Discord também publica as voltas do Le Mans Ultimate nos seus avisos.", "Correções e melhorias."]
+    },
+    {
       "v": "0.9.10",
       "en": ["When you uninstall Pitlane HQ from your PC, a short page asks why, so we can make it better.", "Pitlane HQ is coming to the Microsoft Store, beside the download from our website. The Store keeps that copy up to date by itself.", "The downloads show Steam as coming soon.", "The Discord bot's /pro shows what will be part of Pitlane HQ Pro when the beta ends and what stays free.", "Fixes and improvements."],
       "es": ["Cuando desinstalas Pitlane HQ de tu PC, una página corta te pregunta por qué, para poder mejorarlo.", "Pitlane HQ llega a Microsoft Store, junto a la descarga de nuestra web. La Store mantiene esa copia al día sola.", "Las descargas muestran Steam como próximamente.", "El /pro del bot de Discord muestra lo que será parte de Pitlane HQ Pro cuando acabe la beta y lo que sigue gratis.", "Arreglos y mejoras."],

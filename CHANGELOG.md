@@ -4,6 +4,13 @@ Pitlane HQ is in **beta**. Pitlane HQ Agent (the PC app), the web app and the ph
 number, `0.MINOR.PATCH`. A MINOR version brings a set of new features, and fixes go in as "Fixes and
 improvements". 1.0.0 comes when the beta ends. Newest first.
 
+## 0.9.11 beta
+
+- Testers get each new version first, and it reaches everyone once it has been tested.
+- The Pitlane HQ folder on your PC is tidier, with the window as a single file.
+- The Discord bot posts Le Mans Ultimate laps in its alerts too.
+- Fixes and improvements.
+
 ## 0.9.10 beta
 
 - When you uninstall Pitlane HQ from your PC, a short page asks why, so we can make it better.

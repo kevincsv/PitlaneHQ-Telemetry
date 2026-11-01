@@ -644,6 +644,7 @@ func main() {
 	registerLangRoute(mux)
 	registerConfigRoutes(mux)
 	registerAdminModeRoute(mux)
+	registerAICoachRoutes(mux)
 	registerG61Routes(mux)
 	registerShareRoutes(mux)
 	registerProfileRoutes(mux)

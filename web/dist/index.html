@@ -1636,6 +1636,16 @@ html .hl-sec{padding:0 0 12px;border-radius:var(--radius);display:flex;flex-dire
 .co-hero .co-focus{background:var(--surface2);border-color:var(--line2);border-radius:var(--radius)}
 .co-hero .co-focus b{font:600 18px/1.2 var(--f-display);letter-spacing:.06em;text-transform:uppercase}
 .co-cols{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr) minmax(0,.9fr);gap:12px;align-items:start}
+.co-ai{margin:0 0 12px}.co-ai .pnl-h{display:flex;align-items:center;gap:8px}.co-ai .sp{flex:1}
+.ai-chips{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 10px}.ai-chips .chip{white-space:normal;text-align:left;line-height:1.25}
+.ai-ask{display:flex;gap:8px;align-items:center}.ai-ask input{flex:1;min-width:0}
+.ai-log{display:flex;flex-direction:column;gap:8px;max-height:420px;overflow-y:auto;margin:0 0 10px;padding-right:4px}
+.ai-m{max-width:min(720px,88%);padding:9px 12px;border-radius:12px;font-size:14px;line-height:1.45;overflow-wrap:anywhere}
+.ai-m.me{align-self:flex-end;background:var(--accent);color:var(--accent-ink)}.ai-m.ai{align-self:flex-start;background:var(--surface);border:1px solid var(--line)}
+.ai-m.ai b{color:var(--accent)}.ai-dots{display:inline-flex;gap:4px}.ai-dots i{width:6px;height:6px;border-radius:50%;background:var(--muted);animation:aidot 1s infinite ease-in-out}
+.ai-dots i:nth-child(2){animation-delay:.15s}.ai-dots i:nth-child(3){animation-delay:.3s}@keyframes aidot{0%,80%,100%{opacity:.25}40%{opacity:1}}
+#aiPanel .chk{display:flex;gap:8px;align-items:center}#aiPanel .chk input{width:auto}
+@media (max-width:820px){.ai-m{max-width:94%}.ai-ask{flex-wrap:wrap}.ai-ask input{flex-basis:100%}}
 .co-c1{order:1}.co-side{order:2;display:flex;flex-direction:column;gap:12px;min-width:0}.co-c3{order:3;display:flex;flex-direction:column;gap:12px;min-width:0}
 .co-c1>.pnl-h{flex-wrap:wrap}.co-c1>.pnl-h .btn{font-size:11px}
 .co-c1>.note{padding:12px 14px;margin:0}
@@ -2431,6 +2441,7 @@ html .hl-sec{padding:0 0 12px;border-radius:var(--radius);display:flex;flex-dire
     <div class="panel s12" id="startPanel"></div>
     <div class="panel s12" id="vrPanel" hidden></div>
     <div class="panel s12" id="appsPanel"></div>
+    <div class="panel s12" id="aiPanel" hidden></div>
   </div>
   <h2 class="sethead" id="set-conn" data-i18n="set.conn"></h2>
   <h3 class="setsub">iRacing</h3>
@@ -2466,6 +2477,7 @@ html .hl-sec{padding:0 0 12px;border-radius:var(--radius);display:flex;flex-dire
 
 <script src="pitwall-games.js"></script>
 <script src="pitwall-analysis.js"></script>
+<script src="pitwall-aicoach.js"></script>
 <script src="pitwall-i18n.js"></script>
 <script>; // (an empty statement first: "use strict" below stays a plain string, as it always was)
 
@@ -6289,7 +6301,7 @@ function renderSetAccount(){const b=$("#setAccount");if(!b)return;const on=ME&&M
   wireHidden(b);$("#setManage").onclick=()=>show("me");
   $("#setOut").onclick=async()=>{if(!(await uiConfirm(T("Sign out?","¿Cerrar sesión?","Abmelden?","Sair?"))))return;try{ME=await jpost("/api/sync",{action:"logout"});toast(T("Signed out","Sesión cerrada"))}catch(x){toast(x.message)}renderSetAccount();show("me")}}
 function renderSettings(){renderSetAccount();
-  renderVersion();renderVRPanel();
+  renderVersion();renderVRPanel();renderAiPanel();
   const langSel=$("#langSeg");if(langSel)langSel.value=LANG;
   document.querySelectorAll("#unitSeg button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.u===UNITS));
   const th=store.get("pw.theme","dark");document.querySelectorAll("#themeSeg button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.th===th));
@@ -7255,6 +7267,99 @@ function openInCoach(){const a=$("#lapA").value,b=$("#lapB").value;if(!lapOf(a)|
   let v=String(b);if(/^c/.test(v)){const L=CREF[+v.slice(1)];if(L&&L.model)v="m:"+L.model;else if(L){G61REF=L;v="g61"}}
   show("coach");const cl=$("#coachLap"),cr=$("#coachRef");if(!cl||!cr)return;if(!/^c/.test(String(a)))cl.value=a;renderCoach();
   cr.value=v;if(cr.value===v)cr.dataset.user="1";else delete cr.dataset.user;renderCoach()}
+/* Ask the coach (in development: admins in admin mode and testers, wipOk): an AI chat about the lap pair on screen, with
+   the driver's own API key (Anthropic, OpenAI or Google Gemini). pitwall-aicoach.js (PW_AICOACH, the same file the phones
+   run) builds what is sent and reads the answers. The key never goes to the server nor into the account: on the PC app
+   the agent keeps it (/api/aicoach, sealed with the Windows user's key) and makes the request; on the web it stays in this
+   browser (localStorage "pwai.key.<provider>" when remembered, else sessionStorage) and the request goes straight to the
+   provider. What goes: the coach's analysis of the two laps, the driver's own name, lap B as what it is (your lap, the
+   record, the next level, P3), the raw traces of the corners a question names (all of them on the first question: the two
+   that cost the most). Never another driver's name. */
+const AIC=window.PW_AICOACH;
+const aiAgent=()=>MODE==="bridge"&&!REMOTE&&!COMPANION;
+const AI={cfg:null,loading:null,chat:{key:"",msgs:[],busy:false,err:""}};
+function aiStoreGet(k){try{return localStorage.getItem(k)||sessionStorage.getItem(k)||""}catch(e){return""}}
+function aiStoreSet(k,v,remember){try{localStorage.removeItem(k);sessionStorage.removeItem(k);if(v)(remember?localStorage:sessionStorage).setItem(k,v)}catch(e){}}
+/* the settings: {p, model, has, last4, remember}; on the PC app from the agent (which never hands the key back) */
+async function aiCfg(force){if(AI.cfg&&!force)return AI.cfg;if(AI.loading&&!force)return AI.loading;
+  AI.loading=(async()=>{let c={p:"anthropic",model:"",has:false,last4:"",remember:true};
+    if(aiAgent()){try{const j=await (await fetch("/api/aicoach/config")).json();c={...c,...j}}catch(e){}}
+    else{const s=store.get("pw.aicoach",{});c.p=AIC&&AIC.PROVIDERS[s.p]?s.p:"anthropic";c.model=s.model||"";c.remember=s.remember!==false;const k=aiStoreGet("pwai.key."+c.p);c.has=!!k;c.last4=k?k.slice(-4):""}
+    AI.cfg=c;AI.loading=null;return c})();return AI.loading}
+async function aiSave(p,model,key,remember){
+  if(aiAgent()){const r=await fetch("/api/aicoach/config",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({p,model,key:key==null?undefined:key})});const j=await r.json().catch(()=>({}));if(!r.ok)throw new Error(j.error||("HTTP "+r.status))}
+  else{store.set("pw.aicoach",{p,model,remember});if(key!=null)aiStoreSet("pwai.key."+p,key,remember);else{const k=aiStoreGet("pwai.key."+p);if(k)aiStoreSet("pwai.key."+p,k,remember)}}
+  return aiCfg(true)}
+/* one request to the provider: {status, text} */
+async function aiFetch(op,p,model,body){
+  if(aiAgent()){const r=await fetch("/api/aicoach/send",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({op,p,model,body:body||""})});const j=await r.json().catch(()=>({}));if(!r.ok&&j.error&&!j.status)throw new Error(j.error);return{status:j.status||r.status,text:j.text||""}}
+  const key=aiStoreGet("pwai.key."+p);if(!key)throw new Error("nokey");
+  const q=op==="models"?AIC.modelsRequest(p,key):{...AIC.request(p,model,key,"",[]),body};
+  const ctl=new AbortController(),tm=setTimeout(()=>ctl.abort(),120000);
+  try{const r=await fetch(q.url,{method:q.method,headers:q.headers,body:q.method==="GET"?undefined:q.body,signal:ctl.signal});return{status:r.status,text:await r.text()}}finally{clearTimeout(tm)}}
+function aiErrText(e){const k=e&&e.kind;return k==="key"?Tx("Your API key was not accepted. Check it in Settings → AI coach.","Tu clave de API no se ha aceptado. Revísala en Ajustes → Coach con IA.",null,"Sua chave de API não foi aceita. Confira em Configurações → Coach com IA.")
+  :k==="limit"?Tx("Your AI provider is limiting requests. Try again in a minute.","Tu proveedor de IA está limitando las peticiones. Prueba de nuevo en un minuto.",null,"Seu provedor de IA está limitando os pedidos. Tente de novo em um minuto.")
+  :k==="credit"?Tx("Your AI account has no credit left.","A tu cuenta de IA no le queda saldo.",null,"Sua conta de IA está sem crédito.")
+  :k==="model"?Tx("This model is not available with your key. Pick another one in Settings → AI coach.","Este modelo no está disponible con tu clave. Elige otro en Ajustes → Coach con IA.",null,"Este modelo não está disponível com sua chave. Escolha outro em Configurações → Coach com IA.")
+  :k==="refused"?Tx("The AI did not answer this one. Ask it another way.","La IA no ha respondido a esto. Pregúntalo de otra forma.",null,"A IA não respondeu a isso. Pergunte de outro jeito.")
+  :(e&&e.error)||Tx("The AI could not be reached.","No se ha podido contactar con la IA.",null,"Não foi possível falar com a IA.")}
+/* who lap B is, as the AI reads it: never another driver's name */
+function aiWho(L,A,best){if(!L)return"";const PM=window.PW_MODEL,m=PM&&A&&!A.comm?PM.current(A):null,MR=m?PM.refsFor(m,A):{};
+  const pos=t=>{const rk=m&&t>0?PM.rankOf(m,t):null;return rk?`P${rk.pos} of ${rk.of} drivers known on this car and track`:""};
+  if(L===MR.rec)return"the record, the fastest real lap on this car and track (another driver, P1)";
+  if(L===MR.level)return"the next level, a real lap of another driver just ahead"+(pos(L.time)?" ("+pos(L.time)+")":"");
+  if(L.comm||L.cid||L===G61REF)return"a lap of another driver"+(pos(L.time)?" ("+pos(L.time)+")":"");
+  return(L===best?"the driver's own best lap":"another lap of the driver")+(L.n!=null?` (lap ${String(L.n).replace(/^⟡ /,"")})`:"")}
+function aiInfo(A,R,best,LP){const t=anaTrack(A,R)||{},name=CP.acc&&!CP.acc.anon&&CP.acc.display?CP.acc.display:"";
+  return{lang:LANG==="es"||LANG==="pt"?LANG:"en",units:UNITS,game:GAME_NAMES[A.game]||"iRacing",track:[t.track,t.track_config].filter(Boolean).join(" · ")||A.track||"",car:t.car||A.car||"",len:t.len||null,driver:name,
+    a:aiWho(A,A,best)||"the driver's lap",b:aiWho(R,A,best),laps:(LP||[]).filter(l=>l&&l.valid!==false&&l.time>0).map(l=>l.time)}}
+function aiChatHTML(A,R,c){if(!wipOk()||!AIC)return"";const cfg=AI.cfg,ch=AI.chat,top=c.cs.slice().sort((a,b)=>b.lost-a.lost)[0];
+  const chips=[Tx("Where am I losing the most time?","¿Dónde pierdo más tiempo?",null,"Onde estou perdendo mais tempo?"),top&&top.lost>.03?Tx(`How do I take T${top.n} faster?`,`¿Cómo hago la T${top.n} más rápido?`,null,`Como faço a T${top.n} mais rápido?`):null,Tx("Explain my braking","Explícame mi frenada",null,"Explique minha freada"),Tx("What should I practise next session?","¿Qué practico en la próxima sesión?",null,"O que devo treinar na próxima sessão?")].filter(Boolean);
+  const turnB=s=>esc(s).replace(/\bT(\d{1,2})\b/g,"<b>T$1</b>").replace(/\n/g,"<br>");
+  const body=!cfg?`<p class="note">…</p>`:!cfg.has?`<div class="ai-none"><button type="button" class="btn small primary" id="aiSetup">${esc(Tx("Add your API key","Añade tu clave de API",null,"Adicione sua chave de API"))}</button></div>`
+    :`${ch.msgs.length?`<div class="ai-log" id="aiLog">${ch.msgs.map(m=>`<div class="ai-m ${m.role==="user"?"me":"ai"}">${turnB(m.shown!=null?m.shown:m.content)}</div>`).join("")}${ch.busy?`<div class="ai-m ai busy"><span class="ai-dots"><i></i><i></i><i></i></span></div>`:""}</div>`:""}
+      ${ch.err?`<p class="err" role="alert">${esc(ch.err)}</p>`:""}
+      ${ch.msgs.length?"":`<div class="ai-chips">${chips.map(q=>`<button type="button" class="chip" data-aiq="${esc(q)}">${esc(q)}</button>`).join("")}</div>`}
+      <form class="ai-ask" id="aiAsk"><input type="text" id="aiQ" maxlength="600" autocomplete="off" value="${esc(AI.draft||"")}" placeholder="${esc(Tx("Ask about this lap…","Pregunta sobre esta vuelta…",null,"Pergunte sobre esta volta…"))}"${ch.busy?" disabled":""}><button type="submit" class="btn small primary"${ch.busy?" disabled":""}>${esc(Tx("Ask","Preguntar",null,"Perguntar"))}</button>${ch.msgs.length?`<button type="button" class="btn small" id="aiNew">${esc(Tx("New chat","Nueva conversación",null,"Nova conversa"))}</button>`:""}</form>`;
+  return`<section class="pnl co-ai"><div class="pnl-h">${esc(Tx("Ask the coach","Pregunta al coach",null,"Pergunte ao coach"))}<span class="sp"></span><span class="pill acc">${esc(wipTitle())}</span></div><div class="pnl-b">${body}</div></section>`}
+async function aiAsk(text,A,R,c,best,LP){const ch=AI.chat,cfg=await aiCfg();text=String(text||"").trim();if(!text||ch.busy||!cfg.has)return;
+  const info=aiInfo(A,R,best,LP),first=!ch.msgs.length,content=AIC.question(text,A,R,c,info,first);
+  ch.msgs.push({role:"user",content,shown:text});ch.busy=true;ch.err="";const key=ch.key;renderCoach();
+  try{const sys=AIC.system(info,AIC.context(A,R,c,info)),q=AIC.request(cfg.p,cfg.model,null,sys,ch.msgs.map(m=>({role:m.role,content:m.content})));
+    const r=await aiFetch("chat",cfg.p,cfg.model,q.body);if(AI.chat.key!==key)return;const a=AIC.parse(cfg.p,r.status,r.text);
+    if(a.text)ch.msgs.push({role:"assistant",content:a.text});else{ch.msgs.pop();ch.err=aiErrText(a)}}
+  catch(e){if(AI.chat.key===key){ch.msgs.pop();ch.err=e.message==="nokey"?aiErrText({kind:"key"}):aiErrText({error:String(e.message||e)})}}
+  finally{if(AI.chat.key===key){ch.busy=false;if(CUR_VIEW==="coach")renderCoach()}}}
+function aiChatWire(A,R,c,best,LP){if(!wipOk()||!AIC)return;const k=(ANASEL.a||"")+"|"+(ANASEL.b||"")+"|"+(A.time||0)+"|"+(R.time||0);
+  if(AI.chat.key!==k){AI.chat={key:k,msgs:[],busy:false,err:""};AI.draft=""}
+  if(!AI.cfg){aiCfg().then(()=>{if(CUR_VIEW==="coach")renderCoach()});return}
+  const su=$("#aiSetup");if(su)su.onclick=()=>{show("settings");setTimeout(()=>{const p=$("#aiPanel");if(p)p.scrollIntoView({behavior:"smooth",block:"center"})},120)};
+  document.querySelectorAll("[data-aiq]").forEach(b=>b.onclick=()=>aiAsk(b.dataset.aiq,A,R,c,best,LP));
+  const f=$("#aiAsk"),qi=$("#aiQ");if(qi)qi.oninput=()=>{AI.draft=qi.value};if(f)f.onsubmit=e=>{e.preventDefault();const v=qi.value;AI.draft="";aiAsk(v,A,R,c,best,LP)};
+  const nw=$("#aiNew");if(nw)nw.onclick=()=>{AI.chat={key:k,msgs:[],busy:false,err:""};renderCoach()};
+  const lg=$("#aiLog");if(lg)lg.scrollTop=lg.scrollHeight}
+/* Settings → AI coach: the provider, the key, the model (the ones the key can use, after Test) */
+function renderAiPanel(){const box=$("#aiPanel");if(!box)return;if(!wipOk()||!AIC){box.hidden=true;return}box.hidden=false;
+  if(!AI.cfg){box.innerHTML=`<div class="label">${esc(Tx("AI coach","Coach con IA",null,"Coach com IA"))}</div>`;aiCfg().then(renderAiPanel);return}
+  const c=AI.cfg,P=AIC.PROVIDERS,sel=box.dataset.p&&P[box.dataset.p]?box.dataset.p:c.p,pv=P[sel],list=(AI.models&&AI.models[sel])||pv.models,cur=sel===c.p&&c.model?c.model:pv.models[0],models=list.includes(cur)?list:[cur,...list];
+  const saved=sel===c.p&&c.has;
+  box.innerHTML=`<div class="label">${esc(Tx("AI coach","Coach con IA",null,"Coach com IA"))} <span class="pill acc">${esc(wipTitle())}</span></div>
+    <div class="seg" id="aiProv" style="margin-top:8px">${Object.entries(P).map(([k,v])=>`<button type="button" data-aip="${k}" aria-pressed="${k===sel}">${esc(v.name)}</button>`).join("")}</div>
+    <form class="form" id="aiForm" style="margin-top:12px;max-width:560px">
+      <label><span class="label">${esc(Tx("API key","Clave de API",null,"Chave de API"))}</span><input type="password" id="aiKey" autocomplete="off" spellcheck="false" placeholder="${esc(saved?"•••• "+c.last4:pv.keyHint)}"></label>
+      <label><span class="label">${esc(Tx("Model","Modelo",null,"Modelo"))}</span><select id="aiModel">${models.map(m=>`<option value="${esc(m)}"${m===cur?" selected":""}>${esc(m)}</option>`).join("")}</select></label>
+      ${aiAgent()?"":`<label class="chk"><input type="checkbox" id="aiRem"${c.remember!==false?" checked":""}> <span>${esc(Tx("Remember on this browser","Recordar en este navegador",null,"Lembrar neste navegador"))}</span></label>`}
+      <div class="err" id="aiErr" role="alert"></div><p class="note" id="aiOk"></p>
+      <div class="controls"><button class="btn primary" type="submit">${esc(Tx("Save","Guardar",null,"Salvar"))}</button><button class="btn" type="button" id="aiTest"${saved?"":" disabled"}>${esc(Tx("Test","Probar",null,"Testar"))}</button>${saved?`<button class="btn" type="button" id="aiDel">${esc(Tx("Remove key","Quitar clave",null,"Remover chave"))}</button>`:""}<a class="acc" href="${esc(pv.keys)}" target="_blank" rel="noopener" style="margin-left:auto">${esc(Tx("Get a key","Conseguir una clave",null,"Obter uma chave"))}</a></div>
+    </form>`;
+  box.querySelectorAll("[data-aip]").forEach(b=>b.onclick=()=>{box.dataset.p=b.dataset.aip;renderAiPanel()});
+  const err=$("#aiErr"),ok=$("#aiOk"),rem=()=>{const r=$("#aiRem");return r?r.checked:true};
+  $("#aiForm").onsubmit=async e=>{e.preventDefault();err.textContent="";const k=$("#aiKey").value.trim();if(!k&&!saved){err.textContent=Tx("Paste your API key first.","Pega primero tu clave de API.",null,"Cole sua chave de API primeiro.");return}
+    try{await aiSave(sel,$("#aiModel").value,k||null,rem());delete box.dataset.p;renderAiPanel();const o=$("#aiOk");if(o)o.textContent=Tx("Saved.","Guardado.",null,"Salvo.")}catch(x){err.textContent=String(x.message||x)}};
+  const t=$("#aiTest");if(t)t.onclick=async()=>{err.textContent="";ok.textContent="…";t.disabled=true;
+    try{const r=await aiFetch("models",sel,"",null),m=AIC.parseModels(sel,r.status,r.text);if(m.error){ok.textContent="";err.textContent=aiErrText(m)}else{AI.models=AI.models||{};const fav=pv.models.filter(x=>m.models.includes(x));AI.models[sel]=[...fav,...m.models.filter(x=>!fav.includes(x))].slice(0,40);renderAiPanel();const o=$("#aiOk");if(o)o.textContent=Tx(`Your key works · ${m.models.length} models`,`Tu clave funciona · ${m.models.length} modelos`,null,`Sua chave funciona · ${m.models.length} modelos`)}}
+    catch(x){ok.textContent="";err.textContent=aiErrText({error:String(x.message||x)})}finally{if(t.isConnected)t.disabled=false}};
+  const d=$("#aiDel");if(d)d.onclick=async()=>{if(aiAgent())await fetch("/api/aicoach/config",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({p:sel,model:$("#aiModel").value,key:""})}).catch(()=>{});else aiStoreSet("pwai.key."+sel,"",false);await aiCfg(true);renderAiPanel()}}
 function renderCoach(){coachWeights();coachMe();const LP=coachLaps(),best=markAnalysisBest(LP),bestEx=x=>LP.reduce((a,b)=>b!==x&&(!a||b.time<a.time)?b:a,null);coachCloudBar();const cc=$("#coachComm");if(cc){cc.textContent=Tx("Compare with the community","Comparar con la comunidad");cc.removeAttribute("onclick");cc.onclick=pickCommLap;}const box=$("#coachBody");if(!box)return;
   const sub=$("#coachSub");if(sub)sub.textContent=Tx("Your lap against a reference: what to work on first and where, and your pace among the drivers of this car and track.","Tu vuelta frente a una referencia: qué trabajar primero y dónde, y tu ritmo entre los pilotos de este coche y circuito.","Deine Runde gegen eine Referenz: woran zuerst arbeiten und wo, und dein Tempo unter den Fahrern dieses Autos und dieser Strecke.","Sua volta contra uma referência: o que trabalhar primeiro e onde, e seu ritmo entre os pilotos deste carro e pista.");
   if(LP.length<2&&!G61REF&&!(LP.length&&coachCloudOn()&&LAPF.extra&&(CLOUD.lapsB||[]).length)){box.innerHTML=`<div class="panel empty">${coachCloudOn()?esc(CLOUD.busy?Tx("Loading your laps…","Cargando tus vueltas…","Deine Runden werden geladen…","Carregando suas voltas…"):CLOUD.err||(CLOUD.sessions&&!CLOUD.sessions.length?Tx("No laps in your account yet. On the PC: Account → keep my laps in my account, and drive.","Aún no hay vueltas en tu cuenta. En el PC: Cuenta → guardar mis vueltas en mi cuenta, y da unas vueltas.","Noch keine Runden in deinem Konto. Am PC: Konto → Runden im Konto behalten, und fahre.","Ainda não há voltas na sua conta. No PC: Conta → guardar minhas voltas na conta, e dê umas voltas."):Tx("Choose a session with two or more laps.","Elige una sesión con dos o más vueltas.","Wähle eine Sitzung mit zwei oder mehr Runden.","Escolha uma sessão com duas ou mais voltas."))):Lp("Drive two laps and the coach compares them corner by corner.","Da dos vueltas y el coach las compara curva a curva.")}</div>`;return}
@@ -7309,7 +7414,7 @@ function renderCoach(){coachWeights();coachMe();const LP=coachLaps(),best=markAn
     <div class="pnl co-hero"><div class="co-top"><div><div class="label">${esc(Tx("This lap vs the reference","Esta vuelta frente a la referencia","Diese Runde gegen die Referenz","Esta volta contra a referência"))}</div><div class="big mono ${c.lapD>0?"bad":"good"}">${sgn(c.lapD,3)} s</div>
         <div class="sub">${esc(Tx(`${r2(c.lost)} s lost in ${c.cs.length} corners · ${r2(-c.gained)} s gained · ${r2(Math.abs(c.straight))} s ${c.straight>0?"lost":"gained"} on the straights`,`${r2(c.lost)} s perdidos en ${c.cs.length} curvas · ${r2(-c.gained)} s ganados · ${r2(Math.abs(c.straight))} s ${c.straight>0?"perdidos":"ganados"} en las rectas`))}</div></div>
       <div class="co-focus"><div class="label">${esc(Tx("Work on this first","Trabaja esto primero","Zuerst daran arbeiten","Trabalhe nisto primeiro"))}</div><b>${esc(focusT)}</b><small class="muted">${esc(focusS)}</small></div></div></div>
-    <div class="co-cols"><div class="co-c3"><section class="pnl co-pace"><div class="pnl-h">${esc(Tx("Your pace among the drivers known here","Tu ritmo entre los pilotos conocidos aquí","Dein Tempo unter den hier bekannten Fahrern","Seu ritmo entre os pilotos conhecidos aqui"))}</div><div class="pnl-b">${comm}${carBox}</div></section>
+    ${aiChatHTML(A,R,c)}<div class="co-cols"><div class="co-c3"><section class="pnl co-pace"><div class="pnl-h">${esc(Tx("Your pace among the drivers known here","Tu ritmo entre los pilotos conocidos aquí","Dein Tempo unter den hier bekannten Fahrern","Seu ritmo entre os pilotos conhecidos aqui"))}</div><div class="pnl-b">${comm}${carBox}</div></section>
     <section class="pnl co-planp"><div class="pnl-h">${esc(Tx("Your plan for the next session","Tu plan para la próxima sesión","Dein Plan für die nächste Sitzung","Seu plano para a próxima sessão"))}</div><div class="pnl-b">
       ${c.plan.length?`<ol class="co-plan nums">${planStepsHTML(c.plan,A)}</ol>${planVoteHTML(A)}${planTurns(c.plan).length?`<div class="co-planb"><button type="button" class="btn small" id="coachPlanOv">${esc(Tx("Take the plan to the coach overlay","Llevar el plan al overlay del coach","Den Plan ins Coach-Overlay übernehmen","Levar o plano ao overlay do coach"))}</button></div>`:""}`:`<p class="note">${esc(Tx("Nothing stands out: this lap is as good as the reference everywhere.","Nada destaca: esta vuelta es tan buena como la referencia en todas partes.","Nichts fällt auf: diese Runde ist überall so gut wie die Referenz.","Nada se destaca: esta volta é tão boa quanto a referência em toda parte."))}</p>`}</div></section>${followHTML(fu)}${progHTML(PWA.progressLines(cx.progress,c.cs,cx))}</div>
     <div class="co-side"><section class="pnl"><div class="pnl-h">${esc(Tx("Track map","Mapa del circuito","Streckenkarte","Mapa da pista"))}</div><div class="pnl-b"><div id="coachMap"></div></div></section>${standHTML(rks,cls)}<div id="coachEdges"></div>
@@ -7317,7 +7422,7 @@ function renderCoach(){coachWeights();coachMe();const LP=coachLaps(),best=markAn
       ${c.cs.length?(()=>{const mx=Math.max(.05,...c.cs.map(x=>Math.abs(x.lost)));return`<section class="pnl co-bars"><div class="pnl-h">${esc(Tx("Corner by corner","Curva a curva","Kurve für Kurve","Curva a curva"))}</div><div class="co-bl">${c.cs.slice().sort((a,b)=>b.lost-a.lost).map(x=>{const k=x.lost>.02?"bad":x.lost<-.02?"good":"muted";return`<div class="co-br"><span class="mono">T${x.n}</span><span class="co-bt"><i class="${k}" style="width:${Math.max(2,Math.round(Math.abs(x.lost)/mx*100))}%"></i></span><span class="mono ${k}">${sgn(x.lost,2)}</span></div>`}).join("")}</div></section>`})():""}</div>
     <section class="pnl co-c1"><div class="pnl-h co-ch">${esc(COACH_ALLC?Tx("Corner by corner","Curva a curva","Kurve für Kurve","Curva a curva"):Tx("The corners that cost the most","Las curvas que más cuestan","Die Kurven, die am meisten kosten","As curvas que mais custam"))}<span class="sp"></span>${c.cs.length>3?`<button type="button" class="btn small" id="coachAllC">${esc(COACH_ALLC?Tx("Only the ones that lose time","Solo las que pierden tiempo","Nur die mit Zeitverlust","Só as que perdem tempo"):Tx(`All ${c.cs.length} corners`,`Las ${c.cs.length} curvas`,`Alle ${c.cs.length} Kurven`,`As ${c.cs.length} curvas`))}</button>`:""}</div>
       ${coachCornersHTML(corners,0)}</section>${likeHTML(lk)}${gd?`<section class="pnl co-guide"><div class="pnl-h">${esc(Tx("Track guide","Guía del circuito",null,"Guia da pista"))}</div><div class="pnl-b">${guideHTML(gd)}</div></section>`:""}</div></div>`;
-  const cmap=$("#coachMap");cmap._planSel=Math.max(0,c.plan.slice(0,PLAN_SHOW).findIndex(p=>p.marks&&p.marks.length));renderCmpMap(A,R,cmap,{plan:c.plan.slice(0,PLAN_SHOW)});coachReport(A,R,c,best);coachEdges(A,R,cx);
+  const cmap=$("#coachMap");cmap._planSel=Math.max(0,c.plan.slice(0,PLAN_SHOW).findIndex(p=>p.marks&&p.marks.length));renderCmpMap(A,R,cmap,{plan:c.plan.slice(0,PLAN_SHOW)});coachReport(A,R,c,best);coachEdges(A,R,cx);aiChatWire(A,R,c,best,LP);
   // a step of the plan pressed (or its number on the map) is the one the map shows: its stretch, its points A and B, the apex and the throttle
   const planSel=i=>{cmap._planSel=i;drawPlanLayer(cmap);box.querySelectorAll(".co-plan [data-ps]").forEach(li=>li.classList.toggle("sel",+li.dataset.ps===i))};cmap._onPlanSel=planSel;
   box.querySelectorAll(".co-plan [data-ps]").forEach(li=>li.onclick=e=>{if(e.target.closest(".tiprate"))return;planSel(+li.dataset.ps);if(e.target.closest("[data-psmap]")&&window.innerWidth<900)cmap.scrollIntoView({behavior:"smooth",block:"center"})});

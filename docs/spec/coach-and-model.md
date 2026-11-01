@@ -255,3 +255,24 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
 - **The thresholds on real laps**: Admin → Coach → "The coach on real laps" (GET `/community/admin/coach/calibrate`,
   coachcalib.js) runs the coach over the busiest cars and tracks' model laps and shows how often each tip and step fires.
   On a superspeedway a race lap in traffic can be lap A by default.
+- **Ask the coach** (in development: testers, and admins with admin mode on, every device): an AI chat about the lap
+  pair on screen with the driver's own API key, Anthropic (Claude Haiku 5.5 by default, Sonnet 5.5, Opus 5.5), OpenAI or
+  Google Gemini. `web/dist/pitwall-aicoach.js` (`PW_AICOACH`, pure like the analysis module; the phones carry a copy beside
+  `pitwall-analysis.js`, `tools/sync-analysis.sh`) builds everything sent and reads the answers: `context` (the gap,
+  sectors, every corner with its tip, the plan, phases, how the lap is driven, the session's lap times), `system` (the
+  instructions in the app's language, then the laps), `question` (the driver's words, then the raw traces every 10 m of
+  the corners the question names, `turnsIn`, "T3", "turn 3", "curva 3"; on the first question the two that cost the most:
+  speed, throttle, brake, gear for A and B and the time gained or lost), `request`/`parse` per provider, `modelsRequest`/
+  `parseModels` for the Test button. Who is who: the driver's own name (the account's public name, never when Anonymous),
+  lap B as what it is (your lap N, the record P1, the next level, a community lap as its position, Px of the drivers known),
+  never another driver's name. The newest 12 turns go; Anthropic gets effort low and the system prompt cached.
+  - The key never reaches the Pitlane HQ server nor the account's sync. PC app: the agent keeps it (`aicoach.go`,
+    ai-coach.json in the data folder sealed with DPAPI, only the last four characters handed back) and makes the
+    request (`/api/aicoach/config`, `/api/aicoach/send`, this PC's page only: loopback, JSON, no other site's Origin; only
+    the three providers' addresses). Web: this browser only (localStorage `pwai.key.<provider>` with "Remember on this
+    browser", else sessionStorage), the request straight to the provider. Phones: Android Keystore (`pitlane-ai`
+    preferences) and the iOS Keychain (`com.pitlanehq.ai`), the request from the phone.
+  - Where: web and PC, under the coach's gap ("Ask the coach", chips, a box, New chat) and Settings → General → AI coach
+    (provider, key, model, Test lists the models the key can use, Remove key, Get a key). Phones: under the coach's gap
+    and Account → AI coach. No key: "Add your API key" opens the settings. The coach's learning never reads the AI's
+    answers.

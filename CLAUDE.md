@@ -71,7 +71,7 @@ area you are changing before you change it, and update it in the same commit whe
 
 - In development (shown with "In development", usable only by admins with admin mode on and by testers, every device; `wipOk()`/
   `wipView()` in index.html, `wipAllowed()` in Go): the Planner (until iRacing switches its data API back on), ACC,
-  Assetto Corsa, NASCAR 26, team mode and the SimHub plugin.
+  Assetto Corsa, NASCAR 26, team mode, the SimHub plugin and Ask the coach (the AI coach with the driver's own API key).
 - Switched off for now: setups, per-car settings (`carProfilesOn` in carprofiles.go), the Data view and sharing race
   analyses. Hidden from everyone on the PC (admins too) until the owner says otherwise: profiles and Settings →
   Connections (`CONN_ON` in index.html). Full telemetry is gone everywhere.

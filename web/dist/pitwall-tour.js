@@ -22,7 +22,7 @@
 
   // the Microsoft Store listing (apps.microsoft.com/detail/<Store ID>): "Coming soon" until it is set, the same
   // address as MS_STORE in cloud/src/downloads.js and index.html
-  const MS_STORE = "";
+  const MS_STORE = "https://apps.microsoft.com/detail/9P3642QCS9ZG";
   const ICON = {
     dl: '<svg viewBox="0 0 24 24"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>',
     tag: '<svg viewBox="0 0 24 24"><path d="M3 12V4a1 1 0 0 1 1-1h8l9 9-9 9z"/><circle cx="7.5" cy="7.5" r="1.5"/></svg>',

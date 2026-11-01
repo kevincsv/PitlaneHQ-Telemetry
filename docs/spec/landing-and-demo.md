@@ -10,9 +10,9 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   built exactly as its mockup). The app header carries real buttons (Pricing, which scrolls to the Pricing section, Records, Leagues, the language, Downloads in
   amber; at phone width only their icons, the version badge hidden). The hero is the tagline ("Telemetry, coach and
   overlays for your laps", the eyebrow "iRacing · Le Mans Ultimate (beta)"), one sentence, Create account, Download for
-  Windows, Android, Microsoft Store and Steam "Coming soon" badges that are not links (also on `/downloads`,
-  beside the Windows download, and the Microsoft Store in the app's Download grid; no date; the Store one becomes a
-  link once `MS_STORE` is set in pitwall-tour.js, downloads.js and index.html) and "Run an iRacing or LMU league? Post it for free", beside the "me" view's own sign-in (or create
+  Windows, Android, the Microsoft Store (a link to its listing, apps.microsoft.com/detail/9P3642QCS9ZG, `MS_STORE` in
+  pitwall-tour.js, downloads.js and index.html, also on `/downloads` beside the Windows download and in the app's
+  Download grid) and a Steam "Coming soon" badge that is not a link (no date) and "Run an iRacing or LMU league? Post it for free", beside the "me" view's own sign-in (or create
   account) panel moved there as a card (`#tour` after `#meBody`, mounted by `signWall` while the wall is up; its title
   and welcome hidden). Under it "See it from the inside": one app window in a Windows 11 frame (its icon and name,
   minimise, maximise, close; never a browser bar or an address) with tabs on its left that change what it shows (Coach,

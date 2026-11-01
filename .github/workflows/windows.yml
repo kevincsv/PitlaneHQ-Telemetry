@@ -2,10 +2,28 @@ name: Build PitlaneHQ.exe
 
 # One app: compiles the agent (PitlaneHQ.exe, Go) and the native window (desktop/, C# / WPF) that runs it as its
 # engine, then the one installer and the updater's zip with both, uploaded on the run page (Actions → this run →
-# Artifacts) and, from master, on the downloads page.
+# Artifacts).
+#
+# Every version goes to the testers first (docs/spec/pc-app.md, "Test builds"):
+# - channel "beta" (the default, any branch): builds and puts the files in pitlanehq.app/dl/beta/, where the PCs of
+#   testers and admins with Settings → About → Test builds on take them. Nobody else gets them.
+# - channel "production" (master only): builds nothing. It takes the test build testers ran, checks it is this
+#   commit's code, and puts those same files on the downloads page for everyone (promote).
+# - skip_testing (production only): an urgent fix when the app is broken for people, only when the owner says so:
+#   builds master and publishes it to everyone without a test build.
 
 on:
-  workflow_dispatch: # by hand only (Actions → Run workflow, or `gh workflow run windows.yml --ref master`): a push never builds
+  workflow_dispatch: # by hand only (Actions → Run workflow, or `gh workflow run windows.yml --ref <branch> -f channel=beta`): a push never builds
+    inputs:
+      channel:
+        description: "beta = a test build for testers; production = promote the tested build to everyone (master)"
+        type: choice
+        options: [beta, production]
+        default: beta
+      skip_testing:
+        description: "Urgent fix only, when the owner says so: build master and publish it to everyone without a test build"
+        type: boolean
+        default: false
 
 # one build per branch at a time: a check on another branch never cancels master's (which publishes)
 concurrency:
@@ -17,6 +35,7 @@ permissions:
 
 jobs:
   build:
+    if: inputs.channel != 'production' || inputs.skip_testing
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
@@ -155,9 +174,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - name: Publish on pitlanehq.app (R2)
-        # only builds of master go out; a build started on another branch is only a check
-        if: github.ref == 'refs/heads/master'
+      - name: Publish the test build (pitlanehq.app/dl/beta/)
+        if: inputs.channel != 'production'
         shell: bash
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
@@ -165,44 +183,66 @@ jobs:
         run: |
           # the updater's zip is the app's folder: the window, its files and the agent at the top
           (cd out-desktop && 7z a -tzip ../PitlaneHQ-windows.zip . >/dev/null)
-          cp PitlaneHQ-windows.zip TrackIQ-windows.zip
-          # links to the old preview's installer get the one app
-          cp dist-installer/PitlaneHQ-Setup.exe PitlaneHQ-Desktop-Setup.exe
           ver=$(sed -n 's/^const appVersion = "\(.*\)"/\1/p' main.go)
           min=$(sed -n 's/^const appMinVersion = "\(.*\)"/\1/p' main.go)
-          # what this version brings (whats-new.json), so the update window of the version before can say it
-          notes=$(node -e 'const w=require("./web/dist/whats-new.json"),v=(w.versions||[]).find((x)=>x.v===process.argv[1]),o={};if(v)for(const k of ["en","es","pt"])if(Array.isArray(v[k]))o[k]=v[k];process.stdout.write(JSON.stringify(o))' "$ver")
-          printf '{"version":"%s","build":"%s","date":"%s","min":"%s","notes":%s}\n' "$ver" "$GITHUB_SHA" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "${min:-0}" "${notes:-{\}}" > version.json
-          node -e 'JSON.parse(require("fs").readFileSync("version.json","utf8"))' # never a broken version.json
-          npx --yes wrangler@4 r2 bucket create pitlanehq-downloads 2>/dev/null || true
-          put() { npx --yes wrangler@4 r2 object put "pitlanehq-downloads/$2" --file "$1" --remote --content-type "$3"; }
+          printf '{"version":"%s","build":"%s","date":"%s","min":"%s","channel":"beta","branch":"%s","notes":{}}\n' "$ver" "$GITHUB_SHA" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "${min:-0}" "$GITHUB_REF_NAME" > version.json
+          node -e 'JSON.parse(require("fs").readFileSync("version.json","utf8"))'
+          put() { npx --yes wrangler@4 r2 object put "pitlanehq-downloads/beta/$2" --file "$1" --remote --content-type "$3"; }
           put dist-installer/PitlaneHQ-Setup.exe PitlaneHQ-Setup.exe application/vnd.microsoft.portable-executable
-          put PitlaneHQ-Desktop-Setup.exe PitlaneHQ-Desktop-Setup.exe application/vnd.microsoft.portable-executable
           put PitlaneHQ-windows.zip PitlaneHQ-windows.zip application/zip
-          put TrackIQ-windows.zip TrackIQ-windows.zip application/zip
-          put CHANGELOG.md CHANGELOG-pc.md text/markdown
-          # version.json goes last: the app only sees a new version once its files are there
+          # version.json goes last: the testers' PCs only see the build once its files are there
           put version.json version.json application/json
-      - name: Publish on the GitHub release (record)
-        if: github.ref == 'refs/heads/master'
+      - name: Publish to everyone (urgent fix without a test build)
+        if: inputs.channel == 'production' && github.ref == 'refs/heads/master'
         shell: bash
         env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           GH_TOKEN: ${{ github.token }}
         run: |
-          # the phone apps are built in their own repository now, and the window's preview is the one app: no old files here
-          for old in PitlaneHQ-android.apk PitlaneHQ.ipa PitlaneHQ-Desktop-Setup.exe; do gh release delete-asset pitlanehq-latest "$old" -y 2>/dev/null || true; done
+          (cd out-desktop && 7z a -tzip ../PitlaneHQ-windows.zip . >/dev/null)
+          bash .github/scripts/pc-publish.sh PitlaneHQ-windows.zip dist-installer/PitlaneHQ-Setup.exe "$GITHUB_SHA"
+
+  # production: the files testers ran go to everyone, never a new build of them
+  promote:
+    if: inputs.channel == 'production' && !inputs.skip_testing
+    runs-on: ubuntu-latest
+    steps:
+      - name: Only from master
+        if: github.ref != 'refs/heads/master'
+        run: |
+          echo "::error::Production comes only from master: push the tested work to master, then run this on master"
+          exit 1
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # the test build's commit, on whichever branch it was built
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Take the test build
+        shell: bash
+        run: |
+          curl -fsSL https://pitlanehq.app/dl/beta/version.json -o beta.json || { echo "::error::There is no test build yet: run this workflow with channel beta first"; exit 1; }
+          b=$(node -p 'require("./beta.json").build||""')
+          bv=$(node -p 'require("./beta.json").version||""')
           ver=$(sed -n 's/^const appVersion = "\(.*\)"/\1/p' main.go)
-          bash .github/scripts/publish.sh TrackIQ-windows.zip
-          bash .github/scripts/publish.sh PitlaneHQ-windows.zip
-          bash .github/scripts/publish.sh dist-installer/PitlaneHQ-Setup.exe
-          bash .github/scripts/publish.sh version.json
-          # one release per version with its part of CHANGELOG.md (later builds of the same version
-          # refresh its files and its notes)
-          # the public history started again at 0.4.1 (the owner's choice): the releases of a higher number go, tags too
-          gh release list --limit 300 --json tagName -q '.[].tagName' 2>/dev/null | while read -r t; do o="${t#v}"; o="${o%-beta}"; [[ "$o" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || continue; [ "$o" = "$ver" ] && continue; [ "$(printf '%s\n%s\n' "$ver" "$o" | sort -V | tail -1)" = "$o" ] && gh release delete "$t" -y --cleanup-tag || true; done
-          tag="v$ver-beta"
-          awk -v v="$ver" '$0 ~ "^## "v"( |$)" {on=1; next} on && /^## / {exit} on {print}' CHANGELOG.md > notes.md
-          printf '\n---\nDownloads: https://pitlanehq.app/downloads · Full history: https://pitlanehq.app/changelog\n' >> notes.md
-          gh release view "$tag" >/dev/null 2>&1 || gh release create "$tag" --target "$GITHUB_SHA" --title "Pitlane HQ $ver beta" --notes-file notes.md --prerelease --latest=false || true
-          gh release edit "$tag" --notes-file notes.md >/dev/null 2>&1 || true # the notes follow CHANGELOG.md
-          gh release upload "$tag" PitlaneHQ-windows.zip dist-installer/PitlaneHQ-Setup.exe --clobber || true
+          echo "Test build $bv ($b), master $ver ($GITHUB_SHA)"
+          git cat-file -e "$b^{commit}" 2>/dev/null || { echo "::error::The test build's commit $b is not in this repository any more"; exit 1; }
+          # what testers ran must be this code: only the server, the docs and the workflows may have changed since
+          if ! git diff --quiet "$b" HEAD -- . ':(exclude)cloud' ':(exclude)docs' ':(exclude).github' ':(exclude)CLAUDE.md' ':(exclude)CHANGELOG.md' ':(exclude)web/dist/app-news.json'; then
+            git diff --stat "$b" HEAD -- . ':(exclude)cloud' ':(exclude)docs' ':(exclude).github' ':(exclude)CLAUDE.md' ':(exclude)CHANGELOG.md' ':(exclude)web/dist/app-news.json' | tail -20
+            echo "::error::master has changes testers have not run: make a test build of master (channel beta), test it, then promote"
+            exit 1
+          fi
+          [ "$bv" = "$ver" ] || { echo "::error::The test build is $bv and master is $ver"; exit 1; }
+          curl -fsSL https://pitlanehq.app/dl/beta/PitlaneHQ-windows.zip -o PitlaneHQ-windows.zip
+          curl -fsSL https://pitlanehq.app/dl/beta/PitlaneHQ-Setup.exe -o PitlaneHQ-Setup.exe
+          echo "BETA_BUILD=$b" >> "$GITHUB_ENV"
+      - name: Publish to everyone
+        shell: bash
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          GH_TOKEN: ${{ github.token }}
+        # the build stays the test build's commit: the PCs that ran it already have it and are not updated again
+        run: bash .github/scripts/pc-publish.sh PitlaneHQ-windows.zip PitlaneHQ-Setup.exe "$BETA_BUILD"

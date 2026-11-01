@@ -4,6 +4,7 @@
 //   /dl/<file>            a file (PitlaneHQ-Setup.exe, PitlaneHQ-windows.zip, the APK, the IPA…)
 //   /dl/version.json      the PC version, build and minimum version (the updater reads it)
 //   /dl/phones.json       the phone apps' version and files
+//   /dl/beta/<file>       the same files of the test builds (testers and admins), promoted to /dl/ once they pass
 //   /downloads            the downloads page
 //   /changelog[/phones]   the release notes, one anchor per version (#062-beta)
 import { VISIT_JS } from "./sourceslib.js";
@@ -15,9 +16,12 @@ export async function downloads(req, env, url) {
   const p = url.pathname;
   if (!env.DL) return new Response(JSON.stringify({ error: "downloads are not set up on this server (R2 bucket DL)" }), { status: 404, headers: { "content-type": "application/json" } });
   if (p.startsWith("/dl/")) {
-    const name = decodeURIComponent(p.slice(4));
+    // /dl/beta/<file>: the test builds testers' PCs and phones take before everyone (windows.yml and the phone builds
+    // with channel "beta"); the downloads page never lists them
+    const key = decodeURIComponent(p.slice(4));
+    const beta = key.startsWith("beta/"), name = beta ? key.slice(5) : key;
     if (!/^[A-Za-z0-9._-]{1,80}$/.test(name)) return new Response("not found", { status: 404 });
-    const o = await env.DL.get(name);
+    const o = await env.DL.get(key);
     if (!o) return new Response("not found", { status: 404 });
     if (name === "version.json") return pcVersion(await o.text());
     const ext = name.split(".").pop().toLowerCase();

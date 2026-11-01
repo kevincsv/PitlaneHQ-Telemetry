@@ -17,11 +17,13 @@ area you are changing before you change it, and update it in the same commit whe
   change is committed and pushed to the working branch only (never master), tested together, and goes to master in
   one push when the owner asks for the batch ("sube todo", "súbelo a producción"). A fix that cannot wait (the app
   broken for people) is the one exception, and only when the owner says so.
-- `master` is the main branch the builds come from (Windows and the server). Builds of other branches only check;
-  nothing is published unless it is master.
+- Every version goes to the testers first ("Test builds" in `docs/spec/pc-app.md`): builds run with channel `beta` (the
+  default, any branch) go only to testers and admins (`/dl/beta/`, beta.pitlanehq.app); production comes only from
+  master with channel `production`, which promotes the tested build and refuses code testers have not run.
+  `skip_testing` only for an urgent fix, and only when the owner says so.
 - Pushing never builds or deploys: `windows.yml` and `cloud.yml` run only when started by hand (Actions → Run
-  workflow, or `gh workflow run <file> --ref master`). Never start one unless the owner says "build"/"compila";
-  "sube"/"push" means push only.
+  workflow, or `gh workflow run <file> --ref master`). Never start one unless the owner says "build"/"compila"
+  (a test build) or "promote"/"a producción"; "sube"/"push" means push only.
 - The notices the apps show in their inbox (`web/dist/app-news.json`, every device reads it from the server) are
   never added or changed without asking the owner first, one by one, even when they say "sube todo" for everything
   else: show the text and wait for their yes before it goes in.

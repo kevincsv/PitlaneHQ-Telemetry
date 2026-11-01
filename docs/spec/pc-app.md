@@ -84,3 +84,33 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   two minutes to upload with Retry (POST `/api/health/retry`), or a line asking to sign in when no account takes them,
   and Le Mans Ultimate running for a minute while the agent cannot read it (its plugins off) with where to turn them
   on (`homeHealth`).
+
+## Test builds (every device)
+
+Every version goes to the testers first and reaches everyone only after it passes (the owner's rule, 1 Nov 2026).
+Testers are the Tester level (`isTester`, given in Admin → Users or in `TESTERS`) and the admins.
+
+- The flow: work stays on the working branch; "build beta" runs `windows.yml`, `cloud.yml` and the phones'
+  `android.yml` with channel `beta` (the default) on that branch; testers try it; once it passes and is on master,
+  "promote" runs them on master with channel `production`, which builds nothing new: Windows and Android copy the
+  test build's own files from `/dl/beta/` to `/dl/` (refusing when master's code differs from the commit testers ran,
+  docs, workflows, the server and CHANGELOG.md aside), and the server deploys only when master's `cloud/` and `web/`
+  are what the test version ran (`/dl/beta/cloud.json`). `skip_testing` publishes master without a test build: only for
+  an urgent fix when the app is broken for people, and only when the owner says so.
+- Windows: Settings → About → Test builds (testers and admins, `updPrefs.Beta`, POST `/api/update?action=beta`). On,
+  the agent reads `/dl/beta/version.json` (channel `beta`) and installs `/dl/beta/PitlaneHQ-windows.zip`, and the
+  server's `X-Pitlane-Build` nudge (everyone's build) is ignored. Off, or when the account is no longer a tester, it goes
+  back to everyone's builds without installing an older version (`LeftBeta`, `heldBack`: held until everyone's
+  version reaches the one it has). A promoted build keeps the test build's commit as its `build`, so a tester's PC is
+  not updated again.
+- The web and the server: `beta.pitlanehq.app` is the Worker `pitlanehq-beta` (`BETA = "1"`, `cloud/src/beta.js`) on the
+  same database and files. Signed-in requests of anyone but testers and admins get 403 `beta_only`; the public pages go
+  to pitlanehq.app; `server.json` answers its own address; every answer is `noindex`; it runs no timed jobs, holds no
+  webhooks or Discord commands, and its live room is its own (the PCs stay on pitlanehq.app's). It never changes the
+  database: a branch with migrations production does not have stops unless `apply_migrations` is ticked (the owner's
+  call; such a migration must keep pitlanehq.app working). The page shows a TEST VERSION bar (`betaBanner`).
+- Android: each CI build has its own build number (`versionCode` = 1000 + the run's number). Testers' and admins'
+  phones read `/dl/beta/phones.json` first and are offered a higher build from there; `phones.json` carries `code` and
+  a phone is never offered a lower build (`Updates.pick`). Google Play installs keep Play's updates (internal testing
+  track later). iOS: TestFlight once the Apple developer account exists; until then nothing changes there.
+- The Microsoft Store package and Steam: their own flights and beta branch once they are listed.

@@ -6,11 +6,18 @@ improvements". 1.0.0 comes when the beta ends. Newest first.
 
 ## 0.9.13 beta
 
+- You can practise one corner on its own, with the coach overlay and Telemetry timing it lap after lap.
+- A new Spotter overlay lights a bar on each side while a car is alongside.
+- Overlay sets can open by themselves on ovals, road, dirt or in Le Mans Ultimate.
+- Home shows goals for the session and Your week, with a share card for each new best.
+- The race summary starts with the race story and shows what each pit stop cost.
+- iRacing laps show a height chart and the slope of each braking zone.
+- In Friends you can go head to head with a friend and invite one with your own link.
+- The lap screen on the web has Export CSV, keys for the next and previous lap, and the sessions search by date.
 - In multiclass races the relative and the standings warn you when faster or slower classes are coming.
-- Le Mans Ultimate shows the car's damage on the dash.
-- The lap analysis shows Le Mans Ultimate's hybrid battery through the lap.
-- The race summary shows what each pit stop cost.
+- Le Mans Ultimate shows the car's damage on the dash and the hybrid battery in the lap analysis.
 - LMU leagues show their classes, and records and boards show the game version they were set on.
+- The web app opens faster and also without a connection, and the phones get a tablet layout and an Android home screen widget.
 - Pitlane HQ is in the Microsoft Store.
 - Fixes and improvements.
 

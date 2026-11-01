@@ -1709,6 +1709,130 @@ var require_pitwall_analysis = __commonJS({
         return { laps, need: r1(need), perTank, stops, add: r1(add), start: r1(stops ? tank : need), stint: stops != null ? Math.ceil(laps / (stops + 1)) : null, tank: tank || null };
       }
       __name(fuelPlan, "fuelPlan");
+      function pedalCheck(laps, ctx) {
+        const Tx = txOf(ctx), own = (laps || []).filter((l) => l && l.bins && l.bins.length > 50 && !l.src && !l.est && !l.who && !l.pit && l.time > 0);
+        if (own.length < 3) return [];
+        const med = /* @__PURE__ */ __name((a) => {
+          if (!a.length) return null;
+          const b2 = a.slice().sort((x, y) => x - y);
+          return b2[b2.length >> 1];
+        }, "med");
+        const per = own.map((l) => {
+          const s = serOf(l);
+          let bMax = 0, tMax = 0;
+          const tOnB = [], bOnT = [], st = [];
+          for (const b2 of s) {
+            if (!b2) continue;
+            const thr = +b2[2], brk = +b2[3], v = +b2[0], w = +b2[5];
+            if (isFinite(brk)) bMax = Math.max(bMax, brk);
+            if (isFinite(thr)) tMax = Math.max(tMax, thr);
+            if (brk > 0.3 && isFinite(thr)) tOnB.push(thr);
+            if (thr > 0.97 && isFinite(brk) && v > 25) bOnT.push(brk);
+            if (thr > 0.97 && v > 40 && isFinite(w)) st.push(w * 180 / Math.PI);
+          }
+          return { bMax, tMax, tOnB: med(tOnB), bOnT: med(bOnT), st: st.length > 40 ? med(st) : null };
+        });
+        const all = /* @__PURE__ */ __name((f) => per.every(f), "all"), out = [], p = /* @__PURE__ */ __name((v) => Math.round(v * 100), "p");
+        const bm = Math.max(...per.map((x) => x.bMax)), tm = Math.max(...per.map((x) => x.tMax));
+        if (bm > 0.05 && bm < 0.6) out.push({ k: "brakeMax", v: p(bm), text: Tx(`Your brake never went past ${p(bm)} % on any lap. Check its calibration in the game, or the car brakes less than it can`, `Tu freno nunca pas\xF3 del ${p(bm)} % en ninguna vuelta. Revisa su calibraci\xF3n en el juego, o el coche frena menos de lo que puede`, `Seu freio nunca passou de ${p(bm)} % em nenhuma volta. Verifique a calibra\xE7\xE3o no jogo, ou o carro freia menos do que pode`) });
+        if (tm > 0.3 && tm < 0.95) out.push({ k: "thrMax", v: p(tm), text: Tx(`Your throttle never reached 100 % (${p(tm)} % at most). Check its calibration in the game`, `Tu acelerador nunca lleg\xF3 al 100 % (${p(tm)} % como mucho). Revisa su calibraci\xF3n en el juego`, `Seu acelerador nunca chegou a 100 % (${p(tm)} % no m\xE1ximo). Verifique a calibra\xE7\xE3o no jogo`) });
+        if (all((x) => x.tOnB != null && x.tOnB >= 0.03)) {
+          const v = med(per.map((x) => x.tOnB));
+          out.push({ k: "thrFloor", v: p(v), text: Tx(`The throttle reads ${p(v)} % while you brake. A dead zone at the bottom of the pedal fixes it`, `El acelerador marca ${p(v)} % mientras frenas. Una zona muerta abajo del pedal lo arregla`, `O acelerador marca ${p(v)} % enquanto voc\xEA freia. Uma zona morta embaixo do pedal resolve`) });
+        }
+        if (all((x) => x.bOnT != null && x.bOnT >= 0.03)) {
+          const v = med(per.map((x) => x.bOnT));
+          out.push({ k: "brakeFloor", v: p(v), text: Tx(`The brake reads ${p(v)} % on full throttle. A dead zone at the bottom of the pedal fixes it`, `El freno marca ${p(v)} % a fondo de acelerador. Una zona muerta abajo del pedal lo arregla`, `O freio marca ${p(v)} % com o acelerador no fundo. Uma zona morta embaixo do pedal resolve`) });
+        }
+        if (all((x) => x.st != null)) {
+          const v = med(per.map((x) => x.st));
+          if (Math.abs(v) >= 2.5) {
+            const d = Math.round(Math.abs(v) * 10) / 10;
+            out.push({ k: "steerOff", v: d, text: Tx(`Your wheel is ${d}\xB0 off centre on the straights. Centre it again in the game's controls`, `Tu volante est\xE1 ${d}\xB0 descentrado en las rectas. C\xE9ntralo otra vez en los controles del juego`, `Seu volante est\xE1 ${d}\xB0 descentralizado nas retas. Centralize de novo nos controles do jogo`) });
+          }
+        }
+        return out;
+      }
+      __name(pedalCheck, "pedalCheck");
+      function slopeOf(l, d0, d1) {
+        const z = l && Array.isArray(l.z) ? l.z : null;
+        if (!z || z.length < 8 || !(d1 > d0)) return null;
+        const at2 = /* @__PURE__ */ __name((d) => {
+          const f = Math.max(0, Math.min(z.length - 1, d / 25)), i = Math.floor(f), k = Math.min(z.length - 1, i + 1);
+          return z[i] + (z[k] - z[i]) * (f - i);
+        }, "at");
+        return Math.round((at2(d1) - at2(d0)) / (d1 - d0) * 1e3) / 10;
+      }
+      __name(slopeOf, "slopeOf");
+      function sessionGoals(cur, prev, ctx) {
+        const Tx = txOf(ctx), ok = /* @__PURE__ */ __name((l) => l && l.time > 0 && l.valid !== false && !l.pit && l.bins && l.bins.length > 20, "ok"), out = [];
+        cur = (cur || []).filter((l) => l && l.time > 0);
+        prev = (prev || []).filter(ok);
+        if (!prev.length) return out;
+        const fmt3 = /* @__PURE__ */ __name((t) => {
+          const m = Math.floor(t / 60), r4 = t - m * 60;
+          return m ? `${m}:${r4.toFixed(3).padStart(6, "0")}` : r4.toFixed(3);
+        }, "fmt");
+        const pb = Math.min(...prev.map((l) => l.time)), cb = cur.filter(ok).length ? Math.min(...cur.filter(ok).map((l) => l.time)) : null;
+        out.push({ k: "best", text: Tx(`Beat your best from last time, ${fmt3(pb)}`, `Bate tu mejor de la \xFAltima vez, ${fmt3(pb)}`, `Bata sua melhor da \xFAltima vez, ${fmt3(pb)}`), done: cb != null && cb < pb, now: cb });
+        let run = 0, best = 0;
+        for (const l of cur) {
+          if (l.valid !== false && !l.pit) {
+            run++;
+            best = Math.max(best, run);
+          } else run = 0;
+        }
+        out.push({ k: "clean", text: Tx("Five clean laps in a row", "Cinco vueltas limpias seguidas", "Cinco voltas limpas seguidas"), done: best >= 5, now: best });
+        const turns = Array.isArray(ctx && ctx.turns) ? ctx.turns : [], L = +(ctx && ctx.trackLen) || 0;
+        if (turns.length && L > 0) {
+          const tAt2 = /* @__PURE__ */ __name((l, d) => {
+            const b2 = l.bins[Math.max(0, Math.min(l.bins.length - 1, Math.round(d / BIN3)))];
+            return b2 && b2[1] >= 0 ? b2[1] : null;
+          }, "tAt");
+          const cT = /* @__PURE__ */ __name((l, n) => {
+            const ap = turns[n - 1] * L, a = tAt2(l, Math.max(10, ap - 200)), b2 = tAt2(l, Math.min(L - 10, ap + 120));
+            return a != null && b2 != null && b2 > a ? b2 - a : null;
+          }, "cT");
+          const pbl = prev.find((l) => l.time === pb);
+          let pick = null;
+          for (let n = 1; n <= turns.length; n++) {
+            const own = cT(pbl, n), all = prev.map((l) => cT(l, n)).filter((x) => x != null);
+            if (own == null || !all.length) continue;
+            const m = Math.min(...all), loss = own - m;
+            if (loss > 0.05 && (!pick || loss > pick.loss)) pick = { n, m, loss };
+          }
+          if (pick) {
+            const cbest = cur.filter(ok).map((l) => cT(l, pick.n)).filter((x) => x != null);
+            const nowT = cbest.length ? Math.min(...cbest) : null;
+            out.push({ k: "turn", n: pick.n, text: Tx(`T${pick.n} in ${pick.m.toFixed(2)} s, your best pass there last time`, `La T${pick.n} en ${pick.m.toFixed(2)} s, tu mejor pasada ah\xED la \xFAltima vez`, `A T${pick.n} em ${pick.m.toFixed(2)} s, sua melhor passagem ali da \xFAltima vez`), done: nowT != null && nowT <= pick.m + 5e-3, now: nowT });
+          }
+        }
+        return out;
+      }
+      __name(sessionGoals, "sessionGoals");
+      function raceStory(r4, ctx) {
+        const Tx = txOf(ctx), laps = (r4 && Array.isArray(r4.laps) ? r4.laps : []).filter((l) => l && l.p > 0), out = [];
+        if (!laps.length || !(r4.start > 0)) return out;
+        const pl = /* @__PURE__ */ __name((n) => n === 1 ? Tx("1 place", "1 puesto", "1 posi\xE7\xE3o") : Tx(`${n} places`, `${n} puestos`, `${n} posi\xE7\xF5es`), "pl");
+        const p1 = laps[0].p, d1 = r4.start - p1;
+        out.push({ lap: laps[0].n, k: "start", text: d1 > 0 ? Tx(`Start from P${r4.start}, P${p1} after lap 1 (${pl(d1)} gained)`, `Salida desde P${r4.start}, P${p1} tras la vuelta 1 (${pl(d1)} ganados)`, `Largada de P${r4.start}, P${p1} ap\xF3s a volta 1 (${pl(d1)} ganhas)`) : d1 < 0 ? Tx(`Start from P${r4.start}, P${p1} after lap 1 (${pl(-d1)} lost)`, `Salida desde P${r4.start}, P${p1} tras la vuelta 1 (${pl(-d1)} perdidos)`, `Largada de P${r4.start}, P${p1} ap\xF3s a volta 1 (${pl(-d1)} perdidas)`) : Tx(`Start from P${r4.start}, still P${p1} after lap 1`, `Salida desde P${r4.start}, sigues P${p1} tras la vuelta 1`, `Largada de P${r4.start}, ainda P${p1} ap\xF3s a volta 1`) });
+        const incs = Array.isArray(r4.incidents) ? r4.incidents : [], kindTx = { off: Tx("off track", "salida de pista", "sa\xEDda de pista"), loss: Tx("loss of control", "p\xE9rdida de control", "perda de controle"), light: Tx("light contact", "contacto leve", "contato leve"), contact: Tx("contact", "contacto", "contato") };
+        for (let i = 0; i < laps.length; i++) {
+          const L = laps[i], prev = i ? laps[i - 1].p : null;
+          if (L.pit) out.push({ lap: L.n, k: "pit", text: Tx(`Lap ${L.n}. Pit stop, P${L.p} after it`, `Vuelta ${L.n}. Parada en boxes, P${L.p} despu\xE9s`, `Volta ${L.n}. Pit stop, P${L.p} depois`) });
+          for (const x of incs.filter((x2) => x2.lap === L.n && x2.pts > 0)) out.push({ lap: L.n, k: "inc", text: Tx(`Lap ${L.n}. ${x.pts}x ${kindTx[x.kind] || Tx("incident", "incidente", "incidente")} at ${Math.round(x.d)} m`, `Vuelta ${L.n}. ${x.pts}x ${kindTx[x.kind] || "incidente"} a ${Math.round(x.d)} m`, `Volta ${L.n}. ${x.pts}x ${kindTx[x.kind] || "incidente"} a ${Math.round(x.d)} m`) });
+          if (prev != null && !L.pit && L.p !== prev) {
+            const d = prev - L.p;
+            out.push({ lap: L.n, k: d > 0 ? "gain" : "loss", text: d > 0 ? Tx(`Lap ${L.n}. Up to P${L.p} (${pl(d)} gained)`, `Vuelta ${L.n}. Subes a P${L.p} (${pl(d)} ganados)`, `Volta ${L.n}. Sobe para P${L.p} (${pl(d)} ganhas)`) : Tx(`Lap ${L.n}. Down to P${L.p} (${pl(-d)} lost)`, `Vuelta ${L.n}. Bajas a P${L.p} (${pl(-d)} perdidos)`, `Volta ${L.n}. Cai para P${L.p} (${pl(-d)} perdidas)`) });
+          }
+        }
+        if (r4.finish > 0) {
+          const d = r4.start - r4.finish;
+          out.push({ lap: laps[laps.length - 1].n, k: "finish", text: r4.dnf ? Tx(`Out of the race, P${r4.finish}`, `Fuera de carrera, P${r4.finish}`, `Fora da corrida, P${r4.finish}`) : Tx(`Finish P${r4.finish}${d ? ` (${d > 0 ? "+" : "\u2212"}${Math.abs(d)} from the start)` : ""}`, `Llegada P${r4.finish}${d ? ` (${d > 0 ? "+" : "\u2212"}${Math.abs(d)} desde la salida)` : ""}`, `Chegada P${r4.finish}${d ? ` (${d > 0 ? "+" : "\u2212"}${Math.abs(d)} desde a largada)` : ""}`) });
+        }
+        return out;
+      }
+      __name(raceStory, "raceStory");
       function insights(A, B, ctx) {
         ctx = ctx || {};
         const laps = Array.isArray(ctx.laps) ? ctx.laps : [];
@@ -1783,7 +1907,11 @@ var require_pitwall_analysis = __commonJS({
         tyreLaps,
         fuelUse,
         fuelPlan,
-        insights
+        insights,
+        pedalCheck,
+        slopeOf,
+        sessionGoals,
+        raceStory
       };
       root.PW_ANALYSIS = api2;
       if (typeof module !== "undefined" && module.exports) module.exports = api2;
@@ -5743,7 +5871,8 @@ var SRC_KIND = {
   whatsapp: "social",
   telegram: "social",
   linkedin: "social",
-  direct: "direct"
+  direct: "direct",
+  invite: "community"
 };
 var kindOf = /* @__PURE__ */ __name((src) => SRC_KIND[src] || (/-app$/.test(src) ? "app" : src === "unknown" ? "unknown" : "other"), "kindOf");
 var SELF = /(^|\.)pitlanehq\.app$|^localhost$|^127\.0\.0\.1$/;
@@ -5786,6 +5915,8 @@ function visitOf(b2) {
   const tag3 = cleanSrc(b2.us);
   const campaign = cleanSrc(b2.uc).slice(0, 40);
   const src = tag3 ? SRC_KIND[tag3] ? tag3 : SITES.some(([re]) => re.test(tag3)) ? siteOf2("https://" + tag3 + "/") : tag3 : siteOf2(b2.ref);
+  const inv = /^invite-([0-9a-z]{8,32})$/.exec(src);
+  if (inv) return { src: "invite", page: pageOf(b2.page), campaign, inviter: inv[1] };
   return { src: src === "" || SRC_RE.test(src) ? src : "direct", page: pageOf(b2.page), campaign };
 }
 __name(visitOf, "visitOf");
@@ -6209,6 +6340,8 @@ async function accounts(req, env, url) {
       env.DB.prepare("INSERT INTO community_users (id, token_hash, alias, created) VALUES (?1,?2,?3,?4)").bind(id2, "acct:" + id2, display, Date.now()),
       signupSrc(env, req, id2, body)
     ]);
+    await inviteFollow(env, id2, body).catch(() => {
+    });
     if (steam) await linkSteam(env, steam.steamid, id2, steam.persona);
     if (google) await linkGoogle(env, google.sub, id2);
     const taken = discord && await linkDiscordLogin(env, discord, id2) === "taken" ? { discordTaken: true } : {};
@@ -6556,6 +6689,8 @@ async function quickRegister(env, body, ip, req) {
     env.DB.prepare("INSERT INTO community_users (id, token_hash, alias, created) VALUES (?1,?2,?3,?4)").bind(id2, "acct:" + id2, display, Date.now()),
     signupSrc(env, req, id2, body)
   ]);
+  await inviteFollow(env, id2, body).catch(() => {
+  });
   if (prov === "steam") await linkSteam(env, g.steamid, id2, g.persona);
   else if (prov === "discord") await linkDiscordLogin(env, g, id2);
   else await linkGoogle(env, g.sub, id2);
@@ -6570,6 +6705,16 @@ async function quickRegister(env, body, ip, req) {
   return json5({ id: a.id, token, display: a.display, nameKind: "nick", anon: false, keyTag: await keyTag(a.wrapped_key), admin: isAdmin(env, a.id), tester: isTester(env, a.id, a), verified: true, twoFactor: false, escrow: true, noPassword: true, created: true, dataKey: key2, email: email || void 0 });
 }
 __name(quickRegister, "quickRegister");
+async function inviteFollow(env, id2, body) {
+  const v = body && body.src && typeof body.src === "object" ? visitOf(body.src) : null, by = v && v.inviter;
+  if (!by || by === id2) return;
+  const ok = await env.DB.prepare("SELECT id FROM accounts WHERE id=?1").bind(by).first().catch(() => null);
+  if (!ok) return;
+  const now = Date.now(), add = "INSERT OR IGNORE INTO follows (account_id, driver_id, created) VALUES (?1,?2,?3)";
+  await env.DB.batch([env.DB.prepare(add).bind(id2, by, now), env.DB.prepare(add).bind(by, id2, now)]).catch(() => {
+  });
+}
+__name(inviteFollow, "inviteFollow");
 function signupSrc(env, req, id2, body) {
   const v = body && body.src && typeof body.src === "object" ? visitOf(body.src) : null;
   const src = v && v.src ? v.src : v && v.src === "" ? "direct" : appSrc(req.headers.get("x-pitlane-client"));
@@ -9193,7 +9338,7 @@ async function friendRoutes(req, env, p, m, body, url, game, acc) {
       if (k.length < 8) k.push(l);
       by.set(l.uid, k);
     }
-    return json12({ friends: fr.map((f) => ({ id: f.id, name: f.name || "Driver", sup: !!f.sup, since: f.created, laps: (by.get(f.id) || []).map(({ uid, ...l }) => l) })) });
+    return json12({ invite: "https://pitlanehq.app/?ref=invite-" + acc.id, friends: fr.map((f) => ({ id: f.id, name: f.name || "Driver", sup: !!f.sup, since: f.created, laps: (by.get(f.id) || []).map(({ uid, ...l }) => l) })) });
   }
   if (p === "/friends/laps" && m === "GET") {
     const t = +url.searchParams.get("trackId"), c = await famId(env, game, url.searchParams.get("carId"));
@@ -13956,7 +14101,9 @@ async function api(req, env, url, ctx) {
   }
   if (p === "/api/sessions/summary" && m === "GET") {
     const q2 = url.searchParams;
-    return json17(await sessionSummary(env.DB, { from: q2.get("from"), tz: q2.get("tz"), game: q2.get("game") ? gameOf(q2.get("game")) : null, uploader: own || q2.get("who") || null }));
+    const sum2 = await sessionSummary(env.DB, { from: q2.get("from"), tz: q2.get("tz"), game: q2.get("game") ? gameOf(q2.get("game")) : null, uploader: own || q2.get("who") || null });
+    if (q2.get("pbs") === "1" && own) sum2.pbs = pbsOf((await env.DB.prepare(SQL_PBS).bind(own, sum2.from).all().catch(() => ({ results: [] }))).results || []).map((r4) => ({ track: r4.track, track_config: r4.track_config || null, car: r4.car, best: r4.b, before: r4.before }));
+    return json17(sum2);
   }
   if (p === "/api/sessions-owned" && m === "GET") {
     if (!own) return json17({ tracks: [], cars: [] });
@@ -14423,7 +14570,7 @@ async function handle(req, env, ctx) {
     to.pathname = "/";
     return Response.redirect(to.href, 301);
   }
-  const isAppFile = /^\/(fonts\.css|pitwall-[a-z0-9-]+\.js|app-news\.json|whats-new\.json|server\.json|manifest\.webmanifest|favicon\.ico|favicon-32\.png|icon-\d+\.png|logo\.svg|bimi\.svg|og(?:-es|-pt)?\.png|robots\.txt|landing\/(?:en\/|es\/|pt\/)?[a-z0-9-]+\.(?:jpg|png)|landing\/live-lap\.json)$/.test(url.pathname);
+  const isAppFile = /^\/(sw\.js|fonts\.css|pitwall-[a-z0-9-]+\.js|app-news\.json|whats-new\.json|server\.json|manifest\.webmanifest|favicon\.ico|favicon-32\.png|icon-\d+\.png|logo\.svg|bimi\.svg|og(?:-es|-pt)?\.png|robots\.txt|landing\/(?:en\/|es\/|pt\/)?[a-z0-9-]+\.(?:jpg|png)|landing\/live-lap\.json)$/.test(url.pathname);
   if (url.pathname === "/" && url.searchParams.get("embed") !== "1" || isAppFile) {
     if (!env.ASSETS) return err12("the app is not published on this server", 404);
     if (url.pathname === "/server.json" && env.LOCAL === "1") return new Response(JSON.stringify({ url: url.origin }), { headers: { "content-type": "application/json", "cache-control": "no-cache" } });

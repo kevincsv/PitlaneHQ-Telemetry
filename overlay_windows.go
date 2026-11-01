@@ -140,7 +140,7 @@ var (
 // openOverlay opens a frameless WebView2 window (child process), or an Edge
 // app window when that engine is chosen or WebView2 is not available.
 func openOverlay(o overlayReq, url, engine string) error {
-	if !o.HasPos {
+	if !o.HasPos && !o.HomePos {
 		n := len(listOverlays())
 		o.X, o.Y = 80+n*40, 80+n*40
 	}

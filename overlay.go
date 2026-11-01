@@ -13,6 +13,7 @@ type overlayReq struct {
 	Width, Height int
 	X, Y          int
 	HasPos        bool
+	HomePos       bool // X and Y are its first place on the screen (ovHomeAt), not a saved one
 	Alpha         int
 	Top, Lock     bool
 }
@@ -24,6 +25,24 @@ var overlaySizes = map[string][2]int{"flag": {520, 90}, "dash": {560, 230}, "tim
 	"engine": {320, 260}, "tyres": {420, 260}, "inputs": {560, 210}, "standings": {720, 640}, "radar": {260, 300}, "boost": {360, 170}, "telemetry": {420, 300}, "compare": {680, 320}, "gg": {280, 300}, "deltabar": {520, 90}, "stats": {420, 220},
 	"pit": {440, 260}, "sectors": {560, 150}, "gaps": {560, 260}, "incidents": {380, 300}, "coach": {520, 200}, "brakes": {480, 170},
 	"weather": {360, 250}, "trackbar": {700, 70}, "system": {320, 230}}
+
+// ovHome: where an overlay opens the first time (never placed), on a 2560×1440 screen and scaled to the main one:
+// the timing and standings down the left, the delta bar and flags at the top in the middle, the map top right, the
+// relative bottom right, the radar in the middle, the dash and fuel along the bottom (the Overlays tab's screen shows
+// the same, OV_HOME in pitwall-overlays.js)
+var ovHome = map[string][2]int{"relative": {1880, 900}, "radar": {1150, 700}, "deltabar": {1020, 40}, "timing": {40, 40}, "standings": {40, 300},
+	"map": {2080, 40}, "flag": {1020, 150}, "dash": {1000, 1180}, "fuel": {40, 1180}}
+
+// ovHomeAt: the first place of an overlay w×h on a primary screen pw×ph, inside it
+func ovHomeAt(name string, pw, ph, w, h int) (int, int, bool) {
+	p, ok := ovHome[name]
+	if !ok || pw <= 0 || ph <= 0 {
+		return 0, 0, false
+	}
+	x, y := p[0]*pw/2560, p[1]*ph/1440
+	x, y = max(0, min(pw-w, x)), max(0, min(ph-h, y))
+	return x, y, true
+}
 
 // the smallest an overlay may be made: its default width, so its text never gets too small to read (its
 // height follows its content); the map, the radar and the g-force keep the window's height, so theirs too
@@ -70,6 +89,8 @@ func openNamedOverlay(name string) error {
 	o := overlayReq{Widget: name, Width: int(float64(sz[0]) * c.Scale), Height: int(float64(sz[1]) * c.Scale), Alpha: c.Alpha, Top: true, Lock: !c.Edit} // clicks reach an overlay only while the overlays are being placed
 	if p, ok := c.Positions[name]; ok {
 		o.X, o.Y, o.Width, o.Height, o.HasPos = p[0], p[1], p[2], p[3], true
+	} else if pr, ok := screenInfo()["primary"].([4]int); ok {
+		o.X, o.Y, o.HomePos = ovHomeAt(name, pr[2], pr[3], o.Width, o.Height)
 	}
 	return openOverlay(o, overlayURL(name), "webview") // always the frameless window (the Edge one was dropped)
 }

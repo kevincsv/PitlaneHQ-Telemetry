@@ -218,10 +218,13 @@ function markOvOpen(){
 
 /* ---------- the screen: every open or Auto overlay where it sits on the PC (and the chosen one), dragged and resized
    from the app; the windows move as you drag (/api/overlay/move) ---------- */
+// where an overlay opens the first time, on a 2560×1440 screen (ovHome in overlay.go)
+const OV_HOME={relative:[1880,900],radar:[1150,700],deltabar:[1020,40],timing:[40,40],standings:[40,300],map:[2080,40],flag:[1020,150],dash:[1000,1180],fuel:[40,1180]};
 async function renderScreenEditor(){const box=$("#ovScreen");if(!box||SCREEN_DRAG)return;const sc=await screenInfo(),[vx,vy,vw,vh]=sc.virtual;if(!box.isConnected)return;box.style.aspectRatio=vw+" / "+vh;
   const pos=CFG.positions||{},sel=OVT.sel,names=[...new Set([...(CFG.autoWidgets||[]),...OV_OPEN,...(sel?[sel]:[])])].filter(n=>OVSZ[n]&&WIDGETS.includes(n));
   const inside=([x,y,w,h])=>{w=Math.min(w,vw);h=Math.min(h,vh);return[Math.max(vx,Math.min(vx+vw-w,x)),Math.max(vy,Math.min(vy+vh-h,y)),w,h]};
-  const rect=(n,i)=>inside(pos[n]||[vx+60+i*40,vy+60+i*40,OVSZ[n][0],OVSZ[n][1]]);
+  const home=n=>{const h=OV_HOME[n],[px,py,pw,ph]=sc.primary;return h&&[px+Math.round(h[0]*pw/2560),py+Math.round(h[1]*ph/1440),OVSZ[n][0],OVSZ[n][1]]};
+  const rect=(n,i)=>inside(pos[n]||home(n)||[vx+80+i*40,vy+80+i*40,OVSZ[n][0],OVSZ[n][1]]);
   box.innerHTML=`<div class="mon" style="left:${(sc.primary[0]-vx)/vw*100}%;top:${(sc.primary[1]-vy)/vh*100}%;width:${sc.primary[2]/vw*100}%;height:${sc.primary[3]/vh*100}%"></div>`+
     (names.map((n,i)=>{const[x,y,w,h]=rect(n,i);return `<div class="ovrect${(CFG.autoWidgets||[]).includes(n)?" auto":""}${OV_OPEN.has(n)?"":" closed"}${n===sel?" sel":""}" data-n="${n}" style="left:${(x-vx)/vw*100}%;top:${(y-vy)/vh*100}%;width:${w/vw*100}%;height:${h/vh*100}%"><span>${esc(ovtName(n))}</span><i class="rz"></i></div>`}).join("")||
     `<p class="empty" style="position:absolute;inset:0;display:grid;place-items:center;margin:0">${Lp("Open an overlay or mark it with Auto to place it here.","Abre un overlay o márcalo con Auto para colocarlo aquí.",false,null,"Abra um overlay ou marque-o com Auto para posicioná-lo aqui.")}</p>`);
@@ -299,8 +302,13 @@ setInterval(refreshScreenRects,1500);
 .ovt-stagebar{display:flex;flex-wrap:wrap;align-items:center;gap:12px}.ovt-stagebar .btn{margin-left:auto}
 .ovt-legend{display:inline-flex;align-items:center;gap:6px;font:500 11px var(--f-data);color:var(--muted)}.ovt-legend i{width:12px;height:8px;border-radius:2px;margin-left:6px}
 .ovt-legend .open{border:1.5px solid var(--fg)}.ovt-legend .closed{border:1.5px dashed var(--muted);opacity:.8}
-.ovt-screen{max-width:none;margin:0;border-radius:var(--radius,12px);background:linear-gradient(180deg,color-mix(in srgb,var(--surface2) 70%,#1a2230) 0 48%,color-mix(in srgb,var(--surface2) 80%,#2b323c) 48% 100%)}
-.ovt-screen .ovrect.sel{border:2px solid var(--accent);background:color-mix(in srgb,var(--accent) 20%,var(--surface));z-index:2}.ovt-screen .ovrect.sel span{color:var(--accent)}
+.ovt-screen{max-width:none;margin:0;border-radius:var(--radius,12px);background:linear-gradient(180deg,#1c2533 0 47%,#29313b 47% 100%)}
+.ovt-screen::before{content:"";position:absolute;left:30%;right:30%;bottom:0;height:53%;background:#3a414b;clip-path:polygon(40% 0,60% 0,100% 100%,0 100%);opacity:.75;pointer-events:none}
+.ovt-screen::after{content:"";position:absolute;left:33%;right:33%;bottom:0;height:20%;background:#0e1218;border-radius:45% 45% 0 0;pointer-events:none}
+.ovt-screen .ovrect,.ovt-screen .ovrect.auto{z-index:1;border-radius:5px;background:color-mix(in srgb,#0d1116 88%,transparent);border:1.5px solid color-mix(in srgb,#e8edf3 55%,transparent);user-select:none}
+.ovt-screen .ovrect.closed{border-style:dashed;opacity:.6}.ovt-screen .ovrect span{font-size:10px;color:#e8edf3;padding:3px 5px}
+.ovt-screen .ovrect .rz{width:14px;height:14px;background:linear-gradient(135deg,transparent 50%,color-mix(in srgb,#e8edf3 60%,transparent) 50%)}
+.ovt-screen .ovrect.sel{border:2px solid var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 25%,transparent);background:color-mix(in srgb,#0d1116 88%,transparent);z-index:3;opacity:1}.ovt-screen .ovrect.sel span{color:var(--accent)}.ovt-screen .ovrect.sel .rz{background:linear-gradient(135deg,transparent 50%,var(--accent) 50%)}
 .ovt-insp{flex:0 1 300px;min-width:260px;display:flex;flex-direction:column;gap:14px;padding:14px;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius,12px)}
 .ovt-ih{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.ovt-ih h2{margin:0;font:700 22px/1 var(--f-display);letter-spacing:.06em;text-transform:uppercase;margin-right:auto}
 .ovt-state{display:inline-flex;align-items:center;gap:6px;font:600 10px var(--f-data);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}

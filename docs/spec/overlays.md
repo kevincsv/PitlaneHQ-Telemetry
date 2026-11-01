@@ -185,7 +185,11 @@ overlay windows' code and the Telemetry tab's settings window (`openWidgetCfg`);
 - The screen: every open or Auto overlay where it sits on the PC (open ones solid, closed ones dashed, the chosen one
   in the accent): drag to move, the corner to resize, a click chooses it; the windows move as you drag
   (`/api/overlay/move`), never smaller than `OV_MINW`/`OV_MINH`, and the screen follows the windows dragged on the
-  PC itself (`/api/overlay/list` every 1.5 s).
+  PC itself (`/api/overlay/list` every 1.5 s). It is drawn as the view from the car (the sky, the road and the
+  dashboard), the overlays dark boxes. An overlay never placed opens the first time at its home on the main screen
+  (`ovHome`/`ovHomeAt` in overlay.go, `OV_HOME` on the tab, a 2560×1440 layout scaled: the timing and standings on the
+  left, the delta bar and flags at the top, the map top right, the radar in the middle, the relative bottom right, the
+  dash and fuel along the bottom); the others still open one under the other.
 - The chosen overlay: its name, "Experimental" when it is, open or closed, its live preview (on the PC the overlay
   drawn by its own code, `ovtPic`; on the web the overlay page with `preview=1`; scaled to the column, at its opacity), Open or
   Close (its window; "Open here" in a browser on the PC's address; nothing on the web), All settings (`ovtSettings`),

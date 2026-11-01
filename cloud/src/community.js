@@ -65,7 +65,8 @@ import { turnsFromPath } from "./trackgeo.js";
 import { turnCount, noteTurnCount, rebuildTrackMaps, traceLen, fitsLayout, layoutN } from "./trackmaps.js";
 import { estimateTrace } from "./pedals.js";
 import { discordLapAlert } from "./discord.js";
-import { recordBeaten, testerAlert } from "./alerts.js";
+import { recordBeaten, testerAlert, testAskAlert } from "./alerts.js";
+import { testAskRoutes } from "./testask.js";
 import { addFound, editFound, foundLeagues, leagueGame, scanLeagues } from "./leaguescan.js";
 import { catMap, catOf, licOf, CATS, groupFor } from "./categories.js";
 import { lmuClass, wetOf, clsParam, classLaps } from "./lmuclass.js";
@@ -295,6 +296,7 @@ export async function community(req, env, url, ctx) {
     return json({ id, token });
   }
   { const pr = await proRoutes(req, env, p, m, body); if (pr) return pr; } // Pitlane HQ Pro: the offer, the beta switch
+  { const ta = await testAskRoutes(req, env, p, m, body, { sessionAccount, isAdmin, isTester, testerAlert, testAskAlert }); if (ta) return ta; } // asking to test what is in development: testask.js
   // every list is for one game: laps and analyses of different games are never mixed
   const game = gameOf(url.searchParams.get("game") || body.game);
   { const ct = await coachTipRoutes(req, env, p, m, body, game); if (ct) return ct; } // the coach learns from its tips: coachtips.js
@@ -609,7 +611,7 @@ export async function community(req, env, url, ctx) {
     const was = await env.DB.prepare("SELECT tester FROM accounts WHERE id=?1").bind(id).first();
     if (!was) return err("account not found", 404);
     if (!body.on && testersSet(env, id)) return err("this driver is a tester in the server's settings (TESTERS)", 409);
-    await env.DB.prepare("UPDATE accounts SET tester=?2 WHERE id=?1").bind(id, body.on ? 1 : null).run();
+    await env.DB.prepare("UPDATE accounts SET tester=?2, test_ask=NULL WHERE id=?1").bind(id, body.on ? 1 : null).run(); // a request to test is answered too
     if (body.on && !was.tester && !testersSet(env, id)) await testerAlert(env, id);
     return json({ ok: true, tester: !!body.on });
   }

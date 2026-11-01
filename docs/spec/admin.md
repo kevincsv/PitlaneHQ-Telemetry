@@ -24,6 +24,16 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   kind "tester" (`testerAlert` in alertslib.js, never an email): the phones show it as a notification, and every device
   shows "You are now a Pitlane HQ tester" in its inbox once (until dismissed), with a button to the support chat for
   their feedback.
+- Asking to test (`testask.js`, migration 0094 `accounts.test_ask`/`test_ask_what`): a signed-in driver who is not a
+  tester sees "Ask to test" where something In development shows (the In development cards, under the game switch while
+  ACC and Assetto Corsa are locked, the Leagues card on the phones) and "Ask to be a tester" on their account card (PC
+  and web Settings, the phones' account screen). One tap sends POST /community/tester/ask {what}; the button then reads
+  "Request sent" (GET /community/tester/ask says `asked`). Every admin gets an alert of kind "test_ask" (`testAskAlert`,
+  a phone notification only with admin mode on), and the admin page's Users list shows "Asking to test" first, with
+  where they asked and when: "Yes, make a tester" (POST /community/admin/test-asks {id, yes: true}, the tester level
+  and its "tester" alert) or "No" (closed for good: the driver is not asked again and still reads "Request sent"). The
+  admins' inbox has "Drivers ask to test" while any wait (`pending` in GET /community/tester/ask). Making a tester from
+  the list answers a request too. The PC agent passes POST /community/tester/ask to the server (placcount.go).
 - Admins: the admin page (on the PC, the web and the phones; `admSecs`/`admParts`/`wireAdminProfile` in index.html) is
   sections as tabs, each with its line of explanation: Summary (the key numbers, then the analytics), Users (every
   account with what it uses in the last 30 days, its devices and when it was seen, a name opening its detail,

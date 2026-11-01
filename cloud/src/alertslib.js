@@ -1,5 +1,5 @@
 // The phones' notifications (alerts.js wires it to the server, migration 0081): a record of a driver's beaten by another
-// driver, being made a tester by an admin (testerAlert) (keepBestLap in community.js calls recordBeaten before it keeps a faster lap) and, for the accounts with
+// driver, being made a tester by an admin (testerAlert), a driver asking to test (testAskAlert, to the admins) (keepBestLap in community.js calls recordBeaten before it keeps a faster lap) and, for the accounts with
 // notifications on in a phone, the summary of their week on Monday. The phones read GET /community/alerts?since= in the
 // background and show a notification; the PC and the web show a beaten record on Home. Nothing goes by email. The
 // statements, the route and the job take the sign-in and the summary handed in, so cloud/test/alerts.test.mjs runs them
@@ -137,6 +137,14 @@ export async function weeklyAlerts(env, { sessionSummary }, now = Date.now()) {
 export async function testerAlert(env, acc, now = Date.now()) {
   await env.DB.prepare(SQL_ALERT_ADD).bind(rid(), acc, "tester", now, "{}").run();
   await wake(env, acc);
+}
+
+/** A driver asked to test what is in development: every admin of the server hears it (the phones in admin mode). */
+export async function testAskAlert(env, admins, data, now = Date.now()) {
+  for (const a of admins) {
+    await env.DB.prepare(SQL_ALERT_ADD).bind(rid(), a, "test_ask", now, JSON.stringify(data)).run();
+    await wake(env, a);
+  }
 }
 
 export const pruneAlerts = (env, now = Date.now()) => env.DB.prepare(SQL_ALERT_PRUNE).bind(now - ALERT_DAYS * 864e5).run();

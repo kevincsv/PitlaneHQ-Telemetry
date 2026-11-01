@@ -10,6 +10,7 @@ improvements". 1.0.0 comes when the beta ends. Newest first.
 - Le Mans Ultimate shows the car's damage on the dash.
 - The lap analysis shows Le Mans Ultimate's hybrid battery through the lap.
 - The race summary shows what each pit stop cost.
+- LMU leagues show their classes, and records and boards show the game version they were set on.
 - Pitlane HQ is in the Microsoft Store.
 - Fixes and improvements.
 

@@ -48,6 +48,10 @@ var require_pitwall_analysis = __commonJS({
         return { spd: /* @__PURE__ */ __name((ms) => imp ? ms * 2.23694 : ms * 3.6, "spd"), spdU: /* @__PURE__ */ __name(() => imp ? "mph" : "km/h", "spdU") };
       }, "unitsOf");
       const turnsOf = /* @__PURE__ */ __name((ctx) => ctx && Array.isArray(ctx.turns) ? ctx.turns : null, "turnsOf");
+      const turnLab = /* @__PURE__ */ __name((ctx, n) => {
+        const nm = ctx && Array.isArray(ctx.turnNames) ? ctx.turnNames[n - 1] : "";
+        return nm ? `T${n} ${nm}` : `T${n}`;
+      }, "turnLab");
       const sgn = /* @__PURE__ */ __name((d, n = 3) => d == null || isNaN(d) ? "\u2013" : (d >= 0 ? "+" : "\u2212") + Math.abs(d).toFixed(n), "sgn");
       function coachOf(ctx) {
         const W2 = ctx && ctx.weights || {}, ME = ctx && ctx.me || {}, w = W2.w || {}, b2 = W2.b || {}, mw = ME.w || {};
@@ -846,9 +850,9 @@ var require_pitwall_analysis = __commonJS({
       }
       __name(cornerMarks, "cornerMarks");
       const cornerSpan = /* @__PURE__ */ __name((c) => [Math.max(0, c.d - 50), c.apex + 150], "cornerSpan");
-      function cornerStep(c, Tx, u, L, w) {
+      function cornerStep(c, Tx, u, L, w, ctx) {
         const f = familyOf(c.kind), what = whatOf(c, Tx, u), cf = c.oval && c.lift && COST[f + "_lift"] ? f + "_lift" : f, cost = Tx(...COST[cf] || COST.speed), how = howOf(f, c, Tx, u);
-        return { k: "corner", id: "corner:" + (c.kind || ""), kind: c.kind, turns: [c.n], gain: c.lost, w, t: `T${c.n} \xB7 ${Tx(c.tip[0], c.tip[1], c.tip[2])}`, what, cost, why: what + " " + cost, how, marks: cornerMarks(c, L), spans: [cornerSpan(c)] };
+        return { k: "corner", id: "corner:" + (c.kind || ""), kind: c.kind, turns: [c.n], gain: c.lost, w, t: `${turnLab(ctx, c.n)} \xB7 ${Tx(c.tip[0], c.tip[1], c.tip[2])}`, what, cost, why: what + " " + cost, how, marks: cornerMarks(c, L), spans: [cornerSpan(c)] };
       }
       __name(cornerStep, "cornerStep");
       const turnMarks = /* @__PURE__ */ __name((list) => list.map((c) => ({ d: c.apex, k: "apex", n: c.n })), "turnMarks");
@@ -1038,7 +1042,7 @@ var require_pitwall_analysis = __commonJS({
           }
         });
         const P2 = [], r22 = /* @__PURE__ */ __name((v) => Math.round(v * 100) / 100, "r2"), L = n * BIN3, T32 = /* @__PURE__ */ __name((a) => Tx(a[0], a[1], a[2]), "T3");
-        cs.filter((c) => c.lost > 0.05).sort((a, b2) => b2.lost * tipWeight(b2) * dif(b2) - a.lost * tipWeight(a) * dif(a)).slice(0, 3).forEach((c) => P2.push(cornerStep(c, Tx, spdU(), L, tipWeight(c) * dif(c))));
+        cs.filter((c) => c.lost > 0.05).sort((a, b2) => b2.lost * tipWeight(b2) * dif(b2) - a.lost * tipWeight(a) * dif(a)).slice(0, 3).forEach((c) => P2.push(cornerStep(c, Tx, spdU(), L, tipWeight(c) * dif(c), ctx)));
         const worst = Object.entries(ph).sort((a, b2) => b2[1] - a[1])[0];
         const avg = /* @__PURE__ */ __name((a) => a.length ? a.reduce((q2, v) => q2 + v, 0) / a.length : null, "avg"), mdd = avg(cs.filter((c) => c.dd != null).map((c) => c.dd)), mdmin = avg(cs.filter((c) => c.vmin != null).map((c) => c.vmin - c.vminr)), mlate = avg(cs.filter((c) => c.late != null).map((c) => c.late));
         if (worst && worst[1] > 0.12 && phN[worst[0]] >= 3) {
@@ -1222,8 +1226,8 @@ var require_pitwall_analysis = __commonJS({
           const score = dif + (im ? Math.min(1, im.gain / 0.2) : 0) + (mk ? Math.min(0.6, mk.n / 10) : 0);
           return { n, d: Math.round(c.d), apex: Math.round(c.apex), b: c.b0 != null ? [Math.round(c.b0), Math.round(c.b1)] : null, g, v: c.v0 != null ? [r4(spd(c.v0)), r4(spd(c.v1))] : null, dif: Math.round(dif * 100) / 100, level, levelText: level === "hard" ? Tx("Hard", "Dif\xEDcil", "Dif\xEDcil") : level === "medium" ? Tx("Medium", "Media", "M\xE9dia") : Tx("Easy", "F\xE1cil", "F\xE1cil"), brake, gear, apexSpeed: apex, mistake, improve, lines, drivers: c.n || 0, score: Math.round(score * 100) / 100 };
         });
-        const brief = out.slice().sort((a, b2) => b2.score - a.score).slice(0, 3).filter((x) => x.score > 0).map((c) => ({ n: c.n, apex: c.apex, t: `T${c.n} \xB7 ${c.levelText}`, text: c.lines[0] || "" }));
-        return { corners: out, brief, drivers: Math.max(0, ...cs.map((c) => c.n || 0)), L: Math.round(L) };
+        const brief = out.slice().sort((a, b2) => b2.score - a.score).slice(0, 3).filter((x) => x.score > 0).map((c) => ({ n: c.n, apex: c.apex, t: `${turnLab(ctx, c.n)} \xB7 ${c.levelText}`, text: c.lines[0] || "" }));
+        return { corners: out.map((c) => ({ ...c, lab: turnLab(ctx, c.n) })), brief, drivers: Math.max(0, ...cs.map((c) => c.n || 0)), L: Math.round(L) };
       }
       __name(trackGuide, "trackGuide");
       function cornerRanks(A, md2, ctx) {
@@ -1450,7 +1454,7 @@ var require_pitwall_analysis = __commonJS({
       __name(notesOf, "notesOf");
       function guideItems(g) {
         const tone = /* @__PURE__ */ __name((c) => c.level === "hard" ? "bad" : c.level === "easy" ? "good" : "", "tone");
-        return g.corners.map((c) => ({ t: `T${c.n} \xB7 ${c.levelText}`, text: c.lines.join(" "), tone: tone(c) }));
+        return g.corners.map((c) => ({ t: `${c.lab || "T" + c.n} \xB7 ${c.levelText}`, text: c.lines.join(" "), tone: tone(c) }));
       }
       __name(guideItems, "guideItems");
       function analyse(A, B, ctx, opts) {
@@ -1769,6 +1773,7 @@ var require_pitwall_analysis = __commonJS({
         likeOf,
         likeSteps,
         catGroup,
+        turnLab,
         lapSpread,
         cornerSpread,
         offsExplained,
@@ -8800,6 +8805,8 @@ var leagueGame = /* @__PURE__ */ __name((g) => {
   return LEAGUE_GAMES.includes(x) ? x : "iracing";
 }, "leagueGame");
 var LMU_RE = /le ?mans ultimate|\blmu\b/i;
+var LMU_CLS = [["Hypercar", /hyper ?cars?|\blmh\b|\blmdh\b/i], ["LMP2", /\blmp ?2\b/i], ["LMP3", /\blmp ?3\b/i], ["LMGTE", /\b(lm ?)?gte\b/i], ["LMGT3", /\b(lm ?)?gt ?3\b/i]];
+var lmuClasses = /* @__PURE__ */ __name((t) => LMU_CLS.filter(([, re]) => re.test(String(t || ""))).map(([k]) => k), "lmuClasses");
 var gameOfPost = /* @__PURE__ */ __name((t) => /iracing/i.test(t) ? "iracing" : LMU_RE.test(t) ? "lmu" : "", "gameOfPost");
 var UA = "web:app.pitlanehq.leagues:v1.0 (+https://pitlanehq.app)";
 var EVERY2 = 6 * 36e5;
@@ -9023,6 +9030,7 @@ async function foundLeagues(env, admin, game) {
         online: x.online || 0,
         cats: e.cats || cats,
         game: x.game || "iracing",
+        cls: g === "lmu" ? lmuClasses([e.name || x.name, e.title != null ? e.title : x.title].join(" ")) : void 0,
         checked: x.checked,
         hidden: admin ? !!x.hidden : void 0,
         edited: admin ? !!x.edit : void 0
@@ -9079,6 +9087,21 @@ async function classLaps(env, trackId, cls, opts = {}) {
   return r4.results || [];
 }
 __name(classLaps, "classLaps");
+async function lmuVersions(env) {
+  const r4 = await env.DB.prepare("SELECT game_version AS v, MIN(at) AS at FROM lmu_api WHERE game_version<>'' GROUP BY game_version ORDER BY at").all().catch(() => null);
+  return (r4 && r4.results || []).map((x) => ({ v: shortVer(x.v), at: +x.at || 0 }));
+}
+__name(lmuVersions, "lmuVersions");
+var shortVer = /* @__PURE__ */ __name((v) => String(v || "").split(/[-\s]/)[0], "shortVer");
+function verAt(vs, at2) {
+  let v = "";
+  for (const x of vs || []) {
+    if (x.at <= at2) v = x.v;
+    else break;
+  }
+  return v;
+}
+__name(verAt, "verAt");
 
 // src/lapsectors.js
 function traceSectors(tr2, time) {
@@ -9409,6 +9432,7 @@ async function rememberLic(env, uid, cat, lic) {
   await env.DB.prepare("UPDATE community_users SET lics=?2 WHERE id=?1").bind(uid, JSON.stringify(cur)).run();
 }
 __name(rememberLic, "rememberLic");
+var lmuVers = /* @__PURE__ */ __name(async (env) => (await minuteCache(env, "lmu-versions", async () => ({ results: await lmuVersions(env) }))).results || [], "lmuVers");
 async function minuteCache(env, k, fn) {
   const cache3 = env.LOCAL !== "1" && typeof caches !== "undefined" && caches.default ? caches.default : null;
   const key2 = new Request("https://db.cache/" + k);
@@ -9501,7 +9525,8 @@ async function community(req, env, url, ctx) {
        WHERE l.rk=1 ORDER BY l.created DESC LIMIT ?2`
     ).bind(game, lim).all());
     const cm = all || game === "iracing" ? await catMap(env) : null;
-    return json13({ records: (r4.results || []).map(({ uid, hint, prevTime, prevAlias, ...x }) => ({ ...x, game: gameOf(x.game), car: famName(gameOf(x.game), x.carId, x.car), cat: cm && gameOf(x.game) === "iracing" ? catOf(cm, x.trackId, x.carId, hint, x.track, x.car) : "sports_car", prof: !!x.prof, sup: !!x.sup, hasTrace: !!x.hasTrace, mine: !!who2 && uid === who2.id, field: String(uid).startsWith("o:"), prev: prevTime ? { time: prevTime, alias: prevAlias } : null })) });
+    const lv = all || game === "lmu" ? await lmuVers(env) : null;
+    return json13({ records: (r4.results || []).map(({ uid, hint, prevTime, prevAlias, ...x }) => ({ ...x, ver: lv && gameOf(x.game) === "lmu" ? verAt(lv, x.created) || void 0 : void 0, game: gameOf(x.game), car: famName(gameOf(x.game), x.carId, x.car), cat: cm && gameOf(x.game) === "iracing" ? catOf(cm, x.trackId, x.carId, hint, x.track, x.car) : "sports_car", prof: !!x.prof, sup: !!x.sup, hasTrace: !!x.hasTrace, mine: !!who2 && uid === who2.id, field: String(uid).startsWith("o:"), prev: prevTime ? { time: prevTime, alias: prevAlias } : null })) });
   }
   if (p === "/track" && m === "GET") {
     const t = +url.searchParams.get("trackId");
@@ -9541,7 +9566,8 @@ async function community(req, env, url, ctx) {
     if (cq && +url.searchParams.get("trackId")) {
       const who3 = await me(req, env).catch(() => null);
       const rows = await classLaps(env, +url.searchParams.get("trackId"), cq, { admin: !!who3 && isAdmin(env, who3.id), rivals: seesRivals(req, env, who3), acctTrace: ACCT_TRACE });
-      return json13({ cat: "sports_car", cls: cq, laps: rows.map(({ uid, ...x }) => ({ ...x, car: famName(game, x.carId, x.car), lic: licOf(x.lic), prof: !!x.prof, sup: !!x.sup, mine: !!who3 && uid === who3.id, field: String(uid).startsWith("o:"), hasTrace: !!x.hasTrace, sectors: x.sectors ? JSON.parse(x.sectors) : null })) });
+      const lv2 = await lmuVers(env);
+      return json13({ cat: "sports_car", cls: cq, laps: rows.map(({ uid, ...x }) => ({ ...x, ver: verAt(lv2, x.created) || void 0, car: famName(game, x.carId, x.car), lic: licOf(x.lic), prof: !!x.prof, sup: !!x.sup, mine: !!who3 && uid === who3.id, field: String(uid).startsWith("o:"), hasTrace: !!x.hasTrace, sectors: x.sectors ? JSON.parse(x.sectors) : null })) });
     }
     const t = +url.searchParams.get("trackId"), c = await famId(env, game, url.searchParams.get("carId"));
     if (!t || !c) return err8("trackId and carId", 400);
@@ -9555,7 +9581,8 @@ async function community(req, env, url, ctx) {
        FROM community_laps l JOIN community_users u ON u.id=l.user_id LEFT JOIN accounts ac ON ac.id=l.user_id
        WHERE l.track_id=?1 AND l.car_id=?2 AND l.game=?3 AND COALESCE(l.shown,'')<>'model' ORDER BY l.time LIMIT 200`
     ).bind(t, c, game, cat).all();
-    return json13({ cat, cls: game === "lmu" ? h && h.cls || lmuClass(null, h && h.car) : null, laps: (r4.results || []).map(({ uid, ...x }) => ({ ...x, lic: licOf(x.lic), prof: !!x.prof, sup: !!x.sup, mine: !!who2 && uid === who2.id, field: String(uid).startsWith("o:"), hasTrace: !!x.hasTrace, sectors: x.sectors ? JSON.parse(x.sectors) : null })) });
+    const lv = game === "lmu" ? await lmuVers(env) : null;
+    return json13({ cat, cls: game === "lmu" ? h && h.cls || lmuClass(null, h && h.car) : null, laps: (r4.results || []).map(({ uid, ...x }) => ({ ...x, ver: lv ? verAt(lv, x.created) || void 0 : void 0, lic: licOf(x.lic), prof: !!x.prof, sup: !!x.sup, mine: !!who2 && uid === who2.id, field: String(uid).startsWith("o:"), hasTrace: !!x.hasTrace, sectors: x.sectors ? JSON.parse(x.sectors) : null })) });
   }
   if (p.startsWith("/laps/") && m === "GET") {
     const rivals = seesRivals(req, env, await me(req, env).catch(() => null));
@@ -9612,12 +9639,17 @@ async function community(req, env, url, ctx) {
   if (p === "/turns" && m === "GET") {
     const t = +url.searchParams.get("trackId");
     if (!t) return err8("trackId", 400);
-    const r4 = await env.DB.prepare("SELECT turns, updated FROM track_turns WHERE game=?1 AND track_id=?2").bind(game, t).first();
-    let turns = [], auto = false, count = 0;
+    const r4 = await env.DB.prepare("SELECT turns, names, updated FROM track_turns WHERE game=?1 AND track_id=?2").bind(game, t).first();
+    let turns = [], auto = false, count = 0, names = [];
     try {
       turns = r4 ? JSON.parse(r4.turns) : [];
     } catch (e) {
       turns = [];
+    }
+    try {
+      names = r4 && r4.names ? JSON.parse(r4.names) : [];
+    } catch (e) {
+      names = [];
     }
     if (!turns.length) {
       const [lay, want, slows] = await Promise.all([env.DB.prepare("SELECT pts FROM track_maps WHERE game=?1 AND track_id=?2").bind(game, t).first(), turnCount(env, game, t), slowsOf(env, game, t)]);
@@ -9632,7 +9664,7 @@ async function community(req, env, url, ctx) {
       }
       if (want) count = want;
     }
-    return new Response(JSON.stringify({ trackId: t, game, turns, auto, ...count ? { count } : {}, updated: r4 ? r4.updated : 0 }), { headers: { ...JSONH8, "cache-control": "public, max-age=300" } });
+    return new Response(JSON.stringify({ trackId: t, game, turns, auto, ...!auto && names.some(Boolean) ? { names } : {}, ...count ? { count } : {}, updated: r4 ? r4.updated : 0 }), { headers: { ...JSONH8, "cache-control": "public, max-age=300" } });
   }
   if (p === "/pitlane" && m === "GET") {
     const t = +url.searchParams.get("trackId");
@@ -9647,6 +9679,12 @@ async function community(req, env, url, ctx) {
     const b2 = body;
     const t = +b2.trackId, g = String(b2.game || "iracing").slice(0, 20);
     const turns = Array.isArray(b2.turns) ? b2.turns.map(Number).filter((x) => isFinite(x) && x >= 0 && x < 1).slice(0, 60) : null;
+    if (t && !turns && Array.isArray(b2.names)) {
+      const names = b2.names.slice(0, 60).map((x) => String(x || "").replace(/[\u0000-\u001f<>]/g, "").trim().slice(0, 40));
+      const r4 = await env.DB.prepare("UPDATE track_turns SET names=?3, updated=?4 WHERE game=?1 AND track_id=?2").bind(g, t, names.some(Boolean) ? JSON.stringify(names) : null, Date.now()).run();
+      if (!r4.meta || !r4.meta.changes) return err8("place the official turns first", 400);
+      return json13({ ok: true, trackId: t, game: g, names });
+    }
     if (!t || !turns) return err8("trackId and turns", 400);
     if (!turns.length) await env.DB.prepare("DELETE FROM track_turns WHERE game=?1 AND track_id=?2").bind(g, t).run();
     else await env.DB.prepare("INSERT INTO track_turns (game, track_id, turns, updated) VALUES (?1, ?2, ?3, ?4) ON CONFLICT(game, track_id) DO UPDATE SET turns=excluded.turns, updated=excluded.updated").bind(g, t, JSON.stringify(turns.map((x) => Math.round(x * 1e5) / 1e5)), Date.now()).run();
@@ -9998,6 +10036,7 @@ async function community(req, env, url, ctx) {
         created: x2.created,
         updated: x2.updated,
         game: x2.game || "iracing",
+        cls: x2.game === "lmu" ? lmuClasses([x2.name, x2.cars, x2.about].join(" ")) : void 0,
         mine: !!who2 && x2.owner === who2.id,
         by: x2.alias || "Driver",
         bot: !!x2.bot

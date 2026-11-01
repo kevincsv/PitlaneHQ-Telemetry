@@ -25,7 +25,13 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
 - Overlay windows (what is in development or switched off is in CLAUDE.md, "Feature status"):
   A sync reload never closes or reopens the overlays. An overlay
   window is the widget itself, with Windows 11's rounded corners and a quiet border (`ovwin`, `noWinBorder`); it
-  fits its content's height (grows at once, shrinks after a moment). An overlay never leaves the desktop when
+  fits its content's height (grows at once, shrinks after a moment). The relative's and the standings' width follows
+  their columns (`tableDesignW`: their usual width with the columns they come with, each column adding or taking away
+  its room, Country flags a little more): a column added widens the window by as much at the size the driver gave it,
+  so the text keeps its size and every column shows (`ovPaint`), never wider than the desktop.
+  There is one kind of overlay window, the frameless one (`Engine` is always "webview"; the Edge window was dropped),
+  and clicks reach an overlay only while the overlays are being placed (Place on the screen); otherwise every click
+  goes to the game (`Lock` is always on; the click-through switch was dropped). An overlay never leaves the desktop when
   dragged, resized or placed (`keepOnScreen`, `clampMove`). Nor is it made smaller than it can be read: its default width
   (`overlayMinSize`; the map, the radar and the g-force their default height too), when resized, moved or opened, and
   not even while the corner is dragged (`WM_GETMINMAXINFO`, `OV_MINW` in the Overlays tab's screen). The
@@ -78,12 +84,15 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   the per-pixel distance where the answer is known and the text's glyphs and widths are kept (`textMask`, `ovWidths`),
   the map's still part is drawn once per size and track (`mapLayer`), always the same pixels as before
   (`TestOverlayShapesSameAsBefore`, `TestOverlaysRedrawTheSame`; `ovbench_test.go` measures every overlay's draw), and
-  Overlays → More settings → Frame rate (30 by default, 20, 15 or 10 a second, `ui.ovfps`; the radar twice it) lowers it.
+  each overlay's own Frame rate (its settings → Look: 10, 15, 20, 30, 45 or 60 a second, `ui.<overlay>.fps`, `ovFPS`;
+  by default 30, the radar 60, the standings 10; above 30 its window asks the stream for 60 samples a second,
+  `ovStreamHz`) sets its pace. The old rate for all of them (`ui.ovfps`, from the dropped More settings) still counts
+  for an overlay without its own, never above the default.
   Every overlay's Configure window has its own Opacity (`ui.<overlay>.alpha`, 60–255, `ovAlpha`/`ovAlphaOf`; unset, the
   old setting for all of them, `CFG.alpha`, else opaque; VR too; the designs' panels are opaque themselves, fillA 1, so at 255 nothing of the game shows through, Frameless aside, `TestOverlayStylesOpaque`) and, for the overlays with a title (`OV_TITLED`),
   "Show the title" (`ui.<overlay>.title`, on by default, `titleOn`/`titleH`: off, the content moves up and the overlay
-  is shorter; the engine's and the pit lane's badges keep their row while lit); Overlays → More settings → Titles shows or
-  hides them all at once. Every overlay window's Configure also has its text size (`ui.<overlay>.textScale` 0.85/1/1.2,
+  is shorter; the engine's and the pit lane's badges keep their row while lit), set on each overlay only (the owner's
+  choice: no switch for all of them). Every overlay window's Configure also has its text size (`ui.<overlay>.textScale` 0.85/1/1.2,
   scaling its whole drawing, `textScale`) and "Hide by itself" (`ui.<overlay>.hide`: "car" out of the car, garage or no
   game, "pits" that and on the pit road; nothing on the screen, like the radar with nobody near, never while moving the
   overlays; `autoHidden`, OnPitRoad asked only then; the web widget in an overlay window the same, `ovOwnApply`), and
@@ -164,7 +173,8 @@ overlay windows' code and the Telemetry tab's settings window (`openWidgetCfg`);
   placing locks them), Close all and Open now (opens the Auto overlays of the game running, or all of them with no
   game). Above the screen: the design for all the overlays (`ui.ovstyle`, Lane by default), the legend (open solid,
   closed dashed) and Reset positions. At the foot: Open my overlays when I get in the car, Close them when the game
-  closes and More settings (window engine, titles shown or hidden, frame rate, click-through).
+  closes. Nothing else: the window kind, the titles, the frame rate and the click-through are no longer settings for
+  all of them (the owner's choice; the rate and the title are each overlay's own, in its settings → Look).
 - The list: the overlays in four groups (`OVT_GROUPS`): Around you (relative, standings, radar, map, track bar, flags,
   gap graph, incident log), Pace (timing, delta bar, coach, braking markers, mini-sectors, lap compare), Car (dash,
   inputs, fuel, tyres, engine, pit, DRS & push-to-pass) and More (weather, g-force, driving stats, telemetry,
@@ -175,8 +185,8 @@ overlay windows' code and the Telemetry tab's settings window (`openWidgetCfg`);
   in the accent): drag to move, the corner to resize, a click chooses it; the windows move as you drag
   (`/api/overlay/move`), never smaller than `OV_MINW`/`OV_MINH`, and the screen follows the windows dragged on the
   PC itself (`/api/overlay/list` every 1.5 s).
-- The chosen overlay: its name, "Experimental" when it is, open or closed, its live preview (the overlay page itself
-  with `preview=1`, scaled to the column, at its opacity, on the web too), Open or
+- The chosen overlay: its name, "Experimental" when it is, open or closed, its live preview (on the PC the overlay
+  drawn by its own code, `ovtPic`; on the web the overlay page with `preview=1`; scaled to the column, at its opacity), Open or
   Close (its window; "Open here" in a browser on the PC's address; nothing on the web), All settings (`ovtSettings`),
   When I get in the car per game (iRacing, LMU: `autoIn`/`setAutoIn`; a game that does not send what it needs is
   dashed and says so on hover), its own design, opacity, text size, Hide by itself and Show the title (the same keys as
@@ -194,8 +204,9 @@ overlay windows' code and the Telemetry tab's settings window (`openWidgetCfg`);
 ### The settings window
 
 All settings opens `ovtSettings(w)` (`pitwall-overlays-settings.js`): a window with the overlay's name, open or closed
-and ✕, the overlay live on the left (the overlay page with `preview=1`, up to 1.25× its size) with Reset to default
-and Copy…, and every setting on the right in tabs; Done, ✕, Escape or a click outside close it. Settings are not
+and ✕, the overlay live on the left (as in the tab, at most its own size, staying in view) with Reset to default
+and Copy…, and every setting on the right in tabs; Done, ✕, Escape or a click outside close it. The window grows with
+what it shows and the page scrolls (nothing scrolls inside it), and so does the preview (the owner's choice). Settings are not
 simple switches only: they are the same settings, under the same keys, as `openWidgetCfg` and `OV_OPTS`, none left
 out (the owner's rule: easy to change, never cut down).
 - Relative and Standings: Columns (the chosen ones in order: drag a row or ↑ ↓, ✕ to take one out, Remove all, + to
@@ -207,7 +218,8 @@ out (the owner's rule: easy to change, never cut down).
   range and predicted lap, the inputs' parts, bars and trace, the pit loss, the gap graph's minutes and cars, the
   coach's reference, mode, corner names, corners, hint, verdict and lead, DRS hiding; then their `OV_OPTS`), the
   telemetry's Values (the chosen values in order and a search over every value the game sends) and Look.
-- Look: design (or the same as all), opacity, text size, Hide by itself and the title (the overlays that have one).
+- Look: design (or the same as all), opacity, text size, Hide by itself, frame rate and the title (the overlays that
+  have one).
 - Numbers go with − and + inside their limits; one-of choices and several-of choices are chips; on/off settings are
   switches. Reset to default (asks first) puts the overlay's settings and look back as they come. Copy… copies the
   other table's columns, header and footer (Relative and Standings), or this look to every overlay.
@@ -228,7 +240,10 @@ An overlay's preview never shows an invented race. It plays, in this order:
    /community/preview/sample?game= hands out the newest one of the last month (public, cached 10 minutes). The agent
    asks it through GET /api/preview/sample (yours first, the community's after, kept 30 minutes); the web asks the
    server straight away.
-The page (`previewSampleTick`) plays the sample on a loop at 30 frames a second, blending between its frames (the
+On the PC the Overlays tab's previews are the overlays drawn by their own code (GET /api/overlay/preview.png?w=,
+`ovpreview.go`: `ovDraw` with the settings as they are, at the overlay's normal width, cut to the height it needs,
+several times a second; the header X-Preview-Src says live, mine or community), so they are exactly the windows the
+driver gets. On the web the preview is the overlay page: it (`previewSampleTick`) plays the sample on a loop at 30 frames a second, blending between its frames (the
 `*Pct` values wrap), only inside that preview (`STATUS.demo`: nothing recorded or uploaded), tagged in its corner "Your
 last session" or "Another driver". With none of them the overlay waits for the game like any other; the demo data's
 race plays there only with Settings → About → Demo data on.

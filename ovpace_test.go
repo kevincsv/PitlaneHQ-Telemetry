@@ -327,10 +327,15 @@ func TestOverlayTimer(t *testing.T) {
 		ui   map[string]any
 		ms   uintptr
 	}{{"radar", nil, 16}, {"relative", nil, 33}, {"standings", nil, 100}, {"relative", map[string]any{"ovfps": 15.0}, 66},
-		{"radar", map[string]any{"ovfps": 15.0}, 33}, {"standings", map[string]any{"ovfps": 10.0}, 100}, {"map", map[string]any{"ovfps": 3.0}, 33}} {
+		{"radar", map[string]any{"ovfps": 15.0}, 33}, {"standings", map[string]any{"ovfps": 10.0}, 100}, {"map", map[string]any{"ovfps": 3.0}, 33},
+		{"relative", map[string]any{"relative": map[string]any{"fps": 60.0}, "ovfps": 15.0}, 16}, {"standings", map[string]any{"standings": map[string]any{"fps": 30.0}}, 33},
+		{"map", map[string]any{"map": map[string]any{"fps": 45.0}}, 22}, {"map", map[string]any{"map": map[string]any{"fps": 90.0}}, 33}, {"radar", map[string]any{"radar": map[string]any{"fps": 60.0}}, 16}} {
 		if ms := ovTimerMs(c.name, c.ui); ms != c.ms {
 			t.Errorf("%s %v: %d ms, want %d", c.name, c.ui, ms, c.ms)
 		}
+	}
+	if ovStreamHz("relative", nil) != 30 || ovStreamHz("radar", nil) != 60 || ovStreamHz("relative", map[string]any{"relative": map[string]any{"fps": 60.0}}) != 60 || ovStreamHz("relative", map[string]any{"ovfps": 60.0}) != 30 {
+		t.Fatal("stream rate")
 	}
 	if v := ovWithOnTrack([]string{"Speed"}); strings.Join(v, ",") != "Speed,IsOnTrack" || len(ovWithOnTrack(v)) != 2 {
 		t.Fatal("IsOnTrack")

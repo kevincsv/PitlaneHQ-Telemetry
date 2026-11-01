@@ -67,11 +67,11 @@ func openNamedOverlay(name string) error {
 	if !ok {
 		sz = [2]int{460, 260}
 	}
-	o := overlayReq{Widget: name, Width: int(float64(sz[0]) * c.Scale), Height: int(float64(sz[1]) * c.Scale), Alpha: c.Alpha, Top: true, Lock: c.Lock && !c.Edit}
+	o := overlayReq{Widget: name, Width: int(float64(sz[0]) * c.Scale), Height: int(float64(sz[1]) * c.Scale), Alpha: c.Alpha, Top: true, Lock: !c.Edit} // clicks reach an overlay only while the overlays are being placed
 	if p, ok := c.Positions[name]; ok {
 		o.X, o.Y, o.Width, o.Height, o.HasPos = p[0], p[1], p[2], p[3], true
 	}
-	return openOverlay(o, overlayURL(name), c.Engine)
+	return openOverlay(o, overlayURL(name), "webview") // always the frameless window (the Edge one was dropped)
 }
 
 func registerOverlayRoutes(mux *http.ServeMux) {

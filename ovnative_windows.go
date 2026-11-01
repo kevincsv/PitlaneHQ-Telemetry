@@ -11,6 +11,7 @@ package main
 
 import (
 	"log"
+	"math"
 	"os"
 	"syscall"
 	"time"
@@ -54,6 +55,7 @@ var nat struct {
 	vrAt     time.Time
 	timerMs  uintptr
 	hidden   bool
+	designW  float64 // the table's normal width the window was sized for (tableDesignW)
 }
 
 // runNativeOverlay opens a native overlay's window and blocks until it closes.
@@ -126,6 +128,7 @@ func ovNativeProc(h, msg, wp, lp uintptr) (ret uintptr) {
 	case 0x0113: // WM_TIMER
 		nat.st.mu.Lock()
 		edit, ms := nat.st.edit, ovTimerMs(nat.name, nat.st.ui)
+		nat.st.hz = ovStreamHz(nat.name, nat.st.ui) // above 30 a second, it asks the stream for 60
 		nat.st.mu.Unlock()
 		// hidden (Overlays → Hide): nothing drawn, its stream closed, the timer slow until it shows again
 		vis, _, _ := ovIsWindowVisible.Call(h)
@@ -255,6 +258,34 @@ func ovPaint(hwnd uintptr) {
 	now := time.Now()
 	c := &ovCanvas{w: w, h: h, px: unsafe.Slice((*uint32)(nat.bits), w*h)}
 	need := ovDraw(nat.name, c, nat.st, now)
+	// the relative and the standings: columns added or taken out widen or narrow the window by as much, at the size
+	// the driver gave it (the text keeps its size); never wider than the desktop
+	nat.st.mu.Lock()
+	dw := nat.st.designW
+	nat.st.mu.Unlock()
+	if dw > 0 && !nat.sizing {
+		if nat.designW > 0 && math.Abs(dw-nat.designW) > 0.5 {
+			s := desktopRect()
+			nw := int(float64(w)*dw/nat.designW + 0.5)
+			if mw, _ := overlayMinSize(nat.name); nw < mw {
+				nw = mw
+			}
+			if max := int(s.Right - s.Left); nw > max {
+				nw = max
+			}
+			if nw != w {
+				r := winRect{int32(x), int32(y), int32(x + nw), int32(y + h)}
+				clampMove(&r)
+				x, y, w = int(r.Left), int(r.Top), nw
+				if !ovBuffer(w, h) {
+					return
+				}
+				c = &ovCanvas{w: w, h: h, px: unsafe.Slice((*uint32)(nat.bits), w*h)}
+				need = ovDraw(nat.name, c, nat.st, now)
+			}
+		}
+		nat.designW = dw
+	}
 	if need > 0 && !nat.sizing {
 		s := desktopRect()
 		if max := int(s.Bottom - s.Top); need > max {

@@ -589,6 +589,8 @@ type ovState struct {
 	live    ovLive        // what the gauges remember between frames (ovnative2.go)
 	sm      *ovSessionMem // what the session overlays remember (ovnative3.go)
 	varsKey string        // the variables the stream was asked for (a change reconnects)
+	hzAsked int           // and its samples a second (a frame rate above 30 asks 60)
+	designW float64       // the relative's and standings' width at their normal size for the columns chosen (tableDesignW)
 	varsFn  func() []string
 	client  *http.Client // the PC's API, with this window's cookie (the native overlays that fetch: map, brakes)
 	base    string
@@ -936,12 +938,12 @@ func ovFeed(rawURL string, vars func() []string, st *ovState) {
 		}
 		want := strings.Join(vars(), ",")
 		st.mu.Lock()
-		st.varsKey = want
-		st.mu.Unlock()
+		st.varsKey, st.hzAsked = want, st.hz
 		hz := "30"
 		if st.hz > 0 {
 			hz = strconv.Itoa(st.hz)
 		}
+		st.mu.Unlock()
 		q := base + "/api/stream?vars=" + want + "&hz=" + hz
 		if lt != "" { // the one-use ticket of this window; it leaves a cookie for the reconnections
 			q += "&lt=" + url.QueryEscape(lt)
@@ -1086,7 +1088,7 @@ func (st *ovState) wantsOther() bool {
 	want := strings.Join(st.varsFn(), ",")
 	st.mu.Lock()
 	defer st.mu.Unlock()
-	return st.varsKey != "" && want != st.varsKey
+	return st.varsKey != "" && (want != st.varsKey || st.hz != st.hzAsked)
 }
 
 // countPits counts each car's stops (a new session starts again from zero); st.mu is held
@@ -1377,7 +1379,12 @@ func ovDraw(name string, c *ovCanvas, st *ovState, now time.Time) int {
 		ovTh.ttl, ovTh.armed, ovTh.bandBot, ovTh.raw = ovTitled[name] && st.titleOn(name), false, 0, false
 	}
 	defer func() { ovTh = nil; ovThMu.Unlock() }()
-	z := math.Max(0.5, math.Min(2.5, float64(c.w)/ovDesign[name]))
+	design := ovDesign[name]
+	if name == "relative" || name == "standings" { // their normal width is the columns chosen: more of them, wider
+		design = tableDesignW(name, st)
+		st.designW = design
+	}
+	z := math.Max(0.5, math.Min(2.5, float64(c.w)/design))
 	fresh := now.Sub(st.at) < 2*time.Second
 	if !fresh && len(st.frame) > 0 { // no data from the game: the overlay waits, empty, without old values
 		clear(st.frame)
@@ -1534,12 +1541,48 @@ type ovRow struct {
 }
 
 // drawTableOv: the relative (cars around you) or the standings (race order), like the app's widget table
+// the relative's and the standings' columns as they come, and the room each column takes at the normal size (its
+// title or its usual value, whichever is wider, plus the gap)
+var (
+	stdDefCols = []string{"pos", "num", "name", "lic", "ir", "irc", "laps", "last", "best", "gap", "int", "pit", "pgain"}
+	relDefCols = []string{"pos", "num", "name", "lic", "ir", "irc", "last", "gap"}
+	tableColW  = map[string]float64{"pos": 40, "cpos": 36, "num": 42, "name": 160, "car": 130, "lic": 60, "ir": 52, "irc": 52, "laps": 46,
+		"last": 80, "best": 80, "gap": 60, "int": 58, "pit": 38, "pgain": 48, "tyre": 32, "inc": 44, "pace": 60}
+)
+
+// tableDesignW: the relative's or the standings' width at the normal size for the columns chosen. With the columns
+// they come with it is their usual width (ovDesign); each column added widens it by its room, each taken out narrows
+// it, so the window grows with the columns (ovPaint) and the text keeps its size instead of getting smaller.
+func tableDesignW(name string, st *ovState) float64 {
+	key, def := "std", stdDefCols
+	if name == "relative" {
+		key, def = "rel", relDefCols
+	}
+	sum := func(cols []string) float64 {
+		w := 0.0
+		for _, k := range cols {
+			if v, ok := tableColW[k]; ok {
+				w += v
+			} else {
+				w += 50
+			}
+		}
+		return w
+	}
+	cols := gameKeep(st.game, "columns", uiList(st.uiMap(key), "cols", def))
+	w := ovDesign[name] * sum(cols) / sum(def)
+	if uiBool(st.uiMap(key), "flags", false) {
+		w += 22
+	}
+	return math.Max(ovDesign[name]*0.5, w)
+}
+
 func drawTableOv(c *ovCanvas, st *ovState, z float64, rel bool) int {
 	key := "std"
-	defCols, defHead, defFoot := []string{"pos", "num", "name", "lic", "ir", "irc", "laps", "last", "best", "gap", "int", "pit", "pgain"}, []string{"session", "lapsleft", "sof"}, []string{"pos", "irc", "inc"}
+	defCols, defHead, defFoot := stdDefCols, []string{"session", "lapsleft", "sof"}, []string{"pos", "irc", "inc"}
 	if rel {
 		key = "rel"
-		defCols, defHead, defFoot = []string{"pos", "num", "name", "lic", "ir", "irc", "last", "gap"}, []string{"session", "timeleft", "sof"}, []string{"irc", "inc", "fuel"}
+		defCols, defHead, defFoot = relDefCols, []string{"session", "timeleft", "sof"}, []string{"irc", "inc", "fuel"}
 	}
 	cfg := st.uiMap(key)
 	cols, head, foot := uiList(cfg, "cols", defCols), uiList(cfg, "head", defHead), uiList(cfg, "foot", defFoot)

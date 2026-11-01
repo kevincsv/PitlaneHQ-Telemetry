@@ -558,6 +558,7 @@ func main() {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/api/stream", handleStream)
 	registerPreviewRoutes(mux)
+	registerOverlayPreview(mux)
 	mux.HandleFunc("/api/info", func(w http.ResponseWriter, r *http.Request) {
 		st := currentStatus()
 		host, _ := os.Hostname()

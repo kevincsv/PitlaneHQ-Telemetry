@@ -120,9 +120,7 @@ func registerConfigRoutes(mux *http.ServeMux) {
 			cfgMu.Lock()
 			startChanged := in.StartWithWindows != cfg.StartWithWindows
 			in.Positions = cfg.Positions // window positions are owned by PitWall
-			if in.Engine != "edge" {
-				in.Engine = "webview"
-			}
+			in.Engine, in.Lock = "webview", true // one kind of overlay window, the frameless one; clicks go to the game unless placing
 			if in.Alpha < 40 || in.Alpha > 255 {
 				in.Alpha = 255
 			}
@@ -141,7 +139,7 @@ func registerConfigRoutes(mux *http.ServeMux) {
 					log.Println("Start with Windows:", err)
 				}
 			}
-			setOverlays(overlayReq{Widget: "*", Alpha: c.Alpha, Top: true, Lock: c.Lock && !c.Edit})
+			setOverlays(overlayReq{Widget: "*", Alpha: c.Alpha, Top: true, Lock: !c.Edit})
 		}
 		c, v := settingsSnapshot()
 		writeJSON(w, map[string]any{"config": c, "version": v})

@@ -63,14 +63,18 @@ function ovsPane(w){const k=ovsK(w),own=OVS_OWN[k]||{},tab=OVS.tab;
     <label class="ovs-grp"><span class="ovt-lab">${esc(ovsT("Opacity","Opacidad","Opacidade"))} <b id="ovsAV">${Math.round(a/255*100)}%</b></span><input type="range" id="ovsAlpha" min="60" max="255" step="5" value="${a}"></label>
     <div class="ovs-grp"><span class="ovt-lab">${esc(ovsT("Text size","Tamaño del texto","Tamanho do texto"))}</span>${seg("ts",[[.85,"Small","Pequeño","Pequeno"],[1,"Normal","Normal","Normal"],[1.2,"Large","Grande","Grande"]],ts)}</div>
     <div class="ovs-grp"><span class="ovt-lab">${esc(ovsT("Hide by itself","Ocultarse solo","Ocultar sozinho"))}</span>${seg("hide",[["","Never","Nunca","Nunca"],["car","Out of the car","Fuera del coche","Fora do carro"],["pits","And in the pits","Y en boxes","E nos boxes"]],hd)}</div>
+    <div class="ovs-grp"><span class="ovt-lab">${esc(ovsT("Frame rate","Fotogramas por segundo","Quadros por segundo"))}</span><div class="ovs-opts">${[10,15,20,30,45,60].map(n=>`<button type="button" class="ovt-chip${ovsFps(w)===n?" on":""}" data-s="fps" data-v="${n}" aria-pressed="${ovsFps(w)===n}">${n}</button>`).join("")}</div></div>
     ${OV_TITLED.includes(w)?`<button type="button" class="ovs-sw" data-s="title" aria-pressed="${g.title!==false}"><span>${esc(ovsT("Title","Título","Título"))}</span><span class="ovs-tg${g.title!==false?" on":""}"><i></i></span></button>`:""}`}
+// an overlay's frame rate (ovFPS in ovpace.go): its own, else the old one for all of them, else its default (the
+// radar 60, the standings 10, the rest 30)
+const ovsFpsDef=w=>w==="radar"?60:w==="standings"?10:30;
+function ovsFps(w){const o=((CFG.ui||{})[w]||{}).fps;if(o>=10&&o<=60)return +o;const g=(CFG.ui||{}).ovfps;return g>=10&&g<30&&w!=="radar"?(w==="standings"?Math.min(10,+g):+g):ovsFpsDef(w)}
 /* the overlay itself, live: the overlay page, playing the game's data or a real sample of it (previewSampleTick) */
 let OVS_TIMER=0;
-function ovsPreview(w){const box=$("#ovsPv");if(!box)return;clearInterval(OVS_TIMER);const live=!REMOTE,sz=OVSZ[w]||[460,260];
-  if(live){if(!box.querySelector("iframe"))box.innerHTML=`<div class="ovt-pf"><iframe title="${esc(ovtName(w))}" src="${MODE==="bridge"?"/":""}?overlay=${w}&preview=1" style="width:${sz[0]}px;height:${sz[1]}px" tabindex="-1"></iframe></div>`;
-    const f=box.querySelector("iframe"),k=Math.min(1.25,(box.clientWidth||480)/sz[0]);f.style.transform=`scale(${k})`;f.parentElement.style.height=Math.round(sz[1]*k)+"px"}
-  else if(w==="relative"||w==="standings"){const draw=()=>{if(!box.isConnected){clearInterval(OVS_TIMER);return}if(w==="relative")renderRelative(box);else renderStandingsWidget(box)};draw();OVS_TIMER=setInterval(draw,500)}
-  else box.innerHTML=ovtThumb(w);
+function ovsPreview(w){const box=$("#ovsPv");if(!box)return;clearInterval(OVS_TIMER);
+  if(MODE==="bridge")ovtPic(box,w); // the overlay drawn by its own code, as on the screen
+  else{const sz=OVSZ[w]||[460,260];if(!box.querySelector("iframe"))box.innerHTML=`<div class="ovt-pf"><iframe title="${esc(ovtName(w))}" src="?overlay=${w}&preview=1" style="width:${sz[0]}px;height:${sz[1]}px" tabindex="-1"></iframe></div>`;
+    const f=box.querySelector("iframe"),k=Math.min(1,(box.clientWidth||480)/sz[0]);f.style.transform=`scale(${k})`;f.parentElement.style.height=Math.round(sz[1]*k)+"px"}
   box.style.opacity=String(ovAlphaOf(w)/255)}
 function ovsDraw(keepScroll){const w=OVS.w,d=$("#ovsDlg");if(!d||!w)return;const tabs=ovsTabs(w);if(!tabs.some(t=>t[0]===OVS.tab))OVS.tab=tabs[0][0];const k=ovsK(w);
   const sc=keepScroll&&$("#ovsPane")?$("#ovsPane").scrollTop:0,first=!d.querySelector("#ovsPv")||d.dataset.w!==w;d.dataset.w=w;
@@ -111,39 +115,40 @@ function ovsClick(e){const d=e.currentTarget;if(e.target===d)return ovsClose();c
   if(s==="ts"){setUI(w,{textScale:+b.dataset.v});return ovsDraw(true)}
   if(s==="hide"){setUI(w,{hide:b.dataset.v});return ovsDraw(true)}
   if(s==="title"){setUI(w,{title:ui(w).title===false});return ovsDraw(true)}
+  if(s==="fps"){const n=+b.dataset.v;CFG.ui=CFG.ui||{};const m=Object.assign({},CFG.ui[w]||{});if(n===ovsFpsDef(w))delete m.fps;else m.fps=n;CFG.ui[w]=m;saveCfg();return ovsDraw(true)}
   if(s==="reset")return ovsReset(w)}
 // the spec of a choice, from OVS_OWN or OV_OPTS
 function ovsSpec(w,key,f){const own=OVS_OWN[key]||{};for(const o of [...(own.opt||[]),...(own.rows||[]),...(own.show||[])])if(o[1]===f)return o;const sp=OV_OPTS[w];if(sp&&sp.k===key){const o=sp.o.find(x=>x[0]===f);if(o)return[o[1],o[0],o[2],o[3]]}return["c",f,["","",""],[]]}
 async function ovsReset(w){if(!await uiConfirm(ovsT(`Put ${ovtName(w)} back as it comes?`,`¿Dejar ${ovtName(w)} como viene?`,`Deixar ${ovtName(w)} como vem?`)))return;
   CFG.ui=CFG.ui||{};const k=ovsK(w),sp=OV_OPTS[w];if(k&&k!=="tel")delete CFG.ui[k];if(sp&&sp.k!==k)delete CFG.ui[sp.k];
-  const m=Object.assign({},CFG.ui[w]||{});["style","alpha","textScale","hide","title"].forEach(x=>delete m[x]);CFG.ui[w]=m;saveCfg();
+  const m=Object.assign({},CFG.ui[w]||{});["style","alpha","textScale","hide","title","fps"].forEach(x=>delete m[x]);CFG.ui[w]=m;saveCfg();
   const d=$("#ovsDlg");if(d)d.innerHTML="";ovsDraw();toast(ovsT("Settings back to how they come.","Ajustes como vienen.","Ajustes como vêm."))}
 function ovsChange(e){const t=e.target,w=OVS.w;if(!w)return;
   if(t.id==="ovsStyle"){CFG.ui=CFG.ui||{};const m=Object.assign({},CFG.ui[w]||{});if(t.value)m.style=t.value;else delete m.style;CFG.ui[w]=m;saveCfg();return ovsDraw(true)}
   if(t.id==="ovsAlpha"){setUI(w,{alpha:Math.max(60,Math.min(255,+t.value||255))});return}
   if(t.id==="ovsCopy"){const v=t.value;t.value="";if(!v)return;
-    if(v==="__look"){CFG.ui=CFG.ui||{};const me=(CFG.ui[w]||{});WIDGETS.forEach(x=>{if(x===w)return;const m=Object.assign({},CFG.ui[x]||{});["style","alpha","textScale","hide"].forEach(k=>{if(k in me)m[k]=me[k];else delete m[k]});CFG.ui[x]=m});saveCfg();toast(ovsT("Look copied to every overlay.","Aspecto copiado a todos los overlays.","Aparência copiada para todos os overlays."));return}
+    if(v==="__look"){CFG.ui=CFG.ui||{};const me=(CFG.ui[w]||{});WIDGETS.forEach(x=>{if(x===w)return;const m=Object.assign({},CFG.ui[x]||{});["style","alpha","textScale","hide","fps"].forEach(k=>{if(k in me)m[k]=me[k];else delete m[k]});CFG.ui[x]=m});saveCfg();toast(ovsT("Look copied to every overlay.","Aspecto copiado a todos los overlays.","Aparência copiada para todos os overlays."));return}
     const o=ui(v);setUI(ovsK(w),{cols:o.cols.slice(),head:o.head.slice(),foot:o.foot.slice()});toast(ovsT("Columns, header and footer copied.","Columnas, cabecera y pie copiados.","Colunas, cabeçalho e rodapé copiados."));ovsDraw(true)}}
 function ovsInput(e){const t=e.target;
   if(t.id==="ovsAlpha"){const p=$("#ovsPv"),v=$("#ovsAV");if(p)p.style.opacity=String(+t.value/255);if(v)v.textContent=Math.round(+t.value/255*100)+"%"}
   if(t.id==="ovsQ"){OVS.q=t.value;const pos=t.selectionStart;ovsDraw(true);const n=$("#ovsQ");if(n){n.focus();n.setSelectionRange(pos,pos)}}}
-addEventListener("resize",()=>{if(OVS.w&&!REMOTE){const box=$("#ovsPv"),f=box&&box.querySelector("iframe"),sz=OVSZ[OVS.w]||[460,260];if(f){const k=Math.min(1.25,(box.clientWidth||480)/sz[0]);f.style.transform=`scale(${k})`;f.parentElement.style.height=Math.round(sz[1]*k)+"px"}}});
+addEventListener("resize",()=>{if(OVS.w&&MODE!=="bridge")ovsPreview(OVS.w)});
 
 (function ovsCss(){if(document.getElementById("ovsCss"))return;const s=document.createElement("style");s.id="ovsCss";s.textContent=`
-.ovs-bg{position:fixed;inset:0;z-index:60;display:grid;place-items:center;background:rgba(3,6,10,.66);padding:16px}.ovs-bg[hidden]{display:none!important}
-.ovs-pn{width:min(1100px,100%);max-height:92vh;display:flex;flex-direction:column;background:var(--surface);border:1px solid var(--line2,var(--line));border-radius:var(--radius,12px);overflow:hidden;box-shadow:0 24px 60px rgba(0,0,0,.5)}
+.ovs-bg{position:fixed;inset:0;z-index:60;display:flex;justify-content:center;align-items:flex-start;overflow:auto;background:rgba(3,6,10,.66);padding:4vh 16px}.ovs-bg[hidden]{display:none!important}
+.ovs-pn{width:min(1100px,100%);margin:auto 0;display:flex;flex-direction:column;background:var(--surface);border:1px solid var(--line2,var(--line));border-radius:var(--radius,12px);overflow:hidden;box-shadow:0 24px 60px rgba(0,0,0,.5)}
 .ovs-h{display:flex;align-items:center;gap:12px;padding:14px 18px;border-bottom:1px solid var(--line)}.ovs-h h2{flex:1;margin:0;font:700 22px var(--f-display,inherit);letter-spacing:.06em;text-transform:uppercase}
 .ovs-h .ovt-state .on-t{display:none}.ovs-h.is-open .ovt-state .on-t{display:inline}.ovs-h.is-open .ovt-state .off-t{display:none}.ovs-h .ovt-state{display:inline-flex;align-items:center;gap:6px;font:600 10px var(--f-data);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
 .ovs-x{width:36px;height:36px;border-radius:8px;border:1px solid var(--line);background:var(--surface2);color:var(--muted);cursor:pointer}
-.ovs-grid{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);flex:1;min-height:0;overflow:hidden}.ovs-grid>*{min-width:0}
-.ovs-left{padding:18px;border-right:1px solid var(--line);background:radial-gradient(120% 90% at 50% 0%,color-mix(in srgb,var(--surface2) 80%,#1a2230),var(--bg));overflow:auto;display:flex;flex-direction:column;gap:12px}
-.ovs-pv{min-height:160px;max-width:100%;overflow:hidden;transition:opacity .15s}.ovs-pv .ovt-pf{position:relative;overflow:hidden}.ovs-pv iframe{border:0;transform-origin:0 0;background:transparent;pointer-events:none}
+.ovs-grid{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr)}.ovs-grid>*{min-width:0}
+.ovs-left{padding:18px;border-right:1px solid var(--line);background:radial-gradient(120% 90% at 50% 0%,color-mix(in srgb,var(--surface2) 80%,#1a2230),var(--bg));display:flex;flex-direction:column;gap:12px;position:sticky;top:0;align-self:start}
+.ovs-pv{min-height:120px;max-width:100%;transition:opacity .15s}.ovs-pv .ovt-pf{position:relative;overflow:hidden}.ovs-pv iframe{border:0;transform-origin:0 0;background:transparent;pointer-events:none}
 .ovs-pva{display:flex;gap:8px;flex-wrap:wrap}.ovs-pva select{min-height:30px;font-size:12px}
-.ovs-right{display:flex;flex-direction:column;min-height:0;overflow:hidden}
+.ovs-right{display:flex;flex-direction:column}
 .ovs-tabs{display:flex;gap:2px;padding:10px 14px 0;border-bottom:1px solid var(--line);overflow-x:auto}
 .ovs-tabs button{border:0;background:none;color:var(--muted);font:600 12px var(--f-body,inherit);letter-spacing:.04em;text-transform:uppercase;padding:9px 11px;border-bottom:2px solid transparent;white-space:nowrap;cursor:pointer}
 .ovs-tabs button[aria-selected=true]{color:var(--fg);border-bottom-color:var(--accent)}
-.ovs-pane{padding:16px 18px;overflow:auto;display:flex;flex-direction:column;gap:14px;max-height:calc(92vh - 150px)}
+.ovs-pane{padding:16px 18px;display:flex;flex-direction:column;gap:14px}
 .ovs-grp{display:flex;flex-direction:column;gap:8px}.ovs-grp .ovt-lab b{float:right;color:var(--fg)}.ovt-lab em{font-style:normal;color:var(--accent);margin-left:4px}
 .ovs-opts{display:flex;flex-wrap:wrap;gap:8px}
 .ovs-sw{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;min-height:44px;padding:0 12px;border-radius:8px;border:1px solid var(--line);background:var(--surface2);color:var(--fg);text-align:left;font:500 13px var(--f-body,inherit);cursor:pointer}
@@ -159,5 +164,5 @@ addEventListener("resize",()=>{if(OVS.w&&!REMOTE){const box=$("#ovsPv"),f=box&&b
 .ovs-two{display:grid;grid-template-columns:1fr 1fr;gap:16px}
 #ovsQ{min-height:36px;width:100%}
 .ovs-end{display:flex;justify-content:flex-end;padding:12px 18px;border-top:1px solid var(--line)}
-@media (max-width:820px){.ovs-grid{grid-template-columns:minmax(0,1fr);overflow:auto}.ovs-left{border-right:0;border-bottom:1px solid var(--line)}.ovs-right{overflow:visible}.ovs-pane{max-height:none}.ovs-pn{overflow:auto}.ovs-two{grid-template-columns:minmax(0,1fr)}}
+@media (max-width:820px){.ovs-grid{grid-template-columns:minmax(0,1fr)}.ovs-left{border-right:0;border-bottom:1px solid var(--line);position:static}.ovs-two{grid-template-columns:minmax(0,1fr)}}
 `;document.head.appendChild(s)})();

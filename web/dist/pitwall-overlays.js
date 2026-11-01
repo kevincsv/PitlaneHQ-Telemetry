@@ -89,13 +89,11 @@ function ovtPresetsHTML(){const mine=ovtMyPresets();
     `<button type="button" class="ovt-chip add" data-a="savepreset">+ ${esc(T3("Save current","Guardar el actual","Salvar o atual"))}</button>`}
 function ovtDesignHTML(){const cur=ovtStyleAll();
   return `<label class="ovt-designsel"><span class="ovt-lab">${esc(T3("Design","Diseño","Design"))}</span><select data-c="style">${OV_STYLES.map(([k])=>`<option value="${k}"${cur===k?" selected":""}>${esc(ovStyleLabel(k))}${k==="classic"?"":" · Beta"}</option>`).join("")}</select></label>`}
+// the foot: when they open and close by themselves. The window kind (always the frameless one), the frame rate and
+// the title are no longer for all of them here: the rate and the title are each overlay's own (its settings → Look),
+// and clicks reach the overlays only while they are being placed (the owner's choices)
 function ovtFootHTML(){
-  return `${chk("oAuto",CFG.autoStart,L("autoOpen",true))}${chk("oClose",CFG.closeOnExit,L("closeExit",true))}
-    <details class="ovt-more"><summary>${esc(T3("More settings","Más ajustes","Mais ajustes"))}</summary><div class="ovt-morebody">
-      <label class="ovt-f"><span class="ovt-lab">${L("engineSel",true)}</span><select data-c="engine"><option value="webview">${esc(T3("Frameless (recommended)","Sin bordes (recomendado)","Sem bordas (recomendado)"))}</option><option value="edge">${esc(T3("Edge window","Ventana de Edge","Janela do Edge"))}</option></select></label>
-      <div class="ovt-f"><span class="ovt-lab">${esc(T3("Titles","Títulos","Títulos"))}</span><span class="seg3"><button type="button" data-a="ttl" data-k="1" aria-pressed="${OV_TITLED.every(w=>ui(w).title!==false)}">${esc(T3("Show all","Mostrar todos","Mostrar todos"))}</button><button type="button" data-a="ttl" data-k="0" aria-pressed="${OV_TITLED.every(w=>ui(w).title===false)}">${esc(T3("Hide all","Ocultar todos","Ocultar todos"))}</button></span></div>
-      <label class="ovt-f"><span class="ovt-lab">${esc(T3("Frame rate","Fotogramas por segundo","Quadros por segundo"))}</span><select data-c="fps">${[30,20,15,10].map(n=>`<option value="${n}"${((CFG.ui||{}).ovfps||30)===n?" selected":""}>${esc(T3(n+" a second",n+" por segundo",n+" por segundo"))}</option>`).join("")}</select></label>
-      ${chk("oLock",CFG.lock,L("clickThrough",true))}</div></details>`}
+  return `${chk("oAuto",CFG.autoStart,L("autoOpen",true))}${chk("oClose",CFG.closeOnExit,L("closeExit",true))}`}
 function ovtCounts(){const open=WIDGETS.filter(w=>OV_OPEN.has(w)).length,auto=WIDGETS.filter(ovtAutoAny).length,s=$("#ovSub");if(!s)return;
   s.textContent=(ovtRemote()?T3(`${open} open`,`${open} abiertos`,`${open} abertos`)+" · ":"")+T3(`${auto} on Auto`,`${auto} en Auto`,`${auto} no Auto`)}
 
@@ -118,7 +116,7 @@ function renderOverlaysTab(){const root=ovtFrame();if(!root)return;const remote=
   $("#ovtActs").innerHTML=`<button type="button" class="btn${CFG.edit?" primary":""}" data-a="edit" aria-pressed="${!!CFG.edit}"${remote||MODE==="local"?"":dis}>${esc(CFG.edit?T3("Done placing","Terminar de colocar","Terminar de posicionar"):T3("Place on the screen","Colocar en la pantalla","Posicionar na tela"))}</button>
     <button type="button" class="btn" data-a="closeall"${dis}>${L("closeAll",true)}</button><button type="button" class="btn primary" data-a="opennow"${dis}>${esc(T3("Open now","Abrir ahora","Abrir agora"))}</button>`;
   $("#ovtPresets").innerHTML=ovtPresetsHTML();
-  const foot=$("#ovtFoot");foot.innerHTML=ovtFootHTML();const eng=foot.querySelector('[data-c="engine"]');if(eng)eng.value=CFG.engine||"webview";
+  const foot=$("#ovtFoot");foot.innerHTML=ovtFootHTML();
   ovtRenderScreen();
   ovtCounts();markOvOpen();markGameGaps();renderScreenEditor();refreshScreenRects()}
 
@@ -141,10 +139,23 @@ function ovtRenderInsp(){const w=OVT.sel,g=ui(w),own=(CFG.ui||{})[w]||{},alpha=o
     ${OV_TITLED.includes(w)?`<div class="ovt-f"><button type="button" class="ovt-chip${g.title!==false?" on":""}" data-a="title" aria-pressed="${g.title!==false}">${esc(T3("Show the title","Mostrar el título","Mostrar o título"))}</button></div>`:""}`}
 /* the chosen overlay's live preview: the overlay page itself (scaled to the column), playing the game's data or a real
    sample of it (previewSampleTick in index.html) */
-function ovtPreview(w){const box=$("#ovtPrev");if(!box)return;const live=!REMOTE,sz=OVSZ[w]||[460,260];
-  if(OVT.prevW!==w||!box.firstChild){OVT.prevW=w;box.innerHTML=live?`<div class="ovt-pf"><iframe title="${esc(ovtName(w))}" src="${MODE==="bridge"?"/":""}?overlay=${w}&preview=1" style="width:${sz[0]}px;height:${sz[1]}px" tabindex="-1"></iframe></div>`:ovtThumb(w)}
-  const f=box.querySelector("iframe");if(f){const k=Math.min(1,(box.clientWidth||280)/sz[0]);f.style.transform=`scale(${k})`;f.parentElement.style.height=Math.round(sz[1]*k)+"px"}
+function ovtPreview(w){const box=$("#ovtPrev");if(!box)return;
+  if(MODE==="bridge")ovtPic(box,w);
+  else{const sz=OVSZ[w]||[460,260];if(OVT.prevW!==w||!box.querySelector("iframe")){OVT.prevW=w;box.innerHTML=`<div class="ovt-pf"><iframe title="${esc(ovtName(w))}" src="?overlay=${w}&preview=1" style="width:${sz[0]}px;height:${sz[1]}px" tabindex="-1"></iframe></div>`}
+    const f=box.querySelector("iframe"),k=Math.min(1,(box.clientWidth||280)/sz[0]);f.style.transform=`scale(${k})`;f.parentElement.style.height=Math.round(sz[1]*k)+"px"}
   box.style.opacity=String(ovAlphaOf(w)/255)}
+/* on the PC the preview is the overlay drawn by its own code, the picture its window shows (GET
+   /api/overlay/preview.png, ovpreview.go), several times a second while it is on the screen, with its settings as they
+   are now: it grows with the columns and rows it has to show. Its tag says whose data it plays when not the game's. */
+function ovtPic(box,w){let img=box.querySelector("img.ovt-pic");
+  if(!img||img.dataset.w!==w){box.innerHTML=`<div class="ovt-picw"><img class="ovt-pic" data-w="${w}" alt="${esc(ovtName(w))}"><span class="ovt-pvtag" hidden></span></div>`;img=box.querySelector("img.ovt-pic")}
+  if(img._loop)return;img._loop=true;const tag=box.querySelector(".ovt-pvtag");
+  const tick=async()=>{if(!img.isConnected)return;
+    if(!document.hidden){try{const r=await fetch(`/api/overlay/preview.png?w=${encodeURIComponent(w)}&t=${Date.now()}`,{cache:"no-store"});
+      if(r.ok){const src=r.headers.get("X-Preview-Src")||"",u=URL.createObjectURL(await r.blob()),old=img.src;img.onload=()=>{if(old.startsWith("blob:"))URL.revokeObjectURL(old)};img.src=u;
+        const t=src==="mine"?T3("Your last session","Tu última sesión","Sua última sessão"):src==="community"?T3("Another driver","Otro piloto","Outro piloto"):"";tag.hidden=!t;tag.textContent=t}}catch(e){}}
+    setTimeout(tick,120)};
+  tick()}
 
 /* ---------- what the controls do ---------- */
 const ovtProNeed=w=>{if(!proGated()||OV_BASIC.includes(w))return false;proDialog(T3("The experimental overlays need Pro.","Los overlays experimentales necesitan Pro.","Os overlays experimentais precisam do Pro."));return true};
@@ -153,6 +164,10 @@ async function ovtToggleOpen(w){if(!OV_OPEN.has(w)){if(ovtProNeed(w))return;awai
   OV_OPEN.delete(w);ovtBackToLive(w);markOvOpen();fetch(`/api/overlay/close?w=${w}`,{method:"POST"}).catch(()=>{}).finally(()=>setTimeout(refreshScreenRects,400))}
 function ovtSelect(w){if(!WIDGETS.includes(w))return;OVT.sel=w;store.set("pw.ovSel",w);ovtRenderScreen();markOvOpen();markGameGaps();renderScreenEditor()}
 // the previews follow the settings at once: the PC's overlay pages hear them from the agent, the web's are told here
+// on the web the previews are the overlay page: its frame takes the size the overlay grows to (more columns or rows)
+setInterval(()=>{document.querySelectorAll("#ovtPrev iframe,#ovsPv iframe").forEach(f=>{try{const d=f.contentDocument&&f.contentDocument.documentElement,b=f.parentElement.parentElement;if(!d||!b)return;
+  const w=Math.max(parseInt(f.dataset.w0||f.style.width)||0,d.scrollWidth),h=Math.max(parseInt(f.dataset.h0||f.style.height)||0,d.scrollHeight);if(!f.dataset.w0){f.dataset.w0=parseInt(f.style.width);f.dataset.h0=parseInt(f.style.height)}
+  f.style.width=w+"px";f.style.height=h+"px";const k=Math.min(1,(b.clientWidth||280)/w);f.style.transform=`scale(${k})`;f.parentElement.style.height=Math.round(h*k)+"px"}catch(e){}})},700);
 function ovtSyncPreview(){if(MODE==="bridge")return;document.querySelectorAll("#ovtPrev iframe,#ovsPv iframe").forEach(f=>{try{const cw=f.contentWindow;if(cw&&cw.applyServerCfg)cw.applyServerCfg(JSON.parse(JSON.stringify(CFG)),true)}catch(e){}})}
 ["click","change"].forEach(t=>document.addEventListener(t,()=>{if(typeof CUR_VIEW!=="undefined"&&CUR_VIEW==="overlays")setTimeout(ovtSyncPreview,0)}));
 async function ovtClick(e){const b=e.target.closest("[data-a]");if(!b||b.disabled||!e.currentTarget.contains(b))return;const a=b.dataset.a,w=b.dataset.w,k=b.dataset.k;
@@ -173,18 +188,16 @@ async function ovtClick(e){const b=e.target.closest("[data-a]");if(!b||b.disable
   if(a==="opennow"){const lg=liveNow(),ws=(CFG.autoWidgets||[]).filter(x=>!lg||autoIn(x,lg));if(!ws.length){toast(T3("Mark some overlays with Auto first.","Marca primero algunos overlays con Auto.","Marque primeiro alguns overlays com Auto."));return}
     for(const x of ws){if(proGated()&&!OV_BASIC.includes(x))continue;if(await openOverlayOnPC(x))OV_OPEN.add(x)}markOvOpen();setTimeout(refreshScreenRects,600);toast(T3("Opened on your PC.","Abiertos en tu PC.","Abertos no seu PC."));return}
   if(a==="closeall"){[...OV_OPEN].forEach(ovtBackToLive);OV_OPEN.clear();markOvOpen();fetch("/api/overlay/close?w=*",{method:"POST"}).catch(()=>{}).finally(()=>setTimeout(refreshScreenRects,400));return}
-  if(a==="ttl"){const on=k==="1";CFG.ui=CFG.ui||{};OV_TITLED.forEach(x=>{const m=Object.assign({},CFG.ui[x]||{});if(on)delete m.title;else m.title=false;CFG.ui[x]=m});saveCfg();renderOverlaysTab();return}
   if(a==="ts"){setUI(OVT.sel,{textScale:+k});return}
   if(a==="hide"){setUI(OVT.sel,{hide:k});return}
   if(a==="title"){setUI(OVT.sel,{title:ui(OVT.sel).title===false});return}}
 // the footer's switches keep their ids (chk): Open my overlays when I get in the car, Close them when the game closes, click-through
-document.addEventListener("click",e=>{const b=e.target.closest("#ovTab #oAuto,#ovTab #oClose,#ovTab #oLock");if(!b)return;const k={oAuto:"autoStart",oClose:"closeOnExit",oLock:"lock"}[b.id];CFG[k]=!CFG[k];saveCfg();renderOverlaysTab()});
+document.addEventListener("click",e=>{const b=e.target.closest("#ovTab #oAuto,#ovTab #oClose");if(!b)return;const k={oAuto:"autoStart",oClose:"closeOnExit"}[b.id];CFG[k]=!CFG[k];saveCfg();renderOverlaysTab()});
 function ovtChange(e){const t=e.target,c=t.dataset&&t.dataset.c;if(!c)return;
   if(c==="style"){CFG.ui=CFG.ui||{};if(t.value===OV_DEFAULT_STYLE)delete CFG.ui.ovstyle;else CFG.ui.ovstyle=t.value;saveCfg();renderOverlaysTab()}
   else if(c==="ovstyle"){const w=t.dataset.w;CFG.ui=CFG.ui||{};const m=Object.assign({},CFG.ui[w]||{});if(t.value)m.style=t.value;else delete m.style;CFG.ui[w]=m;saveCfg()}
   else if(c==="alpha")setUI(t.dataset.w,{alpha:Math.max(60,Math.min(255,+t.value||255))});
-  else if(c==="engine"){CFG.engine=t.value;saveCfg()}
-  else if(c==="fps"){CFG.ui=CFG.ui||{};const n=+t.value;if(n>=30)delete CFG.ui.ovfps;else CFG.ui.ovfps=n;saveCfg()}}
+}
 function ovtInput(e){const t=e.target,c=t.dataset&&t.dataset.c;
   if(c==="alpha"){const p=$("#ovtPrev"),v=$("#ovtAlphaV");if(p)p.style.opacity=String(+t.value/255);if(v)v.textContent=Math.round(+t.value/255*100)+"%"}}
 addEventListener("resize",()=>{if(typeof CUR_VIEW!=="undefined"&&CUR_VIEW==="overlays")ovtPreview(OVT.sel)});
@@ -283,7 +296,7 @@ setInterval(refreshScreenRects,1500);
 .ovt-ih{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.ovt-ih h2{margin:0;font:700 22px/1 var(--f-display);letter-spacing:.06em;text-transform:uppercase;margin-right:auto}
 .ovt-state{display:inline-flex;align-items:center;gap:6px;font:600 10px var(--f-data);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
 .ovt-state .on-t{display:none}.is-open .ovt-state{color:var(--good)}.is-open .ovt-state .on-t{display:inline}.is-open .ovt-state .off-t{display:none}
-.ovt-prev{border-radius:8px;overflow:hidden;min-height:60px}.ovt-pf{position:relative;overflow:hidden;border-radius:8px}.ovt-pf iframe{position:absolute;left:0;top:0;border:0;transform-origin:0 0;pointer-events:none;background:transparent}
+.ovt-prev{border-radius:8px;overflow:hidden;min-height:60px}.ovt-picw{position:relative}.ovt-pic{display:block;max-width:100%;height:auto;margin:0 auto}.ovt-pvtag{position:absolute;top:4px;right:6px;padding:2px 7px;border-radius:999px;background:color-mix(in srgb,var(--accent) 85%,transparent);color:#11151b;font:800 9px/1.4 var(--f-data);letter-spacing:.08em;text-transform:uppercase;pointer-events:none}.ovt-pvtag[hidden]{display:none}.ovt-pf{position:relative;overflow:hidden;border-radius:8px}.ovt-pf iframe{position:absolute;left:0;top:0;border:0;transform-origin:0 0;pointer-events:none;background:transparent}
 #ovtInsp{display:flex;flex-direction:column;gap:14px}.ovt-row2{display:flex;gap:8px}.ovt-row2 .btn{flex:1;min-height:36px}.ovt-cfg.wide{flex:2}
 .ovt-f{display:flex;flex-direction:column;gap:7px;min-width:0}.ovt-f select{min-height:34px}.ovt-f input[type=range]{accent-color:var(--accent);width:100%}
 .ovt-f .ovt-lab b{color:var(--fg);font-weight:600;float:right}

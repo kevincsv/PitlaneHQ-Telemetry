@@ -66,12 +66,33 @@ func (p *ovPace) done(st *ovState, w, h int, now time.Time, same bool) {
 	p.offTrackBefore = !fresh || (known && on == 0)
 }
 
-// ovTimerMs: the window's timer for the frame rate chosen (ui.ovfps; 0 or none is the default): the radar at twice
-// it (every sample the game gives at the default), the standings never faster than 10 a second, as always
-func ovTimerMs(name string, ui map[string]any) uintptr {
-	fps := ovDefaultFPS
+// ovFPS: an overlay's own frame rate (its settings → Look, ui.<overlay>.fps, 10 to 60), else the old one for all of
+// them (ui.ovfps, from before each overlay had its own); 0 is the default. own says it is the overlay's own.
+func ovFPS(name string, ui map[string]any) (fps int, own bool) {
+	if m, ok := ui[name].(map[string]any); ok {
+		if v, ok := m["fps"].(float64); ok && v >= 10 && v <= 60 {
+			return int(v), true
+		}
+	}
 	if v, ok := ui["ovfps"].(float64); ok && v >= 10 && v <= 60 {
-		fps = int(v)
+		return int(v), false
+	}
+	return 0, false
+}
+
+// ovTimerMs: the window's timer for its frame rate: the default 30 a second (the radar every sample the game gives,
+// 60; the standings 10); an overlay's own rate up to 60 as chosen; the old rate for all of them never above the
+// default (the radar at twice it, the standings never faster than 10 a second, as it always was)
+func ovTimerMs(name string, ui map[string]any) uintptr {
+	fps, own := ovFPS(name, ui)
+	if own {
+		if name == "radar" && fps >= ovDefaultFPS {
+			return 16
+		}
+		return uintptr(max(16, 1000/fps))
+	}
+	if fps == 0 || fps > ovDefaultFPS {
+		fps = ovDefaultFPS
 	}
 	switch name {
 	case "radar":
@@ -86,6 +107,14 @@ func ovTimerMs(name string, ui map[string]any) uintptr {
 		return 33
 	}
 	return uintptr(1000 / fps)
+}
+
+// ovStreamHz: the samples a second an overlay asks the stream for: 60 for the radar and an overlay set above 30
+func ovStreamHz(name string, ui map[string]any) int {
+	if fps, own := ovFPS(name, ui); name == "radar" || (own && fps > ovDefaultFPS) {
+		return 60
+	}
+	return 30
 }
 
 // ovWithOnTrack: an overlay's values plus IsOnTrack, which paces it

@@ -77,7 +77,7 @@ area you are changing before you change it, and update it in the same commit whe
 - Switched off for now: setups, per-car settings (`carProfilesOn` in carprofiles.go), the Data view and sharing race
   analyses. Hidden from everyone on the PC (admins too) until the owner says otherwise: profiles and Settings →
   Connections (`CONN_ON` in index.html). Full telemetry is gone everywhere.
-- Released to everyone: the overlays, the leagues hub. Le Mans Ultimate is labelled "Beta" wherever it is offered.
+- Released to everyone: the overlays, the leagues hub. Le Mans Ultimate is labelled "Beta" wherever it is offered, and so are ACC and Assetto Corsa where they are offered (still in development).
 
 ## Where things are
 

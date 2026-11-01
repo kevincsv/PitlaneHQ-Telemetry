@@ -470,7 +470,7 @@ nav.subtabs[hidden]{display:none}
 .subbar{display:flex;align-items:flex-end;gap:12px;margin:0 0 14px;border-bottom:1px solid var(--line)}.subbar>nav.subtabs{flex:1 1 auto;min-width:0;margin:0;border-bottom:0}.subbar:has(>nav.subtabs[hidden]){border-bottom:0;margin-bottom:0}.subbar:has(>nav.subtabs[hidden])>.gseg{margin-bottom:0}.subbar:has(>nav.subtabs[hidden]):has(>#gameView[hidden]){display:none}
 .live-off{display:flex;align-items:center;justify-content:flex-end;flex:none;gap:10px;margin:0 0 0 auto;white-space:nowrap;font:600 12px/1.2 var(--f-ui);color:var(--muted)}.live-off[hidden],html.ov .live-off{display:none!important}.live-off .lo-who::before{content:"";display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--good);margin-right:7px;vertical-align:1px}.subbar>.live-off:not([hidden])~.gseg{margin-left:0}@media (max-width:820px){.live-off{justify-content:space-between;margin:0}}
 .gseg{flex:none;margin:0 0 6px auto}.gseg button{font-size:12px;padding:7px 11px;display:inline-flex;align-items:center;gap:2px;white-space:nowrap}.gseg .live{color:var(--good)}.gseg button[aria-pressed="true"] .live{color:inherit}.gseg button[aria-pressed="true"] .pill{background:none;color:inherit;border-color:currentColor}html.ov #gameView{display:none!important}
-@media (max-width:600px){#gameView button{padding:7px 9px}#gameView .gv-wip{font-size:0!important;padding:0!important;overflow:hidden;width:7px;height:7px;border-radius:50%;background:var(--accent);border:0;margin-left:5px}#gameView button[aria-pressed="true"] .gv-wip{background:currentColor}}
+@media (max-width:600px){#gameView button{padding:7px 8px}}
 @media (max-width:820px){.subbar{flex-direction:column;align-items:stretch;gap:8px;border-bottom:0;margin:0 0 12px}.subbar>nav.subtabs{margin:0}.gseg{order:-1;align-self:flex-end;margin:0}}
 html.ov nav.subtabs{display:none!important}
 @media (max-width:760px){nav.tabs button{flex-direction:column;gap:3px;font-size:11px}nav.tabs button svg{width:20px;height:20px}}
@@ -6451,7 +6451,7 @@ function renderDC(){const box=$("#dcRow");if(!box)return;const it=[],lv=(k,lbl)=
 /* analysis, community and sharing show one game at a time: laps of different games are never compared.
    The game you see (the selector over Home, Analysis and Community, pw.viewGame) is only what you look at: the agent
    reads the game Settings → Game says, and Telemetry and Overlays follow the live game, never the selector */
-const VIEW_GAMES=["iracing","lmu"],VIEW_WIP=["acc","ac"],GAME_BETA=new Set(["lmu"]),GAME_VIEWS=["home","laps","coach","cloudlaps","races","community","leagues"];
+const VIEW_GAMES=["iracing","lmu"],VIEW_WIP=["acc","ac"],GAME_BETA=new Set(["lmu","acc","ac"]),GAME_VIEWS=["home","laps","coach","cloudlaps","races","community","leagues"];
 let VGAME=store.get("pw.viewGame","");if(!VIEW_GAMES.includes(VGAME))VGAME="";try{localStorage.removeItem("pw.agame")}catch(e){}
 /* ACC and Assetto Corsa join the games you can look at for the admins in admin mode and the testers (they are in development) */
 function viewGamesSync(){let ok=false;try{ok=wipOk()}catch(e){}const want=["iracing","lmu",...(ok?VIEW_WIP:[])];if(want.join()===VIEW_GAMES.join())return false;
@@ -6480,7 +6480,7 @@ function setViewGame(g,keep){viewGamesSync();if(!VIEW_GAMES.includes(g))return;c
 function toGame(g){viewGamesSync();g=VIEW_GAMES.includes(g)?g:"iracing";if(vGame()!==g)setViewGame(g)}
 function renderGameBar(v){viewGamesSync();const bar=$("#gameView");if(!bar)return;const on=GAME_VIEWS.includes(v)&&!OV.on&&!(typeof signWallOn==="function"&&signWallOn());bar.hidden=!on;if(!on)return;
   const cur=vGame(),live=liveNow();bar.setAttribute("aria-label",Tx("Game","Juego","Spiel","Jogo"));
-  bar.innerHTML=VIEW_GAMES.map(k=>`<button type="button" data-ag="${k}" aria-pressed="${k===cur}" title="${esc(GAME_NAMES[k])}">${esc(GAME_SHORT[k])}${k===live?'<span class="live"> ●</span>':""}${GAME_WIP.has(k)?wipPill().replace('class="pill acc"','class="pill acc gv-wip" title="'+esc(wipTitle())+'"'):gamePill(k)}</button>`).join("");
+  bar.innerHTML=VIEW_GAMES.map(k=>`<button type="button" data-ag="${k}" aria-pressed="${k===cur}" title="${esc(GAME_NAMES[k])}">${esc(GAME_SHORT[k])}${k===live?'<span class="live"> ●</span>':""}${gamePill(k)}</button>`).join("");
   bar.querySelectorAll("[data-ag]").forEach(b=>b.onclick=()=>setViewGame(b.dataset.ag))}
 /* the live game takes the screen when it starts (a new game on the PC), never while you look at the other one after it */
 let LIVE_SEEN="";function followLiveGame(){viewGamesSync();const g=liveNow();if(g===LIVE_SEEN)return;LIVE_SEEN=g;const d=$("#gameAsk");if(g&&d)d.remove();if(VIEW_GAMES.includes(g))setViewGame(g);else try{renderGameBar(CUR_VIEW)}catch(e){}}

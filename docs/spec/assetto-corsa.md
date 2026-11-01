@@ -38,7 +38,7 @@ index.html). Nothing to set up for either.
 ## Pages
 
 - Home, Analysis, Coach, Sessions, Races and Community show the game like the others (the game switch, with
-  "In development"; at phone width the pill is an amber dot). Home's Licence summary is dimmed with "… has no
+  "Beta" like Le Mans Ultimate, the owner's choice; still only for admins in admin mode and testers). Home's Licence summary is dimmed with "… has no
   licences or ratings".
 - Leagues: the hub has iRacing and Le Mans Ultimate leagues only (`LEAGUE_GAMES` on the server); for ACC and Assetto
   Corsa the page says leagues are not available yet and Home has no leagues card.

@@ -1912,13 +1912,15 @@ html .hl-sec{padding:0 0 12px;border-radius:var(--radius);display:flex;flex-dire
 .drawer.float .drawer-panel:has(.cfgsplit) .cfgitem.on{border-color:color-mix(in srgb,var(--accent) 45%,var(--line))}
 @media (max-width:760px){.drawer.float .drawer-panel:has(.cfgsplit) .cfgsplit{background:none}.drawer.float .drawer-panel:has(.cfgsplit) .cfgpv{border-bottom:1px solid var(--line)}}
 /* beyond one lap: corner consistency, race fuel, more charts (renderLapMore), offs explained, friends */
-.lap-more{display:flex;flex-direction:column;gap:12px;min-width:0;max-width:100%}.lap-more>*{min-width:0;max-width:100%}.lap-more[hidden]{display:none}
+.lap-more,.lm-grp{display:flex;flex-direction:column;gap:12px;min-width:0;max-width:100%}.lap-more>*{min-width:0;max-width:100%}.lap-more[hidden]{display:none}
 /* one column on a phone: the map and sectors, the braking points and laps, then the rest */
-@media (max-width:1060px){.la-split{display:flex;flex-direction:column;gap:12px}.la-col{display:contents}#lapsBody .la-split .la-brk{order:1}#lapsBody .la-split .la-laps{order:2}#lapsBody .la-split .lap-more{order:3}}
-.lm-charts{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:12px;align-items:start}
-#lapMore .lm-p{padding:0 0 12px;margin:0}#lapMore .lm-p>*{margin-inline:14px}#lapMore .lm-p>.tscroll{margin-inline:0}
-#lapMore .lm-p>.label:first-child{display:flex;align-items:center;margin:0 0 10px!important;padding:10px 14px;border-bottom:1px solid var(--line);font:600 14px/1.2 var(--f-display);letter-spacing:.12em;text-transform:uppercase;color:var(--fg)}
-#lapMore .lm-p>.label:first-child::before{content:"";width:3px;height:14px;background:var(--accent);border-radius:2px;margin-right:8px;flex:none}
+@media (max-width:1060px){.la-split{display:flex;flex-direction:column;gap:12px}.la-col{display:contents}#lapsBody .la-split .la-brk{order:1}#lapsBody .la-split .la-laps{order:2}#lapsBody .la-split .la-col>.lap-more{order:3}}
+#lapsBody .la-col>.lap-more{order:2}#lapsBody .la-col>.lap-more[hidden]{display:none}
+/* the charts of a row are as tall as each other (the steering chart as tall as the square G-G), the chart in the middle of its card: no empty space beside a short card */
+.lm-charts{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:12px;align-items:stretch}.lm-charts>.lm-p{display:flex;flex-direction:column}.lm-charts>.lm-p>.lm-svg{margin-block:auto;max-height:360px}
+.lap-more .lm-p{padding:0 0 12px;margin:0}.lap-more .lm-p>*{margin-inline:14px}.lap-more .lm-p>.tscroll{margin-inline:0}
+.lap-more .lm-p>.label:first-child{display:flex;align-items:center;margin:0 0 10px!important;padding:10px 14px;border-bottom:1px solid var(--line);font:600 14px/1.2 var(--f-display);letter-spacing:.12em;text-transform:uppercase;color:var(--fg)}
+.lap-more .lm-p>.label:first-child::before{content:"";width:3px;height:14px;background:var(--accent);border-radius:2px;margin-right:8px;flex:none}
 .lm-sum{margin:4px 0 8px;font-size:13px}.lm-t td:first-child,.lm-t th:first-child{padding-left:14px}
 .lm-t{width:100%;font-size:13px}.lm-t td,.lm-t th{padding:5px 6px;white-space:nowrap}.lm-t tr.lm-hot td:first-child b{color:var(--bad)}
 .lm-bar{display:inline-block;width:70px;height:6px;border-radius:3px;background:var(--line);vertical-align:middle;overflow:hidden}.lm-bar i{display:block;height:100%;background:var(--bad)}
@@ -2396,6 +2398,7 @@ html .hl-sec{padding:0 0 12px;border-radius:var(--radius);display:flex;flex-dire
     <div class="panel s12 secpanel"><div class="label" style="margin-bottom:6px" data-i18n="sectors"></div><div class="secstrip" id="secStrip"></div></div>
     <div class="lap-more" id="lapMore" hidden></div>
     </div><div class="la-col">
+    <div class="lap-more" id="lapMore2" hidden></div>
     <div class="panel s12 la-laps">
       <div class="label" style="margin-bottom:4px" data-i18n="lapList"></div>
       <p class="note" id="lapInvNote" style="margin:0 0 6px" hidden></p><div class="tscroll"><table id="lapTable"><thead><tr><th data-i18n="lap"></th><th class="r" data-i18n="time"></th><th class="r" data-i18n="fuelUsed"></th><th class="r" data-i18n="vmax"></th><th class="r">Inc</th><th class="r adm-h" hidden>Admin</th></tr></thead><tbody></tbody></table></div>
@@ -4081,7 +4084,7 @@ function consSessions(){const ss=CLOUD.sessions||[];if(CONS_SES.src===ss)return 
 const isConsSes=x=>!!x&&consSessions().ids.has(x.id);
 const consPill=()=>`<span class="pill cons-p">${esc(Tx("Most consistent","La más regular",null,"A mais regular"))}</span>`;
 const LM_RACE=Object.assign({len:"",unit:"laps"},store.get("pw.fuelrace",{}));
-function renderLapMore(A,B){const box=$("#lapMore");if(!box)return;if(!A){box.hidden=true;box.innerHTML="";return}
+function renderLapMore(A,B){const box=$("#lapMore");if(!box)return;{const r2=$("#lapMore2");if(r2){r2.hidden=true;r2.innerHTML=""}}if(!A){box.hidden=true;box.innerHTML="";return}
   const laps=sesLapsOf(A),ctx=anaCtx(A,B),cs=PWA.cornerSpread(laps,ctx),ls=PWA.lapSpread(laps),ses=(CLOUD.sessions||[]).find(x=>x.id===A.sessionId)||null;
   const tank=ses&&ses.tank>0?ses.tank:+store.get("pw.tank."+normTrk(A.car||""),0)||null,fu=PWA.fuelUse(laps,{tank});
   const day=t=>new Date(t).toLocaleDateString(locale(),{day:"numeric",month:"short"}),parts=[];
@@ -4108,18 +4111,27 @@ function renderLapMore(A,B){const box=$("#lapMore");if(!box)return;if(!A){box.hi
     const st=sA.length?`<div class="panel lm-p"><div class="label">${esc(Tx("Steering against speed","Volante frente a velocidad",null,"Volante contra velocidade"))}</div>${xySVG([sB.length&&{pts:sB,c:cB},{pts:sA,c:cA}].filter(Boolean),spdU(),"°")}${us&&us.text?`<p class="lm-sum">${esc(us.text)}</p>`:""}</div>`:"";
     const tt=ty.length?`<div class="panel lm-p"><div class="label">${esc(Tx("Tyre temperatures","Temperatura de neumáticos",null,"Temperatura dos pneus"))}</div>${tyreSVG(ty)}${tyreTiles(ty.find(t=>t.n===A.n))}</div>`:"";
     parts.push(`<div class="lm-charts">${gg}${st}${tt}</div>`)}
-  box.hidden=false;box.innerHTML=parts.join("");
+  {const mi=parts.findIndex(x=>x.startsWith('<div class="lm-more">'));if(mi>=0)parts.splice(mi,parts.length-mi,`<div class="lm-grp">${parts.slice(mi).join("")}</div>`)}
+  box.hidden=false;box.innerHTML=parts.join("");lapMoreBalance();
   const mb=$("#lmMore");if(mb)mb.onclick=()=>{LAPV.more=!LAPV.more;store.set("pw.lapv",LAPV);renderLapMore(A,B)};
   const li=$("#lmLen");if(li)li.onchange=()=>{LM_RACE.len=li.value;store.set("pw.fuelrace",{len:LM_RACE.len,unit:LM_RACE.unit});renderLapMore(A,B)};
   box.querySelectorAll("#lmUnit [data-u]").forEach(b=>b.onclick=()=>{LM_RACE.unit=b.dataset.u;store.set("pw.fuelrace",{len:LM_RACE.len,unit:LM_RACE.unit});renderLapMore(A,B)});
   const ti=$("#lmTank");if(ti)ti.onchange=()=>{const v=LM_RACE._toL(+ti.value||0);if(v>0){store.set("pw.tank."+normTrk(A.car||""),Math.round(v*10)/10);if(ses)ses.tank=Math.round(v*10)/10}renderLapMore(A,B)}}
+/* the panels beyond one lap go, one by one, under whichever column of the analyzer is shorter (#lapMore under the map and
+   sectors, #lapMore2 under the laps), so neither column leaves empty space; in one column (a phone) they all come last */
+function lapMoreBalance(){const L=$("#lapMore"),R=$("#lapMore2");if(!L||!R)return;
+  if(!lapMoreBalance.on&&window.ResizeObserver){lapMoreBalance.on=1;let w=-1;new ResizeObserver(()=>{const x=L.parentNode.parentNode.clientWidth;if(x!==w){w=x;requestAnimationFrame(lapMoreBalance)}}).observe(L.parentNode.parentNode)}
+  const units=[...L.children,...R.children].sort((a,b)=>(+a.dataset.lmi||0)-(+b.dataset.lmi||0));units.forEach((u,i)=>{u.dataset.lmi=i;u.remove()});
+  const one=innerWidth<=1060||L.hidden||!L.parentNode.getBoundingClientRect().width;R.hidden=true;
+  units.forEach(u=>{if(one){L.appendChild(u);return}const lc=L.parentNode.getBoundingClientRect(),rc=R.parentNode.getBoundingClientRect();
+    const to=rc.height<lc.height?R:L;if(to===R)R.hidden=false;to.appendChild(u)})}
 /* a G-G chart: lateral g across, longitudinal g up (speeding up) and down (braking), rings at every g */
 function ggSVG(sets){const S=300,c=S/2,mx=Math.max(1.5,Math.ceil(Math.max(1,...sets.flatMap(s=>s.pts.map(p=>Math.max(Math.abs(p[0]),Math.abs(p[1])))))*2)/2),k=(c-14)/mx;
   let g=`<svg class="lm-svg" viewBox="0 0 ${S} ${S}" role="img" aria-label="G-G">`;for(let r=1;r<=mx;r++)g+=`<circle cx="${c}" cy="${c}" r="${(r*k).toFixed(1)}" class="lm-grid"/><text x="${(c+r*k*.71+2).toFixed(1)}" y="${(c-r*k*.71-2).toFixed(1)}" class="lm-ax">${r} g</text>`;
   g+=`<line x1="${c}" y1="6" x2="${c}" y2="${S-6}" class="lm-grid"/><line x1="6" y1="${c}" x2="${S-6}" y2="${c}" class="lm-grid"/>`;
   sets.forEach(s=>{g+=`<g fill="${s.c}" fill-opacity=".45">`+s.pts.map(p=>`<circle cx="${(c-p[0]*k).toFixed(1)}" cy="${(c-p[1]*k).toFixed(1)}" r="1.6"/>`).join("")+"</g>"});return g+"</svg>"}
 /* a scatter of [x, y] points (the steering against the speed) */
-function xySVG(sets,ux,uy){const W=320,H=220,pl=34,pb=22,all=sets.flatMap(s=>s.pts),X=Math.max(10,...all.map(p=>p[0])),Y=Math.max(5,...all.map(p=>p[1])),sx=v=>pl+v/X*(W-pl-6),sy=v=>H-pb-v/Y*(H-pb-6);
+function xySVG(sets,ux,uy){const W=320,H=300,pl=34,pb=22,all=sets.flatMap(s=>s.pts),X=Math.max(10,...all.map(p=>p[0])),Y=Math.max(5,...all.map(p=>p[1])),sx=v=>pl+v/X*(W-pl-6),sy=v=>H-pb-v/Y*(H-pb-6);
   let g=`<svg class="lm-svg lm-wide" viewBox="0 0 ${W} ${H}" role="img">`;const fy=v=>Y<12?v.toFixed(1):Math.round(v);[.25,.5,.75,1].forEach(f=>{g+=`<line x1="${pl}" x2="${W-6}" y1="${sy(Y*f).toFixed(1)}" y2="${sy(Y*f).toFixed(1)}" class="lm-grid"/><text x="2" y="${(sy(Y*f)+3).toFixed(1)}" class="lm-ax">${fy(Y*f)}${uy}</text>${f<1?`<text x="${sx(X*f).toFixed(1)}" y="${H-6}" class="lm-ax" text-anchor="middle">${Math.round(X*f)}</text>`:""}`});
   g+=`<text x="${W-6}" y="${H-6}" class="lm-ax" text-anchor="end">${esc(ux)}</text>`;
   sets.forEach(s=>{g+=`<g fill="${s.c}" fill-opacity=".45">`+s.pts.map(p=>`<circle cx="${sx(p[0]).toFixed(1)}" cy="${sy(p[1]).toFixed(1)}" r="1.6"/>`).join("")+"</g>"});return g+"</svg>"}

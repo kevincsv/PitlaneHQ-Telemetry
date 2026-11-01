@@ -1178,6 +1178,39 @@
     return Math.round((at(d1) - at(d0)) / (d1 - d0) * 1000) / 10;
   }
 
+  /* session goals: what this session (cur, its laps so far) aims at, from the last session on the same car and track
+     (prev): beat its best lap, five clean laps in a row, and the corner where its best lap lost the most to its own best
+     pass there (ctx.turns, the official turns as fractions of the lap, and ctx.trackLen in m). Each goal is
+     {k, text, done, now} */
+  function sessionGoals(cur, prev, ctx) {
+    const Tx = txOf(ctx), ok = (l) => l && l.time > 0 && l.valid !== false && !l.pit && l.bins && l.bins.length > 20, out = [];
+    cur = (cur || []).filter((l) => l && l.time > 0); prev = (prev || []).filter(ok);
+    if (!prev.length) return out;
+    const fmt = (t) => { const m = Math.floor(t / 60), r = t - m * 60; return m ? `${m}:${r.toFixed(3).padStart(6, "0")}` : r.toFixed(3); };
+    const pb = Math.min(...prev.map((l) => l.time)), cb = cur.filter(ok).length ? Math.min(...cur.filter(ok).map((l) => l.time)) : null;
+    out.push({ k: "best", text: Tx(`Beat your best from last time, ${fmt(pb)}`, `Bate tu mejor de la última vez, ${fmt(pb)}`, `Bata sua melhor da última vez, ${fmt(pb)}`), done: cb != null && cb < pb, now: cb });
+    let run = 0, best = 0; for (const l of cur) { if (l.valid !== false && !l.pit) { run++; best = Math.max(best, run); } else run = 0; }
+    out.push({ k: "clean", text: Tx("Five clean laps in a row", "Cinco vueltas limpias seguidas", "Cinco voltas limpas seguidas"), done: best >= 5, now: best });
+    const turns = Array.isArray(ctx && ctx.turns) ? ctx.turns : [], L = +(ctx && ctx.trackLen) || 0;
+    if (turns.length && L > 0) {
+      const tAt = (l, d) => { const b = l.bins[Math.max(0, Math.min(l.bins.length - 1, Math.round(d / BIN)))]; return b && b[1] >= 0 ? b[1] : null; };
+      const cT = (l, n) => { const ap = turns[n - 1] * L, a = tAt(l, Math.max(10, ap - 200)), b = tAt(l, Math.min(L - 10, ap + 120)); return a != null && b != null && b > a ? b - a : null; };
+      const pbl = prev.find((l) => l.time === pb); let pick = null;
+      for (let n = 1; n <= turns.length; n++) {
+        const own = cT(pbl, n), all = prev.map((l) => cT(l, n)).filter((x) => x != null);
+        if (own == null || !all.length) continue;
+        const m = Math.min(...all), loss = own - m;
+        if (loss > 0.05 && (!pick || loss > pick.loss)) pick = { n, m, loss };
+      }
+      if (pick) {
+        const cbest = cur.filter(ok).map((l) => cT(l, pick.n)).filter((x) => x != null);
+        const nowT = cbest.length ? Math.min(...cbest) : null;
+        out.push({ k: "turn", n: pick.n, text: Tx(`T${pick.n} in ${pick.m.toFixed(2)} s, your best pass there last time`, `La T${pick.n} en ${pick.m.toFixed(2)} s, tu mejor pasada ahí la última vez`, `A T${pick.n} em ${pick.m.toFixed(2)} s, sua melhor passagem ali da última vez`), done: nowT != null && nowT <= pick.m + 0.005, now: nowT });
+      }
+    }
+    return out;
+  }
+
   function insights(A, B, ctx) {
     ctx = ctx || {};
     const laps = Array.isArray(ctx.laps) ? ctx.laps : [];
@@ -1188,7 +1221,7 @@
   const api = { VERSION, BIN, lapSeries, serOf, lapShape, sameFrame, lineOffsets, cornerLine, lineTip, brakeZones, PHASES, phaseName, turnNo, COACH_GEN, cornerClass, cornerZones,
     OVAL_KINDS, ovalOf, liftZones, ovalZones, dirtLineTip, coachCompare, cornerConsistency, pairSecs, lapDriving, kindName, stepName, tipMain, tipShort, tipTodo, coachPlan, stepText, analyzerFacts, analyse,
     estOf, failedOf, progressLines, followUp, trackGuide, cornerRanks, clsLines, racePace, edgeUse, notesOf, guideItems, likeOf, likeSteps, catGroup,
-    turnLab, lapSpread, cornerSpread, offsExplained, ggOf, steerOf, understeer, tyreLaps, fuelUse, fuelPlan, insights, pedalCheck, slopeOf };
+    turnLab, lapSpread, cornerSpread, offsExplained, ggOf, steerOf, understeer, tyreLaps, fuelUse, fuelPlan, insights, pedalCheck, slopeOf, sessionGoals };
   root.PW_ANALYSIS = api;
   if (typeof module !== "undefined" && module.exports) module.exports = api;
 })(typeof window !== "undefined" ? window : typeof globalThis !== "undefined" ? globalThis : this);

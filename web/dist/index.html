@@ -7505,6 +7505,15 @@ async function openGuide(trackId,carId,title){let d=$("#gdDlg");if(!d){d=documen
   b.innerHTML=g?guideHTML(g):`<p class="note">${esc(Tx("Not enough laps of this car here yet for a guide.","Aún no hay vueltas suficientes de este coche aquí para una guía.",null,"Ainda não há voltas suficientes deste carro aqui para um guia."))}</p>`}
 /* Home's briefing while the driver is on track: the three corners of the track guide that matter most for this car */
 const HOME_BRIEF={k:"",g:null};
+/* session goals on Home (the module's sessionGoals): during a session and for two hours after it, what it aims at from
+   the last session on the same car and track, ticked as the laps come */
+const GOALS_PREV={};
+function goalsHTML(){let LP=[];try{LP=(analysisLaps()||[]).filter(l=>l&&!l.who&&!l.est&&!l.comm)}catch(e){return""}const last=LP.at(-1);if(!last||!last.sessionId)return"";
+  const ses=(CLOUD.sessions||[]).find(x=>x.id===last.sessionId),live=STATUS.connected&&liveNow();if(!live&&!(ses&&Date.now()-(ses.started||0)<4*3600e3))return"";
+  const prevS=(CLOUD.sessions||[]).filter(x=>x.id!==last.sessionId&&x.track===last.track&&x.car===last.car&&(x.started||0)<((ses&&ses.started)||Date.now())&&!x.other).sort((a,b)=>b.started-a.started)[0];if(!prevS)return"";
+  const P=GOALS_PREV[prevS.id];if(P===undefined){GOALS_PREV[prevS.id]=null;cloudSessionLaps(prevS.id).then(r=>{GOALS_PREV[prevS.id]=r.laps||[];if(CUR_VIEW==="home")renderHome()}).catch(()=>{GOALS_PREV[prevS.id]=[]});return""}if(!P||!P.length)return"";
+  const cx=anaCtx(last);let gs=[];try{gs=PWA.sessionGoals(sesLapsOf(last),P,{...cx,turns:cx.turns||[],trackLen:(last.bins||[]).length*BIN})}catch(e){return""}if(!gs.length)return"";
+  return`<div class="hm-card"><b>${esc(Tx("Goals for this session","Objetivos de esta sesión",null,"Metas desta sessão"))}</b><ul class="goal-l" style="list-style:none;margin:8px 0 0;padding:0">${gs.map(g=>`<li style="display:flex;gap:8px;align-items:center;padding:3px 0"><span class="${g.done?"good":"muted"}" aria-hidden="true">${g.done?"✓":"○"}</span><span>${esc(g.text)}</span></li>`).join("")}</ul></div>`}
 /* the pedal and wheel check on Home (in development, wipOk; the module's pedalCheck): problems the last session's own
    laps show on every lap, once each until the driver closes them */
 function pedalCheckHTML(){if(!wipOk())return"";let LP=[];try{LP=(analysisLaps()||[]).filter(l=>l&&!l.who&&!l.est)}catch(e){return""}const last=LP.at(-1);if(!last)return"";
@@ -9057,7 +9066,7 @@ function renderHome(fromLoad){const box=$("#homeBox");if(!box)return;if(!fromLoa
   else{if(COMPANION&&!CP.acc)h+=`<div class="hm-card hm-empty"><span>${esc(Tx("Sign in with your Pitlane HQ account to see your licences, credits, races and planner from anywhere.","Inicia sesión con tu cuenta de Pitlane HQ para ver tus licencias, créditos, carreras y planner desde cualquier sitio.","Melde dich mit deinem PitlaneHQ-Konto an, um deine Lizenzen, Credits, Rennen und deinen Planer überall zu sehen.","Entre com sua conta Pitlane HQ para ver suas licenças, créditos, corridas e planner de qualquer lugar."))}</span><button type="button" class="btn small primary" id="hmSign">${esc(Tx("Sign in","Entrar","Anmelden","Entrar"))}</button></div>`;
   else if(CONN_ON&&MODE==="bridge"&&!ACC.loggedIn)h+=`<div class="hm-card hm-empty adm"><span>${esc(Tx("Connect your iRacing account to see your licences, credits and races here.","Conecta tu cuenta de iRacing para ver aquí tus licencias, créditos y carreras.","Verbinde dein iRacing-Konto, um hier deine Lizenzen, Credits und Rennen zu sehen.","Conecte sua conta do iRacing para ver aqui suas licenças, créditos e corridas."))}</span><button type="button" class="btn small" id="hmConn">${esc(Tx("Connect","Conectar"))}</button></div>`;
   if(STATUS.connected||STATUS.demo)h+=`<button type="button" class="hm-card hm-live" id="hmLive" style="text-align:left;font:inherit;color:inherit;cursor:pointer"><i></i><div><b>${esc(STATUS.demo?Tx("Demo session running","Sesión demo en marcha"):Tx("You are on track","Estás en pista"))}</b><span>${esc(Tx("Open live telemetry","Abrir la telemetría en vivo"))}</span></div><span aria-hidden="true" style="font-size:20px;color:var(--muted)">›</span></button>`;
-  h+=homeBriefHTML();h+=pedalCheckHTML();
+  h+=homeBriefHTML();h+=goalsHTML();h+=pedalCheckHTML();
   if(!me.noData){
   // licences
   const order=[["oval","Oval","Óvalo"],["sports_car","Sports","Sports"],["formula_car","Formula","Fórmula"],["dirt_oval","Dirt oval","Óv. tierra"],["dirt_road","Dirt road","Tierra"]];

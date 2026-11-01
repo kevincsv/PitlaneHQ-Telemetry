@@ -88,3 +88,15 @@ console.log("insights ok");
   assert.equal(PW.pedalCheck(bad.slice(0, 2), ctx).length, 0, "needs three laps");
 }
 console.log("pedal check ok");
+
+// session goals: beat last time's best, five clean laps in a row and the corner where last time's best lap lost the most
+{
+  const prev = [lap(1), lap(2, { bp: 200 }), lap(3, { vmin: 25 })];
+  const g0 = PW.sessionGoals([], prev, { ...ctx, turns: [0.1, 220 * 5 / 2000], trackLen: 2000 });
+  assert.equal(g0.find((g) => g.k === "best").done, false);
+  const cur = [1, 2, 3, 4, 5].map((n) => lap(n, { bp: 205 }));
+  const g = PW.sessionGoals(cur, prev, { ...ctx, turns: [0.1, 220 * 5 / 2000], trackLen: 2000 });
+  assert.equal(g.find((x) => x.k === "clean").done, true);
+  assert.equal(PW.sessionGoals(cur, [], ctx).length, 0);
+}
+console.log("session goals ok");

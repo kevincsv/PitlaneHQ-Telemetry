@@ -110,3 +110,11 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   or more while braking, the brake reading 3 % or more on full throttle, the wheel 2.5° or more off centre on the
   straights. "Got it" hides those problems on that device (`pw.pedalSeen`).
 
+## Goals for this session
+
+- Home (and the phones' Home) shows "Goals for this session" during a session and for four hours after it, when the
+  driver has an earlier session on the same car and track (`goalsHTML` in index.html, `sessionGoals` in
+  pitwall-analysis.js): beat that session's best lap, five clean laps in a row, and the official turn where that
+  session's best lap lost the most to its own best pass there (from 200 m before the turn to 120 m after). Each goal
+  shows ✓ once a lap of this session reaches it.
+

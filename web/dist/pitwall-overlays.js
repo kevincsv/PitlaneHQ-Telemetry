@@ -71,8 +71,12 @@ function ovtThumb(w){
   return `<div class="ovt-th" aria-hidden="true">${(k[w]||(()=>rows(4)))()}</div>`}
 
 /* ---------- the parts of the list and the chosen overlay ---------- */
+// the games it works in, as badges (lit while it is on Auto; dashed where the game does not send what it needs)
 function ovtAutoPills(w){return `<span class="ovt-games">${VIEW_GAMES.map(g=>{const ok=gameHas(g,"widgets",w),on=ok&&autoIn(w,g);
-  return `<button type="button" class="ovt-gp${on?" on":""}" data-a="auto" data-w="${w}" data-g="${g}" aria-pressed="${on}"${ok?"":` disabled title="${esc(gameLacks(g,"widgets",w))}"`} aria-label="${esc(ovtName(w)+" · "+GAME_NAMES[g]+" · "+T3("when I get in the car","al entrar al coche","ao entrar no carro"))}">${esc(GAME_SHORT[g])}</button>`}).join("")}</span>`}
+  return `<span class="ovt-gp${on?" on":""}${ok?"":" no"}"${ok?"":` title="${esc(gameLacks(g,"widgets",w))}"`}>${esc(GAME_SHORT[g])}</span>`}).join("")}</span>`}
+// Auto on or off in every game it works in (the card's switch and the settings window's)
+function ovtAutoToggle(w){const gs=ovtAutoGames(w);if(!gs.length)return false;const on=ovtAutoAny(w);if(!on&&!(CFG.autoWidgets||[]).includes(w)&&ovtProNeed(w))return false;
+  gs.forEach(g=>{if(autoIn(w,g)===on)setAutoIn(w,g,!on)});saveCfg();return true}
 // Auto on the card: one switch (open it by itself when I get in the car, in every game it works in), then the games
 function ovtAutoSwitch(w){const on=ovtAutoAny(w),ok=ovtAutoGames(w).length>0;
   return `<button type="button" class="ovs-sw" data-a="autoall" data-w="${w}" aria-pressed="${on}"${ok?"":" disabled"}><span><b class="ovt-autob">Auto</b> ${esc(T3("Open by itself","Abrirse solo","Abrir sozinho"))}</span><span class="ovs-tg${on?" on":""}"><i></i></span></button>`}
@@ -134,7 +138,7 @@ function ovtRenderInsp(){const w=OVT.sel,g=ui(w),own=(CFG.ui||{})[w]||{},alpha=o
   ovtPreview(w);
   const seg=(a,list,cur)=>`<div class="seg3 ovt-seg3">${list.map(([v,...n])=>`<button type="button" data-a="${a}" data-k="${v}" aria-pressed="${String(cur)===String(v)}">${esc(T3(...n))}</button>`).join("")}</div>`;
   $("#ovtInsp").innerHTML=`<div class="ovt-row2" data-ovw="${w}">${ovtOpenBtn(w)}${ovtCfgBtn(w).replace('class="btn small ovt-cfg"','class="btn small ovt-cfg wide"').replace(ovtIcon.cfg,ovtIcon.cfg+`<span>${esc(T3("All settings","Todos los ajustes","Todos os ajustes"))}</span>`)}</div>
-    <div class="ovt-f">${ovtAutoSwitch(w)}${ovtAutoAny(w)&&ovtAutoGames(w).length>1?ovtAutoPills(w):""}</div>
+    <div class="ovt-f">${ovtAutoSwitch(w)}${ovtAutoPills(w)}</div>
     <label class="ovt-f"><span class="ovt-lab">${esc(T3("Design","Diseño","Design"))}</span><select data-c="ovstyle" data-w="${w}"><option value="">${esc(T3("Same as all","Igual que todos","Igual a todos"))} · ${esc(ovStyleLabel(ovtStyleAll()))}</option>${OV_STYLES.map(([k])=>`<option value="${k}"${own.style===k?" selected":""}>${esc(ovStyleLabel(k))}${k==="classic"?"":" · Beta"}</option>`).join("")}</select></label>
     <label class="ovt-f"><span class="ovt-lab">${esc(T3("Opacity","Opacidad","Opacidade"))} <b id="ovtAlphaV">${Math.round(alpha/255*100)}%</b></span><input type="range" min="60" max="255" step="5" value="${alpha}" data-c="alpha" data-w="${w}"></label>
     <div class="ovt-f"><span class="ovt-lab">${esc(T3("Text size","Tamaño del texto","Tamanho do texto"))}</span>${seg("ts",[[.85,"Small","Pequeño","Pequeno"],[1,"Normal","Normal","Normal"],[1.2,"Large","Grande","Grande"]],ts)}</div>
@@ -175,9 +179,7 @@ function ovtSyncPreview(){if(MODE==="bridge")return;document.querySelectorAll("#
 ["click","change"].forEach(t=>document.addEventListener(t,()=>{if(typeof CUR_VIEW!=="undefined"&&CUR_VIEW==="overlays")setTimeout(ovtSyncPreview,0)}));
 async function ovtClick(e){const b=e.target.closest("[data-a]");if(!b||b.disabled||!e.currentTarget.contains(b))return;const a=b.dataset.a,w=b.dataset.w,k=b.dataset.k;
   if(a==="sel")return ovtSelect(w);
-  if(a==="auto"){const g=b.dataset.g;if(!gameHas(g,"widgets",w))return;const on=autoIn(w,g);if(!on&&!(CFG.autoWidgets||[]).includes(w)&&ovtProNeed(w))return;setAutoIn(w,g,!on);saveCfg();renderOverlaysTab();return}
-  if(a==="autoall"){const gs=ovtAutoGames(w);if(!gs.length)return;const on=ovtAutoAny(w);if(!on&&!(CFG.autoWidgets||[]).includes(w)&&ovtProNeed(w))return;
-    gs.forEach(g=>{if(autoIn(w,g)===on)setAutoIn(w,g,!on)});saveCfg();renderOverlaysTab();return}
+  if(a==="autoall"){if(ovtAutoToggle(w))renderOverlaysTab();return}
   if(a==="open")return ovtToggleOpen(w);
   if(a==="here"){window.open(`/?overlay=${w}`,"_blank");return}
   if(a==="cfg")return ovtSettings(w);
@@ -255,9 +257,9 @@ setInterval(refreshScreenRects,1500);
 .is-open .ovt-dot,.is-open>.ovt-dot{background:var(--good);border-color:var(--good)}
 .ovt-autob{font:700 11px var(--f-data);letter-spacing:.08em;text-transform:uppercase;color:var(--accent);margin-right:6px}.ovs-sw[disabled]{opacity:.45;cursor:default}
 .ovt-games{display:inline-flex;flex-wrap:wrap;gap:6px}
-.ovt-gp{min-height:28px;padding:0 10px;border-radius:999px;border:1px solid var(--line);background:none;color:var(--muted);font:600 11px var(--f-data);cursor:pointer}
-.ovt-gp:hover{color:var(--fg)}.ovt-gp.on{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 14%,transparent);color:var(--accent)}
-.ovt-gp[disabled]{border-style:dashed;opacity:.4;cursor:default;color:var(--muted)}
+.ovt-gp{display:inline-flex;align-items:center;min-height:22px;padding:0 8px;border-radius:5px;border:1px solid var(--line);color:var(--muted);font:600 10px var(--f-data);letter-spacing:.04em}
+.ovt-gp.on{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 14%,transparent);color:var(--accent)}
+.ovt-gp.no{border-style:dashed;opacity:.45;text-decoration:line-through}
 .ovt-cb{display:inline-flex;gap:6px;justify-content:flex-end}
 .ovt-open{min-width:74px}.ovt-open.on{color:var(--good);border-color:color-mix(in srgb,var(--good) 45%,var(--line))}
 .ovt-cfg{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-width:36px;padding:0 9px}

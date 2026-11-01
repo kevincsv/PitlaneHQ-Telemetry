@@ -45,6 +45,10 @@ ADMINS = "3e224233fde0e11f670d2d97"
 # tester account id(s): they use what is in development on every device, without the admins' tools
 TESTERS = "88407bb0034daced71a27d3f,210b905aaa95b846b8b0bcfd"
 
+# the invite of the Pitlane HQ community server on Discord (one that never expires): the public pages, llms.txt and the
+# JSON-LD name it only while it is set
+DISCORD_INVITE = ""
+
 # the full app (web/dist) is served at /app/ by the worker
 [assets]
 directory = "../web/dist"

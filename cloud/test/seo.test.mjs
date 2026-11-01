@@ -236,6 +236,24 @@ assert.ok(!pages.get("/iracing-coach").ld.some((x) => x["@type"] === "HowTo"), "
 }
 // every indexed page ends with what Pitlane HQ is, in its own language
 for (const [path, p] of pages) assert.match(p.text, /What is Pitlane HQ|Qué es Pitlane HQ|O que é o Pitlane HQ/, `${path} says what Pitlane HQ is`);
+// the Discord community server: nowhere while DISCORD_INVITE is unset (or not an invite), and with it the footer, the
+// What is box, the landings' FAQ (and FAQPage), the Organization's sameAs and llms.txt name it
+{
+  const INV = "https://discord.gg/pitlanehq";
+  assert.ok(![...pages.values()].some((p) => /discord\.gg\/pitlanehq/.test(p.main)), "no Discord invite while unset");
+  const bad = { ...world(), DISCORD_INVITE: "https://example.com/x" };
+  assert.ok(!(await (await get(bad, "/iracing-telemetry")).text()).includes("example.com"), "only a Discord invite");
+  const dc = { ...world(), DISCORD_INVITE: INV };
+  for (const path of ["/iracing-telemetry", "/es/telemetria-le-mans-ultimate", "/pt/coach-iracing", "/records"]) {
+    const h = await (await get(dc, path)).text(), p = parse(h);
+    assert.ok(h.includes(`href="${INV}"`), `${path} links the Discord server`);
+    assert.ok(p.ld.some((x) => x["@type"] === "Organization" && (x.sameAs || []).includes(INV)) || !/telemetr/.test(path), `${path} sameAs`);
+    if (/telemetr/.test(path)) assert.ok(p.ld.find((x) => x["@type"] === "FAQPage").mainEntity.some((q) => /Discord/.test(q.name)), `${path} FAQ names Discord`);
+    assert.ok(!/[^\s\d]: /.test(p.text.replace(/support@pitlanehq\.app/g, "")), `${path} joins phrases with a colon`);
+  }
+  for (const f of ["/llms.txt", "/llms-full.txt"]) assert.ok((await (await get(dc, f)).text()).includes(INV), `${f} names the Discord server`);
+  await get(world(), "/llms.txt");
+}
 // robots.txt shuts no robot out of the public pages (search engines and AI search alike) and names the sitemap
 {
   const rb = readFileSync(DIST + "robots.txt", "utf8");

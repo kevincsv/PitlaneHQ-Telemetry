@@ -22,6 +22,7 @@
 //   (the uninstall answers, uninstall.js, come with no account: accountId null)
 // Every answer is also a driver's message of their support chat (support.js, migration 0075).
 import { sessionAccount, isAdmin } from "./accounts.js";
+import { installsOf, supportersOf } from "./pcstats.js";
 import { srcName, KIND_NAMES, hiText, areasOf } from "./usagenames.js";
 import { visitOf, countryOf, isBot, sourcesOf, SQL_VISIT_ADD } from "./sourceslib.js";
 import { openEscrow } from "./escrow.js";
@@ -155,6 +156,14 @@ export async function usageRoute(req, env, url) {
       q("SELECT COUNT(*) AS n FROM accounts"),
       q("SELECT day, src, country, page, n FROM visits_days WHERE day>=?1 LIMIT 20000", pFrom).catch(() => []),
     ]);
+    // installs and uninstalls, and the supporters and their donations (pcstats.js)
+    const [pcRows, unAns, badges, patrons, orders] = await Promise.all([
+      q("SELECT day, kind, v, n FROM pc_days WHERE day>=?1 LIMIT 20000", pFrom).catch(() => []),
+      q("SELECT created, v, style, text FROM feedback WHERE kind='uninstall' AND created>=?1 ORDER BY created DESC LIMIT 2000", p0).catch(() => []),
+      q("SELECT supporter_src AS src, COUNT(*) AS n FROM accounts WHERE supporter=1 GROUP BY supporter_src").catch(() => []),
+      q("SELECT COUNT(*) AS n FROM patreon_patrons WHERE active=1").catch(() => []),
+      q("SELECT o.at, o.status, o.amount, o.currency, o.account_id, a.display AS name FROM pro_orders o LEFT JOIN accounts a ON a.id=o.account_id WHERE o.kind='supporter' AND o.at>=?1 ORDER BY o.at DESC LIMIT 2000", p0).catch(() => []),
+    ]);
     const ids = [...new Set([...rows.map((x) => x.account_id), ...ses.map((x) => x.uploader.slice(5))])].slice(0, 300), accounts = new Map();
     // the nicknames of the accounts in the list, in pieces of 90 (D1's bound parameters)
     for (let i = 0; i < ids.length; i += 90) {
@@ -165,7 +174,9 @@ export async function usageRoute(req, env, url) {
     const out = analyticsOf(days, [], rows, pres, accounts);
     const more = analyticsMore({ from, t0, actDays, rows, sessions: ses, prevSessions: pSes[0] || {}, prevActive: (pAct[0] || {}).n || 0, accounts: accs, accountsAll: (allAcc[0] || {}).n || 0 });
     const vNow = vis.filter((x) => x.day >= from), vPrev = vis.filter((x) => x.day < from);
-    const all = { ...out, ...more, sources: sourcesOf(vNow, vPrev, accs.filter((a) => a.created >= t0), accs.filter((a) => a.created < t0)) };
+    const installs = installsOf({ from, pcRows, answers: unAns.map((x) => ({ ...x, day: day(x.created) })) });
+    const supporters = supportersOf({ t0, badges, patrons: (patrons[0] || {}).n || 0, orders });
+    const all = { ...out, ...more, installs, supporters, sources: sourcesOf(vNow, vPrev, accs.filter((a) => a.created >= t0), accs.filter((a) => a.created < t0)) };
     // the names and sentences in the three languages, so the phones show what the web shows (usagenames.js)
     all.sources.bySource = all.sources.bySource.map((x) => ({ ...x, name: srcName(x.src), kindName: KIND_NAMES[x.kind] || KIND_NAMES.other }));
     return json({ ...all, highlights: highlightsOf(all).map((h) => ({ ...h, text: hiText(h.k, h.a) })), areas: areasOf(all.top || []) });

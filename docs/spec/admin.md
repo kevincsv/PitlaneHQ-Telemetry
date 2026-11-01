@@ -76,7 +76,10 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   grouped reads of usage_days, sessions (accounts' uploads), accounts, visits_days and presence, never a query per
   account: {days, top [{key, n, users}], byDevice [{device, users, n}], games, versions [{device, v, devices}], users [{id,
   nick, lastSeen, devices, n, top}] (the Users tab), active / activeApp / drove [{day, users}] (active = opened an app or
-  drove that day), signupsPerDay [{day, n}], totals {active, newAccounts, accounts, drove, sessions, races, laps, secs,
+  drove that day), signupsPerDay [{day, n}], installs {downloads, prevDownloads, downloadsBeta, uninstalls,
+  prevUninstalls, answered, prevAnswered, perDay, byVersion, reasons [{k, n, name}], said [{at, v, text}]}, supporters
+  {total, stripe, manual, patreon, patrons, donations, prevDonations, amounts [{currency, amount}], prevAmounts, waiting,
+  refunded, recent [{at, amount, currency, name, id}]} (`pcstats.js`), totals {active, newAccounts, accounts, drove, sessions, races, laps, secs,
   returning (2 days or more), multiDevice}, prev {active, newAccounts, sessions, drove, secs}, funnel of the period's new
   accounts {accounts, opened, drove, laps (Laps, Telemetry, My sessions, a race summary or compare), coach (the coach
   screen, a report, a lap sent to it, its plan)}, comeback {d1, d23, d4}, driven [{game, drivers, sessions, races, laps,
@@ -91,7 +94,10 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   drove with the agent, time driven, came back), drivers per day (drove in amber from the sessions, opened an app in
   blue, new accounts under them), From sign-up to the coach (the funnel with the red line of who stops at each step),
   Do drivers come back (1 day, 2 or 3, 4 or more, more than one device), Where drivers come from (visits, sign-ups,
-  the table of sources with kind, visits, change and sign-ups, countries, pages they landed on), Games (drivers,
+  the table of sources with kind, visits, change and sign-ups, countries, pages they landed on), Installs and uninstalls (installer
+  downloads, uninstalls with their change in red when it grows, said why, the reasons, the version uninstalled and what
+  they wrote), Supporters (Stripe donations and what they raised, supporters from Stripe and by hand, the latest
+  donations, Patreon apart as legacy with its badges and active patrons), Games (drivers,
   sessions, races, laps, hours, sessions a driver), What drivers use (by area, the share of the active drivers and the
   uses, what each counts on hover), Devices (drivers) and Up to date (devices on each app's newest version, the older ones
   on hover). Users merges the answer into every account.
@@ -120,3 +126,14 @@ races the PCs report (`seasonseen.js`). The PC app passes that post through `/ap
   the drivers slow down) do not match the game's count, with the layout's length (GET `/community/admin/turns-check`).
 - Coach → "The coach on real laps": how often each tip and plan step fires on the busiest cars and tracks' model laps
   (GET `/community/admin/coach/calibrate`).
+- Installs and uninstalls (`cloud/src/pcstats.js`, migration 0095 `pc_days`): the server counts per day, with no address
+  or account, every download of PitlaneHQ-Setup.exe (`downloads.js`, not a resumed piece, not robots, v "beta" for the
+  test builds; the updater takes the zip, so updates are not counted) and every time the page the uninstaller opens is
+  shown (`uninstall.js`, by the version removed; a silent uninstall opens nothing). An uninstall is a page shown, or on a
+  day with more answers than pages (before they were counted) the answers. The reasons and what drivers wrote come from
+  the uninstall answers (feedback of kind "uninstall"). What stands out says how many uninstalls and the main reason, and
+  how many donations came in.
+- Supporters: the accounts with the badge by `supporter_src` (stripe, manual, patreon), and the Stripe donations
+  (`pro_orders` kind "supporter", with their amount, currency and payment since migration 0095; a refunded donation is
+  marked "refunded" and no longer counts, the badge stays). Patreon is no longer offered (0.9.8), so the Summary and the
+  Analytics show it as "Patreon (legacy)".

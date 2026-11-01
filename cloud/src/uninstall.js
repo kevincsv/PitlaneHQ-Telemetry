@@ -1,13 +1,15 @@
 // What a driver says when they uninstall Pitlane HQ from their PC: the uninstaller (installer/PitlaneHQ.iss) opens
 // /uninstalled?v=<version>&lang=<es|en|pt> in the browser once the files are gone, never in a silent uninstall.
 //
-// GET  /uninstalled            the page: why they uninstalled (any of the reasons), an optional text box and Send
+// GET  /uninstalled            the page: why they uninstalled (any of the reasons), an optional text box and Send;
+//   every time it is shown is one uninstall in the admin Analytics (pc_days, pcstats.js)
 // POST /community/feedback/uninstall (anyone, no sign-in)  {reasons: ["bugs", …], text, v}
 //   kept as a feedback answer of kind "uninstall" (`feedback`, the reason codes in `style`), emailed to support@ and
 //   posted in the Discord feedback forum like the others. With no account, it is counted per network and day (a hash
 //   that changes every day, never the address), 3 a day each and 200 a day in all.
 import { isBot } from "./sourceslib.js";
 import { FEEDBACK_MAX } from "./usagelib.js";
+import { pcCount } from "./pcstats.js";
 
 const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
 const json = (o, s = 200) => new Response(JSON.stringify(o), { status: s, headers: { "content-type": "application/json", "cache-control": "no-store" } });
@@ -86,7 +88,9 @@ async function netKey(req, now) {
 export async function uninstallRoute(req, env, url, { send = async () => false, discord = async () => 0 } = {}) {
   const p = url.pathname.replace(/\/+$/, "");
   if (p === "/uninstalled" && req.method === "GET") {
-    return new Response(uninstallPage(uninstallLang(req, url), url.searchParams.get("v")), { headers: { "content-type": "text/html; charset=utf-8", "cache-control": "public, max-age=3600", vary: "Accept-Language" } });
+    // counted for the admin Analytics (pcstats.js): one uninstall, by the version removed
+    if (!isBot(req.headers.get("user-agent"))) await pcCount(env, "uninstall", cleanV(url.searchParams.get("v")));
+    return new Response(uninstallPage(uninstallLang(req, url), url.searchParams.get("v")), { headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-store", vary: "Accept-Language" } });
   }
   if (p !== "/community/feedback/uninstall" || req.method !== "POST") return null;
   if (isBot(req.headers.get("user-agent"))) return json({ ok: true });

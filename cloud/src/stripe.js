@@ -6,7 +6,7 @@
 //   gives Pro until its period ends (35 days until Stripe sends the subscription itself)
 // - customer.subscription.created / updated / deleted: the subscription's state and the end of the paid period
 //   (+3 days of grace for the renewal); a cancelled subscription keeps Pro until the period it paid for ends
-// - charge.refunded: a fully refunded lifetime payment takes the lifetime away
+// - charge.refunded: a fully refunded lifetime payment takes the lifetime away; a refunded donation is marked refunded
 // - a donation (the Support link: client_reference_id "support-<account id>", or the session's payment_link is
 //   donate.link of license_plans.json) gives the ♥ Supporter badge, like Patreon, never Pro; a donor without an account
 //   gets it when they sign up with that email (pro_orders kind 'supporter')
@@ -64,7 +64,11 @@ export async function stripeWebhook(req, env, emailHash, opts = {}) {
     if (support) {
       if (o.payment_status !== "paid") return json({ ok: true, skipped: "not paid yet" });
       if (!accountId && eh) { const a = await env.DB.prepare("SELECT id FROM accounts WHERE email_hash=?1").bind(eh).first().catch(() => null); if (a) accountId = a.id; }
-      await env.DB.prepare("INSERT INTO pro_orders (id, account_id, email_hash, kind, status, until, at) VALUES (?1,?2,?3,'supporter','on',0,?4) ON CONFLICT(id) DO NOTHING").bind(donOrder(o.id), accountId, eh, now).run();
+      // the amount and currency for the admin Analytics (pcstats.js), and the payment so a refund finds it
+      const pi = typeof o.payment_intent === "string" ? o.payment_intent : (o.payment_intent && o.payment_intent.id) || null;
+      const amount = Number.isFinite(+o.amount_total) && o.amount_total !== null ? Math.round(+o.amount_total) : null;
+      const cur = /^[a-z]{3}$/i.test(String(o.currency || "")) ? String(o.currency).toLowerCase() : null;
+      await env.DB.prepare("INSERT INTO pro_orders (id, account_id, email_hash, kind, status, until, at, amount, currency, ref) VALUES (?1,?2,?3,'supporter','on',0,?4,?5,?6,?7) ON CONFLICT(id) DO NOTHING").bind(donOrder(o.id), accountId, eh, now, amount, cur, pi).run();
       if (accountId) await env.DB.prepare("UPDATE accounts SET supporter=1, supporter_src=COALESCE(supporter_src,'stripe') WHERE id=?1").bind(accountId).run();
       return json({ ok: true, supporter: !!accountId });
     }
@@ -100,7 +104,11 @@ export async function stripeWebhook(req, env, emailHash, opts = {}) {
   if (ev === "charge.refunded" && o.refunded && o.payment_intent) {
     const pi = typeof o.payment_intent === "string" ? o.payment_intent : o.payment_intent.id;
     const had = await orderRow(env, payOrder(pi));
-    if (!had || had.kind !== "lifetime") return json({ ok: true, skipped: "not a lifetime payment" });
+    if (!had || had.kind !== "lifetime") {
+      // a refunded donation keeps the badge it gave, but no longer counts as a donation (nor gives it on a later sign-up)
+      const r = await env.DB.prepare("UPDATE pro_orders SET status='refunded' WHERE kind='supporter' AND ref=?1").bind(pi).run().catch(() => null);
+      return json({ ok: true, skipped: r && r.meta && r.meta.changes ? "donation refunded" : "not a lifetime payment" });
+    }
     await setPro(env, { accountId: had.account_id, eh: had.email_hash, kind: "lifetime", until: 0, on: false, order: payOrder(pi) });
     return json({ ok: true, lifetime: false });
   }

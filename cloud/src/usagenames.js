@@ -5,6 +5,8 @@
 /** [en, es, pt] */
 const N = (en, es, pt) => [en, es || en, pt || en];
 
+import { REASONS } from "./uninstall.js";
+
 export const VIEWS = {
   home: N("Home", "Inicio", "Início"), live: N("Telemetry", "Telemetría", "Telemetria"), telemetry: N("Telemetry", "Telemetría", "Telemetria"),
   laps: N("Laps", "Vueltas", "Voltas"), cloudlaps: N("My sessions", "Mis sesiones", "Minhas sessões"), session: N("Session", "Sesión", "Sessão"),
@@ -107,6 +109,9 @@ export function hiText(k, a) {
     case "no_android": return [`No Android phone opened the app in these ${a[0]} days.`, `Ningún móvil Android abrió la app en estos ${a[0]} días.`, `Nenhum celular Android abriu o app nestes ${a[0]} dias.`];
     case "no_ios": return [`No iPhone opened the app in these ${a[0]} days.`, `Ningún iPhone abrió la app en estos ${a[0]} días.`, `Nenhum iPhone abriu o app nestes ${a[0]} dias.`];
     case "behind": return [`${a[0]} devices seen this week are not on the newest version.`, `${a[0]} dispositivos vistos esta semana no tienen la versión más nueva.`, `${a[0]} dispositivos vistos esta semana não estão na versão mais nova.`];
+    case "uninstalls": return [`The agent was uninstalled ${a[0]} times in these ${a[1]} days.`, `El agente se desinstaló ${a[0]} veces en estos ${a[1]} días.`, `O agente foi desinstalado ${a[0]} vezes nestes ${a[1]} dias.`];
+    case "uninstalls_why": { const r = REASONS[a[2]] || REASONS.other; return [`The agent was uninstalled ${a[0]} times in these ${a[1]} days, most often because "${r.en}".`, `El agente se desinstaló ${a[0]} veces en estos ${a[1]} días, sobre todo por "${r.es}".`, `O agente foi desinstalado ${a[0]} vezes nestes ${a[1]} dias, mais por "${r.pt}".`]; }
+    case "donations": return [`${a[0]} donations came in through Stripe in these ${a[1]} days.`, `Llegaron ${a[0]} donaciones por Stripe en estos ${a[1]} días.`, `Chegaram ${a[0]} doações pelo Stripe nestes ${a[1]} dias.`];
     default: return null;
   }
 }

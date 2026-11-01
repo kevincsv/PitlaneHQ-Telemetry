@@ -14,7 +14,7 @@ import { foundLeagues } from "./leaguescan.js";
 const SITE = "https://pitlanehq.app";
 // SEO_VER: raised when the public pages change (new languages, new addresses, new texts): every page is sent to
 // IndexNow again once. SEO_DATE: the day their texts last changed, the sitemap's lastmod of the pages without data.
-const SEO_VER = "13", SEO_DATE = "2026-11-01";
+const SEO_VER = "14", SEO_DATE = "2026-11-01";
 const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
 const slug = (s) => String(s || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 80);
 const fmt = (t) => { if (!(t > 0)) return "–"; const m = Math.floor(t / 60), s = t - m * 60; return (m ? m + ":" + (s < 10 ? "0" : "") : "") + s.toFixed(3); };
@@ -90,7 +90,7 @@ h1,h2,h3{font-family:var(--hd);font-weight:700;line-height:1.1;letter-spacing:.0
 .btn{display:inline-block;padding:12px 18px;border-radius:8px;font:700 15px/1 var(--hd);letter-spacing:.06em;text-transform:uppercase;text-decoration:none;border:1px solid var(--line);color:var(--fg)}
 .btn.p{background:var(--acc);color:#11151b;border-color:var(--acc)}.g{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px}
 .c{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:18px}.c p{margin:0;color:#c9d1dc}.m{color:var(--mut)}a.c{text-decoration:none;color:inherit}
-.x{margin:22px 0 0;padding:14px 16px;border:1px solid var(--line);border-radius:10px;background:var(--card)}
+#what h2{margin:0 0 8px}#what p{margin:0 0 8px;color:#c9d1dc}.x{margin:22px 0 0;padding:14px 16px;border:1px solid var(--line);border-radius:10px;background:var(--card)}
 table{width:100%;border-collapse:collapse;font-size:15px}th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line)}th{color:var(--mut);font-weight:400;font-size:13px;text-transform:uppercase;letter-spacing:.06em}
 td.t{font-family:'JetBrains Mono',ui-monospace,monospace;color:var(--acc)}.n{width:44px;color:var(--mut)}.tw{overflow-x:auto}
 details{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px 16px;margin:8px 0}summary{cursor:pointer;font-weight:600}
@@ -158,9 +158,24 @@ ${hl}
 <style>${CSS}</style><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="${FONTS}" media="print" onload="this.media='all'"><noscript><link rel="stylesheet" href="${FONTS}"></noscript>
 ${ld ? `<script type="application/ld+json">${JSON.stringify(ld).replace(/</g, "\\u003c")}</script>` : ""}</head><body>
 <header><div class="w"><a class="b" href="/">${LOGO}Pitlane HQ</a><nav><a href="${(game === "lmu" ? LANDL : LAND)[l].path}">${esc(t.tel[game])}</a><a href="${(game === "lmu" ? OVLL : OVL)[l].path}">${esc(t.ov)}</a><a href="${lg}">${esc(t.lgs)}</a><a href="${rc}">${esc(t.rec)}</a><a href="${(other === "lmu" ? LANDL : LAND)[l].path}">${esc(GNAME[other])}</a><a href="/downloads">${esc(t.dl)}</a><a href="/">${esc(t.app)}</a>${others}</nav></div></header>
-<main class="w">${body}</main>
+<main class="w">${body}${path && !noindex ? whatIs(l) : ""}</main>
 <footer><div class="w"><p class="m">${esc(GUIDES[l])} · iRacing · ${iracingLinks(l).map(([p, h]) => `<a href="${p}">${esc(h)}</a>`).join(" · ")}</p><p class="m">${esc(t.lmuH)} · ${lmuLinks(l).map(([p, h]) => `<a href="${p}">${esc(h)}</a>`).join(" · ")}</p>Pitlane HQ · ${esc(t.free)} · <a href="/downloads">${esc(t.dl)}</a> · <a href="mailto:support@pitlanehq.app">support@pitlanehq.app</a> · ${LANGS.map((k) => `<a href="${LAND[k].path}" hreflang="${HLANG[k]}">${NAME[k]}</a>`).join(" · ")}</div></footer>${VISIT_JS}</body></html>`;
 }
+// what Pitlane HQ is, in a few plain sentences at the end of every indexed page, so whoever lands on any one of them
+// (a person, a search engine or an AI assistant) reads the whole of it. Only what exists today, and free only "during
+// the beta" beyond what is free now
+const WHAT = {
+  en: { t: "What is Pitlane HQ", p: ["Pitlane HQ (also written PitlaneHQ) is a free sim racing telemetry app for iRacing and Le Mans Ultimate. It is in beta, and everything in it is free during the beta.",
+    "Pitlane HQ Agent runs on the Windows PC where you race. It records every lap by itself and draws overlays on top of the game, also in VR. The web app and the Android app show your laps with a lap analyzer, lap comparison, sectors and braking points, and a coach that learns from real laps, shows corner by corner where you lose time and gives a plan marked on the track map.",
+    "Every lap syncs to your account with your whole history. Pitlane HQ also has live telemetry on your phone, race summaries with the fuel of each stint, leaderboards by car and track, friends, leagues and a Discord bot."] },
+  es: { t: "Qué es Pitlane HQ", p: ["Pitlane HQ (también escrito PitlaneHQ) es una app gratis de telemetría para sim racing en iRacing y Le Mans Ultimate. Está en beta, y durante la beta todo es gratis.",
+    "Pitlane HQ Agent funciona en el PC con Windows donde corres. Graba cada vuelta solo y dibuja overlays encima del juego, también en VR. La app web y la app de Android te enseñan tus vueltas con un analizador de vueltas, comparación de vueltas, sectores y puntos de frenada, y un coach que aprende de vueltas reales, te enseña curva a curva dónde pierdes tiempo y te da un plan marcado en el mapa.",
+    "Cada vuelta se sincroniza con tu cuenta, con todo tu historial. Pitlane HQ también tiene telemetría en vivo en el móvil, resúmenes de carrera con el combustible de cada stint, clasificaciones por coche y circuito, amigos, ligas y un bot de Discord."] },
+  pt: { t: "O que é o Pitlane HQ", p: ["O Pitlane HQ (também escrito PitlaneHQ) é um app grátis de telemetria para sim racing no iRacing e no Le Mans Ultimate. Ele está em beta, e durante a beta tudo é grátis.",
+    "O Pitlane HQ Agent roda no PC com Windows onde você corre. Ele grava cada volta sozinho e desenha overlays sobre o jogo, também em VR. O app web e o app de Android mostram suas voltas com um analisador de voltas, comparação de voltas, setores e pontos de frenagem, e um coach que aprende com voltas reais, mostra curva a curva onde você perde tempo e dá um plano marcado no mapa da pista.",
+    "Cada volta sincroniza com a sua conta, com todo o seu histórico. O Pitlane HQ também tem telemetria ao vivo no celular, resumos de corrida com o combustível de cada stint, classificações por carro e pista, amigos, ligas e um bot de Discord."] },
+};
+const whatIs = (l) => `<section class="x" id="what"><h2>${esc(WHAT[l].t)}</h2>${WHAT[l].p.map((x) => `<p>${esc(x)}</p>`).join("")}</section>`;
 // the page itself: its address, its name, its language, the site it belongs to and the day it last changed
 const webPageLd = (l, path, name, description, mod) => ({ "@context": "https://schema.org", "@type": "WebPage", "@id": SITE + path + "#page", url: SITE + path, name, description,
   inLanguage: HLANG[l], isPartOf: { "@id": SITE + "/#website" }, about: { "@id": SITE + "/#app" }, dateModified: mod || SEO_DATE });
@@ -199,23 +214,27 @@ const LAND = {
   en: {
     path: "/iracing-telemetry",
     title: "iRacing telemetry, lap analysis and overlays · Pitlane HQ",
-    desc: "Free iRacing telemetry from Pitlane HQ. Record every lap, see where you lose time, compare with faster drivers and race with overlays on top of the game.",
+    desc: "Free iRacing telemetry from Pitlane HQ. Record every lap, see corner by corner where you lose time with the coach, compare laps and race with overlays.",
     h1: "iRacing telemetry and a coach for your laps",
     lead: "Pitlane HQ records every lap you drive in iRacing and shows where you lose time, against your own best lap, the record and the driver just ahead of you in the same car. It is free and works on Windows, Android and the web.",
     cards: [
       ["Telemetry from every lap", "Pitlane HQ Agent runs next to iRacing and saves speed, throttle, brake, gear and steering on every lap, with nothing to set up. The laps go to your account, so you can open them later on the web or on your phone."],
       ["Compare two laps", "Speed, inputs and the time gap along the lap, the track map, the sectors and the braking points. Pick any two laps, yours, one from another session or one from the leaderboard."],
-      ["A coach that uses real laps", "For each car and track Pitlane HQ learns from real laps driven by real people. The coach compares your lap with the record and with the driver just ahead of you, and tells you which corners cost the most."],
+      ["A coach that uses real laps", "For each car and track Pitlane HQ learns from real laps driven by real people, and from every session you drive. The coach compares your lap with the record and with the driver just ahead of you, shows corner by corner where the time goes and gives a plan with each point marked on the track map."],
       ["Live telemetry on your phone", "While you drive, watch your telemetry on the phone or in a browser. Share a code and a friend can watch too."],
       ["Leaderboards by car and track", "The fastest lap of every driver on each car and track, by discipline, oval, sports car, formula, dirt oval and dirt road."],
-      ["Race summaries and iRating", "After each race, your result, your laps, your incidents, your iRating and how you compared with the drivers around you."],
-      ["Overlays on top of the game", "Relative, standings, radar, delta bar, fuel, tyres, track map, flags, a live coach and more, drawn by Pitlane HQ Agent over iRacing and also shown in VR."],
+      ["Race summaries and iRating", "After each race, your result, your laps, your incidents, your iRating, your race pace and fuel per stint, and how you compared with the drivers around you."],
+      ["Overlays on top of the game", "Relative, standings, radar, delta bar, fuel, tyres, track map, flags, a live coach and more, drawn by Pitlane HQ Agent over iRacing and also shown in VR. Place them on a picture of your screen in the Overlays tab and set each one with a live preview."],
+      ["Your laps on every device", "Every lap goes to your account and syncs to the web and the phone, with your whole history. Days you drove opens as a calendar with the races and sessions of each day."],
+      ["Friends and a Discord bot", "Follow your friends and see their newest laps in Community. The Discord bot posts new best laps and records in your server and answers with leaderboards, records and lap comparisons."],
     ],
     recs: "Records by car and track", recsLead: "The fastest laps driven with Pitlane HQ.",
     faqT: "Questions",
     faq: [
-      ["What is Pitlane HQ?", "Pitlane HQ (also written PitlaneHQ) is a free sim racing telemetry app for iRacing and Le Mans Ultimate. Pitlane HQ Agent records your laps on Windows, and the web and the phone app show them with a coach, leaderboards and overlays."],
-      ["Is it free?", "Yes. The telemetry, the coach, the leaderboards and the basic overlays are free, and during the beta everything is."],
+      ["What is Pitlane HQ?", "Pitlane HQ (also written PitlaneHQ) is a free sim racing telemetry app for iRacing and Le Mans Ultimate. Pitlane HQ Agent records your laps on Windows and draws overlays over the game, and the web and the Android app show the laps with a lap analyzer, a coach, leaderboards and race summaries."],
+      ["Is it free?", "Yes. The telemetry, the coach, the leaderboards, the basic overlays, sync and your whole lap history are free, and during the beta everything is."],
+      ["Does Pitlane HQ have an AI coach?", "Yes. The coach learns from the real laps of every driver on each car and track and from each of your sessions. It shows corner by corner where you lose time and gives a plan with each point marked on the track map."],
+      ["Do I keep all my laps?", "Yes. Every lap goes to your account and syncs between your PC, the web and your phone, with your whole history."],
       ["Which sims does it work with?", "iRacing and Le Mans Ultimate (in beta). ACC and Assetto Corsa are in development."],
       ["What do I need?", "A Windows PC where you race in iRacing or Le Mans Ultimate, to record the laps. To look at them, any browser or the Android app."],
       ["Who sees my laps?", "Your laps are in your account. On the leaderboards only your fastest lap of each car and track appears, under your public name or as Anonymous."],
@@ -226,23 +245,27 @@ const LAND = {
   es: {
     path: "/es/telemetria-iracing",
     title: "Telemetría de iRacing, análisis y overlays · Pitlane HQ",
-    desc: "Telemetría gratis para iRacing con Pitlane HQ. Graba tus vueltas, mira dónde pierdes tiempo, compárate con pilotos más rápidos y usa overlays en el juego.",
+    desc: "Telemetría gratis para iRacing con Pitlane HQ. Graba tus vueltas, mira curva a curva dónde pierdes tiempo con el coach, compara vueltas y usa overlays.",
     h1: "Telemetría para iRacing y un coach para tus vueltas",
     lead: "Pitlane HQ graba cada vuelta que das en iRacing y te enseña dónde pierdes tiempo, frente a tu mejor vuelta, frente al récord y frente al piloto que va justo por delante con el mismo coche. Es gratis y funciona en Windows, Android y la web.",
     cards: [
       ["Telemetría de cada vuelta", "Pitlane HQ Agent funciona junto a iRacing y guarda velocidad, acelerador, freno, marcha y volante en cada vuelta, sin configurar nada. Las vueltas van a tu cuenta, así que luego las abres en la web o en el móvil."],
       ["Comparar dos vueltas", "Velocidad, pedales y diferencia de tiempo a lo largo de la vuelta, el mapa del circuito, los sectores y los puntos de frenada. Eliges dos vueltas cualquiera, tuyas, de otra sesión o de la clasificación."],
-      ["Un coach con vueltas reales", "Para cada coche y circuito, Pitlane HQ aprende de vueltas reales de pilotos reales. El coach compara tu vuelta con el récord y con el piloto que va justo por delante, y te dice qué curvas te cuestan más."],
+      ["Un coach con vueltas reales", "Para cada coche y circuito, Pitlane HQ aprende de vueltas reales de pilotos reales y de cada sesión que corres. El coach compara tu vuelta con el récord y con el piloto que va justo por delante, te enseña curva a curva dónde se va el tiempo y te da un plan con cada punto marcado en el mapa."],
       ["Telemetría en vivo en el móvil", "Mientras corres, mira tu telemetría en el móvil o en el navegador. Comparte un código y un amigo también puede verla."],
       ["Clasificaciones por coche y circuito", "La vuelta más rápida de cada piloto en cada coche y circuito, por disciplina, óvalo, sports car, fórmula, óvalo de tierra y tierra."],
-      ["Resumen de carrera e iRating", "Después de cada carrera, tu resultado, tus vueltas, tus incidentes, tu iRating y cómo ibas frente a los pilotos de tu alrededor."],
-      ["Overlays encima del juego", "Relative, clasificación, radar, barra de delta, combustible, neumáticos, mapa, banderas, un coach en vivo y más, dibujados por Pitlane HQ Agent sobre iRacing y también en VR."],
+      ["Resumen de carrera e iRating", "Después de cada carrera, tu resultado, tus vueltas, tus incidentes, tu iRating, tu ritmo de carrera y el combustible de cada stint, y cómo ibas frente a los pilotos de tu alrededor."],
+      ["Overlays encima del juego", "Relative, clasificación, radar, barra de delta, combustible, neumáticos, mapa, banderas, un coach en vivo y más, dibujados por Pitlane HQ Agent sobre iRacing y también en VR. Los colocas sobre un dibujo de tu pantalla en la pestaña Overlays y ajustas cada uno con una vista previa en vivo."],
+      ["Tus vueltas en todos tus dispositivos", "Cada vuelta va a tu cuenta y se sincroniza con la web y el móvil, con todo tu historial. Días que has corrido se abre como un calendario con las carreras y sesiones de cada día."],
+      ["Amigos y un bot de Discord", "Sigue a tus amigos y mira sus últimas vueltas en Comunidad. El bot de Discord publica en tu servidor las nuevas mejores vueltas y los récords, y responde con clasificaciones, récords y comparaciones de vueltas."],
     ],
     recs: "Récords por coche y circuito", recsLead: "Las vueltas más rápidas hechas con Pitlane HQ.",
     faqT: "Preguntas",
     faq: [
-      ["¿Qué es Pitlane HQ?", "Pitlane HQ (también escrito PitlaneHQ) es una app gratis de telemetría para sim racing en iRacing y Le Mans Ultimate. Pitlane HQ Agent graba tus vueltas en Windows, y la web y la app del móvil te las enseñan con un coach, clasificaciones y overlays."],
-      ["¿Es gratis?", "Sí. La telemetría, el coach, las clasificaciones y los overlays básicos son gratis, y durante la beta lo es todo."],
+      ["¿Qué es Pitlane HQ?", "Pitlane HQ (también escrito PitlaneHQ) es una app gratis de telemetría para sim racing en iRacing y Le Mans Ultimate. Pitlane HQ Agent graba tus vueltas en Windows y dibuja overlays sobre el juego, y la web y la app de Android te las enseñan con un analizador de vueltas, un coach, clasificaciones y resúmenes de carrera."],
+      ["¿Es gratis?", "Sí. La telemetría, el coach, las clasificaciones, los overlays básicos, la sincronización y todo tu historial de vueltas son gratis, y durante la beta lo es todo."],
+      ["¿Pitlane HQ tiene un coach con IA?", "Sí. El coach aprende de las vueltas reales de todos los pilotos en cada coche y circuito y de cada una de tus sesiones. Te enseña curva a curva dónde pierdes tiempo y te da un plan con cada punto marcado en el mapa."],
+      ["¿Guardo todas mis vueltas?", "Sí. Cada vuelta va a tu cuenta y se sincroniza entre tu PC, la web y tu móvil, con todo tu historial."],
       ["¿Con qué simuladores funciona?", "Con iRacing y Le Mans Ultimate (en beta). ACC y Assetto Corsa están en desarrollo."],
       ["¿Qué necesito?", "Un PC con Windows donde corras en iRacing o Le Mans Ultimate, para grabar las vueltas. Para verlas, cualquier navegador o la app de Android."],
       ["¿Quién ve mis vueltas?", "Tus vueltas están en tu cuenta. En las clasificaciones solo aparece tu vuelta más rápida de cada coche y circuito, con tu nombre público o como Anónimo."],
@@ -253,23 +276,27 @@ const LAND = {
   pt: {
     path: "/pt/telemetria-iracing",
     title: "Telemetria do iRacing, análise e overlays · Pitlane HQ",
-    desc: "Telemetria grátis para iRacing com o Pitlane HQ. Grave suas voltas, veja onde perde tempo, compare com pilotos mais rápidos e use overlays no jogo.",
+    desc: "Telemetria grátis para iRacing com o Pitlane HQ. Grave suas voltas, veja curva a curva onde perde tempo com o coach, compare voltas e use overlays.",
     h1: "Telemetria para iRacing e um coach para suas voltas",
     lead: "O Pitlane HQ grava cada volta que você dá no iRacing e mostra onde você perde tempo, contra a sua melhor volta, contra o recorde e contra o piloto logo à sua frente no mesmo carro. É grátis e funciona no Windows, no Android e na web.",
     cards: [
       ["Telemetria de cada volta", "O Pitlane HQ Agent roda ao lado do iRacing e salva velocidade, acelerador, freio, marcha e volante em cada volta, sem configurar nada. As voltas vão para a sua conta, então você as abre depois na web ou no celular."],
       ["Compare duas voltas", "Velocidade, pedais e a diferença de tempo ao longo da volta, o mapa da pista, os setores e os pontos de frenagem. Escolha duas voltas quaisquer, suas, de outra sessão ou da classificação."],
-      ["Um coach com voltas reais", "Para cada carro e pista, o Pitlane HQ aprende com voltas reais de pilotos reais. O coach compara a sua volta com o recorde e com o piloto logo à frente e diz quais curvas custam mais."],
+      ["Um coach com voltas reais", "Para cada carro e pista, o Pitlane HQ aprende com voltas reais de pilotos reais e com cada sessão que você corre. O coach compara a sua volta com o recorde e com o piloto logo à frente, mostra curva a curva para onde vai o tempo e dá um plano com cada ponto marcado no mapa da pista."],
       ["Telemetria ao vivo no celular", "Enquanto você corre, veja a sua telemetria no celular ou no navegador. Compartilhe um código e um amigo também pode acompanhar."],
       ["Classificações por carro e pista", "A volta mais rápida de cada piloto em cada carro e pista, por disciplina, oval, sports car, fórmula, oval de terra e terra."],
-      ["Resumo de corrida e iRating", "Depois de cada corrida, o seu resultado, as suas voltas, os seus incidentes, o seu iRating e como você foi contra os pilotos ao seu redor."],
-      ["Overlays sobre o jogo", "Relative, classificação, radar, barra de delta, combustível, pneus, mapa, bandeiras, um coach ao vivo e mais, desenhados pelo Pitlane HQ Agent sobre o iRacing e também em VR."],
+      ["Resumo de corrida e iRating", "Depois de cada corrida, o seu resultado, as suas voltas, os seus incidentes, o seu iRating, o seu ritmo de corrida e o combustível de cada stint, e como você foi contra os pilotos ao seu redor."],
+      ["Overlays sobre o jogo", "Relative, classificação, radar, barra de delta, combustível, pneus, mapa, bandeiras, um coach ao vivo e mais, desenhados pelo Pitlane HQ Agent sobre o iRacing e também em VR. Posicione sobre um desenho da sua tela na aba Overlays e ajuste cada um com uma prévia ao vivo."],
+      ["Suas voltas em todos os aparelhos", "Cada volta vai para a sua conta e sincroniza com a web e o celular, com todo o seu histórico. Dias em que correu abre como um calendário com as corridas e sessões de cada dia."],
+      ["Amigos e um bot de Discord", "Siga seus amigos e veja as voltas mais novas deles em Comunidade. O bot de Discord publica no seu servidor as novas melhores voltas e os recordes, e responde com classificações, recordes e comparações de voltas."],
     ],
     recs: "Recordes por carro e pista", recsLead: "As voltas mais rápidas feitas com o Pitlane HQ.",
     faqT: "Perguntas",
     faq: [
-      ["O que é o Pitlane HQ?", "O Pitlane HQ (também escrito PitlaneHQ) é um app grátis de telemetria para sim racing no iRacing e no Le Mans Ultimate. O Pitlane HQ Agent grava suas voltas no Windows, e a web e o app de celular mostram com um coach, classificações e overlays."],
-      ["É grátis?", "Sim. A telemetria, o coach, as classificações e os overlays básicos são grátis, e durante a beta tudo é."],
+      ["O que é o Pitlane HQ?", "O Pitlane HQ (também escrito PitlaneHQ) é um app grátis de telemetria para sim racing no iRacing e no Le Mans Ultimate. O Pitlane HQ Agent grava suas voltas no Windows e desenha overlays sobre o jogo, e a web e o app de Android mostram as voltas com um analisador de voltas, um coach, classificações e resumos de corrida."],
+      ["É grátis?", "Sim. A telemetria, o coach, as classificações, os overlays básicos, a sincronização e todo o seu histórico de voltas são grátis, e durante a beta tudo é."],
+      ["O Pitlane HQ tem um coach com IA?", "Sim. O coach aprende com as voltas reais de todos os pilotos em cada carro e pista e com cada uma das suas sessões. Ele mostra curva a curva onde você perde tempo e dá um plano com cada ponto marcado no mapa da pista."],
+      ["Eu guardo todas as minhas voltas?", "Sim. Cada volta vai para a sua conta e sincroniza entre o seu PC, a web e o seu celular, com todo o seu histórico."],
       ["Com quais simuladores funciona?", "Com o iRacing e o Le Mans Ultimate (em beta). ACC e Assetto Corsa estão em desenvolvimento."],
       ["Do que eu preciso?", "Um PC com Windows onde você corre no iRacing ou no Le Mans Ultimate, para gravar as voltas. Para vê-las, qualquer navegador ou o app de Android."],
       ["Quem vê as minhas voltas?", "As suas voltas ficam na sua conta. Nas classificações aparece só a sua volta mais rápida de cada carro e pista, com o seu nome público ou como Anônimo."],
@@ -290,11 +317,12 @@ const LANDL = {
     cards: [
       ["Nothing to install in the game", "Pitlane HQ Agent reads the game's own data. Turn on Enable Plugins in the game's Settings → Gameplay and drive. Every lap is saved with its speed, pedals, gear, steering and official sectors."],
       ["Compare laps and reference laps", "Put two laps side by side, yours or the leaderboard's, with the time gap, the inputs, the racing line on the map and the braking points."],
-      ["A coach with real laps", "The coach compares your lap with the record and with the driver just ahead of your pace on the same car and track, and lists the corners that cost the most."],
+      ["A coach with real laps", "The coach compares your lap with the record and with the driver just ahead of your pace on the same car and track, shows corner by corner where the time goes and gives a plan with each point marked on the track map."],
       ["Overlays for multiclass races", "Relative and standings with class colours, radar, delta bar, fuel, a track map with every class, flags and a dash with TC, ABS, brake bias and the virtual energy left."],
       ["Live on your phone", "Watch position, delta, fuel, the relative and the map on a phone or tablet next to the wheel, over Wi-Fi or mobile data."],
       ["Race summaries and rivals", "After each race, your place, your laps and the field as the game shows it, with the best lap of every rival."],
       ["Leaderboards and leagues", "Your fastest lap of each car and track goes to its leaderboard by itself, and the leagues hub lists Le Mans Ultimate leagues with their Discord."],
+      ["Your laps on every device", "Every lap goes to your account and syncs to the web and the phone, with your whole history, and you can follow your friends and see their newest laps."],
     ],
     recs: "Le Mans Ultimate records by car and track", recsLead: "The fastest Le Mans Ultimate laps driven with Pitlane HQ.",
     faqT: "Questions",
@@ -317,11 +345,12 @@ const LANDL = {
     cards: [
       ["Nada que instalar en el juego", "Pitlane HQ Agent lee los datos del propio juego. Activa Enable Plugins en Settings → Gameplay del juego y conduce. Cada vuelta se guarda con su velocidad, pedales, marcha, volante y sectores oficiales."],
       ["Compara vueltas y vueltas de referencia", "Pon dos vueltas una al lado de la otra, tuyas o de la clasificación, con la diferencia de tiempo, los pedales, la trazada en el mapa y los puntos de frenada."],
-      ["Un coach con vueltas reales", "El coach compara tu vuelta con el récord y con el piloto justo por encima de tu ritmo en el mismo coche y circuito, y pone primero las curvas que más te cuestan."],
+      ["Un coach con vueltas reales", "El coach compara tu vuelta con el récord y con el piloto justo por encima de tu ritmo en el mismo coche y circuito, te enseña curva a curva dónde se va el tiempo y te da un plan con cada punto marcado en el mapa."],
       ["Overlays para carreras multiclase", "Relative y clasificación con los colores de cada clase, radar, barra de delta, combustible, mapa con todas las clases, banderas y un dash con TC, ABS, reparto de frenada y la energía virtual que queda."],
       ["En vivo en el móvil", "Mira posición, delta, combustible, el relative y el mapa en un móvil o una tablet junto al volante, con Wi-Fi o datos."],
       ["Resúmenes de carrera y rivales", "Después de cada carrera, tu posición, tus vueltas y la parrilla como la muestra el juego, con la mejor vuelta de cada rival."],
       ["Clasificaciones y ligas", "Tu vuelta más rápida de cada coche y circuito entra sola en su clasificación, y el hub de ligas reúne ligas de Le Mans Ultimate con su Discord."],
+      ["Tus vueltas en todos tus dispositivos", "Cada vuelta va a tu cuenta y se sincroniza con la web y el móvil, con todo tu historial, y puedes seguir a tus amigos y ver sus últimas vueltas."],
     ],
     recs: "Récords de Le Mans Ultimate por coche y circuito", recsLead: "Las vueltas más rápidas de Le Mans Ultimate hechas con Pitlane HQ.",
     faqT: "Preguntas",
@@ -344,11 +373,12 @@ const LANDL = {
     cards: [
       ["Nada para instalar no jogo", "O Pitlane HQ Agent lê os dados do próprio jogo. Ative Enable Plugins em Settings → Gameplay do jogo e pilote. Cada volta é salva com velocidade, pedais, marcha, volante e setores oficiais."],
       ["Compare voltas e voltas de referência", "Coloque duas voltas lado a lado, suas ou da classificação, com a diferença de tempo, os pedais, o traçado no mapa e os pontos de frenagem."],
-      ["Um coach com voltas reais", "O coach compara sua volta com o recorde e com o piloto logo acima do seu ritmo no mesmo carro e pista, e mostra primeiro as curvas que mais custam."],
+      ["Um coach com voltas reais", "O coach compara sua volta com o recorde e com o piloto logo acima do seu ritmo no mesmo carro e pista, mostra curva a curva para onde vai o tempo e dá um plano com cada ponto marcado no mapa da pista."],
       ["Overlays para corridas multiclasse", "Relative e classificação com as cores de cada classe, radar, barra de delta, combustível, mapa com todas as classes, bandeiras e um dash com TC, ABS, balanço de freio e a energia virtual que resta."],
       ["Ao vivo no celular", "Veja posição, delta, combustível, o relative e o mapa num celular ou tablet ao lado do volante, com Wi-Fi ou dados."],
       ["Resumos de corrida e rivais", "Depois de cada corrida, a sua posição, as suas voltas e o grid como o jogo mostra, com a melhor volta de cada rival."],
       ["Classificações e ligas", "Sua volta mais rápida de cada carro e pista entra sozinha na classificação, e o hub de ligas reúne ligas de Le Mans Ultimate com o Discord delas."],
+      ["Suas voltas em todos os aparelhos", "Cada volta vai para a sua conta e sincroniza com a web e o celular, com todo o seu histórico, e você pode seguir seus amigos e ver as voltas mais novas deles."],
     ],
     recs: "Recordes do Le Mans Ultimate por carro e pista", recsLead: "As voltas mais rápidas do Le Mans Ultimate feitas com o Pitlane HQ.",
     faqT: "Perguntas",
@@ -756,10 +786,22 @@ export async function indexNow(env) {
 // site before they answer about it; /llms-full.txt: the English pages' own texts, whole. Made from the same texts as
 // the pages, so they never say anything the pages do not. Plain facts, never hype; noindex (they are no page for people).
 const mdLink = ([path, h, d]) => `- [${h}](${SITE}${path})${d ? ": " + d : ""}`;
-const ABOUT = "Pitlane HQ (also written PitlaneHQ) is a free sim racing telemetry app for iRacing and Le Mans Ultimate. Le Mans Ultimate support is in beta, and ACC and Assetto Corsa are in development. "
-  + "Pitlane HQ Agent, a Windows program, runs next to the game and records every lap by itself. The web app and the Android app show the laps with a coach that compares them with real faster laps, lap comparison, braking points, "
-  + "leaderboards by car and track, race summaries with the iRating and leagues to join. Pitlane HQ Agent also draws overlays on top of the game, in six looks and in VR, and sends live telemetry to a phone. "
-  + "Everything is free during the beta. The pages are in English, Spanish and Portuguese (Brazil).";
+const ABOUT = WHAT.en.p.join(" ") + " ACC and Assetto Corsa are in development. The pages are in English, Spanish and Portuguese (Brazil).";
+// the facts an assistant needs to describe Pitlane HQ whole, one line each (the pages say each of them too)
+const FACTS = [
+  ["Price", "Free. Everything in Pitlane HQ is free while it is in beta, with no card asked for. Sync and the whole lap history are part of the free account."],
+  ["Games", "iRacing, and Le Mans Ultimate (in beta). ACC and Assetto Corsa are in development."],
+  ["Devices", "Pitlane HQ Agent on Windows records the laps and draws the overlays. The web app at pitlanehq.app works on any computer or phone browser, and there is an Android app. One account on every device, with sign-up by email, Steam or Discord."],
+  ["Telemetry", "Speed, throttle, brake, gear and steering of every lap, saved by itself with nothing to set up. Live telemetry on a phone or a browser while you drive, and a code to share it with a friend."],
+  ["Overlays", "Relative, standings, radar, delta bar, fuel, tyres, track map, flags, braking markers, a live coach, weather and more, drawn natively over the game, in six looks, also in VR through SteamVR. In the Overlays tab you place them on a picture of your screen. Each overlay has a settings window with a live preview and its own frame rate, and can open by itself in every game it works with."],
+  ["Coach", "Learns from the real laps of every driver on each car and track and from each of your sessions, apart for road, oval, dirt oval and dirt road. It compares your lap with the record and with the driver just ahead of your pace, shows corner by corner where the time goes, how consistent each corner is and how it improves over time, and gives a plan with each point marked on the track map, saying what happened, why it costs time and what to do instead. On the first laps of a track the coach overlay calls the braking points."],
+  ["Lap analyzer", "Compare any two laps, your own, from another session or from the leaderboard, with speed, inputs, the time gap, the sectors, the braking points, the racing line on the map and a replay of both laps. More charts add the G-G chart, steering against speed and tyre temperatures lap by lap. Every off shows on the map with what the lap did just before it."],
+  ["Races", "A summary after each race with the result, laps, incidents, race pace, the fuel per lap and per stint, and in iRacing the iRating and a licence summary."],
+  ["History", "Every lap syncs to your account with the whole history, and Days you drove opens as a calendar with the races and sessions of each day."],
+  ["Community", "Leaderboards and records by car and track, friends to follow, a leagues hub with leagues to join, and a Discord bot that posts new best laps and records in a server and answers with leaderboards, records and lap comparisons."],
+  ["Languages", "English, Spanish and Portuguese (Brazil)."],
+];
+const factsMd = () => FACTS.map(([k, v]) => `- **${k}.** ${v}`).join("\n");
 function llmsTxt() {
   const l = "en", g = (x) => [x.path, x.h1, x.desc];
   const ir = [g(LAND.en), g(OVL.en), ...TOPICS.filter((x) => x.game !== "lmu").map((x) => g(x.en)), g(LEAG.en), [REC_IDX.iracing.en, S.en.recH("iRacing"), S.en.recD("iRacing")]];
@@ -768,9 +810,15 @@ function llmsTxt() {
   const other = LANGS.filter((k) => k !== l).flatMap((k) => [[LAND[k].path, LAND[k].h1 + " (" + NAME[k] + ")"], [LANDL[k].path, LANDL[k].h1 + " (" + NAME[k] + ")"]]);
   return `# Pitlane HQ
 
-> Free iRacing and Le Mans Ultimate telemetry with a lap coach, overlays, leaderboards and leagues, on Windows, the web and Android.
+> Sim racing telemetry for iRacing and Le Mans Ultimate, all free during the beta, with a coach that learns from real laps, a lap analyzer, live overlays, sync with the whole lap history, leaderboards, friends, leagues and a Discord bot, on Windows, the web and Android.
 
 ${ABOUT}
+
+## Key facts
+
+${factsMd()}
+
+## Links
 
 - Website and web app ${SITE}/
 - Download ${SITE}/downloads
@@ -798,7 +846,7 @@ function llmsFull() {
   const sec = (path, h1, lead, parts, faq) => `# ${h1}\n\n${SITE}${path}\n\n${lead}\n\n${parts.map(([h, p]) => `## ${h}\n\n${p}`).join("\n\n")}${faq && faq.length ? "\n\n## " + LAND[l].faqT + "\n\n" + qa(faq) : ""}`;
   const land = (L, gn) => sec(L.path, L.h1, L.lead, [...L.cards, [START[l].t, START[l].steps(gn).map((x, i) => `${i + 1}. ${x}`).join("\n")]], L.faq);
   const W = OVW[l], ov = (O) => sec(O.path, O.h1, O.lead, [...O.items, [W.expT, W.exp], [W.vrT, W.vr], [W.howT, W.how.map((x) => "- " + x).join("\n")]], O.faq);
-  return [`# Pitlane HQ\n\n${ABOUT}`, land(LAND[l], "iRacing"), ov(OVL[l]), ...TOPICS.filter((x) => x.game !== "lmu").map((x) => sec(x[l].path, x[l].h1, x[l].lead, x[l].secs, x[l].faq)),
+  return [`# Pitlane HQ\n\n${ABOUT}\n\n## Key facts\n\n${factsMd()}`, land(LAND[l], "iRacing"), ov(OVL[l]), ...TOPICS.filter((x) => x.game !== "lmu").map((x) => sec(x[l].path, x[l].h1, x[l].lead, x[l].secs, x[l].faq)),
     land(LANDL[l], "Le Mans Ultimate"), ov(OVLL[l]), ...TOPICS.filter((x) => x.game === "lmu").map((x) => sec(x[l].path, x[l].h1, x[l].lead, x[l].secs, x[l].faq)),
     sec(LEAG[l].path, LEAG[l].h1, LEAG[l].lead, [], LEAG[l].faq), sec(REC_IDX.iracing[l], S[l].recH("iRacing"), S[l].recD("iRacing"), [[S[l].howT, S[l].how("iRacing")]], S[l].faq("iRacing"))].join("\n\n---\n\n") + "\n";
 }

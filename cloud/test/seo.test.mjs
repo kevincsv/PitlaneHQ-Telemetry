@@ -226,9 +226,16 @@ assert.ok(!pages.get("/iracing-coach").ld.some((x) => x["@type"] === "HowTo"), "
     const x = await get(env, href); assert.ok(x && x.status === 200, `llms.txt links ${href}, which answers ${x && x.status}`); }
   const bare = await (await get(world({ lmu: false }), "/llms.txt")).text();
   for (const set of LMU_DATA) assert.ok(!bare.includes(set.en + ")"), `llms.txt leaves out ${set.en} while it is empty`);
+  assert.match(t, /## Key facts/); assert.match(t, /free during the beta/);
+  for (const w of ["coach", "overlays", "Discord bot", "sync", "Le Mans Ultimate", "Android", "sectors"]) assert.ok(t.includes(w), `llms.txt names ${w}`);
   const full = await (await get(env, "/llms-full.txt")).text();
+  assert.match(full, /## Key facts/);
+  // only what exists and is open to everyone: nothing scrapped, secret, in development behind admin mode, or about the server's insides
+  for (const x of [t, full]) assert.ok(!/SimHub|voice engineer|DRINKS|Planner|planner|3D|D1|database|Ask the coach/.test(x), "llms text names something it must not");
   for (const x of TOPICS) { assert.ok(full.includes("# " + x.en.h1), `llms-full.txt has ${x.en.path}`); assert.ok(full.includes(x.en.faq[0][1]), `llms-full.txt has the answers of ${x.en.path}`); }
 }
+// every indexed page ends with what Pitlane HQ is, in its own language
+for (const [path, p] of pages) assert.match(p.text, /What is Pitlane HQ|Qué es Pitlane HQ|O que é o Pitlane HQ/, `${path} says what Pitlane HQ is`);
 // robots.txt shuts no robot out of the public pages (search engines and AI search alike) and names the sitemap
 {
   const rb = readFileSync(DIST + "robots.txt", "utf8");

@@ -47,8 +47,12 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   PerplexityBot read them like search engines; the test checks there is never a `Disallow: /`). `/llms.txt` (llmstxt.org,
   Markdown as plain text, noindex) says in plain facts what Pitlane HQ is and lists every English public page with its
   description (Le Mans Ultimate's leagues and records only while they exist), the downloads, the other languages'
-  landings and `/llms-full.txt`, every English page's own texts whole; both are made from the pages' texts, so they never
-  say anything the pages do not. Every indexed page carries a WebPage node (its address, name, language and
+  landings and `/llms-full.txt`, every English page's own texts whole; both open with what Pitlane HQ is (`WHAT`) and its
+  "Key facts" (`FACTS`: price, games, devices, telemetry, overlays, coach, lap analyzer, races, history, community,
+  languages), only what exists and is open to everyone (never anything scrapped, secret, in development or about the
+  server), and free only as "free during the beta" beyond what is free now; both are made from the pages' texts, so they never
+  say anything the pages do not. Every indexed page ends with "What is Pitlane HQ" (`WHAT`, three short paragraphs in its language, the same text
+  as the app's <noscript>), and every indexed page carries a WebPage node (its address, name, language and
   `dateModified`, `SEO_DATE` or a record's newest lap); the two landings show "How to start" (four steps, `START`) and carry
   them as HowTo, never on a page where the steps do not show; the SoftwareApplication says `downloadUrl` and
   `isAccessibleForFree`, and on the landings its `featureList` is their cards' titles. The robots noted for the admins

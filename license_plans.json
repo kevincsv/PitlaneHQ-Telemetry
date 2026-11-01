@@ -1,7 +1,7 @@
 {
-  "_help": "Pitlane HQ Pro. The admin page switches Pro on when the beta ends (until then everything is free). The lifetime offer: its price during the beta and after, and the Lemon Squeezy checkout link of its product (buy). The store charges; the server hears of each purchase through its webhook (secret LEMONSQUEEZY_WEBHOOK_SECRET).",
+  "_help": "Pitlane HQ Pro. The admin page switches Pro on when the beta ends (until then everything is free). The lifetime offer: its price during the beta and after, and the checkout link of its product (buy: a Stripe Payment Link, https://buy.stripe.com/...). Stripe charges (Managed Payments); the server hears of each purchase through POST /stripe/webhook (secret STRIPE_WEBHOOK_SECRET). Lemon Squeezy (LEMONSQUEEZY_WEBHOOK_SECRET) still works for what was bought there.",
   "enforce": false,
-  "provider": "lemonsqueezy",
+  "provider": "stripe",
   "customUrl": "",
   "storeUrl": "https://pitlanehq.lemonsqueezy.com",
   "trialDays": 14,

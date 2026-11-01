@@ -8,10 +8,16 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   the experimental overlays close (and never open by themselves) and only `freeApps` (3) of the programs the PC
   starts by itself (Settings → Programs, when Pitlane HQ opens or iRacing starts, `apps.go`) start; the overlays on Auto
   have no limit of their own; admins always have it. Pro is the
-  lifetime offer (`lifetime` in license_plans.json: 12 € during the beta, 24 € after, paid once) bought with Lemon
-  Squeezy (`lifetime.buy` is the checkout link; the checkout carries the account id; POST `/lemonsqueezy/webhook`
-  signed with LEMONSQUEEZY_WEBHOOK_SECRET; a buyer without an account gets it when they sign up with that email) or
-  given by hand on the admin page. Patreon donations are still welcome beside it (Account → Pitlane HQ Pro). The Account card is hidden for now
+  lifetime offer (`lifetime` in license_plans.json: 12 € during the beta, 24 € after, paid once) bought with Stripe
+  (Managed Payments, Stripe is the merchant of record; `cloud/src/stripe.js`): `lifetime.buy` is a Stripe Payment Link,
+  which the apps open with `client_reference_id` (the account id) and `prefilled_email`; Stripe calls POST
+  `/stripe/webhook` signed with STRIPE_WEBHOOK_SECRET (no Stripe API key on the server). A paid one-off payment is the
+  lifetime and a full refund (`charge.refunded`) takes it away; a subscription gives Pro until its paid period ends plus
+  3 days (`customer.subscription.*`, 35 days after the checkout until Stripe sends the period), and a cancelled one keeps
+  it until then. A subscription or refund never takes away a lifetime or a Pro given by hand (`setPro` in prostore.js).
+  Lemon Squeezy (`lemon.js`, POST `/lemonsqueezy/webhook`, LEMONSQUEEZY_WEBHOOK_SECRET) still works for what was bought
+  there; `provider` in license_plans.json says which one the admin page checks. A buyer without an account gets Pro
+  when they sign up with that email (pro_orders). Pro can also be given by hand on the admin page. Patreon donations are still welcome beside it (Account → Pitlane HQ Pro). The Account card is hidden for now
   (`PRO_CARD_ON` false in index.html) until the owner says otherwise.
   Pro limits only the PC (its experimental overlays and the programs it starts); the web and the phones only receive and always have
   everything. Pro lives on one PC at a time (`pcid.go`: a hash of Windows' MachineGuid, sent as `?pc=` on `/community/pro`

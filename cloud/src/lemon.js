@@ -7,6 +7,7 @@
 // hash (the server never keeps emails). A buyer without an account yet gets Pro when they create one with that email.
 import PLANS from "../../license_plans.json";
 import { sessionAccount, isAdmin, emailHash } from "./accounts.js";
+import { setPro } from "./prostore.js";
 
 const JSONH = { "content-type": "application/json", "access-control-allow-origin": "*" };
 const json = (o, s = 200) => new Response(JSON.stringify(o), { status: s, headers: JSONH });
@@ -40,19 +41,6 @@ async function hmacHex(secret, body) {
   return [...s].map((b) => b.toString(16).padStart(2, "0")).join("");
 }
 const same = (a, b) => { if (a.length !== b.length) return false; let d = 0; for (let i = 0; i < a.length; i++) d |= a.charCodeAt(i) ^ b.charCodeAt(i); return d === 0; };
-
-// give (or take) Pro: on the account when it is known, and kept by the email's hash for an account made later
-async function setPro(env, { accountId, eh, kind, until, on, order }) {
-  const now = Date.now();
-  if (!accountId && eh) { const a = await env.DB.prepare("SELECT id FROM accounts WHERE email_hash=?1").bind(eh).first().catch(() => null); if (a) accountId = a.id; }
-  if (order) await env.DB.prepare("INSERT INTO pro_orders (id, account_id, email_hash, kind, status, until, at) VALUES (?1,?2,?3,?4,?5,?6,?7) ON CONFLICT(id) DO UPDATE SET account_id=COALESCE(excluded.account_id, pro_orders.account_id), status=excluded.status, until=excluded.until, at=excluded.at")
-    .bind(order, accountId || null, eh || null, kind, on ? "on" : "off", until || 0, now).run();
-  if (!accountId) return false;
-  if (on) await env.DB.prepare("UPDATE accounts SET pro=1, pro_src=?2, pro_until=?3, pro_since=CASE WHEN pro_since>0 THEN pro_since ELSE ?4 END WHERE id=?1 AND NOT (pro=1 AND pro_src='lifetime' AND ?2<>'lifetime')").bind(accountId, kind, until || 0, now).run();
-  // a subscription that ends or an order refunded never takes away a lifetime or a Pro given by hand
-  else await env.DB.prepare("UPDATE accounts SET pro=0, pro_src=NULL, pro_until=0 WHERE id=?1 AND pro_src=?2").bind(accountId, kind).run();
-  return true;
-}
 
 export async function lemonWebhook(req, env) {
   if (!env.LEMONSQUEEZY_WEBHOOK_SECRET) return err("Lemon Squeezy is not set up on this server", 404);
@@ -143,5 +131,7 @@ export async function proRoutes(req, env, p, m, body) {
   const c = await env.DB.prepare("SELECT COUNT(*) AS n, SUM(pro_src='lifetime') AS life, SUM(pro_src='subscription') AS sub, SUM(pro_src='manual') AS man FROM accounts WHERE pro=1 AND (pro_until=0 OR pro_until>?1)").bind(Date.now()).first().catch(() => ({}));
   const waiting = await env.DB.prepare("SELECT COUNT(*) AS n FROM pro_orders WHERE account_id IS NULL AND status='on'").first().catch(() => ({ n: 0 }));
   return json({ ...(await proOffer(env)), counts: { pro: c.n || 0, lifetime: c.life || 0, subscription: c.sub || 0, manual: c.man || 0, waiting: waiting.n || 0 },
-    store: { webhook: !!env.LEMONSQUEEZY_WEBHOOK_SECRET, checkout: !!(PLANS.lifetime && PLANS.lifetime.buy), url: "https://pitlanehq.app/lemonsqueezy/webhook" } });
+    store: PLANS.provider === "stripe"
+      ? { provider: "stripe", webhook: !!env.STRIPE_WEBHOOK_SECRET, secret: "STRIPE_WEBHOOK_SECRET", checkout: !!(PLANS.lifetime && PLANS.lifetime.buy), url: "https://pitlanehq.app/stripe/webhook" }
+      : { provider: "lemonsqueezy", webhook: !!env.LEMONSQUEEZY_WEBHOOK_SECRET, secret: "LEMONSQUEEZY_WEBHOOK_SECRET", checkout: !!(PLANS.lifetime && PLANS.lifetime.buy), url: "https://pitlanehq.app/lemonsqueezy/webhook" } });
 }

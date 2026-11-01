@@ -20,6 +20,16 @@
     <Company>Pitlane HQ</Company>
     <Product>Pitlane HQ</Product>
     <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+    <!-- a tidy install folder: the window, the .NET runtime and its libraries in one compressed PitlaneHQ.Desktop.exe;
+         only the native files WPF and WebView2 load sit beside it (not extracted to %TEMP%, so the updater's zip
+         overwrites them with the matching version). Old loose files: oldlayout.go and the .iss's [InstallDelete] -->
+    <PublishSingleFile>true</PublishSingleFile>
+    <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
+    <IncludeNativeLibrariesForSelfExtract>false</IncludeNativeLibrariesForSelfExtract>
+    <DebugType>embedded</DebugType>
+    <PublishReferencesDocumentationFiles>false</PublishReferencesDocumentationFiles>
+    <!-- WebView2Loader.dll once, next to the window (MainWindow sets the loader's folder), not again in runtimes\ -->
+    <WebView2NeverCopyLoaderDllToOutputDirectory>true</WebView2NeverCopyLoaderDllToOutputDirectory>
   </PropertyGroup>
 
   <!-- the app's fonts, the same files the native overlays draw with -->

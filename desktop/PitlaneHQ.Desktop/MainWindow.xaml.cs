@@ -208,6 +208,8 @@ public partial class MainWindow : Window
         _webStarted = true;
         try
         {
+            // the window is one file (single-file publish): WebView2Loader.dll sits next to it, never in runtimes\
+            try { CoreWebView2Environment.SetLoaderDllFolderPath(AppContext.BaseDirectory); } catch (InvalidOperationException) { }
             // its own data folder (the install folder may not be writable) and no slowing down while hidden:
             // the rev beep keeps its timing behind a native screen
             var env = await CoreWebView2Environment.CreateAsync(null,

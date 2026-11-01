@@ -63,9 +63,10 @@ jobs:
       - name: Build the window (with the agent next to it)
         shell: pwsh
         run: |
-          # self-contained: the .NET runtime goes inside, so nothing else has to be installed
+          # self-contained: the .NET runtime goes inside, so nothing else has to be installed; one file (the .csproj's
+          # single-file publish) with only WPF's and WebView2's native files beside it
           $ver = (Select-String -Path main.go -Pattern 'appVersion\s*=\s*"([^"]+)"').Matches[0].Groups[1].Value
-          dotnet publish desktop/PitlaneHQ.Desktop/PitlaneHQ.Desktop.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=false -p:Version=$ver -o out-desktop
+          dotnet publish desktop/PitlaneHQ.Desktop/PitlaneHQ.Desktop.csproj -c Release -r win-x64 --self-contained true -p:Version=$ver -o out-desktop
           if ($LASTEXITCODE -ne 0) { exit 1 }
           Copy-Item engine/PitlaneHQ.exe out-desktop/
           # only our two programs go to the signer (the .NET runtime's own files are already Microsoft's)

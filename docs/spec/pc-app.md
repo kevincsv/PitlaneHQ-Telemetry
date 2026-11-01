@@ -20,6 +20,15 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   and `AZURE_SIGNING_PROFILE` are set, and checks the signatures; without them the build is unsigned as before. The
   updater's zip carries the signed programs. The .NET runtime's files keep Microsoft's signatures. SmartScreen
   reputation builds with downloads of signed files, so the warning can still show for the first days.
+- The install folder is tidy: the window is one compressed single-file `PitlaneHQ.Desktop.exe` (`PublishSingleFile`,
+  `EnableCompressionInSingleFile` in the .csproj: the .NET runtime, WPF, Windows Forms and WebView2's libraries
+  inside) with only the native files WPF and WebView2 load beside it (`*_cor3.dll`, `WebView2Loader.dll`, never
+  extracted to %TEMP%, no `runtimes\` folder; the window points WebView2 at its loader with `SetLoaderDllFolderPath`),
+  then the agent, the EULA, the privacy notice, the notices and the uninstaller: about 13 files instead of ~260. The
+  old loose files go with the installer's `[InstallDelete]` and, on a PC that updated by itself (the updater before
+  only added files), with the agent's `cleanOldLayout` at start (`oldlayout.go`: only when `hostfxr.dll` is there and
+  the window is a single-file bundle; removes the runtime's native files, the .NET assemblies, the deps/runtimeconfig
+  json, `createdump.exe`, the WebView2 .xml and `runtimes\`, a file in use becomes .old and goes at the next start).
 - One Windows app, "Pitlane HQ" (never "preview" or a second download): one installer (`installer/PitlaneHQ.iss`,
   `PitlaneHQ-Setup.exe`; `PitlaneHQ-Desktop-Setup.exe` is the same file for old links) puts the native window
   (`PitlaneHQ.Desktop.exe`, self-contained) and the agent next to it, and its shortcuts open the window, which runs the

@@ -251,6 +251,8 @@ func cleanOldFiles() {
 	if err != nil {
 		return
 	}
+	// the window's old loose files, once it is one file (oldlayout.go)
+	cleanOldLayout(filepath.Dir(exe))
 	// the program's folder and its sub-folders (the native window's files)
 	filepath.WalkDir(filepath.Dir(exe), func(p string, d os.DirEntry, err error) error {
 		if err == nil && !d.IsDir() && strings.HasSuffix(p, ".old") {

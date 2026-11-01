@@ -1,5 +1,5 @@
 ; Pitlane HQ installer (Inno Setup 6). Built by CI: iscc /DAppVersion=x.y.z installer\PitlaneHQ.iss
-; One app: the native window (PitlaneHQ.Desktop.exe, self-contained .NET, so nothing else has to be
+; One app: the native window (PitlaneHQ.Desktop.exe, self-contained .NET in one file, so nothing else has to be
 ; installed; WebView2 is part of Windows 10/11) with the agent (PitlaneHQ.exe) next to it as its engine.
 ; Installs for the current user only (no administrator needed), so the built-in updater can replace
 ; the files later.
@@ -59,6 +59,16 @@ Source: "..\docs\legal\PRIVACY.md"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\THIRD_PARTY_NOTICES.md"; DestDir: "{app}"; Flags: ignoreversion
 
 [InstallDelete]
+; the window used to be ~250 loose files (the .NET runtime and its libraries): it is one PitlaneHQ.Desktop.exe now, so
+; the old ones go before the new files are copied (the native files beside it come back with them)
+Type: files; Name: "{app}\*.dll"
+Type: files; Name: "{app}\*.old"
+Type: files; Name: "{app}\createdump.exe"
+Type: files; Name: "{app}\PitlaneHQ.Desktop.deps.json"
+Type: files; Name: "{app}\PitlaneHQ.Desktop.runtimeconfig.json"
+Type: files; Name: "{app}\PitlaneHQ.Desktop.pdb"
+Type: files; Name: "{app}\Microsoft.Web.WebView2.*.xml"
+Type: filesandordirs; Name: "{app}\runtimes"
 ; installs made while the app was called TrackIQ (0.5–0.6.1): that program and its shortcuts go, PitlaneHQ.exe takes over
 Type: files; Name: "{app}\TrackIQ.exe"
 Type: files; Name: "{group}\TrackIQ.lnk"

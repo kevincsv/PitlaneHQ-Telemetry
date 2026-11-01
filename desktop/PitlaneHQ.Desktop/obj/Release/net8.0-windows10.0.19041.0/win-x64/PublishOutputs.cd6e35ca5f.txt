@@ -1,0 +1,5 @@
+/tmp/claude-0/-home-user/dd18946d-a094-5560-b1a5-e7295543c984/scratchpad/sfn/PitlaneHQ.Desktop.pdb
+/tmp/claude-0/-home-user/dd18946d-a094-5560-b1a5-e7295543c984/scratchpad/sfn/Microsoft.Web.WebView2.Core.xml
+/tmp/claude-0/-home-user/dd18946d-a094-5560-b1a5-e7295543c984/scratchpad/sfn/Microsoft.Web.WebView2.Wpf.xml
+/tmp/claude-0/-home-user/dd18946d-a094-5560-b1a5-e7295543c984/scratchpad/sfn/Microsoft.Web.WebView2.WinForms.xml
+/tmp/claude-0/-home-user/dd18946d-a094-5560-b1a5-e7295543c984/scratchpad/sfn/PitlaneHQ.Desktop.exe

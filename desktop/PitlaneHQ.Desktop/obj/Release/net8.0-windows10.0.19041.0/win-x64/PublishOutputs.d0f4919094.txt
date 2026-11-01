@@ -1,0 +1,12 @@
+/tmp/claude-0/-home-user/dd18946d-a094-5560-b1a5-e7295543c984/scratchpad/sf/PitlaneHQ.Desktop.pdb
+/tmp/claude-0/-home-user/dd18946d-a094-5560-b1a5-e7295543c984/scratchpad/sf/runtimes/win-x64/native/WebView2Loader.dll
+/tmp/claude-0/-home-user/dd18946d-a094-5560-b1a5-e7295543c984/scratchpad/sf/D3DCompiler_47_cor3.dll
+/tmp/claude-0/-home-user/dd18946d-a094-5560-b1a5-e7295543c984/scratchpad/sf/PenImc_cor3.dll
+/tmp/claude-0/-home-user/dd18946d-a094-5560-b1a5-e7295543c984/scratchpad/sf/PresentationNative_cor3.dll
+/tmp/claude-0/-home-user/dd18946d-a094-5560-b1a5-e7295543c984/scratchpad/sf/vcruntime140_cor3.dll
+/tmp/claude-0/-home-user/dd18946d-a094-5560-b1a5-e7295543c984/scratchpad/sf/wpfgfx_cor3.dll
+/tmp/claude-0/-home-user/dd18946d-a094-5560-b1a5-e7295543c984/scratchpad/sf/WebView2Loader.dll
+/tmp/claude-0/-home-user/dd18946d-a094-5560-b1a5-e7295543c984/scratchpad/sf/Microsoft.Web.WebView2.Core.xml
+/tmp/claude-0/-home-user/dd18946d-a094-5560-b1a5-e7295543c984/scratchpad/sf/Microsoft.Web.WebView2.Wpf.xml
+/tmp/claude-0/-home-user/dd18946d-a094-5560-b1a5-e7295543c984/scratchpad/sf/Microsoft.Web.WebView2.WinForms.xml
+/tmp/claude-0/-home-user/dd18946d-a094-5560-b1a5-e7295543c984/scratchpad/sf/PitlaneHQ.Desktop.exe

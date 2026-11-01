@@ -19,8 +19,30 @@ name: Pitlane HQ Cloud (web version)
 # Instant phone notifications: secret FCM_SERVICE_ACCOUNT, the whole JSON key of the Firebase project's service
 # account (Firebase console → Project settings → Service accounts → Generate new private key).
 
+# Every server change goes to the testers first (docs/spec/pc-app.md, "Test builds"):
+# - channel "beta" (the default, any branch): deploys this branch as its own Worker, pitlanehq-beta, on
+#   beta.<CUSTOM_DOMAIN> with the same database and files (cloud/src/beta.js: testers and admins only, no timed jobs).
+#   It never changes the database: a branch with migrations pitlanehq.app does not have stops, unless
+#   apply_migrations is ticked (the owner's call; a migration must keep pitlanehq.app working as it is).
+# - channel "production" (master only): deploys pitlanehq.app, only when master's server and web are what the last
+#   test version ran. skip_testing: an urgent fix when the app is broken for people, only when the owner says so.
+
 on:
   workflow_dispatch: # by hand only: a push never deploys
+    inputs:
+      channel:
+        description: "beta = the test version (beta.pitlanehq.app); production = pitlanehq.app, after testing (master)"
+        type: choice
+        options: [beta, production]
+        default: beta
+      apply_migrations:
+        description: "Beta only, when the owner says so: apply this branch's new database migrations"
+        type: boolean
+        default: false
+      skip_testing:
+        description: "Urgent fix only, when the owner says so: deploy master to pitlanehq.app without a test version"
+        type: boolean
+        default: false
 
 concurrency:
   group: ${{ github.workflow }}
@@ -66,8 +88,55 @@ jobs:
       - run: npm ci
       - name: Check that it builds
         run: npx wrangler deploy --dry-run --outdir dist
+      - name: Production only from master, after testing
+        if: inputs.channel == 'production'
+        working-directory: .
+        run: |
+          if [ "$GITHUB_REF" != "refs/heads/master" ]; then echo "::error::pitlanehq.app comes only from master"; exit 1; fi
+          if [ "${{ inputs.skip_testing }}" = "true" ]; then echo "::warning::Deployed without a test version (urgent fix)"; exit 0; fi
+          git fetch -q --unshallow origin '+refs/heads/*:refs/remotes/origin/*' || git fetch -q origin '+refs/heads/*:refs/remotes/origin/*'
+          curl -fsSL https://pitlanehq.app/dl/beta/cloud.json -o beta.json || { echo "::error::There is no test version yet: run this workflow with channel beta first"; exit 1; }
+          b=$(node -p 'require("./beta.json").build||""')
+          git cat-file -e "$b^{commit}" 2>/dev/null || { echo "::error::The test version's commit $b is not in this repository any more"; exit 1; }
+          # what testers ran must be this server and this web app (the inbox notices are the owner's, asked one by one)
+          if ! git diff --quiet "$b" HEAD -- cloud web license_plans.json ':(exclude)web/dist/app-news.json'; then
+            git diff --stat "$b" HEAD -- cloud web license_plans.json ':(exclude)web/dist/app-news.json' | tail -20
+            echo "::error::master has server or web changes testers have not run: deploy master with channel beta, test it, then deploy production"
+            exit 1
+          fi
+      - name: Publish the test version (beta.<domain>)
+        if: env.CLOUDFLARE_API_TOKEN != '' && inputs.channel != 'production'
+        run: |
+          set -e
+          find_db() { npx wrangler d1 list --json 2>/dev/null | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{try{const d=JSON.parse(s).find(x=>x.name==="pitlanehq");console.log(d?d.uuid:"")}catch(e){console.log("")}})'; }
+          DB_ID="$D1_ID"
+          if [ -z "$DB_ID" ]; then DB_ID=$(find_db); fi
+          if [ -z "$DB_ID" ]; then echo "::error::The database does not exist yet: deploy production first"; exit 1; fi
+          sed -i "s/^migrations_dir = \"migrations\"/migrations_dir = \"migrations\"\ndatabase_id = \"$DB_ID\"/" wrangler.toml
+          # the database is pitlanehq.app's: the test version never changes it unless the owner said so
+          pending=$(npx wrangler d1 migrations list DB --remote 2>&1 | grep -oE '[0-9]{4}_[A-Za-z0-9_-]+\.sql' || true)
+          if [ -n "$pending" ]; then
+            if [ "${{ inputs.apply_migrations }}" = "true" ]; then npx wrangler d1 migrations apply DB --remote
+            else echo "::error::This branch has database migrations pitlanehq.app does not have: $pending. Tick apply_migrations only when the owner says so."; exit 1; fi
+          fi
+          if [ -n "$ADMINS" ]; then sed -i "s/^ADMINS = \".*\"/ADMINS = \"$ADMINS\"/" wrangler.toml; fi
+          # its own Worker: another name, BETA = "1", no timed jobs, only the beta. address
+          sed -i 's/^name = "pitlanehq"/name = "pitlanehq-beta"/' wrangler.toml
+          sed -i 's/^\[vars\]/[vars]\nBETA = "1"/' wrangler.toml
+          sed -i '/^\[triggers\]/,/^crons/d' wrangler.toml
+          if [ -n "$CUSTOM_DOMAIN" ]; then printf 'routes = [{ pattern = "beta.%s", custom_domain = true }]\n\n' "$CUSTOM_DOMAIN" > routes.toml; awk 'NR==FNR{r=r $0 "\n";next} !done && /^\[/{printf "%s", r; done=1} {print}' routes.toml wrangler.toml > w.toml && mv w.toml wrangler.toml; fi
+          grep -q '^BETA = "1"' wrangler.toml && ! grep -q '^crons' wrangler.toml
+          npx wrangler deploy
+          # the keys it needs to read the same accounts and data (never the webhooks' or the Discord bot's)
+          for k in DATA_KEY EMAIL_PEPPER RESEND_API_KEY EMAIL_FROM TURN_KEY_ID TURN_KEY_TOKEN STEAM_WEB_API_KEY FCM_SERVICE_ACCOUNT; do
+            v="${!k}"; if [ -n "$v" ]; then printf '%s' "$v" | npx wrangler secret put "$k"; fi
+          done
+          # what testers run now: production deploys only this (see "Production only from master, after testing")
+          printf '{"build":"%s","branch":"%s","date":"%s"}\n' "$GITHUB_SHA" "$GITHUB_REF_NAME" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" > cloud.json
+          npx wrangler r2 object put "pitlanehq-downloads/beta/cloud.json" --file cloud.json --remote --content-type application/json
+          echo "## Test version: https://beta.$CUSTOM_DOMAIN ($GITHUB_REF_NAME, ${GITHUB_SHA::7})" >> "$GITHUB_STEP_SUMMARY"
       - name: Publish to Cloudflare
-        if: env.CLOUDFLARE_API_TOKEN != ''
+        if: env.CLOUDFLARE_API_TOKEN != '' && inputs.channel == 'production'
         run: |
           set -e
           # the database: the one in PITLANE_D1_ID, or "pitlanehq" (created the first time)

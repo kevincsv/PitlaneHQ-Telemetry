@@ -32,6 +32,8 @@ type updateInfo struct {
 	Min     string `json:"min,omitempty"` // older versions than this must update (they no longer work with the server)
 	// what the version brings, as whats-new.json says it (en, es, pt): the update window shows its first lines
 	Notes map[string][]string `json:"notes,omitempty"`
+	// "beta" in the test builds' version.json (pitlanehq.app/dl/beta/), which only testers and admins read
+	Channel string `json:"channel,omitempty"`
 }
 
 // versionLess: "0.6.1" < "0.6.10" (numbers, not text)
@@ -56,6 +58,40 @@ func versionLess(a, b string) bool {
 type updPrefs struct {
 	Told   string `json:"told,omitempty"`
 	Manual bool   `json:"manual,omitempty"` // install only when you press Update now (by default they install by themselves)
+	// Test builds (Settings → About, testers and admins only): this PC takes the builds testers try before everyone
+	Beta bool `json:"beta,omitempty"`
+	// the version this PC had when it left the test builds: until the normal builds reach it, they are not offered
+	// (a test build is usually newer, and leaving never installs an older version)
+	LeftBeta string `json:"leftBeta,omitempty"`
+}
+
+// betaAllowed: the signed-in account may take test builds (a tester or an admin of the server)
+func betaAllowed() bool {
+	loadPL()
+	plMu.Lock()
+	defer plMu.Unlock()
+	return (plAcc.Tester || plAcc.Admin) && plAcc.Token != ""
+}
+
+// updChannel: the folder this PC takes its builds from, "beta/" for the test builds or "" for everyone's. A PC whose
+// account is no longer a tester leaves the test builds by itself (keeping the version it has, LeftBeta).
+func updChannel() string {
+	p := loadUpdPrefs()
+	if !p.Beta {
+		return ""
+	}
+	if betaAllowed() {
+		return "beta/"
+	}
+	p.Beta, p.LeftBeta = false, appVersion
+	saveUpdPrefs(p)
+	return ""
+}
+
+// heldBack: a PC that left the test builds is not offered a normal build older than the version it has; once the
+// normal builds reach that version, the hold ends
+func heldBack(p updPrefs, latest *updateInfo) bool {
+	return p.LeftBeta != "" && latest != nil && latest.Channel != "beta" && versionLess(latest.Version, appVersion)
 }
 
 func updPrefsPath() string { return filepath.Join(dataDir(), "update.json") }
@@ -92,7 +128,8 @@ func checkUpdate() error {
 	if localServer() != "" {
 		return errors.New("local mode: no updates, nothing leaves this PC")
 	}
-	resp, err := (&http.Client{Transport: tlsTransport(), Timeout: 20 * time.Second}).Get(updateBase() + "version.json")
+	dir := updChannel()
+	resp, err := (&http.Client{Transport: tlsTransport(), Timeout: 20 * time.Second}).Get(updateBase() + dir + "version.json")
 	if err != nil {
 		return fmt.Errorf("could not check for updates: %w", err)
 	}
@@ -104,6 +141,13 @@ func checkUpdate() error {
 	if err := json.NewDecoder(io.LimitReader(resp.Body, 1<<14)).Decode(&u); err != nil || u.Build == "" {
 		return errors.New("the downloads page has no version information yet")
 	}
+	if dir != "" {
+		u.Channel = "beta"
+	}
+	if p := loadUpdPrefs(); p.LeftBeta != "" && !heldBack(p, &u) && u.Channel != "beta" {
+		p.LeftBeta = "" // the normal builds have caught up
+		saveUpdPrefs(p)
+	}
 	updMu.Lock()
 	updLatest, updChecked, updErr = &u, time.Now(), ""
 	updMu.Unlock()
@@ -113,12 +157,13 @@ func checkUpdate() error {
 func updateStatus() map[string]any {
 	updMu.Lock()
 	defer updMu.Unlock()
-	avail := updLatest != nil && buildID != "dev" && updLatest.Build != buildID
+	prefs := loadUpdPrefs()
+	avail := updLatest != nil && buildID != "dev" && updLatest.Build != buildID && !heldBack(prefs, updLatest)
 	// required: this version is older than the newest one's minimum, so it no longer works properly
 	required := avail && updLatest.Min != "" && versionLess(appVersion, updLatest.Min)
 	on := updateSupported && buildID != "dev" && localServer() == "" && !underSteam() && !storeApp() // local mode: no updates (the local server has none); under Steam, Steam updates; from the Microsoft Store, the Store
 	m := map[string]any{"version": appVersion, "build": buildID, "available": avail, "required": required, "busy": updBusy, "error": updErr, "supported": on,
-		"auto": !loadUpdPrefs().Manual, "autoWorks": on && (!engineMode || desktopNext() != ""), "store": storeApp()}
+		"auto": !prefs.Manual, "beta": prefs.Beta, "betaOk": betaAllowed(), "autoWorks": on && (!engineMode || desktopNext() != ""), "store": storeApp()}
 	if updLatest != nil {
 		m["latest"] = updLatest
 	}
@@ -138,7 +183,8 @@ var (
 )
 
 func updateNudge(build string) bool {
-	return nudgeBuild(build, updateSupported && localServer() == "" && !underSteam() && !storeApp())
+	// the server names everyone's newest build: a PC on the test builds checks its own folder on its own schedule
+	return nudgeBuild(build, updateSupported && localServer() == "" && !underSteam() && !storeApp() && !loadUpdPrefs().Beta)
 }
 
 // nudgeBuild: updateNudge's decision, with "updates work here" given (tests)
@@ -280,7 +326,13 @@ func applyUpdate() error {
 	if latest.Build == buildID {
 		return errors.New("you already have the latest version")
 	}
-	resp, err := updHTTP.Get(updateBase() + "PitlaneHQ-windows.zip")
+	from := ""
+	updMu.Lock()
+	if updLatest != nil && updLatest.Channel == "beta" {
+		from = "beta/" // the files of the version the PC was told about
+	}
+	updMu.Unlock()
+	resp, err := updHTTP.Get(updateBase() + from + "PitlaneHQ-windows.zip")
 	if err != nil {
 		return fmt.Errorf("could not download the update: %w", err)
 	}
@@ -390,6 +442,26 @@ func registerUpdateRoutes(mux *http.ServeMux) {
 				p := loadUpdPrefs()
 				p.Manual = r.URL.Query().Get("on") != "1"
 				saveUpdPrefs(p)
+			case "beta": // Test builds on or off (testers and admins)
+				on := r.URL.Query().Get("on") == "1"
+				if on && !betaAllowed() {
+					err = errors.New("test builds are for testers")
+					break
+				}
+				p := loadUpdPrefs()
+				if p.Beta != on {
+					p.Beta = on
+					if on {
+						p.LeftBeta = ""
+					} else {
+						p.LeftBeta = appVersion
+					}
+					saveUpdPrefs(p)
+				}
+				updMu.Lock()
+				updLatest = nil // the other folder's version is not this one's
+				updMu.Unlock()
+				err = checkUpdate()
 			case "apply":
 				updMu.Lock()
 				busy := updBusy

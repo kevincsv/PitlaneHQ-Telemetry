@@ -22,6 +22,14 @@ assert.equal(v.min, "1.1.0"); // a higher minimum from the build stays
 files["version.json"] = "not json";
 assert.equal(await (await get("/dl/version.json")).text(), "not json");
 
+// the test builds' folder: the same answer, its own file; nothing else under beta/ or above it
+files["beta/version.json"] = JSON.stringify({ version: "0.9.11", build: "tst", min: "0.1.0", channel: "beta" });
+v = await (await get("/dl/beta/version.json")).json();
+assert.equal(v.build, "tst");
+assert.equal(v.min, PC_MIN);
+assert.equal((await get("/dl/beta/x/version.json")).status, 404);
+assert.equal((await get("/dl/beta/missing.zip")).status, 404);
+
 assert.ok(versionLess("0.7.2", "0.9.0") && versionLess("0.8.9", "0.9.0") && !versionLess("0.9.0", "0.9.0") && versionLess("0.9.9", "0.10.0"));
 const goMin = readFileSync(new URL("../../main.go", import.meta.url), "utf8").match(/const appMinVersion = "([^"]+)"/)[1];
 assert.equal(goMin, PC_MIN, "PC_MIN in downloads.js and appMinVersion in main.go must agree");

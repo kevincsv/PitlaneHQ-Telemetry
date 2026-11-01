@@ -3,6 +3,7 @@
 import { discordServerRoute } from "./discordserver.js";
 import { voiceIce } from "./voiceice.js";
 import { downloads, latestBuild } from "./downloads.js";
+import { betaGate, betaHeaders, betaSignIn, isBeta } from "./beta.js";
 import { markModel, rebuildDirty, reconcileIds, buildOvalKinds } from "./model.js";
 import { fillCats } from "./coachtips.js";
 import { shadowRun, answerRun } from "./coachlearn.js";
@@ -530,6 +531,7 @@ function harden(r) {
 export default {
   // every 10 minutes: the models of the cars and tracks that got new laps
   async scheduled(ev, env, ctx) {
+    if (isBeta(env)) return; // the test version (beta.js): the production Worker runs the timed jobs, never twice
     // the repairs of old data once an hour (the first run of each hour), the rest every ten minutes
     // the database's reads per day are limited: the repairs that read the whole laps table (and find nothing almost
     // always: the uploads repair their own laps) run once a day, at 03:00 UTC
@@ -557,9 +559,9 @@ export default {
   },
   async fetch(req, env, ctx) {
     // the rows each route reads and writes, for the admin page's Health (reports.js); about once a minute they are kept
-    if (!env.DB) return harden(await handle(req, env, ctx).catch(gatedAnswer));
+    if (!env.DB) return betaHeaders(harden(await handle(req, env, ctx).catch(gatedAnswer)), env);
     const raw = env.DB, url = new URL(req.url);
-    try { return harden(await handle(req, { ...env, DB: countingDB(raw, routeKey(req.method, url.pathname)) }, ctx).catch(gatedAnswer)); }
+    try { return betaHeaders(harden(await handle(req, { ...env, DB: countingDB(raw, routeKey(req.method, url.pathname)) }, ctx).catch(gatedAnswer)), env); }
     finally { ctx.waitUntil(flushUsage(raw)); }
   },
 };
@@ -582,6 +584,8 @@ async function handle(req, env, ctx) {
       url.hostname = url.hostname.slice(4);
       return Response.redirect(url.toString(), 301);
     }
+    // beta.pitlanehq.app, the test version: testers and admins only (beta.js)
+    { const b = await betaGate(req, env, url); if (b) return b; }
     if (url.pathname === "/news") return news(req, env, ctx);
     // the public pages for search engines: what Pitlane HQ does, the records of every car and track, the sitemap
     { const sp = await seoPage(req, env, url, ctx).catch(() => null); if (sp) return sp; }
@@ -628,7 +632,7 @@ async function handle(req, env, ctx) {
       try {
         {
           // the PC's minute sync carries the newest Windows build, so a PC behind checks for its update at once
-          const res = await accounts(req, env, url);
+          const res = await betaSignIn(await accounts(req, env, url), env); // the test version: testers and admins only
           if (res && url.pathname === "/account/sync/meta") { try { const b = await latestBuild(env); if (b) res.headers.set("X-Pitlane-Build", b); } catch (e) {} }
           return res;
         }

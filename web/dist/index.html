@@ -7495,6 +7495,13 @@ async function openGuide(trackId,carId,title){let d=$("#gdDlg");if(!d){d=documen
   b.innerHTML=g?guideHTML(g):`<p class="note">${esc(Tx("Not enough laps of this car here yet for a guide.","Aún no hay vueltas suficientes de este coche aquí para una guía.",null,"Ainda não há voltas suficientes deste carro aqui para um guia."))}</p>`}
 /* Home's briefing while the driver is on track: the three corners of the track guide that matter most for this car */
 const HOME_BRIEF={k:"",g:null};
+/* the pedal and wheel check on Home (in development, wipOk; the module's pedalCheck): problems the last session's own
+   laps show on every lap, once each until the driver closes them */
+function pedalCheckHTML(){if(!wipOk())return"";let LP=[];try{LP=(analysisLaps()||[]).filter(l=>l&&!l.who&&!l.est)}catch(e){return""}const last=LP.at(-1);if(!last)return"";
+  let st={};try{st=JSON.parse(localStorage.getItem("pw.pedalSeen")||"{}")}catch(e){}
+  let items=[];try{items=PWA.pedalCheck(sesLapsOf(last),anaCtx(last))}catch(e){return""}items=items.filter(x=>!st[x.k]);if(!items.length)return"";
+  return`<div class="hm-card" id="hmPedal"><div style="display:flex;align-items:center;gap:8px"><b>${esc(Tx("Pedal and wheel check","Revisión de pedales y volante",null,"Verificação de pedais e volante"))}</b>${wipPill()}<span class="sp" style="flex:1"></span><button type="button" class="btn small" data-pedalok>${esc(Tx("Got it","Entendido",null,"Entendi"))}</button></div><ul style="margin:8px 0 0;padding-left:18px">${items.map(x=>`<li>${esc(x.text)}.</li>`).join("")}</ul></div>`}
+function pedalCheckWire(box){const b=box.querySelector("[data-pedalok]");if(!b)return;b.onclick=()=>{let st={};try{st=JSON.parse(localStorage.getItem("pw.pedalSeen")||"{}")}catch(e){}let LP=[];try{LP=analysisLaps()||[]}catch(e){}const last=LP.at(-1);try{for(const x of PWA.pedalCheck(sesLapsOf(last),anaCtx(last)))st[x.k]=1;localStorage.setItem("pw.pedalSeen",JSON.stringify(st))}catch(e){}const c=$("#hmPedal");if(c)c.remove()}}
 function homeBriefHTML(){if(!(STATUS.connected&&liveNow()))return"";const wi=S.WeekendInfo||{},tid=+wi.TrackID||0,cid=+((myDriver()||{}).CarID)||0;if(!tid||!cid)return"";const k=tid+":"+cid;
   if(HOME_BRIEF.k!==k){HOME_BRIEF.k=k;HOME_BRIEF.g=null;guideFor(tid,cid).then(g=>{if(HOME_BRIEF.k!==k)return;HOME_BRIEF.g=g;if(g&&CUR_VIEW==="home")renderHome(true)})}
   const g=HOME_BRIEF.g;if(!g||!g.brief.length)return"";
@@ -9040,7 +9047,7 @@ function renderHome(fromLoad){const box=$("#homeBox");if(!box)return;if(!fromLoa
   else{if(COMPANION&&!CP.acc)h+=`<div class="hm-card hm-empty"><span>${esc(Tx("Sign in with your Pitlane HQ account to see your licences, credits, races and planner from anywhere.","Inicia sesión con tu cuenta de Pitlane HQ para ver tus licencias, créditos, carreras y planner desde cualquier sitio.","Melde dich mit deinem PitlaneHQ-Konto an, um deine Lizenzen, Credits, Rennen und deinen Planer überall zu sehen.","Entre com sua conta Pitlane HQ para ver suas licenças, créditos, corridas e planner de qualquer lugar."))}</span><button type="button" class="btn small primary" id="hmSign">${esc(Tx("Sign in","Entrar","Anmelden","Entrar"))}</button></div>`;
   else if(CONN_ON&&MODE==="bridge"&&!ACC.loggedIn)h+=`<div class="hm-card hm-empty adm"><span>${esc(Tx("Connect your iRacing account to see your licences, credits and races here.","Conecta tu cuenta de iRacing para ver aquí tus licencias, créditos y carreras.","Verbinde dein iRacing-Konto, um hier deine Lizenzen, Credits und Rennen zu sehen.","Conecte sua conta do iRacing para ver aqui suas licenças, créditos e corridas."))}</span><button type="button" class="btn small" id="hmConn">${esc(Tx("Connect","Conectar"))}</button></div>`;
   if(STATUS.connected||STATUS.demo)h+=`<button type="button" class="hm-card hm-live" id="hmLive" style="text-align:left;font:inherit;color:inherit;cursor:pointer"><i></i><div><b>${esc(STATUS.demo?Tx("Demo session running","Sesión demo en marcha"):Tx("You are on track","Estás en pista"))}</b><span>${esc(Tx("Open live telemetry","Abrir la telemetría en vivo"))}</span></div><span aria-hidden="true" style="font-size:20px;color:var(--muted)">›</span></button>`;
-  h+=homeBriefHTML();
+  h+=homeBriefHTML();h+=pedalCheckHTML();
   if(!me.noData){
   // licences
   const order=[["oval","Oval","Óvalo"],["sports_car","Sports","Sports"],["formula_car","Formula","Fórmula"],["dirt_oval","Dirt oval","Óv. tierra"],["dirt_road","Dirt road","Tierra"]];
@@ -9079,7 +9086,7 @@ function renderHome(fromLoad){const box=$("#homeBox");if(!box)return;if(!fromLoa
   h+=homeActivityHTML();
   if(me.noData)h+=licSummaryHTML()+homeRacesHTML();}
   if(WEBAPP)h+=dlHTML();
-  box.innerHTML=h;homeHealth(box);homeAlerts(box);
+  box.innerHTML=h;homeHealth(box);homeAlerts(box);pedalCheckWire(box);
   // actions
   const go=v=>show(v);box.querySelectorAll("[data-go]").forEach(b=>b.onclick=()=>{if(b.dataset.stab)SER_TAB=b.dataset.stab;go(b.dataset.go)});
   const st=$("#hmSet");if(st)st.onclick=()=>go("settings");const lv=$("#hmLive");if(lv)lv.onclick=()=>go("live");

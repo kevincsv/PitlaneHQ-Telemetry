@@ -1137,6 +1137,38 @@
 
   /* everything beyond one lap at once, for the phones: lap A against lap B and the session's laps (ctx.laps) →
      {spread, lapSpread, offs, gg: {a, b}, steer: {a, b}, us, tyres, fuel} */
+  /* the pedal and wheel check (in development): hardware problems the driver's own laps show, the same on every
+     lap, so they are calibration and not driving. Laps whose pedals are estimated (another car's) are left out. Each
+     problem is {k, v, text}: brakeMax (the brake never went past v %), thrMax (the throttle never reached 100 %),
+     thrFloor (v % of throttle read with the foot on the brake), brakeFloor (v % of brake read on full throttle),
+     steerOff (the wheel v° off centre on the straights). Needs three laps */
+  function pedalCheck(laps, ctx) {
+    const Tx = txOf(ctx), own = (laps || []).filter((l) => l && l.bins && l.bins.length > 50 && !l.src && !l.est && !l.who && !l.pit && l.time > 0);
+    if (own.length < 3) return [];
+    const med = (a) => { if (!a.length) return null; const b = a.slice().sort((x, y) => x - y); return b[b.length >> 1]; };
+    const per = own.map((l) => {
+      const s = serOf(l); let bMax = 0, tMax = 0; const tOnB = [], bOnT = [], st = [];
+      for (const b of s) {
+        if (!b) continue;
+        const thr = +b[2], brk = +b[3], v = +b[0], w = +b[5];
+        if (isFinite(brk)) bMax = Math.max(bMax, brk);
+        if (isFinite(thr)) tMax = Math.max(tMax, thr);
+        if (brk > 0.3 && isFinite(thr)) tOnB.push(thr);
+        if (thr > 0.97 && isFinite(brk) && v > 25) bOnT.push(brk);
+        if (thr > 0.97 && v > 40 && isFinite(w)) st.push(w * 180 / Math.PI);
+      }
+      return { bMax, tMax, tOnB: med(tOnB), bOnT: med(bOnT), st: st.length > 40 ? med(st) : null };
+    });
+    const all = (f) => per.every(f), out = [], p = (v) => Math.round(v * 100);
+    const bm = Math.max(...per.map((x) => x.bMax)), tm = Math.max(...per.map((x) => x.tMax));
+    if (bm > 0.05 && bm < 0.6) out.push({ k: "brakeMax", v: p(bm), text: Tx(`Your brake never went past ${p(bm)} % on any lap. Check its calibration in the game, or the car brakes less than it can`, `Tu freno nunca pasó del ${p(bm)} % en ninguna vuelta. Revisa su calibración en el juego, o el coche frena menos de lo que puede`, `Seu freio nunca passou de ${p(bm)} % em nenhuma volta. Verifique a calibração no jogo, ou o carro freia menos do que pode`) });
+    if (tm > 0.3 && tm < 0.95) out.push({ k: "thrMax", v: p(tm), text: Tx(`Your throttle never reached 100 % (${p(tm)} % at most). Check its calibration in the game`, `Tu acelerador nunca llegó al 100 % (${p(tm)} % como mucho). Revisa su calibración en el juego`, `Seu acelerador nunca chegou a 100 % (${p(tm)} % no máximo). Verifique a calibração no jogo`) });
+    if (all((x) => x.tOnB != null && x.tOnB >= 0.03)) { const v = med(per.map((x) => x.tOnB)); out.push({ k: "thrFloor", v: p(v), text: Tx(`The throttle reads ${p(v)} % while you brake. A dead zone at the bottom of the pedal fixes it`, `El acelerador marca ${p(v)} % mientras frenas. Una zona muerta abajo del pedal lo arregla`, `O acelerador marca ${p(v)} % enquanto você freia. Uma zona morta embaixo do pedal resolve`) }); }
+    if (all((x) => x.bOnT != null && x.bOnT >= 0.03)) { const v = med(per.map((x) => x.bOnT)); out.push({ k: "brakeFloor", v: p(v), text: Tx(`The brake reads ${p(v)} % on full throttle. A dead zone at the bottom of the pedal fixes it`, `El freno marca ${p(v)} % a fondo de acelerador. Una zona muerta abajo del pedal lo arregla`, `O freio marca ${p(v)} % com o acelerador no fundo. Uma zona morta embaixo do pedal resolve`) }); }
+    if (all((x) => x.st != null)) { const v = med(per.map((x) => x.st)); if (Math.abs(v) >= 2.5) { const d = Math.round(Math.abs(v) * 10) / 10; out.push({ k: "steerOff", v: d, text: Tx(`Your wheel is ${d}° off centre on the straights. Centre it again in the game's controls`, `Tu volante está ${d}° descentrado en las rectas. Céntralo otra vez en los controles del juego`, `Seu volante está ${d}° descentralizado nas retas. Centralize de novo nos controles do jogo`) }); } }
+    return out;
+  }
+
   function insights(A, B, ctx) {
     ctx = ctx || {};
     const laps = Array.isArray(ctx.laps) ? ctx.laps : [];
@@ -1147,7 +1179,7 @@
   const api = { VERSION, BIN, lapSeries, serOf, lapShape, sameFrame, lineOffsets, cornerLine, lineTip, brakeZones, PHASES, phaseName, turnNo, COACH_GEN, cornerClass, cornerZones,
     OVAL_KINDS, ovalOf, liftZones, ovalZones, dirtLineTip, coachCompare, cornerConsistency, pairSecs, lapDriving, kindName, stepName, tipMain, tipShort, tipTodo, coachPlan, stepText, analyzerFacts, analyse,
     estOf, failedOf, progressLines, followUp, trackGuide, cornerRanks, clsLines, racePace, edgeUse, notesOf, guideItems, likeOf, likeSteps, catGroup,
-    turnLab, lapSpread, cornerSpread, offsExplained, ggOf, steerOf, understeer, tyreLaps, fuelUse, fuelPlan, insights };
+    turnLab, lapSpread, cornerSpread, offsExplained, ggOf, steerOf, understeer, tyreLaps, fuelUse, fuelPlan, insights, pedalCheck };
   root.PW_ANALYSIS = api;
   if (typeof module !== "undefined" && module.exports) module.exports = api;
 })(typeof window !== "undefined" ? window : typeof globalThis !== "undefined" ? globalThis : this);

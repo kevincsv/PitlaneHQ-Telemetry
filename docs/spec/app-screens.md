@@ -101,3 +101,12 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   g of cornering against B's, 10 % apart or more), and the tyre temperatures lap by lap where the game gives them
   (`tyreLaps`: the agent records each tyre's carcass temperature left, middle and right, averaged over the lap, as the
   trace's `tt`) with lap A's three temperatures of each tyre.
+
+## Pedal and wheel check (in development: testers, admins in admin mode)
+
+- Home shows "Pedal and wheel check" (`pedalCheckHTML` in index.html, the phones' Home the same) when the last
+  session's own laps (three or more, pedals not estimated) show the same hardware problem on every lap
+  (`pedalCheck` in pitwall-analysis.js): the brake never past 60 %, the throttle never at 95 %, the throttle reading 3 %
+  or more while braking, the brake reading 3 % or more on full throttle, the wheel 2.5° or more off centre on the
+  straights. "Got it" hides those problems on that device (`pw.pedalSeen`).
+

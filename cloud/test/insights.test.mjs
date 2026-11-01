@@ -76,3 +76,15 @@ assert.equal(PW.fuelPlan({ ...u, tank: null }, { laps: 50 }).stops, null, "no ta
 const all = JSON.parse(JSON.stringify(PW.insights(best, lap(2), { ...ctx, laps: [best, lap(2), lap(3), lap(4, { valid: false, bp: 198, incAt: [1110, 1], incK: ["off"] })], tank: 60 })));
 assert.ok(all.spread && all.offs.length === 1 && all.gg.a && all.steer.a.length && all.fuel.perLap === 2.5);
 console.log("insights ok");
+
+// the pedal and wheel check: good laps say nothing; a brake that never passes 55 %, a throttle that reads with the foot
+// on the brake and a wheel off centre on the straights are found on every lap
+{
+  const good = [1, 2, 3].map((n) => lap(n));
+  assert.deepEqual(PW.pedalCheck(good, ctx), []);
+  const bad = [1, 2, 3].map((n) => { const l = lap(n, { brk: 0.55 }); for (const b of l.bins) { if (b[3] > 0.3) b[2] = 0.06; if (b[2] > 0.97) b[5] = 0.07; } return l; });
+  const ks = PW.pedalCheck(bad, ctx).map((x) => x.k);
+  assert.ok(ks.includes("brakeMax") && ks.includes("thrFloor") && ks.includes("steerOff"), ks.join(","));
+  assert.equal(PW.pedalCheck(bad.slice(0, 2), ctx).length, 0, "needs three laps");
+}
+console.log("pedal check ok");

@@ -1698,7 +1698,7 @@ html .hl-sec{padding:0 0 12px;border-radius:var(--radius);display:flex;flex-dire
 .ai-dots i:nth-child(2){animation-delay:.15s}.ai-dots i:nth-child(3){animation-delay:.3s}@keyframes aidot{0%,80%,100%{opacity:.25}40%{opacity:1}}
 #aiPanel .chk{display:flex;gap:8px;align-items:center}#aiPanel .chk input{width:auto}
 @media (max-width:820px){.ai-m{max-width:94%}.ai-ask{flex-wrap:wrap}.ai-ask input{flex-basis:100%}}
-.co-c1{order:1}.co-side{order:2;display:flex;flex-direction:column;gap:12px;min-width:0}.co-c3{order:3;display:flex;flex-direction:column;gap:12px;min-width:0}
+.co-main{order:1;display:flex;flex-direction:column;gap:12px;min-width:0}.co-side{order:2;display:flex;flex-direction:column;gap:12px;min-width:0}.co-c3{order:3;display:flex;flex-direction:column;gap:12px;min-width:0}
 .co-c1>.pnl-h{flex-wrap:wrap}.co-c1>.pnl-h .btn{font-size:11px}
 .co-c1>.note{padding:12px 14px;margin:0}
 .co-tips.rb-cards{display:flex;flex-direction:column;gap:0;margin:0}
@@ -1750,8 +1750,9 @@ html .hl-sec{padding:0 0 12px;border-radius:var(--radius);display:flex;flex-dire
 .rbmap .pa circle{fill:var(--accent);stroke:var(--bg);stroke-width:2}.rbmap .pb circle{fill:none;stroke:var(--blue);stroke-width:3}.rbmap .pa text,.rbmap .pb text{font:800 16px var(--f-data);paint-order:stroke;stroke:var(--bg);stroke-width:3px}.rbmap .pa text{fill:var(--accent)}.rbmap .pb text{fill:var(--blue)}
 .rbmap .pthr{fill:var(--good);stroke:var(--bg);stroke-width:1.5}.rbmap .pthr.a{fill:none;stroke:var(--good);stroke-width:2.5}
 #coachMap{min-width:0}
-@media (max-width:1240px){.co-cols{grid-template-columns:minmax(0,1.2fr) minmax(0,1fr)}.co-c3{grid-column:1/-1;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr));align-items:start}}
-@media (max-width:820px){.co-cols{grid-template-columns:minmax(0,1fr)}.co-c3{grid-column:auto}.co-hero .co-top .big{font-size:26px}}
+/* two columns: the corners on the left, the map column and then the pace and plan under it on the right (no row between them, so no empty space) */
+@media (max-width:1240px){.co-cols{grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);grid-template-rows:auto 1fr}.co-main{grid-column:1;grid-row:1/span 2}.co-side{grid-column:2;grid-row:1}.co-c3{grid-column:2;grid-row:2}.co-cols.c3l .co-main{grid-row:1}.co-cols.c3l .co-side{grid-row:1/span 2}.co-cols.c3l .co-c3{grid-column:1;grid-row:2}}
+@media (max-width:820px){.co-cols{grid-template-columns:minmax(0,1fr);grid-template-rows:none}.co-cols .co-main,.co-cols .co-side,.co-cols .co-c3{grid-column:auto;grid-row:auto}.co-hero .co-top .big{font-size:26px}}
 /* My sessions and My races: tables in panels */
 #cloudLapsBox .mr-filt{margin-bottom:12px}
 .mr-pnl+.mr-pnl{margin-top:12px}
@@ -1910,8 +1911,9 @@ html .hl-sec{padding:0 0 12px;border-radius:var(--radius);display:flex;flex-dire
 .drawer.float .drawer-panel:has(.cfgsplit) .cfgitem.on{border-color:color-mix(in srgb,var(--accent) 45%,var(--line))}
 @media (max-width:760px){.drawer.float .drawer-panel:has(.cfgsplit) .cfgsplit{background:none}.drawer.float .drawer-panel:has(.cfgsplit) .cfgpv{border-bottom:1px solid var(--line)}}
 /* beyond one lap: corner consistency, race fuel, more charts (renderLapMore), offs explained, friends */
-.lap-more{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr));gap:12px;align-items:start}
-.lap-more .lm-more,.lap-more .lm-charts{grid-column:1/-1}
+.lap-more{display:flex;flex-direction:column;gap:12px;min-width:0;max-width:100%}.lap-more>*{min-width:0;max-width:100%}.lap-more[hidden]{display:none}
+/* one column on a phone: the map and sectors, the braking points and laps, then the rest */
+@media (max-width:1060px){.la-split{display:flex;flex-direction:column;gap:12px}.la-col{display:contents}#lapsBody .la-split .la-brk{order:1}#lapsBody .la-split .la-laps{order:2}#lapsBody .la-split .lap-more{order:3}}
 .lm-charts{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:12px;align-items:start}
 #lapMore .lm-p{padding:0 0 12px;margin:0}#lapMore .lm-p>*{margin-inline:14px}#lapMore .lm-p>.tscroll{margin-inline:0}
 #lapMore .lm-p>.label:first-child{display:flex;align-items:center;margin:0 0 10px!important;padding:10px 14px;border-bottom:1px solid var(--line);font:600 14px/1.2 var(--f-display);letter-spacing:.12em;text-transform:uppercase;color:var(--fg)}
@@ -2388,6 +2390,7 @@ html .hl-sec{padding:0 0 12px;border-radius:var(--radius);display:flex;flex-dire
     <div class="s12 la-split"><div class="la-col">
     <div class="panel s12"><div class="label" style="margin-bottom:6px"><span data-i18n="trackMap"></span></div><div id="lapMap"></div></div>
     <div class="panel s12 secpanel"><div class="label" style="margin-bottom:6px" data-i18n="sectors"></div><div class="secstrip" id="secStrip"></div></div>
+    <div class="lap-more" id="lapMore" hidden></div>
     </div><div class="la-col">
     <div class="panel s12 la-laps">
       <div class="label" style="margin-bottom:4px" data-i18n="lapList"></div>
@@ -2400,7 +2403,6 @@ html .hl-sec{padding:0 0 12px;border-radius:var(--radius);display:flex;flex-dire
 
     </div>
     </div></div>
-    <div class="s12 lap-more" id="lapMore" hidden></div>
   </div>
 </section>
 
@@ -7586,9 +7588,9 @@ function renderCoach(){coachWeights();coachMe();const LP=coachLaps(),best=markAn
     <div class="co-side"><section class="pnl"><div class="pnl-h">${esc(Tx("Track map","Mapa del circuito","Streckenkarte","Mapa da pista"))}</div><div class="pnl-b"><div id="coachMap"></div></div></section>${standHTML(rks,cls)}<div id="coachEdges"></div>
       <section class="pnl"><div class="pnl-h">${esc(Tx("Sectors","Sectores","Sektoren","Setores"))}</div><div class="pnl-b">${c.secs.length?`<div class="co-secs">${c.secs.map(x=>`<div class="co-s"><span class="k">S${x.n}</span><b class="mono ${x.d>0?"bad":"good"}">${sgn(x.d,3)}</b><small class="mono">A ${x.a.toFixed(3)} · B ${x.b.toFixed(3)}</small></div>`).join("")}</div>`:`<p class="note" style="margin:0">${esc(Tx("No sector times for these laps.","Estas vueltas no tienen tiempos por sector.","Keine Sektorzeiten für diese Runden.","Sem tempos de setor para estas voltas."))}</p>`}</div></section>
       ${c.cs.length?(()=>{const mx=Math.max(.05,...c.cs.map(x=>Math.abs(x.lost)));return`<section class="pnl co-bars"><div class="pnl-h">${esc(Tx("Corner by corner","Curva a curva","Kurve für Kurve","Curva a curva"))}</div><div class="co-bl">${c.cs.slice().sort((a,b)=>b.lost-a.lost).map(x=>{const k=x.lost>.02?"bad":x.lost<-.02?"good":"muted";return`<div class="co-br"><span class="mono">T${x.n}</span><span class="co-bt"><i class="${k}" style="width:${Math.max(2,Math.round(Math.abs(x.lost)/mx*100))}%"></i></span><span class="mono ${k}">${sgn(x.lost,2)}</span></div>`}).join("")}</div></section>`})():""}</div>
-    <section class="pnl co-c1"><div class="pnl-h co-ch">${esc(COACH_ALLC?Tx("Corner by corner","Curva a curva","Kurve für Kurve","Curva a curva"):Tx("The corners that cost the most","Las curvas que más cuestan","Die Kurven, die am meisten kosten","As curvas que mais custam"))}<span class="sp"></span>${c.cs.length>3?`<button type="button" class="btn small" id="coachAllC">${esc(COACH_ALLC?Tx("Only the ones that lose time","Solo las que pierden tiempo","Nur die mit Zeitverlust","Só as que perdem tempo"):Tx(`All ${c.cs.length} corners`,`Las ${c.cs.length} curvas`,`Alle ${c.cs.length} Kurven`,`As ${c.cs.length} curvas`))}</button>`:""}</div>
-      ${coachCornersHTML(corners,0)}</section>${likeHTML(lk)}${gd?`<section class="pnl co-guide"><div class="pnl-h">${esc(Tx("Track guide","Guía del circuito",null,"Guia da pista"))}</div><div class="pnl-b">${guideHTML(gd)}</div></section>`:""}</div></div>`;
-  const cmap=$("#coachMap");cmap._planSel=Math.max(0,c.plan.slice(0,PLAN_SHOW).findIndex(p=>p.marks&&p.marks.length));renderCmpMap(A,R,cmap,{plan:c.plan.slice(0,PLAN_SHOW)});coachReport(A,R,c,best);coachEdges(A,R,cx);aiChatWire(A,R,c,best,LP);
+    <div class="co-main"><section class="pnl co-c1"><div class="pnl-h co-ch">${esc(COACH_ALLC?Tx("Corner by corner","Curva a curva","Kurve für Kurve","Curva a curva"):Tx("The corners that cost the most","Las curvas que más cuestan","Die Kurven, die am meisten kosten","As curvas que mais custam"))}<span class="sp"></span>${c.cs.length>3?`<button type="button" class="btn small" id="coachAllC">${esc(COACH_ALLC?Tx("Only the ones that lose time","Solo las que pierden tiempo","Nur die mit Zeitverlust","Só as que perdem tempo"):Tx(`All ${c.cs.length} corners`,`Las ${c.cs.length} curvas`,`Alle ${c.cs.length} Kurven`,`As ${c.cs.length} curvas`))}</button>`:""}</div>
+      ${coachCornersHTML(corners,0)}</section>${likeHTML(lk)}${gd?`<section class="pnl co-guide"><div class="pnl-h">${esc(Tx("Track guide","Guía del circuito",null,"Guia da pista"))}</div><div class="pnl-b">${guideHTML(gd)}</div></section>`:""}</div></div></div>`;
+  const cmap=$("#coachMap");cmap._planSel=Math.max(0,c.plan.slice(0,PLAN_SHOW).findIndex(p=>p.marks&&p.marks.length));renderCmpMap(A,R,cmap,{plan:c.plan.slice(0,PLAN_SHOW)});coachReport(A,R,c,best);coachEdges(A,R,cx);aiChatWire(A,R,c,best,LP);coachBalance(box);
   // a step of the plan pressed (or its number on the map) is the one the map shows: its stretch, its points A and B, the apex and the throttle
   const planSel=i=>{cmap._planSel=i;drawPlanLayer(cmap);box.querySelectorAll(".co-plan [data-ps]").forEach(li=>li.classList.toggle("sel",+li.dataset.ps===i))};cmap._onPlanSel=planSel;
   box.querySelectorAll(".co-plan [data-ps]").forEach(li=>li.onclick=e=>{if(e.target.closest(".tiprate"))return;planSel(+li.dataset.ps);if(e.target.closest("[data-psmap]")&&window.innerWidth<900)cmap.scrollIntoView({behavior:"smooth",block:"center"})});
@@ -7597,6 +7599,10 @@ function renderCoach(){coachWeights();coachMe();const LP=coachLaps(),best=markAn
   box.querySelectorAll("[data-cref]").forEach(b=>b.onclick=()=>{rsel.value=b.dataset.cref;rsel.dataset.user="1";renderCoach()});
   const ac=$("#coachAllC");if(ac)ac.onclick=()=>{COACH_ALLC=!COACH_ALLC;renderCoach()}
   const po=$("#coachPlanOv");if(po)po.onclick=()=>planToOverlay(c.plan,po,A.trackId||TURN_TID)}
+/* two columns: the pace and the plan go under the shorter of the corners and the map column, so neither leaves empty space */
+function coachBalance(box){const g=box&&box.querySelector(".co-cols");if(!g)return;const m=g.querySelector(".co-main"),sd=g.querySelector(".co-side");
+  const set=()=>{g.classList.remove("c3l");if(m&&sd&&m.offsetHeight<sd.offsetHeight)g.classList.add("c3l")};set();requestAnimationFrame(set);
+  if(window.ResizeObserver&&!g._ro){let w=0;g._ro=new ResizeObserver(()=>{if(g.clientWidth!==w){w=g.clientWidth;set()}});g._ro.observe(g)}}
 /* the plan's corners (in its order, the ones shown) for the coach overlay: "Take the plan to the coach overlay" makes them
    the overlay's chosen corners on that track (its settings, UI_DEFAULTS.coach.turns and turnsTrack, which go with the
    account; on another track the overlay speaks at the three that cost the most) and opens it on the PC */

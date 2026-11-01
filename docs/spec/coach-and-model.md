@@ -26,7 +26,10 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   key facts (plus the corners against the straights), every corner as a small bar you can press to pin the charts
   and the map at it (`la-corners`; `CornerStrip` on the phones, where a corner is "T3" too), the charts with the reference's corners as bands labelled by the official turns
   (`cmpCornerBands`), the "Line" chart (how far A was to one side of B, + left, `LAPCH.line`), the map, the sectors,
-  the lap list and the braking points. The lap list has a column per sector (S1, S2, S3…: the game's official sectors that add
+  the lap list and the braking points. On a wide screen the panels sit in columns that each flow on their own, never in rows, so
+  a short panel leaves no empty space under it: the coach's corners, map and plan columns (`co-main`, `co-side`, `co-c3`; at two
+  columns the pace and plan go under the shorter one, `coachBalance`), and the analyzer's corner consistency, race fuel and more
+  charts under the map and the sectors (`#lapMore` in the left `la-col`; last on a phone). The lap list has a column per sector (S1, S2, S3…: the game's official sectors that add
   up to the lap's time, `lapSecCols`; a session without them has no sector columns, on the phones neither), purple the
   session's best of each among the valid laps, green a valid lap's one better than your best lap's. The braking points are a table of lap A against lap B per corner of
   `coachCompare` in pitwall-analysis.js (`renderBrakeTable`): the turn ("T7"), where A and B brake, Δ m (+ A later; red when A brakes 3 m or more

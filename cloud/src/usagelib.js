@@ -119,6 +119,82 @@ export function analyticsOf(days, perDay, rows, presence, accounts) {
 }
 
 
+// the keys that mean a driver looked at their laps, and that they used the coach (the funnel of the Analytics)
+const LAPS_KEYS = new Set(["view:laps", "view:telemetry", "view:cloudlaps", "view:session", "act:race_summary", "act:compare"]);
+const COACH_KEYS = new Set(["act:coach_report", "view:coach", "act:open_in_coach", "act:coach_plan", "act:plan_to_overlay"]);
+const sesDay = (t) => new Date(t).toISOString().slice(0, 10);
+
+/** The rest of the Analytics answer (pure, so the test can run it): who was active each day (used an app or drove),
+ *  the totals against the period before, the funnel of the period's new accounts, how many days each driver came,
+ *  and the games driven from the uploaded sessions. */
+export function analyticsMore({ from, t0, actDays, rows, sessions, prevSessions, prevActive, accounts, accountsAll }) {
+  const perDay = new Map(), userDays = new Map(), app = new Map(), drove = new Map();
+  const mark = (m, d, id) => { let x = m.get(d); if (!x) m.set(d, (x = new Set())); x.add(id); };
+  for (const r of actDays) { if (r.day < from) continue; mark(perDay, r.day, r.account_id); mark(app, r.day, r.account_id); mark(userDays, r.account_id, r.day); }
+  const games = new Map(), drivers = new Set();
+  let nSes = 0, races = 0, laps = 0, secs = 0;
+  for (const s of sessions) {
+    const id = String(s.uploader || "").slice(5), d = s.day || sesDay(s.started || 0);
+    if (!id || d < from) continue;
+    mark(perDay, d, id); mark(drove, d, id); mark(userDays, id, d); drivers.add(id);
+    let g = games.get(s.game);
+    if (!g) games.set(s.game, (g = { game: s.game, drivers: new Set(), sessions: 0, races: 0, laps: 0, secs: 0 }));
+    g.drivers.add(id); g.sessions += s.n || 0; g.races += s.races || 0; g.laps += s.laps || 0; g.secs += s.secs || 0;
+    nSes += s.n || 0; races += s.races || 0; laps += s.laps || 0; secs += s.secs || 0;
+  }
+  const devices = new Map(), keys = new Map();
+  for (const r of rows) {
+    let d = devices.get(r.account_id); if (!d) devices.set(r.account_id, (d = new Set())); d.add(r.device);
+    let k = keys.get(r.account_id); if (!k) keys.set(r.account_id, (k = new Set())); k.add(r.key);
+  }
+  const fresh = accounts.filter((a) => a.created >= t0);
+  const has = (id, set) => [...(keys.get(id) || [])].some((k) => set.has(k));
+  const daysList = [...userDays.values()].map((x) => x.size);
+  const list = (m) => [...m].sort((a, b) => (a[0] < b[0] ? -1 : 1)).map(([day, u]) => ({ day, users: u.size }));
+  return {
+    active: list(perDay),
+    activeApp: list(app),
+    drove: list(drove),
+    signupsPerDay: [...fresh.reduce((m, a) => m.set(sesDay(a.created), (m.get(sesDay(a.created)) || 0) + 1), new Map())].sort().map(([day, n]) => ({ day, n })),
+    totals: { active: userDays.size, newAccounts: fresh.length, accounts: accountsAll, drove: drivers.size, sessions: nSes, races, laps, secs: Math.round(secs), returning: daysList.filter((n) => n >= 2).length, multiDevice: [...devices.values()].filter((d) => d.size >= 2).length },
+    prev: { active: prevActive, newAccounts: accounts.length - fresh.length, sessions: prevSessions.sessions || 0, drove: prevSessions.drivers || 0, secs: Math.round(prevSessions.secs || 0) },
+    funnel: { accounts: fresh.length, opened: fresh.filter((a) => keys.has(a.id)).length, drove: fresh.filter((a) => drivers.has(a.id)).length, laps: fresh.filter((a) => has(a.id, LAPS_KEYS)).length, coach: fresh.filter((a) => has(a.id, COACH_KEYS)).length },
+    comeback: { d1: daysList.filter((n) => n === 1).length, d23: daysList.filter((n) => n >= 2 && n <= 3).length, d4: daysList.filter((n) => n >= 4).length },
+    driven: [...games.values()].map((g) => ({ game: g.game, drivers: g.drivers.size, sessions: g.sessions, races: g.races, laps: g.laps, secs: Math.round(g.secs) })).sort((a, b) => b.sessions - a.sessions),
+  };
+}
+/** What stands out in an Analytics answer, as keys with their numbers, so every device writes the same sentences in its
+ *  own language (web: admHiText in index.html; phones: the strings admin_hi_<k>). Tones: good, bad, warn, blue. */
+export function highlightsOf(a) {
+  const out = [], t = a.totals || {}, pv = a.prev || {}, F = a.funnel || {}, act = t.active || 0, top = a.top || [];
+  if (pv.active) out.push({ k: t.active >= pv.active ? "active_more" : "active_fewer", tone: t.active >= pv.active ? "good" : "bad", a: [act, a.days, Math.abs(act - pv.active)] });
+  else out.push({ k: "active_first", tone: "good", a: [act, a.days, t.newAccounts || 0] });
+  if (F.accounts >= 3) {
+    const w = [["no_app", F.accounts - (F.opened || 0)], ["no_drive", F.accounts - (F.drove || 0)]].sort((x, y) => y[1] - x[1])[0];
+    if (w[1] > 0) out.push({ k: w[0], tone: "bad", a: [w[1], F.accounts, Math.round((w[1] / F.accounts) * 100)] });
+  }
+  const users = (keys) => Math.max(0, ...keys.map((k) => (top.find((x) => x.key === k) || {}).users || 0));
+  const coach = users(["act:coach_report", "view:coach"]), laps = users(["view:telemetry", "view:laps"]);
+  if (act && laps && coach < laps * 0.6) out.push({ k: "coach_low", tone: "warn", a: [coach, act, laps] });
+  const S = a.sources || {}, bs = (S.bySource || []).filter((x) => x.signups && x.src !== "unknown").sort((x, y) => y.signups - x.signups)[0];
+  const bv = (S.bySource || []).filter((x) => x.visits).sort((x, y) => y.visits - x.visits)[0];
+  if (bs) out.push({ k: "top_signups", tone: "blue", a: [bs.src, bs.signups] });
+  else if (bv) out.push({ k: "top_visits", tone: "blue", a: [bv.src, bv.visits, S.visits] });
+  const g = (a.driven || []).filter((x) => x.drivers).map((x) => [x.game, x.sessions / x.drivers]).sort((x, y) => y[1] - x[1]);
+  if (g.length > 1 && g[0][1] >= g[g.length - 1][1] * 2) out.push({ k: "games", tone: "blue", a: [g[0][0], g[0][1].toFixed(1), g[g.length - 1][0], g[g.length - 1][1].toFixed(1)] });
+  const devs = new Map((a.byDevice || []).map((x) => [x.device, x.users]));
+  for (const d of ["android", "ios"]) if (act && !devs.get(d)) out.push({ k: "no_" + d, tone: "bad", a: [a.days] });
+  const vers = new Map();
+  for (const v of a.versions || []) { const k = v.device === "desktop" ? "pc" : v.device; if (!vers.has(k)) vers.set(k, []); vers.get(k).push(v); }
+  const num = (v) => String(v || "").split(/[^0-9]+/).filter(Boolean).slice(0, 3).map(Number);
+  const cmp = (x, y) => { const p = num(x), q = num(y); for (let i = 0; i < 3; i++) { const d = (p[i] || 0) - (q[i] || 0); if (d) return d; } return 0; };
+  let behind = 0;
+  for (const list of vers.values()) { const newest = list.map((x) => x.v).sort(cmp).pop(); behind += list.filter((x) => cmp(x.v, newest)).reduce((s, x) => s + x.devices, 0); }
+  if (behind) out.push({ k: "behind", tone: "warn", a: [behind] });
+  return out;
+}
+export const SQL_SESSIONS_DAYS = "SELECT date(started/1000,'unixepoch') AS day, game, uploader, COUNT(*) AS n, SUM(COALESCE(laps,0)) AS laps, SUM(COALESCE(secs,0)) AS secs, SUM(CASE WHEN lower(COALESCE(kind,'')) LIKE '%race%' THEN 1 ELSE 0 END) AS races FROM sessions WHERE started>=?1 AND uploader LIKE 'acct:%' GROUP BY 1, game, uploader LIMIT 20000";
+
 // the statements of usage.js the test runs on SQLite too
 export const SQL_USAGE_ADD = "INSERT INTO usage_days (day, account_id, device, key, n) VALUES (?1,?2,?3,?4,?5) ON CONFLICT(day, account_id, device, key) DO UPDATE SET n=MIN(usage_days.n+excluded.n, 100000)";
 export const SQL_ASK_USED = "INSERT INTO feedback_ask (account_id, shown, used) VALUES (?1,?2,?3) ON CONFLICT(account_id) DO UPDATE SET used=feedback_ask.used+excluded.used";

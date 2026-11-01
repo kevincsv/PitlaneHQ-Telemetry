@@ -13,6 +13,7 @@ import { discordAccount, discordStart, useDiscordGrant, discordAccountId, discor
 import { steamAccount, steamStart, useSteamGrant, steamAccountId, linkSteam } from "./steam.js";
 import { notePresence } from "./presence.js";
 import { sealEscrow, escrowLogin, escrowReady } from "./escrow.js";
+import { visitOf, appSrc, countryOf, SQL_ACCOUNT_SRC } from "./sourceslib.js";
 import { googleStart, googleReady, useGoogleGrant, googleAccountId, linkGoogle } from "./google.js";
 // the phone app calls the server directly (bearer tokens, no cookies), so any origin may ask
 const JSONH = { "content-type": "application/json; charset=utf-8", "cache-control": "no-store", "access-control-allow-origin": "*" };
@@ -281,7 +282,7 @@ export async function accounts(req, env, url) {
 
   if (p === "/register" && m === "POST") {
     if (await tooMany(env, ["reg:" + ip], [5])) return err("too many new accounts from this network, try later", 429);
-    if (body.quick) return quickRegister(env, body, ip);
+    if (body.quick) return quickRegister(env, body, ip, req);
     if (typeof body.email !== "string" || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(body.email) || !isKey(body.auth) || !isB64(body.wrappedKey, 200)) return err("missing email, key or data key", 400);
     const display = cleanName(body.display);
     if (!display) return err("choose a public name", 400);
@@ -319,6 +320,7 @@ export async function accounts(req, env, url) {
       env.DB.prepare("INSERT INTO accounts (id, email_hash, auth_salt, auth_hash, wrapped_key, display, name_kind, created) VALUES (?1,?2,?3,?4,?5,?6,?7,?8)")
         .bind(id, eh, salt, await authHash(salt, body.auth), body.wrappedKey, display, body.nameKind === "iracing" ? "iracing" : "nick", Date.now()),
       env.DB.prepare("INSERT INTO community_users (id, token_hash, alias, created) VALUES (?1,?2,?3,?4)").bind(id, "acct:" + id, display, Date.now()),
+      signupSrc(env, req, id, body),
     ]);
     if (steam) await linkSteam(env, steam.steamid, id, steam.persona);
     if (google) await linkGoogle(env, google.sub, id);
@@ -682,7 +684,7 @@ export async function accounts(req, env, url) {
 // sealed (escrow), so DATA_KEY is needed; the public name is the one the sign-in gave (made free); Google's verified email
 // is the account's email, the others have none (a hash nobody's email has). It answers as a sign-in with Steam does
 // (signedIn, social: the session and the data key), plus created
-async function quickRegister(env, body, ip) {
+async function quickRegister(env, body, ip, req) {
   if (!escrowReady(env)) return json({ error: "sign up with an email on this server", code: "no_quick" }, 503);
   if ([body.sid, body.discordSid, body.googleSid].filter(Boolean).length !== 1) return err("sign up with one of them", 400);
   let g = null, prov = "steam", name = "", email = "";
@@ -715,6 +717,7 @@ async function quickRegister(env, body, ip) {
     env.DB.prepare("INSERT INTO accounts (id, email_hash, auth_salt, auth_hash, wrapped_key, display, name_kind, created, verified, escrow) VALUES (?1,?2,'','','',?3,'nick',?4,1,?5)")
       .bind(id, eh, display, Date.now(), sealed.value),
     env.DB.prepare("INSERT INTO community_users (id, token_hash, alias, created) VALUES (?1,?2,?3,?4)").bind(id, "acct:" + id, display, Date.now()),
+      signupSrc(env, req, id, body),
   ]);
   if (prov === "steam") await linkSteam(env, g.steamid, id, g.persona);
   else if (prov === "discord") await linkDiscordLogin(env, g, id);
@@ -726,4 +729,12 @@ async function quickRegister(env, body, ip) {
   const a = await env.DB.prepare("SELECT * FROM accounts WHERE id=?1").bind(id).first();
   const token = await newSession(env, id, cleanName(body.device) || g.device || "PC");
   return json({ id: a.id, token, display: a.display, nameKind: "nick", anon: false, keyTag: await keyTag(a.wrapped_key), admin: isAdmin(env, a.id), tester: isTester(env, a.id, a), verified: true, twoFactor: false, escrow: true, noPassword: true, created: true, dataKey: key, email: email || undefined });
+}
+
+// where a new account came from (the admin page's Analytics, sourceslib.js): the first visit of the browser it was made
+// in (body.src, kept by the page), else the app it was made in, and the country of the sign-up
+function signupSrc(env, req, id, body) {
+  const v = body && body.src && typeof body.src === "object" ? visitOf(body.src) : null;
+  const src = v && v.src ? v.src : v && v.src === "" ? "direct" : appSrc(req.headers.get("x-pitlane-client"));
+  return env.DB.prepare(SQL_ACCOUNT_SRC).bind(id, src, v ? v.page : null, countryOf(req.cf));
 }

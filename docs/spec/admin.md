@@ -49,11 +49,44 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   demo data, never for a visitor (dropped unsent), never from an overlay window, never while an admin has admin mode on.
   The server keeps keys matching `^(view|act|game):[a-z0-9_.-]{1,40}$` only, 100 a batch, 1000 per key, added into one row
   per day, account, device and key (rows over 400 days go, hourly). `ms` (how long the page was on the screen, 10 minutes
-  a batch at most) adds to the account's use for the feedback window. GET `/community/admin/analytics?days=N` (admins, 1 to
-  90 days) answers {days, active [{day, users}], byDevice [{device, users, n}], top [{key, n, users}], games [{game, users,
-  n}], versions [{device, v, devices}] from presence, users [{id, nick, lastSeen, devices, n, top [{key, n}]}]} from two
-  grouped reads of usage_days and one of presence, never a query per account; the Summary draws it (active drivers per
-  day, devices, games, screens and actions with how many drivers, versions) and Users merges it into every account.
+  a batch at most) adds to the account's use for the feedback window. One use of the same action with the same thing within a
+  minute counts once (a screen that opens itself again when a setting changes in it, like the overlay settings, is one use).
+- Where the drivers come from (`cloud/src/sourceslib.js`, migration 0089 `visits_days` and `accounts.src/src_page/country`):
+  the landing, the web app (`index.html`, after its `<noscript>`) and every public page (`seo.js`, `/downloads`) run the
+  same lines (`VISIT_JS`): once per browser session they send POST `/community/visit` {ref (document.referrer), page,
+  us (utm_source or ?ref=), um, uc} with sendBeacon (text/plain, no sign-in), and keep the browser's first visit in
+  localStorage `pw.src0`, only on pitlanehq.app. The server drops robots (`isBot`) and moves inside Pitlane HQ, names the
+  site (`siteOf`: google, reddit, discord, iracing (its forums), chatgpt…, the host for any other site, "direct" without
+  one; a campaign tag wins over the referrer, `visitOf`), takes the country from Cloudflare (`countryOf`, XX when
+  unknown) and the page (`pageOf`: landing, app or the path), and adds one into the row of the day, source, country and
+  page (no address, no account). Every sign-up (`/account/register`, the form and the quick Steam, Discord and Google one)
+  sends `src: pw.src0`, and the account keeps its source, page and country once (`signupSrc`); an account made without one
+  is pc-app, android-app, ios-app (from X-Pitlane-Client) or unknown. Rows over 400 days go with the usage.
+- GET `/community/admin/analytics?days=N` (admins, 1 to 90 days, the same days before them for the changes) answers, from
+  grouped reads of usage_days, sessions (accounts' uploads), accounts, visits_days and presence, never a query per
+  account: {days, top [{key, n, users}], byDevice [{device, users, n}], games, versions [{device, v, devices}], users [{id,
+  nick, lastSeen, devices, n, top}] (the Users tab), active / activeApp / drove [{day, users}] (active = opened an app or
+  drove that day), signupsPerDay [{day, n}], totals {active, newAccounts, accounts, drove, sessions, races, laps, secs,
+  returning (2 days or more), multiDevice}, prev {active, newAccounts, sessions, drove, secs}, funnel of the period's new
+  accounts {accounts, opened, drove, laps (Laps, Telemetry, My sessions, a race summary or compare), coach (the coach
+  screen, a report, a lap sent to it, its plan)}, comeback {d1, d23, d4}, driven [{game, drivers, sessions, races, laps,
+  secs}], sources {visits, prevVisits, signups, prevSignups, bySource [{src, kind, name, kindName, visits, prevVisits,
+  signups, prevSignups}], byCountry, byPage}, highlights [{k, tone, a, text [en, es, pt]}], areas [{k, name, rows [{key,
+  name, what, users, n}]}]} (`analyticsOf`, `analyticsMore`, `sourcesOf`, `highlightsOf` in usagelib.js; the names and
+  sentences in the three languages in `usagenames.js`, so the phones show the same).
+- The Summary's analytics (`admAnalyticsHTML`, the owner's approved design): 7, 30 or 90 days with "Changes are against
+  the N days before", What stands out (the server's sentences: active drivers against before, the biggest drop of the new
+  accounts, the coach used by few, where most accounts or visits came from, sessions a driver per game, a phone with no
+  one, devices not on the newest version), the key numbers as tiles with their change (active drivers, new accounts,
+  drove with the agent, time driven, came back), drivers per day (drove in amber from the sessions, opened an app in
+  blue, new accounts under them), From sign-up to the coach (the funnel with the red line of who stops at each step),
+  Do drivers come back (1 day, 2 or 3, 4 or more, more than one device), Where drivers come from (visits, sign-ups,
+  the table of sources with kind, visits, change and sign-ups, countries, pages they landed on), Games (drivers,
+  sessions, races, laps, hours, sessions a driver), What drivers use (by area, the share of the active drivers and the
+  uses, what each counts on hover), Devices (drivers) and Up to date (devices on each app's newest version, the older ones
+  on hover). Users merges the answer into every account.
+- The admin page's look (Nov 2026): the sections as a dark well with the chosen one raised, every part a card with its
+  title in the display font, the key numbers as tiles, the rows as cards (`#v-admin` rules and `.an-*` in index.html).
 - Health (`cloud/src/reports.js`, the pure part in `reportslib.js`, migration 0079): Crashes and errors lists every kind
   of error the agent, the web and the phones sent in the last 7 days (POST `/community/crash` {app pc|web|android|ios, v,
   os, where, msg, stack}, signed in or not; one row per kind, `crashSig`: the app, the part and the message with its

@@ -52,6 +52,10 @@ export const LAYOUT = [
     { key: "lmu", name: "🏎️・le-mans-ultimate", type: T.text, topic: "Le Mans Ultimate talk, series and races." },
     { key: "showcase", name: "📸・screenshots-and-clips", type: T.text, topic: "Your best moments on track." },
   ] },
+  { cat: "LANGUAGES", kind: "open", channels: [
+    { key: "es", name: "🇪🇸・español", type: T.text, topic: "Pitlane HQ y simracing en español." },
+    { key: "pt", name: "🇧🇷・português", type: T.text, topic: "Pitlane HQ e simracing em português." },
+  ] },
   { cat: "SUPPORTERS", kind: "supporters", channels: [{ key: "supporters", name: "♥・supporters-lounge", type: T.text, topic: "Thank you for keeping Pitlane HQ going." }] },
   { cat: "TESTERS", kind: "testers", channels: [{ key: "testers", name: "🧪・tester-chat", type: T.text, topic: "Features in development, before everyone gets them." }] },
   { cat: "STAFF", kind: "staff", channels: [
@@ -87,7 +91,7 @@ const rulesText = (ch) => [
   "**3.** No spam or ads. Leagues and streams are welcome in the right channel.",
   `**4.** Use the right channel. One bug per post in ${ch("bugs")}, one idea per post in ${ch("feedback")}.`,
   "**5.** Never post your password, codes or tokens, nor anyone else's private details. Staff will never ask for your password.",
-  "**6.** English is the main language here. Español y português também são bem-vindos.",
+  `**6.** English is the main language here. En español en ${ch("es")}. Em português em ${ch("pt")}.`,
   "**7.** Follow Discord's Terms of Service and Community Guidelines. Admins have the final word.",
   "",
   "Breaking the rules can get you a warning, a timeout or a ban.",
@@ -183,16 +187,22 @@ export async function buildServer({ token, guild: gid, step, apply, fetchFn = fe
       else await act(`Update the forum #${c.name}`, () => api("PATCH", `/channels/${C[c.key].id}`, { ...body, available_tags: undefined }));
     }
     const ch = (k) => `<#${C[k].id}>`;
-    const postOnce = async (key, content) => {
+    const postOnce = async (key, content, keep) => {
       if (apply && !C[key].id.startsWith("new-")) {
         const msgs = await api("GET", `/channels/${C[key].id}/messages?limit=50`).catch(() => []);
-        if (msgs.some((m) => m.author && m.author.id === me.id)) { log.push(`#${key} already has the bot's post, kept`); return; }
+        // the bot's own post is brought up to date (a new rule, a new channel) and never posted twice
+        const mine = msgs.find((m) => m.author && m.author.id === me.id);
+        if (mine) {
+          if (keep || mine.content === content.slice(0, 1990)) log.push(`#${key} already has the bot's post, kept`);
+          else await soft(`Update the ${key} message`, () => api("PATCH", `/channels/${C[key].id}/messages/${mine.id}`, { content: content.slice(0, 1990), allowed_mentions: { parse: [] } }));
+          return;
+        }
       }
       await soft(`Post the ${key} message`, () => api("POST", `/channels/${C[key].id}/messages`, { content: content.slice(0, 1990), allowed_mentions: { parse: [] } }));
     };
     await postOnce("welcome", welcomeText(ch));
     await postOnce("rules", rulesText(ch));
-    if (notes.length) await postOnce("changelog", notes.join("\n").slice(0, 1990));
+    if (notes.length) await postOnce("changelog", notes.join("\n").slice(0, 1990), true);
     let sf = BigInt(Date.now() - 1420070400000) << 22n;
     const nid = () => String(sf += 1n);
     await soft("Onboarding asks \"What do you drive?\" and gives Driver plus iRacing or Le Mans Ultimate", () => api("PUT", `/guilds/${gid}/onboarding`, {

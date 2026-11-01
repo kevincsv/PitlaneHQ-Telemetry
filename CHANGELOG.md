@@ -4,6 +4,12 @@ Pitlane HQ is in **beta**. Pitlane HQ Agent (the PC app), the web app and the ph
 number, `0.MINOR.PATCH`. A MINOR version brings a set of new features, and fixes go in as "Fixes and
 improvements". 1.0.0 comes when the beta ends. Newest first.
 
+## 0.9.8 beta
+
+- A PRO badge marks what will be part of Pitlane HQ Pro when the beta ends. Tap it to see that it is free while Pitlane HQ is in beta.
+- You can support Pitlane HQ with a donation from $1, and the ♥ Supporter badge shows next to your name.
+- Fixes and improvements.
+
 ## 0.9.7 beta
 
 - The Overlays tab is redesigned, with the screen drawn as the view from the car and a settings window with a live preview.

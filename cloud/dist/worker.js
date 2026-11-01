@@ -50,12 +50,12 @@ var require_pitwall_analysis = __commonJS({
       const turnsOf = /* @__PURE__ */ __name((ctx) => ctx && Array.isArray(ctx.turns) ? ctx.turns : null, "turnsOf");
       const sgn = /* @__PURE__ */ __name((d, n = 3) => d == null || isNaN(d) ? "\u2013" : (d >= 0 ? "+" : "\u2212") + Math.abs(d).toFixed(n), "sgn");
       function coachOf(ctx) {
-        const W2 = ctx && ctx.weights || {}, ME = ctx && ctx.me || {}, w = W2.w || {}, b = W2.b || {}, mw = ME.w || {};
+        const W2 = ctx && ctx.weights || {}, ME = ctx && ctx.me || {}, w = W2.w || {}, b2 = W2.b || {}, mw = ME.w || {};
         const off = W2.off instanceof Set ? W2.off : new Set(Array.isArray(W2.off) ? W2.off : []);
         return {
           weight: /* @__PURE__ */ __name((c) => c && c.kind ? (w[c.kind + "|" + c.cls] || 1) * (mw[c.kind + "|" + c.cls] || 1) : 1, "weight"),
           ask: /* @__PURE__ */ __name((k, cls) => {
-            const x = b[k + "|" + cls];
+            const x = b2[k + "|" + cls];
             return x && x.ask > 0 ? x.ask : null;
           }, "ask"),
           off: /* @__PURE__ */ __name((k, cls) => off.has(k + "|" + cls), "off"),
@@ -75,21 +75,21 @@ var require_pitwall_analysis = __commonJS({
         const mx = Math.max(0, ...cs.map((c) => c.spread || 0));
         return (apex) => {
           if (!(apex >= 0)) return null;
-          let b = null;
+          let b2 = null;
           for (const c of cs) {
             const g = Math.abs(c.apex - apex);
-            if (g <= 60 && (!b || g < Math.abs(b.apex - apex))) b = c;
+            if (g <= 60 && (!b2 || g < Math.abs(b2.apex - apex))) b2 = c;
           }
-          return b ? { ...b, spreadMax: b.spreadMax != null ? b.spreadMax : mx } : null;
+          return b2 ? { ...b2, spreadMax: b2.spreadMax != null ? b2.spreadMax : mx } : null;
         };
       }
       __name(hintOf, "hintOf");
       function failedOf(ctx) {
-        const T3 = ctx && ctx.progress && Array.isArray(ctx.progress.tried) ? ctx.progress.tried : null;
-        if (!T3 || !T3.length) return () => null;
+        const T4 = ctx && ctx.progress && Array.isArray(ctx.progress.tried) ? ctx.progress.tried : null;
+        if (!T4 || !T4.length) return () => null;
         return (apex) => {
           const by = {};
-          for (const x of T3) {
+          for (const x of T4) {
             if (!x || !x.kind || !(Math.abs(x.apex - apex) <= 60)) continue;
             const a = by[x.kind] = by[x.kind] || [];
             if (a.length < 2) a.push(x.ok > 0);
@@ -105,10 +105,10 @@ var require_pitwall_analysis = __commonJS({
         let last = null;
         const lim = Math.min(l.bins.length, (l.maxBin || l.bins.length - 1) + 1);
         for (let i = 0; i < lim; i++) {
-          const b = l.bins[i] || last;
+          const b2 = l.bins[i] || last;
           if (!l.bins[i] && !last) continue;
-          out[i] = b;
-          last = b;
+          out[i] = b2;
+          last = b2;
         }
         const end = out.length;
         return { arr: out, end };
@@ -123,26 +123,26 @@ var require_pitwall_analysis = __commonJS({
       }
       __name(serOf, "serOf");
       const lapShape = /* @__PURE__ */ __name((l) => l && l.xy && l.xy.x.length > 10 ? { x: l.xy.x, y: l.xy.y, N: l.xy.x.length, g: l.xy.g || null, lap: true } : null, "lapShape");
-      function sameFrame2(a, b) {
-        if (!a || !b || !!a.g !== !!b.g) return null;
-        if (!a.g || a.g[0] === b.g[0] && a.g[1] === b.g[1]) return b;
-        const dx = (b.g[1] - a.g[1]) * 111320 * Math.cos(a.g[0] * Math.PI / 180), dy = (b.g[0] - a.g[0]) * 110540;
-        return { ...b, x: b.x.map((v) => v + dx), y: b.y.map((v) => v + dy) };
+      function sameFrame2(a, b2) {
+        if (!a || !b2 || !!a.g !== !!b2.g) return null;
+        if (!a.g || a.g[0] === b2.g[0] && a.g[1] === b2.g[1]) return b2;
+        const dx = (b2.g[1] - a.g[1]) * 111320 * Math.cos(a.g[0] * Math.PI / 180), dy = (b2.g[0] - a.g[0]) * 110540;
+        return { ...b2, x: b2.x.map((v) => v + dx), y: b2.y.map((v) => v + dy) };
       }
       __name(sameFrame2, "sameFrame");
       function lineOffsets2(A, B) {
-        const a = lapShape(A), b = sameFrame2(a, lapShape(B));
-        if (!a || !b) return null;
-        const n = Math.min(a.N, b.N);
+        const a = lapShape(A), b2 = sameFrame2(a, lapShape(B));
+        if (!a || !b2) return null;
+        const n = Math.min(a.N, b2.N);
         if (n < 60) return null;
         const lat = new Array(n), lon = new Array(n);
         for (let i = 0; i < n; i++) {
           const i0 = Math.max(0, i - 2), i1 = Math.min(n - 1, i + 2);
-          let tx = b.x[i1] - b.x[i0], ty = b.y[i1] - b.y[i0];
+          let tx = b2.x[i1] - b2.x[i0], ty = b2.y[i1] - b2.y[i0];
           const tm = Math.hypot(tx, ty) || 1;
           tx /= tm;
           ty /= tm;
-          const dx = a.x[i] - b.x[i], dy = a.y[i] - b.y[i];
+          const dx = a.x[i] - b2.x[i], dy = a.y[i] - b2.y[i];
           lat[i] = -ty * dx + tx * dy;
           lon[i] = tx * dx + ty * dy;
         }
@@ -160,12 +160,12 @@ var require_pitwall_analysis = __commonJS({
       }
       __name(lineOffsets2, "lineOffsets");
       function cornerLine(lat, B, brake, apex) {
-        const b = lapShape(B);
-        if (!lat || !b) return null;
-        const n = Math.min(lat.length, b.N);
+        const b2 = lapShape(B);
+        if (!lat || !b2) return null;
+        const n = Math.min(lat.length, b2.N);
         if (apex <= 0 || apex >= n - 1) return null;
         const tan = /* @__PURE__ */ __name((i) => {
-          const i0 = Math.max(0, i - 2), i1 = Math.min(n - 1, i + 2), tx = b.x[i1] - b.x[i0], ty = b.y[i1] - b.y[i0], m = Math.hypot(tx, ty) || 1;
+          const i0 = Math.max(0, i - 2), i1 = Math.min(n - 1, i + 2), tx = b2.x[i1] - b2.x[i0], ty = b2.y[i1] - b2.y[i0], m = Math.hypot(tx, ty) || 1;
           return [tx / m, ty / m];
         }, "tan");
         const t1 = tan(Math.max(0, apex - 8)), t2 = tan(Math.min(n - 1, apex + 8)), cr = t1[0] * t2[1] - t1[1] * t2[0];
@@ -203,10 +203,10 @@ var require_pitwall_analysis = __commonJS({
       const OVAL_KINDS = ["superspeedway", "intermediate", "mile", "short", "dirt"];
       const fullShare = /* @__PURE__ */ __name((s) => {
         let f = 0, c = 0;
-        for (const b of s) {
-          if (!b) continue;
+        for (const b2 of s) {
+          if (!b2) continue;
           c++;
-          if (b[2] > 0.95) f++;
+          if (b2[2] > 0.95) f++;
         }
         return c ? f / c : 0;
       }, "fullShare");
@@ -214,7 +214,7 @@ var require_pitwall_analysis = __commonJS({
         const o = ctx && ctx.oval;
         if (o === false) return null;
         if (OVAL_KINDS.includes(o)) return o;
-        const T3 = ctx && ctx.track || {}, has = /* @__PURE__ */ __name((x, k) => x && x[k] != null && x[k] !== "", "has"), get = /* @__PURE__ */ __name((k) => has(T3, k) ? T3[k] : has(A, k) ? A[k] : has(B, k) ? B[k] : "", "get");
+        const T4 = ctx && ctx.track || {}, has = /* @__PURE__ */ __name((x, k) => x && x[k] != null && x[k] !== "", "has"), get = /* @__PURE__ */ __name((k) => has(T4, k) ? T4[k] : has(A, k) ? A[k] : has(B, k) ? B[k] : "", "get");
         const cat = String(get("cat")).toLowerCase().replace(/[^a-z]/g, ""), name2 = String(get("track")), cfg = String(get("track_config")), type = String(get("trackType")).toLowerCase(), car = String(get("car"));
         if (/road|roval|infield|rallycross/i.test(cfg) || /road/.test(type) || ["sportscar", "formulacar", "formula", "dirtroad", "road"].includes(cat)) return null;
         const dirt = cat === "dirtoval" || /dirt/.test(type) || !cat && /\bdirt\b|sprint car|midget/i.test(car);
@@ -227,7 +227,7 @@ var require_pitwall_analysis = __commonJS({
       }
       __name(ovalOf, "ovalOf");
       function catGroup(A, B, ctx) {
-        const T3 = ctx && ctx.track || {}, c = String(T3.cat || A && A.cat || B && B.cat || "").toLowerCase().replace(/[^a-z]/g, "");
+        const T4 = ctx && ctx.track || {}, c = String(T4.cat || A && A.cat || B && B.cat || "").toLowerCase().replace(/[^a-z]/g, "");
         if (c === "oval") return "oval";
         if (c === "dirtoval") return "dirt_oval";
         if (c === "dirtroad") return "dirt_road";
@@ -239,8 +239,8 @@ var require_pitwall_analysis = __commonJS({
       function liftZones(s) {
         const out = [];
         for (let i = 1; i < s.length; i++) {
-          const a = s[i], b = s[i - 1];
-          if (!a || !b || !(a[2] < 0.9 && b[2] >= 0.9 && a[3] <= 0.12)) continue;
+          const a = s[i], b2 = s[i - 1];
+          if (!a || !b2 || !(a[2] < 0.9 && b2[2] >= 0.9 && a[3] <= 0.12)) continue;
           let k = i, vmin = a[0], imin = i, brk = false;
           while (k < s.length && k < i + 160 && s[k] && s[k][2] < 0.9) {
             if (s[k][0] < vmin) {
@@ -254,7 +254,7 @@ var require_pitwall_analysis = __commonJS({
             vmin = s[q2][0];
             imin = q2;
           }
-          if (!brk && b[0] - vmin > 1.5) out.push({ i, v: b[0], vmin, imin, lift: true });
+          if (!brk && b2[0] - vmin > 1.5) out.push({ i, v: b2[0], vmin, imin, lift: true });
           i = k;
         }
         return out;
@@ -262,7 +262,7 @@ var require_pitwall_analysis = __commonJS({
       __name(liftZones, "liftZones");
       function ovalZones(s) {
         const zb = brakeZones2(s);
-        return zb.concat(liftZones(s).filter((l) => !zb.some((z) => l.i <= z.imin && z.i <= l.imin + 10))).sort((a, b) => a.i - b.i);
+        return zb.concat(liftZones(s).filter((l) => !zb.some((z) => l.i <= z.imin && z.i <= l.imin + 10))).sort((a, b2) => a.i - b2.i);
       }
       __name(ovalZones, "ovalZones");
       function dirtLineTip(c) {
@@ -275,9 +275,9 @@ var require_pitwall_analysis = __commonJS({
       function brakeZones2(s) {
         const out = [];
         for (let i = 1; i < s.length; i++) {
-          const a = s[i], b = s[i - 1];
-          if (!a || !b) continue;
-          if (a[3] > 0.12 && b[3] <= 0.12) {
+          const a = s[i], b2 = s[i - 1];
+          if (!a || !b2) continue;
+          if (a[3] > 0.12 && b2[3] <= 0.12) {
             let k = i, vmin = a[0], imin = i;
             while (k < s.length && k < i + 120 && s[k] && !(s[k][2] > 0.6 && s[k][3] < 0.05)) {
               if (s[k][0] < vmin) {
@@ -320,15 +320,15 @@ var require_pitwall_analysis = __commonJS({
         const zb = oval ? ovalZones(sb) : brakeZones2(sb), t = turns;
         if (!t || !t.length || !(n > 0)) return zb;
         const ap = t.map((f) => Math.round(f * n)).filter((i) => i > 0 && i < n - 1), near = /* @__PURE__ */ __name((i) => {
-          let b = -1, bd = 1e9;
+          let b2 = -1, bd = 1e9;
           ap.forEach((a, k) => {
             const d = Math.abs(a - i);
             if (d < bd) {
               bd = d;
-              b = k;
+              b2 = k;
             }
           });
-          return bd <= 30 ? b : -1;
+          return bd <= 30 ? b2 : -1;
         }, "near");
         const by = /* @__PURE__ */ new Map();
         zb.forEach((z) => {
@@ -364,7 +364,7 @@ var require_pitwall_analysis = __commonJS({
           const v = sb[i0] ? sb[i0][0] : vmin;
           if (v - vmin > 2) by.set(k, { i: i0, v, vmin, imin, turn: k, lift: true });
         });
-        return [...by.values()].sort((a, b) => a.i - b.i);
+        return [...by.values()].sort((a, b2) => a.i - b2.i);
       }
       __name(cornerZones, "cornerZones");
       function coachCompare(A, B, ctx) {
@@ -375,9 +375,9 @@ var require_pitwall_analysis = __commonJS({
           for (let k = q2.i; k <= q2.imin; k++) if (sb[k] && sb[k][2] < 0.9) return;
           zb.push({ i: q2.i, imin: q2.imin, v: sb[q2.i][0], vmin: sb[q2.imin][0], lift: true, flatB: true });
         });
-        if (oval) zb.sort((a, b) => a.i - b.i);
+        if (oval) zb.sort((a, b2) => a.i - b2.i);
         const failed = failedOf(ctx);
-        const T3 = /* @__PURE__ */ __name((s, i) => s[i] && s[i][1], "T"), seg = /* @__PURE__ */ __name((x, y) => x < y && sa[x] && sa[y] && sb[x] && sb[y] ? T3(sa, y) - T3(sa, x) - (T3(sb, y) - T3(sb, x)) : 0, "seg");
+        const T4 = /* @__PURE__ */ __name((s, i) => s[i] && s[i][1], "T"), seg = /* @__PURE__ */ __name((x, y) => x < y && sa[x] && sa[y] && sb[x] && sb[y] ? T4(sa, y) - T4(sa, x) - (T4(sb, y) - T4(sb, x)) : 0, "seg");
         const peak = /* @__PURE__ */ __name((s, x, y) => {
           let p = 0, ip = x;
           for (let k = x; k <= y && k < s.length; k++) if (s[k] && s[k][3] > p) {
@@ -449,10 +449,10 @@ var require_pitwall_analysis = __commonJS({
             return [n2, has];
           }, "revs"), [rA, hasA] = revs(sa, i0, i1), [rB, hasB] = revs(sb, i0, i1);
           let en = "", es = "", pt = "", phase = null, kind = "", alt = null;
-          const say2 = /* @__PURE__ */ __name((k2, a, b, c) => {
+          const say2 = /* @__PURE__ */ __name((k2, a, b2, c) => {
             kind = k2;
             en = a;
-            es = b;
+            es = b2;
             pt = c;
           }, "say");
           const cls = cornerClass(z.vmin);
@@ -577,10 +577,10 @@ var require_pitwall_analysis = __commonJS({
             return s[i0] && s[i1] ? s[i1][1] - s[i0][1] : null;
           }).filter((x) => x != null);
           if (ts.length < 3) return null;
-          const mu = ts.reduce((a, b) => a + b, 0) / ts.length;
-          return Math.sqrt(ts.reduce((a, b) => a + (b - mu) * (b - mu), 0) / ts.length);
+          const mu = ts.reduce((a, b2) => a + b2, 0) / ts.length;
+          return Math.sqrt(ts.reduce((a, b2) => a + (b2 - mu) * (b2 - mu), 0) / ts.length);
         });
-        return per.map((sd2, i) => ({ n: zb[i].turn != null ? zb[i].turn + 1 : i + 1, sd: sd2 })).filter((x) => x.sd != null).sort((a, b) => b.sd - a.sd);
+        return per.map((sd2, i) => ({ n: zb[i].turn != null ? zb[i].turn + 1 : i + 1, sd: sd2 })).filter((x) => x.sd != null).sort((a, b2) => b2.sd - a.sd);
       }
       __name(cornerConsistency, "cornerConsistency");
       function pairSecs(A, B, sa, sb, n) {
@@ -602,33 +602,33 @@ var require_pitwall_analysis = __commonJS({
         const m = /* @__PURE__ */ __name((s) => {
           let full = 0, coast = 0, c = 0, lifts = 0, steer = 0, rev = 0, hasS = false, prevT = null, prevD = 0, lastS = null;
           for (let i = 0; i < n; i++) {
-            const b2 = s.arr[i];
-            if (!b2) continue;
+            const b3 = s.arr[i];
+            if (!b3) continue;
             c++;
-            const t = b2[2], k = b2[3];
+            const t = b3[2], k = b3[3];
             if (t > 0.95) full++;
             if (t < 0.05 && k < 0.05) coast++;
             if (prevT != null && prevT > 0.9 && t < 0.6 && k < 0.05) lifts++;
             prevT = t;
-            if (isFinite(b2[5])) {
+            if (isFinite(b3[5])) {
               hasS = true;
               if (lastS != null) {
-                const d = b2[5] - lastS;
+                const d = b3[5] - lastS;
                 steer += Math.abs(d);
                 if (Math.abs(d) > 4e-3 && Math.sign(d) !== Math.sign(prevD) && prevD !== 0) rev++;
                 if (Math.abs(d) > 4e-3) prevD = d;
               }
-              lastS = b2[5];
+              lastS = b3[5];
             }
           }
           return { full: c ? full / c : 0, coast: c ? coast / c : 0, lifts, steer, rev, hasS };
         }, "m");
         if (estOf(null, ctx)) return [];
-        const a = m(sa), b = m(sb), out = [], pc = /* @__PURE__ */ __name((v) => Math.round(v * 100) + "%", "pc");
-        if (b.full - a.full > 0.03) out.push("\u{1F9B6} " + Tx(`A is flat out ${pc(a.full)} of the lap, B ${pc(b.full)}. Get back on the throttle sooner on the corner exits.`, `A va a fondo el ${pc(a.full)} de la vuelta, B el ${pc(b.full)}. Vuelve al acelerador antes a la salida de las curvas.`, `A vai de p\xE9 no fundo ${pc(a.full)} da volta, B ${pc(b.full)}. Volte ao acelerador antes na sa\xEDda das curvas.`));
-        if (a.coast - b.coast > 0.02) out.push("\u{1F4A4} " + Tx(`A spends ${pc(a.coast)} of the lap with no pedal (B ${pc(b.coast)}). Go from brake to throttle without waiting in between.`, `A pasa el ${pc(a.coast)} de la vuelta sin pisar ning\xFAn pedal (B el ${pc(b.coast)}). Pasa del freno al acelerador sin esperar entre medias.`, `A passa ${pc(a.coast)} da volta sem pedal (B ${pc(b.coast)}). V\xE1 do freio ao acelerador sem esperar.`));
-        if (a.lifts > b.lifts + 1) out.push("\u2195\uFE0F " + Tx(`A lifts off the throttle ${a.lifts} times in the middle of a corner (B ${b.lifts}). A smoother entry lets you stay on the throttle.`, `A levanta el pie del acelerador ${a.lifts} veces en mitad de curva (B ${b.lifts}). Una entrada m\xE1s suave te deja mantener el gas.`, `A tira o p\xE9 ${a.lifts} vezes no meio da curva (B ${b.lifts}). Uma entrada mais suave deixa voc\xEA manter o acelerador.`));
-        if (ovalOf(null, null, ctx) !== "dirt" && a.hasS && b.hasS && b.steer > 0 && a.steer > b.steer * 1.15) out.push("\u{1F3AF} " + Tx(`A turns the wheel ${Math.round((a.steer / b.steer - 1) * 100)}% more than B and corrects it ${a.rev} times (B ${b.rev}). The car is sliding or you go in too fast. Smoother hands, a little less speed at the turn-in.`, `A gira el volante un ${Math.round((a.steer / b.steer - 1) * 100)} % m\xE1s que B y lo corrige ${a.rev} veces (B ${b.rev}). El coche desliza o entras demasiado r\xE1pido. Manos m\xE1s suaves y un poco menos de velocidad al girar.`, `A gira o volante ${Math.round((a.steer / b.steer - 1) * 100)}% mais que B e corrige ${a.rev} vezes (B ${b.rev}). O carro est\xE1 escorregando ou voc\xEA entra r\xE1pido demais. M\xE3os mais suaves, um pouco menos de velocidade na entrada.`));
+        const a = m(sa), b2 = m(sb), out = [], pc = /* @__PURE__ */ __name((v) => Math.round(v * 100) + "%", "pc");
+        if (b2.full - a.full > 0.03) out.push("\u{1F9B6} " + Tx(`A is flat out ${pc(a.full)} of the lap, B ${pc(b2.full)}. Get back on the throttle sooner on the corner exits.`, `A va a fondo el ${pc(a.full)} de la vuelta, B el ${pc(b2.full)}. Vuelve al acelerador antes a la salida de las curvas.`, `A vai de p\xE9 no fundo ${pc(a.full)} da volta, B ${pc(b2.full)}. Volte ao acelerador antes na sa\xEDda das curvas.`));
+        if (a.coast - b2.coast > 0.02) out.push("\u{1F4A4} " + Tx(`A spends ${pc(a.coast)} of the lap with no pedal (B ${pc(b2.coast)}). Go from brake to throttle without waiting in between.`, `A pasa el ${pc(a.coast)} de la vuelta sin pisar ning\xFAn pedal (B el ${pc(b2.coast)}). Pasa del freno al acelerador sin esperar entre medias.`, `A passa ${pc(a.coast)} da volta sem pedal (B ${pc(b2.coast)}). V\xE1 do freio ao acelerador sem esperar.`));
+        if (a.lifts > b2.lifts + 1) out.push("\u2195\uFE0F " + Tx(`A lifts off the throttle ${a.lifts} times in the middle of a corner (B ${b2.lifts}). A smoother entry lets you stay on the throttle.`, `A levanta el pie del acelerador ${a.lifts} veces en mitad de curva (B ${b2.lifts}). Una entrada m\xE1s suave te deja mantener el gas.`, `A tira o p\xE9 ${a.lifts} vezes no meio da curva (B ${b2.lifts}). Uma entrada mais suave deixa voc\xEA manter o acelerador.`));
+        if (ovalOf(null, null, ctx) !== "dirt" && a.hasS && b2.hasS && b2.steer > 0 && a.steer > b2.steer * 1.15) out.push("\u{1F3AF} " + Tx(`A turns the wheel ${Math.round((a.steer / b2.steer - 1) * 100)}% more than B and corrects it ${a.rev} times (B ${b2.rev}). The car is sliding or you go in too fast. Smoother hands, a little less speed at the turn-in.`, `A gira el volante un ${Math.round((a.steer / b2.steer - 1) * 100)} % m\xE1s que B y lo corrige ${a.rev} veces (B ${b2.rev}). El coche desliza o entras demasiado r\xE1pido. Manos m\xE1s suaves y un poco menos de velocidad al girar.`, `A gira o volante ${Math.round((a.steer / b2.steer - 1) * 100)}% mais que B e corrige ${a.rev} vezes (B ${b2.rev}). O carro est\xE1 escorregando ou voc\xEA entra r\xE1pido demais. M\xE3os mais suaves, um pouco menos de velocidade na entrada.`));
         return out;
       }
       __name(lapDriving, "lapDriving");
@@ -820,8 +820,8 @@ var require_pitwall_analysis = __commonJS({
           out.push(lift ? Tx(`You lift ${m} m ${c.dd > 0 ? "later" : "earlier"} than the reference (A and B on the map).`, `Levantas ${m} m ${c.dd > 0 ? "m\xE1s tarde" : "antes"} que la referencia (A y B en el mapa).`, `Voc\xEA alivia ${m} m ${c.dd > 0 ? "depois" : "antes"} da refer\xEAncia (A e B no mapa).`) : Tx(`You brake ${m} m ${c.dd > 0 ? "later" : "earlier"} than the reference (A and B on the map).`, `Frenas ${m} m ${c.dd > 0 ? "m\xE1s tarde" : "antes"} que la referencia (A y B en el mapa).`, `Voc\xEA freia ${m} m ${c.dd > 0 ? "depois" : "antes"} da refer\xEAncia (A e B no mapa).`));
         } else if (c.dd != null) out.push(lift ? Tx("You lift at the same point as the reference.", "Levantas en el mismo punto que la referencia.", "Voc\xEA alivia no mesmo ponto da refer\xEAncia.") : Tx("You brake at the same point as the reference.", "Frenas en el mismo punto que la referencia.", "Voc\xEA freia no mesmo ponto da refer\xEAncia."));
         if (c.vmin != null && c.vminr != null) {
-          const a = r4(c.vmin), b = r4(c.vminr);
-          out.push(a === b ? Tx(`At the slowest point you match it, ${a} ${u}.`, `En el punto m\xE1s lento vas igual, ${a} ${u}.`, `No ponto mais lento voc\xEA empata, ${a} ${u}.`) : Tx(`At the slowest point you are at ${a} ${u} and the reference at ${b}.`, `En el punto m\xE1s lento vas a ${a} ${u} y la referencia a ${b}.`, `No ponto mais lento voc\xEA est\xE1 a ${a} ${u} e a refer\xEAncia a ${b}.`));
+          const a = r4(c.vmin), b2 = r4(c.vminr);
+          out.push(a === b2 ? Tx(`At the slowest point you match it, ${a} ${u}.`, `En el punto m\xE1s lento vas igual, ${a} ${u}.`, `No ponto mais lento voc\xEA empata, ${a} ${u}.`) : Tx(`At the slowest point you are at ${a} ${u} and the reference at ${b2}.`, `En el punto m\xE1s lento vas a ${a} ${u} y la referencia a ${b2}.`, `No ponto mais lento voc\xEA est\xE1 a ${a} ${u} e a refer\xEAncia a ${b2}.`));
         }
         if (c.kind === "trail" && c.trailA != null) out.push(Tx(`You hold the brake ${r4(c.trailA)} m into the turn and the reference ${r4(c.trailB)} m.`, `Mantienes el freno ${r4(c.trailA)} m dentro de la curva y la referencia ${r4(c.trailB)} m.`, `Voc\xEA segura o freio ${r4(c.trailA)} m dentro da curva e a refer\xEAncia ${r4(c.trailB)} m.`));
         if (!c.est && c.coastA - c.coastB >= 10) out.push(Tx(`${r4(c.coastA)} m with no pedal pressed (reference ${r4(c.coastB)} m).`, `${r4(c.coastA)} m sin pisar ning\xFAn pedal (referencia ${r4(c.coastB)} m).`, `${r4(c.coastA)} m sem nenhum pedal (refer\xEAncia ${r4(c.coastB)} m).`));
@@ -861,8 +861,8 @@ var require_pitwall_analysis = __commonJS({
       }, "lapClock");
       const lapTimeOf = /* @__PURE__ */ __name((l) => {
         if (l && l.time > 0) return l.time;
-        const b = l && l.bins, lim = b ? Math.min(b.length - 1, l.maxBin != null ? l.maxBin : b.length - 1) : -1;
-        for (let i = lim; i >= 0; i--) if (b[i] && b[i][1] > 0) return b[i][1];
+        const b2 = l && l.bins, lim = b2 ? Math.min(b2.length - 1, l.maxBin != null ? l.maxBin : b2.length - 1) : -1;
+        for (let i = lim; i >= 0; i--) if (b2[i] && b2[i][1] > 0) return b2[i][1];
         return null;
       }, "lapTimeOf");
       const medianOf = /* @__PURE__ */ __name((a) => {
@@ -870,8 +870,8 @@ var require_pitwall_analysis = __commonJS({
         return v.length % 2 ? v[h] : (v[h - 1] + v[h]) / 2;
       }, "medianOf");
       function lapSteps(cs, ov, A, LP, Tx, u) {
-        const P = [], r4 = Math.round, r22 = /* @__PURE__ */ __name((v) => Math.round(v * 100) / 100, "r2"), sum = /* @__PURE__ */ __name((l, f) => l.reduce((q2, c) => q2 + f(c), 0), "sum"), lostOf = /* @__PURE__ */ __name((l) => sum(l, (c) => Math.max(0, c.lost)), "lostOf"), dirt = ov === "dirt", ss = ov === "superspeedway";
-        const T3 = /* @__PURE__ */ __name((a) => Tx(a[0], a[1], a[2]), "T"), step = /* @__PURE__ */ __name((k, list, gain, t, what, cost, how) => P.push({ k, id: k, turns: list.map((c) => c.n), gain, t, what, cost, why: (what + " " + cost).trim(), how, marks: turnMarks(list), spans: turnSpans(list) }), "step");
+        const P2 = [], r4 = Math.round, r22 = /* @__PURE__ */ __name((v) => Math.round(v * 100) / 100, "r2"), sum = /* @__PURE__ */ __name((l, f) => l.reduce((q2, c) => q2 + f(c), 0), "sum"), lostOf = /* @__PURE__ */ __name((l) => sum(l, (c) => Math.max(0, c.lost)), "lostOf"), dirt = ov === "dirt", ss = ov === "superspeedway";
+        const T4 = /* @__PURE__ */ __name((a) => Tx(a[0], a[1], a[2]), "T"), step = /* @__PURE__ */ __name((k, list, gain, t, what, cost, how) => P2.push({ k, id: k, turns: list.map((c) => c.n), gain, t, what, cost, why: (what + " " + cost).trim(), how, marks: turnMarks(list), spans: turnSpans(list) }), "step");
         const tr2 = cs.filter((c) => !c.est && !c.lift && c.lost > 0.03 && c.trailA != null && c.trailB - c.trailA >= 12);
         const gTr = sum(tr2, (c) => Math.max(0, (c.ph.brake || 0) + (c.ph.entry || 0)));
         if (tr2.length >= 2 && !ss && gTr > 0.06) {
@@ -882,7 +882,7 @@ var require_pitwall_analysis = __commonJS({
             gTr * 0.8,
             Tx(`Trail braking in ${nm}`, `Trail braking en ${nm}`, `Trail braking em ${nm}`),
             Tx(`In these corners you let go of the brake about ${mA} m into the turn and the reference about ${mB} m.`, `En estas curvas sueltas el freno unos ${mA} m dentro de la curva y la referencia unos ${mB} m.`, `Nestas curvas voc\xEA solta o freio uns ${mA} m dentro da curva e a refer\xEAncia uns ${mB} m.`),
-            T3(COST.trail),
+            T4(COST.trail),
             Tx("Brake hard in a straight line, then let the pedal out slowly as you turn the wheel, like letting out a spring. The brake is fully off at the apex, not before.", "Frena fuerte en l\xEDnea recta y suelta el pedal despacio mientras giras el volante, como quien suelta un muelle. El freno queda suelto del todo en el v\xE9rtice, no antes.", "Freie forte em linha reta e solte o pedal devagar enquanto gira o volante, como quem solta uma mola. O freio fica totalmente solto no \xE1pice, n\xE3o antes.")
           );
         }
@@ -921,14 +921,14 @@ var require_pitwall_analysis = __commonJS({
             lostOf(gs) * 0.6,
             Tx(`Gears in ${nm}`, `Marchas en ${nm}`, `Marchas em ${nm}`),
             Tx(`You take ${ls}.`, `Tomas ${ls}.`, `Voc\xEA faz ${ls}.`),
-            T3(COST.gear),
+            T4(COST.gear),
             Tx("Copy the reference's gear in these corners. Shift down before you turn in, never in the middle of the corner, and shift up as soon as the revs reach the top of the band.", "Copia la marcha de la referencia en estas curvas. Reduce antes de girar, nunca en mitad de la curva, y sube en cuanto las revoluciones lleguen arriba.", "Copie a marcha da refer\xEAncia nestas curvas. Reduza antes de entrar, nunca no meio da curva, e suba assim que a rota\xE7\xE3o chegar ao topo.")
           );
         }
-        const same6 = (LP || []).filter((l) => l && l.valid !== false && (!A || !A.sessionId || !l.sessionId || l.sessionId === A.sessionId)).map((l, i) => ({ t: lapTimeOf(l), n: l.n != null ? l.n : i })).filter((x) => x.t > 0).sort((a, b) => a.n - b.n);
+        const same6 = (LP || []).filter((l) => l && l.valid !== false && (!A || !A.sessionId || !l.sessionId || l.sessionId === A.sessionId)).map((l, i) => ({ t: lapTimeOf(l), n: l.n != null ? l.n : i })).filter((x) => x.t > 0).sort((a, b2) => a.n - b2.n);
         if (same6.length >= 8) {
           const ts = same6.map((x) => x.t), first = medianOf(ts.slice(1, 4)), last = medianOf(ts.slice(-3)), fall = last - first;
-          if (fall > 0.4 && fall > first * 3e-3) P.push({
+          if (fall > 0.4 && fall > first * 3e-3) P2.push({
             k: "tyres",
             id: "tyres",
             gain: fall * 0.4,
@@ -942,7 +942,7 @@ var require_pitwall_analysis = __commonJS({
         }
         if (same6.length >= 5) {
           const ts = same6.map((x) => x.t), best = Math.min(...ts), med = medianOf(ts), gap2 = med - best;
-          if (gap2 > 0.5 && gap2 > best * 5e-3) P.push({
+          if (gap2 > 0.5 && gap2 > best * 5e-3) P2.push({
             k: "pace",
             id: "pace",
             gain: gap2 * 0.5,
@@ -954,7 +954,7 @@ var require_pitwall_analysis = __commonJS({
             spans: []
           });
         }
-        return P;
+        return P2;
       }
       __name(lapSteps, "lapSteps");
       function ovalStep(ov, A, R, sa, sb, n, cs, lapD, Tx) {
@@ -1024,7 +1024,7 @@ var require_pitwall_analysis = __commonJS({
             }
           });
         });
-        const secs = pairSecs(A, R, sa, sb, n).map(([a, b], k) => ({ n: k + 1, a, b, d: a - b }));
+        const secs = pairSecs(A, R, sa, sb, n).map(([a, b2], k) => ({ n: k + 1, a, b: b2, d: a - b2 }));
         const driving = lapDriving(sa, sb, n, cx), cons = cornerConsistency((LP || []).filter((l) => l.valid !== false), R, turns, ov) || [];
         const dif = /* @__PURE__ */ __name((c) => {
           const h = cornerHint(c.apex);
@@ -1037,9 +1037,9 @@ var require_pitwall_analysis = __commonJS({
             c.tip = ["Same braking point every lap, before anything else", "El mismo punto de frenada cada vuelta, antes que nada", "O mesmo ponto de frenagem em toda volta, antes de qualquer outra coisa"];
           }
         });
-        const P = [], r22 = /* @__PURE__ */ __name((v) => Math.round(v * 100) / 100, "r2"), L = n * BIN3, T3 = /* @__PURE__ */ __name((a) => Tx(a[0], a[1], a[2]), "T3");
-        cs.filter((c) => c.lost > 0.05).sort((a, b) => b.lost * tipWeight(b) * dif(b) - a.lost * tipWeight(a) * dif(a)).slice(0, 3).forEach((c) => P.push(cornerStep(c, Tx, spdU(), L, tipWeight(c) * dif(c))));
-        const worst = Object.entries(ph).sort((a, b) => b[1] - a[1])[0];
+        const P2 = [], r22 = /* @__PURE__ */ __name((v) => Math.round(v * 100) / 100, "r2"), L = n * BIN3, T32 = /* @__PURE__ */ __name((a) => Tx(a[0], a[1], a[2]), "T3");
+        cs.filter((c) => c.lost > 0.05).sort((a, b2) => b2.lost * tipWeight(b2) * dif(b2) - a.lost * tipWeight(a) * dif(a)).slice(0, 3).forEach((c) => P2.push(cornerStep(c, Tx, spdU(), L, tipWeight(c) * dif(c))));
+        const worst = Object.entries(ph).sort((a, b2) => b2[1] - a[1])[0];
         const avg = /* @__PURE__ */ __name((a) => a.length ? a.reduce((q2, v) => q2 + v, 0) / a.length : null, "avg"), mdd = avg(cs.filter((c) => c.dd != null).map((c) => c.dd)), mdmin = avg(cs.filter((c) => c.vmin != null).map((c) => c.vmin - c.vminr)), mlate = avg(cs.filter((c) => c.late != null).map((c) => c.late));
         if (worst && worst[1] > 0.12 && phN[worst[0]] >= 3) {
           const HOW = {
@@ -1051,17 +1051,17 @@ var require_pitwall_analysis = __commonJS({
           if (ov && ov !== "short") HOW.entry = ["Lift once, a little earlier and lighter, and roll the speed into the corner instead of slowing the car at the last moment.", "Levanta una sola vez, un poco antes y menos, y deja correr la velocidad en la curva en vez de frenar el coche en el \xFAltimo momento.", "Alivie uma s\xF3 vez, um pouco antes e mais leve, e leve a velocidade para dentro da curva em vez de segurar o carro no \xFAltimo momento."];
           if (ov) HOW.apex = ["Keep the car rolling through the middle of the corner. A smoother entry with less steering keeps more speed at the slowest point.", "Mant\xE9n el coche rodando por el centro de la curva. Una entrada m\xE1s suave y con menos volante deja m\xE1s velocidad en el punto m\xE1s lento.", "Mantenha o carro rolando pelo meio da curva. Uma entrada mais suave e com menos volante deixa mais velocidade no ponto mais lento."];
           if (ov) HOW.exit = ov === "dirt" ? ["Feed the throttle in on exit instead of stabbing it. Wheelspin on dirt costs you the whole straight.", "Dosifica el gas a la salida en vez de pisarlo de golpe. En tierra, el patinazo te cuesta toda la recta.", "Dose o acelerador na sa\xEDda em vez de pisar de uma vez. Na terra, a patinada custa a reta inteira."] : ["Back to full throttle as soon as the car stops turning and let it run up towards the wall on exit. The speed off the corner is carried down the whole straight.", "Vuelve a fondo en cuanto el coche deja de girar y d\xE9jalo subir hacia el muro a la salida. La velocidad de salida se lleva toda la recta.", "Volte ao fundo assim que o carro parar de virar e deixe-o subir em dire\xE7\xE3o ao muro na sa\xEDda. A velocidade de sa\xEDda vai pela reta inteira."];
-          P.push({ k: "phase", ph0: worst[0], gain: worst[1], t: Tx(`${pn(worst[0])} phase \xB7 ${r22(worst[1])} s over the lap`, `Fase de ${pn(worst[0]).toLowerCase()} \xB7 ${r22(worst[1])} s en la vuelta`, `Fase de ${pn(worst[0]).toLowerCase()} \xB7 ${r22(worst[1])} s na volta`), why: Tx(`It shows in ${phN[worst[0]]} corners, so it is a habit rather than one mistake.`, `Aparece en ${phN[worst[0]]} curvas, as\xED que es un h\xE1bito m\xE1s que un error puntual.`, `Aparece em ${phN[worst[0]]} curvas, ent\xE3o \xE9 mais um h\xE1bito do que um erro isolado.`), how: Tx(...HOW[worst[0]]) });
+          P2.push({ k: "phase", ph0: worst[0], gain: worst[1], t: Tx(`${pn(worst[0])} phase \xB7 ${r22(worst[1])} s over the lap`, `Fase de ${pn(worst[0]).toLowerCase()} \xB7 ${r22(worst[1])} s en la vuelta`, `Fase de ${pn(worst[0]).toLowerCase()} \xB7 ${r22(worst[1])} s na volta`), why: Tx(`It shows in ${phN[worst[0]]} corners, so it is a habit rather than one mistake.`, `Aparece en ${phN[worst[0]]} curvas, as\xED que es un h\xE1bito m\xE1s que un error puntual.`, `Aparece em ${phN[worst[0]]} curvas, ent\xE3o \xE9 mais um h\xE1bito do que um erro isolado.`), how: Tx(...HOW[worst[0]]) });
         }
-        if (straight > 0.08 && ov) P.push({ k: "straight", gain: straight, t: Tx(`${r22(straight)} s outside the corners`, `${r22(straight)} s fuera de las curvas`, `${r22(straight)} s fora das curvas`), why: Tx("On an oval the straights are won in the corner before them, in the speed you carry off it and how soon you are back flat out.", "En un \xF3valo las rectas se ganan en la curva anterior, con la velocidad que sacas de ella y lo pronto que vuelves a ir a fondo.", "Num oval as retas se ganham na curva anterior, com a velocidade que voc\xEA leva dela e o quanto antes volta ao fundo."), how: ov === "superspeedway" ? Tx("Here the draft decides most of it. A lap on your own is slower than one behind another car.", "Aqu\xED el rebufo decide casi todo. Una vuelta en solitario es m\xE1s lenta que una detr\xE1s de otro coche.", "Aqui o v\xE1cuo decide quase tudo. Uma volta sozinho \xE9 mais lenta do que uma atr\xE1s de outro carro.") : Tx("Get the car turned early in the corner so you can be flat out sooner, and let it run up to the wall on exit.", "Haz girar el coche pronto en la curva para ir a fondo antes, y d\xE9jalo subir hasta el muro a la salida.", "Fa\xE7a o carro virar cedo na curva para ir ao fundo mais cedo, e deixe-o subir at\xE9 o muro na sa\xEDda.") });
-        else if (straight > 0.08) P.push({ k: "straight", gain: straight, t: Tx(`${r22(straight)} s outside the braking zones`, `${r22(straight)} s fuera de las zonas de frenada`, `${r22(straight)} s fora das zonas de frenagem`), why: Tx("Time lost on the straights comes from the corner exits before them (less speed at the apex and a later throttle) and from the gears.", "El tiempo que se pierde en las rectas viene de las salidas de las curvas anteriores (menos velocidad en el v\xE9rtice y el acelerador m\xE1s tarde) y de las marchas.", "O tempo perdido nas retas vem das sa\xEDdas das curvas anteriores (menos velocidade no \xE1pice e o acelerador mais tarde) e das marchas."), how: Tx("Finish each corner with the throttle fully open as early as you can and check you shift at the right revs.", "Termina cada curva con el acelerador a fondo lo antes posible y comprueba que cambias a las revoluciones correctas.", "Termine cada curva com o acelerador a fundo o quanto antes e confira se voc\xEA troca de marcha na rota\xE7\xE3o certa.") });
+        if (straight > 0.08 && ov) P2.push({ k: "straight", gain: straight, t: Tx(`${r22(straight)} s outside the corners`, `${r22(straight)} s fuera de las curvas`, `${r22(straight)} s fora das curvas`), why: Tx("On an oval the straights are won in the corner before them, in the speed you carry off it and how soon you are back flat out.", "En un \xF3valo las rectas se ganan en la curva anterior, con la velocidad que sacas de ella y lo pronto que vuelves a ir a fondo.", "Num oval as retas se ganham na curva anterior, com a velocidade que voc\xEA leva dela e o quanto antes volta ao fundo."), how: ov === "superspeedway" ? Tx("Here the draft decides most of it. A lap on your own is slower than one behind another car.", "Aqu\xED el rebufo decide casi todo. Una vuelta en solitario es m\xE1s lenta que una detr\xE1s de otro coche.", "Aqui o v\xE1cuo decide quase tudo. Uma volta sozinho \xE9 mais lenta do que uma atr\xE1s de outro carro.") : Tx("Get the car turned early in the corner so you can be flat out sooner, and let it run up to the wall on exit.", "Haz girar el coche pronto en la curva para ir a fondo antes, y d\xE9jalo subir hasta el muro a la salida.", "Fa\xE7a o carro virar cedo na curva para ir ao fundo mais cedo, e deixe-o subir at\xE9 o muro na sa\xEDda.") });
+        else if (straight > 0.08) P2.push({ k: "straight", gain: straight, t: Tx(`${r22(straight)} s outside the braking zones`, `${r22(straight)} s fuera de las zonas de frenada`, `${r22(straight)} s fora das zonas de frenagem`), why: Tx("Time lost on the straights comes from the corner exits before them (less speed at the apex and a later throttle) and from the gears.", "El tiempo que se pierde en las rectas viene de las salidas de las curvas anteriores (menos velocidad en el v\xE9rtice y el acelerador m\xE1s tarde) y de las marchas.", "O tempo perdido nas retas vem das sa\xEDdas das curvas anteriores (menos velocidade no \xE1pice e o acelerador mais tarde) e das marchas."), how: Tx("Finish each corner with the throttle fully open as early as you can and check you shift at the right revs.", "Termina cada curva con el acelerador a fondo lo antes posible y comprueba que cambias a las revoluciones correctas.", "Termine cada curva com o acelerador a fundo o quanto antes e confira se voc\xEA troca de marcha na rota\xE7\xE3o certa.") });
         const wob = cons.filter((x) => x.sd > 0.08).slice(0, 2);
-        wob.forEach((x) => P.push({ k: "cons", turns: [x.n], gain: x.sd * 0.6, t: Tx(`T${x.n} changes \xB1${r22(x.sd)} s from lap to lap`, `T${x.n} cambia \xB1${r22(x.sd)} s de una vuelta a otra`, `T${x.n} muda \xB1${r22(x.sd)} s de uma volta para outra`), why: Tx("Over the session you take this corner differently every lap. The time spread is the gap between your best and your usual lap.", "A lo largo de la sesi\xF3n tomas esta curva distinto cada vuelta. La dispersi\xF3n es la diferencia entre tu mejor vuelta y la habitual.", "Ao longo da sess\xE3o voc\xEA faz esta curva de um jeito diferente a cada volta. A dispers\xE3o \xE9 a diferen\xE7a entre sua melhor volta e a volta habitual."), how: Tx("Same braking marker, same turn-in point, same line, every lap. Consistency first, speed after.", "La misma referencia de frenada, el mismo punto de giro, la misma trazada, cada vuelta. Primero regularidad, luego velocidad.", "A mesma refer\xEAncia de frenagem, o mesmo ponto de entrada, a mesma linha, em toda volta. Primeiro regularidade, depois velocidade.") }));
-        driving.forEach((d) => P.push({ k: "style", gain: 0, t: d.replace(/^\S+\s/, ""), why: "", how: "" }));
-        lapSteps(cs, ov, A, LP, Tx, spdU()).forEach((x) => P.push(x));
-        likeSteps(likeOf(A, cx, cs), Tx).forEach((x) => P.push(x));
+        wob.forEach((x) => P2.push({ k: "cons", turns: [x.n], gain: x.sd * 0.6, t: Tx(`T${x.n} changes \xB1${r22(x.sd)} s from lap to lap`, `T${x.n} cambia \xB1${r22(x.sd)} s de una vuelta a otra`, `T${x.n} muda \xB1${r22(x.sd)} s de uma volta para outra`), why: Tx("Over the session you take this corner differently every lap. The time spread is the gap between your best and your usual lap.", "A lo largo de la sesi\xF3n tomas esta curva distinto cada vuelta. La dispersi\xF3n es la diferencia entre tu mejor vuelta y la habitual.", "Ao longo da sess\xE3o voc\xEA faz esta curva de um jeito diferente a cada volta. A dispers\xE3o \xE9 a diferen\xE7a entre sua melhor volta e a volta habitual."), how: Tx("Same braking marker, same turn-in point, same line, every lap. Consistency first, speed after.", "La misma referencia de frenada, el mismo punto de giro, la misma trazada, cada vuelta. Primero regularidad, luego velocidad.", "A mesma refer\xEAncia de frenagem, o mesmo ponto de entrada, a mesma linha, em toda volta. Primeiro regularidade, depois velocidade.") }));
+        driving.forEach((d) => P2.push({ k: "style", gain: 0, t: d.replace(/^\S+\s/, ""), why: "", how: "" }));
+        lapSteps(cs, ov, A, LP, Tx, spdU()).forEach((x) => P2.push(x));
+        likeSteps(likeOf(A, cx, cs), Tx).forEach((x) => P2.push(x));
         const PCOST = { brake: ["The braking zones are where the speed changes the most, so a few metres there are worth more than anywhere else on the lap.", "Las frenadas son donde m\xE1s cambia la velocidad, as\xED que unos metros ah\xED valen m\xE1s que en cualquier otra parte de la vuelta.", "As frenagens s\xE3o onde a velocidade mais muda, ent\xE3o alguns metros ali valem mais do que em qualquer outra parte da volta."], entry: ov && ov !== "short" ? COST.lift : est ? COST.speed : COST.trail, apex: COST.speed, exit: COST.exit };
-        const sorted = cs.slice().sort((a, b) => a.d - b.d), tAt2 = /* @__PURE__ */ __name((s, d) => {
+        const sorted = cs.slice().sort((a, b2) => a.d - b2.d), tAt2 = /* @__PURE__ */ __name((s, d) => {
           for (let k = Math.max(0, Math.min(n - 1, Math.round(d / BIN3))); k >= 0; k--) if (s.arr[k]) return s.arr[k][1];
           return null;
         }, "tAt");
@@ -1086,19 +1086,19 @@ var require_pitwall_analysis = __commonJS({
             } else strs.push({ after: lt.n, spans: [[0, sorted[0].d - 50]], v });
           }
         }
-        P.forEach((p) => {
+        P2.forEach((p) => {
           if (p.k === "phase") {
             const ph0 = p.ph0, list = cs.filter((c) => !Object.values(c.ph).some((v) => Math.abs(v) > 1) && (c.ph[ph0] || 0) > 0.02);
             p.id = "phase:" + ph0;
             p.what = Tx(`It shows in ${tNames(list)}, so it is a habit rather than one mistake.`, `Aparece en ${tNames(list)}, as\xED que es un h\xE1bito m\xE1s que un error puntual.`, `Aparece em ${tNames(list)}, ent\xE3o \xE9 mais um h\xE1bito do que um erro isolado.`);
-            p.cost = T3(PCOST[ph0] || COST.speed);
+            p.cost = T32(PCOST[ph0] || COST.speed);
             p.why = p.what + " " + p.cost;
             p.turns = list.map((c) => c.n);
             p.marks = turnMarks(list);
             p.spans = turnSpans(list);
             delete p.ph0;
           } else if (p.k === "straight") {
-            const top = strs.filter((x) => x.v > 0.02).sort((a, b) => b.v - a.v).slice(0, 2), nm = top.map((x) => Tx(`after T${x.after} (${r22(x.v)} s)`, `despu\xE9s de T${x.after} (${r22(x.v)} s)`, `depois da T${x.after} (${r22(x.v)} s)`)).join(Tx(" and ", " y ", " e "));
+            const top = strs.filter((x) => x.v > 0.02).sort((a, b2) => b2.v - a.v).slice(0, 2), nm = top.map((x) => Tx(`after T${x.after} (${r22(x.v)} s)`, `despu\xE9s de T${x.after} (${r22(x.v)} s)`, `depois da T${x.after} (${r22(x.v)} s)`)).join(Tx(" and ", " y ", " e "));
             p.id = "straight";
             p.what = top.length ? Tx(`Most of it is on the straight ${nm}.`, `La mayor parte est\xE1 en la recta ${nm}.`, `A maior parte est\xE1 na reta ${nm}.`) : "";
             p.cost = p.why;
@@ -1112,7 +1112,7 @@ var require_pitwall_analysis = __commonJS({
             const c = cs.find((x) => x.n === p.turns[0]);
             p.id = "cons";
             p.what = p.why;
-            p.cost = T3(COST.cons);
+            p.cost = T32(COST.cons);
             p.why = p.what + " " + p.cost;
             p.marks = c ? turnMarks([c]) : [];
             p.spans = c ? turnSpans([c]) : [];
@@ -1122,34 +1122,34 @@ var require_pitwall_analysis = __commonJS({
             p.cost = "";
           }
         });
-        P.sort((a, b) => b.gain * (b.w || 1) * C.plan(b.id) - a.gain * (a.w || 1) * C.plan(a.id));
+        P2.sort((a, b2) => b2.gain * (b2.w || 1) * C.plan(b2.id) - a.gain * (a.w || 1) * C.plan(a.id));
         const OI = ov ? ovalStep(ov, A, R, sa, sb, n, cs, lapD, Tx) : null;
         if (OI) {
           const list = cs.filter((c) => c.lost > 0.05);
-          P.unshift({ ...OI, id: "oval:" + ov, what: OI.why, cost: "", marks: turnMarks(list), spans: turnSpans(list) });
+          P2.unshift({ ...OI, id: "oval:" + ov, what: OI.why, cost: "", marks: turnMarks(list), spans: turnSpans(list) });
         }
         const H3 = C.habits[0];
         if (H3 && H3.tracks >= 3) {
           const inLap = cs.filter((c) => c.kind === H3.kind && c.lost > 0.03), names = inLap.map((c) => "T" + c.n).join(", ");
-          P.unshift({ k: "habit", turns: inLap.map((c) => c.n), gain: inLap.reduce((q2, c) => q2 + c.lost, 0), t: Tx(`${kindName(H3.kind, ctx)} \xB7 a habit of yours`, `${kindName(H3.kind, ctx)} \xB7 un h\xE1bito tuyo`, `${kindName(H3.kind, ctx)} \xB7 um h\xE1bito seu`), why: Tx(`It shows on ${H3.tracks} tracks and ${H3.sessions} sessions${names ? `. In this lap in ${names}` : ""}.`, `Lo arrastras en ${H3.tracks} circuitos y ${H3.sessions} sesiones${names ? `. En esta vuelta en ${names}` : ""}.`, `Aparece em ${H3.tracks} pistas e ${H3.sessions} sess\xF5es${names ? `. Nesta volta em ${names}` : ""}.`), how: "" });
-          const hp = P[0], f = familyOf(H3.kind);
+          P2.unshift({ k: "habit", turns: inLap.map((c) => c.n), gain: inLap.reduce((q2, c) => q2 + c.lost, 0), t: Tx(`${kindName(H3.kind, ctx)} \xB7 a habit of yours`, `${kindName(H3.kind, ctx)} \xB7 un h\xE1bito tuyo`, `${kindName(H3.kind, ctx)} \xB7 um h\xE1bito seu`), why: Tx(`It shows on ${H3.tracks} tracks and ${H3.sessions} sessions${names ? `. In this lap in ${names}` : ""}.`, `Lo arrastras en ${H3.tracks} circuitos y ${H3.sessions} sesiones${names ? `. En esta vuelta en ${names}` : ""}.`, `Aparece em ${H3.tracks} pistas e ${H3.sessions} sess\xF5es${names ? `. Nesta volta em ${names}` : ""}.`), how: "" });
+          const hp = P2[0], f = familyOf(H3.kind);
           hp.id = "habit:" + H3.kind;
           hp.what = hp.why;
-          hp.cost = T3(COST[f] || COST.speed);
+          hp.cost = T32(COST[f] || COST.speed);
           hp.why = hp.what + " " + hp.cost;
           hp.how = inLap[0] ? howOf(f, inLap[0], Tx, spdU()) : "";
           hp.marks = turnMarks(inLap);
           hp.spans = turnSpans(inLap);
         }
-        P.forEach((p) => {
+        P2.forEach((p) => {
           p.id = p.id || p.k;
           p.what = p.what || "";
           p.cost = p.cost || "";
           p.marks = (p.marks || []).filter((m) => m.d >= 0 && m.d <= L).map((m) => ({ ...m, d: Math.round(m.d) }));
-          p.spans = (p.spans || []).map(([a, b]) => [Math.round(Math.max(0, a)), Math.round(Math.min(L, b))]).filter(([a, b]) => b > a);
+          p.spans = (p.spans || []).map(([a, b2]) => [Math.round(Math.max(0, a)), Math.round(Math.min(L, b2))]).filter(([a, b2]) => b2 > a);
         });
         const areas = [["brake", ph.brake], ["entry", ph.entry], ["apex", ph.apex], ["exit", ph.exit], ["straight", Math.max(0, straight)]];
-        return { cs, lapD, lost, gained, straight, ph, phN, secs, driving, cons, plan: P, areas, focus: areas.slice().sort((a, b) => b[1] - a[1])[0] };
+        return { cs, lapD, lost, gained, straight, ph, phN, secs, driving, cons, plan: P2, areas, focus: areas.slice().sort((a, b2) => b2[1] - a[1])[0] };
       }
       __name(coachPlan, "coachPlan");
       function stepText(step, A, ctx) {
@@ -1162,9 +1162,9 @@ var require_pitwall_analysis = __commonJS({
         const Tx = txOf(ctx), sa = lapSeries(A), sb = lapSeries(B), n = Math.min(sa.end, sb.end), ad = A.time - B.time;
         let peak = 0, peakI = 0, gain = 0, gainI = 0;
         for (let i = 0; i < n; i++) {
-          const a = sa.arr[i], b = sb.arr[i];
-          if (a && b) {
-            const d = a[1] - b[1];
+          const a = sa.arr[i], b2 = sb.arr[i];
+          if (a && b2) {
+            const d = a[1] - b2[1];
             if (d > peak) {
               peak = d;
               peakI = i;
@@ -1190,7 +1190,7 @@ var require_pitwall_analysis = __commonJS({
       function followUp(prev, cs, ctx) {
         if (!Array.isArray(prev) || !prev.length || !Array.isArray(cs) || !cs.length) return [];
         const Tx = txOf(ctx), r22 = /* @__PURE__ */ __name((v) => Math.round(v * 100) / 100, "r2"), seen2 = /* @__PURE__ */ new Set();
-        return prev.filter((p) => p && p.kind && p.lost > 0.05 && p.tbest > 0 && p.apex >= 0).sort((a, b) => b.lost - a.lost).map((p) => {
+        return prev.filter((p) => p && p.kind && p.lost > 0.05 && p.tbest > 0 && p.apex >= 0).sort((a, b2) => b2.lost - a.lost).map((p) => {
           const c = cs.filter((x) => x.ta > 0 && Math.abs(x.apex - p.apex) <= 60).sort((x, y) => Math.abs(x.apex - p.apex) - Math.abs(y.apex - p.apex))[0];
           if (!c || seen2.has(c.n)) return null;
           seen2.add(c.n);
@@ -1206,7 +1206,7 @@ var require_pitwall_analysis = __commonJS({
         if (!cs.length) return null;
         const Tx = txOf(ctx), { spd, spdU } = unitsOf(ctx), turns = turnsOf(ctx), L = md2.nb > 0 ? md2.nb * BIN3 : Math.max(...cs.map((c) => c.apex)) + 200, r4 = Math.round, r22 = /* @__PURE__ */ __name((v) => Math.round(v * 100) / 100, "r2");
         const mx = Math.max(0, ...cs.map((c) => c.spread || 0)), imp = Array.isArray(md2.improve) ? md2.improve : [], u = spdU();
-        const out = cs.slice().sort((a, b) => a.apex - b.apex).map((c, k) => {
+        const out = cs.slice().sort((a, b2) => a.apex - b2.apex).map((c, k) => {
           const n = turnNo(turns, c.apex, L, k + 1), dif = mx > 0 && c.spread > 0 ? c.spread / mx : 0, lines = [];
           const level = dif >= 0.66 ? "hard" : dif >= 0.33 ? "medium" : "easy";
           const brake = c.b0 != null && c.b1 != null ? Tx(`Brake between ${r4(c.b0)} and ${r4(c.b1)} m`, `Frena entre ${r4(c.b0)} y ${r4(c.b1)} m`, `Freie entre ${r4(c.b0)} e ${r4(c.b1)} m`) : "";
@@ -1217,12 +1217,12 @@ var require_pitwall_analysis = __commonJS({
           if (ln && (ln[0] >= 1 || ln[1] <= -1)) lines.push(ln[0] >= 1 ? Tx("The fast drivers pass the apex a little inside the record's line.", "Los r\xE1pidos pasan el v\xE9rtice un poco por dentro de la trazada del r\xE9cord.", "Os r\xE1pidos passam o \xE1pice um pouco por dentro da linha do recorde.") : Tx("The fast drivers pass the apex a little outside the record's line.", "Los r\xE1pidos pasan el v\xE9rtice un poco por fuera de la trazada del r\xE9cord.", "Os r\xE1pidos passam o \xE1pice um pouco por fora da linha do recorde."));
           const mk = c.mistake && c.mistake.kind ? c.mistake : null, mistake = mk ? Tx(`The most common tip here \xB7 ${kindName(mk.kind, ctx)} (${mk.n} drivers)`, `El consejo m\xE1s com\xFAn aqu\xED \xB7 ${kindName(mk.kind, ctx)} (${mk.n} pilotos)`, `A dica mais comum aqui \xB7 ${kindName(mk.kind, ctx)} (${mk.n} pilotos)`) : "";
           if (mistake) lines.push(mistake);
-          const im = imp.filter((x) => Math.abs(x.apex - c.apex) <= 60).sort((a, b) => b.gain - a.gain)[0], improve = im ? Tx(`The drivers who improved here found ${r22(im.gain)} s in this corner (${im.n} drivers)`, `Los pilotos que mejoraron aqu\xED encontraron ${r22(im.gain)} s en esta curva (${im.n} pilotos)`, `Os pilotos que melhoraram aqui acharam ${r22(im.gain)} s nesta curva (${im.n} pilotos)`) : "";
+          const im = imp.filter((x) => Math.abs(x.apex - c.apex) <= 60).sort((a, b2) => b2.gain - a.gain)[0], improve = im ? Tx(`The drivers who improved here found ${r22(im.gain)} s in this corner (${im.n} drivers)`, `Los pilotos que mejoraron aqu\xED encontraron ${r22(im.gain)} s en esta curva (${im.n} pilotos)`, `Os pilotos que melhoraram aqui acharam ${r22(im.gain)} s nesta curva (${im.n} pilotos)`) : "";
           if (improve) lines.push(improve);
           const score = dif + (im ? Math.min(1, im.gain / 0.2) : 0) + (mk ? Math.min(0.6, mk.n / 10) : 0);
           return { n, d: Math.round(c.d), apex: Math.round(c.apex), b: c.b0 != null ? [Math.round(c.b0), Math.round(c.b1)] : null, g, v: c.v0 != null ? [r4(spd(c.v0)), r4(spd(c.v1))] : null, dif: Math.round(dif * 100) / 100, level, levelText: level === "hard" ? Tx("Hard", "Dif\xEDcil", "Dif\xEDcil") : level === "medium" ? Tx("Medium", "Media", "M\xE9dia") : Tx("Easy", "F\xE1cil", "F\xE1cil"), brake, gear, apexSpeed: apex, mistake, improve, lines, drivers: c.n || 0, score: Math.round(score * 100) / 100 };
         });
-        const brief = out.slice().sort((a, b) => b.score - a.score).slice(0, 3).filter((x) => x.score > 0).map((c) => ({ n: c.n, apex: c.apex, t: `T${c.n} \xB7 ${c.levelText}`, text: c.lines[0] || "" }));
+        const brief = out.slice().sort((a, b2) => b2.score - a.score).slice(0, 3).filter((x) => x.score > 0).map((c) => ({ n: c.n, apex: c.apex, t: `T${c.n} \xB7 ${c.levelText}`, text: c.lines[0] || "" }));
         return { corners: out, brief, drivers: Math.max(0, ...cs.map((c) => c.n || 0)), L: Math.round(L) };
       }
       __name(trackGuide, "trackGuide");
@@ -1233,7 +1233,7 @@ var require_pitwall_analysis = __commonJS({
           for (let k = Math.min(s.length - 1, Math.round(d / BIN3)); k >= 0; k--) if (s[k]) return s[k][1];
           return null;
         }, "tAt");
-        return R.slice().sort((a, b) => a.apex - b.apex).map((c, k) => {
+        return R.slice().sort((a, b2) => a.apex - b2.apex).map((c, k) => {
           const q2 = Array.isArray(c.q) ? c.q : [];
           if (q2.length < 3) return null;
           const t0 = tAt2(c.i0), t1 = tAt2(c.i1);
@@ -1245,44 +1245,44 @@ var require_pitwall_analysis = __commonJS({
       __name(cornerRanks, "cornerRanks");
       function clsLines(byCls, ctx) {
         const Tx = txOf(ctx), N2 = { slow: ["Slow corners", "Curvas lentas", "Curvas lentas"], medium: ["Medium corners", "Curvas medias", "Curvas m\xE9dias"], fast: ["Fast corners", "Curvas r\xE1pidas", "Curvas r\xE1pidas"] };
-        return (Array.isArray(byCls) ? byCls : []).filter((x) => N2[x.cls] && x.n >= 5).sort((a, b) => b.avg - a.avg).map((x) => ({ cls: x.cls, avg: x.avg, n: x.n, t: Tx(...N2[x.cls]), text: Tx(`${Math.round(x.avg * 100) / 100} s lost on average (${x.n} corners)`, `${Math.round(x.avg * 100) / 100} s perdidos de media (${x.n} curvas)`, `${Math.round(x.avg * 100) / 100} s perdidos em m\xE9dia (${x.n} curvas)`) }));
+        return (Array.isArray(byCls) ? byCls : []).filter((x) => N2[x.cls] && x.n >= 5).sort((a, b2) => b2.avg - a.avg).map((x) => ({ cls: x.cls, avg: x.avg, n: x.n, t: Tx(...N2[x.cls]), text: Tx(`${Math.round(x.avg * 100) / 100} s lost on average (${x.n} corners)`, `${Math.round(x.avg * 100) / 100} s perdidos de media (${x.n} curvas)`, `${Math.round(x.avg * 100) / 100} s perdidos em m\xE9dia (${x.n} curvas)`) }));
       }
       __name(clsLines, "clsLines");
       function progressLines(prog, cs, ctx) {
-        const P = prog && Array.isArray(prog.corners) ? prog.corners : [];
-        if (!P.length) return [];
+        const P2 = prog && Array.isArray(prog.corners) ? prog.corners : [];
+        if (!P2.length) return [];
         const Tx = txOf(ctx), r22 = /* @__PURE__ */ __name((v) => Math.round(v * 100) / 100, "r2"), rank = { worse: 0, stuck: 1, better: 2 };
-        return P.filter((c) => c && rank[c.trend] != null && c.sessions >= 2).map((c) => {
+        return P2.filter((c) => c && rank[c.trend] != null && c.sessions >= 2).map((c) => {
           const m = (cs || []).filter((x) => Math.abs(x.apex - c.apex) <= 60).sort((x, y) => Math.abs(x.apex - c.apex) - Math.abs(y.apex - c.apex))[0], n = m ? m.n : c.n, k = c.sessions;
           const text2 = c.trend === "better" ? Tx(`${r22(c.gain)} s faster over your last ${k} sessions`, `${r22(c.gain)} s m\xE1s r\xE1pido en tus \xFAltimas ${k} sesiones`, `${r22(c.gain)} s mais r\xE1pido nas suas \xFAltimas ${k} sess\xF5es`) : c.trend === "worse" ? Tx(`${r22(-c.gain)} s slower than ${k} sessions ago`, `${r22(-c.gain)} s m\xE1s lento que hace ${k} sesiones`, `${r22(-c.gain)} s mais lento que h\xE1 ${k} sess\xF5es`) : Tx(`No faster in your last ${k} sessions`, `Sin mejorar en tus \xFAltimas ${k} sesiones`, `Sem melhorar nas suas \xFAltimas ${k} sess\xF5es`);
           return { n, apex: c.apex, trend: c.trend, gain: c.gain, sessions: k, t: `T${n}`, text: text2, tone: c.trend === "better" ? "good" : "bad" };
-        }).sort((a, b) => rank[a.trend] - rank[b.trend] || Math.abs(b.gain) - Math.abs(a.gain)).slice(0, 6);
+        }).sort((a, b2) => rank[a.trend] - rank[b2.trend] || Math.abs(b2.gain) - Math.abs(a.gain)).slice(0, 6);
       }
       __name(progressLines, "progressLines");
       function edgeUse(A, map, ctx) {
         ctx = ctx || {};
         const e = map && map.edges, a = lapShape(A);
         if (!e || !Array.isArray(e.l) || !Array.isArray(e.r) || !a || !a.g || !map.g || !Array.isArray(map.x) || e.l.length !== map.x.length) return [];
-        const nb = map.x.length, b = { x: map.x, y: map.y, g: map.g }, p = sameFrame2(b, { x: a.x, y: a.y, g: a.g }), na = p.x.length;
+        const nb = map.x.length, b2 = { x: map.x, y: map.y, g: map.g }, p = sameFrame2(b2, { x: a.x, y: a.y, g: a.g }), na = p.x.length;
         if (na < 60 || nb < 60) return [];
         const off = new Array(nb).fill(NaN);
         for (let i = 0; i < nb; i++) {
           const i0 = (i - 2 + nb) % nb, i1 = (i + 2) % nb;
-          let tx = b.x[i1] - b.x[i0], ty = b.y[i1] - b.y[i0];
+          let tx = b2.x[i1] - b2.x[i0], ty = b2.y[i1] - b2.y[i0];
           const tm = Math.hypot(tx, ty) || 1;
           tx /= tm;
           ty /= tm;
           const j0 = Math.round(i * na / nb);
           let bj = -1, bd = 1e18;
           for (let k = -30; k <= 30; k++) {
-            const j = ((j0 + k) % na + na) % na, dx2 = p.x[j] - b.x[i], dy2 = p.y[j] - b.y[i], d2 = dx2 * dx2 + dy2 * dy2;
+            const j = ((j0 + k) % na + na) % na, dx2 = p.x[j] - b2.x[i], dy2 = p.y[j] - b2.y[i], d2 = dx2 * dx2 + dy2 * dy2;
             if (d2 < bd) {
               bd = d2;
               bj = j;
             }
           }
           if (bj < 0 || bd > 1600) continue;
-          const dx = p.x[bj] - b.x[i], dy = p.y[bj] - b.y[i];
+          const dx = p.x[bj] - b2.x[i], dy = p.y[bj] - b2.y[i];
           if (Math.abs(tx * dx + ty * dy) > 6) continue;
           off[i] = -ty * dx + tx * dy;
         }
@@ -1294,7 +1294,7 @@ var require_pitwall_analysis = __commonJS({
         }
         const out = [];
         apexes.forEach((i, k) => {
-          const P = /* @__PURE__ */ __name((q2) => [b.x[at2(q2)], b.y[at2(q2)]], "P"), p0 = P(i - 8), p1 = P(i), p2 = P(i + 8), cr = (p1[0] - p0[0]) * (p2[1] - p1[1]) - (p1[1] - p0[1]) * (p2[0] - p1[0]);
+          const P2 = /* @__PURE__ */ __name((q2) => [b2.x[at2(q2)], b2.y[at2(q2)]], "P"), p0 = P2(i - 8), p1 = P2(i), p2 = P2(i + 8), cr = (p1[0] - p0[0]) * (p2[1] - p1[1]) - (p1[1] - p0[1]) * (p2[0] - p1[0]);
           if (Math.abs(cr) < 1) return;
           const left = cr > 0;
           let mn = Infinity, seen2 = 0;
@@ -1317,7 +1317,7 @@ var require_pitwall_analysis = __commonJS({
         const stats = /* @__PURE__ */ __name((ts) => {
           ts = ts.filter((t) => t > 0);
           if (ts.length < PACE_MIN) return null;
-          const m = ts.slice().sort((a, b) => a - b)[Math.floor(ts.length / 2)];
+          const m = ts.slice().sort((a, b2) => a - b2)[Math.floor(ts.length / 2)];
           const c = ts.filter((t) => t <= m * 1.03);
           if (c.length < PACE_MIN) return null;
           const avg = c.reduce((a, t) => a + t, 0) / c.length, sd2 = Math.sqrt(c.reduce((a, t) => a + (t - avg) ** 2, 0) / c.length);
@@ -1334,13 +1334,13 @@ var require_pitwall_analysis = __commonJS({
         });
         if (rows.length < 2) return null;
         const lines = [], others = rows.filter((x) => !x.me);
-        const fast = others.slice().sort((a, b) => a.late - b.late)[0];
+        const fast = others.slice().sort((a, b2) => a.late - b2.late)[0];
         if (fast && fast.late <= -0.1) lines.push({ good: false, t: Tx(`P${fast.pos} was ${(-fast.late).toFixed(2)} s a lap faster than you in the second half`, `P${fast.pos} fue ${(-fast.late).toFixed(2)} s por vuelta m\xE1s r\xE1pido que t\xFA en la segunda mitad`, `P${fast.pos} foi ${(-fast.late).toFixed(2)} s por volta mais r\xE1pido que voc\xEA na segunda metade`) });
-        const slow = others.slice().sort((a, b) => b.late - a.late)[0];
+        const slow = others.slice().sort((a, b2) => b2.late - a.late)[0];
         if (slow && slow.late >= 0.1) lines.push({ good: true, t: Tx(`You were ${slow.late.toFixed(2)} s a lap faster than P${slow.pos} in the second half`, `Fuiste ${slow.late.toFixed(2)} s por vuelta m\xE1s r\xE1pido que P${slow.pos} en la segunda mitad`, `Voc\xEA foi ${slow.late.toFixed(2)} s por volta mais r\xE1pido que P${slow.pos} na segunda metade`) });
-        const me2 = rows.find((x) => x.me), fades = others.map((x) => x.fade).sort((a, b) => a - b), fm = fades.length ? fades[Math.floor(fades.length / 2)] : null;
+        const me2 = rows.find((x) => x.me), fades = others.map((x) => x.fade).sort((a, b2) => a - b2), fm = fades.length ? fades[Math.floor(fades.length / 2)] : null;
         if (me2 && fm != null && me2.fade - fm >= 0.15) lines.push({ good: false, t: Tx(`Your pace dropped ${(me2.fade - fm).toFixed(2)} s a lap more than theirs from the first half to the second`, `Tu ritmo cay\xF3 ${(me2.fade - fm).toFixed(2)} s por vuelta m\xE1s que el suyo de la primera mitad a la segunda`, `Seu ritmo caiu ${(me2.fade - fm).toFixed(2)} s por volta mais que o deles da primeira metade para a segunda`) });
-        const sds = others.map((x) => x.sd).sort((a, b) => a - b), sm = sds.length ? sds[Math.floor(sds.length / 2)] : null;
+        const sds = others.map((x) => x.sd).sort((a, b2) => a - b2), sm = sds.length ? sds[Math.floor(sds.length / 2)] : null;
         if (me2 && sm != null && me2.sd - sm >= 0.15) lines.push({ good: false, t: Tx(`Your laps spread ${me2.sd.toFixed(2)} s against ${sm.toFixed(2)} s for the cars around you`, `Tus vueltas var\xEDan ${me2.sd.toFixed(2)} s frente a ${sm.toFixed(2)} s de los coches de tu alrededor`, `Suas voltas variam ${me2.sd.toFixed(2)} s contra ${sm.toFixed(2)} s dos carros ao seu redor`) });
         else if (me2 && sm != null && sm - me2.sd >= 0.1) lines.push({ good: true, t: Tx(`More consistent than the cars around you, ${me2.sd.toFixed(2)} s against ${sm.toFixed(2)} s`, `M\xE1s regular que los coches de tu alrededor, ${me2.sd.toFixed(2)} s frente a ${sm.toFixed(2)} s`, `Mais regular que os carros ao seu redor, ${me2.sd.toFixed(2)} s contra ${sm.toFixed(2)} s`) });
         return { rows, lines };
@@ -1422,15 +1422,15 @@ var require_pitwall_analysis = __commonJS({
       __name(likeOf, "likeOf");
       function likeSteps(lk, Tx) {
         if (!lk) return [];
-        const P = lk.corners.slice(0, 2).map((c) => {
+        const P2 = lk.corners.slice(0, 2).map((c) => {
           const f = c.kind === "apex" ? "speed" : c.kind === "gear" ? "gear" : c.lift ? "early_lift" : "early";
           return { k: "like", id: "like:" + c.kind, kind: c.kind, turns: [c.n], gain: c.gain, t: `T${c.n} \xB7 ` + Tx("From other tracks", "De otros circuitos", "De outras pistas"), what: c.lines.join(" "), cost: Tx(...COST[f]), how: "", marks: [{ d: c.d, k: "a", n: c.n }, { d: c.apex, k: "apex", n: c.n }], spans: [[c.d - 50, c.apex + 150]] };
         });
-        if (lk.oval) P.push({ k: "like", id: "like:oval", kind: "oval", turns: [], gain: lk.oval.gain, t: Tx(...LIKE_OVALS[lk.oval.kind]) + " \xB7 " + Tx("From other tracks", "De otros circuitos", "De outras pistas"), what: lk.oval.lines.join(" "), cost: Tx(...COST.lift), how: "", marks: lk.oval.braked.map((d) => ({ d, k: "apex" })), spans: [] });
-        P.forEach((p) => {
+        if (lk.oval) P2.push({ k: "like", id: "like:oval", kind: "oval", turns: [], gain: lk.oval.gain, t: Tx(...LIKE_OVALS[lk.oval.kind]) + " \xB7 " + Tx("From other tracks", "De otros circuitos", "De outras pistas"), what: lk.oval.lines.join(" "), cost: Tx(...COST.lift), how: "", marks: lk.oval.braked.map((d) => ({ d, k: "apex" })), spans: [] });
+        P2.forEach((p) => {
           p.why = (p.what + " " + p.cost).trim();
         });
-        return P;
+        return P2;
       }
       __name(likeSteps, "likeSteps");
       function notesOf(o, ctx) {
@@ -1534,7 +1534,7 @@ var require_pitwall_analysis = __commonJS({
             )
           });
         });
-        rows.sort((a, b) => b.cost - a.cost);
+        rows.sort((a, b2) => b2.cost - a.cost);
         return { rows, laps: L.length, unit: U.spdU() };
       }
       __name(cornerSpread, "cornerSpread");
@@ -1575,9 +1575,9 @@ var require_pitwall_analysis = __commonJS({
           }, "onset");
           const oL = onset(sl), oR = onset(sr);
           if (oL >= 0 && oR >= 0) c.push({ why: "late", v: (oL - oR) * BIN3, s: (oL - oR) * BIN3 / 10 });
-          const peak = /* @__PURE__ */ __name((s, a, b) => {
+          const peak = /* @__PURE__ */ __name((s, a, b2) => {
             let m = 0;
-            for (let i = a; i <= b; i++) m = Math.max(m, at2(s, i, 3) || 0);
+            for (let i = a; i <= b2; i++) m = Math.max(m, at2(s, i, 3) || 0);
             return m;
           }, "peak");
           if (oL >= 0) {
@@ -1609,7 +1609,7 @@ var require_pitwall_analysis = __commonJS({
             c.push({ why: "fast", v: dv, s: dv / 4 });
           }
         }
-        const top = c.filter((x) => x.s >= 1).sort((a, b) => b.s - a.s)[0];
+        const top = c.filter((x) => x.s >= 1).sort((a, b2) => b2.s - a.s)[0];
         return top ? { ...top, n: num4 } : { why: "line", v: 0, n: num4 };
       }
       __name(offWhy, "offWhy");
@@ -1621,19 +1621,19 @@ var require_pitwall_analysis = __commonJS({
       function ggRaw(l) {
         const s = serOf(l), n = s.length, xy = l && l.xy;
         if (!xy || !Array.isArray(xy.x) || xy.x.length < 20 || n < 20) return null;
-        const N2 = xy.x.length, P = /* @__PURE__ */ __name((i) => {
+        const N2 = xy.x.length, P2 = /* @__PURE__ */ __name((i) => {
           const q2 = Math.max(0, Math.min(N2 - 1, Math.round(i * N2 / n)));
           return [xy.x[q2], xy.y[q2]];
         }, "P");
         const pts = [], idx = [];
         let mLat = 0, mBr = 0, mAc = 0;
         for (let i = 4; i < n - 4; i += 2) {
-          const a = s[i - 2], b = s[i + 2], m = s[i];
-          if (!a || !b || !m) continue;
-          const dt = b[1] - a[1], v = m[0];
+          const a = s[i - 2], b2 = s[i + 2], m = s[i];
+          if (!a || !b2 || !m) continue;
+          const dt = b2[1] - a[1], v = m[0];
           if (!(dt > 0.01 && dt < 5) || !(v > 5)) continue;
-          const lg = (b[0] - a[0]) / dt / 9.81;
-          const p0 = P(i - 4), p1 = P(i), p2 = P(i + 4);
+          const lg = (b2[0] - a[0]) / dt / 9.81;
+          const p0 = P2(i - 4), p1 = P2(i), p2 = P2(i + 4);
           const ax = p1[0] - p0[0], ay = p1[1] - p0[1], bx = p2[0] - p1[0], by = p2[1] - p1[1], cx = p2[0] - p0[0], cy = p2[1] - p0[1];
           const la = Math.hypot(ax, ay), lb = Math.hypot(bx, by), lc = Math.hypot(cx, cy);
           if (!(la > 1 && lb > 1 && lc > 1)) continue;
@@ -1652,10 +1652,10 @@ var require_pitwall_analysis = __commonJS({
       function steerOf(l, ctx) {
         const U = unitsOf(ctx), s = serOf(l), out = [];
         for (let i = 0; i < s.length; i += 2) {
-          const b = s[i];
-          if (!b || !(b[0] > 5) || !isFinite(b[5])) continue;
-          const deg = Math.abs(b[5]) * 180 / Math.PI;
-          if (deg > 3) out.push([Math.round(U.spd(b[0])), Math.round(deg * 10) / 10]);
+          const b2 = s[i];
+          if (!b2 || !(b2[0] > 5) || !isFinite(b2[5])) continue;
+          const deg = Math.abs(b2[5]) * 180 / Math.PI;
+          if (deg > 3) out.push([Math.round(U.spd(b2[0])), Math.round(deg * 10) / 10]);
         }
         return out;
       }
@@ -1670,11 +1670,11 @@ var require_pitwall_analysis = __commonJS({
           });
           return xs.length >= 10 ? xs.sort((x, y) => x - y)[Math.floor(xs.length / 2)] : null;
         }, "per");
-        const a = per(A), b = B ? per(B) : null;
+        const a = per(A), b2 = B ? per(B) : null;
         if (a == null) return null;
-        const out = { a: r1(a), b: b == null ? null : r1(b) };
-        if (b != null && b > 0) {
-          const f = a / b - 1;
+        const out = { a: r1(a), b: b2 == null ? null : r1(b2) };
+        if (b2 != null && b2 > 0) {
+          const f = a / b2 - 1;
           out.text = f >= 0.1 ? Tx(`A needs ${Math.round(f * 100)} % more steering than B for the same grip, so A pushes (understeer)`, `A necesita un ${Math.round(f * 100)} % m\xE1s de volante que B para el mismo agarre, as\xED que A empuja (subviraje)`, `A precisa de ${Math.round(f * 100)} % mais volante que B para a mesma ader\xEAncia, ent\xE3o A empurra (subester\xE7o)`) : f <= -0.1 ? Tx(`A needs ${Math.round(-f * 100)} % less steering than B for the same grip, so the rear moves more (oversteer)`, `A necesita un ${Math.round(-f * 100)} % menos de volante que B para el mismo agarre, as\xED que la trasera se mueve m\xE1s (sobreviraje)`, `A precisa de ${Math.round(-f * 100)} % menos volante que B para a mesma ader\xEAncia, ent\xE3o a traseira se mexe mais (sobrester\xE7o)`) : Tx("A and B need the same steering for the same grip", "A y B necesitan el mismo volante para el mismo agarre", "A e B precisam do mesmo volante para a mesma ader\xEAncia");
         }
         return out;
@@ -1786,2099 +1786,6 @@ var require_pitwall_analysis = __commonJS({
   }
 });
 
-// src/voiceice.js
-var STUN = [{ urls: ["stun:stun.cloudflare.com:3478", "stun:stun.l.google.com:19302"] }];
-var json = /* @__PURE__ */ __name((o) => new Response(JSON.stringify(o), { headers: { "content-type": "application/json", "access-control-allow-origin": "*", "cache-control": "no-store" } }), "json");
-async function voiceIce(env) {
-  if (!env.TURN_KEY_ID || !env.TURN_KEY_TOKEN) return json({ iceServers: STUN });
-  try {
-    const r4 = await fetch(`https://rtc.live.cloudflare.com/v1/turn/keys/${env.TURN_KEY_ID}/credentials/generate-ice-servers`, {
-      method: "POST",
-      headers: { authorization: "Bearer " + env.TURN_KEY_TOKEN, "content-type": "application/json" },
-      body: JSON.stringify({ ttl: 86400 })
-    });
-    const j = await r4.json();
-    const got = Array.isArray(j.iceServers) ? j.iceServers : j.iceServers ? [j.iceServers] : [];
-    return json({ iceServers: got.length ? got : STUN });
-  } catch (e) {
-    return json({ iceServers: STUN });
-  }
-}
-__name(voiceIce, "voiceIce");
-
-// src/sourceslib.js
-var SRC_RE = /^[a-z0-9._-]{1,40}$/;
-var PAGE_RE = /^[a-z0-9/_-]{1,60}$/;
-var SITES = [
-  [/(^|\.)google\.[a-z.]+$/, "google"],
-  [/(^|\.)bing\.com$/, "bing"],
-  [/(^|\.)duckduckgo\.com$/, "duckduckgo"],
-  [/(^|\.)yahoo\.[a-z.]+$/, "yahoo"],
-  [/(^|\.)yandex\.[a-z.]+$/, "yandex"],
-  [/(^|\.)baidu\.com$/, "baidu"],
-  [/(^|\.)ecosia\.org$/, "ecosia"],
-  [/(^|\.)search\.brave\.com$/, "brave"],
-  [/(^|\.)qwant\.com$/, "qwant"],
-  [/(^|\.)(chatgpt\.com|openai\.com)$/, "chatgpt"],
-  [/(^|\.)perplexity\.ai$/, "perplexity"],
-  [/(^|\.)claude\.ai$/, "claude"],
-  [/(^|\.)gemini\.google\.com$/, "gemini"],
-  [/(^|\.)copilot\.microsoft\.com$/, "copilot"],
-  [/(^|\.)(reddit\.com|redd\.it)$/, "reddit"],
-  [/(^|\.)(discord\.com|discordapp\.com|discord\.gg)$/, "discord"],
-  [/(^|\.)(youtube\.com|youtu\.be)$/, "youtube"],
-  [/(^|\.)(facebook\.com|fb\.com|fb\.me)$/, "facebook"],
-  [/(^|\.)instagram\.com$/, "instagram"],
-  [/(^|\.)(x\.com|twitter\.com|t\.co)$/, "x"],
-  [/(^|\.)tiktok\.com$/, "tiktok"],
-  [/(^|\.)twitch\.tv$/, "twitch"],
-  [/(^|\.)(iracing\.com)$/, "iracing"],
-  [/(^|\.)(steamcommunity\.com|steampowered\.com)$/, "steam"],
-  [/(^|\.)(overtake\.gg|racedepartment\.com)$/, "overtake"],
-  [/(^|\.)simhubdash\.com$/, "simhub"],
-  [/(^|\.)github\.com$/, "github"],
-  [/(^|\.)(whatsapp\.com|wa\.me)$/, "whatsapp"],
-  [/(^|\.)(t\.me|telegram\.org)$/, "telegram"],
-  [/(^|\.)linkedin\.com$/, "linkedin"]
-];
-var SRC_KIND = {
-  google: "search",
-  bing: "search",
-  duckduckgo: "search",
-  yahoo: "search",
-  yandex: "search",
-  baidu: "search",
-  ecosia: "search",
-  brave: "search",
-  qwant: "search",
-  chatgpt: "ai",
-  perplexity: "ai",
-  claude: "ai",
-  gemini: "ai",
-  copilot: "ai",
-  reddit: "community",
-  discord: "community",
-  iracing: "community",
-  overtake: "community",
-  steam: "community",
-  simhub: "community",
-  github: "community",
-  youtube: "social",
-  facebook: "social",
-  instagram: "social",
-  x: "social",
-  tiktok: "social",
-  twitch: "social",
-  whatsapp: "social",
-  telegram: "social",
-  linkedin: "social",
-  direct: "direct"
-};
-var kindOf = /* @__PURE__ */ __name((src) => SRC_KIND[src] || (/-app$/.test(src) ? "app" : src === "unknown" ? "unknown" : "other"), "kindOf");
-var SELF = /(^|\.)pitlanehq\.app$|^localhost$|^127\.0\.0\.1$/;
-var cleanSrc = /* @__PURE__ */ __name((s) => String(s == null ? "" : s).toLowerCase().trim().replace(/^www\./, "").replace(/[^a-z0-9._-]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 40), "cleanSrc");
-function siteOf(ref) {
-  let host = "";
-  const s = String(ref == null ? "" : ref).trim();
-  if (!s) return "direct";
-  const app = /^android-app:\/\/([a-z0-9._]+)/i.exec(s);
-  if (app) {
-    const id2 = app[1].toLowerCase();
-    if (id2 === "com.google.android.googlequicksearchbox") return "google";
-    if (id2 === "com.reddit.frontpage") return "reddit";
-    if (id2 === "com.discord") return "discord";
-    if (id2 === "com.google.android.gm") return "gmail";
-    return cleanSrc("app-" + id2.split(".").pop());
-  }
-  try {
-    host = new URL(s).hostname.toLowerCase();
-  } catch {
-    return "direct";
-  }
-  if (!host) return "direct";
-  if (SELF.test(host)) return "";
-  for (const [re, name2] of SITES) if (re.test(host)) return name2;
-  if (/(^|\.)mail\.google\.com$/.test(host)) return "gmail";
-  return cleanSrc(host.replace(/^(m|l|lm|old|new|mobile)\./, "")) || "direct";
-}
-__name(siteOf, "siteOf");
-function pageOf(p) {
-  let s = String(p == null ? "" : p).toLowerCase().split(/[?#]/)[0].replace(/\/+$/, "");
-  if (!s || s === "/" || s === "/index.html") return "landing";
-  if (s === "/app" || s.startsWith("/app/")) return "app";
-  s = s.replace(/^\/+/, "").replace(/[^a-z0-9/_-]+/g, "-").slice(0, 60);
-  return PAGE_RE.test(s) ? s : "other";
-}
-__name(pageOf, "pageOf");
-function visitOf(b) {
-  if (!b || typeof b !== "object") return { src: "direct", page: "landing", campaign: "" };
-  const tag3 = cleanSrc(b.us);
-  const campaign = cleanSrc(b.uc).slice(0, 40);
-  const src = tag3 ? SRC_KIND[tag3] ? tag3 : SITES.some(([re]) => re.test(tag3)) ? siteOf("https://" + tag3 + "/") : tag3 : siteOf(b.ref);
-  return { src: src === "" || SRC_RE.test(src) ? src : "direct", page: pageOf(b.page), campaign };
-}
-__name(visitOf, "visitOf");
-var countryOf = /* @__PURE__ */ __name((cf) => {
-  const c = String(cf && cf.country || "").toUpperCase();
-  return /^[A-Z]{2}$/.test(c) && c !== "T1" ? c : "XX";
-}, "countryOf");
-function appSrc(client) {
-  const k = String(client || "").trim().toLowerCase().split("/")[0];
-  return k === "pc" || k === "desktop" ? "pc-app" : k === "android" || k === "ios" ? k + "-app" : "unknown";
-}
-__name(appSrc, "appSrc");
-var isBot = /* @__PURE__ */ __name((ua) => !ua || /bot|crawl|spider|slurp|preview|headless|lighthouse|facebookexternalhit|embedly|curl|wget|python|httpclient|go-http/i.test(ua), "isBot");
-var SQL_VISIT_ADD = "INSERT INTO visits_days (day, src, country, page, n) VALUES (?1,?2,?3,?4,1) ON CONFLICT(day, src, country, page) DO UPDATE SET n=MIN(visits_days.n+1, 1000000)";
-var SQL_ACCOUNT_SRC = "UPDATE accounts SET src=?2, src_page=?3, country=?4 WHERE id=?1 AND src IS NULL";
-function sourcesOf(visits, prevVisits, signups, prevSignups) {
-  const sum = /* @__PURE__ */ __name((rows, key2) => {
-    const m = /* @__PURE__ */ new Map();
-    for (const r4 of rows) m.set(r4[key2], (m.get(r4[key2]) || 0) + (r4.n || 0));
-    return m;
-  }, "sum");
-  const vSrc = sum(visits, "src"), vCountry = sum(visits, "country"), vPage = sum(visits, "page"), pSrc = sum(prevVisits, "src");
-  const sSrc = /* @__PURE__ */ new Map(), sCountry = /* @__PURE__ */ new Map();
-  for (const a of signups) {
-    const s = a.src || "unknown", c = a.country || "XX";
-    sSrc.set(s, (sSrc.get(s) || 0) + 1);
-    sCountry.set(c, (sCountry.get(c) || 0) + 1);
-  }
-  const pAcc = /* @__PURE__ */ new Map();
-  for (const a of prevSignups) {
-    const s = a.src || "unknown";
-    pAcc.set(s, (pAcc.get(s) || 0) + 1);
-  }
-  const srcs = /* @__PURE__ */ new Set([...vSrc.keys(), ...sSrc.keys()]);
-  const total = /* @__PURE__ */ __name((m) => [...m.values()].reduce((a, b) => a + b, 0), "total");
-  return {
-    visits: total(vSrc),
-    prevVisits: total(pSrc),
-    signups: signups.length,
-    prevSignups: prevSignups.length,
-    bySource: [...srcs].map((src) => ({ src, kind: kindOf(src), visits: vSrc.get(src) || 0, prevVisits: pSrc.get(src) || 0, signups: sSrc.get(src) || 0, prevSignups: pAcc.get(src) || 0 })).sort((a, b) => b.visits + b.signups * 20 - (a.visits + a.signups * 20)).slice(0, 40),
-    byCountry: [.../* @__PURE__ */ new Set([...vCountry.keys(), ...sCountry.keys()])].map((country) => ({ country, visits: vCountry.get(country) || 0, signups: sCountry.get(country) || 0 })).sort((a, b) => b.visits + b.signups * 20 - (a.visits + a.signups * 20)).slice(0, 40),
-    byPage: [...vPage].map(([page4, n]) => ({ page: page4, visits: n })).sort((a, b) => b.visits - a.visits).slice(0, 25)
-  };
-}
-__name(sourcesOf, "sourcesOf");
-var VISIT_JS = `<script>(function(){try{var q=new URLSearchParams(location.search),v={ref:document.referrer,page:location.pathname,us:q.get("utm_source")||q.get("ref")||"",um:q.get("utm_medium")||"",uc:q.get("utm_campaign")||""};if(!/(^|\\.)pitlanehq\\.app$/.test(location.hostname))return;try{if(!localStorage.getItem("pw.src0"))localStorage.setItem("pw.src0",JSON.stringify(v))}catch(e){}if(sessionStorage.getItem("pw.v"))return;sessionStorage.setItem("pw.v","1");var b=JSON.stringify(v);if(navigator.sendBeacon)navigator.sendBeacon("/community/visit",new Blob([b],{type:"text/plain"}));else fetch("/community/visit",{method:"POST",body:b,keepalive:true})}catch(e){}})()<\/script>`;
-
-// src/downloads.js
-var H = { "content-type": "text/html; charset=utf-8", "cache-control": "no-cache", "referrer-policy": "no-referrer", vary: "Accept-Language" };
-var esc = /* @__PURE__ */ __name((s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]), "esc");
-var TYPES = { exe: "application/vnd.microsoft.portable-executable", zip: "application/zip", apk: "application/vnd.android.package-archive", aab: "application/octet-stream", ipa: "application/octet-stream", json: "application/json; charset=utf-8", md: "text/markdown; charset=utf-8" };
-async function downloads(req, env, url) {
-  const p = url.pathname;
-  if (!env.DL) return new Response(JSON.stringify({ error: "downloads are not set up on this server (R2 bucket DL)" }), { status: 404, headers: { "content-type": "application/json" } });
-  if (p.startsWith("/dl/")) {
-    const name2 = decodeURIComponent(p.slice(4));
-    if (!/^[A-Za-z0-9._-]{1,80}$/.test(name2)) return new Response("not found", { status: 404 });
-    const o = await env.DL.get(name2);
-    if (!o) return new Response("not found", { status: 404 });
-    if (name2 === "version.json") return pcVersion(await o.text());
-    const ext = name2.split(".").pop().toLowerCase();
-    const h = new Headers({ "content-type": TYPES[ext] || "application/octet-stream", "cache-control": ext === "json" || ext === "md" ? "no-cache" : "public, max-age=300", "x-content-type-options": "nosniff", "access-control-allow-origin": "*" });
-    if (o.httpEtag) h.set("etag", o.httpEtag);
-    if (!["json", "md"].includes(ext)) h.set("content-disposition", `attachment; filename="${name2}"`);
-    h.set("content-length", String(o.size));
-    return new Response(o.body, { headers: h });
-  }
-  const read = /* @__PURE__ */ __name(async (n) => {
-    const o = await env.DL.get(n);
-    return o ? o.text() : null;
-  }, "read");
-  const json16 = /* @__PURE__ */ __name(async (n) => {
-    try {
-      return JSON.parse(await read(n) || "null");
-    } catch (e) {
-      return null;
-    }
-  }, "json");
-  const es = (req.headers.get("accept-language") || "").toLowerCase().startsWith("es");
-  if (p === "/downloads/" || p === "/changelog/") return Response.redirect("https://pitlanehq.app" + p.slice(0, -1), 301);
-  if (p === "/downloads") {
-    const pc = await json16("version.json") || {}, ph = await json16("phones.json") || {};
-    const t = /* @__PURE__ */ __name((en, s) => es ? s : en, "t");
-    const row = /* @__PURE__ */ __name((title, sub, file) => `<a class="c" href="/dl/${esc(file)}"><b>${esc(title)}</b><span>${esc(sub)}</span></a>`, "row");
-    const body = `<h1>${t("Download Pitlane HQ", "Descargar Pitlane HQ")}</h1><p>${t("Free. One account for the PC, the web and the phone apps.", "Gratis. Una cuenta para el PC, la web y las apps de m\xF3vil.")}</p>
-<h2>Windows ${pc.version ? `<small>v${esc(pc.version)} beta</small>` : ""}</h2><div class="g">
-${row(t("Pitlane HQ for Windows", "Pitlane HQ para Windows"), t("Records your laps and uploads them so you can analyse them", "Graba tus vueltas y las sube para que las analices"), "PitlaneHQ-Setup.exe")}</div>
-<h2>${t("Phones", "M\xF3viles")} ${ph.version ? `<small>v${esc(String(ph.version).replace(/^v/, "").replace(/-?beta$/i, ""))} beta</small>` : ""}</h2><div class="g">
-${ph.apk ? row("Android", t("App (APK). Google Play soon", "App (APK). Pronto en Google Play"), ph.apk) : ""}<div class="c" style="opacity:.7"><b>iPhone</b><span>${t("Coming to the App Store", "Pronto en la App Store")}</span></div></div>
-<p class="n"><a href="/changelog">${t("What changed in each version", "Qu\xE9 cambi\xF3 en cada versi\xF3n")}</a> \xB7 <a href="/">${t("Open the web app", "Abrir la app web")}</a></p>`;
-    return new Response(page(body, { lang: es ? "es" : "en" }), { headers: H });
-  }
-  if (p === "/changelog" || p === "/changelog/phones") {
-    let vs = [];
-    try {
-      vs = (await (await env.ASSETS.fetch(new Request(new URL("/whats-new.json", url.origin)))).json()).versions || [];
-    } catch (e) {
-    }
-    const l = es ? "es" : "en";
-    const body = `<h1>${es ? "Novedades" : "What's new"}</h1>` + vs.map((x) => `<h2 id="${esc(String(x.v).replace(/\./g, ""))}-beta">${esc(x.v)} <small>${esc(x.date || "")}</small></h2><ul>${(x[l] || x.en || []).map((t) => `<li>${esc(t)}</li>`).join("")}</ul>`).join("");
-    return new Response(page(
-      body + `<p class="n"><a href="/downloads">${es ? "Descargas" : "Downloads"}</a> \xB7 <a href="/">${es ? "Abrir la app" : "Open the app"}</a></p>`,
-      { lang: es ? "es" : "en", path: p, title: "What's new in Pitlane HQ \xB7 Changelog", desc: "What changed in each version of Pitlane HQ, the iRacing and Le Mans Ultimate telemetry app for Windows, the web and Android." }
-    ), { headers: H });
-  }
-  return new Response("not found", { status: 404 });
-}
-__name(downloads, "downloads");
-var page = /* @__PURE__ */ __name((body, o = {}) => `<!doctype html><html lang="${o.lang || "en"}"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${o.title || "Download Pitlane HQ \xB7 iRacing and LMU telemetry for Windows"}</title><meta name="description" content="${o.desc || "Download Pitlane HQ Agent for Windows, which records your iRacing and Le Mans Ultimate laps, and the Android app. Free."}"><link rel="canonical" href="https://pitlanehq.app${o.path || "/downloads"}"><meta property="og:image" content="https://pitlanehq.app/og.png"><link rel="icon" href="/favicon.ico" sizes="any"><link rel="icon" href="/logo.svg" type="image/svg+xml">
-<style>body{margin:0;background:#11151b;color:#e7ebf1;font:16px/1.55 system-ui,sans-serif}main{max-width:760px;margin:0 auto;padding:28px 16px 48px}h1{font-size:26px;letter-spacing:.04em;text-transform:uppercase;margin:0 0 6px}h2{font-size:18px;margin:26px 0 10px;letter-spacing:.03em}h2 small{color:#8a97a9;font-weight:600;font-size:12px;margin-left:8px}
-h3{font-size:14px;color:#ffb02e;margin:18px 0 4px}p{color:#a9b4c3;margin:6px 0}ul{padding-left:20px;color:#c9d2de}li{margin:4px 0}code{background:#19202a;padding:1px 5px;border-radius:4px;font-size:13px}a{color:#ffb02e}
-.g{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px}.c{display:grid;gap:3px;padding:14px;border:1px solid #2b3542;border-radius:12px;background:#19202a;text-decoration:none;color:#e7ebf1}.c:hover{border-color:#ffb02e}.c span{color:#8a97a9;font-size:13px}.n{margin-top:26px;font-size:14px}
-.top{display:flex;align-items:center;gap:10px;margin-bottom:18px}.top b{font-size:15px;letter-spacing:.06em}.top img{width:28px;height:28px;border-radius:7px}</style>
-<main><div class="top"><img src="/icon-192.png" alt=""><b>PITLANE HQ</b></div>${body}</main>${VISIT_JS}</html>`, "page");
-var PC_MIN = "0.9.0";
-var vparts = /* @__PURE__ */ __name((v) => String(v || "0").replace(/^v/, "").split("+")[0].split(".").map((x) => parseInt(x, 10) || 0), "vparts");
-function versionLess(a, b) {
-  const x = vparts(a), y = vparts(b);
-  for (let i = 0; i < Math.max(x.length, y.length); i++) if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) < (y[i] || 0);
-  return false;
-}
-__name(versionLess, "versionLess");
-function pcVersion(text2) {
-  let body = text2;
-  try {
-    const v = JSON.parse(text2);
-    if (v && typeof v === "object" && versionLess(v.min, PC_MIN)) body = JSON.stringify({ ...v, min: PC_MIN });
-  } catch (e) {
-  }
-  return new Response(body, { headers: { "content-type": TYPES.json, "cache-control": "no-cache", "x-content-type-options": "nosniff", "access-control-allow-origin": "*" } });
-}
-__name(pcVersion, "pcVersion");
-var buildCache = { at: 0, build: "" };
-async function latestBuild(env) {
-  const now = Date.now();
-  if (now - buildCache.at < 6e4) return buildCache.build;
-  buildCache.at = now;
-  try {
-    const o = env.DL && await env.DL.get("version.json");
-    const v = o ? JSON.parse(await o.text()) : null;
-    buildCache.build = v && typeof v.build === "string" ? v.build : "";
-  } catch (e) {
-    buildCache.build = "";
-  }
-  return buildCache.build;
-}
-__name(latestBuild, "latestBuild");
-
-// src/carfamily.js
-var CAR_FAMILIES = [
-  { key: "sf23", name: "Super Formula SF23", re: /^Super Formula SF23\b/i },
-  { key: "cup-nextgen", name: "NASCAR Cup Series Next Gen", re: /^NASCAR Cup Series Next Gen\b/i },
-  { key: "cup-gen6", name: "NASCAR Cup Series Gen 6", re: /^NASCAR (Cup|Monster Energy Cup) Series (Chevrolet|Ford|Toyota)\b/i },
-  { key: "xfinity", name: "NASCAR Xfinity Series", re: /^NASCAR Xfinity\b/i },
-  { key: "truck", name: "NASCAR Truck Series", re: /^NASCAR (Craftsman |Camping World |Gander (RV & )?Outdoors )?Truck\b/i },
-  { key: "arca", name: "ARCA Menards Series", re: /^ARCA Menards\b/i },
-  { key: "supercars-gen3", name: "Supercars Gen3", re: /^Supercars?\b.*\bGen ?3\b/i },
-  { key: "supercars-gen2", name: "Supercars Gen2", re: /^Supercars? (Ford Mustang GT|Holden ZB Commodore)\b/i },
-  { key: "v8supercars", name: "V8 Supercars", re: /^V8 Supercars?\b/i }
-];
-var famRule = /* @__PURE__ */ __name((name2) => CAR_FAMILIES.find((f) => f.re.test(String(name2 || "").trim())) || null, "famRule");
-var famName = /* @__PURE__ */ __name((game, carId, name2) => {
-  const f = famRule(name2);
-  return f ? f.name : name2;
-}, "famName");
-var cache = /* @__PURE__ */ new Map();
-var TTL = 5 * 6e4;
-async function famId(env, game, carId) {
-  const c = Math.trunc(+carId) || 0, g = game || "iracing";
-  if (!c) return 0;
-  const k = g + ":" + c, hit = cache.get(k);
-  if (hit && Date.now() - hit.at < TTL) return hit.fam;
-  const row = await env.DB.prepare("SELECT fam_id FROM car_families WHERE game=?1 AND car_id=?2").bind(g, c).first().catch(() => null);
-  const fam = row ? row.fam_id : c;
-  cache.set(k, { fam, at: Date.now() });
-  return fam;
-}
-__name(famId, "famId");
-async function famIds(env, game, carId) {
-  const fam = await famId(env, game, carId);
-  if (!fam) return [];
-  const r4 = await env.DB.prepare("SELECT car_id FROM car_families WHERE game=?1 AND fam_id=?2").bind(game || "iracing", fam).all().catch(() => null);
-  const ids = /* @__PURE__ */ new Set([fam, ...(r4 && r4.results || []).map((x) => x.car_id)]);
-  return [...ids];
-}
-__name(famIds, "famIds");
-var famSql = /* @__PURE__ */ __name(async (env, game, carId) => (await famIds(env, game, carId)).map((n) => String(Math.trunc(n) || 0)).join(","), "famSql");
-async function famGroups(env, game) {
-  const r4 = await env.DB.prepare("SELECT car_id, fam_id FROM car_families WHERE game=?1").bind(game || "iracing").all().catch(() => null);
-  const by = /* @__PURE__ */ new Map();
-  for (const x of r4 && r4.results || []) {
-    if (!by.has(x.fam_id)) by.set(x.fam_id, /* @__PURE__ */ new Set([x.fam_id]));
-    by.get(x.fam_id).add(x.car_id);
-  }
-  return by;
-}
-__name(famGroups, "famGroups");
-async function noteCar(env, game, carId, name2) {
-  const c = Math.trunc(+carId) || 0, g = game || "iracing", f = famRule(name2);
-  if (!c || !f || c >= 9e8) return famId(env, g, c);
-  const k = g + ":" + c, hit = cache.get(k);
-  if (hit && Date.now() - hit.at < TTL && hit.known) return hit.fam;
-  const row = await env.DB.prepare("SELECT fam_id FROM car_families WHERE game=?1 AND car_id=?2").bind(g, c).first();
-  if (row) {
-    cache.set(k, { fam: row.fam_id, at: Date.now(), known: true });
-    return row.fam_id;
-  }
-  const head = await env.DB.prepare("SELECT fam_id FROM car_families WHERE game=?1 AND fam=?2 ORDER BY created LIMIT 1").bind(g, f.key).first();
-  const fam = head ? head.fam_id : c;
-  await env.DB.prepare("INSERT OR IGNORE INTO car_families (game, car_id, fam_id, fam, created) VALUES (?1,?2,?3,?4,?5)").bind(g, c, fam, f.key, Date.now()).run();
-  if (fam !== c) await joinCar(env, g, c, fam);
-  cache.set(k, { fam, at: Date.now(), known: true });
-  return fam;
-}
-__name(noteCar, "noteCar");
-async function joinCar(env, game, carId, fam) {
-  await env.DB.batch([
-    env.DB.prepare(`DELETE FROM community_laps WHERE game=?1 AND car_id=?3 AND EXISTS (SELECT 1 FROM community_laps o WHERE o.game=?1 AND o.car_id=?2
-      AND o.user_id=community_laps.user_id AND o.track_id=community_laps.track_id AND o.time<community_laps.time)`).bind(game, carId, fam),
-    env.DB.prepare("UPDATE OR IGNORE community_laps SET car_id=?3 WHERE game=?1 AND car_id=?2").bind(game, carId, fam),
-    env.DB.prepare("DELETE FROM community_laps WHERE game=?1 AND car_id=?2").bind(game, carId),
-    env.DB.prepare("UPDATE OR IGNORE model_laps SET car_id=?3 WHERE game=?1 AND car_id=?2").bind(game, carId, fam),
-    env.DB.prepare("DELETE FROM model_laps WHERE game=?1 AND car_id=?2").bind(game, carId),
-    env.DB.prepare("DELETE FROM model_cache WHERE game=?1 AND car_id IN (?2, ?3)").bind(game, carId, fam),
-    env.DB.prepare("DELETE FROM car_cards WHERE game=?1 AND car_id IN (?2, ?3)").bind(game, carId, fam)
-  ]);
-}
-__name(joinCar, "joinCar");
-
-// src/trackgeo.js
-var TURN_RADIUS = 300;
-var TURN_MIN_M = 20;
-var TURN_GAP_M = 60;
-var SMOOTH = 3;
-function curvature(x, y, step = 5) {
-  const n = Math.min(x.length, y.length), k = new Array(n).fill(0);
-  if (n < 20) return k;
-  const at2 = /* @__PURE__ */ __name((i) => (i % n + n) % n, "at");
-  const head = new Array(n);
-  for (let i = 0; i < n; i++) {
-    const a = at2(i - SMOOTH), b = at2(i + SMOOTH);
-    head[i] = Math.atan2(y[b] - y[a], x[b] - x[a]);
-  }
-  for (let i = 0; i < n; i++) {
-    let d = head[at2(i + 1)] - head[at2(i - 1)];
-    while (d > Math.PI) d -= 2 * Math.PI;
-    while (d < -Math.PI) d += 2 * Math.PI;
-    k[i] = d / (2 * step);
-  }
-  return k;
-}
-__name(curvature, "curvature");
-function cornersOf(x, y, step = 5, want = 0, slows = []) {
-  const n = Math.min(x.length, y.length);
-  if (n < 20) return [];
-  const k = curvature(x, y, step), slow = slowTest(slows, n, step);
-  let cs = want > 0 && want <= 60 ? fitCount(k, n, step, want, slows) : cornersAt(k, n, step, TURN_RADIUS);
-  if (!(want > 0) && slow) cs = addDriven(cs, k, n, step, slows);
-  return cs.map(({ pts, ...c }) => c);
-}
-__name(cornersOf, "cornersOf");
-var SLOW_NEAR_M = 60;
-var slowAt = /* @__PURE__ */ __name((slows, n) => slows.filter((f) => isFinite(f) && f >= 0 && f < 1).map((f) => Math.round(f * n) % n), "slowAt");
-var ringD = /* @__PURE__ */ __name((a, b, n) => {
-  const d = Math.abs(a - b) % n;
-  return Math.min(d, n - d);
-}, "ringD");
-function slowTest(slows, n, step) {
-  const s = Array.isArray(slows) ? slowAt(slows, n) : [];
-  if (!s.length) return null;
-  const near = Math.round(SLOW_NEAR_M / step);
-  return (c) => s.some((i) => ringD(i, c.i, n) <= near || c.from <= i && i <= c.to);
-}
-__name(slowTest, "slowTest");
-function addDriven(cs, k, n, step, slows) {
-  const wide = cornersAt(k, n, step, RELAX[RELAX.length - 1]), near = Math.round(SLOW_NEAR_M / step), out = cs.slice();
-  for (const i of slowAt(slows, n)) {
-    if (out.some((c) => ringD(c.i, i, n) <= near || c.from <= i && i <= c.to)) continue;
-    const w = wide.filter((c) => ringD(c.i, i, n) <= near).sort((a, b) => ringD(a.i, i, n) - ringD(b.i, i, n))[0];
-    if (w && !out.includes(w)) out.push(w);
-  }
-  return order(out);
-}
-__name(addDriven, "addDriven");
-function cornersAt(k, n, step, radius) {
-  const lim = 1 / radius, minPts = Math.max(2, Math.round(TURN_MIN_M / step)), gapPts = Math.round(TURN_GAP_M / step);
-  const runs = [];
-  let start = 0;
-  while (start < n && Math.abs(k[start]) > lim) start++;
-  if (start >= n) return [];
-  for (let c = 0; c < n; c++) {
-    const i = (start + c) % n;
-    const s = Math.abs(k[i]) > lim ? Math.sign(k[i]) : 0;
-    const last = runs[runs.length - 1];
-    if (s && last && last.dir === s && last.open) last.pts.push(i);
-    else if (s) {
-      if (last) last.open = false;
-      runs.push({ dir: s, pts: [i], open: true });
-    } else if (last && last.open) {
-      last.open = false;
-    }
-  }
-  const merged = [];
-  for (const r4 of runs) {
-    const last = merged[merged.length - 1];
-    const gap2 = last ? (r4.pts[0] - last.pts[last.pts.length - 1] + n) % n : 1e9;
-    if (last && last.dir === r4.dir && gap2 <= gapPts) last.pts.push(...r4.pts);
-    else merged.push({ dir: r4.dir, pts: r4.pts.slice() });
-  }
-  return order(merged.filter((r4) => r4.pts.length >= minPts).map((r4) => corner(k, r4.dir, r4.pts)));
-}
-__name(cornersAt, "cornersAt");
-function corner(k, dir, pts) {
-  let apex = pts[0];
-  for (const p of pts) if (Math.abs(k[p]) > Math.abs(k[apex])) apex = p;
-  return { i: apex, from: pts[0], to: pts[pts.length - 1], dir, r: Math.round(1 / Math.max(Math.abs(k[apex]), 1e-6)), pts };
-}
-__name(corner, "corner");
-var order = /* @__PURE__ */ __name((cs) => cs.sort((a, b) => a.i - b.i), "order");
-var MERGE_GAP_M = 100;
-var SPLIT_MIN_M = 30;
-var SPLIT_DIP = 0.6;
-var RELAX = [TURN_RADIUS, 400, 550, 750, 1e3];
-function fitCount(k, n, step, want, slows = []) {
-  let best = [];
-  const slow = slowTest(slows, n, step);
-  for (const radius of RELAX) {
-    let cs = splitTo(cornersAt(k, n, step, radius), k, want, step);
-    if (slow) cs = addDriven(cs, k, n, step, slows);
-    if (cs.length >= want) return reduceTo(cs, want, n, step, k, slow);
-    if (cs.length > best.length) best = cs;
-  }
-  return best;
-}
-__name(fitCount, "fitCount");
-function splitTo(cs, k, want, step) {
-  cs = cs.slice();
-  const minPts = Math.round(SPLIT_MIN_M / step), w = 3;
-  while (cs.length < want) {
-    let pick = null;
-    cs.forEach((c2, ci) => {
-      const a = c2.pts.map((p) => Math.abs(k[p])), m = a.length;
-      if (m < 2 * minPts) return;
-      const peaks = [];
-      for (let j = 0; j < m; j++) {
-        let top = true;
-        for (let d = -w; d <= w && top; d++) if (d && j + d >= 0 && j + d < m && a[j + d] > a[j]) top = false;
-        if (top) peaks.push(j);
-      }
-      peaks.sort((p, q2) => a[q2] - a[p]);
-      const p1 = peaks[0], p2 = peaks.find((p) => Math.abs(p - p1) >= minPts);
-      if (p1 == null || p2 == null) return;
-      const lo = Math.min(p1, p2), hi = Math.max(p1, p2);
-      let dip = lo;
-      for (let j = lo; j <= hi; j++) if (a[j] < a[dip]) dip = j;
-      const ratio = a[dip] / Math.min(a[p1], a[p2]);
-      if (ratio < SPLIT_DIP && (!pick || ratio < pick.ratio)) pick = { ci, dip, ratio };
-    });
-    if (!pick) break;
-    const c = cs[pick.ci];
-    cs.splice(pick.ci, 1, corner(k, c.dir, c.pts.slice(0, pick.dip + 1)), corner(k, c.dir, c.pts.slice(pick.dip + 1)));
-    order(cs);
-  }
-  return cs;
-}
-__name(splitTo, "splitTo");
-function reduceTo(cs, want, n, step, k, slow = null) {
-  cs = order(cs.slice());
-  const gapMax = Math.round(MERGE_GAP_M / step);
-  while (cs.length > want && cs.length > 1) {
-    let pick = -1, best = 1e9;
-    for (let j = 0; j < cs.length; j++) {
-      const a = cs[j], b = cs[(j + 1) % cs.length];
-      if (a === b || a.dir !== b.dir) continue;
-      const gap2 = (b.from - a.to + n) % n;
-      if (gap2 <= gapMax && gap2 < best) {
-        best = gap2;
-        pick = j;
-      }
-    }
-    if (pick >= 0) {
-      const a = cs[pick], j2 = (pick + 1) % cs.length, b = cs[j2];
-      const joined = corner(k, a.dir, a.pts.concat(b.pts));
-      cs = cs.filter((c, j) => j !== pick && j !== j2);
-      cs.push(joined);
-    } else {
-      let g = -1;
-      const pool = slow && cs.some((c) => !slow(c)) ? (c) => !slow(c) : () => true;
-      cs.forEach((c, j) => {
-        if (pool(c) && (g < 0 || c.r > cs[g].r)) g = j;
-      });
-      cs.splice(g, 1);
-    }
-    order(cs);
-  }
-  return cs;
-}
-__name(reduceTo, "reduceTo");
-function turnsFromPath(x, y, want = 0, slows = []) {
-  const n = Math.min(x.length, y.length);
-  return cornersOf(x, y, 5, want, slows).map((c) => Math.round(c.i / n * 1e5) / 1e5);
-}
-__name(turnsFromPath, "turnsFromPath");
-function lineOffsets(ax, ay, bx, by) {
-  const n = Math.min(ax.length, ay.length, bx.length, by.length);
-  if (n < 60) return null;
-  const lat = new Array(n), lon = new Array(n);
-  for (let i = 0; i < n; i++) {
-    const i0 = Math.max(0, i - 2), i1 = Math.min(n - 1, i + 2);
-    let tx = bx[i1] - bx[i0], ty = by[i1] - by[i0];
-    const tm = Math.hypot(tx, ty) || 1;
-    tx /= tm;
-    ty /= tm;
-    const dx = ax[i] - bx[i], dy = ay[i] - by[i];
-    lat[i] = -ty * dx + tx * dy;
-    lon[i] = tx * dx + ty * dy;
-  }
-  const W2 = 80, sm = /* @__PURE__ */ __name((v) => {
-    const pre = [0];
-    v.forEach((x, i) => pre.push(pre[i] + x));
-    return v.map((x, i) => {
-      const lo = Math.max(0, i - W2), hi = Math.min(n - 1, i + W2);
-      return x - (pre[hi + 1] - pre[lo]) / (hi - lo + 1);
-    });
-  }, "sm");
-  const lc = sm(lat), oc = sm(lon), ab = oc.map(Math.abs).sort((p, q2) => p - q2);
-  if (ab[n >> 1] > 6) return null;
-  return lc.map((v, i) => Math.abs(oc[i]) > 20 || Math.abs(v) > 25 ? NaN : v);
-}
-__name(lineOffsets, "lineOffsets");
-function sameFrame(a, b) {
-  if (!a || !b || !!a.g !== !!b.g) return null;
-  if (!a.g || a.g[0] === b.g[0] && a.g[1] === b.g[1]) return b;
-  const dx = (b.g[1] - a.g[1]) * 111320 * Math.cos(a.g[0] * Math.PI / 180), dy = (b.g[0] - a.g[0]) * 110540;
-  return { ...b, x: b.x.map((v) => v + dx), y: b.y.map((v) => v + dy) };
-}
-__name(sameFrame, "sameFrame");
-function insideSign(bx, by, apex) {
-  const n = Math.min(bx.length, by.length);
-  if (apex <= 0 || apex >= n - 1) return 0;
-  const tan = /* @__PURE__ */ __name((i) => {
-    const i0 = Math.max(0, i - 2), i1 = Math.min(n - 1, i + 2), tx = bx[i1] - bx[i0], ty = by[i1] - by[i0], m = Math.hypot(tx, ty) || 1;
-    return [tx / m, ty / m];
-  }, "tan");
-  const t1 = tan(Math.max(0, apex - 8)), t2 = tan(Math.min(n - 1, apex + 8)), cr = t1[0] * t2[1] - t1[1] * t2[0];
-  if (Math.abs(cr) < 0.05) return 0;
-  return cr < 0 ? -1 : 1;
-}
-__name(insideSign, "insideSign");
-
-// src/crypt.js
-var enc = new TextEncoder();
-var dec = new TextDecoder();
-var b64 = /* @__PURE__ */ __name((b) => btoa(String.fromCharCode(...new Uint8Array(b))), "b64");
-var unb64 = /* @__PURE__ */ __name((s) => Uint8Array.from(atob(s), (c) => c.charCodeAt(0)), "unb64");
-var keyCache = null;
-async function dataKey(env) {
-  if (!env.DATA_KEY) return null;
-  if (keyCache && keyCache.src === env.DATA_KEY) return keyCache.key;
-  const raw = await crypto.subtle.digest("SHA-256", enc.encode("trackiq-data-v1:" + env.DATA_KEY));
-  const key2 = await crypto.subtle.importKey("raw", raw, { name: "AES-GCM" }, false, ["encrypt", "decrypt"]);
-  keyCache = { src: env.DATA_KEY, key: key2 };
-  return key2;
-}
-__name(dataKey, "dataKey");
-async function sealData(env, s) {
-  if (s == null) return s;
-  const key2 = await dataKey(env);
-  if (!key2) return s;
-  const iv = crypto.getRandomValues(new Uint8Array(12));
-  const ct = await crypto.subtle.encrypt({ name: "AES-GCM", iv, additionalData: enc.encode("trackiq-data") }, key2, enc.encode(String(s)));
-  const out = new Uint8Array(12 + ct.byteLength);
-  out.set(iv, 0);
-  out.set(new Uint8Array(ct), 12);
-  return "enc:" + b64(out);
-}
-__name(sealData, "sealData");
-async function openData(env, s) {
-  if (typeof s !== "string" || !s.startsWith("enc:")) return s;
-  const key2 = await dataKey(env);
-  if (!key2) throw new Error("DATA_KEY is not set on this server: sealed data cannot be read");
-  const all = unb64(s.slice(4));
-  const pt = await crypto.subtle.decrypt({ name: "AES-GCM", iv: all.subarray(0, 12), additionalData: enc.encode("trackiq-data") }, key2, all.subarray(12));
-  return dec.decode(pt);
-}
-__name(openData, "openData");
-var B32 = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
-function base32(bytes) {
-  let bits = 0, val = 0, out = "";
-  for (const b of bytes) {
-    val = val << 8 | b;
-    bits += 8;
-    while (bits >= 5) {
-      out += B32[val >>> bits - 5 & 31];
-      bits -= 5;
-    }
-  }
-  if (bits > 0) out += B32[val << 5 - bits & 31];
-  return out;
-}
-__name(base32, "base32");
-function unbase32(s) {
-  const clean2 = String(s || "").toUpperCase().replace(/[^A-Z2-7]/g, "");
-  let bits = 0, val = 0;
-  const out = [];
-  for (const c of clean2) {
-    val = val << 5 | B32.indexOf(c);
-    bits += 5;
-    if (bits >= 8) {
-      out.push(val >>> bits - 8 & 255);
-      bits -= 8;
-    }
-  }
-  return new Uint8Array(out);
-}
-__name(unbase32, "unbase32");
-var newTotpSecret = /* @__PURE__ */ __name(() => base32(crypto.getRandomValues(new Uint8Array(20))), "newTotpSecret");
-async function hotp(secret, counter) {
-  const key2 = await crypto.subtle.importKey("raw", unbase32(secret), { name: "HMAC", hash: "SHA-1" }, false, ["sign"]);
-  const msg = new Uint8Array(8);
-  for (let i = 7; i >= 0; i--) {
-    msg[i] = counter & 255;
-    counter = Math.floor(counter / 256);
-  }
-  const h = new Uint8Array(await crypto.subtle.sign("HMAC", key2, msg));
-  const o = h[19] & 15;
-  const code = ((h[o] & 127) << 24 | h[o + 1] << 16 | h[o + 2] << 8 | h[o + 3]) % 1e6;
-  return String(code).padStart(6, "0");
-}
-__name(hotp, "hotp");
-async function totpOK(secret, code) {
-  const c = String(code || "").replace(/\s+/g, "");
-  if (!/^\d{6}$/.test(c)) return false;
-  const now = Math.floor(Date.now() / 3e4);
-  for (const d of [0, -1, 1]) if (await hotp(secret, now + d) === c) return true;
-  return false;
-}
-__name(totpOK, "totpOK");
-var otpauthURL = /* @__PURE__ */ __name((secret, label, issuer = "Pitlane HQ") => `otpauth://totp/${encodeURIComponent(issuer)}:${encodeURIComponent(label)}?secret=${secret}&issuer=${encodeURIComponent(issuer)}&algorithm=SHA1&digits=6&period=30`, "otpauthURL");
-function newRecoveryCodes() {
-  const a = "abcdefghjkmnpqrstuvwxyz23456789";
-  return Array.from({ length: 8 }, () => {
-    const r4 = crypto.getRandomValues(new Uint8Array(8));
-    const s = [...r4].map((x) => a[x % a.length]).join("");
-    return s.slice(0, 4) + "-" + s.slice(4);
-  });
-}
-__name(newRecoveryCodes, "newRecoveryCodes");
-
-// src/trackmaps.js
-var STATE = "trackmaps_rebuild";
-var PER_RUN = 3;
-var PER_TRACK = 6;
-async function turnCount(env, game, trackId) {
-  const r4 = await env.DB.prepare("SELECT nturns FROM track_info WHERE game=?1 AND track_id=?2").bind(game, trackId).first().catch(() => null);
-  return r4 && r4.nturns > 0 ? r4.nturns : 0;
-}
-__name(turnCount, "turnCount");
-async function noteTurnCount(env, game, trackId, track2, nturns) {
-  const n = Number(nturns);
-  if (!trackId || !Number.isInteger(n) || n < 1 || n > 60) return false;
-  const old = await env.DB.prepare("SELECT nturns, track FROM track_info WHERE game=?1 AND track_id=?2").bind(game, trackId).first().catch(() => null);
-  if (old && old.nturns === n && (old.track || "") === (track2 || old.track || "")) return false;
-  await env.DB.prepare(`INSERT INTO track_info (game, track_id, track, nturns, updated) VALUES (?1,?2,?3,?4,?5)
-     ON CONFLICT(game, track_id) DO UPDATE SET nturns=excluded.nturns, track=COALESCE(excluded.track, track_info.track), updated=excluded.updated`).bind(game, trackId, track2 ? String(track2).slice(0, 120) : null, n, Date.now()).run();
-  return true;
-}
-__name(noteTurnCount, "noteTurnCount");
-var LAYOUT_TOL = 0.06;
-function traceLen(tr2) {
-  if (!tr2 || !Array.isArray(tr2.d) || tr2.d.length < 20) return 0;
-  const b = +tr2.bin > 0 ? +tr2.bin : 5;
-  return tr2.d.length * b;
-}
-__name(traceLen, "traceLen");
-function fitsLayout(lapLen, layN) {
-  if (!(lapLen > 0) || !(layN >= 100)) return true;
-  const L = layN * 5;
-  return Math.abs(lapLen - L) / L <= LAYOUT_TOL;
-}
-__name(fitsLayout, "fitsLayout");
-async function layoutN(env, game, trackId) {
-  const r4 = await env.DB.prepare("SELECT n FROM track_maps WHERE game=?1 AND track_id=?2").bind(game, trackId).first().catch(() => null);
-  return r4 && r4.n > 0 ? r4.n : 0;
-}
-__name(layoutN, "layoutN");
-function geoPath(tr2) {
-  if (!tr2 || !Array.isArray(tr2.g) || tr2.g.length !== 2 || !tr2.g.every((v) => typeof v === "number" && isFinite(v))) return null;
-  const x = tr2.x, y = tr2.y;
-  if (!Array.isArray(x) || !Array.isArray(y) || x.length !== y.length || x.length < 100 || x.length > 3e3) return null;
-  const ok = /* @__PURE__ */ __name((v) => typeof v === "number" && isFinite(v) && Math.abs(v) < 3e4, "ok");
-  if (!x.every(ok) || !y.every(ok)) return null;
-  const r1 = /* @__PURE__ */ __name((v) => Math.round(v * 10) / 10, "r1");
-  return { x: x.map(r1), y: y.map(r1), g: tr2.g.map((v) => Math.round(v * 1e5) / 1e5) };
-}
-__name(geoPath, "geoPath");
-async function rebuildTrackMaps(env, { all = false } = {}) {
-  const st = await env.DB.prepare("SELECT v FROM app_state WHERE k=?1").bind(STATE).first().catch(() => null);
-  let state = { done: false, seen: [] };
-  try {
-    if (st && st.v) state = { done: false, seen: [], ...JSON.parse(st.v) };
-  } catch (e) {
-  }
-  if (all || state.done && Date.now() - (state.at || 0) > 864e5) state = { done: false, seen: [] };
-  if (state.done) return { checked: 0, rebuilt: 0, left: 0, done: true };
-  const rows = (await env.DB.prepare("SELECT game, track_id, time FROM track_maps WHERE geo IS NULL").all()).results || [];
-  const seen2 = new Set(state.seen), todo = rows.filter((r4) => !seen2.has(r4.game + ":" + r4.track_id));
-  const now = todo.slice(0, all ? 40 : PER_RUN);
-  let rebuilt = 0;
-  for (const t of now) {
-    seen2.add(t.game + ":" + t.track_id);
-    const laps = (await env.DB.prepare(
-      `SELECT a.trace, a.time FROM sessions s JOIN laps a ON a.session_id=s.id
-       WHERE s.track_id=?1 AND s.game=?2 AND a.valid=1 AND a.trace IS NOT NULL AND (instr(a.trace,'"g":[')>0 OR substr(a.trace,1,4)='enc:')
-         AND COALESCE(s.kind,'') NOT LIKE '%test%' ORDER BY a.time LIMIT ${PER_TRACK}`
-    ).bind(t.track_id, t.game).all().catch(() => ({ results: [] }))).results || [];
-    for (const l of laps) {
-      let path = null;
-      try {
-        path = geoPath(JSON.parse(await openData(env, l.trace)));
-      } catch (e) {
-        path = null;
-      }
-      if (!path) continue;
-      await env.DB.prepare("UPDATE track_maps SET n=?3, pts=?4, time=?5, geo=?6, created=?7 WHERE game=?1 AND track_id=?2 AND geo IS NULL").bind(t.game, t.track_id, path.x.length, JSON.stringify({ x: path.x, y: path.y }), l.time, JSON.stringify(path.g), Date.now()).run();
-      rebuilt++;
-      break;
-    }
-  }
-  const left = todo.length - now.length;
-  state = { done: left <= 0, seen: [...seen2].slice(-500), at: left <= 0 ? Date.now() : 0 };
-  await env.DB.prepare("INSERT INTO app_state (k, v, at) VALUES (?1, ?2, ?3) ON CONFLICT(k) DO UPDATE SET v=excluded.v, at=excluded.at").bind(STATE, JSON.stringify(state), Date.now()).run();
-  return { checked: now.length, rebuilt, left, done: state.done, withoutGeo: rows.length - rebuilt };
-}
-__name(rebuildTrackMaps, "rebuildTrackMaps");
-var EDGE_LAPS = 40;
-var EDGE_MIN = 8;
-var EDGE_PER_RUN = 2;
-var EDGE_AGE = 7 * 864e5;
-var EDGE_Q = 0.03;
-function inFrame(a, b) {
-  if (!a.g || !b.g) return null;
-  if (a.g[0] === b.g[0] && a.g[1] === b.g[1]) return a;
-  const dx = (a.g[1] - b.g[1]) * 111320 * Math.cos(b.g[0] * Math.PI / 180), dy = (a.g[0] - b.g[0]) * 110540;
-  return { x: a.x.map((v) => v + dx), y: a.y.map((v) => v + dy), g: b.g };
-}
-__name(inFrame, "inFrame");
-function lateral(a, b) {
-  const p = inFrame(a, b);
-  if (!p) return null;
-  const na = p.x.length, nb = b.x.length, out = new Array(nb).fill(NaN);
-  if (na < 60 || nb < 60) return null;
-  for (let i = 0; i < nb; i++) {
-    const i0 = (i - 2 + nb) % nb, i1 = (i + 2) % nb;
-    let tx = b.x[i1] - b.x[i0], ty = b.y[i1] - b.y[i0];
-    const tm = Math.hypot(tx, ty) || 1;
-    tx /= tm;
-    ty /= tm;
-    const j0 = Math.round(i * na / nb);
-    let bj = -1, bd = 1e18;
-    for (let k = -30; k <= 30; k++) {
-      const j = ((j0 + k) % na + na) % na, dx2 = p.x[j] - b.x[i], dy2 = p.y[j] - b.y[i], d2 = dx2 * dx2 + dy2 * dy2;
-      if (d2 < bd) {
-        bd = d2;
-        bj = j;
-      }
-    }
-    if (bj < 0 || bd > 40 * 40) continue;
-    const dx = p.x[bj] - b.x[i], dy = p.y[bj] - b.y[i];
-    if (Math.abs(tx * dx + ty * dy) > 6) continue;
-    out[i] = -ty * dx + tx * dy;
-  }
-  return out;
-}
-__name(lateral, "lateral");
-function edgesOf(offs, nb) {
-  const l = new Array(nb).fill(null), r4 = new Array(nb).fill(null);
-  let have = 0;
-  for (let i = 0; i < nb; i++) {
-    const v = offs.map((o) => o[i]).filter((x) => isFinite(x)).sort((a, b) => a - b);
-    if (v.length < EDGE_MIN) continue;
-    const q2 = /* @__PURE__ */ __name((f) => v[Math.min(v.length - 1, Math.max(0, Math.round(f * (v.length - 1))))], "q");
-    l[i] = Math.max(0, q2(1 - EDGE_Q));
-    r4[i] = Math.min(0, q2(EDGE_Q));
-    have++;
-  }
-  if (have < nb * 0.7) return null;
-  const fill2 = /* @__PURE__ */ __name((a) => {
-    for (let i = 0; i < nb; i++) {
-      if (a[i] != null) continue;
-      let lo = i, hi = i;
-      while (a[(lo - 1 + nb) % nb] == null && hi - lo < nb) lo--;
-      while (a[(hi + 1) % nb] == null && hi - lo < nb) hi++;
-      const va = a[(lo - 1 + nb) % nb], vb = a[(hi + 1) % nb];
-      for (let k = lo; k <= hi; k++) a[(k + nb) % nb] = va + (vb - va) * (k - lo + 1) / (hi - lo + 2);
-    }
-    return a.map((_, i) => {
-      let s = 0;
-      for (let k = -2; k <= 2; k++) s += a[(i + k + nb) % nb];
-      return Math.round(s / 5 * 10) / 10;
-    });
-  }, "fill");
-  return { l: fill2(l), r: fill2(r4) };
-}
-__name(edgesOf, "edgesOf");
-async function rebuildEdges(env) {
-  const rows = (await env.DB.prepare(
-    `SELECT m.game, m.track_id, m.n, m.pts, m.geo FROM track_maps m LEFT JOIN track_edges e ON e.game=m.game AND e.track_id=m.track_id
-     WHERE m.geo IS NOT NULL AND (e.updated IS NULL OR e.updated<?1 OR e.n<>m.n) ORDER BY e.updated LIMIT ${EDGE_PER_RUN}`
-  ).bind(Date.now() - EDGE_AGE).all().catch(() => ({ results: [] }))).results || [];
-  let built = 0;
-  for (const t of rows) {
-    let lay = null;
-    try {
-      const q2 = JSON.parse(t.pts);
-      lay = { x: q2.x, y: q2.y, g: JSON.parse(t.geo) };
-    } catch (e2) {
-      lay = null;
-    }
-    if (!lay) continue;
-    const laps = (await env.DB.prepare(
-      `SELECT a.trace FROM sessions s JOIN laps a ON a.session_id=s.id
-       WHERE s.track_id=?1 AND s.game=?2 AND a.valid=1 AND a.trace IS NOT NULL AND (instr(a.trace,'"g":[')>0 OR substr(a.trace,1,4)='enc:')
-       ORDER BY a.id DESC LIMIT ${EDGE_LAPS * 2}`
-    ).bind(t.track_id, t.game).all().catch(() => ({ results: [] }))).results || [];
-    const offs = [];
-    for (const l of laps) {
-      if (offs.length >= EDGE_LAPS) break;
-      let path = null;
-      try {
-        path = geoPath(JSON.parse(await openData(env, l.trace)));
-      } catch (e2) {
-        path = null;
-      }
-      if (!path || !fitsLayout(path.x.length * 5, t.n)) continue;
-      const o = lateral(path, lay);
-      if (o && o.filter((v) => isFinite(v)).length > t.n * 0.8) offs.push(o);
-    }
-    const e = offs.length >= EDGE_MIN ? edgesOf(offs, t.n) : null;
-    await env.DB.prepare(`INSERT INTO track_edges (game, track_id, n, laps, data, updated) VALUES (?1,?2,?3,?4,?5,?6)
-       ON CONFLICT(game, track_id) DO UPDATE SET n=excluded.n, laps=excluded.laps, data=excluded.data, updated=excluded.updated`).bind(t.game, t.track_id, t.n, offs.length, e ? JSON.stringify(e) : "{}", Date.now()).run();
-    if (e) built++;
-  }
-  return { checked: rows.length, built };
-}
-__name(rebuildEdges, "rebuildEdges");
-
-// src/pedals.js
-var BIN = 5;
-var VSTEP = 5;
-var BANDS = 18;
-var MIN_SAMPLES = 8;
-var band = /* @__PURE__ */ __name((v) => Math.max(0, Math.min(BANDS - 1, Math.floor(v / VSTEP))), "band");
-var clamp01 = /* @__PURE__ */ __name((x) => x < 0 ? 0 : x > 1 ? 1 : x, "clamp01");
-var q = /* @__PURE__ */ __name((a, p) => {
-  if (!a.length) return null;
-  const s = [...a].sort((x, y) => x - y);
-  return s[Math.min(s.length - 1, Math.max(0, Math.round(p * (s.length - 1))))];
-}, "q");
-function smooth(v, w) {
-  const n = v.length, out = new Array(n);
-  for (let i = 0; i < n; i++) {
-    let s = 0, k = 0;
-    for (let j = i - w; j <= i + w; j++) if (j >= 0 && j < n) {
-      s += v[j];
-      k++;
-    }
-    out[i] = Math.max(1, s / k);
-  }
-  return out;
-}
-__name(smooth, "smooth");
-function accel(v, span) {
-  const n = v.length, a = new Array(n);
-  for (let i = 0; i < n; i++) {
-    const p = Math.max(0, i - span), r4 = Math.min(n - 1, i + span);
-    a[i] = r4 > p ? (v[r4] * v[r4] - v[p] * v[p]) / (2 * BIN * (r4 - p)) : 0;
-  }
-  return a;
-}
-__name(accel, "accel");
-function fill(arr) {
-  const idx = arr.map((x, i) => x == null ? -1 : i).filter((i) => i >= 0);
-  if (!idx.length) return null;
-  return arr.map((x, i) => {
-    if (x != null) return x;
-    const lo = idx.filter((j) => j < i).pop(), hi = idx.find((j) => j > i);
-    if (lo == null) return arr[hi];
-    if (hi == null) return arr[lo];
-    return arr[lo] + (arr[hi] - arr[lo]) * (i - lo) / (hi - lo);
-  });
-}
-__name(fill, "fill");
-function pedalEnvelope(laps) {
-  const full = Array.from({ length: BANDS }, () => []), coast = Array.from({ length: BANDS }, () => []), brake = Array.from({ length: BANDS }, () => []);
-  for (const bins of laps) {
-    if (!Array.isArray(bins) || bins.length < 60) continue;
-    const v = smooth(bins.map((b2) => +b2[0] || 0), 1), a = accel(v, 2);
-    for (let i = 2; i < bins.length - 2; i++) {
-      const thr = +bins[i][2] || 0, brk = +bins[i][3] || 0, b2 = band(v[i]);
-      let steady = true;
-      for (let j = i - 2; j <= i + 2; j++) if (Math.abs((+bins[j][2] || 0) - thr) > 0.1 || Math.abs(j - i) < 2 && Math.abs((+bins[j][3] || 0) - brk) > 0.15) steady = false;
-      if (!steady) continue;
-      if (thr >= 0.97 && brk < 0.02) full[b2].push(a[i]);
-      else if (thr < 0.03 && brk < 0.02) coast[b2].push(a[i]);
-      else if (brk >= 0.7 && thr < 0.03) brake[b2].push(-a[i] / brk);
-    }
-  }
-  const pick = /* @__PURE__ */ __name((arr, p) => arr.map((s) => s.length >= MIN_SAMPLES ? q(s, p) : null), "pick");
-  const f = fill(pick(full, 0.6)), c = fill(pick(coast, 0.5)), b = fill(pick(brake, 0.8));
-  if (!f || !b) return null;
-  const r22 = /* @__PURE__ */ __name((x) => Math.round(x * 100) / 100, "r2");
-  return { full: f.map(r22), coast: (c || GUESS_COAST).map(r22), brake: b.map(r22) };
-}
-__name(pedalEnvelope, "pedalEnvelope");
-var GUESS_COAST = Array.from({ length: BANDS }, (_, k) => -(0.6 + 5e-4 * (k * VSTEP + VSTEP / 2) ** 2));
-function ownEnvelope(v, a) {
-  const up = Array.from({ length: BANDS }, () => []), dn = Array.from({ length: BANDS }, () => []);
-  for (let i = 0; i < v.length; i++) (a[i] >= 0 ? up : dn)[band(v[i])].push(Math.abs(a[i]));
-  const f = fill(up.map((s) => s.length >= 3 ? q(s, 0.9) : null)) || new Array(BANDS).fill(4);
-  const b = fill(dn.map((s) => s.length >= 3 ? q(s, 0.95) : null)) || new Array(BANDS).fill(10);
-  return { full: f, coast: GUESS_COAST, brake: b.map((x) => Math.max(x, 4)) };
-}
-__name(ownEnvelope, "ownEnvelope");
-function at(env, v) {
-  const x = v / VSTEP - 0.5, i = Math.max(0, Math.min(BANDS - 2, Math.floor(x))), f = Math.max(0, Math.min(1, x - i));
-  return env[i] + (env[i + 1] - env[i]) * f;
-}
-__name(at, "at");
-function estimatePedals(bins, pe, shifts) {
-  if (!Array.isArray(bins) || bins.length < 20) return bins;
-  const raw = bins.map((b) => +b[0] || 0);
-  const v = smooth(raw, 2), a = accel(v, 3), vb = smooth(raw, 1), ab = accel(vb, 2);
-  const env = pe && Array.isArray(pe.full) && pe.full.length === BANDS ? pe : ownEnvelope(v, a);
-  const n = bins.length, thr = new Array(n), brk = new Array(n);
-  for (let i = 0; i < n; i++) {
-    const f = Math.max(0.3, at(env.full, v[i])), c = Math.min(f - 0.2, at(env.coast, v[i])), b = Math.max(2, at(env.brake, v[i]));
-    if (ab[i] < c - 1.5 && a[i] < c - 0.4) {
-      brk[i] = clamp01((c - ab[i]) / (b + c));
-      thr[i] = 0;
-    } else if (a[i] > c + 0.2) {
-      thr[i] = clamp01((a[i] - c) / (f - c));
-      brk[i] = 0;
-    } else {
-      thr[i] = 0;
-      brk[i] = 0;
-    }
-    if (thr[i] > 0.92) thr[i] = 1;
-  }
-  const sm = /* @__PURE__ */ __name((x) => x.map((_, i) => (x[Math.max(0, i - 1)] + x[i] + x[Math.min(n - 1, i + 1)]) / 3), "sm");
-  const T3 = sm(thr), B = brk;
-  const ups = (Array.isArray(shifts) ? shifts : []).filter((s) => Array.isArray(s) && s[1] > 0).sort((x, y) => x[0] - y[0]);
-  return bins.map((x, i) => {
-    let g = +x[4] || 0;
-    if (ups.length) {
-      g = 1;
-      for (const [gear, sp] of ups) if (v[i] > sp) g = gear + 1;
-    }
-    return [x[0], x[1], Math.round(T3[i] * 100) / 100, Math.round(B[i] * 100) / 100, g, x[5] || 0];
-  });
-}
-__name(estimatePedals, "estimatePedals");
-function estimateTrace(tr2, pe, shifts) {
-  if (!tr2 || tr2.src !== "field" || !Array.isArray(tr2.d)) return tr2;
-  const bins = tr2.d.map((x) => [+x[0], +x[5], +x[1] || 0, +x[2] || 0, +x[3] || 0, +x[4] || 0]);
-  const est = estimatePedals(bins, pe, shifts);
-  return { ...tr2, d: tr2.d.map((x, i) => [x[0], est[i][2], est[i][3], est[i][4], x[4], x[5]]), est: 2 };
-}
-__name(estimateTrace, "estimateTrace");
-
-// src/categories.js
-var CATS = ["oval", "sports_car", "formula_car", "dirt_oval", "dirt_road"];
-var LICS = ["R", "D", "C", "B", "A", "P"];
-var MEMO = { stamp: -1, map: { tc: {}, c: {} } };
-async function catMap(env) {
-  const c = await env.DB.prepare("SELECT updated, chunks FROM season_cache WHERE k='current'").first().catch(() => null);
-  if (!c) return MEMO.map;
-  if (MEMO.stamp === c.updated) return MEMO.map;
-  let season = null;
-  try {
-    const r4 = await env.DB.prepare("SELECT data FROM season_chunks WHERE k='current' AND idx<?1 ORDER BY idx").bind(c.chunks).all();
-    season = JSON.parse((r4.results || []).map((x) => x.data).join(""));
-  } catch (e) {
-  }
-  const norm = /* @__PURE__ */ __name((x) => x === "road" ? "sports_car" : x, "norm");
-  const classes = {};
-  for (const k of season && season.classes || []) classes[k.car_class_id] = (k.cars_in_class || []).map((x) => x.car_id);
-  const tc = {}, votes = {};
-  for (const s of season && season.seasons || []) {
-    const cars = (s.car_class_ids || []).flatMap((id2) => classes[id2] || []);
-    for (const w of s.schedules || []) {
-      const cat = norm(w.category);
-      if (!CATS.includes(cat)) continue;
-      const wc = (w.race_week_cars || []).map((x) => x.car_id);
-      const t = w.track && w.track.track_id;
-      for (const car of wc.length ? wc : cars) {
-        if (t) tc[t + ":" + car] = cat;
-        const v = votes[car] = votes[car] || {};
-        v[cat] = (v[cat] || 0) + 1;
-      }
-    }
-  }
-  for (const car of season && season.cars || []) {
-    const cs = (car.categories || []).map(norm).filter((x) => CATS.includes(x));
-    if (cs.length && !votes[car.car_id]) votes[car.car_id] = { [cs[0]]: 1 };
-  }
-  const cm = {};
-  for (const [car, v] of Object.entries(votes)) cm[car] = Object.entries(v).sort((a, b) => b[1] - a[1])[0][0];
-  MEMO = { stamp: c.updated, map: { tc, c: cm } };
-  return MEMO.map;
-}
-__name(catMap, "catMap");
-function guessCat(track2, car) {
-  const t = String(track2 || ""), c = String(car || "");
-  if (/dirt/i.test(t + " " + c) || /sprint ?car|midget|\bpro ?[24]\b|rallycross|stadium truck|\blites?\b/i.test(c))
-    return /rallycross|road|\brx\b/i.test(t) || /rallycross|pro ?[24]\b|\blites?\b|stadium/i.test(c) ? "dirt_road" : "dirt_oval";
-  if (/nascar|cup series|next gen|xfinity|craftsman|\btrucks?\b|\barca\b|late model|modified|legends|street stock|silver crown|stock ?car|super late/i.test(c)) return "oval";
-  if (/\boval\b|superspeedway/i.test(t)) return "oval";
-  if (/p217|lmp|\bgtp\b|\bdpi?\b|prototype|hypercar/i.test(c)) return "sports_car";
-  if (/formula|\bf[1-4]\b|super ?formula|dallara|indy|\bir-?\d+|skip barber|ff1600|pro mazda|\busf\b|lotus (18|49|79)|williams|mercedes-amg w1|tatuus|\bvee\b|\bfr ?[23]\.|renault/i.test(c)) return "formula_car";
-  return "sports_car";
-}
-__name(guessCat, "guessCat");
-function catOf(map, trackId, carId, hint, track2, car) {
-  const h = String(hint || "").toLowerCase().replace(/[^a-z]/g, "");
-  const sure = { oval: "oval", dirtoval: "dirt_oval", dirtroad: "dirt_road", formulacar: "formula_car", formula: "formula_car", sportscar: "sports_car" }[h];
-  const x = map.tc[trackId + ":" + carId] || sure || map.c[carId] || guessCat(track2, car);
-  if (h === "road" && !["sports_car", "formula_car"].includes(x)) {
-    const g = guessCat("", car);
-    return g === "formula_car" ? g : "sports_car";
-  }
-  return x;
-}
-__name(catOf, "catOf");
-var licOf = /* @__PURE__ */ __name((v) => {
-  const s = String(v || "").trim().toUpperCase();
-  if (s.startsWith("WC") || s.startsWith("PRO")) return "P";
-  return LICS.includes(s[0]) ? s[0] : null;
-}, "licOf");
-var groupOf = /* @__PURE__ */ __name((cat) => cat === "oval" || cat === "dirt_oval" || cat === "dirt_road" ? cat : "road", "groupOf");
-async function groupFor(env, game, trackId, carId, hint, track2, car) {
-  if (game && game !== "iracing") return "road";
-  if (!trackId && !carId && !hint && !track2 && !car) return "";
-  return groupOf(catOf(await catMap(env), trackId || 0, carId || 0, hint, track2 || "", car || ""));
-}
-__name(groupFor, "groupFor");
-
-// src/model.js
-var import_pitwall_analysis = __toESM(require_pitwall_analysis(), 1);
-var MODEL_VERSION = 12;
-var CARD_VERSION = 3;
-var SEG_M = 250;
-var MAX_LAPS = 80;
-var LEARN_PER_RUN = 120;
-var LADDER_STEP = 4e-3;
-var LADDER_SPAN = 0.08;
-var LEVEL_BIN = 2;
-var CMP_MIN = 5;
-var CMP_DRIVERS = 3;
-var BAND_MIN = 5;
-var BAND_DRIVERS = 3;
-var IMPROVE_DRIVERS = 30;
-var IMPROVE_MIN = 3;
-var RANK_Q = 41;
-var median = /* @__PURE__ */ __name((a) => {
-  const v = a.filter((x) => x != null && isFinite(x)).sort((x, y) => x - y);
-  if (!v.length) return null;
-  const m = v.length >> 1;
-  return v.length % 2 ? v[m] : (v[m - 1] + v[m]) / 2;
-}, "median");
-var r = /* @__PURE__ */ __name((v, d) => v == null || !isFinite(v) ? 0 : Math.round(v * d) / d, "r");
-var tAt = /* @__PURE__ */ __name((l, i) => {
-  const b = l.bins[Math.min(i, l.bins.length - 1)];
-  return b ? b[1] : null;
-}, "tAt");
-function segTimes(l, M, n) {
-  const out = [], step = n / M;
-  for (let k = 0; k < M; k++) {
-    const s = Math.round(k * step), e = k === M - 1 ? n - 1 : Math.round((k + 1) * step);
-    const a = tAt(l, s), b = k === M - 1 ? l.time : tAt(l, e);
-    out.push(a != null && b != null && b > a ? b - a : null);
-  }
-  return out;
-}
-__name(segTimes, "segTimes");
-function goodLap(time, tr2) {
-  if (!tr2 || !Array.isArray(tr2.d) || tr2.d.length < 60) return null;
-  if (Array.isArray(tr2.f) && tr2.f.includes("traffic")) return null;
-  if (Array.isArray(tr2.f) && tr2.f.includes("wet")) return null;
-  if (tr2.h && typeof tr2.h === "object" && ((+tr2.h.gap || 0) > 40 || (+tr2.h.seen || 1) < 0.9)) return null;
-  const bins = tr2.d.map((x) => [+x[0], +x[5], Math.min(1, Math.max(0, +x[1] || 0)), Math.min(1, Math.max(0, +x[2] || 0)), +x[3], +x[4]]);
-  let back2 = 0, jumps = 0, prev = -1, prevV = null;
-  for (const b of bins) {
-    if (!(b[0] >= 0 && b[0] < 130) || !isFinite(b[1])) return null;
-    if (b[1] < prev - 0.05) back2++;
-    prev = b[1];
-    if (prevV != null && Math.abs(b[0] - prevV) > 10) jumps++;
-    prevV = b[0];
-  }
-  if (back2 > 2 || jumps > 2) return null;
-  if (bins[bins.length - 1][1] > time + 2) return null;
-  return { time, bins, field: tr2.src === "field", rival: tr2.src === "real" };
-}
-__name(goodLap, "goodLap");
-function lapCompound(tr2) {
-  const f = tr2 && Array.isArray(tr2.f) ? tr2.f.find((x) => typeof x === "string" && /^cmp:\d+$/.test(x)) : null;
-  if (f) return +f.slice(4);
-  return tr2 && (tr2.src === "field" || tr2.src === "real") ? -1 : 0;
-}
-__name(lapCompound, "lapCompound");
-var sha = /* @__PURE__ */ __name(async (t) => [...new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(t)))].map((x) => x.toString(16).padStart(2, "0")).join("").slice(0, 24), "sha");
-async function adoptOldSessions(env, game, trackId, carId) {
-  const names = await env.DB.prepare(
-    `SELECT track, car FROM community_laps WHERE track_id=?1 AND car_id=?2 AND game=?3
-     UNION SELECT track, car FROM community_reports WHERE track_id=?1 AND car_id=?2 AND game=?3 LIMIT 20`
-  ).bind(trackId, carId, game).all();
-  const full = [];
-  for (const n of names.results || []) {
-    if (!n.track || !n.car) continue;
-    full.push(n.track);
-    await env.DB.prepare(
-      `UPDATE sessions SET track_id=?1, car_id=?2 WHERE (track_id IS NULL OR car_id IS NULL) AND game=?3 AND car=?4
-         AND ((track||' \xB7 '||COALESCE(track_config,''))=?5 OR (track=?5 AND COALESCE(track_config,'')=''))`
-    ).bind(trackId, carId, game, n.car, n.track).run().catch(() => {
-    });
-  }
-  if (full.length) {
-    const ph = full.map((_, i) => "?" + (i + 4)).join(",");
-    await env.DB.prepare(
-      `UPDATE sessions SET track_id=NULL, car_id=NULL WHERE track_id=?1 AND car_id=?2 AND game=?3 AND COALESCE(track_config,'')<>''
-         AND (track||' \xB7 '||track_config) NOT IN (${ph})`
-    ).bind(trackId, carId, game, ...full).run().catch(() => {
-    });
-  }
-}
-__name(adoptOldSessions, "adoptOldSessions");
-async function learnNewLaps(env, game, trackId, carId) {
-  const known = new Map(((await env.DB.prepare("SELECT k, cmp FROM model_laps WHERE game=?1 AND track_id=?2 AND car_id=?3").bind(game, trackId, carId).all()).results || []).map((x) => [x.k, x.cmp]));
-  const a = await env.DB.prepare(
-    `SELECT s.uploader AS up, a.time, a.trace, s.track_temp AS temp FROM laps a JOIN sessions s ON s.id=a.session_id
-     WHERE s.track_id=?1 AND (s.car_id=?2 OR s.car_id IN (${await famSql(env, game, carId)})) AND s.game=?3 AND s.uploader LIKE 'acct:%' AND a.valid=1 AND a.time>10 AND a.trace IS NOT NULL
-       AND LOWER(COALESCE(s.kind,'')) NOT LIKE '%test%' AND (COALESCE(s.official,1)<>0 OR s.ai=1)
-     ORDER BY a.time LIMIT 3000`
-  ).bind(trackId, carId, game).all();
-  const c = await env.DB.prepare(
-    `SELECT 'acct:'||user_id AS up, time, trace, NULL AS temp FROM community_laps WHERE track_id=?1 AND car_id=?2 AND game=?3 AND trace IS NOT NULL AND (COALESCE(official,1)<>0 OR ai=1) ORDER BY time LIMIT 800`
-  ).bind(trackId, carId, game).all();
-  const out = await env.DB.prepare(
-    `SELECT s.uploader AS up, a.time FROM laps a JOIN sessions s ON s.id=a.session_id
-     WHERE s.track_id=?1 AND (s.car_id=?2 OR s.car_id IN (${await famSql(env, game, carId)})) AND s.game=?3 AND s.uploader LIKE 'acct:%' AND a.valid=1 AND a.time>10 AND a.trace IS NOT NULL
-       AND (LOWER(COALESCE(s.kind,'')) LIKE '%test%' OR (s.official=0 AND COALESCE(s.ai,0)=0)) LIMIT 3000`
-  ).bind(trackId, carId, game).all();
-  for (const x of out.results || []) {
-    const k = await sha(x.up + ":" + x.time.toFixed(3));
-    if (!known.has(k)) continue;
-    known.delete(k);
-    await env.DB.prepare("DELETE FROM model_laps WHERE game=?1 AND track_id=?2 AND car_id=?3 AND k=?4").bind(game, trackId, carId, k).run();
-  }
-  let added = 0, read = 0;
-  const layN = await layoutN(env, game, trackId);
-  for (const x of [...a.results || [], ...c.results || []]) {
-    const k = await sha(x.up + ":" + x.time.toFixed(3));
-    const old = known.has(k);
-    if (old && known.get(k) != null) continue;
-    if (added + read >= LEARN_PER_RUN) return { added, more: true };
-    let tr2 = null;
-    try {
-      tr2 = JSON.parse(await openData(env, x.trace));
-    } catch (e) {
-      tr2 = null;
-    }
-    if (old) {
-      read++;
-      const cmp = tr2 ? lapCompound(tr2) : -1;
-      known.set(k, cmp);
-      await env.DB.prepare("UPDATE model_laps SET cmp=?5 WHERE game=?1 AND track_id=?2 AND car_id=?3 AND k=?4").bind(game, trackId, carId, k, cmp).run();
-      continue;
-    }
-    if (!tr2) {
-      known.set(k, -1);
-      continue;
-    }
-    known.set(k, -1);
-    if (!fitsLayout(traceLen(tr2), layN) || !goodLap(x.time, tr2)) continue;
-    await env.DB.prepare("INSERT INTO model_laps (game, track_id, car_id, k, drv, time, data, created, temp, cmp) VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10) ON CONFLICT DO NOTHING").bind(game, trackId, carId, k, await sha("drv:" + x.up), x.time, await gz(JSON.stringify(tr2.src === "field" || tr2.src === "real" ? { d: tr2.d, src: tr2.src } : tr2.d)), Date.now(), typeof x.temp === "number" && isFinite(x.temp) ? x.temp : null, lapCompound(tr2)).run();
-    added++;
-  }
-  return { added, more: false };
-}
-__name(learnNewLaps, "learnNewLaps");
-async function lapPath(env, game, trackId, carId, time) {
-  const ok = /* @__PURE__ */ __name((tr2) => tr2 && Array.isArray(tr2.x) && Array.isArray(tr2.y) && tr2.x.length > 10 && tr2.x.length === tr2.y.length, "ok");
-  const open = /* @__PURE__ */ __name(async (row) => {
-    if (!row || !row.trace) return null;
-    try {
-      const tr2 = JSON.parse(await openData(env, row.trace));
-      return ok(tr2) ? { x: tr2.x, y: tr2.y, g: Array.isArray(tr2.g) && tr2.g.length === 2 ? tr2.g : null } : null;
-    } catch (e) {
-      return null;
-    }
-  }, "open");
-  const c = await env.DB.prepare("SELECT trace FROM community_laps WHERE track_id=?1 AND car_id=?2 AND game=?3 AND abs(time-?4)<0.0006 AND trace IS NOT NULL LIMIT 3").bind(trackId, carId, game, time).all();
-  for (const row of c.results || []) {
-    const p = await open(row);
-    if (p) return p;
-  }
-  const a = await env.DB.prepare(
-    `SELECT a.trace FROM laps a JOIN sessions s ON s.id=a.session_id
-     WHERE s.track_id=?1 AND (s.car_id=?2 OR s.car_id IN (${await famSql(env, game, carId)})) AND s.game=?3 AND abs(a.time-?4)<0.0006 AND a.trace IS NOT NULL LIMIT 3`
-  ).bind(trackId, carId, game, time).all();
-  for (const row of a.results || []) {
-    const p = await open(row);
-    if (p) return p;
-  }
-  return null;
-}
-__name(lapPath, "lapPath");
-var memTrace = /* @__PURE__ */ __name((v) => Array.isArray(v) ? { d: v } : { d: v.d, src: v.src }, "memTrace");
-function pickLaps(rows) {
-  const drivers = new Set(rows.map((x) => x.drv)).size;
-  const cap3 = drivers < 3 ? 10 : 3;
-  const per = /* @__PURE__ */ new Map();
-  for (const x of rows) {
-    const l = per.get(x.drv) || [];
-    if (l.length >= cap3) continue;
-    l.push(x);
-    per.set(x.drv, l);
-  }
-  const rounds = Array.from({ length: cap3 }, () => []);
-  for (const l of per.values()) l.forEach((x, i) => rounds[i].push(x));
-  const pick = [];
-  for (const rd of rounds) for (const x of rd.sort((p, q2) => p.time - q2.time)) if (pick.length < MAX_LAPS) pick.push(x);
-  return pick;
-}
-__name(pickLaps, "pickLaps");
-function compoundsOf(rows) {
-  const n = /* @__PURE__ */ new Map(), d = /* @__PURE__ */ new Map();
-  for (const x of rows) {
-    if (typeof x.cmp !== "number" || x.cmp < 0) continue;
-    n.set(x.cmp, (n.get(x.cmp) || 0) + 1);
-    if (!d.has(x.cmp)) d.set(x.cmp, /* @__PURE__ */ new Set());
-    d.get(x.cmp).add(x.drv);
-  }
-  if (n.size < 2) return [];
-  return [...n.entries()].filter(([c, k]) => k >= CMP_MIN && d.get(c).size >= CMP_DRIVERS).map(([c]) => c).sort((p, q2) => p - q2);
-}
-__name(compoundsOf, "compoundsOf");
-function bandsOf(rows) {
-  const n = /* @__PURE__ */ new Map(), d = /* @__PURE__ */ new Map();
-  for (const x of rows) {
-    const b = bandOf(x.temp);
-    if (!b) continue;
-    n.set(b, (n.get(b) || 0) + 1);
-    if (!d.has(b)) d.set(b, /* @__PURE__ */ new Set());
-    d.get(b).add(x.drv);
-  }
-  if (n.size < 2) return [];
-  return BANDS2.filter((b) => (n.get(b) || 0) >= BAND_MIN && d.get(b).size >= BAND_DRIVERS);
-}
-__name(bandsOf, "bandsOf");
-function progressPairs(rows) {
-  const per = /* @__PURE__ */ new Map();
-  for (const x of rows) {
-    if (!per.has(x.drv)) per.set(x.drv, []);
-    per.get(x.drv).push(x);
-  }
-  const out = [];
-  for (const l of per.values()) {
-    if (l.length < 2) continue;
-    const best = l.reduce((a, b) => b.time < a.time ? b : a);
-    const older = l.filter((x) => x !== best && (x.created || 0) < (best.created || 0) && x.time > best.time * 1.003);
-    if (!older.length) continue;
-    const first = older.reduce((a, b) => (b.created || 0) < (a.created || 0) ? b : a);
-    out.push([first, best, first.time - best.time]);
-  }
-  return out.sort((a, b) => b[2] - a[2]).slice(0, IMPROVE_DRIVERS).map(([a, b]) => [a, b]);
-}
-__name(progressPairs, "progressPairs");
-function improveSteps(pairs, zones, n) {
-  const out = [];
-  for (const z of zones) {
-    const g = [];
-    for (const { old, now } of pairs) {
-      const a = cornerTime(old.bins, z, Math.min(n, old.bins.length)), b = cornerTime(now.bins, z, Math.min(n, now.bins.length));
-      if (a != null && b != null) g.push(a - b);
-    }
-    if (g.length < IMPROVE_MIN) continue;
-    g.sort((p, q2) => p - q2);
-    const gain = g[g.length >> 1];
-    if (gain > 0.02) out.push({ apex: z.imin * 5, gain: r(gain, 1e3), n: g.length });
-  }
-  return out.sort((a, b) => b.gain - a.gain).slice(0, 3);
-}
-__name(improveSteps, "improveSteps");
-function cornerRanksOf(sorted, zones, n) {
-  const best = [], seen2 = /* @__PURE__ */ new Set();
-  for (const l of sorted) {
-    if (seen2.has(l.up)) continue;
-    seen2.add(l.up);
-    best.push(l);
-  }
-  if (best.length < 3) return [];
-  return zones.map((z) => {
-    const ts = best.map((l) => cornerTime(l.bins, z, n)).filter((t) => t != null && t > 0).sort((a, b) => a - b);
-    if (ts.length < 3) return null;
-    const q2 = ts.length <= RANK_Q ? ts : Array.from({ length: RANK_Q }, (_, k) => ts[Math.round(k * (ts.length - 1) / (RANK_Q - 1))]);
-    return { apex: z.imin * 5, i0: Math.max(0, z.i - 10) * 5, i1: Math.min(n - 1, z.imin + 30) * 5, n: ts.length, q: q2.map((t) => r(t, 1e3)) };
-  }).filter(Boolean);
-}
-__name(cornerRanksOf, "cornerRanksOf");
-async function candidates(env, game, trackId, carId) {
-  await adoptOldSessions(env, game, trackId, carId);
-  const learnt = await learnNewLaps(env, game, trackId, carId);
-  const rows = (await env.DB.prepare("SELECT drv, time, data, temp, cmp, created FROM model_laps WHERE game=?1 AND track_id=?2 AND car_id=?3 ORDER BY time LIMIT 5000").bind(game, trackId, carId).all()).results || [];
-  const drivers = new Set(rows.map((x) => x.drv)).size;
-  const open = /* @__PURE__ */ new Map();
-  let card;
-  const lapsOf = /* @__PURE__ */ __name(async (pick) => {
-    const out = [];
-    for (const x of pick) {
-      if (!open.has(x)) {
-        let g2 = null;
-        try {
-          g2 = goodLap(x.time, memTrace(JSON.parse(await gunz(x.data))));
-        } catch (e) {
-        }
-        if (g2) {
-          g2.up = x.drv;
-          g2.temp = typeof x.temp === "number" ? x.temp : null;
-          g2.cmp = typeof x.cmp === "number" && x.cmp >= 0 ? x.cmp : null;
-          if (g2.field) {
-            if (card === void 0) card = await getCarCard(env, game, carId).catch(() => null);
-            g2.bins = estimatePedals(g2.bins, card && card.pedals, card && card.shifts);
-          }
-        }
-        open.set(x, g2);
-      }
-      const g = open.get(x);
-      if (g) out.push(g);
-    }
-    return out;
-  }, "lapsOf");
-  const laps = await lapsOf(pickLaps(rows));
-  const byCmp = /* @__PURE__ */ new Map();
-  for (const c of compoundsOf(rows)) byCmp.set(c, await lapsOf(pickLaps(rows.filter((x) => x.cmp === c))));
-  const byBand = /* @__PURE__ */ new Map();
-  for (const b of bandsOf(rows)) byBand.set(b, await lapsOf(pickLaps(rows.filter((x) => bandOf(x.temp) === b))));
-  const pairs = [];
-  for (const [o, nw] of progressPairs(rows)) {
-    const [a, b] = await lapsOf([o, nw]);
-    if (a && b && a !== b) pairs.push({ old: a, now: b });
-  }
-  return { laps, byCmp, byBand, pairs, drivers, more: learnt.more, added: learnt.added };
-}
-__name(candidates, "candidates");
-var CORNER_FAST = 0.3;
-var CORNER_MIN = 3;
-var CORNER_MAX = 12;
-var SAME_ZONE = 20;
-function brakeZones(bins, n) {
-  const out = [];
-  for (let i = 1; i < n; i++) {
-    const a = bins[i], b = bins[i - 1];
-    if (!a || !b) continue;
-    if (a[3] > 0.12 && b[3] <= 0.12) {
-      let k = i, vmin = a[0], imin = i;
-      while (k < n && k < i + 120 && bins[k] && !(bins[k][2] > 0.6 && bins[k][3] < 0.05)) {
-        if (bins[k][0] < vmin) {
-          vmin = bins[k][0];
-          imin = k;
-        }
-        k++;
-      }
-      if (a[0] - vmin > 4) out.push({ i, vmin, imin });
-      i = k;
-    }
-  }
-  return out;
-}
-__name(brakeZones, "brakeZones");
-var BANDS2 = ["cold", "mild", "hot"];
-var bandOf = /* @__PURE__ */ __name((t) => typeof t === "number" && isFinite(t) ? t < 25 ? "cold" : t > 35 ? "hot" : "mild" : null, "bandOf");
-var cornerTime = /* @__PURE__ */ __name((bins, z, n) => {
-  const i0 = Math.max(0, z.i - 10), i1 = Math.min(n - 1, z.imin + 30);
-  return bins[i0] && bins[i1] ? bins[i1][1] - bins[i0][1] : null;
-}, "cornerTime");
-var sd = /* @__PURE__ */ __name((a) => {
-  if (a.length < 3) return null;
-  const mu = a.reduce((p, q2) => p + q2, 0) / a.length;
-  return Math.sqrt(a.reduce((p, q2) => p + (q2 - mu) * (q2 - mu), 0) / a.length);
-}, "sd");
-function fastPicks(sorted) {
-  const seen2 = /* @__PURE__ */ new Set(), fast = [];
-  for (const l of sorted) {
-    if (seen2.has(l.up)) continue;
-    seen2.add(l.up);
-    fast.push(l);
-  }
-  return fast.slice(0, Math.min(CORNER_MAX, Math.max(CORNER_MIN, Math.round(fast.length * CORNER_FAST))));
-}
-__name(fastPicks, "fastPicks");
-function cornerCard(sorted, fastest, n) {
-  const pick = fastPicks(sorted);
-  if (pick.length < CORNER_MIN) return [];
-  const zones = pick.map((l) => brakeZones(l.bins, n)), out = [];
-  const range = /* @__PURE__ */ __name((ls, zs, z) => {
-    const bp = [], va = [];
-    zs.forEach((q2, k) => {
-      if (!ls[k]) return;
-      const m = q2.filter((x) => Math.abs(x.i - z.i) <= SAME_ZONE).sort((p, w) => Math.abs(p.i - z.i) - Math.abs(w.i - z.i))[0];
-      if (m) {
-        bp.push(m.i * 5);
-        va.push(m.vmin);
-      }
-    });
-    if (bp.length < CORNER_MIN) return null;
-    bp.sort((a, b) => a - b);
-    va.sort((a, b) => a - b);
-    return { b0: bp[0], b1: bp[bp.length - 1], v0: r(va[0], 10), v1: r(va[va.length - 1], 10), n: bp.length };
-  }, "range");
-  for (const z of brakeZones(fastest.bins, n)) {
-    const all = range(pick.map(() => true), zones, z);
-    if (!all) continue;
-    const c = { d: z.i * 5, apex: z.imin * 5, ...all };
-    const gs = [];
-    zones.forEach((q2, k) => {
-      const l = pick[k];
-      if (l.field) return;
-      const mm = q2.filter((x) => Math.abs(x.i - z.i) <= SAME_ZONE).sort((p, w) => Math.abs(p.i - z.i) - Math.abs(w.i - z.i))[0];
-      const g = mm && l.bins[mm.imin] ? Math.round(l.bins[mm.imin][4] || 0) : 0;
-      if (g >= 1) gs.push(g);
-    });
-    if (gs.length >= 2) {
-      gs.sort((a, b) => a - b);
-      c.g = [gs[Math.floor(gs.length * 0.2)], gs[Math.ceil(gs.length * 0.8) - 1]];
-    }
-    const bands = {};
-    for (const b of BANDS2) {
-      const rg = range(pick.map((l) => bandOf(l.temp) === b), zones, z);
-      if (rg) bands[b] = rg;
-    }
-    if (Object.keys(bands).length) c.bands = bands;
-    const ts = sorted.map((l) => cornerTime(l.bins, z, n)).filter((t) => t != null);
-    const spread = sd(ts);
-    if (spread != null) c.spread = r(spread, 1e3);
-    out.push(c);
-  }
-  return out;
-}
-__name(cornerCard, "cornerCard");
-function levelStep(pick, laps, zones, n) {
-  const G = laps.filter((l) => l !== pick && l.time > pick.time && l.time <= pick.time * 1.03);
-  if (G.length < 2) return [];
-  const out = [];
-  for (const z of zones) {
-    const tp = cornerTime(pick.bins, z, n);
-    if (tp == null) continue;
-    const d = G.map((l) => cornerTime(l.bins, z, n)).filter((t) => t != null).map((t) => t - tp).sort((a, b) => a - b);
-    if (d.length < 2) continue;
-    const gain = d[d.length >> 1];
-    if (gain > 0.03) out.push({ apex: z.imin * 5, gain: r(gain, 1e3) });
-  }
-  return out.sort((a, b) => b.gain - a.gain).slice(0, 3);
-}
-__name(levelStep, "levelStep");
-function lineRanges(record2, recPath2, picks, zones, n) {
-  if (!recPath2 || recPath2.x.length < n) return [];
-  const offs = [];
-  for (const { lap, path } of picks) {
-    if (lap === record2) continue;
-    const p = sameFrame(recPath2, path);
-    if (!p || p.x.length < n) continue;
-    const o = lineOffsets(p.x.slice(0, n), p.y.slice(0, n), recPath2.x.slice(0, n), recPath2.y.slice(0, n));
-    if (o) offs.push(o);
-  }
-  if (offs.length < CORNER_MIN) return [];
-  const out = [];
-  for (const z of zones) {
-    const sg = insideSign(recPath2.x, recPath2.y, z.imin);
-    if (!sg) continue;
-    const at2 = /* @__PURE__ */ __name((i) => {
-      const v = [];
-      for (const o of offs) {
-        let s = 0, c2 = 0;
-        for (let k = Math.max(0, i - 2); k <= Math.min(n - 1, i + 2); k++) if (!isNaN(o[k])) {
-          s += o[k];
-          c2++;
-        }
-        if (c2) v.push(s / c2 * sg);
-      }
-      return v;
-    }, "at");
-    const rg = /* @__PURE__ */ __name((v) => {
-      if (v.length < CORNER_MIN) return null;
-      v.sort((a2, b2) => a2 - b2);
-      return [r(v[0], 10), r(v[v.length - 1], 10)];
-    }, "rg");
-    const a = rg(at2(z.i)), b = rg(at2(z.imin)), c = rg(at2(Math.min(n - 1, z.imin + 16)));
-    if (a && b && c) out.push({ apex: z.imin * 5, in: a, at: b, out: c, n: offs.length });
-  }
-  return out;
-}
-__name(lineRanges, "lineRanges");
-function cleanLaps(raw) {
-  if (raw.length < 2) return raw.slice();
-  const len = median(raw.map((l) => l.bins.length));
-  let laps = raw.filter((l) => Math.abs(l.bins.length - len) <= len * 0.03);
-  laps = laps.filter((l) => {
-    let t = 0, n = 0;
-    for (const b of l.bins) if (b[0] > 0.5) {
-      t += 5 / b[0];
-      n++;
-    }
-    return n >= l.bins.length * 0.9 && Math.abs(t - l.time) / l.time < 0.04;
-  });
-  const tMed = median(laps.map((l) => l.time));
-  laps = laps.filter((l) => l.time <= tMed * 1.12);
-  if (laps.length >= 3) {
-    const nb = Math.min(...laps.map((l) => l.bins.length)), prof = [];
-    for (let i = 0; i < nb; i++) prof.push(median(laps.map((l) => l.bins[i][0])));
-    const M0 = Math.max(8, Math.round(nb * 5 / SEG_M));
-    laps.forEach((l) => {
-      l.seg0 = segTimes(l, M0, nb);
-    });
-    const segMed = [];
-    for (let k = 0; k < M0; k++) segMed.push(median(laps.map((l) => l.seg0[k])));
-    laps = laps.filter((l) => {
-      let dev = 0;
-      for (let i = 0; i < nb; i++) dev += Math.abs(l.bins[i][0] - prof[i]) / Math.max(prof[i], 5);
-      if (dev / nb > 0.2) return false;
-      return l.seg0.every((v, k) => v == null || segMed[k] == null || v >= segMed[k] * 0.88);
-    });
-  }
-  return laps;
-}
-__name(cleanLaps, "cleanLaps");
-async function refsOf(laps, pathFor) {
-  const n = Math.min(...laps.map((l) => l.bins.length)), M = Math.max(8, Math.round(n * 5 / SEG_M));
-  laps.forEach((l) => {
-    l.seg = segTimes(l, M, n);
-  });
-  const fastest = laps.reduce((a, b) => b.time < a.time ? b : a);
-  const record2 = fastest.bins.slice(0, n).map((b) => [r(b[0], 10), r(b[1], 1e3), r(b[2], 100), r(b[3], 100), Math.round(b[4] || 0), r(b[5], 100)]);
-  const compact = /* @__PURE__ */ __name((l) => {
-    const out2 = [];
-    for (let i = 0; i < n; i += LEVEL_BIN) {
-      const b = l.bins[i];
-      out2.push([r(b[0], 10), r(b[1], 1e3), r(b[2], 100), r(b[3], 100), Math.round(b[4] || 0)]);
-    }
-    return out2;
-  }, "compact");
-  const sorted = laps.slice().sort((a, b) => a.time - b.time);
-  const corners = cornerCard(sorted, fastest, n);
-  const zr = brakeZones(fastest.bins, n);
-  const ladder = [];
-  for (let j = 0; j * LADDER_STEP <= LADDER_SPAN; j++) {
-    const t = fastest.time * (1 + j * LADDER_STEP);
-    let g = sorted.filter((l) => l.time < t * 0.997 && l.time > t * 0.97);
-    if (!g.length) g = sorted.filter((l) => l.time < t * 0.997);
-    const real = g.filter((l) => !l.field);
-    const pick = real.length ? real[real.length - 1] : g.length ? g[g.length - 1] : fastest;
-    if (ladder.length && ladder[ladder.length - 1].lap === pick) {
-      ladder[ladder.length - 1].upTo = t;
-      continue;
-    }
-    ladder.push({ lap: pick, upTo: t, time: r(pick.time, 1e3), n: 1, field: !!pick.field, seg: pick.seg.map((x) => r(x, 1e3)), bins: compact(pick) });
-  }
-  const fp = await pathFor(fastest);
-  const out = [];
-  for (const { lap, ...x } of ladder) {
-    const p = await pathFor(lap), e = { ...x, upTo: r(x.upTo, 1e3) };
-    if (p && p.x.length >= n) {
-      e.x = [];
-      e.y = [];
-      for (let i = 0; i < n; i += LEVEL_BIN) {
-        e.x.push(r(p.x[i], 10));
-        e.y.push(r(p.y[i], 10));
-      }
-      if (p.g) e.g = p.g;
-    }
-    e.step = levelStep(lap, laps, zr, n);
-    out.push(e);
-  }
-  if (fp && fp.x.length >= n) {
-    const pp = [];
-    for (const l of fastPicks(sorted)) {
-      const p = await pathFor(l);
-      if (p) pp.push({ lap: l, path: p });
-    }
-    for (const q2 of lineRanges(fastest, fp, pp, zr, n)) {
-      const c = corners.find((x) => x.apex === q2.apex);
-      if (c) c.line = { in: q2.in, at: q2.at, out: q2.out, n: q2.n };
-    }
-  }
-  let lineXY = null;
-  if (!(fp && fp.x.length >= n)) {
-    for (const l of sorted.slice(0, 40)) {
-      const p = await pathFor(l);
-      if (p && p.x.length >= n) {
-        lineXY = { time: r(l.time, 1e3), x: p.x.slice(0, n).map((v) => r(v, 10)), y: p.y.slice(0, n).map((v) => r(v, 10)), ...p.g ? { g: p.g } : {} };
-        break;
-      }
-    }
-  }
-  return {
-    n: laps.length,
-    M,
-    nb: n,
-    pool: laps.length,
-    idealTime: r(fastest.time, 1e3),
-    fastest: r(fastest.time, 1e3),
-    lineXY,
-    ranks: cornerRanksOf(sorted, zr, n),
-    ideal: record2,
-    idealField: !!fastest.field,
-    corners,
-    idealXY: fp && fp.x.length >= n ? { x: fp.x.slice(0, n).map((v) => r(v, 10)), y: fp.y.slice(0, n).map((v) => r(v, 10)), ...fp.g ? { g: fp.g } : {} } : null,
-    ladder: out
-  };
-}
-__name(refsOf, "refsOf");
-async function buildModel(env, game, trackId, carId) {
-  carId = await famId(env, game, carId);
-  const { laps: raw, byCmp: rawCmp, byBand: rawBand, pairs, drivers, more, added } = await candidates(env, game, trackId, carId);
-  if (added) await markCar(env, game, carId);
-  const shared = await env.DB.prepare(
-    `SELECT COUNT(*) AS n, MIN(time) AS best FROM community_laps WHERE track_id=?1 AND car_id=?2 AND game=?3 AND COALESCE(shown,'')<>'model'`
-  ).bind(trackId, carId, game).first();
-  const base2 = { v: MODEL_VERSION, game, trackId, carId, built: Date.now(), more: !!more, drivers, shared: shared && shared.n || 0 };
-  if (raw.length < 2) return { ...base2, n: raw.length };
-  const laps = cleanLaps(raw);
-  const timed = await env.DB.prepare("SELECT user_id, MIN(time) AS t FROM community_laps WHERE track_id=?1 AND car_id=?2 AND game=?3 AND time>10 AND (COALESCE(official,1)<>0 OR ai=1) GROUP BY user_id").bind(trackId, carId, game).all();
-  const byDrv = /* @__PURE__ */ new Map();
-  for (const l of laps) if (!byDrv.has(l.up) || l.time < byDrv.get(l.up)) byDrv.set(l.up, l.time);
-  for (const x of timed.results || []) {
-    const k = await sha("drv:acct:" + x.user_id);
-    if (!byDrv.has(k) || x.t < byDrv.get(k)) byDrv.set(k, x.t);
-  }
-  const times = [...byDrv.values()].sort((a, b) => a - b).map((t) => r(t, 1e3));
-  if (laps.length < 2) return { ...base2, n: laps.length, drivers: Math.max(drivers, times.length), times };
-  const paths = /* @__PURE__ */ new Map();
-  const pathFor = /* @__PURE__ */ __name(async (l) => {
-    if (!paths.has(l)) paths.set(l, await lapPath(env, game, trackId, carId, l.time).catch(() => null));
-    return paths.get(l);
-  }, "pathFor");
-  const model = { ...base2, drivers: Math.max(drivers, times.length), times, ...await refsOf(laps, pathFor) };
-  const cmps = {};
-  for (const [c, ls] of rawCmp) {
-    const cl = cleanLaps(ls);
-    if (cl.length >= 2) cmps[c] = await refsOf(cl, pathFor);
-  }
-  if (Object.keys(cmps).length) model.byCmp = cmps;
-  const bands = {};
-  for (const [b, ls] of rawBand || []) {
-    const cl = cleanLaps(ls);
-    if (cl.length >= 2) {
-      const x = await refsOf(cl, async () => null);
-      bands[b] = { n: x.n, ladder: x.ladder.map(({ x: _x, y: _y, g: _g, ...e }) => e) };
-    }
-  }
-  if (Object.keys(bands).length) model.byBand = bands;
-  const nb = model.nb || 0, fastest = laps.reduce((a, b) => b.time < a.time ? b : a);
-  model.improve = improveSteps(pairs || [], brakeZones(fastest.bins, nb), nb);
-  await usualTips(env, game, trackId, carId, model.corners || []).catch(() => {
-  });
-  return model;
-}
-__name(buildModel, "buildModel");
-var MISTAKE_MIN = 3;
-async function usualTips(env, game, trackId, carId, corners) {
-  if (!corners.length) return;
-  const rows = (await env.DB.prepare("SELECT apex, kind, account FROM coach_tips WHERE game=?1 AND track_id=?2 AND car_id=?3 AND kind<>'' AND lost>0.05 LIMIT 5000").bind(game, trackId, carId).all()).results || [];
-  for (const c of corners) {
-    const by = /* @__PURE__ */ new Map();
-    for (const x of rows) {
-      if (Math.abs(x.apex - c.apex) > 60) continue;
-      if (!by.has(x.kind)) by.set(x.kind, /* @__PURE__ */ new Set());
-      by.get(x.kind).add(x.account);
-    }
-    const top = [...by.entries()].map(([kind, s]) => ({ kind, n: s.size })).sort((a, b) => b.n - a.n)[0];
-    if (top && top.n >= MISTAKE_MIN) c.mistake = top;
-  }
-}
-__name(usualTips, "usualTips");
-function forCompound(md2, cmp, temp) {
-  if (!md2) return md2;
-  const { byCmp, byBand, ...m } = md2;
-  const list = byCmp ? Object.keys(byCmp).map(Number).sort((p, q2) => p - q2) : [];
-  const one = byCmp && Number.isInteger(cmp) && cmp >= 0 ? byCmp[cmp] : null;
-  const b = bandOf(temp), bb = !one && b && byBand ? byBand[b] : null;
-  return { ...m, ...list.length ? { cmps: list } : {}, ...one ? { ...one, cmp } : {}, ...bb ? { ladder: bb.ladder, band: b } : {} };
-}
-__name(forCompound, "forCompound");
-var CARD_TRACKS = 12;
-var CARD_PER_TRACK = 8;
-var CARD_PER_DRIVER = 2;
-var pct = /* @__PURE__ */ __name((a, q2) => {
-  const v = a.filter((x) => x != null && isFinite(x)).sort((x, y) => x - y);
-  return v.length ? v[Math.min(v.length - 1, Math.floor(q2 * (v.length - 1) + 0.5))] : null;
-}, "pct");
-function lapFacts(bins) {
-  const dec2 = [], shifts = {};
-  let vmax = 0, geared = false;
-  for (let i = 0; i + 1 < bins.length; i++) {
-    const a = bins[i], b = bins[i + 1];
-    if (a[0] > vmax) vmax = a[0];
-    if (a[4] >= 1) geared = true;
-    const dt = b[1] - a[1];
-    if (dt > 0.01 && dt < 2 && a[3] >= 0.5 && a[0] > 12 && a[0] > b[0]) dec2.push((a[0] - b[0]) / dt);
-    if (a[4] >= 1 && b[4] === a[4] + 1 && a[0] > 5) shifts[a[4]] = Math.max(shifts[a[4]] || 0, a[0]);
-  }
-  return { brake: dec2.length >= 5 ? pct(dec2, 0.95) : null, shifts: geared ? shifts : null, vmax };
-}
-__name(lapFacts, "lapFacts");
-function cardOf(laps) {
-  const f = laps.map((l) => ({ ...lapFacts(l.bins), trackId: l.trackId, drv: l.drv, field: !!l.field || !!l.rival }));
-  const brakes = f.map((x) => x.brake).filter((x) => x != null);
-  const shifts = [];
-  for (let g = 1; g <= 8; g++) {
-    const v = f.filter((x) => !x.field).map((x) => x.shifts && x.shifts[g]).filter((x) => x > 0);
-    if (v.length >= 3) shifts.push([g, r(pct(v, 0.8), 10)]);
-  }
-  let vmax = 0, vmaxAt = 0;
-  for (const x of f) if (x.vmax > vmax) {
-    vmax = x.vmax;
-    vmaxAt = x.trackId;
-  }
-  return {
-    n: laps.length,
-    tracks: new Set(laps.map((l) => l.trackId)).size,
-    drivers: new Set(laps.map((l) => l.drv)).size,
-    brake: brakes.length >= 3 ? r(pct(brakes, 0.8), 100) : null,
-    shifts,
-    vmax: r(vmax, 10),
-    vmaxAt,
-    // what the car does at every speed with full throttle, no pedal and full brake: rivals' pedals from their speed
-    pedals: pedalEnvelope(laps.filter((l) => !l.field && !l.rival).map((l) => l.bins))
-  };
-}
-__name(cardOf, "cardOf");
-async function buildCarCard(env, game, carId) {
-  carId = await famId(env, game, carId);
-  const all = (await env.DB.prepare("SELECT track_id, drv, time, data FROM model_laps WHERE game=?1 AND car_id=?2 ORDER BY time LIMIT 4000").bind(game, carId).all()).results || [];
-  const byTrack = /* @__PURE__ */ new Map();
-  for (const x of all) {
-    const t = byTrack.get(x.track_id) || [];
-    t.push(x);
-    byTrack.set(x.track_id, t);
-  }
-  const pick = [];
-  for (const [, rows] of [...byTrack.entries()].sort((a, b) => b[1].length - a[1].length).slice(0, CARD_TRACKS)) {
-    const per = /* @__PURE__ */ new Map();
-    let n = 0;
-    for (const x of rows) {
-      const c = per.get(x.drv) || 0;
-      if (c >= CARD_PER_DRIVER || n >= CARD_PER_TRACK) continue;
-      per.set(x.drv, c + 1);
-      n++;
-      pick.push(x);
-    }
-  }
-  const laps = [];
-  for (const x of pick) {
-    try {
-      const g = goodLap(x.time, memTrace(JSON.parse(await gunz(x.data))));
-      if (g) laps.push({ trackId: x.track_id, drv: x.drv, time: x.time, bins: g.bins, field: g.field, rival: g.rival });
-    } catch (e) {
-    }
-  }
-  const card = { v: CARD_VERSION, game, carId, built: Date.now(), ...cardOf(laps) };
-  const info = {};
-  for (const t of new Set(laps.map((l) => l.trackId))) info[t] = await trackInfo(env, game, t, carId).catch(() => ({ g: "road" }));
-  card.cz = cornerSamples(laps, info);
-  card.ot = ovalProfile(laps, info);
-  card.tg = Object.fromEntries(Object.entries(info).map(([t, x]) => [t, x.g || "road"]));
-  if (card.vmaxAt) {
-    const t = await env.DB.prepare("SELECT track, track_config FROM sessions WHERE game=?1 AND track_id=?2 AND track IS NOT NULL LIMIT 1").bind(game, card.vmaxAt).first().catch(() => null) || await env.DB.prepare("SELECT track, NULL AS track_config FROM community_laps WHERE game=?1 AND track_id=?2 LIMIT 1").bind(game, card.vmaxAt).first().catch(() => null);
-    if (t && t.track) card.vmaxTrack = t.track + (t.track_config ? " \xB7 " + t.track_config : "");
-  }
-  await env.DB.prepare(
-    `INSERT INTO car_cards (game, car_id, dirty, built, data) VALUES (?1,?2,0,?3,?4)
-     ON CONFLICT(game, car_id) DO UPDATE SET dirty=0, built=excluded.built, data=excluded.data`
-  ).bind(game, carId, card.built, await gz(JSON.stringify(card))).run();
-  return card;
-}
-__name(buildCarCard, "buildCarCard");
-async function markCar(env, game, carId) {
-  carId = await famId(env, game, carId);
-  if (!carId) return;
-  await env.DB.prepare(
-    `INSERT INTO car_cards (game, car_id, dirty, built, data) VALUES (?1,?2,1,0,NULL)
-     ON CONFLICT(game, car_id) DO UPDATE SET dirty=1`
-  ).bind(game, carId).run().catch(() => {
-  });
-}
-__name(markCar, "markCar");
-async function getCarCard(env, game, carId, full = false) {
-  carId = await famId(env, game, carId);
-  if (!carId) return null;
-  const out = /* @__PURE__ */ __name((c) => {
-    if (!c || !c.n) return null;
-    if (full) return c;
-    const { cz, ot, tg, ...rest } = c;
-    return rest;
-  }, "out");
-  const row = await env.DB.prepare("SELECT dirty, data FROM car_cards WHERE game=?1 AND car_id=?2").bind(game, carId).first().catch(() => null);
-  if (row && row.data && !row.dirty) {
-    const c = JSON.parse(await gunz(row.data));
-    if (c.v === CARD_VERSION) return out(c);
-  }
-  try {
-    return out(await buildCarCard(env, game, carId));
-  } catch (e) {
-    if (row && row.data) return out(JSON.parse(await gunz(row.data)));
-    return null;
-  }
-}
-__name(getCarCard, "getCarCard");
-var LIKE_FAST = 0.03;
-var LIKE_MAX = 900;
-var PWA = /* @__PURE__ */ __name(() => globalThis.PW_ANALYSIS, "PWA");
-async function trackInfo(env, game, trackId, carId) {
-  const s = await env.DB.prepare("SELECT track, track_config, cat FROM sessions WHERE game=?1 AND track_id=?2 AND track IS NOT NULL ORDER BY started DESC LIMIT 1").bind(game, trackId).first().catch(() => null);
-  const cat = game === "iracing" ? catOf(await catMap(env), trackId, carId, s && s.cat, s && s.track || "", "") : "sports_car";
-  return { cat, g: groupOf(cat), track: s && s.track || "", cfg: s && s.track_config || "" };
-}
-__name(trackInfo, "trackInfo");
-var fastOf = /* @__PURE__ */ __name((laps) => {
-  const best = {};
-  for (const l of laps) if (!l.field && !l.rival) best[l.trackId] = Math.min(best[l.trackId] || 1e9, l.time);
-  return laps.filter((l) => !l.field && !l.rival && l.time <= best[l.trackId] * (1 + LIKE_FAST));
-}, "fastOf");
-function cornerSamples(laps, info = {}) {
-  const P = PWA(), out = [];
-  if (!P) return out;
-  for (const l of fastOf(laps)) {
-    const s = l.bins;
-    for (const z of P.ovalZones(s)) {
-      const a = s[z.imin];
-      if (!a) continue;
-      let st = 0, has = false;
-      for (let k = z.i; k <= Math.min(s.length - 1, z.imin + 6); k++) {
-        const v = s[k] && s[k][5];
-        if (typeof v === "number" && isFinite(v)) {
-          if (v !== 0) has = true;
-          st = Math.max(st, Math.abs(v));
-        }
-      }
-      out.push([l.trackId, r(z.v, 10), r(z.vmin, 10), (z.imin - z.i) * 5, Math.round(a[4] || 0), has ? r(st, 1e3) : null, z.lift ? 1 : 0]);
-    }
-  }
-  const per = {};
-  return out.filter((x) => (per[x[0]] = (per[x[0]] || 0) + 1) <= Math.ceil(LIKE_MAX / Math.max(1, new Set(out.map((y) => y[0])).size)));
-}
-__name(cornerSamples, "cornerSamples");
-function ovalProfile(laps, info = {}) {
-  const P = PWA(), by = {};
-  if (!P) return [];
-  for (const l of fastOf(laps)) {
-    const ti = info[l.trackId] || {};
-    if (ti.g !== "oval" && ti.g !== "dirt_oval") continue;
-    const A = { bins: l.bins, maxBin: l.bins.length - 1 };
-    const k = P.ovalOf(A, A, { track: { cat: ti.cat, track: ti.track, track_config: ti.cfg, len: l.bins.length * 5 } });
-    if (!k) continue;
-    let full = 0, c = 0;
-    for (const b of l.bins) {
-      if (!b) continue;
-      c++;
-      if (b[2] > 0.95) full++;
-    }
-    const zs = P.ovalZones(l.bins), o = by[l.trackId] = by[l.trackId] || { t: l.trackId, k, g: ti.g, f: [], lf: [] };
-    if (c) o.f.push(full / c);
-    if (zs.length) o.lf.push(zs.filter((z) => z.lift).length / zs.length);
-  }
-  const med = /* @__PURE__ */ __name((a) => {
-    if (!a.length) return null;
-    const v = a.slice().sort((x, y) => x - y);
-    return v[v.length >> 1];
-  }, "med");
-  return Object.values(by).map((o) => ({ t: o.t, k: o.k, g: o.g, f: r(med(o.f) || 0, 1e3), lf: o.lf.length ? r(med(o.lf), 100) : null, n: o.f.length }));
-}
-__name(ovalProfile, "ovalProfile");
-var KIND_MIN = 3;
-async function buildOvalKinds(env) {
-  const r0 = await env.DB.prepare("SELECT game, car_id, data FROM car_cards WHERE data IS NOT NULL AND game='iracing' LIMIT 3000").all().catch(() => ({ results: [] }));
-  const by = {};
-  for (const x of r0.results || []) {
-    let c = null;
-    try {
-      c = JSON.parse(await gunz(x.data));
-    } catch (e) {
-      continue;
-    }
-    for (const o of c && c.ot || []) {
-      const b = by[o.k] = by[o.k] || { f: [], lf: [], cars: /* @__PURE__ */ new Set() };
-      b.f.push(o.f);
-      if (o.lf != null) b.lf.push(o.lf);
-      b.cars.add(x.car_id);
-    }
-  }
-  const q2 = /* @__PURE__ */ __name((a, p) => {
-    const v = a.slice().sort((x, y) => x - y);
-    return v.length ? v[Math.min(v.length - 1, Math.floor(p * (v.length - 1) + 0.5))] : null;
-  }, "q");
-  const kinds = {};
-  for (const [k, b] of Object.entries(by)) if (b.f.length >= KIND_MIN && b.cars.size >= 2) kinds[k] = { f: [q2(b.f, 0.25), q2(b.f, 0.5), q2(b.f, 0.75)], lf: b.lf.length >= KIND_MIN ? q2(b.lf, 0.5) : null, n: b.f.length, cars: b.cars.size };
-  await env.DB.prepare("INSERT INTO app_state (k, v, at) VALUES ('coach_ovals', ?1, ?2) ON CONFLICT(k) DO UPDATE SET v=excluded.v, at=excluded.at").bind(JSON.stringify(kinds), Date.now()).run();
-  return kinds;
-}
-__name(buildOvalKinds, "buildOvalKinds");
-async function likeFor(env, game, trackId, carId, grp) {
-  const card = await getCarCard(env, game, carId, true).catch(() => null);
-  const dirt = /^dirt/.test(grp || ""), same6 = /* @__PURE__ */ __name((g) => !grp || /^dirt/.test(g || "road") === dirt, "same");
-  const ot = (card && card.ot || []).filter((o) => o.t !== trackId && same6(o.g));
-  const tg = card && card.tg || {};
-  const cz = (card && card.cz || []).filter((x) => x[0] !== trackId && same6(tg[x[0]]));
-  let kinds = {};
-  if (game === "iracing") {
-    const a = await env.DB.prepare("SELECT v FROM app_state WHERE k='coach_ovals'").first().catch(() => null);
-    try {
-      kinds = a && a.v ? JSON.parse(a.v) : {};
-    } catch (e) {
-    }
-  }
-  return { v: 1, carId: card ? card.carId : carId, tracks: new Set(cz.map((x) => x[0])).size, cz, ot, kinds, shifts: card && card.shifts || [] };
-}
-__name(likeFor, "likeFor");
-var PSEUDO_MIN = 9e8;
-var normName = /* @__PURE__ */ __name((v) => String(v || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, ""), "normName");
-async function pseudoId(kind, game, name2) {
-  const b = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(kind + "|" + game + "|" + normName(name2)));
-  const n = new DataView(b).getUint32(0);
-  return PSEUDO_MIN + n % 99999999;
-}
-__name(pseudoId, "pseudoId");
-async function reconcileIds(env, game, track2, trackConfig, car, trackId, carId) {
-  if (!trackId || !carId || trackId >= PSEUDO_MIN || carId >= PSEUDO_MIN) return;
-  const full = track2 + (trackConfig ? " \xB7 " + trackConfig : "");
-  const pt = await pseudoId("t", game, full), pc = await pseudoId("c", game, car);
-  const hit = await env.DB.prepare("SELECT 1 FROM sessions WHERE game=?1 AND (track_id=?2 OR car_id=?3) LIMIT 1").bind(game, pt, pc).first() || await env.DB.prepare("SELECT 1 FROM community_laps WHERE game=?1 AND (track_id=?2 OR car_id=?3) LIMIT 1").bind(game, pt, pc).first() || await env.DB.prepare("SELECT 1 FROM community_reports WHERE game=?1 AND (track_id=?2 OR car_id=?3) LIMIT 1").bind(game, pt, pc).first();
-  if (!hit) return;
-  const fix3 = /* @__PURE__ */ __name((t) => [
-    env.DB.prepare(`UPDATE OR IGNORE ${t} SET track_id=CASE WHEN track_id=?1 THEN ?2 ELSE track_id END, car_id=CASE WHEN car_id=?3 THEN ?4 ELSE car_id END WHERE game=?5 AND (track_id=?1 OR car_id=?3)`).bind(pt, trackId, pc, carId, game),
-    env.DB.prepare(`DELETE FROM ${t} WHERE game=?1 AND (track_id=?2 OR car_id=?3)`).bind(game, pt, pc)
-    // a row the real combo already had wins
-  ], "fix");
-  await env.DB.batch([
-    env.DB.prepare("UPDATE sessions SET track_id=CASE WHEN track_id=?1 THEN ?2 ELSE track_id END, car_id=CASE WHEN car_id=?3 THEN ?4 ELSE car_id END WHERE game=?5 AND (track_id=?1 OR car_id=?3)").bind(pt, trackId, pc, carId, game),
-    ...fix3("community_laps"),
-    ...fix3("community_reports"),
-    ...fix3("model_laps"),
-    env.DB.prepare("UPDATE OR IGNORE car_cards SET car_id=?2, dirty=1 WHERE game=?3 AND car_id=?1").bind(pc, carId, game),
-    env.DB.prepare("DELETE FROM car_cards WHERE game=?2 AND car_id=?1").bind(pc, game),
-    env.DB.prepare("DELETE FROM model_cache WHERE game=?1 AND (track_id=?2 OR car_id=?3)").bind(game, pt, pc)
-  ]);
-  await markModel(env, game, trackId, carId);
-}
-__name(reconcileIds, "reconcileIds");
-var gz = /* @__PURE__ */ __name(async (s) => new Uint8Array(await new Response(new Blob([s]).stream().pipeThrough(new CompressionStream("gzip"))).arrayBuffer()), "gz");
-var gunz = /* @__PURE__ */ __name(async (b) => await new Response(new Blob([b instanceof ArrayBuffer || ArrayBuffer.isView(b) ? b : new Uint8Array(b)]).stream().pipeThrough(new DecompressionStream("gzip"))).text(), "gunz");
-async function moveDriver(env, fromUp, toUp, game) {
-  const from = await sha("drv:" + fromUp), to = await sha("drv:" + toUp);
-  const rows = (await env.DB.prepare("SELECT game, track_id, car_id, k, time FROM model_laps WHERE drv=?1" + (game ? " AND game=?2" : "")).bind(...game ? [from, game] : [from]).all()).results || [];
-  for (const r4 of rows) {
-    await env.DB.prepare("UPDATE OR IGNORE model_laps SET drv=?5, k=?6 WHERE game=?1 AND track_id=?2 AND car_id=?3 AND k=?4").bind(r4.game, r4.track_id, r4.car_id, r4.k, to, await sha(toUp + ":" + r4.time.toFixed(3))).run();
-  }
-  await env.DB.prepare("DELETE FROM model_laps WHERE drv=?1" + (game ? " AND game=?2" : "")).bind(...game ? [from, game] : [from]).run();
-  return rows;
-}
-__name(moveDriver, "moveDriver");
-async function moveDriverBack(env, rows, fromUp, toUp) {
-  const from = await sha("drv:" + fromUp), to = await sha("drv:" + toUp);
-  for (const x of rows || []) {
-    if (!x || typeof x.time !== "number") continue;
-    await env.DB.prepare("UPDATE OR IGNORE model_laps SET drv=?5, k=?6 WHERE game=?1 AND track_id=?2 AND car_id=?3 AND k=?4 AND drv=?7").bind(x.game, x.track_id, x.car_id, await sha(fromUp + ":" + x.time.toFixed(3)), to, await sha(toUp + ":" + x.time.toFixed(3)), from).run();
-  }
-}
-__name(moveDriverBack, "moveDriverBack");
-async function forgetLap(env, game, trackId, carId, uploader, time) {
-  carId = await famId(env, game, carId);
-  if (!trackId || !carId) return;
-  await env.DB.prepare("DELETE FROM model_laps WHERE game=?1 AND track_id=?2 AND car_id=?3 AND k=?4").bind(game, trackId, carId, await sha(uploader + ":" + Number(time).toFixed(3))).run();
-  await markModel(env, game, trackId, carId);
-}
-__name(forgetLap, "forgetLap");
-async function markModel(env, game, trackId, carId) {
-  carId = await famId(env, game, carId);
-  if (!trackId || !carId) return;
-  await env.DB.prepare(
-    `INSERT INTO model_cache (game, track_id, car_id, dirty, built, data) VALUES (?1,?2,?3,1,0,NULL)
-     ON CONFLICT(game, track_id, car_id) DO UPDATE SET dirty=1`
-  ).bind(game, trackId, carId).run().catch(() => {
-  });
-  await markCar(env, game, carId);
-}
-__name(markModel, "markModel");
-async function rebuild(env, game, trackId, carId) {
-  const m = await buildModel(env, game, trackId, carId);
-  await env.DB.prepare(
-    `INSERT INTO model_cache (game, track_id, car_id, dirty, built, data) VALUES (?1,?2,?3,?6,?4,?5)
-     ON CONFLICT(game, track_id, car_id) DO UPDATE SET dirty=excluded.dirty, built=excluded.built, data=excluded.data`
-  ).bind(game, trackId, carId, m.built, await gz(JSON.stringify(m)), m.more ? 1 : 0).run();
-  return m;
-}
-__name(rebuild, "rebuild");
-async function slowsOf(env, game, trackId) {
-  const rows = (await env.DB.prepare("SELECT data FROM model_cache WHERE game=?1 AND track_id=?2 AND data IS NOT NULL ORDER BY built DESC LIMIT 4").bind(game, trackId).all().catch(() => ({ results: [] }))).results || [];
-  const out = [];
-  for (const row of rows) {
-    try {
-      const m = JSON.parse(await gunz(row.data)), L = (m.nb || 0) * 5;
-      if (!(L > 500)) continue;
-      for (const c of m.corners || []) if ((c.n || 0) >= 3 && c.apex > 0 && c.apex < L) out.push(Math.round(c.apex / L * 1e4) / 1e4);
-    } catch (e) {
-    }
-  }
-  return out;
-}
-__name(slowsOf, "slowsOf");
-async function getModel(env, game, trackId, carId) {
-  carId = await famId(env, game, carId);
-  const row = await env.DB.prepare("SELECT dirty, built, data FROM model_cache WHERE game=?1 AND track_id=?2 AND car_id=?3").bind(game, trackId, carId).first();
-  if (row && row.data && !row.dirty) {
-    const m = JSON.parse(await gunz(row.data));
-    if (m.v === MODEL_VERSION) return m;
-  }
-  try {
-    return await rebuild(env, game, trackId, carId);
-  } catch (e) {
-    if (row && row.data) return JSON.parse(await gunz(row.data));
-    throw e;
-  }
-}
-__name(getModel, "getModel");
-async function rebuildDirty(env, { daily = false } = {}) {
-  if (daily) await env.DB.prepare(
-    `INSERT INTO model_cache (game, track_id, car_id, dirty, built, data)
-     SELECT DISTINCT game, track_id, car_id, 1, 0, NULL FROM community_laps WHERE track_id>0 AND car_id>0
-     UNION SELECT DISTINCT game, track_id, car_id, 1, 0, NULL FROM sessions WHERE track_id>0 AND car_id>0 AND uploader LIKE 'acct:%'
-     ON CONFLICT DO NOTHING`
-  ).run().catch(() => {
-  });
-  const r4 = await env.DB.prepare("SELECT game, track_id, car_id FROM model_cache WHERE dirty=1 ORDER BY built LIMIT 25").all();
-  for (const x of r4.results || []) {
-    try {
-      await rebuild(env, x.game, x.track_id, x.car_id);
-    } catch (e) {
-    }
-  }
-  if (daily) await env.DB.prepare("INSERT INTO car_cards (game, car_id, dirty, built, data) SELECT DISTINCT game, car_id, 1, 0, NULL FROM model_laps WHERE car_id>0 ON CONFLICT DO NOTHING").run().catch(() => {
-  });
-  const c = await env.DB.prepare("SELECT game, car_id FROM car_cards WHERE dirty=1 ORDER BY built LIMIT 10").all().catch(() => ({ results: [] }));
-  for (const x of c.results || []) {
-    try {
-      await buildCarCard(env, x.game, x.car_id);
-    } catch (e) {
-    }
-    await env.DB.prepare("UPDATE car_cards SET dirty=0, built=?3 WHERE game=?1 AND car_id=?2 AND dirty=1").bind(x.game, x.car_id, Date.now()).run().catch(() => {
-    });
-  }
-}
-__name(rebuildDirty, "rebuildDirty");
-
 // src/supportlib.js
 var SUPPORT_MAX = 4e3;
 var SUPPORT_PER_DAY = 20;
@@ -3895,12 +1802,12 @@ function cleanText(t) {
   return { text: text2 };
 }
 __name(cleanText, "cleanText");
-function cleanSupport(b) {
-  if (!b || typeof b !== "object") return { error: "missing body" };
-  const t = cleanText(b.text);
+function cleanSupport(b2) {
+  if (!b2 || typeof b2 !== "object") return { error: "missing body" };
+  const t = cleanText(b2.text);
   if (t.error) return t;
-  const device = String(b.device || "").toLowerCase();
-  return { text: t.text, device: DEVICES.includes(device) ? device : "", v: cleanV(b.v), view: String(b.view || "").replace(/[^a-z0-9_.:-]/gi, "").slice(0, 40), lang: cleanLang(b.lang) };
+  const device = String(b2.device || "").toLowerCase();
+  return { text: t.text, device: DEVICES.includes(device) ? device : "", v: cleanV(b2.v), view: String(b2.view || "").replace(/[^a-z0-9_.:-]/gi, "").slice(0, 40), lang: cleanLang(b2.lang) };
 }
 __name(cleanSupport, "cleanSupport");
 var SQL_MSG_ADD = "INSERT INTO support_msgs (id, account_id, from_support, text, created, rating, device, v, view, kind, style, lang) VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12)";
@@ -3961,8 +1868,8 @@ function chatMail(f) {
   };
 }
 __name(chatMail, "chatMail");
-var json2 = /* @__PURE__ */ __name((o, s = 200) => new Response(JSON.stringify(o), { status: s, headers: { "content-type": "application/json", "cache-control": "no-store" } }), "json");
-var err = /* @__PURE__ */ __name((m, s) => json2({ error: m }, s), "err");
+var json = /* @__PURE__ */ __name((o, s = 200) => new Response(JSON.stringify(o), { status: s, headers: { "content-type": "application/json", "cache-control": "no-store" } }), "json");
+var err = /* @__PURE__ */ __name((m, s) => json({ error: m }, s), "err");
 var driverMessage = /* @__PURE__ */ __name((env, accId, id2, now, m) => [
   env.DB.prepare(SQL_MSG_ADD).bind(id2, accId, 0, m.text, now, m.rating || null, m.device || "", m.v || "", m.view || "", m.kind || "chat", m.style || null, m.lang || null),
   env.DB.prepare(SQL_THREAD_DRIVER).bind(accId, now, m.text)
@@ -3975,13 +1882,13 @@ async function handleSupport(req, env, url, { sessionAccount: sessionAccount2, i
   const now = Date.now();
   if (p === "/community/support/unread" && m === "GET") {
     const r4 = await env.DB.prepare(SQL_UNREAD_DRIVER).bind(acc.id).first(), n = r4 && r4.n || 0;
-    return json2(n && r4.last_support ? { n, last: r4.last_text, at: r4.last_at } : { n });
+    return json(n && r4.last_support ? { n, last: r4.last_text, at: r4.last_at } : { n });
   }
   if (p === "/community/support" && m === "GET") {
     const [rows, u] = await Promise.all([env.DB.prepare(SQL_THREAD_MSGS).bind(acc.id).all(), env.DB.prepare(SQL_UNREAD_DRIVER).bind(acc.id).first()]);
     const unread = u && u.n || 0;
     if (unread) await env.DB.batch([env.DB.prepare(SQL_DRIVER_READ).bind(acc.id, now), env.DB.prepare(SQL_DRIVER_READ_T).bind(acc.id)]);
-    return json2({ msgs: chrono(rows.results || []).map(driverMsg), unread });
+    return json({ msgs: chrono(rows.results || []).map(driverMsg), unread });
   }
   if (p === "/community/support" && m === "POST") {
     const f = cleanSupport(await req.json().catch(() => null));
@@ -3990,20 +1897,20 @@ async function handleSupport(req, env, url, { sessionAccount: sessionAccount2, i
     if (c && c.n >= SUPPORT_PER_DAY) return err("that is enough for today, we answer soon", 429);
     const id3 = crypto.randomUUID();
     await env.DB.batch(driverMessage(env, acc.id, id3, now, { ...f, kind: "chat" }));
-    const esc6 = await openEscrow2(env, acc.escrow).catch(() => null);
-    const mailed = await sendSupportChat2(env, { ...f, nick: acc.display || "", accountId: acc.id, email: esc6 && esc6.email || "" }).catch(() => false);
-    return json2({ ok: true, mailed, msg: { id: id3, me: true, text: f.text, created: now, kind: "chat" } });
+    const esc7 = await openEscrow2(env, acc.escrow).catch(() => null);
+    const mailed = await sendSupportChat2(env, { ...f, nick: acc.display || "", accountId: acc.id, email: esc7 && esc7.email || "" }).catch(() => false);
+    return json({ ok: true, mailed, msg: { id: id3, me: true, text: f.text, created: now, kind: "chat" } });
   }
   if (!p.startsWith("/community/admin/support")) return err("not found", 404);
   if (!isAdmin2(env, acc.id)) return err("only the admins of this server can do this", 403);
   if (p === "/community/admin/support/unread" && m === "GET") {
     const r4 = await env.DB.prepare(SQL_UNREAD_ADMIN).first();
-    return json2({ n: r4 && r4.n || 0 });
+    return json({ n: r4 && r4.n || 0 });
   }
   if (p === "/community/admin/support" && m === "GET") {
     const r4 = await env.DB.prepare(SQL_CONVERSATIONS).all();
     const items = (r4.results || []).map(conversation);
-    return json2({ items, unread: items.filter((x) => x.unread > 0).length });
+    return json({ items, unread: items.filter((x) => x.unread > 0).length });
   }
   const mm = /^\/community\/admin\/support\/([^/]+)$/.exec(p);
   const id2 = mm ? decodeURIComponent(mm[1]) : "";
@@ -4012,7 +1919,7 @@ async function handleSupport(req, env, url, { sessionAccount: sessionAccount2, i
   if (m === "GET") {
     const rows = await env.DB.prepare(SQL_THREAD_MSGS).bind(id2).all();
     await env.DB.batch([env.DB.prepare(SQL_SUPPORT_READ).bind(id2, now), env.DB.prepare(SQL_SUPPORT_READ_T).bind(id2)]);
-    return json2({ accountId: id2, nick: a && a.display || "", gone: !a, msgs: chrono(rows.results || []).map(adminMsg) });
+    return json({ accountId: id2, nick: a && a.display || "", gone: !a, msgs: chrono(rows.results || []).map(adminMsg) });
   }
   if (m === "POST") {
     if (!a) return err("this account does not exist any more", 404);
@@ -4026,9 +1933,9 @@ async function handleSupport(req, env, url, { sessionAccount: sessionAccount2, i
       env.DB.prepare(SQL_SUPPORT_READ).bind(id2, now),
       env.DB.prepare(SQL_SUPPORT_READ_T).bind(id2)
     ]);
-    const [esc6, lr] = await Promise.all([openEscrow2(env, a.escrow).catch(() => null), env.DB.prepare(SQL_LAST_LANG).bind(id2).first()]);
-    const mailed = esc6 && esc6.email ? await sendSupportReply2(env, esc6.email, t.text, lr && lr.lang).catch(() => false) : false;
-    return json2({ ok: true, mailed, msg: { id: mid, support: true, text: t.text, created: now, read: null, rating: null, device: "", v: "", view: "", kind: "reply", style: null } });
+    const [esc7, lr] = await Promise.all([openEscrow2(env, a.escrow).catch(() => null), env.DB.prepare(SQL_LAST_LANG).bind(id2).first()]);
+    const mailed = esc7 && esc7.email ? await sendSupportReply2(env, esc7.email, t.text, lr && lr.lang).catch(() => false) : false;
+    return json({ ok: true, mailed, msg: { id: mid, support: true, text: t.text, created: now, read: null, rating: null, device: "", v: "", view: "", kind: "reply", style: null } });
   }
   return err("not found", 404);
 }
@@ -4061,27 +1968,27 @@ function mailHTML(subject, text2, link, button2, l) {
   const L = lang(l), ask = { en: "Questions? Write to", es: "\xBFDudas? Escr\xEDbenos a", de: "Fragen? Schreib uns an", pt: "D\xFAvidas? Escreva para" }[L];
   const alt = { en: "If the button does not work, open this link:", es: "Si el bot\xF3n no funciona, abre este enlace:", de: "Wenn der Button nicht geht, \xF6ffne diesen Link:", pt: "Se o bot\xE3o n\xE3o funcionar, abra este link:" }[L];
   const why = { en: "You get this email because someone used this address on Pitlane HQ.", es: "Recibes este email porque alguien us\xF3 esta direcci\xF3n en Pitlane HQ.", de: "Du bekommst diese E-Mail, weil diese Adresse bei Pitlane HQ verwendet wurde.", pt: "Voc\xEA recebe este email porque algu\xE9m usou este endere\xE7o no Pitlane HQ." }[L];
-  return `<!doctype html><html lang="${L}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="dark"><meta name="supported-color-schemes" content="dark"><title>${esc2(subject)}</title></head>
+  return `<!doctype html><html lang="${L}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="dark"><meta name="supported-color-schemes" content="dark"><title>${esc(subject)}</title></head>
 <body style="margin:0;padding:0;background:#11151b">
-<div style="display:none;max-height:0;overflow:hidden;opacity:0">${esc2(text2.slice(0, 110))}</div>
+<div style="display:none;max-height:0;overflow:hidden;opacity:0">${esc(text2.slice(0, 110))}</div>
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#11151b" style="background:#11151b"><tr><td align="center" style="padding:32px 14px">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:520px">
 <tr><td style="padding:0 4px 18px"><a href="${SITE}" style="text-decoration:none"><table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
 <td style="padding-right:12px"><img src="${SITE}/icon-192.png" width="40" height="40" alt="" style="display:block;border:0;width:40px;height:40px"></td>
 <td style="font:800 20px ${F};letter-spacing:.06em;text-transform:uppercase;color:#e7ebf1">PITLANE HQ</td></tr></table></a></td></tr>
 <tr><td bgcolor="#1a2029" style="background:#1a2029;border:1px solid #2b3542;border-radius:14px;padding:28px 26px">
-<div style="font:800 13px ${F};letter-spacing:.1em;text-transform:uppercase;color:#ffb02e;margin:0 0 10px">${esc2(subject.replace(/^Pitlane HQ:\s*/, ""))}</div>
-<p style="font:16px/1.55 ${F};color:#e7ebf1;margin:0 0 22px;white-space:pre-line">${esc2(text2)}</p>
+<div style="font:800 13px ${F};letter-spacing:.1em;text-transform:uppercase;color:#ffb02e;margin:0 0 10px">${esc(subject.replace(/^Pitlane HQ:\s*/, ""))}</div>
+<p style="font:16px/1.55 ${F};color:#e7ebf1;margin:0 0 22px;white-space:pre-line">${esc(text2)}</p>
 <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td bgcolor="#ffb02e" style="background:#ffb02e;border-radius:8px">
-<a href="${esc2(link)}" style="display:inline-block;padding:13px 22px;font:800 14px ${F};letter-spacing:.06em;text-transform:uppercase;color:#11151b;text-decoration:none">${esc2(button2)}</a></td></tr></table>
-<p style="font:13px/1.5 ${F};color:#8a96a8;margin:22px 0 0">${esc2(alt)}<br><a href="${esc2(link)}" style="color:#aab4c3;word-break:break-all">${esc2(link)}</a></p>
+<a href="${esc(link)}" style="display:inline-block;padding:13px 22px;font:800 14px ${F};letter-spacing:.06em;text-transform:uppercase;color:#11151b;text-decoration:none">${esc(button2)}</a></td></tr></table>
+<p style="font:13px/1.5 ${F};color:#8a96a8;margin:22px 0 0">${esc(alt)}<br><a href="${esc(link)}" style="color:#aab4c3;word-break:break-all">${esc(link)}</a></p>
 </td></tr>
-<tr><td style="padding:18px 6px 0;font:12px/1.6 ${F};color:#6c7789">${esc2(ask)} <a href="mailto:${SUPPORT}" style="color:#aab4c3">${SUPPORT}</a><br>${esc2(why)}<br><a href="${SITE}" style="color:#6c7789">pitlanehq.app</a></td></tr>
+<tr><td style="padding:18px 6px 0;font:12px/1.6 ${F};color:#6c7789">${esc(ask)} <a href="mailto:${SUPPORT}" style="color:#aab4c3">${SUPPORT}</a><br>${esc(why)}<br><a href="${SITE}" style="color:#6c7789">pitlanehq.app</a></td></tr>
 </table></td></tr></table></body></html>`;
 }
 __name(mailHTML, "mailHTML");
 var lang = /* @__PURE__ */ __name((l) => ["en", "es", "pt"].includes(l) ? l : "en", "lang");
-var esc2 = /* @__PURE__ */ __name((s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]), "esc");
+var esc = /* @__PURE__ */ __name((s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]), "esc");
 async function note(env, ok) {
   await env.DB.prepare("INSERT INTO app_state (k, v, at) VALUES (?1,?2,?3) ON CONFLICT(k) DO UPDATE SET v=excluded.v, at=excluded.at").bind(ok ? "mail_ok" : "mail_error", ok ? "" : JSON.stringify(lastError), Date.now()).run().catch(() => {
   });
@@ -4227,7 +2134,8 @@ var sendVerify = /* @__PURE__ */ __name((env, to, link, l) => send(env, to, T.ve
 var sendReset = /* @__PURE__ */ __name((env, to, link, l) => send(env, to, T.resetSubject[lang(l)], T.resetText[lang(l)], link, T.resetButton[lang(l)], l), "sendReset");
 function feedbackMail(f) {
   const stars = f.rating ? "\u2605".repeat(f.rating) + "\u2606".repeat(5 - f.rating) + " (" + f.rating + "/5)" : "no stars";
-  const ov = f.kind === "overlays";
+  const ov = f.kind === "overlays", un = f.kind === "uninstall";
+  if (un) return { subject: "Pitlane HQ uninstalled \xB7 version " + (f.v || "\u2013"), text: [f.text, "", "Sent from the page the uninstaller opens \xB7 version " + (f.v || "\u2013"), "No account, nobody to reply to"].join("\n") };
   const subject = (ov ? "Pitlane HQ overlay feedback \xB7 " : "Pitlane HQ feedback \xB7 ") + (f.nick || "a driver") + (f.rating ? " \xB7 " + f.rating + "/5" : "");
   const text2 = [f.text, "", ...ov ? ["About the overlays \xB7 design " + (f.style || "classic")] : [], "From " + (f.nick || "\u2013") + " (" + (f.accountId || "\u2013") + ")", "Device " + (f.device || "\u2013") + " \xB7 version " + (f.v || "\u2013") + " \xB7 asked in " + (f.view || "\u2013"), stars, f.email ? "Reply to answer " + f.email : "No email known for this account"].join("\n");
   return { subject, text: text2 };
@@ -4286,7 +2194,7 @@ var S = {
   back: { en: "Back to Pitlane HQ", es: "Volver a Pitlane HQ", de: "Zur\xFCck zu Pitlane HQ", pt: "Voltar ao Pitlane HQ" },
   noMail: { en: "Emails are not set up on this server yet.", es: "Los emails a\xFAn no est\xE1n configurados en este servidor.", de: "E-Mails sind auf diesem Server noch nicht eingerichtet.", pt: "Os emails ainda n\xE3o est\xE3o configurados neste servidor." }
 };
-var esc3 = /* @__PURE__ */ __name((s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]), "esc");
+var esc2 = /* @__PURE__ */ __name((s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]), "esc");
 function pageLang(req, url) {
   const q2 = url.searchParams.get("lang");
   if (q2) return lang(q2);
@@ -4294,14 +2202,14 @@ function pageLang(req, url) {
   return lang(a);
 }
 __name(pageLang, "pageLang");
-function page2(l, body, script = "") {
+function page(l, body, script = "") {
   return new Response(
     `<!doctype html><html lang="${l}"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Pitlane HQ - Telemetry &amp; Coach</title>
 <style>body{margin:0;min-height:100vh;display:grid;place-items:center;background:#11151b;color:#e7ebf1;font:16px/1.5 system-ui,sans-serif}main{width:min(420px,calc(100% - 32px))}
 h1{font-size:22px;letter-spacing:.05em;text-transform:uppercase}p{color:#a9b4c3}label{display:block;margin:12px 0 4px;font-size:13px;color:#8a97a9;text-transform:uppercase;letter-spacing:.06em}
 input{width:100%;box-sizing:border-box;font:16px system-ui;padding:12px;border-radius:8px;border:1px solid #2b3542;background:#19202a;color:#e7ebf1}
 button{margin-top:16px;width:100%;padding:13px;border:0;border-radius:8px;background:#ffb02e;color:#11151b;font:700 15px system-ui;text-transform:uppercase;letter-spacing:.05em;cursor:pointer}
-.err{color:#ff6363;min-height:1.4em}.ok{color:#38c97c}.back{display:inline-block;margin-top:22px;color:#8a97a9;font-size:14px;text-decoration:none}.back:hover{color:#e7ebf1}</style><main>${body}<a class="back" href="/">\u2190 ${esc3(S.back[l])}</a></main>${script ? `<script>${script}<\/script>` : ""}</html>`,
+.err{color:#ff6363;min-height:1.4em}.ok{color:#38c97c}.back{display:inline-block;margin-top:22px;color:#8a97a9;font-size:14px;text-decoration:none}.back:hover{color:#e7ebf1}</style><main>${body}<a class="back" href="/">\u2190 ${esc2(S.back[l])}</a></main>${script ? `<script>${script}<\/script>` : ""}</html>`,
     {
       headers: {
         "content-type": "text/html; charset=utf-8",
@@ -4312,14 +2220,14 @@ button{margin-top:16px;width:100%;padding:13px;border:0;border-radius:8px;backgr
     }
   );
 }
-__name(page2, "page");
-var messagePage = /* @__PURE__ */ __name((l, ok) => page2(l, `<h1>${S.title[l]}</h1><p class="${ok ? "ok" : "err"}">${esc3(ok ? S.verified[l] : S.badLink[l])}</p>`), "messagePage");
-var badLinkPage = /* @__PURE__ */ __name((l) => page2(l, `<h1>${S.title[l]}</h1><p class="err">${esc3(S.badLink[l])}</p>`), "badLinkPage");
+__name(page, "page");
+var messagePage = /* @__PURE__ */ __name((l, ok) => page(l, `<h1>${S.title[l]}</h1><p class="${ok ? "ok" : "err"}">${esc2(ok ? S.verified[l] : S.badLink[l])}</p>`), "messagePage");
+var badLinkPage = /* @__PURE__ */ __name((l) => page(l, `<h1>${S.title[l]}</h1><p class="err">${esc2(S.badLink[l])}</p>`), "badLinkPage");
 function forgotPage(l, ready) {
-  if (!ready) return page2(l, `<h1>${esc3(S.forgotTitle[l])}</h1><p class="err">${esc3(S.noMail[l])}</p>`);
-  return page2(
+  if (!ready) return page(l, `<h1>${esc2(S.forgotTitle[l])}</h1><p class="err">${esc2(S.noMail[l])}</p>`);
+  return page(
     l,
-    `<h1>${esc3(S.forgotTitle[l])}</h1><p>${esc3(S.forgotText[l])}</p><form id="f"><label for="e">${esc3(S.email[l])}</label><input id="e" type="email" autocomplete="username" required><div class="err" id="m"></div><button>${esc3(S.send[l])}</button></form>`,
+    `<h1>${esc2(S.forgotTitle[l])}</h1><p>${esc2(S.forgotText[l])}</p><form id="f"><label for="e">${esc2(S.email[l])}</label><input id="e" type="email" autocomplete="username" required><div class="err" id="m"></div><button>${esc2(S.send[l])}</button></form>`,
     `document.getElementById("f").onsubmit=async e=>{e.preventDefault();const m=document.getElementById("m");m.className="";m.textContent=${JSON.stringify(S.working[l])};
 try{const r=await fetch("/account/forgot",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({email:document.getElementById("e").value.trim().toLowerCase(),lang:${JSON.stringify(l)}})});const j=await r.json().catch(()=>({}));
 if(!r.ok)throw new Error(j.error||("HTTP "+r.status));m.className="ok";m.textContent=${JSON.stringify(S.sent[l])}}catch(x){m.className="err";m.textContent=x.message}}`
@@ -4327,11 +2235,11 @@ if(!r.ok)throw new Error(j.error||("HTTP "+r.status));m.className="ok";m.textCon
 }
 __name(forgotPage, "forgotPage");
 function resetPage(l, token) {
-  return page2(
+  return page(
     l,
-    `<h1>${esc3(S.resetTitle[l])}</h1><p>${esc3(S.resetText[l])}</p><form id="f"><label for="e">${esc3(S.email[l])}</label><input id="e" type="email" autocomplete="username" required>
-<label for="p">${esc3(S.pass[l])}</label><input id="p" type="password" autocomplete="new-password" minlength="10" required><label for="p2">${esc3(S.pass2[l])}</label><input id="p2" type="password" autocomplete="new-password" minlength="10" required>
-<div class="err" id="m"></div><button>${esc3(S.save[l])}</button></form>`,
+    `<h1>${esc2(S.resetTitle[l])}</h1><p>${esc2(S.resetText[l])}</p><form id="f"><label for="e">${esc2(S.email[l])}</label><input id="e" type="email" autocomplete="username" required>
+<label for="p">${esc2(S.pass[l])}</label><input id="p" type="password" autocomplete="new-password" minlength="10" required><label for="p2">${esc2(S.pass2[l])}</label><input id="p2" type="password" autocomplete="new-password" minlength="10" required>
+<div class="err" id="m"></div><button>${esc2(S.save[l])}</button></form>`,
     `const T=${JSON.stringify(token)},te=new TextEncoder(),hex=b=>[...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,"0")).join("");
 async function keys(email,pw){const salt=await crypto.subtle.digest("SHA-256",te.encode("pitlanehq-account-v1:"+email));const k=await crypto.subtle.importKey("raw",te.encode(pw),"PBKDF2",false,["deriveBits"]);
  const master=await crypto.subtle.deriveBits({name:"PBKDF2",hash:"SHA-256",salt,iterations:600000},k,256);const hk=await crypto.subtle.importKey("raw",master,"HKDF",false,["deriveBits"]);
@@ -4348,6 +2256,105 @@ document.getElementById("f").onsubmit=async e=>{e.preventDefault();const m=docum
 }
 __name(resetPage, "resetPage");
 
+// src/crypt.js
+var enc = new TextEncoder();
+var dec = new TextDecoder();
+var b64 = /* @__PURE__ */ __name((b2) => btoa(String.fromCharCode(...new Uint8Array(b2))), "b64");
+var unb64 = /* @__PURE__ */ __name((s) => Uint8Array.from(atob(s), (c) => c.charCodeAt(0)), "unb64");
+var keyCache = null;
+async function dataKey(env) {
+  if (!env.DATA_KEY) return null;
+  if (keyCache && keyCache.src === env.DATA_KEY) return keyCache.key;
+  const raw = await crypto.subtle.digest("SHA-256", enc.encode("trackiq-data-v1:" + env.DATA_KEY));
+  const key2 = await crypto.subtle.importKey("raw", raw, { name: "AES-GCM" }, false, ["encrypt", "decrypt"]);
+  keyCache = { src: env.DATA_KEY, key: key2 };
+  return key2;
+}
+__name(dataKey, "dataKey");
+async function sealData(env, s) {
+  if (s == null) return s;
+  const key2 = await dataKey(env);
+  if (!key2) return s;
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const ct = await crypto.subtle.encrypt({ name: "AES-GCM", iv, additionalData: enc.encode("trackiq-data") }, key2, enc.encode(String(s)));
+  const out = new Uint8Array(12 + ct.byteLength);
+  out.set(iv, 0);
+  out.set(new Uint8Array(ct), 12);
+  return "enc:" + b64(out);
+}
+__name(sealData, "sealData");
+async function openData(env, s) {
+  if (typeof s !== "string" || !s.startsWith("enc:")) return s;
+  const key2 = await dataKey(env);
+  if (!key2) throw new Error("DATA_KEY is not set on this server: sealed data cannot be read");
+  const all = unb64(s.slice(4));
+  const pt = await crypto.subtle.decrypt({ name: "AES-GCM", iv: all.subarray(0, 12), additionalData: enc.encode("trackiq-data") }, key2, all.subarray(12));
+  return dec.decode(pt);
+}
+__name(openData, "openData");
+var B32 = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
+function base32(bytes) {
+  let bits = 0, val = 0, out = "";
+  for (const b2 of bytes) {
+    val = val << 8 | b2;
+    bits += 8;
+    while (bits >= 5) {
+      out += B32[val >>> bits - 5 & 31];
+      bits -= 5;
+    }
+  }
+  if (bits > 0) out += B32[val << 5 - bits & 31];
+  return out;
+}
+__name(base32, "base32");
+function unbase32(s) {
+  const clean2 = String(s || "").toUpperCase().replace(/[^A-Z2-7]/g, "");
+  let bits = 0, val = 0;
+  const out = [];
+  for (const c of clean2) {
+    val = val << 5 | B32.indexOf(c);
+    bits += 5;
+    if (bits >= 8) {
+      out.push(val >>> bits - 8 & 255);
+      bits -= 8;
+    }
+  }
+  return new Uint8Array(out);
+}
+__name(unbase32, "unbase32");
+var newTotpSecret = /* @__PURE__ */ __name(() => base32(crypto.getRandomValues(new Uint8Array(20))), "newTotpSecret");
+async function hotp(secret, counter) {
+  const key2 = await crypto.subtle.importKey("raw", unbase32(secret), { name: "HMAC", hash: "SHA-1" }, false, ["sign"]);
+  const msg = new Uint8Array(8);
+  for (let i = 7; i >= 0; i--) {
+    msg[i] = counter & 255;
+    counter = Math.floor(counter / 256);
+  }
+  const h = new Uint8Array(await crypto.subtle.sign("HMAC", key2, msg));
+  const o = h[19] & 15;
+  const code = ((h[o] & 127) << 24 | h[o + 1] << 16 | h[o + 2] << 8 | h[o + 3]) % 1e6;
+  return String(code).padStart(6, "0");
+}
+__name(hotp, "hotp");
+async function totpOK(secret, code) {
+  const c = String(code || "").replace(/\s+/g, "");
+  if (!/^\d{6}$/.test(c)) return false;
+  const now = Math.floor(Date.now() / 3e4);
+  for (const d of [0, -1, 1]) if (await hotp(secret, now + d) === c) return true;
+  return false;
+}
+__name(totpOK, "totpOK");
+var otpauthURL = /* @__PURE__ */ __name((secret, label, issuer = "Pitlane HQ") => `otpauth://totp/${encodeURIComponent(issuer)}:${encodeURIComponent(label)}?secret=${secret}&issuer=${encodeURIComponent(issuer)}&algorithm=SHA1&digits=6&period=30`, "otpauthURL");
+function newRecoveryCodes() {
+  const a = "abcdefghjkmnpqrstuvwxyz23456789";
+  return Array.from({ length: 8 }, () => {
+    const r4 = crypto.getRandomValues(new Uint8Array(8));
+    const s = [...r4].map((x) => a[x % a.length]).join("");
+    return s.slice(0, 4) + "-" + s.slice(4);
+  });
+}
+__name(newRecoveryCodes, "newRecoveryCodes");
+
 // src/patreon.js
 function md5(bytes) {
   const K = new Uint32Array(64), S3 = [7, 12, 17, 22, 5, 9, 14, 20, 4, 11, 16, 23, 6, 10, 15, 21];
@@ -4361,31 +2368,31 @@ function md5(bytes) {
   const w = new Uint32Array(16);
   for (let o = 0; o < len; o += 64) {
     for (let i = 0; i < 16; i++) w[i] = m[o + 4 * i] | m[o + 4 * i + 1] << 8 | m[o + 4 * i + 2] << 16 | m[o + 4 * i + 3] << 24;
-    let a = a0, b = b0, c = c0, d = d0;
+    let a = a0, b2 = b0, c = c0, d = d0;
     for (let i = 0; i < 64; i++) {
       let f, g;
       if (i < 16) {
-        f = b & c | ~b & d;
+        f = b2 & c | ~b2 & d;
         g = i;
       } else if (i < 32) {
-        f = d & b | ~d & c;
+        f = d & b2 | ~d & c;
         g = (5 * i + 1) % 16;
       } else if (i < 48) {
-        f = b ^ c ^ d;
+        f = b2 ^ c ^ d;
         g = (3 * i + 5) % 16;
       } else {
-        f = c ^ (b | ~d);
+        f = c ^ (b2 | ~d);
         g = 7 * i % 16;
       }
       const t = d;
       d = c;
-      c = b;
+      c = b2;
       const x = a + f + K[i] + w[g] >>> 0, s = S3[(i >> 4) * 4 + i % 4];
-      b = b + (x << s | x >>> 32 - s) >>> 0;
+      b2 = b2 + (x << s | x >>> 32 - s) >>> 0;
       a = t;
     }
     a0 = a0 + a >>> 0;
-    b0 = b0 + b >>> 0;
+    b0 = b0 + b2 >>> 0;
     c0 = c0 + c >>> 0;
     d0 = d0 + d >>> 0;
   }
@@ -4412,36 +2419,36 @@ function hmacMd5Hex(key2, msg) {
   return [...md5(outer)].map((x) => x.toString(16).padStart(2, "0")).join("");
 }
 __name(hmacMd5Hex, "hmacMd5Hex");
-var same = /* @__PURE__ */ __name((a, b) => {
-  if (a.length !== b.length) return false;
+var same = /* @__PURE__ */ __name((a, b2) => {
+  if (a.length !== b2.length) return false;
   let r4 = 0;
-  for (let i = 0; i < a.length; i++) r4 |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  for (let i = 0; i < a.length; i++) r4 |= a.charCodeAt(i) ^ b2.charCodeAt(i);
   return r4 === 0;
 }, "same");
 async function patreonWebhook(req, env) {
-  const json16 = /* @__PURE__ */ __name((o, s = 200) => new Response(JSON.stringify(o), { status: s, headers: { "content-type": "application/json" } }), "json");
-  if (!env.PATREON_WEBHOOK_SECRET) return json16({ error: "Patreon is not set up on this server" }, 404);
+  const json17 = /* @__PURE__ */ __name((o, s = 200) => new Response(JSON.stringify(o), { status: s, headers: { "content-type": "application/json" } }), "json");
+  if (!env.PATREON_WEBHOOK_SECRET) return json17({ error: "Patreon is not set up on this server" }, 404);
   const body = await req.text();
-  if (body.length > 2e5) return json16({ error: "too large" }, 413);
+  if (body.length > 2e5) return json17({ error: "too large" }, 413);
   const sig = (req.headers.get("x-patreon-signature") || "").toLowerCase();
-  if (!sig || !same(sig, hmacMd5Hex(env.PATREON_WEBHOOK_SECRET, body))) return json16({ error: "bad signature" }, 401);
+  if (!sig || !same(sig, hmacMd5Hex(env.PATREON_WEBHOOK_SECRET, body))) return json17({ error: "bad signature" }, 401);
   let j = null;
   try {
     j = JSON.parse(body);
   } catch (e) {
-    return json16({ error: "not JSON" }, 400);
+    return json17({ error: "not JSON" }, 400);
   }
   const ev = req.headers.get("x-patreon-event") || "";
   const at2 = j && j.data && j.data.attributes || {};
   const email = String(at2.email || "").trim().toLowerCase();
-  if (!email) return json16({ ok: true, skipped: "no email" });
+  if (!email) return json17({ ok: true, skipped: "no email" });
   const active = !/delete/.test(ev) && at2.patron_status === "active_patron";
   const eh = await emailHash(env, email), now = Date.now();
   await env.DB.batch([
     env.DB.prepare("INSERT INTO patreon_patrons (email_hash, active, updated) VALUES (?1,?2,?3) ON CONFLICT(email_hash) DO UPDATE SET active=excluded.active, updated=excluded.updated").bind(eh, active ? 1 : 0, now),
     active ? env.DB.prepare("UPDATE accounts SET supporter=1, supporter_src=COALESCE(supporter_src,'patreon') WHERE email_hash=?1").bind(eh) : env.DB.prepare("UPDATE accounts SET supporter=0, supporter_src=NULL WHERE email_hash=?1 AND supporter_src='patreon'").bind(eh)
   ]);
-  return json16({ ok: true, active });
+  return json17({ ok: true, active });
 }
 __name(patreonWebhook, "patreonWebhook");
 async function patreonOnRegister(env, id2, eh) {
@@ -4610,8 +2617,8 @@ __name(setPro, "setPro");
 
 // src/lemon.js
 var JSONH = { "content-type": "application/json", "access-control-allow-origin": "*" };
-var json3 = /* @__PURE__ */ __name((o, s = 200) => new Response(JSON.stringify(o), { status: s, headers: JSONH }), "json");
-var err2 = /* @__PURE__ */ __name((e, s = 400) => json3({ error: e }, s), "err");
+var json2 = /* @__PURE__ */ __name((o, s = 200) => new Response(JSON.stringify(o), { status: s, headers: JSONH }), "json");
+var err2 = /* @__PURE__ */ __name((e, s = 400) => json2({ error: e }, s), "err");
 var gateAt = 0;
 var gateOn = false;
 async function proGate(env) {
@@ -4635,13 +2642,13 @@ __name(proOffer, "proOffer");
 async function hmacHex(secret, body) {
   const k = await crypto.subtle.importKey("raw", new TextEncoder().encode(secret), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
   const s = new Uint8Array(await crypto.subtle.sign("HMAC", k, new TextEncoder().encode(body)));
-  return [...s].map((b) => b.toString(16).padStart(2, "0")).join("");
+  return [...s].map((b2) => b2.toString(16).padStart(2, "0")).join("");
 }
 __name(hmacHex, "hmacHex");
-var same2 = /* @__PURE__ */ __name((a, b) => {
-  if (a.length !== b.length) return false;
+var same2 = /* @__PURE__ */ __name((a, b2) => {
+  if (a.length !== b2.length) return false;
   let d = 0;
-  for (let i = 0; i < a.length; i++) d |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  for (let i = 0; i < a.length; i++) d |= a.charCodeAt(i) ^ b2.charCodeAt(i);
   return d === 0;
 }, "same");
 async function lemonWebhook(req, env) {
@@ -4667,18 +2674,18 @@ async function lemonWebhook(req, env) {
   const t = /* @__PURE__ */ __name((v) => v ? Date.parse(v) || 0 : 0, "t");
   if (ev === "order_created" || ev === "order_refunded") {
     const items = at2.first_order_item || {}, isSub = !!(custom.kind === "subscription" || /month|year|mes|año|anual/i.test(String(items.variant_name || "")));
-    if (isSub) return json3({ ok: true, skipped: "subscription order" });
+    if (isSub) return json2({ ok: true, skipped: "subscription order" });
     const paid = ev === "order_created" && at2.status === "paid" && !at2.refunded;
     await setPro(env, { accountId, eh, kind: "lifetime", until: 0, on: paid, order: "order:" + d.id });
-    return json3({ ok: true, lifetime: paid });
+    return json2({ ok: true, lifetime: paid });
   }
   if (/^subscription_/.test(ev)) {
     const live2 = ["active", "on_trial", "past_due", "cancelled"].includes(at2.status);
     const until = at2.status === "cancelled" ? t(at2.ends_at) : t(at2.renews_at) + 3 * 864e5;
     await setPro(env, { accountId, eh, kind: "subscription", until, on: live2 && until > Date.now(), order: "sub:" + d.id });
-    return json3({ ok: true, subscription: live2 });
+    return json2({ ok: true, subscription: live2 });
   }
-  return json3({ ok: true, skipped: ev });
+  return json2({ ok: true, skipped: ev });
 }
 __name(lemonWebhook, "lemonWebhook");
 async function proOnRegister(env, id2, eh) {
@@ -4705,7 +2712,7 @@ async function proRoutes(req, env, p, m, body) {
     const acc2 = await sessionAccount(req, env).catch(() => null);
     const q2 = new URL(req.url).searchParams, out = { ...await proOffer(env), ...acc2 ? proOf(acc2) : {}, admin: !!(acc2 && isAdmin(env, acc2.id)) };
     if (acc2) Object.assign(out, await proHere(env, acc2, q2));
-    return json3(out);
+    return json2(out);
   }
   if (p === "/pro/pc" && m === "POST") {
     const acc2 = await sessionAccount(req, env);
@@ -4714,7 +2721,7 @@ async function proRoutes(req, env, p, m, body) {
     if (!pc) return err2("only the Pitlane HQ Agent on a PC can do this");
     if (!proOf(acc2).pro) return err2("this account has no Pro", 403);
     await env.DB.prepare("UPDATE accounts SET pro_pc=?2, pro_pc_name=?3, pro_pc_at=?4 WHERE id=?1").bind(acc2.id, pc, pcNameOf(q2), Date.now()).run();
-    return json3({ ok: true, pcOk: true });
+    return json2({ ok: true, pcOk: true });
   }
   if (p !== "/admin/pro" && p !== "/admin/pro-user") return null;
   const acc = await sessionAccount(req, env);
@@ -4726,11 +2733,11 @@ async function proRoutes(req, env, p, m, body) {
   if (p === "/admin/pro-user" && m === "POST") {
     const id2 = String(body.id || "");
     const r4 = body.on ? await env.DB.prepare("UPDATE accounts SET pro=1, pro_src='manual', pro_until=0, pro_since=CASE WHEN pro_since>0 THEN pro_since ELSE ?2 END WHERE id=?1").bind(id2, Date.now()).run() : await env.DB.prepare("UPDATE accounts SET pro=0, pro_src=NULL, pro_until=0 WHERE id=?1 AND pro_src='manual'").bind(id2).run();
-    return r4.meta && r4.meta.changes ? json3({ ok: true }) : err2("account not found, or its Pro was bought (only a Pro given by hand is taken away here)", 404);
+    return r4.meta && r4.meta.changes ? json2({ ok: true }) : err2("account not found, or its Pro was bought (only a Pro given by hand is taken away here)", 404);
   }
   const c = await env.DB.prepare("SELECT COUNT(*) AS n, SUM(pro_src='lifetime') AS life, SUM(pro_src='subscription') AS sub, SUM(pro_src='manual') AS man FROM accounts WHERE pro=1 AND (pro_until=0 OR pro_until>?1)").bind(Date.now()).first().catch(() => ({}));
   const waiting = await env.DB.prepare("SELECT COUNT(*) AS n FROM pro_orders WHERE account_id IS NULL AND status='on' AND kind<>'supporter'").first().catch(() => ({ n: 0 }));
-  return json3({
+  return json2({
     ...await proOffer(env),
     counts: { pro: c.n || 0, lifetime: c.life || 0, subscription: c.sub || 0, manual: c.man || 0, waiting: waiting.n || 0 },
     store: license_plans_default.provider === "stripe" ? { provider: "stripe", webhook: !!env.STRIPE_WEBHOOK_SECRET, secret: "STRIPE_WEBHOOK_SECRET", checkout: !!(license_plans_default.lifetime && license_plans_default.lifetime.buy), url: "https://pitlanehq.app/stripe/webhook" } : { provider: "lemonsqueezy", webhook: !!env.LEMONSQUEEZY_WEBHOOK_SECRET, secret: "LEMONSQUEEZY_WEBHOOK_SECRET", checkout: !!(license_plans_default.lifetime && license_plans_default.lifetime.buy), url: "https://pitlanehq.app/lemonsqueezy/webhook" }
@@ -4738,13 +2745,1729 @@ async function proRoutes(req, env, p, m, body) {
 }
 __name(proRoutes, "proRoutes");
 
+// src/carfamily.js
+var CAR_FAMILIES = [
+  { key: "sf23", name: "Super Formula SF23", re: /^Super Formula SF23\b/i },
+  { key: "cup-nextgen", name: "NASCAR Cup Series Next Gen", re: /^NASCAR Cup Series Next Gen\b/i },
+  { key: "cup-gen6", name: "NASCAR Cup Series Gen 6", re: /^NASCAR (Cup|Monster Energy Cup) Series (Chevrolet|Ford|Toyota)\b/i },
+  { key: "xfinity", name: "NASCAR Xfinity Series", re: /^NASCAR Xfinity\b/i },
+  { key: "truck", name: "NASCAR Truck Series", re: /^NASCAR (Craftsman |Camping World |Gander (RV & )?Outdoors )?Truck\b/i },
+  { key: "arca", name: "ARCA Menards Series", re: /^ARCA Menards\b/i },
+  { key: "supercars-gen3", name: "Supercars Gen3", re: /^Supercars?\b.*\bGen ?3\b/i },
+  { key: "supercars-gen2", name: "Supercars Gen2", re: /^Supercars? (Ford Mustang GT|Holden ZB Commodore)\b/i },
+  { key: "v8supercars", name: "V8 Supercars", re: /^V8 Supercars?\b/i }
+];
+var famRule = /* @__PURE__ */ __name((name2) => CAR_FAMILIES.find((f) => f.re.test(String(name2 || "").trim())) || null, "famRule");
+var famName = /* @__PURE__ */ __name((game, carId, name2) => {
+  const f = famRule(name2);
+  return f ? f.name : name2;
+}, "famName");
+var cache = /* @__PURE__ */ new Map();
+var TTL = 5 * 6e4;
+async function famId(env, game, carId) {
+  const c = Math.trunc(+carId) || 0, g = game || "iracing";
+  if (!c) return 0;
+  const k = g + ":" + c, hit = cache.get(k);
+  if (hit && Date.now() - hit.at < TTL) return hit.fam;
+  const row = await env.DB.prepare("SELECT fam_id FROM car_families WHERE game=?1 AND car_id=?2").bind(g, c).first().catch(() => null);
+  const fam = row ? row.fam_id : c;
+  cache.set(k, { fam, at: Date.now() });
+  return fam;
+}
+__name(famId, "famId");
+async function famIds(env, game, carId) {
+  const fam = await famId(env, game, carId);
+  if (!fam) return [];
+  const r4 = await env.DB.prepare("SELECT car_id FROM car_families WHERE game=?1 AND fam_id=?2").bind(game || "iracing", fam).all().catch(() => null);
+  const ids = /* @__PURE__ */ new Set([fam, ...(r4 && r4.results || []).map((x) => x.car_id)]);
+  return [...ids];
+}
+__name(famIds, "famIds");
+var famSql = /* @__PURE__ */ __name(async (env, game, carId) => (await famIds(env, game, carId)).map((n) => String(Math.trunc(n) || 0)).join(","), "famSql");
+async function famGroups(env, game) {
+  const r4 = await env.DB.prepare("SELECT car_id, fam_id FROM car_families WHERE game=?1").bind(game || "iracing").all().catch(() => null);
+  const by = /* @__PURE__ */ new Map();
+  for (const x of r4 && r4.results || []) {
+    if (!by.has(x.fam_id)) by.set(x.fam_id, /* @__PURE__ */ new Set([x.fam_id]));
+    by.get(x.fam_id).add(x.car_id);
+  }
+  return by;
+}
+__name(famGroups, "famGroups");
+async function noteCar(env, game, carId, name2) {
+  const c = Math.trunc(+carId) || 0, g = game || "iracing", f = famRule(name2);
+  if (!c || !f || c >= 9e8) return famId(env, g, c);
+  const k = g + ":" + c, hit = cache.get(k);
+  if (hit && Date.now() - hit.at < TTL && hit.known) return hit.fam;
+  const row = await env.DB.prepare("SELECT fam_id FROM car_families WHERE game=?1 AND car_id=?2").bind(g, c).first();
+  if (row) {
+    cache.set(k, { fam: row.fam_id, at: Date.now(), known: true });
+    return row.fam_id;
+  }
+  const head = await env.DB.prepare("SELECT fam_id FROM car_families WHERE game=?1 AND fam=?2 ORDER BY created LIMIT 1").bind(g, f.key).first();
+  const fam = head ? head.fam_id : c;
+  await env.DB.prepare("INSERT OR IGNORE INTO car_families (game, car_id, fam_id, fam, created) VALUES (?1,?2,?3,?4,?5)").bind(g, c, fam, f.key, Date.now()).run();
+  if (fam !== c) await joinCar(env, g, c, fam);
+  cache.set(k, { fam, at: Date.now(), known: true });
+  return fam;
+}
+__name(noteCar, "noteCar");
+async function joinCar(env, game, carId, fam) {
+  await env.DB.batch([
+    env.DB.prepare(`DELETE FROM community_laps WHERE game=?1 AND car_id=?3 AND EXISTS (SELECT 1 FROM community_laps o WHERE o.game=?1 AND o.car_id=?2
+      AND o.user_id=community_laps.user_id AND o.track_id=community_laps.track_id AND o.time<community_laps.time)`).bind(game, carId, fam),
+    env.DB.prepare("UPDATE OR IGNORE community_laps SET car_id=?3 WHERE game=?1 AND car_id=?2").bind(game, carId, fam),
+    env.DB.prepare("DELETE FROM community_laps WHERE game=?1 AND car_id=?2").bind(game, carId),
+    env.DB.prepare("UPDATE OR IGNORE model_laps SET car_id=?3 WHERE game=?1 AND car_id=?2").bind(game, carId, fam),
+    env.DB.prepare("DELETE FROM model_laps WHERE game=?1 AND car_id=?2").bind(game, carId),
+    env.DB.prepare("DELETE FROM model_cache WHERE game=?1 AND car_id IN (?2, ?3)").bind(game, carId, fam),
+    env.DB.prepare("DELETE FROM car_cards WHERE game=?1 AND car_id IN (?2, ?3)").bind(game, carId, fam)
+  ]);
+}
+__name(joinCar, "joinCar");
+
+// src/trackgeo.js
+var TURN_RADIUS = 300;
+var TURN_MIN_M = 20;
+var TURN_GAP_M = 60;
+var SMOOTH = 3;
+function curvature(x, y, step = 5) {
+  const n = Math.min(x.length, y.length), k = new Array(n).fill(0);
+  if (n < 20) return k;
+  const at2 = /* @__PURE__ */ __name((i) => (i % n + n) % n, "at");
+  const head = new Array(n);
+  for (let i = 0; i < n; i++) {
+    const a = at2(i - SMOOTH), b2 = at2(i + SMOOTH);
+    head[i] = Math.atan2(y[b2] - y[a], x[b2] - x[a]);
+  }
+  for (let i = 0; i < n; i++) {
+    let d = head[at2(i + 1)] - head[at2(i - 1)];
+    while (d > Math.PI) d -= 2 * Math.PI;
+    while (d < -Math.PI) d += 2 * Math.PI;
+    k[i] = d / (2 * step);
+  }
+  return k;
+}
+__name(curvature, "curvature");
+function cornersOf(x, y, step = 5, want = 0, slows = []) {
+  const n = Math.min(x.length, y.length);
+  if (n < 20) return [];
+  const k = curvature(x, y, step), slow = slowTest(slows, n, step);
+  let cs = want > 0 && want <= 60 ? fitCount(k, n, step, want, slows) : cornersAt(k, n, step, TURN_RADIUS);
+  if (!(want > 0) && slow) cs = addDriven(cs, k, n, step, slows);
+  return cs.map(({ pts, ...c }) => c);
+}
+__name(cornersOf, "cornersOf");
+var SLOW_NEAR_M = 60;
+var slowAt = /* @__PURE__ */ __name((slows, n) => slows.filter((f) => isFinite(f) && f >= 0 && f < 1).map((f) => Math.round(f * n) % n), "slowAt");
+var ringD = /* @__PURE__ */ __name((a, b2, n) => {
+  const d = Math.abs(a - b2) % n;
+  return Math.min(d, n - d);
+}, "ringD");
+function slowTest(slows, n, step) {
+  const s = Array.isArray(slows) ? slowAt(slows, n) : [];
+  if (!s.length) return null;
+  const near = Math.round(SLOW_NEAR_M / step);
+  return (c) => s.some((i) => ringD(i, c.i, n) <= near || c.from <= i && i <= c.to);
+}
+__name(slowTest, "slowTest");
+function addDriven(cs, k, n, step, slows) {
+  const wide = cornersAt(k, n, step, RELAX[RELAX.length - 1]), near = Math.round(SLOW_NEAR_M / step), out = cs.slice();
+  for (const i of slowAt(slows, n)) {
+    if (out.some((c) => ringD(c.i, i, n) <= near || c.from <= i && i <= c.to)) continue;
+    const w = wide.filter((c) => ringD(c.i, i, n) <= near).sort((a, b2) => ringD(a.i, i, n) - ringD(b2.i, i, n))[0];
+    if (w && !out.includes(w)) out.push(w);
+  }
+  return order(out);
+}
+__name(addDriven, "addDriven");
+function cornersAt(k, n, step, radius) {
+  const lim = 1 / radius, minPts = Math.max(2, Math.round(TURN_MIN_M / step)), gapPts = Math.round(TURN_GAP_M / step);
+  const runs = [];
+  let start = 0;
+  while (start < n && Math.abs(k[start]) > lim) start++;
+  if (start >= n) return [];
+  for (let c = 0; c < n; c++) {
+    const i = (start + c) % n;
+    const s = Math.abs(k[i]) > lim ? Math.sign(k[i]) : 0;
+    const last = runs[runs.length - 1];
+    if (s && last && last.dir === s && last.open) last.pts.push(i);
+    else if (s) {
+      if (last) last.open = false;
+      runs.push({ dir: s, pts: [i], open: true });
+    } else if (last && last.open) {
+      last.open = false;
+    }
+  }
+  const merged = [];
+  for (const r4 of runs) {
+    const last = merged[merged.length - 1];
+    const gap2 = last ? (r4.pts[0] - last.pts[last.pts.length - 1] + n) % n : 1e9;
+    if (last && last.dir === r4.dir && gap2 <= gapPts) last.pts.push(...r4.pts);
+    else merged.push({ dir: r4.dir, pts: r4.pts.slice() });
+  }
+  return order(merged.filter((r4) => r4.pts.length >= minPts).map((r4) => corner(k, r4.dir, r4.pts)));
+}
+__name(cornersAt, "cornersAt");
+function corner(k, dir, pts) {
+  let apex = pts[0];
+  for (const p of pts) if (Math.abs(k[p]) > Math.abs(k[apex])) apex = p;
+  return { i: apex, from: pts[0], to: pts[pts.length - 1], dir, r: Math.round(1 / Math.max(Math.abs(k[apex]), 1e-6)), pts };
+}
+__name(corner, "corner");
+var order = /* @__PURE__ */ __name((cs) => cs.sort((a, b2) => a.i - b2.i), "order");
+var MERGE_GAP_M = 100;
+var SPLIT_MIN_M = 30;
+var SPLIT_DIP = 0.6;
+var RELAX = [TURN_RADIUS, 400, 550, 750, 1e3];
+function fitCount(k, n, step, want, slows = []) {
+  let best = [];
+  const slow = slowTest(slows, n, step);
+  for (const radius of RELAX) {
+    let cs = splitTo(cornersAt(k, n, step, radius), k, want, step);
+    if (slow) cs = addDriven(cs, k, n, step, slows);
+    if (cs.length >= want) return reduceTo(cs, want, n, step, k, slow);
+    if (cs.length > best.length) best = cs;
+  }
+  return best;
+}
+__name(fitCount, "fitCount");
+function splitTo(cs, k, want, step) {
+  cs = cs.slice();
+  const minPts = Math.round(SPLIT_MIN_M / step), w = 3;
+  while (cs.length < want) {
+    let pick = null;
+    cs.forEach((c2, ci) => {
+      const a = c2.pts.map((p) => Math.abs(k[p])), m = a.length;
+      if (m < 2 * minPts) return;
+      const peaks = [];
+      for (let j = 0; j < m; j++) {
+        let top = true;
+        for (let d = -w; d <= w && top; d++) if (d && j + d >= 0 && j + d < m && a[j + d] > a[j]) top = false;
+        if (top) peaks.push(j);
+      }
+      peaks.sort((p, q2) => a[q2] - a[p]);
+      const p1 = peaks[0], p2 = peaks.find((p) => Math.abs(p - p1) >= minPts);
+      if (p1 == null || p2 == null) return;
+      const lo = Math.min(p1, p2), hi = Math.max(p1, p2);
+      let dip = lo;
+      for (let j = lo; j <= hi; j++) if (a[j] < a[dip]) dip = j;
+      const ratio = a[dip] / Math.min(a[p1], a[p2]);
+      if (ratio < SPLIT_DIP && (!pick || ratio < pick.ratio)) pick = { ci, dip, ratio };
+    });
+    if (!pick) break;
+    const c = cs[pick.ci];
+    cs.splice(pick.ci, 1, corner(k, c.dir, c.pts.slice(0, pick.dip + 1)), corner(k, c.dir, c.pts.slice(pick.dip + 1)));
+    order(cs);
+  }
+  return cs;
+}
+__name(splitTo, "splitTo");
+function reduceTo(cs, want, n, step, k, slow = null) {
+  cs = order(cs.slice());
+  const gapMax = Math.round(MERGE_GAP_M / step);
+  while (cs.length > want && cs.length > 1) {
+    let pick = -1, best = 1e9;
+    for (let j = 0; j < cs.length; j++) {
+      const a = cs[j], b2 = cs[(j + 1) % cs.length];
+      if (a === b2 || a.dir !== b2.dir) continue;
+      const gap2 = (b2.from - a.to + n) % n;
+      if (gap2 <= gapMax && gap2 < best) {
+        best = gap2;
+        pick = j;
+      }
+    }
+    if (pick >= 0) {
+      const a = cs[pick], j2 = (pick + 1) % cs.length, b2 = cs[j2];
+      const joined = corner(k, a.dir, a.pts.concat(b2.pts));
+      cs = cs.filter((c, j) => j !== pick && j !== j2);
+      cs.push(joined);
+    } else {
+      let g = -1;
+      const pool = slow && cs.some((c) => !slow(c)) ? (c) => !slow(c) : () => true;
+      cs.forEach((c, j) => {
+        if (pool(c) && (g < 0 || c.r > cs[g].r)) g = j;
+      });
+      cs.splice(g, 1);
+    }
+    order(cs);
+  }
+  return cs;
+}
+__name(reduceTo, "reduceTo");
+function turnsFromPath(x, y, want = 0, slows = []) {
+  const n = Math.min(x.length, y.length);
+  return cornersOf(x, y, 5, want, slows).map((c) => Math.round(c.i / n * 1e5) / 1e5);
+}
+__name(turnsFromPath, "turnsFromPath");
+function lineOffsets(ax, ay, bx, by) {
+  const n = Math.min(ax.length, ay.length, bx.length, by.length);
+  if (n < 60) return null;
+  const lat = new Array(n), lon = new Array(n);
+  for (let i = 0; i < n; i++) {
+    const i0 = Math.max(0, i - 2), i1 = Math.min(n - 1, i + 2);
+    let tx = bx[i1] - bx[i0], ty = by[i1] - by[i0];
+    const tm = Math.hypot(tx, ty) || 1;
+    tx /= tm;
+    ty /= tm;
+    const dx = ax[i] - bx[i], dy = ay[i] - by[i];
+    lat[i] = -ty * dx + tx * dy;
+    lon[i] = tx * dx + ty * dy;
+  }
+  const W2 = 80, sm = /* @__PURE__ */ __name((v) => {
+    const pre = [0];
+    v.forEach((x, i) => pre.push(pre[i] + x));
+    return v.map((x, i) => {
+      const lo = Math.max(0, i - W2), hi = Math.min(n - 1, i + W2);
+      return x - (pre[hi + 1] - pre[lo]) / (hi - lo + 1);
+    });
+  }, "sm");
+  const lc = sm(lat), oc = sm(lon), ab = oc.map(Math.abs).sort((p, q2) => p - q2);
+  if (ab[n >> 1] > 6) return null;
+  return lc.map((v, i) => Math.abs(oc[i]) > 20 || Math.abs(v) > 25 ? NaN : v);
+}
+__name(lineOffsets, "lineOffsets");
+function sameFrame(a, b2) {
+  if (!a || !b2 || !!a.g !== !!b2.g) return null;
+  if (!a.g || a.g[0] === b2.g[0] && a.g[1] === b2.g[1]) return b2;
+  const dx = (b2.g[1] - a.g[1]) * 111320 * Math.cos(a.g[0] * Math.PI / 180), dy = (b2.g[0] - a.g[0]) * 110540;
+  return { ...b2, x: b2.x.map((v) => v + dx), y: b2.y.map((v) => v + dy) };
+}
+__name(sameFrame, "sameFrame");
+function insideSign(bx, by, apex) {
+  const n = Math.min(bx.length, by.length);
+  if (apex <= 0 || apex >= n - 1) return 0;
+  const tan = /* @__PURE__ */ __name((i) => {
+    const i0 = Math.max(0, i - 2), i1 = Math.min(n - 1, i + 2), tx = bx[i1] - bx[i0], ty = by[i1] - by[i0], m = Math.hypot(tx, ty) || 1;
+    return [tx / m, ty / m];
+  }, "tan");
+  const t1 = tan(Math.max(0, apex - 8)), t2 = tan(Math.min(n - 1, apex + 8)), cr = t1[0] * t2[1] - t1[1] * t2[0];
+  if (Math.abs(cr) < 0.05) return 0;
+  return cr < 0 ? -1 : 1;
+}
+__name(insideSign, "insideSign");
+
+// src/trackmaps.js
+var STATE = "trackmaps_rebuild";
+var PER_RUN = 3;
+var PER_TRACK = 6;
+async function turnCount(env, game, trackId) {
+  const r4 = await env.DB.prepare("SELECT nturns FROM track_info WHERE game=?1 AND track_id=?2").bind(game, trackId).first().catch(() => null);
+  return r4 && r4.nturns > 0 ? r4.nturns : 0;
+}
+__name(turnCount, "turnCount");
+async function noteTurnCount(env, game, trackId, track2, nturns) {
+  const n = Number(nturns);
+  if (!trackId || !Number.isInteger(n) || n < 1 || n > 60) return false;
+  const old = await env.DB.prepare("SELECT nturns, track FROM track_info WHERE game=?1 AND track_id=?2").bind(game, trackId).first().catch(() => null);
+  if (old && old.nturns === n && (old.track || "") === (track2 || old.track || "")) return false;
+  await env.DB.prepare(`INSERT INTO track_info (game, track_id, track, nturns, updated) VALUES (?1,?2,?3,?4,?5)
+     ON CONFLICT(game, track_id) DO UPDATE SET nturns=excluded.nturns, track=COALESCE(excluded.track, track_info.track), updated=excluded.updated`).bind(game, trackId, track2 ? String(track2).slice(0, 120) : null, n, Date.now()).run();
+  return true;
+}
+__name(noteTurnCount, "noteTurnCount");
+var LAYOUT_TOL = 0.06;
+function traceLen(tr2) {
+  if (!tr2 || !Array.isArray(tr2.d) || tr2.d.length < 20) return 0;
+  const b2 = +tr2.bin > 0 ? +tr2.bin : 5;
+  return tr2.d.length * b2;
+}
+__name(traceLen, "traceLen");
+function fitsLayout(lapLen, layN) {
+  if (!(lapLen > 0) || !(layN >= 100)) return true;
+  const L = layN * 5;
+  return Math.abs(lapLen - L) / L <= LAYOUT_TOL;
+}
+__name(fitsLayout, "fitsLayout");
+async function layoutN(env, game, trackId) {
+  const r4 = await env.DB.prepare("SELECT n FROM track_maps WHERE game=?1 AND track_id=?2").bind(game, trackId).first().catch(() => null);
+  return r4 && r4.n > 0 ? r4.n : 0;
+}
+__name(layoutN, "layoutN");
+function geoPath(tr2) {
+  if (!tr2 || !Array.isArray(tr2.g) || tr2.g.length !== 2 || !tr2.g.every((v) => typeof v === "number" && isFinite(v))) return null;
+  const x = tr2.x, y = tr2.y;
+  if (!Array.isArray(x) || !Array.isArray(y) || x.length !== y.length || x.length < 100 || x.length > 3e3) return null;
+  const ok = /* @__PURE__ */ __name((v) => typeof v === "number" && isFinite(v) && Math.abs(v) < 3e4, "ok");
+  if (!x.every(ok) || !y.every(ok)) return null;
+  const r1 = /* @__PURE__ */ __name((v) => Math.round(v * 10) / 10, "r1");
+  return { x: x.map(r1), y: y.map(r1), g: tr2.g.map((v) => Math.round(v * 1e5) / 1e5) };
+}
+__name(geoPath, "geoPath");
+async function rebuildTrackMaps(env, { all = false } = {}) {
+  const st = await env.DB.prepare("SELECT v FROM app_state WHERE k=?1").bind(STATE).first().catch(() => null);
+  let state = { done: false, seen: [] };
+  try {
+    if (st && st.v) state = { done: false, seen: [], ...JSON.parse(st.v) };
+  } catch (e) {
+  }
+  if (all || state.done && Date.now() - (state.at || 0) > 864e5) state = { done: false, seen: [] };
+  if (state.done) return { checked: 0, rebuilt: 0, left: 0, done: true };
+  const rows = (await env.DB.prepare("SELECT game, track_id, time FROM track_maps WHERE geo IS NULL").all()).results || [];
+  const seen2 = new Set(state.seen), todo = rows.filter((r4) => !seen2.has(r4.game + ":" + r4.track_id));
+  const now = todo.slice(0, all ? 40 : PER_RUN);
+  let rebuilt = 0;
+  for (const t of now) {
+    seen2.add(t.game + ":" + t.track_id);
+    const laps = (await env.DB.prepare(
+      `SELECT a.trace, a.time FROM sessions s JOIN laps a ON a.session_id=s.id
+       WHERE s.track_id=?1 AND s.game=?2 AND a.valid=1 AND a.trace IS NOT NULL AND (instr(a.trace,'"g":[')>0 OR substr(a.trace,1,4)='enc:')
+         AND COALESCE(s.kind,'') NOT LIKE '%test%' ORDER BY a.time LIMIT ${PER_TRACK}`
+    ).bind(t.track_id, t.game).all().catch(() => ({ results: [] }))).results || [];
+    for (const l of laps) {
+      let path = null;
+      try {
+        path = geoPath(JSON.parse(await openData(env, l.trace)));
+      } catch (e) {
+        path = null;
+      }
+      if (!path) continue;
+      await env.DB.prepare("UPDATE track_maps SET n=?3, pts=?4, time=?5, geo=?6, created=?7 WHERE game=?1 AND track_id=?2 AND geo IS NULL").bind(t.game, t.track_id, path.x.length, JSON.stringify({ x: path.x, y: path.y }), l.time, JSON.stringify(path.g), Date.now()).run();
+      rebuilt++;
+      break;
+    }
+  }
+  const left = todo.length - now.length;
+  state = { done: left <= 0, seen: [...seen2].slice(-500), at: left <= 0 ? Date.now() : 0 };
+  await env.DB.prepare("INSERT INTO app_state (k, v, at) VALUES (?1, ?2, ?3) ON CONFLICT(k) DO UPDATE SET v=excluded.v, at=excluded.at").bind(STATE, JSON.stringify(state), Date.now()).run();
+  return { checked: now.length, rebuilt, left, done: state.done, withoutGeo: rows.length - rebuilt };
+}
+__name(rebuildTrackMaps, "rebuildTrackMaps");
+var EDGE_LAPS = 40;
+var EDGE_MIN = 8;
+var EDGE_PER_RUN = 2;
+var EDGE_AGE = 7 * 864e5;
+var EDGE_Q = 0.03;
+function inFrame(a, b2) {
+  if (!a.g || !b2.g) return null;
+  if (a.g[0] === b2.g[0] && a.g[1] === b2.g[1]) return a;
+  const dx = (a.g[1] - b2.g[1]) * 111320 * Math.cos(b2.g[0] * Math.PI / 180), dy = (a.g[0] - b2.g[0]) * 110540;
+  return { x: a.x.map((v) => v + dx), y: a.y.map((v) => v + dy), g: b2.g };
+}
+__name(inFrame, "inFrame");
+function lateral(a, b2) {
+  const p = inFrame(a, b2);
+  if (!p) return null;
+  const na = p.x.length, nb = b2.x.length, out = new Array(nb).fill(NaN);
+  if (na < 60 || nb < 60) return null;
+  for (let i = 0; i < nb; i++) {
+    const i0 = (i - 2 + nb) % nb, i1 = (i + 2) % nb;
+    let tx = b2.x[i1] - b2.x[i0], ty = b2.y[i1] - b2.y[i0];
+    const tm = Math.hypot(tx, ty) || 1;
+    tx /= tm;
+    ty /= tm;
+    const j0 = Math.round(i * na / nb);
+    let bj = -1, bd = 1e18;
+    for (let k = -30; k <= 30; k++) {
+      const j = ((j0 + k) % na + na) % na, dx2 = p.x[j] - b2.x[i], dy2 = p.y[j] - b2.y[i], d2 = dx2 * dx2 + dy2 * dy2;
+      if (d2 < bd) {
+        bd = d2;
+        bj = j;
+      }
+    }
+    if (bj < 0 || bd > 40 * 40) continue;
+    const dx = p.x[bj] - b2.x[i], dy = p.y[bj] - b2.y[i];
+    if (Math.abs(tx * dx + ty * dy) > 6) continue;
+    out[i] = -ty * dx + tx * dy;
+  }
+  return out;
+}
+__name(lateral, "lateral");
+function edgesOf(offs, nb) {
+  const l = new Array(nb).fill(null), r4 = new Array(nb).fill(null);
+  let have = 0;
+  for (let i = 0; i < nb; i++) {
+    const v = offs.map((o) => o[i]).filter((x) => isFinite(x)).sort((a, b2) => a - b2);
+    if (v.length < EDGE_MIN) continue;
+    const q2 = /* @__PURE__ */ __name((f) => v[Math.min(v.length - 1, Math.max(0, Math.round(f * (v.length - 1))))], "q");
+    l[i] = Math.max(0, q2(1 - EDGE_Q));
+    r4[i] = Math.min(0, q2(EDGE_Q));
+    have++;
+  }
+  if (have < nb * 0.7) return null;
+  const fill2 = /* @__PURE__ */ __name((a) => {
+    for (let i = 0; i < nb; i++) {
+      if (a[i] != null) continue;
+      let lo = i, hi = i;
+      while (a[(lo - 1 + nb) % nb] == null && hi - lo < nb) lo--;
+      while (a[(hi + 1) % nb] == null && hi - lo < nb) hi++;
+      const va = a[(lo - 1 + nb) % nb], vb = a[(hi + 1) % nb];
+      for (let k = lo; k <= hi; k++) a[(k + nb) % nb] = va + (vb - va) * (k - lo + 1) / (hi - lo + 2);
+    }
+    return a.map((_, i) => {
+      let s = 0;
+      for (let k = -2; k <= 2; k++) s += a[(i + k + nb) % nb];
+      return Math.round(s / 5 * 10) / 10;
+    });
+  }, "fill");
+  return { l: fill2(l), r: fill2(r4) };
+}
+__name(edgesOf, "edgesOf");
+async function rebuildEdges(env) {
+  const rows = (await env.DB.prepare(
+    `SELECT m.game, m.track_id, m.n, m.pts, m.geo FROM track_maps m LEFT JOIN track_edges e ON e.game=m.game AND e.track_id=m.track_id
+     WHERE m.geo IS NOT NULL AND (e.updated IS NULL OR e.updated<?1 OR e.n<>m.n) ORDER BY e.updated LIMIT ${EDGE_PER_RUN}`
+  ).bind(Date.now() - EDGE_AGE).all().catch(() => ({ results: [] }))).results || [];
+  let built = 0;
+  for (const t of rows) {
+    let lay = null;
+    try {
+      const q2 = JSON.parse(t.pts);
+      lay = { x: q2.x, y: q2.y, g: JSON.parse(t.geo) };
+    } catch (e2) {
+      lay = null;
+    }
+    if (!lay) continue;
+    const laps = (await env.DB.prepare(
+      `SELECT a.trace FROM sessions s JOIN laps a ON a.session_id=s.id
+       WHERE s.track_id=?1 AND s.game=?2 AND a.valid=1 AND a.trace IS NOT NULL AND (instr(a.trace,'"g":[')>0 OR substr(a.trace,1,4)='enc:')
+       ORDER BY a.id DESC LIMIT ${EDGE_LAPS * 2}`
+    ).bind(t.track_id, t.game).all().catch(() => ({ results: [] }))).results || [];
+    const offs = [];
+    for (const l of laps) {
+      if (offs.length >= EDGE_LAPS) break;
+      let path = null;
+      try {
+        path = geoPath(JSON.parse(await openData(env, l.trace)));
+      } catch (e2) {
+        path = null;
+      }
+      if (!path || !fitsLayout(path.x.length * 5, t.n)) continue;
+      const o = lateral(path, lay);
+      if (o && o.filter((v) => isFinite(v)).length > t.n * 0.8) offs.push(o);
+    }
+    const e = offs.length >= EDGE_MIN ? edgesOf(offs, t.n) : null;
+    await env.DB.prepare(`INSERT INTO track_edges (game, track_id, n, laps, data, updated) VALUES (?1,?2,?3,?4,?5,?6)
+       ON CONFLICT(game, track_id) DO UPDATE SET n=excluded.n, laps=excluded.laps, data=excluded.data, updated=excluded.updated`).bind(t.game, t.track_id, t.n, offs.length, e ? JSON.stringify(e) : "{}", Date.now()).run();
+    if (e) built++;
+  }
+  return { checked: rows.length, built };
+}
+__name(rebuildEdges, "rebuildEdges");
+
+// src/pedals.js
+var BIN = 5;
+var VSTEP = 5;
+var BANDS = 18;
+var MIN_SAMPLES = 8;
+var band = /* @__PURE__ */ __name((v) => Math.max(0, Math.min(BANDS - 1, Math.floor(v / VSTEP))), "band");
+var clamp01 = /* @__PURE__ */ __name((x) => x < 0 ? 0 : x > 1 ? 1 : x, "clamp01");
+var q = /* @__PURE__ */ __name((a, p) => {
+  if (!a.length) return null;
+  const s = [...a].sort((x, y) => x - y);
+  return s[Math.min(s.length - 1, Math.max(0, Math.round(p * (s.length - 1))))];
+}, "q");
+function smooth(v, w) {
+  const n = v.length, out = new Array(n);
+  for (let i = 0; i < n; i++) {
+    let s = 0, k = 0;
+    for (let j = i - w; j <= i + w; j++) if (j >= 0 && j < n) {
+      s += v[j];
+      k++;
+    }
+    out[i] = Math.max(1, s / k);
+  }
+  return out;
+}
+__name(smooth, "smooth");
+function accel(v, span) {
+  const n = v.length, a = new Array(n);
+  for (let i = 0; i < n; i++) {
+    const p = Math.max(0, i - span), r4 = Math.min(n - 1, i + span);
+    a[i] = r4 > p ? (v[r4] * v[r4] - v[p] * v[p]) / (2 * BIN * (r4 - p)) : 0;
+  }
+  return a;
+}
+__name(accel, "accel");
+function fill(arr) {
+  const idx = arr.map((x, i) => x == null ? -1 : i).filter((i) => i >= 0);
+  if (!idx.length) return null;
+  return arr.map((x, i) => {
+    if (x != null) return x;
+    const lo = idx.filter((j) => j < i).pop(), hi = idx.find((j) => j > i);
+    if (lo == null) return arr[hi];
+    if (hi == null) return arr[lo];
+    return arr[lo] + (arr[hi] - arr[lo]) * (i - lo) / (hi - lo);
+  });
+}
+__name(fill, "fill");
+function pedalEnvelope(laps) {
+  const full = Array.from({ length: BANDS }, () => []), coast = Array.from({ length: BANDS }, () => []), brake = Array.from({ length: BANDS }, () => []);
+  for (const bins of laps) {
+    if (!Array.isArray(bins) || bins.length < 60) continue;
+    const v = smooth(bins.map((b3) => +b3[0] || 0), 1), a = accel(v, 2);
+    for (let i = 2; i < bins.length - 2; i++) {
+      const thr = +bins[i][2] || 0, brk = +bins[i][3] || 0, b3 = band(v[i]);
+      let steady = true;
+      for (let j = i - 2; j <= i + 2; j++) if (Math.abs((+bins[j][2] || 0) - thr) > 0.1 || Math.abs(j - i) < 2 && Math.abs((+bins[j][3] || 0) - brk) > 0.15) steady = false;
+      if (!steady) continue;
+      if (thr >= 0.97 && brk < 0.02) full[b3].push(a[i]);
+      else if (thr < 0.03 && brk < 0.02) coast[b3].push(a[i]);
+      else if (brk >= 0.7 && thr < 0.03) brake[b3].push(-a[i] / brk);
+    }
+  }
+  const pick = /* @__PURE__ */ __name((arr, p) => arr.map((s) => s.length >= MIN_SAMPLES ? q(s, p) : null), "pick");
+  const f = fill(pick(full, 0.6)), c = fill(pick(coast, 0.5)), b2 = fill(pick(brake, 0.8));
+  if (!f || !b2) return null;
+  const r22 = /* @__PURE__ */ __name((x) => Math.round(x * 100) / 100, "r2");
+  return { full: f.map(r22), coast: (c || GUESS_COAST).map(r22), brake: b2.map(r22) };
+}
+__name(pedalEnvelope, "pedalEnvelope");
+var GUESS_COAST = Array.from({ length: BANDS }, (_, k) => -(0.6 + 5e-4 * (k * VSTEP + VSTEP / 2) ** 2));
+function ownEnvelope(v, a) {
+  const up = Array.from({ length: BANDS }, () => []), dn = Array.from({ length: BANDS }, () => []);
+  for (let i = 0; i < v.length; i++) (a[i] >= 0 ? up : dn)[band(v[i])].push(Math.abs(a[i]));
+  const f = fill(up.map((s) => s.length >= 3 ? q(s, 0.9) : null)) || new Array(BANDS).fill(4);
+  const b2 = fill(dn.map((s) => s.length >= 3 ? q(s, 0.95) : null)) || new Array(BANDS).fill(10);
+  return { full: f, coast: GUESS_COAST, brake: b2.map((x) => Math.max(x, 4)) };
+}
+__name(ownEnvelope, "ownEnvelope");
+function at(env, v) {
+  const x = v / VSTEP - 0.5, i = Math.max(0, Math.min(BANDS - 2, Math.floor(x))), f = Math.max(0, Math.min(1, x - i));
+  return env[i] + (env[i + 1] - env[i]) * f;
+}
+__name(at, "at");
+function estimatePedals(bins, pe, shifts) {
+  if (!Array.isArray(bins) || bins.length < 20) return bins;
+  const raw = bins.map((b2) => +b2[0] || 0);
+  const v = smooth(raw, 2), a = accel(v, 3), vb = smooth(raw, 1), ab = accel(vb, 2);
+  const env = pe && Array.isArray(pe.full) && pe.full.length === BANDS ? pe : ownEnvelope(v, a);
+  const n = bins.length, thr = new Array(n), brk = new Array(n);
+  for (let i = 0; i < n; i++) {
+    const f = Math.max(0.3, at(env.full, v[i])), c = Math.min(f - 0.2, at(env.coast, v[i])), b2 = Math.max(2, at(env.brake, v[i]));
+    if (ab[i] < c - 1.5 && a[i] < c - 0.4) {
+      brk[i] = clamp01((c - ab[i]) / (b2 + c));
+      thr[i] = 0;
+    } else if (a[i] > c + 0.2) {
+      thr[i] = clamp01((a[i] - c) / (f - c));
+      brk[i] = 0;
+    } else {
+      thr[i] = 0;
+      brk[i] = 0;
+    }
+    if (thr[i] > 0.92) thr[i] = 1;
+  }
+  const sm = /* @__PURE__ */ __name((x) => x.map((_, i) => (x[Math.max(0, i - 1)] + x[i] + x[Math.min(n - 1, i + 1)]) / 3), "sm");
+  const T4 = sm(thr), B = brk;
+  const ups = (Array.isArray(shifts) ? shifts : []).filter((s) => Array.isArray(s) && s[1] > 0).sort((x, y) => x[0] - y[0]);
+  return bins.map((x, i) => {
+    let g = +x[4] || 0;
+    if (ups.length) {
+      g = 1;
+      for (const [gear, sp] of ups) if (v[i] > sp) g = gear + 1;
+    }
+    return [x[0], x[1], Math.round(T4[i] * 100) / 100, Math.round(B[i] * 100) / 100, g, x[5] || 0];
+  });
+}
+__name(estimatePedals, "estimatePedals");
+function estimateTrace(tr2, pe, shifts) {
+  if (!tr2 || tr2.src !== "field" || !Array.isArray(tr2.d)) return tr2;
+  const bins = tr2.d.map((x) => [+x[0], +x[5], +x[1] || 0, +x[2] || 0, +x[3] || 0, +x[4] || 0]);
+  const est = estimatePedals(bins, pe, shifts);
+  return { ...tr2, d: tr2.d.map((x, i) => [x[0], est[i][2], est[i][3], est[i][4], x[4], x[5]]), est: 2 };
+}
+__name(estimateTrace, "estimateTrace");
+
+// src/categories.js
+var CATS = ["oval", "sports_car", "formula_car", "dirt_oval", "dirt_road"];
+var LICS = ["R", "D", "C", "B", "A", "P"];
+var MEMO = { stamp: -1, map: { tc: {}, c: {} } };
+async function catMap(env) {
+  const c = await env.DB.prepare("SELECT updated, chunks FROM season_cache WHERE k='current'").first().catch(() => null);
+  if (!c) return MEMO.map;
+  if (MEMO.stamp === c.updated) return MEMO.map;
+  let season = null;
+  try {
+    const r4 = await env.DB.prepare("SELECT data FROM season_chunks WHERE k='current' AND idx<?1 ORDER BY idx").bind(c.chunks).all();
+    season = JSON.parse((r4.results || []).map((x) => x.data).join(""));
+  } catch (e) {
+  }
+  const norm = /* @__PURE__ */ __name((x) => x === "road" ? "sports_car" : x, "norm");
+  const classes = {};
+  for (const k of season && season.classes || []) classes[k.car_class_id] = (k.cars_in_class || []).map((x) => x.car_id);
+  const tc = {}, votes = {};
+  for (const s of season && season.seasons || []) {
+    const cars = (s.car_class_ids || []).flatMap((id2) => classes[id2] || []);
+    for (const w of s.schedules || []) {
+      const cat = norm(w.category);
+      if (!CATS.includes(cat)) continue;
+      const wc = (w.race_week_cars || []).map((x) => x.car_id);
+      const t = w.track && w.track.track_id;
+      for (const car of wc.length ? wc : cars) {
+        if (t) tc[t + ":" + car] = cat;
+        const v = votes[car] = votes[car] || {};
+        v[cat] = (v[cat] || 0) + 1;
+      }
+    }
+  }
+  for (const car of season && season.cars || []) {
+    const cs = (car.categories || []).map(norm).filter((x) => CATS.includes(x));
+    if (cs.length && !votes[car.car_id]) votes[car.car_id] = { [cs[0]]: 1 };
+  }
+  const cm = {};
+  for (const [car, v] of Object.entries(votes)) cm[car] = Object.entries(v).sort((a, b2) => b2[1] - a[1])[0][0];
+  MEMO = { stamp: c.updated, map: { tc, c: cm } };
+  return MEMO.map;
+}
+__name(catMap, "catMap");
+function guessCat(track2, car) {
+  const t = String(track2 || ""), c = String(car || "");
+  if (/dirt/i.test(t + " " + c) || /sprint ?car|midget|\bpro ?[24]\b|rallycross|stadium truck|\blites?\b/i.test(c))
+    return /rallycross|road|\brx\b/i.test(t) || /rallycross|pro ?[24]\b|\blites?\b|stadium/i.test(c) ? "dirt_road" : "dirt_oval";
+  if (/nascar|cup series|next gen|xfinity|craftsman|\btrucks?\b|\barca\b|late model|modified|legends|street stock|silver crown|stock ?car|super late/i.test(c)) return "oval";
+  if (/\boval\b|superspeedway/i.test(t)) return "oval";
+  if (/p217|lmp|\bgtp\b|\bdpi?\b|prototype|hypercar/i.test(c)) return "sports_car";
+  if (/formula|\bf[1-4]\b|super ?formula|dallara|indy|\bir-?\d+|skip barber|ff1600|pro mazda|\busf\b|lotus (18|49|79)|williams|mercedes-amg w1|tatuus|\bvee\b|\bfr ?[23]\.|renault/i.test(c)) return "formula_car";
+  return "sports_car";
+}
+__name(guessCat, "guessCat");
+function catOf(map, trackId, carId, hint, track2, car) {
+  const h = String(hint || "").toLowerCase().replace(/[^a-z]/g, "");
+  const sure = { oval: "oval", dirtoval: "dirt_oval", dirtroad: "dirt_road", formulacar: "formula_car", formula: "formula_car", sportscar: "sports_car" }[h];
+  const x = map.tc[trackId + ":" + carId] || sure || map.c[carId] || guessCat(track2, car);
+  if (h === "road" && !["sports_car", "formula_car"].includes(x)) {
+    const g = guessCat("", car);
+    return g === "formula_car" ? g : "sports_car";
+  }
+  return x;
+}
+__name(catOf, "catOf");
+var licOf = /* @__PURE__ */ __name((v) => {
+  const s = String(v || "").trim().toUpperCase();
+  if (s.startsWith("WC") || s.startsWith("PRO")) return "P";
+  return LICS.includes(s[0]) ? s[0] : null;
+}, "licOf");
+var groupOf = /* @__PURE__ */ __name((cat) => cat === "oval" || cat === "dirt_oval" || cat === "dirt_road" ? cat : "road", "groupOf");
+async function groupFor(env, game, trackId, carId, hint, track2, car) {
+  if (game && game !== "iracing") return "road";
+  if (!trackId && !carId && !hint && !track2 && !car) return "";
+  return groupOf(catOf(await catMap(env), trackId || 0, carId || 0, hint, track2 || "", car || ""));
+}
+__name(groupFor, "groupFor");
+
+// src/model.js
+var import_pitwall_analysis = __toESM(require_pitwall_analysis(), 1);
+var MODEL_VERSION = 12;
+var CARD_VERSION = 3;
+var SEG_M = 250;
+var MAX_LAPS = 80;
+var LEARN_PER_RUN = 120;
+var LADDER_STEP = 4e-3;
+var LADDER_SPAN = 0.08;
+var LEVEL_BIN = 2;
+var CMP_MIN = 5;
+var CMP_DRIVERS = 3;
+var BAND_MIN = 5;
+var BAND_DRIVERS = 3;
+var IMPROVE_DRIVERS = 30;
+var IMPROVE_MIN = 3;
+var RANK_Q = 41;
+var median = /* @__PURE__ */ __name((a) => {
+  const v = a.filter((x) => x != null && isFinite(x)).sort((x, y) => x - y);
+  if (!v.length) return null;
+  const m = v.length >> 1;
+  return v.length % 2 ? v[m] : (v[m - 1] + v[m]) / 2;
+}, "median");
+var r = /* @__PURE__ */ __name((v, d) => v == null || !isFinite(v) ? 0 : Math.round(v * d) / d, "r");
+var tAt = /* @__PURE__ */ __name((l, i) => {
+  const b2 = l.bins[Math.min(i, l.bins.length - 1)];
+  return b2 ? b2[1] : null;
+}, "tAt");
+function segTimes(l, M, n) {
+  const out = [], step = n / M;
+  for (let k = 0; k < M; k++) {
+    const s = Math.round(k * step), e = k === M - 1 ? n - 1 : Math.round((k + 1) * step);
+    const a = tAt(l, s), b2 = k === M - 1 ? l.time : tAt(l, e);
+    out.push(a != null && b2 != null && b2 > a ? b2 - a : null);
+  }
+  return out;
+}
+__name(segTimes, "segTimes");
+function goodLap(time, tr2) {
+  if (!tr2 || !Array.isArray(tr2.d) || tr2.d.length < 60) return null;
+  if (Array.isArray(tr2.f) && tr2.f.includes("traffic")) return null;
+  if (Array.isArray(tr2.f) && tr2.f.includes("wet")) return null;
+  if (tr2.h && typeof tr2.h === "object" && ((+tr2.h.gap || 0) > 40 || (+tr2.h.seen || 1) < 0.9)) return null;
+  const bins = tr2.d.map((x) => [+x[0], +x[5], Math.min(1, Math.max(0, +x[1] || 0)), Math.min(1, Math.max(0, +x[2] || 0)), +x[3], +x[4]]);
+  let back2 = 0, jumps = 0, prev = -1, prevV = null;
+  for (const b2 of bins) {
+    if (!(b2[0] >= 0 && b2[0] < 130) || !isFinite(b2[1])) return null;
+    if (b2[1] < prev - 0.05) back2++;
+    prev = b2[1];
+    if (prevV != null && Math.abs(b2[0] - prevV) > 10) jumps++;
+    prevV = b2[0];
+  }
+  if (back2 > 2 || jumps > 2) return null;
+  if (bins[bins.length - 1][1] > time + 2) return null;
+  return { time, bins, field: tr2.src === "field", rival: tr2.src === "real" };
+}
+__name(goodLap, "goodLap");
+function lapCompound(tr2) {
+  const f = tr2 && Array.isArray(tr2.f) ? tr2.f.find((x) => typeof x === "string" && /^cmp:\d+$/.test(x)) : null;
+  if (f) return +f.slice(4);
+  return tr2 && (tr2.src === "field" || tr2.src === "real") ? -1 : 0;
+}
+__name(lapCompound, "lapCompound");
+var sha = /* @__PURE__ */ __name(async (t) => [...new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(t)))].map((x) => x.toString(16).padStart(2, "0")).join("").slice(0, 24), "sha");
+async function adoptOldSessions(env, game, trackId, carId) {
+  const names = await env.DB.prepare(
+    `SELECT track, car FROM community_laps WHERE track_id=?1 AND car_id=?2 AND game=?3
+     UNION SELECT track, car FROM community_reports WHERE track_id=?1 AND car_id=?2 AND game=?3 LIMIT 20`
+  ).bind(trackId, carId, game).all();
+  const full = [];
+  for (const n of names.results || []) {
+    if (!n.track || !n.car) continue;
+    full.push(n.track);
+    await env.DB.prepare(
+      `UPDATE sessions SET track_id=?1, car_id=?2 WHERE (track_id IS NULL OR car_id IS NULL) AND game=?3 AND car=?4
+         AND ((track||' \xB7 '||COALESCE(track_config,''))=?5 OR (track=?5 AND COALESCE(track_config,'')=''))`
+    ).bind(trackId, carId, game, n.car, n.track).run().catch(() => {
+    });
+  }
+  if (full.length) {
+    const ph = full.map((_, i) => "?" + (i + 4)).join(",");
+    await env.DB.prepare(
+      `UPDATE sessions SET track_id=NULL, car_id=NULL WHERE track_id=?1 AND car_id=?2 AND game=?3 AND COALESCE(track_config,'')<>''
+         AND (track||' \xB7 '||track_config) NOT IN (${ph})`
+    ).bind(trackId, carId, game, ...full).run().catch(() => {
+    });
+  }
+}
+__name(adoptOldSessions, "adoptOldSessions");
+async function learnNewLaps(env, game, trackId, carId) {
+  const known = new Map(((await env.DB.prepare("SELECT k, cmp FROM model_laps WHERE game=?1 AND track_id=?2 AND car_id=?3").bind(game, trackId, carId).all()).results || []).map((x) => [x.k, x.cmp]));
+  const a = await env.DB.prepare(
+    `SELECT s.uploader AS up, a.time, a.trace, s.track_temp AS temp FROM laps a JOIN sessions s ON s.id=a.session_id
+     WHERE s.track_id=?1 AND (s.car_id=?2 OR s.car_id IN (${await famSql(env, game, carId)})) AND s.game=?3 AND s.uploader LIKE 'acct:%' AND a.valid=1 AND a.time>10 AND a.trace IS NOT NULL
+       AND LOWER(COALESCE(s.kind,'')) NOT LIKE '%test%' AND (COALESCE(s.official,1)<>0 OR s.ai=1)
+     ORDER BY a.time LIMIT 3000`
+  ).bind(trackId, carId, game).all();
+  const c = await env.DB.prepare(
+    `SELECT 'acct:'||user_id AS up, time, trace, NULL AS temp FROM community_laps WHERE track_id=?1 AND car_id=?2 AND game=?3 AND trace IS NOT NULL AND (COALESCE(official,1)<>0 OR ai=1) ORDER BY time LIMIT 800`
+  ).bind(trackId, carId, game).all();
+  const out = await env.DB.prepare(
+    `SELECT s.uploader AS up, a.time FROM laps a JOIN sessions s ON s.id=a.session_id
+     WHERE s.track_id=?1 AND (s.car_id=?2 OR s.car_id IN (${await famSql(env, game, carId)})) AND s.game=?3 AND s.uploader LIKE 'acct:%' AND a.valid=1 AND a.time>10 AND a.trace IS NOT NULL
+       AND (LOWER(COALESCE(s.kind,'')) LIKE '%test%' OR (s.official=0 AND COALESCE(s.ai,0)=0)) LIMIT 3000`
+  ).bind(trackId, carId, game).all();
+  for (const x of out.results || []) {
+    const k = await sha(x.up + ":" + x.time.toFixed(3));
+    if (!known.has(k)) continue;
+    known.delete(k);
+    await env.DB.prepare("DELETE FROM model_laps WHERE game=?1 AND track_id=?2 AND car_id=?3 AND k=?4").bind(game, trackId, carId, k).run();
+  }
+  let added = 0, read = 0;
+  const layN = await layoutN(env, game, trackId);
+  for (const x of [...a.results || [], ...c.results || []]) {
+    const k = await sha(x.up + ":" + x.time.toFixed(3));
+    const old = known.has(k);
+    if (old && known.get(k) != null) continue;
+    if (added + read >= LEARN_PER_RUN) return { added, more: true };
+    let tr2 = null;
+    try {
+      tr2 = JSON.parse(await openData(env, x.trace));
+    } catch (e) {
+      tr2 = null;
+    }
+    if (old) {
+      read++;
+      const cmp = tr2 ? lapCompound(tr2) : -1;
+      known.set(k, cmp);
+      await env.DB.prepare("UPDATE model_laps SET cmp=?5 WHERE game=?1 AND track_id=?2 AND car_id=?3 AND k=?4").bind(game, trackId, carId, k, cmp).run();
+      continue;
+    }
+    if (!tr2) {
+      known.set(k, -1);
+      continue;
+    }
+    known.set(k, -1);
+    if (!fitsLayout(traceLen(tr2), layN) || !goodLap(x.time, tr2)) continue;
+    await env.DB.prepare("INSERT INTO model_laps (game, track_id, car_id, k, drv, time, data, created, temp, cmp) VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10) ON CONFLICT DO NOTHING").bind(game, trackId, carId, k, await sha("drv:" + x.up), x.time, await gz(JSON.stringify(tr2.src === "field" || tr2.src === "real" ? { d: tr2.d, src: tr2.src } : tr2.d)), Date.now(), typeof x.temp === "number" && isFinite(x.temp) ? x.temp : null, lapCompound(tr2)).run();
+    added++;
+  }
+  return { added, more: false };
+}
+__name(learnNewLaps, "learnNewLaps");
+async function lapPath(env, game, trackId, carId, time) {
+  const ok = /* @__PURE__ */ __name((tr2) => tr2 && Array.isArray(tr2.x) && Array.isArray(tr2.y) && tr2.x.length > 10 && tr2.x.length === tr2.y.length, "ok");
+  const open = /* @__PURE__ */ __name(async (row) => {
+    if (!row || !row.trace) return null;
+    try {
+      const tr2 = JSON.parse(await openData(env, row.trace));
+      return ok(tr2) ? { x: tr2.x, y: tr2.y, g: Array.isArray(tr2.g) && tr2.g.length === 2 ? tr2.g : null } : null;
+    } catch (e) {
+      return null;
+    }
+  }, "open");
+  const c = await env.DB.prepare("SELECT trace FROM community_laps WHERE track_id=?1 AND car_id=?2 AND game=?3 AND abs(time-?4)<0.0006 AND trace IS NOT NULL LIMIT 3").bind(trackId, carId, game, time).all();
+  for (const row of c.results || []) {
+    const p = await open(row);
+    if (p) return p;
+  }
+  const a = await env.DB.prepare(
+    `SELECT a.trace FROM laps a JOIN sessions s ON s.id=a.session_id
+     WHERE s.track_id=?1 AND (s.car_id=?2 OR s.car_id IN (${await famSql(env, game, carId)})) AND s.game=?3 AND abs(a.time-?4)<0.0006 AND a.trace IS NOT NULL LIMIT 3`
+  ).bind(trackId, carId, game, time).all();
+  for (const row of a.results || []) {
+    const p = await open(row);
+    if (p) return p;
+  }
+  return null;
+}
+__name(lapPath, "lapPath");
+var memTrace = /* @__PURE__ */ __name((v) => Array.isArray(v) ? { d: v } : { d: v.d, src: v.src }, "memTrace");
+function pickLaps(rows) {
+  const drivers = new Set(rows.map((x) => x.drv)).size;
+  const cap3 = drivers < 3 ? 10 : 3;
+  const per = /* @__PURE__ */ new Map();
+  for (const x of rows) {
+    const l = per.get(x.drv) || [];
+    if (l.length >= cap3) continue;
+    l.push(x);
+    per.set(x.drv, l);
+  }
+  const rounds = Array.from({ length: cap3 }, () => []);
+  for (const l of per.values()) l.forEach((x, i) => rounds[i].push(x));
+  const pick = [];
+  for (const rd of rounds) for (const x of rd.sort((p, q2) => p.time - q2.time)) if (pick.length < MAX_LAPS) pick.push(x);
+  return pick;
+}
+__name(pickLaps, "pickLaps");
+function compoundsOf(rows) {
+  const n = /* @__PURE__ */ new Map(), d = /* @__PURE__ */ new Map();
+  for (const x of rows) {
+    if (typeof x.cmp !== "number" || x.cmp < 0) continue;
+    n.set(x.cmp, (n.get(x.cmp) || 0) + 1);
+    if (!d.has(x.cmp)) d.set(x.cmp, /* @__PURE__ */ new Set());
+    d.get(x.cmp).add(x.drv);
+  }
+  if (n.size < 2) return [];
+  return [...n.entries()].filter(([c, k]) => k >= CMP_MIN && d.get(c).size >= CMP_DRIVERS).map(([c]) => c).sort((p, q2) => p - q2);
+}
+__name(compoundsOf, "compoundsOf");
+function bandsOf(rows) {
+  const n = /* @__PURE__ */ new Map(), d = /* @__PURE__ */ new Map();
+  for (const x of rows) {
+    const b2 = bandOf(x.temp);
+    if (!b2) continue;
+    n.set(b2, (n.get(b2) || 0) + 1);
+    if (!d.has(b2)) d.set(b2, /* @__PURE__ */ new Set());
+    d.get(b2).add(x.drv);
+  }
+  if (n.size < 2) return [];
+  return BANDS2.filter((b2) => (n.get(b2) || 0) >= BAND_MIN && d.get(b2).size >= BAND_DRIVERS);
+}
+__name(bandsOf, "bandsOf");
+function progressPairs(rows) {
+  const per = /* @__PURE__ */ new Map();
+  for (const x of rows) {
+    if (!per.has(x.drv)) per.set(x.drv, []);
+    per.get(x.drv).push(x);
+  }
+  const out = [];
+  for (const l of per.values()) {
+    if (l.length < 2) continue;
+    const best = l.reduce((a, b2) => b2.time < a.time ? b2 : a);
+    const older = l.filter((x) => x !== best && (x.created || 0) < (best.created || 0) && x.time > best.time * 1.003);
+    if (!older.length) continue;
+    const first = older.reduce((a, b2) => (b2.created || 0) < (a.created || 0) ? b2 : a);
+    out.push([first, best, first.time - best.time]);
+  }
+  return out.sort((a, b2) => b2[2] - a[2]).slice(0, IMPROVE_DRIVERS).map(([a, b2]) => [a, b2]);
+}
+__name(progressPairs, "progressPairs");
+function improveSteps(pairs, zones, n) {
+  const out = [];
+  for (const z of zones) {
+    const g = [];
+    for (const { old, now } of pairs) {
+      const a = cornerTime(old.bins, z, Math.min(n, old.bins.length)), b2 = cornerTime(now.bins, z, Math.min(n, now.bins.length));
+      if (a != null && b2 != null) g.push(a - b2);
+    }
+    if (g.length < IMPROVE_MIN) continue;
+    g.sort((p, q2) => p - q2);
+    const gain = g[g.length >> 1];
+    if (gain > 0.02) out.push({ apex: z.imin * 5, gain: r(gain, 1e3), n: g.length });
+  }
+  return out.sort((a, b2) => b2.gain - a.gain).slice(0, 3);
+}
+__name(improveSteps, "improveSteps");
+function cornerRanksOf(sorted, zones, n) {
+  const best = [], seen2 = /* @__PURE__ */ new Set();
+  for (const l of sorted) {
+    if (seen2.has(l.up)) continue;
+    seen2.add(l.up);
+    best.push(l);
+  }
+  if (best.length < 3) return [];
+  return zones.map((z) => {
+    const ts = best.map((l) => cornerTime(l.bins, z, n)).filter((t) => t != null && t > 0).sort((a, b2) => a - b2);
+    if (ts.length < 3) return null;
+    const q2 = ts.length <= RANK_Q ? ts : Array.from({ length: RANK_Q }, (_, k) => ts[Math.round(k * (ts.length - 1) / (RANK_Q - 1))]);
+    return { apex: z.imin * 5, i0: Math.max(0, z.i - 10) * 5, i1: Math.min(n - 1, z.imin + 30) * 5, n: ts.length, q: q2.map((t) => r(t, 1e3)) };
+  }).filter(Boolean);
+}
+__name(cornerRanksOf, "cornerRanksOf");
+async function candidates(env, game, trackId, carId) {
+  await adoptOldSessions(env, game, trackId, carId);
+  const learnt = await learnNewLaps(env, game, trackId, carId);
+  const rows = (await env.DB.prepare("SELECT drv, time, data, temp, cmp, created FROM model_laps WHERE game=?1 AND track_id=?2 AND car_id=?3 ORDER BY time LIMIT 5000").bind(game, trackId, carId).all()).results || [];
+  const drivers = new Set(rows.map((x) => x.drv)).size;
+  const open = /* @__PURE__ */ new Map();
+  let card;
+  const lapsOf = /* @__PURE__ */ __name(async (pick) => {
+    const out = [];
+    for (const x of pick) {
+      if (!open.has(x)) {
+        let g2 = null;
+        try {
+          g2 = goodLap(x.time, memTrace(JSON.parse(await gunz(x.data))));
+        } catch (e) {
+        }
+        if (g2) {
+          g2.up = x.drv;
+          g2.temp = typeof x.temp === "number" ? x.temp : null;
+          g2.cmp = typeof x.cmp === "number" && x.cmp >= 0 ? x.cmp : null;
+          if (g2.field) {
+            if (card === void 0) card = await getCarCard(env, game, carId).catch(() => null);
+            g2.bins = estimatePedals(g2.bins, card && card.pedals, card && card.shifts);
+          }
+        }
+        open.set(x, g2);
+      }
+      const g = open.get(x);
+      if (g) out.push(g);
+    }
+    return out;
+  }, "lapsOf");
+  const laps = await lapsOf(pickLaps(rows));
+  const byCmp = /* @__PURE__ */ new Map();
+  for (const c of compoundsOf(rows)) byCmp.set(c, await lapsOf(pickLaps(rows.filter((x) => x.cmp === c))));
+  const byBand = /* @__PURE__ */ new Map();
+  for (const b2 of bandsOf(rows)) byBand.set(b2, await lapsOf(pickLaps(rows.filter((x) => bandOf(x.temp) === b2))));
+  const pairs = [];
+  for (const [o, nw] of progressPairs(rows)) {
+    const [a, b2] = await lapsOf([o, nw]);
+    if (a && b2 && a !== b2) pairs.push({ old: a, now: b2 });
+  }
+  return { laps, byCmp, byBand, pairs, drivers, more: learnt.more, added: learnt.added };
+}
+__name(candidates, "candidates");
+var CORNER_FAST = 0.3;
+var CORNER_MIN = 3;
+var CORNER_MAX = 12;
+var SAME_ZONE = 20;
+function brakeZones(bins, n) {
+  const out = [];
+  for (let i = 1; i < n; i++) {
+    const a = bins[i], b2 = bins[i - 1];
+    if (!a || !b2) continue;
+    if (a[3] > 0.12 && b2[3] <= 0.12) {
+      let k = i, vmin = a[0], imin = i;
+      while (k < n && k < i + 120 && bins[k] && !(bins[k][2] > 0.6 && bins[k][3] < 0.05)) {
+        if (bins[k][0] < vmin) {
+          vmin = bins[k][0];
+          imin = k;
+        }
+        k++;
+      }
+      if (a[0] - vmin > 4) out.push({ i, vmin, imin });
+      i = k;
+    }
+  }
+  return out;
+}
+__name(brakeZones, "brakeZones");
+var BANDS2 = ["cold", "mild", "hot"];
+var bandOf = /* @__PURE__ */ __name((t) => typeof t === "number" && isFinite(t) ? t < 25 ? "cold" : t > 35 ? "hot" : "mild" : null, "bandOf");
+var cornerTime = /* @__PURE__ */ __name((bins, z, n) => {
+  const i0 = Math.max(0, z.i - 10), i1 = Math.min(n - 1, z.imin + 30);
+  return bins[i0] && bins[i1] ? bins[i1][1] - bins[i0][1] : null;
+}, "cornerTime");
+var sd = /* @__PURE__ */ __name((a) => {
+  if (a.length < 3) return null;
+  const mu = a.reduce((p, q2) => p + q2, 0) / a.length;
+  return Math.sqrt(a.reduce((p, q2) => p + (q2 - mu) * (q2 - mu), 0) / a.length);
+}, "sd");
+function fastPicks(sorted) {
+  const seen2 = /* @__PURE__ */ new Set(), fast = [];
+  for (const l of sorted) {
+    if (seen2.has(l.up)) continue;
+    seen2.add(l.up);
+    fast.push(l);
+  }
+  return fast.slice(0, Math.min(CORNER_MAX, Math.max(CORNER_MIN, Math.round(fast.length * CORNER_FAST))));
+}
+__name(fastPicks, "fastPicks");
+function cornerCard(sorted, fastest, n) {
+  const pick = fastPicks(sorted);
+  if (pick.length < CORNER_MIN) return [];
+  const zones = pick.map((l) => brakeZones(l.bins, n)), out = [];
+  const range = /* @__PURE__ */ __name((ls, zs, z) => {
+    const bp = [], va = [];
+    zs.forEach((q2, k) => {
+      if (!ls[k]) return;
+      const m = q2.filter((x) => Math.abs(x.i - z.i) <= SAME_ZONE).sort((p, w) => Math.abs(p.i - z.i) - Math.abs(w.i - z.i))[0];
+      if (m) {
+        bp.push(m.i * 5);
+        va.push(m.vmin);
+      }
+    });
+    if (bp.length < CORNER_MIN) return null;
+    bp.sort((a, b2) => a - b2);
+    va.sort((a, b2) => a - b2);
+    return { b0: bp[0], b1: bp[bp.length - 1], v0: r(va[0], 10), v1: r(va[va.length - 1], 10), n: bp.length };
+  }, "range");
+  for (const z of brakeZones(fastest.bins, n)) {
+    const all = range(pick.map(() => true), zones, z);
+    if (!all) continue;
+    const c = { d: z.i * 5, apex: z.imin * 5, ...all };
+    const gs = [];
+    zones.forEach((q2, k) => {
+      const l = pick[k];
+      if (l.field) return;
+      const mm = q2.filter((x) => Math.abs(x.i - z.i) <= SAME_ZONE).sort((p, w) => Math.abs(p.i - z.i) - Math.abs(w.i - z.i))[0];
+      const g = mm && l.bins[mm.imin] ? Math.round(l.bins[mm.imin][4] || 0) : 0;
+      if (g >= 1) gs.push(g);
+    });
+    if (gs.length >= 2) {
+      gs.sort((a, b2) => a - b2);
+      c.g = [gs[Math.floor(gs.length * 0.2)], gs[Math.ceil(gs.length * 0.8) - 1]];
+    }
+    const bands = {};
+    for (const b2 of BANDS2) {
+      const rg = range(pick.map((l) => bandOf(l.temp) === b2), zones, z);
+      if (rg) bands[b2] = rg;
+    }
+    if (Object.keys(bands).length) c.bands = bands;
+    const ts = sorted.map((l) => cornerTime(l.bins, z, n)).filter((t) => t != null);
+    const spread = sd(ts);
+    if (spread != null) c.spread = r(spread, 1e3);
+    out.push(c);
+  }
+  return out;
+}
+__name(cornerCard, "cornerCard");
+function levelStep(pick, laps, zones, n) {
+  const G = laps.filter((l) => l !== pick && l.time > pick.time && l.time <= pick.time * 1.03);
+  if (G.length < 2) return [];
+  const out = [];
+  for (const z of zones) {
+    const tp = cornerTime(pick.bins, z, n);
+    if (tp == null) continue;
+    const d = G.map((l) => cornerTime(l.bins, z, n)).filter((t) => t != null).map((t) => t - tp).sort((a, b2) => a - b2);
+    if (d.length < 2) continue;
+    const gain = d[d.length >> 1];
+    if (gain > 0.03) out.push({ apex: z.imin * 5, gain: r(gain, 1e3) });
+  }
+  return out.sort((a, b2) => b2.gain - a.gain).slice(0, 3);
+}
+__name(levelStep, "levelStep");
+function lineRanges(record2, recPath2, picks, zones, n) {
+  if (!recPath2 || recPath2.x.length < n) return [];
+  const offs = [];
+  for (const { lap, path } of picks) {
+    if (lap === record2) continue;
+    const p = sameFrame(recPath2, path);
+    if (!p || p.x.length < n) continue;
+    const o = lineOffsets(p.x.slice(0, n), p.y.slice(0, n), recPath2.x.slice(0, n), recPath2.y.slice(0, n));
+    if (o) offs.push(o);
+  }
+  if (offs.length < CORNER_MIN) return [];
+  const out = [];
+  for (const z of zones) {
+    const sg = insideSign(recPath2.x, recPath2.y, z.imin);
+    if (!sg) continue;
+    const at2 = /* @__PURE__ */ __name((i) => {
+      const v = [];
+      for (const o of offs) {
+        let s = 0, c2 = 0;
+        for (let k = Math.max(0, i - 2); k <= Math.min(n - 1, i + 2); k++) if (!isNaN(o[k])) {
+          s += o[k];
+          c2++;
+        }
+        if (c2) v.push(s / c2 * sg);
+      }
+      return v;
+    }, "at");
+    const rg = /* @__PURE__ */ __name((v) => {
+      if (v.length < CORNER_MIN) return null;
+      v.sort((a2, b3) => a2 - b3);
+      return [r(v[0], 10), r(v[v.length - 1], 10)];
+    }, "rg");
+    const a = rg(at2(z.i)), b2 = rg(at2(z.imin)), c = rg(at2(Math.min(n - 1, z.imin + 16)));
+    if (a && b2 && c) out.push({ apex: z.imin * 5, in: a, at: b2, out: c, n: offs.length });
+  }
+  return out;
+}
+__name(lineRanges, "lineRanges");
+function cleanLaps(raw) {
+  if (raw.length < 2) return raw.slice();
+  const len = median(raw.map((l) => l.bins.length));
+  let laps = raw.filter((l) => Math.abs(l.bins.length - len) <= len * 0.03);
+  laps = laps.filter((l) => {
+    let t = 0, n = 0;
+    for (const b2 of l.bins) if (b2[0] > 0.5) {
+      t += 5 / b2[0];
+      n++;
+    }
+    return n >= l.bins.length * 0.9 && Math.abs(t - l.time) / l.time < 0.04;
+  });
+  const tMed = median(laps.map((l) => l.time));
+  laps = laps.filter((l) => l.time <= tMed * 1.12);
+  if (laps.length >= 3) {
+    const nb = Math.min(...laps.map((l) => l.bins.length)), prof = [];
+    for (let i = 0; i < nb; i++) prof.push(median(laps.map((l) => l.bins[i][0])));
+    const M0 = Math.max(8, Math.round(nb * 5 / SEG_M));
+    laps.forEach((l) => {
+      l.seg0 = segTimes(l, M0, nb);
+    });
+    const segMed = [];
+    for (let k = 0; k < M0; k++) segMed.push(median(laps.map((l) => l.seg0[k])));
+    laps = laps.filter((l) => {
+      let dev = 0;
+      for (let i = 0; i < nb; i++) dev += Math.abs(l.bins[i][0] - prof[i]) / Math.max(prof[i], 5);
+      if (dev / nb > 0.2) return false;
+      return l.seg0.every((v, k) => v == null || segMed[k] == null || v >= segMed[k] * 0.88);
+    });
+  }
+  return laps;
+}
+__name(cleanLaps, "cleanLaps");
+async function refsOf(laps, pathFor) {
+  const n = Math.min(...laps.map((l) => l.bins.length)), M = Math.max(8, Math.round(n * 5 / SEG_M));
+  laps.forEach((l) => {
+    l.seg = segTimes(l, M, n);
+  });
+  const fastest = laps.reduce((a, b2) => b2.time < a.time ? b2 : a);
+  const record2 = fastest.bins.slice(0, n).map((b2) => [r(b2[0], 10), r(b2[1], 1e3), r(b2[2], 100), r(b2[3], 100), Math.round(b2[4] || 0), r(b2[5], 100)]);
+  const compact = /* @__PURE__ */ __name((l) => {
+    const out2 = [];
+    for (let i = 0; i < n; i += LEVEL_BIN) {
+      const b2 = l.bins[i];
+      out2.push([r(b2[0], 10), r(b2[1], 1e3), r(b2[2], 100), r(b2[3], 100), Math.round(b2[4] || 0)]);
+    }
+    return out2;
+  }, "compact");
+  const sorted = laps.slice().sort((a, b2) => a.time - b2.time);
+  const corners = cornerCard(sorted, fastest, n);
+  const zr = brakeZones(fastest.bins, n);
+  const ladder = [];
+  for (let j = 0; j * LADDER_STEP <= LADDER_SPAN; j++) {
+    const t = fastest.time * (1 + j * LADDER_STEP);
+    let g = sorted.filter((l) => l.time < t * 0.997 && l.time > t * 0.97);
+    if (!g.length) g = sorted.filter((l) => l.time < t * 0.997);
+    const real = g.filter((l) => !l.field);
+    const pick = real.length ? real[real.length - 1] : g.length ? g[g.length - 1] : fastest;
+    if (ladder.length && ladder[ladder.length - 1].lap === pick) {
+      ladder[ladder.length - 1].upTo = t;
+      continue;
+    }
+    ladder.push({ lap: pick, upTo: t, time: r(pick.time, 1e3), n: 1, field: !!pick.field, seg: pick.seg.map((x) => r(x, 1e3)), bins: compact(pick) });
+  }
+  const fp = await pathFor(fastest);
+  const out = [];
+  for (const { lap, ...x } of ladder) {
+    const p = await pathFor(lap), e = { ...x, upTo: r(x.upTo, 1e3) };
+    if (p && p.x.length >= n) {
+      e.x = [];
+      e.y = [];
+      for (let i = 0; i < n; i += LEVEL_BIN) {
+        e.x.push(r(p.x[i], 10));
+        e.y.push(r(p.y[i], 10));
+      }
+      if (p.g) e.g = p.g;
+    }
+    e.step = levelStep(lap, laps, zr, n);
+    out.push(e);
+  }
+  if (fp && fp.x.length >= n) {
+    const pp = [];
+    for (const l of fastPicks(sorted)) {
+      const p = await pathFor(l);
+      if (p) pp.push({ lap: l, path: p });
+    }
+    for (const q2 of lineRanges(fastest, fp, pp, zr, n)) {
+      const c = corners.find((x) => x.apex === q2.apex);
+      if (c) c.line = { in: q2.in, at: q2.at, out: q2.out, n: q2.n };
+    }
+  }
+  let lineXY = null;
+  if (!(fp && fp.x.length >= n)) {
+    for (const l of sorted.slice(0, 40)) {
+      const p = await pathFor(l);
+      if (p && p.x.length >= n) {
+        lineXY = { time: r(l.time, 1e3), x: p.x.slice(0, n).map((v) => r(v, 10)), y: p.y.slice(0, n).map((v) => r(v, 10)), ...p.g ? { g: p.g } : {} };
+        break;
+      }
+    }
+  }
+  return {
+    n: laps.length,
+    M,
+    nb: n,
+    pool: laps.length,
+    idealTime: r(fastest.time, 1e3),
+    fastest: r(fastest.time, 1e3),
+    lineXY,
+    ranks: cornerRanksOf(sorted, zr, n),
+    ideal: record2,
+    idealField: !!fastest.field,
+    corners,
+    idealXY: fp && fp.x.length >= n ? { x: fp.x.slice(0, n).map((v) => r(v, 10)), y: fp.y.slice(0, n).map((v) => r(v, 10)), ...fp.g ? { g: fp.g } : {} } : null,
+    ladder: out
+  };
+}
+__name(refsOf, "refsOf");
+async function buildModel(env, game, trackId, carId) {
+  carId = await famId(env, game, carId);
+  const { laps: raw, byCmp: rawCmp, byBand: rawBand, pairs, drivers, more, added } = await candidates(env, game, trackId, carId);
+  if (added) await markCar(env, game, carId);
+  const shared = await env.DB.prepare(
+    `SELECT COUNT(*) AS n, MIN(time) AS best FROM community_laps WHERE track_id=?1 AND car_id=?2 AND game=?3 AND COALESCE(shown,'')<>'model'`
+  ).bind(trackId, carId, game).first();
+  const base2 = { v: MODEL_VERSION, game, trackId, carId, built: Date.now(), more: !!more, drivers, shared: shared && shared.n || 0 };
+  if (raw.length < 2) return { ...base2, n: raw.length };
+  const laps = cleanLaps(raw);
+  const timed = await env.DB.prepare("SELECT user_id, MIN(time) AS t FROM community_laps WHERE track_id=?1 AND car_id=?2 AND game=?3 AND time>10 AND (COALESCE(official,1)<>0 OR ai=1) GROUP BY user_id").bind(trackId, carId, game).all();
+  const byDrv = /* @__PURE__ */ new Map();
+  for (const l of laps) if (!byDrv.has(l.up) || l.time < byDrv.get(l.up)) byDrv.set(l.up, l.time);
+  for (const x of timed.results || []) {
+    const k = await sha("drv:acct:" + x.user_id);
+    if (!byDrv.has(k) || x.t < byDrv.get(k)) byDrv.set(k, x.t);
+  }
+  const times = [...byDrv.values()].sort((a, b2) => a - b2).map((t) => r(t, 1e3));
+  if (laps.length < 2) return { ...base2, n: laps.length, drivers: Math.max(drivers, times.length), times };
+  const paths = /* @__PURE__ */ new Map();
+  const pathFor = /* @__PURE__ */ __name(async (l) => {
+    if (!paths.has(l)) paths.set(l, await lapPath(env, game, trackId, carId, l.time).catch(() => null));
+    return paths.get(l);
+  }, "pathFor");
+  const model = { ...base2, drivers: Math.max(drivers, times.length), times, ...await refsOf(laps, pathFor) };
+  const cmps = {};
+  for (const [c, ls] of rawCmp) {
+    const cl = cleanLaps(ls);
+    if (cl.length >= 2) cmps[c] = await refsOf(cl, pathFor);
+  }
+  if (Object.keys(cmps).length) model.byCmp = cmps;
+  const bands = {};
+  for (const [b2, ls] of rawBand || []) {
+    const cl = cleanLaps(ls);
+    if (cl.length >= 2) {
+      const x = await refsOf(cl, async () => null);
+      bands[b2] = { n: x.n, ladder: x.ladder.map(({ x: _x, y: _y, g: _g, ...e }) => e) };
+    }
+  }
+  if (Object.keys(bands).length) model.byBand = bands;
+  const nb = model.nb || 0, fastest = laps.reduce((a, b2) => b2.time < a.time ? b2 : a);
+  model.improve = improveSteps(pairs || [], brakeZones(fastest.bins, nb), nb);
+  await usualTips(env, game, trackId, carId, model.corners || []).catch(() => {
+  });
+  return model;
+}
+__name(buildModel, "buildModel");
+var MISTAKE_MIN = 3;
+async function usualTips(env, game, trackId, carId, corners) {
+  if (!corners.length) return;
+  const rows = (await env.DB.prepare("SELECT apex, kind, account FROM coach_tips WHERE game=?1 AND track_id=?2 AND car_id=?3 AND kind<>'' AND lost>0.05 LIMIT 5000").bind(game, trackId, carId).all()).results || [];
+  for (const c of corners) {
+    const by = /* @__PURE__ */ new Map();
+    for (const x of rows) {
+      if (Math.abs(x.apex - c.apex) > 60) continue;
+      if (!by.has(x.kind)) by.set(x.kind, /* @__PURE__ */ new Set());
+      by.get(x.kind).add(x.account);
+    }
+    const top = [...by.entries()].map(([kind, s]) => ({ kind, n: s.size })).sort((a, b2) => b2.n - a.n)[0];
+    if (top && top.n >= MISTAKE_MIN) c.mistake = top;
+  }
+}
+__name(usualTips, "usualTips");
+function forCompound(md2, cmp, temp) {
+  if (!md2) return md2;
+  const { byCmp, byBand, ...m } = md2;
+  const list = byCmp ? Object.keys(byCmp).map(Number).sort((p, q2) => p - q2) : [];
+  const one = byCmp && Number.isInteger(cmp) && cmp >= 0 ? byCmp[cmp] : null;
+  const b2 = bandOf(temp), bb = !one && b2 && byBand ? byBand[b2] : null;
+  return { ...m, ...list.length ? { cmps: list } : {}, ...one ? { ...one, cmp } : {}, ...bb ? { ladder: bb.ladder, band: b2 } : {} };
+}
+__name(forCompound, "forCompound");
+var CARD_TRACKS = 12;
+var CARD_PER_TRACK = 8;
+var CARD_PER_DRIVER = 2;
+var pct = /* @__PURE__ */ __name((a, q2) => {
+  const v = a.filter((x) => x != null && isFinite(x)).sort((x, y) => x - y);
+  return v.length ? v[Math.min(v.length - 1, Math.floor(q2 * (v.length - 1) + 0.5))] : null;
+}, "pct");
+function lapFacts(bins) {
+  const dec2 = [], shifts = {};
+  let vmax = 0, geared = false;
+  for (let i = 0; i + 1 < bins.length; i++) {
+    const a = bins[i], b2 = bins[i + 1];
+    if (a[0] > vmax) vmax = a[0];
+    if (a[4] >= 1) geared = true;
+    const dt = b2[1] - a[1];
+    if (dt > 0.01 && dt < 2 && a[3] >= 0.5 && a[0] > 12 && a[0] > b2[0]) dec2.push((a[0] - b2[0]) / dt);
+    if (a[4] >= 1 && b2[4] === a[4] + 1 && a[0] > 5) shifts[a[4]] = Math.max(shifts[a[4]] || 0, a[0]);
+  }
+  return { brake: dec2.length >= 5 ? pct(dec2, 0.95) : null, shifts: geared ? shifts : null, vmax };
+}
+__name(lapFacts, "lapFacts");
+function cardOf(laps) {
+  const f = laps.map((l) => ({ ...lapFacts(l.bins), trackId: l.trackId, drv: l.drv, field: !!l.field || !!l.rival }));
+  const brakes = f.map((x) => x.brake).filter((x) => x != null);
+  const shifts = [];
+  for (let g = 1; g <= 8; g++) {
+    const v = f.filter((x) => !x.field).map((x) => x.shifts && x.shifts[g]).filter((x) => x > 0);
+    if (v.length >= 3) shifts.push([g, r(pct(v, 0.8), 10)]);
+  }
+  let vmax = 0, vmaxAt = 0;
+  for (const x of f) if (x.vmax > vmax) {
+    vmax = x.vmax;
+    vmaxAt = x.trackId;
+  }
+  return {
+    n: laps.length,
+    tracks: new Set(laps.map((l) => l.trackId)).size,
+    drivers: new Set(laps.map((l) => l.drv)).size,
+    brake: brakes.length >= 3 ? r(pct(brakes, 0.8), 100) : null,
+    shifts,
+    vmax: r(vmax, 10),
+    vmaxAt,
+    // what the car does at every speed with full throttle, no pedal and full brake: rivals' pedals from their speed
+    pedals: pedalEnvelope(laps.filter((l) => !l.field && !l.rival).map((l) => l.bins))
+  };
+}
+__name(cardOf, "cardOf");
+async function buildCarCard(env, game, carId) {
+  carId = await famId(env, game, carId);
+  const all = (await env.DB.prepare("SELECT track_id, drv, time, data FROM model_laps WHERE game=?1 AND car_id=?2 ORDER BY time LIMIT 4000").bind(game, carId).all()).results || [];
+  const byTrack = /* @__PURE__ */ new Map();
+  for (const x of all) {
+    const t = byTrack.get(x.track_id) || [];
+    t.push(x);
+    byTrack.set(x.track_id, t);
+  }
+  const pick = [];
+  for (const [, rows] of [...byTrack.entries()].sort((a, b2) => b2[1].length - a[1].length).slice(0, CARD_TRACKS)) {
+    const per = /* @__PURE__ */ new Map();
+    let n = 0;
+    for (const x of rows) {
+      const c = per.get(x.drv) || 0;
+      if (c >= CARD_PER_DRIVER || n >= CARD_PER_TRACK) continue;
+      per.set(x.drv, c + 1);
+      n++;
+      pick.push(x);
+    }
+  }
+  const laps = [];
+  for (const x of pick) {
+    try {
+      const g = goodLap(x.time, memTrace(JSON.parse(await gunz(x.data))));
+      if (g) laps.push({ trackId: x.track_id, drv: x.drv, time: x.time, bins: g.bins, field: g.field, rival: g.rival });
+    } catch (e) {
+    }
+  }
+  const card = { v: CARD_VERSION, game, carId, built: Date.now(), ...cardOf(laps) };
+  const info = {};
+  for (const t of new Set(laps.map((l) => l.trackId))) info[t] = await trackInfo(env, game, t, carId).catch(() => ({ g: "road" }));
+  card.cz = cornerSamples(laps, info);
+  card.ot = ovalProfile(laps, info);
+  card.tg = Object.fromEntries(Object.entries(info).map(([t, x]) => [t, x.g || "road"]));
+  if (card.vmaxAt) {
+    const t = await env.DB.prepare("SELECT track, track_config FROM sessions WHERE game=?1 AND track_id=?2 AND track IS NOT NULL LIMIT 1").bind(game, card.vmaxAt).first().catch(() => null) || await env.DB.prepare("SELECT track, NULL AS track_config FROM community_laps WHERE game=?1 AND track_id=?2 LIMIT 1").bind(game, card.vmaxAt).first().catch(() => null);
+    if (t && t.track) card.vmaxTrack = t.track + (t.track_config ? " \xB7 " + t.track_config : "");
+  }
+  await env.DB.prepare(
+    `INSERT INTO car_cards (game, car_id, dirty, built, data) VALUES (?1,?2,0,?3,?4)
+     ON CONFLICT(game, car_id) DO UPDATE SET dirty=0, built=excluded.built, data=excluded.data`
+  ).bind(game, carId, card.built, await gz(JSON.stringify(card))).run();
+  return card;
+}
+__name(buildCarCard, "buildCarCard");
+async function markCar(env, game, carId) {
+  carId = await famId(env, game, carId);
+  if (!carId) return;
+  await env.DB.prepare(
+    `INSERT INTO car_cards (game, car_id, dirty, built, data) VALUES (?1,?2,1,0,NULL)
+     ON CONFLICT(game, car_id) DO UPDATE SET dirty=1`
+  ).bind(game, carId).run().catch(() => {
+  });
+}
+__name(markCar, "markCar");
+async function getCarCard(env, game, carId, full = false) {
+  carId = await famId(env, game, carId);
+  if (!carId) return null;
+  const out = /* @__PURE__ */ __name((c) => {
+    if (!c || !c.n) return null;
+    if (full) return c;
+    const { cz, ot, tg, ...rest } = c;
+    return rest;
+  }, "out");
+  const row = await env.DB.prepare("SELECT dirty, data FROM car_cards WHERE game=?1 AND car_id=?2").bind(game, carId).first().catch(() => null);
+  if (row && row.data && !row.dirty) {
+    const c = JSON.parse(await gunz(row.data));
+    if (c.v === CARD_VERSION) return out(c);
+  }
+  try {
+    return out(await buildCarCard(env, game, carId));
+  } catch (e) {
+    if (row && row.data) return out(JSON.parse(await gunz(row.data)));
+    return null;
+  }
+}
+__name(getCarCard, "getCarCard");
+var LIKE_FAST = 0.03;
+var LIKE_MAX = 900;
+var PWA = /* @__PURE__ */ __name(() => globalThis.PW_ANALYSIS, "PWA");
+async function trackInfo(env, game, trackId, carId) {
+  const s = await env.DB.prepare("SELECT track, track_config, cat FROM sessions WHERE game=?1 AND track_id=?2 AND track IS NOT NULL ORDER BY started DESC LIMIT 1").bind(game, trackId).first().catch(() => null);
+  const cat = game === "iracing" ? catOf(await catMap(env), trackId, carId, s && s.cat, s && s.track || "", "") : "sports_car";
+  return { cat, g: groupOf(cat), track: s && s.track || "", cfg: s && s.track_config || "" };
+}
+__name(trackInfo, "trackInfo");
+var fastOf = /* @__PURE__ */ __name((laps) => {
+  const best = {};
+  for (const l of laps) if (!l.field && !l.rival) best[l.trackId] = Math.min(best[l.trackId] || 1e9, l.time);
+  return laps.filter((l) => !l.field && !l.rival && l.time <= best[l.trackId] * (1 + LIKE_FAST));
+}, "fastOf");
+function cornerSamples(laps, info = {}) {
+  const P2 = PWA(), out = [];
+  if (!P2) return out;
+  for (const l of fastOf(laps)) {
+    const s = l.bins;
+    for (const z of P2.ovalZones(s)) {
+      const a = s[z.imin];
+      if (!a) continue;
+      let st = 0, has = false;
+      for (let k = z.i; k <= Math.min(s.length - 1, z.imin + 6); k++) {
+        const v = s[k] && s[k][5];
+        if (typeof v === "number" && isFinite(v)) {
+          if (v !== 0) has = true;
+          st = Math.max(st, Math.abs(v));
+        }
+      }
+      out.push([l.trackId, r(z.v, 10), r(z.vmin, 10), (z.imin - z.i) * 5, Math.round(a[4] || 0), has ? r(st, 1e3) : null, z.lift ? 1 : 0]);
+    }
+  }
+  const per = {};
+  return out.filter((x) => (per[x[0]] = (per[x[0]] || 0) + 1) <= Math.ceil(LIKE_MAX / Math.max(1, new Set(out.map((y) => y[0])).size)));
+}
+__name(cornerSamples, "cornerSamples");
+function ovalProfile(laps, info = {}) {
+  const P2 = PWA(), by = {};
+  if (!P2) return [];
+  for (const l of fastOf(laps)) {
+    const ti = info[l.trackId] || {};
+    if (ti.g !== "oval" && ti.g !== "dirt_oval") continue;
+    const A = { bins: l.bins, maxBin: l.bins.length - 1 };
+    const k = P2.ovalOf(A, A, { track: { cat: ti.cat, track: ti.track, track_config: ti.cfg, len: l.bins.length * 5 } });
+    if (!k) continue;
+    let full = 0, c = 0;
+    for (const b2 of l.bins) {
+      if (!b2) continue;
+      c++;
+      if (b2[2] > 0.95) full++;
+    }
+    const zs = P2.ovalZones(l.bins), o = by[l.trackId] = by[l.trackId] || { t: l.trackId, k, g: ti.g, f: [], lf: [] };
+    if (c) o.f.push(full / c);
+    if (zs.length) o.lf.push(zs.filter((z) => z.lift).length / zs.length);
+  }
+  const med = /* @__PURE__ */ __name((a) => {
+    if (!a.length) return null;
+    const v = a.slice().sort((x, y) => x - y);
+    return v[v.length >> 1];
+  }, "med");
+  return Object.values(by).map((o) => ({ t: o.t, k: o.k, g: o.g, f: r(med(o.f) || 0, 1e3), lf: o.lf.length ? r(med(o.lf), 100) : null, n: o.f.length }));
+}
+__name(ovalProfile, "ovalProfile");
+var KIND_MIN = 3;
+async function buildOvalKinds(env) {
+  const r0 = await env.DB.prepare("SELECT game, car_id, data FROM car_cards WHERE data IS NOT NULL AND game='iracing' LIMIT 3000").all().catch(() => ({ results: [] }));
+  const by = {};
+  for (const x of r0.results || []) {
+    let c = null;
+    try {
+      c = JSON.parse(await gunz(x.data));
+    } catch (e) {
+      continue;
+    }
+    for (const o of c && c.ot || []) {
+      const b2 = by[o.k] = by[o.k] || { f: [], lf: [], cars: /* @__PURE__ */ new Set() };
+      b2.f.push(o.f);
+      if (o.lf != null) b2.lf.push(o.lf);
+      b2.cars.add(x.car_id);
+    }
+  }
+  const q2 = /* @__PURE__ */ __name((a, p) => {
+    const v = a.slice().sort((x, y) => x - y);
+    return v.length ? v[Math.min(v.length - 1, Math.floor(p * (v.length - 1) + 0.5))] : null;
+  }, "q");
+  const kinds = {};
+  for (const [k, b2] of Object.entries(by)) if (b2.f.length >= KIND_MIN && b2.cars.size >= 2) kinds[k] = { f: [q2(b2.f, 0.25), q2(b2.f, 0.5), q2(b2.f, 0.75)], lf: b2.lf.length >= KIND_MIN ? q2(b2.lf, 0.5) : null, n: b2.f.length, cars: b2.cars.size };
+  await env.DB.prepare("INSERT INTO app_state (k, v, at) VALUES ('coach_ovals', ?1, ?2) ON CONFLICT(k) DO UPDATE SET v=excluded.v, at=excluded.at").bind(JSON.stringify(kinds), Date.now()).run();
+  return kinds;
+}
+__name(buildOvalKinds, "buildOvalKinds");
+async function likeFor(env, game, trackId, carId, grp) {
+  const card = await getCarCard(env, game, carId, true).catch(() => null);
+  const dirt = /^dirt/.test(grp || ""), same6 = /* @__PURE__ */ __name((g) => !grp || /^dirt/.test(g || "road") === dirt, "same");
+  const ot = (card && card.ot || []).filter((o) => o.t !== trackId && same6(o.g));
+  const tg = card && card.tg || {};
+  const cz = (card && card.cz || []).filter((x) => x[0] !== trackId && same6(tg[x[0]]));
+  let kinds = {};
+  if (game === "iracing") {
+    const a = await env.DB.prepare("SELECT v FROM app_state WHERE k='coach_ovals'").first().catch(() => null);
+    try {
+      kinds = a && a.v ? JSON.parse(a.v) : {};
+    } catch (e) {
+    }
+  }
+  return { v: 1, carId: card ? card.carId : carId, tracks: new Set(cz.map((x) => x[0])).size, cz, ot, kinds, shifts: card && card.shifts || [] };
+}
+__name(likeFor, "likeFor");
+var PSEUDO_MIN = 9e8;
+var normName = /* @__PURE__ */ __name((v) => String(v || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, ""), "normName");
+async function pseudoId(kind, game, name2) {
+  const b2 = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(kind + "|" + game + "|" + normName(name2)));
+  const n = new DataView(b2).getUint32(0);
+  return PSEUDO_MIN + n % 99999999;
+}
+__name(pseudoId, "pseudoId");
+async function reconcileIds(env, game, track2, trackConfig, car, trackId, carId) {
+  if (!trackId || !carId || trackId >= PSEUDO_MIN || carId >= PSEUDO_MIN) return;
+  const full = track2 + (trackConfig ? " \xB7 " + trackConfig : "");
+  const pt = await pseudoId("t", game, full), pc = await pseudoId("c", game, car);
+  const hit = await env.DB.prepare("SELECT 1 FROM sessions WHERE game=?1 AND (track_id=?2 OR car_id=?3) LIMIT 1").bind(game, pt, pc).first() || await env.DB.prepare("SELECT 1 FROM community_laps WHERE game=?1 AND (track_id=?2 OR car_id=?3) LIMIT 1").bind(game, pt, pc).first() || await env.DB.prepare("SELECT 1 FROM community_reports WHERE game=?1 AND (track_id=?2 OR car_id=?3) LIMIT 1").bind(game, pt, pc).first();
+  if (!hit) return;
+  const fix3 = /* @__PURE__ */ __name((t) => [
+    env.DB.prepare(`UPDATE OR IGNORE ${t} SET track_id=CASE WHEN track_id=?1 THEN ?2 ELSE track_id END, car_id=CASE WHEN car_id=?3 THEN ?4 ELSE car_id END WHERE game=?5 AND (track_id=?1 OR car_id=?3)`).bind(pt, trackId, pc, carId, game),
+    env.DB.prepare(`DELETE FROM ${t} WHERE game=?1 AND (track_id=?2 OR car_id=?3)`).bind(game, pt, pc)
+    // a row the real combo already had wins
+  ], "fix");
+  await env.DB.batch([
+    env.DB.prepare("UPDATE sessions SET track_id=CASE WHEN track_id=?1 THEN ?2 ELSE track_id END, car_id=CASE WHEN car_id=?3 THEN ?4 ELSE car_id END WHERE game=?5 AND (track_id=?1 OR car_id=?3)").bind(pt, trackId, pc, carId, game),
+    ...fix3("community_laps"),
+    ...fix3("community_reports"),
+    ...fix3("model_laps"),
+    env.DB.prepare("UPDATE OR IGNORE car_cards SET car_id=?2, dirty=1 WHERE game=?3 AND car_id=?1").bind(pc, carId, game),
+    env.DB.prepare("DELETE FROM car_cards WHERE game=?2 AND car_id=?1").bind(pc, game),
+    env.DB.prepare("DELETE FROM model_cache WHERE game=?1 AND (track_id=?2 OR car_id=?3)").bind(game, pt, pc)
+  ]);
+  await markModel(env, game, trackId, carId);
+}
+__name(reconcileIds, "reconcileIds");
+var gz = /* @__PURE__ */ __name(async (s) => new Uint8Array(await new Response(new Blob([s]).stream().pipeThrough(new CompressionStream("gzip"))).arrayBuffer()), "gz");
+var gunz = /* @__PURE__ */ __name(async (b2) => await new Response(new Blob([b2 instanceof ArrayBuffer || ArrayBuffer.isView(b2) ? b2 : new Uint8Array(b2)]).stream().pipeThrough(new DecompressionStream("gzip"))).text(), "gunz");
+async function moveDriver(env, fromUp, toUp, game) {
+  const from = await sha("drv:" + fromUp), to = await sha("drv:" + toUp);
+  const rows = (await env.DB.prepare("SELECT game, track_id, car_id, k, time FROM model_laps WHERE drv=?1" + (game ? " AND game=?2" : "")).bind(...game ? [from, game] : [from]).all()).results || [];
+  for (const r4 of rows) {
+    await env.DB.prepare("UPDATE OR IGNORE model_laps SET drv=?5, k=?6 WHERE game=?1 AND track_id=?2 AND car_id=?3 AND k=?4").bind(r4.game, r4.track_id, r4.car_id, r4.k, to, await sha(toUp + ":" + r4.time.toFixed(3))).run();
+  }
+  await env.DB.prepare("DELETE FROM model_laps WHERE drv=?1" + (game ? " AND game=?2" : "")).bind(...game ? [from, game] : [from]).run();
+  return rows;
+}
+__name(moveDriver, "moveDriver");
+async function moveDriverBack(env, rows, fromUp, toUp) {
+  const from = await sha("drv:" + fromUp), to = await sha("drv:" + toUp);
+  for (const x of rows || []) {
+    if (!x || typeof x.time !== "number") continue;
+    await env.DB.prepare("UPDATE OR IGNORE model_laps SET drv=?5, k=?6 WHERE game=?1 AND track_id=?2 AND car_id=?3 AND k=?4 AND drv=?7").bind(x.game, x.track_id, x.car_id, await sha(fromUp + ":" + x.time.toFixed(3)), to, await sha(toUp + ":" + x.time.toFixed(3)), from).run();
+  }
+}
+__name(moveDriverBack, "moveDriverBack");
+async function forgetLap(env, game, trackId, carId, uploader, time) {
+  carId = await famId(env, game, carId);
+  if (!trackId || !carId) return;
+  await env.DB.prepare("DELETE FROM model_laps WHERE game=?1 AND track_id=?2 AND car_id=?3 AND k=?4").bind(game, trackId, carId, await sha(uploader + ":" + Number(time).toFixed(3))).run();
+  await markModel(env, game, trackId, carId);
+}
+__name(forgetLap, "forgetLap");
+async function markModel(env, game, trackId, carId) {
+  carId = await famId(env, game, carId);
+  if (!trackId || !carId) return;
+  await env.DB.prepare(
+    `INSERT INTO model_cache (game, track_id, car_id, dirty, built, data) VALUES (?1,?2,?3,1,0,NULL)
+     ON CONFLICT(game, track_id, car_id) DO UPDATE SET dirty=1`
+  ).bind(game, trackId, carId).run().catch(() => {
+  });
+  await markCar(env, game, carId);
+}
+__name(markModel, "markModel");
+async function rebuild(env, game, trackId, carId) {
+  const m = await buildModel(env, game, trackId, carId);
+  await env.DB.prepare(
+    `INSERT INTO model_cache (game, track_id, car_id, dirty, built, data) VALUES (?1,?2,?3,?6,?4,?5)
+     ON CONFLICT(game, track_id, car_id) DO UPDATE SET dirty=excluded.dirty, built=excluded.built, data=excluded.data`
+  ).bind(game, trackId, carId, m.built, await gz(JSON.stringify(m)), m.more ? 1 : 0).run();
+  return m;
+}
+__name(rebuild, "rebuild");
+async function slowsOf(env, game, trackId) {
+  const rows = (await env.DB.prepare("SELECT data FROM model_cache WHERE game=?1 AND track_id=?2 AND data IS NOT NULL ORDER BY built DESC LIMIT 4").bind(game, trackId).all().catch(() => ({ results: [] }))).results || [];
+  const out = [];
+  for (const row of rows) {
+    try {
+      const m = JSON.parse(await gunz(row.data)), L = (m.nb || 0) * 5;
+      if (!(L > 500)) continue;
+      for (const c of m.corners || []) if ((c.n || 0) >= 3 && c.apex > 0 && c.apex < L) out.push(Math.round(c.apex / L * 1e4) / 1e4);
+    } catch (e) {
+    }
+  }
+  return out;
+}
+__name(slowsOf, "slowsOf");
+async function getModel(env, game, trackId, carId) {
+  carId = await famId(env, game, carId);
+  const row = await env.DB.prepare("SELECT dirty, built, data FROM model_cache WHERE game=?1 AND track_id=?2 AND car_id=?3").bind(game, trackId, carId).first();
+  if (row && row.data && !row.dirty) {
+    const m = JSON.parse(await gunz(row.data));
+    if (m.v === MODEL_VERSION) return m;
+  }
+  try {
+    return await rebuild(env, game, trackId, carId);
+  } catch (e) {
+    if (row && row.data) return JSON.parse(await gunz(row.data));
+    throw e;
+  }
+}
+__name(getModel, "getModel");
+async function rebuildDirty(env, { daily = false } = {}) {
+  if (daily) await env.DB.prepare(
+    `INSERT INTO model_cache (game, track_id, car_id, dirty, built, data)
+     SELECT DISTINCT game, track_id, car_id, 1, 0, NULL FROM community_laps WHERE track_id>0 AND car_id>0
+     UNION SELECT DISTINCT game, track_id, car_id, 1, 0, NULL FROM sessions WHERE track_id>0 AND car_id>0 AND uploader LIKE 'acct:%'
+     ON CONFLICT DO NOTHING`
+  ).run().catch(() => {
+  });
+  const r4 = await env.DB.prepare("SELECT game, track_id, car_id FROM model_cache WHERE dirty=1 ORDER BY built LIMIT 25").all();
+  for (const x of r4.results || []) {
+    try {
+      await rebuild(env, x.game, x.track_id, x.car_id);
+    } catch (e) {
+    }
+  }
+  if (daily) await env.DB.prepare("INSERT INTO car_cards (game, car_id, dirty, built, data) SELECT DISTINCT game, car_id, 1, 0, NULL FROM model_laps WHERE car_id>0 ON CONFLICT DO NOTHING").run().catch(() => {
+  });
+  const c = await env.DB.prepare("SELECT game, car_id FROM car_cards WHERE dirty=1 ORDER BY built LIMIT 10").all().catch(() => ({ results: [] }));
+  for (const x of c.results || []) {
+    try {
+      await buildCarCard(env, x.game, x.car_id);
+    } catch (e) {
+    }
+    await env.DB.prepare("UPDATE car_cards SET dirty=0, built=?3 WHERE game=?1 AND car_id=?2 AND dirty=1").bind(x.game, x.car_id, Date.now()).run().catch(() => {
+    });
+  }
+}
+__name(rebuildDirty, "rebuildDirty");
+
 // src/steam.js
 var SITE2 = "https://pitlanehq.app";
 var OPENID = "https://steamcommunity.com/openid/login";
 var NS = "http://specs.openid.net/auth/2.0";
 var JSONH2 = { "content-type": "application/json; charset=utf-8", "cache-control": "no-store", "access-control-allow-origin": "*" };
-var json4 = /* @__PURE__ */ __name((v, status = 200) => new Response(JSON.stringify(v), { status, headers: JSONH2 }), "json");
-var hex = /* @__PURE__ */ __name((b) => [...new Uint8Array(b)].map((x) => x.toString(16).padStart(2, "0")).join(""), "hex");
+var json3 = /* @__PURE__ */ __name((v, status = 200) => new Response(JSON.stringify(v), { status, headers: JSONH2 }), "json");
+var hex = /* @__PURE__ */ __name((b2) => [...new Uint8Array(b2)].map((x) => x.toString(16).padStart(2, "0")).join(""), "hex");
 var rid = /* @__PURE__ */ __name((n = 24) => hex(crypto.getRandomValues(new Uint8Array(n))), "rid");
 var isHex48 = /* @__PURE__ */ __name((v) => typeof v === "string" && /^[0-9a-f]{48}$/.test(v), "isHex48");
 var portOf = /* @__PURE__ */ __name((v) => Number.isInteger(Number(v)) && Number(v) > 0 && Number(v) < 65536 ? Number(v) : null, "portOf");
@@ -4875,32 +4598,32 @@ async function steamAccount(env, a, p, m, body, url, passCheck) {
   if (p === "/steam" && m === "GET") {
     const l = await env.DB.prepare("SELECT steamid, persona, shown FROM steam_links WHERE account_id=?1").bind(a.id).first();
     if (l && !l.persona) l.persona = await nameLink(env, l.steamid);
-    return json4({ linked: !!l, id: l ? l.steamid : void 0, persona: l ? l.persona || "" : void 0, shown: !!(l && l.shown) });
+    return json3({ linked: !!l, id: l ? l.steamid : void 0, persona: l ? l.persona || "" : void 0, shown: !!(l && l.shown) });
   }
   if (p === "/steam/start" && m === "POST") {
     const no = await passCheck();
     if (no) return no;
     const r4 = await steamStart(env, url, "link", a.id, body.device, body.port, body.app || url.searchParams.get("app"));
-    return json4(r4, r4.error ? 400 : 200);
+    return json3(r4, r4.error ? 400 : 200);
   }
   if (p === "/steam/link" && m === "POST") {
     const g = await useSteamGrant(env, body.grant, "link", body.code);
-    if (!g || g.account_id !== a.id) return json4({ error: "this Steam sign-in is not valid any more, sign in with Steam again" }, 400);
+    if (!g || g.account_id !== a.id) return json3({ error: "this Steam sign-in is not valid any more, sign in with Steam again" }, 400);
     const res = await linkSteam(env, g.steamid, a.id, g.persona);
-    if (res === "taken") return json4({ error: "this Steam account is already linked to another account", code: "taken" }, 409);
-    return json4({ ok: true, persona: g.persona || "" });
+    if (res === "taken") return json3({ error: "this Steam account is already linked to another account", code: "taken" }, 409);
+    return json3({ ok: true, persona: g.persona || "" });
   }
   if (p === "/steam/shown" && m === "POST") {
     await env.DB.prepare("UPDATE steam_links SET shown=?2 WHERE account_id=?1").bind(a.id, body.shown ? 1 : 0).run();
-    return json4({ ok: true, shown: !!body.shown });
+    return json3({ ok: true, shown: !!body.shown });
   }
   if (p === "/steam/unlink" && m === "POST") {
     const no = await passCheck();
     if (no) return no;
     await env.DB.prepare("DELETE FROM steam_links WHERE account_id=?1").bind(a.id).run();
-    return json4({ ok: true });
+    return json3({ ok: true });
   }
-  return json4({ error: "not found" }, 404);
+  return json3({ error: "not found" }, 404);
 }
 __name(steamAccount, "steamAccount");
 
@@ -4951,7 +4674,7 @@ var answer = /* @__PURE__ */ __name((data, eph) => ({ allowed_mentions: { parse:
 var say = /* @__PURE__ */ __name((data, eph) => reply({ type: 4, data: answer(data, eph) }), "say");
 var text = /* @__PURE__ */ __name((content, eph = true) => say({ content }, eph), "text");
 var button = /* @__PURE__ */ __name((label, url) => ({ type: 2, style: 5, label: label.slice(0, 80), url }), "button");
-var buttons = /* @__PURE__ */ __name((...b) => [{ type: 1, components: b.filter(Boolean) }], "buttons");
+var buttons = /* @__PURE__ */ __name((...b2) => [{ type: 1, components: b2.filter(Boolean) }], "buttons");
 var unhex = /* @__PURE__ */ __name((h) => new Uint8Array((String(h).match(/../g) || []).map((x) => parseInt(x, 16))), "unhex");
 async function signed(req, env, body) {
   const sig = req.headers.get("x-signature-ed25519") || "", ts = req.headers.get("x-signature-timestamp") || "";
@@ -4999,7 +4722,7 @@ async function discordInteraction(req, env, ctx) {
   if (x.guild && chans.length && PUBLIC_CMDS.has(name2) && !chans.includes(it.channel_id) && !chans.includes(it.channel && it.channel.parent_id))
     return text(tr(l, "In this server the bot answers in ", "En este servidor el bot responde en ", "Neste servidor o bot responde em ") + chans.map((c) => `<#${c}>`).join(" ") + ".");
   if (PRO.has(name2) && !await isPro(env, x.account)) return proOnly(x);
-  const run = { record, driver, link: linkStart, unlink, download, help, language, setup, coach, compare, board, alerts, recent, track, league }[name2];
+  const run = { record, driver, link: linkStart, unlink, download, help, pro: proList, language, setup, coach, compare, board, alerts, recent, track, league }[name2];
   if (!run) return text(tr(l, "Unknown command", "Comando desconocido", "Comando desconhecido"));
   try {
     return await run(x);
@@ -5158,7 +4881,7 @@ async function linkStart(x) {
     const a = await accountOf(x.env, x.account);
     return text(tr(x.l, `Your Discord is linked to **${md(a ? a.alias : "?")}**. Use /unlink to change it.`, `Tu Discord est\xE1 vinculado a **${md(a ? a.alias : "?")}**. Usa /unlink para cambiarlo.`, `O seu Discord est\xE1 vinculado a **${md(a ? a.alias : "?")}**. Use /unlink para mudar.`));
   }
-  const ABC = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789", code = [...crypto.getRandomValues(new Uint8Array(8))].map((b) => ABC[b % 32]).join("");
+  const ABC = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789", code = [...crypto.getRandomValues(new Uint8Array(8))].map((b2) => ABC[b2 % 32]).join("");
   const now = Date.now();
   await x.env.DB.batch([
     x.env.DB.prepare("DELETE FROM discord_codes WHERE expires<?1 OR discord_id=?2").bind(now, x.user.id),
@@ -5202,12 +4925,34 @@ async function download(x) {
   });
 }
 __name(download, "download");
+function proList(x) {
+  const paid = tr(
+    x.l,
+    "\u2022 The coach's plan on the track map\n\u2022 Compare with the community (the next level, the record and your friends' laps)\n\u2022 How consistent you are in each corner\n\u2022 Offs explained on the map\n\u2022 Race fuel\n\u2022 More charts (G-G, steering against speed, tyre temperatures)\n\u2022 The experimental overlays\n\u2022 More than 3 programs starting by themselves",
+    "\u2022 El plan del coach en el mapa del circuito\n\u2022 Comparar con la comunidad (el siguiente nivel, el r\xE9cord y las vueltas de tus amigos)\n\u2022 Tu constancia en cada curva\n\u2022 Las salidas de pista explicadas en el mapa\n\u2022 Combustible de carrera\n\u2022 M\xE1s gr\xE1ficas (G-G, volante contra velocidad, temperaturas de neum\xE1ticos)\n\u2022 Los overlays experimentales\n\u2022 M\xE1s de 3 programas que se abren solos",
+    "\u2022 O plano do coach no mapa da pista\n\u2022 Comparar com a comunidade (o pr\xF3ximo n\xEDvel, o recorde e as voltas dos seus amigos)\n\u2022 A sua const\xE2ncia em cada curva\n\u2022 As sa\xEDdas de pista explicadas no mapa\n\u2022 Combust\xEDvel de corrida\n\u2022 Mais gr\xE1ficos (G-G, volante contra velocidade, temperaturas dos pneus)\n\u2022 Os overlays experimentais\n\u2022 Mais de 3 programas que abrem sozinhos"
+  );
+  const free = tr(
+    x.l,
+    "Recording your laps, your own analysis and the coach's tips, the standard overlays, your whole history on the web and the phones, the leaderboards, and every command of this bot.",
+    "Grabar tus vueltas, tu an\xE1lisis y los consejos del coach, los overlays normales, todo tu historial en la web y los m\xF3viles, las leaderboards y todos los comandos de este bot.",
+    "Gravar as suas voltas, a sua an\xE1lise e as dicas do coach, os overlays normais, todo o seu hist\xF3rico na web e nos celulares, as classifica\xE7\xF5es e todos os comandos deste bot."
+  );
+  return say({ embeds: [{
+    color: AMBER,
+    title: "Pitlane HQ Pro",
+    url: SITE3,
+    description: tr(x.l, "Everything is free while Pitlane HQ is in beta. When the beta ends, these will be part of Pitlane HQ Pro.", "Todo es gratis mientras Pitlane HQ est\xE1 en beta. Cuando acabe la beta, esto ser\xE1 parte de Pitlane HQ Pro.", "Tudo \xE9 gr\xE1tis enquanto o Pitlane HQ est\xE1 em beta. Quando a beta acabar, isto far\xE1 parte do Pitlane HQ Pro."),
+    fields: [{ name: "PRO", value: paid }, { name: tr(x.l, "Always free", "Siempre gratis", "Sempre gr\xE1tis"), value: free }]
+  }] }, true);
+}
+__name(proList, "proList");
 function help(x) {
   const free = tr(
     x.l,
-    "`/record` the record and top 10 of a car and track\n`/driver` a driver's profile, or yours\n`/link` \xB7 `/unlink` your Pitlane HQ account\n`/recent` your last sessions\n`/track` a track's records on every car\n`/download` the apps\n`/language` the bot's language",
-    "`/record` el r\xE9cord y el top 10 de un coche y circuito\n`/driver` el perfil de un piloto, o el tuyo\n`/link` \xB7 `/unlink` tu cuenta de Pitlane HQ\n`/recent` tus \xFAltimas sesiones\n`/track` los r\xE9cords de un circuito en cada coche\n`/download` las apps\n`/language` el idioma del bot",
-    "`/record` o recorde e o top 10 de um carro e pista\n`/driver` o perfil de um piloto, ou o seu\n`/link` \xB7 `/unlink` a sua conta do Pitlane HQ\n`/recent` as suas \xFAltimas sess\xF5es\n`/track` os recordes de uma pista em cada carro\n`/download` os apps\n`/language` o idioma do bot"
+    "`/record` the record and top 10 of a car and track\n`/driver` a driver's profile, or yours\n`/link` \xB7 `/unlink` your Pitlane HQ account\n`/recent` your last sessions\n`/track` a track's records on every car\n`/download` the apps\n`/pro` what will be part of Pitlane HQ Pro\n`/language` the bot's language",
+    "`/record` el r\xE9cord y el top 10 de un coche y circuito\n`/driver` el perfil de un piloto, o el tuyo\n`/link` \xB7 `/unlink` tu cuenta de Pitlane HQ\n`/recent` tus \xFAltimas sesiones\n`/track` los r\xE9cords de un circuito en cada coche\n`/download` las apps\n`/pro` lo que ser\xE1 parte de Pitlane HQ Pro\n`/language` el idioma del bot",
+    "`/record` o recorde e o top 10 de um carro e pista\n`/driver` o perfil de um piloto, ou o seu\n`/link` \xB7 `/unlink` a sua conta do Pitlane HQ\n`/recent` as suas \xFAltimas sess\xF5es\n`/track` os recordes de uma pista em cada carro\n`/download` os apps\n`/pro` o que far\xE1 parte do Pitlane HQ Pro\n`/language` o idioma do bot"
   );
   const pro = tr(
     x.l,
@@ -5340,7 +5085,7 @@ async function coach(x) {
     if (!times.length) times = ((await x.env.DB.prepare("SELECT time FROM community_laps WHERE track_id=?1 AND car_id=?2 AND game='iracing' AND COALESCE(shown,'')<>'model' AND time>10 AND COALESCE(official,1)<>0").bind(k.t, k.c).all()).results || []).map((v) => v.time);
     const me2 = mine.time;
     if (!times.some((t) => Math.abs(t - me2) < 5e-4)) times.push(me2);
-    times.sort((a, b) => a - b);
+    times.sort((a, b2) => a - b2);
     const pos = times.filter((t) => t < me2 - 5e-4).length + 1;
     const rec = Math.min(m.fastest || Infinity, times[0]);
     const lv = (m.ladder || []).find((e) => me2 <= e.upTo + 5e-4) || (m.ladder || []).slice(-1)[0];
@@ -5365,24 +5110,24 @@ async function coach(x) {
 __name(coach, "coach");
 async function compare(x) {
   if (!x.account) return needLink(x);
-  const b = await driverOf(x.env, x.opt.name);
-  if (!b) return text(tr(x.l, "No driver by that name (anonymous drivers have no profile).", "No hay ning\xFAn piloto con ese nombre (los pilotos an\xF3nimos no tienen perfil).", "N\xE3o h\xE1 nenhum piloto com esse nome (pilotos an\xF4nimos n\xE3o t\xEAm perfil)."));
-  if (b.id === x.account) return text(tr(x.l, "That is you.", "Ese eres t\xFA.", "Esse \xE9 voc\xEA."));
+  const b2 = await driverOf(x.env, x.opt.name);
+  if (!b2) return text(tr(x.l, "No driver by that name (anonymous drivers have no profile).", "No hay ning\xFAn piloto con ese nombre (los pilotos an\xF3nimos no tienen perfil).", "N\xE3o h\xE1 nenhum piloto com esse nome (pilotos an\xF4nimos n\xE3o t\xEAm perfil)."));
+  if (b2.id === x.account) return text(tr(x.l, "That is you.", "Ese eres t\xFA.", "Esse \xE9 voc\xEA."));
   const r4 = await x.env.DB.prepare(
     `SELECT a.track, a.car, a.time AS mine, b.time AS theirs, MAX(a.created, b.created) AS at
        FROM community_laps a JOIN community_laps b ON b.track_id=a.track_id AND b.car_id=a.car_id AND b.game=a.game
       WHERE a.user_id=?1 AND b.user_id=?2 AND b.anon=0 AND COALESCE(a.shown,'')<>'model' AND COALESCE(b.shown,'')<>'model'
       ORDER BY at DESC LIMIT 300`
-  ).bind(x.account, b.id).all();
+  ).bind(x.account, b2.id).all();
   const rows = r4.results || [];
   const eph = await isAnon(x.env, x.account);
-  if (!rows.length) return text(tr(x.l, `You and **${md(b.alias)}** have no car and track in common yet.`, `T\xFA y **${md(b.alias)}** a\xFAn no ten\xE9is ning\xFAn coche y circuito en com\xFAn.`, `Voc\xEA e **${md(b.alias)}** ainda n\xE3o t\xEAm nenhum carro e pista em comum.`), eph);
+  if (!rows.length) return text(tr(x.l, `You and **${md(b2.alias)}** have no car and track in common yet.`, `T\xFA y **${md(b2.alias)}** a\xFAn no ten\xE9is ning\xFAn coche y circuito en com\xFAn.`, `Voc\xEA e **${md(b2.alias)}** ainda n\xE3o t\xEAm nenhum carro e pista em comum.`), eph);
   const won = rows.filter((v) => v.mine < v.theirs).length;
   const lines = rows.slice(0, 12).map((v) => `${v.mine < v.theirs ? "\u{1F7E2}" : v.mine > v.theirs ? "\u{1F534}" : "\u26AA"} \`${gap(v.mine - v.theirs)}\` ${md(fix(v.car))} \xB7 ${md(fix(v.track))}`);
   return say({
     embeds: [{
       color: AMBER,
-      title: tr(x.l, `You against ${b.alias}`, `T\xFA contra ${b.alias}`, `Voc\xEA contra ${b.alias}`).slice(0, 250),
+      title: tr(x.l, `You against ${b2.alias}`, `T\xFA contra ${b2.alias}`, `Voc\xEA contra ${b2.alias}`).slice(0, 250),
       description: tr(x.l, `Faster on **${won}** of **${rows.length}** cars and tracks.`, `M\xE1s r\xE1pido en **${won}** de **${rows.length}** coches y circuitos.`, `Mais r\xE1pido em **${won}** de **${rows.length}** carros e pistas.`) + "\n\n" + lines.join("\n"),
       footer: { text: tr(x.l, "Your gap on each one's fastest lap \xB7 most recent first", "Tu diferencia en la vuelta m\xE1s r\xE1pida de cada uno \xB7 las m\xE1s recientes primero", "A sua diferen\xE7a na volta mais r\xE1pida de cada um \xB7 as mais recentes primeiro") }
     }]
@@ -5536,6 +5281,35 @@ ${md(famName("iracing", v.c, fix(v.car)))} \xB7 ${md(fix(v.track))}`);
   return n;
 }
 __name(discordWeekly, "discordWeekly");
+var FB_TAGS = { web: "web", pc: "windowsagent", android: "android", ios: "ios" };
+var FB_DEV = { web: "Web", pc: "Windows agent", android: "Android", ios: "iOS" };
+async function discordFeedback(env, f) {
+  if (!env.DISCORD_BOT_TOKEN || !f || !f.text) return 0;
+  const gs = (await env.DB.prepare("SELECT feedback_channel AS ch FROM discord_guilds WHERE feedback_channel IS NOT NULL").all().catch(() => ({ results: [] }))).results || [];
+  const H3 = { authorization: "Bot " + env.DISCORD_BOT_TOKEN, "content-type": "application/json" };
+  const stars = f.rating ? "\u2605".repeat(f.rating) + "\u2606".repeat(5 - f.rating) : "";
+  const foot = [FB_DEV[f.device], f.v ? "v" + f.v : "", f.kind === "overlays" ? "Overlays" + (f.style ? " \xB7 " + f.style : "") : "", f.kind === "uninstall" ? "Uninstalled" : ""].filter(Boolean).join(" \xB7 ");
+  const embed = { color: AMBER, description: f.text.slice(0, 4e3), ...stars ? { title: stars } : {}, ...foot ? { footer: { text: foot } } : {} };
+  let n = 0;
+  for (const g of gs) {
+    const c = await fetch(`${API}/channels/${g.ch}`, { headers: H3 }).then((r4) => r4.ok ? r4.json() : null).catch(() => null);
+    if (!c) continue;
+    if (c.type === 15) {
+      const norm = /* @__PURE__ */ __name((x) => String(x || "").toLowerCase().replace(/[^a-z0-9]/g, ""), "norm");
+      const want = [FB_TAGS[f.device], f.kind === "overlays" ? "overlays" : "", f.kind === "uninstall" ? "uninstall" : ""].filter(Boolean);
+      const tags = (c.available_tags || []).filter((t) => want.includes(norm(t.name))).map((t) => t.id).slice(0, 5);
+      const name2 = (f.text.split("\n")[0].trim() || "Feedback").slice(0, 90);
+      const r4 = await fetch(`${API}/channels/${g.ch}/threads`, {
+        method: "POST",
+        headers: H3,
+        body: JSON.stringify({ name: name2, applied_tags: tags, message: { embeds: [embed], allowed_mentions: { parse: [] } } })
+      }).catch(() => null);
+      if (r4 && r4.ok) n++;
+    } else if (await post(env, g.ch, { embeds: [embed] })) n++;
+  }
+  return n;
+}
+__name(discordFeedback, "discordFeedback");
 async function post(env, channel, msg) {
   const r4 = await fetch(`${API}/channels/${channel}/messages`, {
     method: "POST",
@@ -5546,19 +5320,22 @@ async function post(env, channel, msg) {
 }
 __name(post, "post");
 async function discordLapAlert(env, accountId, lap) {
-  if (!env.DISCORD_BOT_TOKEN || !lap || !lap.improved || lap.game !== "iracing") return;
-  const a = await env.DB.prepare("SELECT a.anon, u.alias, dl.discord_id FROM accounts a JOIN community_users u ON u.id=a.id JOIN discord_links dl ON dl.account_id=a.id WHERE a.id=?1").bind(accountId).first();
-  if (!a || a.anon || lap.anon) return;
-  const gs = (await env.DB.prepare("SELECT g.guild_id, g.alerts_channel, g.records_channel, g.set_by, g.lang FROM discord_members m JOIN discord_guilds g ON g.guild_id=m.guild_id WHERE m.discord_id=?1 AND (g.alerts_channel IS NOT NULL OR g.records_channel IS NOT NULL)").bind(a.discord_id).all()).results || [];
+  if (!env.DISCORD_BOT_TOKEN || !lap || !lap.improved || lap.game !== "iracing" || lap.anon || String(accountId).startsWith("o:")) return;
+  const a = await env.DB.prepare("SELECT a.anon, u.alias, u.iracing, dl.discord_id FROM accounts a JOIN community_users u ON u.id=a.id LEFT JOIN discord_links dl ON dl.account_id=a.id WHERE a.id=?1").bind(accountId).first();
+  if (!a || a.anon) return;
+  const mine = a.discord_id ? (await env.DB.prepare("SELECT g.guild_id, g.alerts_channel, g.records_channel, g.set_by, g.lang, g.everyone FROM discord_members m JOIN discord_guilds g ON g.guild_id=m.guild_id WHERE m.discord_id=?1 AND (g.alerts_channel IS NOT NULL OR g.records_channel IS NOT NULL)").bind(a.discord_id).all()).results || [] : [];
+  const all = lap.ai ? [] : (await env.DB.prepare("SELECT guild_id, alerts_channel, records_channel, set_by, lang, everyone FROM discord_guilds WHERE everyone=1 AND (alerts_channel IS NOT NULL OR records_channel IS NOT NULL)").all().catch(() => ({ results: [] }))).results || [];
+  const gs = [...new Map([...mine, ...all].map((g) => [g.guild_id, g])).values()];
   if (!gs.length) return;
   const st = await env.DB.prepare(
     `SELECT (SELECT COUNT(*) FROM community_laps l WHERE l.track_id=?1 AND l.car_id=?2 AND l.game='iracing' AND ${NOT_MODEL} AND l.time<?3)+1 AS pos,
             (SELECT COUNT(*) FROM community_laps l WHERE l.track_id=?1 AND l.car_id=?2 AND l.game='iracing' AND ${NOT_MODEL}) AS total`
   ).bind(lap.trackId, lap.carId, lap.time).first();
   const k = { t: lap.trackId, c: lap.carId, track: lap.track, car: lap.car };
+  const name2 = lap.shown === "iracing" && a.iracing ? a.iracing : a.alias;
   for (const g of gs) {
     const rec = st.pos === 1 && st.total > 1, channel = rec ? g.records_channel || g.alerts_channel : g.alerts_channel;
-    if (!channel || !await isPro(env, g.set_by)) continue;
+    if (!channel || !g.everyone && !await isPro(env, g.set_by)) continue;
     const l = ["es", "pt"].includes(g.lang) ? g.lang : "en";
     const fields = [
       { name: tr(l, "Time", "Tiempo", "Tempo"), value: `\`${fmt(lap.time)}\`` + (lap.prev ? ` \`${gap(lap.time - lap.prev)}\`` : ""), inline: true },
@@ -5569,7 +5346,7 @@ async function discordLapAlert(env, accountId, lap) {
         color: rec ? PURPLE : AMBER,
         url: recUrl(l, k),
         title: rec ? tr(l, "\u{1F3C6} New record", "\u{1F3C6} Nuevo r\xE9cord", "\u{1F3C6} Novo recorde") : tr(l, "\u23F1\uFE0F New best lap", "\u23F1\uFE0F Nueva mejor vuelta", "\u23F1\uFE0F Nova melhor volta"),
-        description: `<@${a.discord_id}> **${md(a.alias)}**
+        description: `${a.discord_id ? `<@${a.discord_id}> ` : ""}**${md(name2)}**
 ${md(fix(lap.car))} \xB7 ${md(fix(lap.track))}`,
         fields
       }]
@@ -5588,14 +5365,14 @@ async function linkPair(env, discordId, accountId, handle2, guildId, login) {
 }
 __name(linkPair, "linkPair");
 var JSONH3 = { "content-type": "application/json; charset=utf-8", "cache-control": "no-store", "access-control-allow-origin": "*" };
-var json5 = /* @__PURE__ */ __name((v, status = 200) => new Response(JSON.stringify(v), { status, headers: JSONH3 }), "json");
-var hexOf = /* @__PURE__ */ __name((b) => [...new Uint8Array(b)].map((x) => x.toString(16).padStart(2, "0")).join(""), "hexOf");
+var json4 = /* @__PURE__ */ __name((v, status = 200) => new Response(JSON.stringify(v), { status, headers: JSONH3 }), "json");
+var hexOf = /* @__PURE__ */ __name((b2) => [...new Uint8Array(b2)].map((x) => x.toString(16).padStart(2, "0")).join(""), "hexOf");
 var rid2 = /* @__PURE__ */ __name(() => hexOf(crypto.getRandomValues(new Uint8Array(24))), "rid");
 var isHex482 = /* @__PURE__ */ __name((v) => typeof v === "string" && /^[0-9a-f]{48}$/.test(v), "isHex48");
 var portOf2 = /* @__PURE__ */ __name((v) => Number.isInteger(Number(v)) && Number(v) > 0 && Number(v) < 65536 ? Number(v) : null, "portOf");
 var clean32 = /* @__PURE__ */ __name((a) => (typeof a === "string" ? a : "").slice(0, 32).replace(/[\u0000-\u001f<>]/g, "").trim(), "clean32");
-var siteOf2 = /* @__PURE__ */ __name((env, url) => env.LOCAL === "1" && url ? url.origin : SITE3, "siteOf");
-var oauthBack = /* @__PURE__ */ __name((env, url) => siteOf2(env, url) + "/discord/oauth", "oauthBack");
+var siteOf = /* @__PURE__ */ __name((env, url) => env.LOCAL === "1" && url ? url.origin : SITE3, "siteOf");
+var oauthBack = /* @__PURE__ */ __name((env, url) => siteOf(env, url) + "/discord/oauth", "oauthBack");
 var oauthReady = /* @__PURE__ */ __name((env) => !!(env.DISCORD_APP_ID && env.DISCORD_CLIENT_SECRET), "oauthReady");
 var NOT_READY = "Discord sign-in is not set up on this server yet";
 var AGAIN = "this Discord sign-in is not valid any more, sign in with Discord again";
@@ -5642,7 +5419,7 @@ function discordUser(me2) {
 }
 __name(discordUser, "discordUser");
 async function discordOAuth(req, env, url) {
-  const base2 = siteOf2(env, url);
+  const base2 = siteOf(env, url);
   const state = url.searchParams.get("state") || "", code = url.searchParams.get("code") || "";
   if (!isHex482(state)) return Response.redirect(base2 + "/?discordLogin=0", 302);
   const st = await env.DB.prepare("DELETE FROM discord_oauth WHERE state_hash=?1 RETURNING code_hash, account_id, device, kind, port, app, expires").bind(await sha256("discord-oauth:" + state)).first();
@@ -5693,26 +5470,26 @@ __name(discordAnswer, "discordAnswer");
 async function discordAccount(env, a, p, m, body, url, passCheck) {
   if (p === "/discord" && m === "GET") {
     const l = await env.DB.prepare("SELECT discord_id, handle, shown, login FROM discord_links WHERE account_id=?1").bind(a.id).first();
-    return json5({ linked: !!l, id: l ? l.discord_id : void 0, handle: l ? l.handle || "" : void 0, shown: !!(l && l.shown), login: !!(l && l.login), oauth: oauthReady(env) });
+    return json4({ linked: !!l, id: l ? l.discord_id : void 0, handle: l ? l.handle || "" : void 0, shown: !!(l && l.shown), login: !!(l && l.login), oauth: oauthReady(env) });
   }
   if (p === "/discord/start" && m === "POST") {
-    if (!oauthReady(env)) return json5({ error: NOT_READY + ": use /link in Discord" }, 503);
+    if (!oauthReady(env)) return json4({ error: NOT_READY + ": use /link in Discord" }, 503);
     const app = body.app || url.searchParams.get("app");
-    if (body.auth == null && !app && !body.port) return json5(await discordStart(env, url, "legacy", a.id, body.device));
+    if (body.auth == null && !app && !body.port) return json4(await discordStart(env, url, "legacy", a.id, body.device));
     const no = await passCheck();
     if (no) return no;
     const r4 = await discordStart(env, url, "link", a.id, body.device, body.port, app);
-    return json5(r4, r4.error ? 400 : 200);
+    return json4(r4, r4.error ? 400 : 200);
   }
   if (p === "/discord/link/grant" && m === "POST") {
     const g = await useDiscordGrant(env, body.grant, "link", body.code);
-    if (!g || g.account_id !== a.id) return json5({ error: AGAIN }, 400);
-    if (await linkDiscordLogin(env, g, a.id) === "taken") return json5({ error: "this Discord account is already linked to another account", code: "taken" }, 409);
-    return json5({ ok: true, handle: g.handle || "" });
+    if (!g || g.account_id !== a.id) return json4({ error: AGAIN }, 400);
+    if (await linkDiscordLogin(env, g, a.id) === "taken") return json4({ error: "this Discord account is already linked to another account", code: "taken" }, 409);
+    return json4({ ok: true, handle: g.handle || "" });
   }
   if (p === "/discord/show" && m === "POST") {
     await env.DB.prepare("UPDATE discord_links SET shown=?2 WHERE account_id=?1").bind(a.id, body.shown ? 1 : 0).run();
-    return json5({ ok: true, shown: !!body.shown });
+    return json4({ ok: true, shown: !!body.shown });
   }
   if (p === "/discord/unlink" && m === "POST") {
     const l = await env.DB.prepare("SELECT login FROM discord_links WHERE account_id=?1").bind(a.id).first();
@@ -5724,22 +5501,22 @@ async function discordAccount(env, a, p, m, body, url, passCheck) {
       env.DB.prepare("DELETE FROM discord_members WHERE discord_id IN (SELECT discord_id FROM discord_links WHERE account_id=?1)").bind(a.id),
       env.DB.prepare("DELETE FROM discord_links WHERE account_id=?1").bind(a.id)
     ]);
-    return json5({ ok: true });
+    return json4({ ok: true });
   }
   const code = String((m === "GET" ? url.searchParams.get("c") : body.code) || "").toUpperCase().replace(/[^A-Z0-9]/g, "");
-  if (code.length !== 8) return json5({ error: "this link is not valid" }, 400);
+  if (code.length !== 8) return json4({ error: "this link is not valid" }, 400);
   const h = await sha256("discord:" + code);
   const c = await env.DB.prepare("SELECT discord_id, discord_name, guild_id, handle FROM discord_codes WHERE code_hash=?1 AND expires>?2").bind(h, Date.now()).first();
-  if (!c) return json5({ error: "this link expired: ask the bot again with /link" }, 404);
-  if (p === "/discord/code" && m === "GET") return json5({ name: c.discord_name });
+  if (!c) return json4({ error: "this link expired: ask the bot again with /link" }, 404);
+  if (p === "/discord/code" && m === "GET") return json4({ name: c.discord_name });
   if (p === "/discord/link" && m === "POST") {
     const no = await passCheck();
     if (no) return no;
     await linkPair(env, c.discord_id, a.id, c.handle, c.guild_id, false);
     await env.DB.prepare("DELETE FROM discord_codes WHERE code_hash=?1").bind(h).run();
-    return json5({ ok: true, name: c.discord_name });
+    return json4({ ok: true, name: c.discord_name });
   }
-  return json5({ error: "not found" }, 404);
+  return json4({ error: "not found" }, 404);
 }
 __name(discordAccount, "discordAccount");
 
@@ -5783,9 +5560,9 @@ async function prunePresence(env) {
 }
 __name(prunePresence, "prunePresence");
 async function onlineRoute(req, env) {
-  const json16 = /* @__PURE__ */ __name((o, s = 200) => new Response(JSON.stringify(o), { status: s, headers: { "content-type": "application/json", "cache-control": "no-store" } }), "json");
+  const json17 = /* @__PURE__ */ __name((o, s = 200) => new Response(JSON.stringify(o), { status: s, headers: { "content-type": "application/json", "cache-control": "no-store" } }), "json");
   const acc = await sessionAccount(req, env);
-  if (!acc || !isAdmin(env, acc.id)) return json16({ error: "only the admins of this server can do this" }, 403);
+  if (!acc || !isAdmin(env, acc.id)) return json17({ error: "only the admins of this server can do this" }, 403);
   const now = Date.now(), on = now - 3 * 6e4;
   const r4 = await env.DB.prepare(
     `SELECT p.account_id AS accountId, p.kind, p.name AS device, p.app_version AS version, p.last_seen AS lastSeen, a.display AS nick
@@ -5802,7 +5579,7 @@ async function onlineRoute(req, env) {
     return { ...c, accounts: accs.size, devices: list.length };
   }, "count");
   const online = rows.filter((x) => x.lastSeen > on), recent2 = rows.filter((x) => x.lastSeen <= on);
-  return json16({ now, online, recent: recent2, counts: { online: count(online), recent: count(rows) } });
+  return json17({ now, online, recent: recent2, counts: { online: count(online), recent: count(rows) } });
 }
 __name(onlineRoute, "onlineRoute");
 
@@ -5836,11 +5613,168 @@ async function escrowLogin(env, a) {
 }
 __name(escrowLogin, "escrowLogin");
 
+// src/sourceslib.js
+var SRC_RE = /^[a-z0-9._-]{1,40}$/;
+var PAGE_RE = /^[a-z0-9/_-]{1,60}$/;
+var SITES = [
+  [/(^|\.)google\.[a-z.]+$/, "google"],
+  [/(^|\.)bing\.com$/, "bing"],
+  [/(^|\.)duckduckgo\.com$/, "duckduckgo"],
+  [/(^|\.)yahoo\.[a-z.]+$/, "yahoo"],
+  [/(^|\.)yandex\.[a-z.]+$/, "yandex"],
+  [/(^|\.)baidu\.com$/, "baidu"],
+  [/(^|\.)ecosia\.org$/, "ecosia"],
+  [/(^|\.)search\.brave\.com$/, "brave"],
+  [/(^|\.)qwant\.com$/, "qwant"],
+  [/(^|\.)(chatgpt\.com|openai\.com)$/, "chatgpt"],
+  [/(^|\.)perplexity\.ai$/, "perplexity"],
+  [/(^|\.)claude\.ai$/, "claude"],
+  [/(^|\.)gemini\.google\.com$/, "gemini"],
+  [/(^|\.)copilot\.microsoft\.com$/, "copilot"],
+  [/(^|\.)(reddit\.com|redd\.it)$/, "reddit"],
+  [/(^|\.)(discord\.com|discordapp\.com|discord\.gg)$/, "discord"],
+  [/(^|\.)(youtube\.com|youtu\.be)$/, "youtube"],
+  [/(^|\.)(facebook\.com|fb\.com|fb\.me)$/, "facebook"],
+  [/(^|\.)instagram\.com$/, "instagram"],
+  [/(^|\.)(x\.com|twitter\.com|t\.co)$/, "x"],
+  [/(^|\.)tiktok\.com$/, "tiktok"],
+  [/(^|\.)twitch\.tv$/, "twitch"],
+  [/(^|\.)(iracing\.com)$/, "iracing"],
+  [/(^|\.)(steamcommunity\.com|steampowered\.com)$/, "steam"],
+  [/(^|\.)(overtake\.gg|racedepartment\.com)$/, "overtake"],
+  [/(^|\.)simhubdash\.com$/, "simhub"],
+  [/(^|\.)github\.com$/, "github"],
+  [/(^|\.)(whatsapp\.com|wa\.me)$/, "whatsapp"],
+  [/(^|\.)(t\.me|telegram\.org)$/, "telegram"],
+  [/(^|\.)linkedin\.com$/, "linkedin"]
+];
+var SRC_KIND = {
+  google: "search",
+  bing: "search",
+  duckduckgo: "search",
+  yahoo: "search",
+  yandex: "search",
+  baidu: "search",
+  ecosia: "search",
+  brave: "search",
+  qwant: "search",
+  chatgpt: "ai",
+  perplexity: "ai",
+  claude: "ai",
+  gemini: "ai",
+  copilot: "ai",
+  reddit: "community",
+  discord: "community",
+  iracing: "community",
+  overtake: "community",
+  steam: "community",
+  simhub: "community",
+  github: "community",
+  youtube: "social",
+  facebook: "social",
+  instagram: "social",
+  x: "social",
+  tiktok: "social",
+  twitch: "social",
+  whatsapp: "social",
+  telegram: "social",
+  linkedin: "social",
+  direct: "direct"
+};
+var kindOf = /* @__PURE__ */ __name((src) => SRC_KIND[src] || (/-app$/.test(src) ? "app" : src === "unknown" ? "unknown" : "other"), "kindOf");
+var SELF = /(^|\.)pitlanehq\.app$|^localhost$|^127\.0\.0\.1$/;
+var cleanSrc = /* @__PURE__ */ __name((s) => String(s == null ? "" : s).toLowerCase().trim().replace(/^www\./, "").replace(/[^a-z0-9._-]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 40), "cleanSrc");
+function siteOf2(ref) {
+  let host = "";
+  const s = String(ref == null ? "" : ref).trim();
+  if (!s) return "direct";
+  const app = /^android-app:\/\/([a-z0-9._]+)/i.exec(s);
+  if (app) {
+    const id2 = app[1].toLowerCase();
+    if (id2 === "com.google.android.googlequicksearchbox") return "google";
+    if (id2 === "com.reddit.frontpage") return "reddit";
+    if (id2 === "com.discord") return "discord";
+    if (id2 === "com.google.android.gm") return "gmail";
+    return cleanSrc("app-" + id2.split(".").pop());
+  }
+  try {
+    host = new URL(s).hostname.toLowerCase();
+  } catch {
+    return "direct";
+  }
+  if (!host) return "direct";
+  if (SELF.test(host)) return "";
+  for (const [re, name2] of SITES) if (re.test(host)) return name2;
+  if (/(^|\.)mail\.google\.com$/.test(host)) return "gmail";
+  return cleanSrc(host.replace(/^(m|l|lm|old|new|mobile)\./, "")) || "direct";
+}
+__name(siteOf2, "siteOf");
+function pageOf(p) {
+  let s = String(p == null ? "" : p).toLowerCase().split(/[?#]/)[0].replace(/\/+$/, "");
+  if (!s || s === "/" || s === "/index.html") return "landing";
+  if (s === "/app" || s.startsWith("/app/")) return "app";
+  s = s.replace(/^\/+/, "").replace(/[^a-z0-9/_-]+/g, "-").slice(0, 60);
+  return PAGE_RE.test(s) ? s : "other";
+}
+__name(pageOf, "pageOf");
+function visitOf(b2) {
+  if (!b2 || typeof b2 !== "object") return { src: "direct", page: "landing", campaign: "" };
+  const tag3 = cleanSrc(b2.us);
+  const campaign = cleanSrc(b2.uc).slice(0, 40);
+  const src = tag3 ? SRC_KIND[tag3] ? tag3 : SITES.some(([re]) => re.test(tag3)) ? siteOf2("https://" + tag3 + "/") : tag3 : siteOf2(b2.ref);
+  return { src: src === "" || SRC_RE.test(src) ? src : "direct", page: pageOf(b2.page), campaign };
+}
+__name(visitOf, "visitOf");
+var countryOf = /* @__PURE__ */ __name((cf) => {
+  const c = String(cf && cf.country || "").toUpperCase();
+  return /^[A-Z]{2}$/.test(c) && c !== "T1" ? c : "XX";
+}, "countryOf");
+function appSrc(client) {
+  const k = String(client || "").trim().toLowerCase().split("/")[0];
+  return k === "pc" || k === "desktop" ? "pc-app" : k === "android" || k === "ios" ? k + "-app" : "unknown";
+}
+__name(appSrc, "appSrc");
+var isBot = /* @__PURE__ */ __name((ua) => !ua || /bot|crawl|spider|slurp|preview|headless|lighthouse|facebookexternalhit|embedly|curl|wget|python|httpclient|go-http/i.test(ua), "isBot");
+var SQL_VISIT_ADD = "INSERT INTO visits_days (day, src, country, page, n) VALUES (?1,?2,?3,?4,1) ON CONFLICT(day, src, country, page) DO UPDATE SET n=MIN(visits_days.n+1, 1000000)";
+var SQL_ACCOUNT_SRC = "UPDATE accounts SET src=?2, src_page=?3, country=?4 WHERE id=?1 AND src IS NULL";
+function sourcesOf(visits, prevVisits, signups, prevSignups) {
+  const sum = /* @__PURE__ */ __name((rows, key2) => {
+    const m = /* @__PURE__ */ new Map();
+    for (const r4 of rows) m.set(r4[key2], (m.get(r4[key2]) || 0) + (r4.n || 0));
+    return m;
+  }, "sum");
+  const vSrc = sum(visits, "src"), vCountry = sum(visits, "country"), vPage = sum(visits, "page"), pSrc = sum(prevVisits, "src");
+  const sSrc = /* @__PURE__ */ new Map(), sCountry = /* @__PURE__ */ new Map();
+  for (const a of signups) {
+    const s = a.src || "unknown", c = a.country || "XX";
+    sSrc.set(s, (sSrc.get(s) || 0) + 1);
+    sCountry.set(c, (sCountry.get(c) || 0) + 1);
+  }
+  const pAcc = /* @__PURE__ */ new Map();
+  for (const a of prevSignups) {
+    const s = a.src || "unknown";
+    pAcc.set(s, (pAcc.get(s) || 0) + 1);
+  }
+  const srcs = /* @__PURE__ */ new Set([...vSrc.keys(), ...sSrc.keys()]);
+  const total = /* @__PURE__ */ __name((m) => [...m.values()].reduce((a, b2) => a + b2, 0), "total");
+  return {
+    visits: total(vSrc),
+    prevVisits: total(pSrc),
+    signups: signups.length,
+    prevSignups: prevSignups.length,
+    bySource: [...srcs].map((src) => ({ src, kind: kindOf(src), visits: vSrc.get(src) || 0, prevVisits: pSrc.get(src) || 0, signups: sSrc.get(src) || 0, prevSignups: pAcc.get(src) || 0 })).sort((a, b2) => b2.visits + b2.signups * 20 - (a.visits + a.signups * 20)).slice(0, 40),
+    byCountry: [.../* @__PURE__ */ new Set([...vCountry.keys(), ...sCountry.keys()])].map((country) => ({ country, visits: vCountry.get(country) || 0, signups: sCountry.get(country) || 0 })).sort((a, b2) => b2.visits + b2.signups * 20 - (a.visits + a.signups * 20)).slice(0, 40),
+    byPage: [...vPage].map(([page4, n]) => ({ page: page4, visits: n })).sort((a, b2) => b2.visits - a.visits).slice(0, 25)
+  };
+}
+__name(sourcesOf, "sourcesOf");
+var VISIT_JS = `<script>(function(){try{var q=new URLSearchParams(location.search),v={ref:document.referrer,page:location.pathname,us:q.get("utm_source")||q.get("ref")||"",um:q.get("utm_medium")||"",uc:q.get("utm_campaign")||""};if(!/(^|\\.)pitlanehq\\.app$/.test(location.hostname))return;try{if(!localStorage.getItem("pw.src0"))localStorage.setItem("pw.src0",JSON.stringify(v))}catch(e){}if(sessionStorage.getItem("pw.v"))return;sessionStorage.setItem("pw.v","1");var b=JSON.stringify(v);if(navigator.sendBeacon)navigator.sendBeacon("/community/visit",new Blob([b],{type:"text/plain"}));else fetch("/community/visit",{method:"POST",body:b,keepalive:true})}catch(e){}})()<\/script>`;
+
 // src/google.js
 var SITE4 = "https://pitlanehq.app";
 var AUTH = "https://accounts.google.com/o/oauth2/v2/auth";
 var TOKEN = "https://oauth2.googleapis.com/token";
-var hexOf2 = /* @__PURE__ */ __name((b) => [...new Uint8Array(b)].map((x) => x.toString(16).padStart(2, "0")).join(""), "hexOf");
+var hexOf2 = /* @__PURE__ */ __name((b2) => [...new Uint8Array(b2)].map((x) => x.toString(16).padStart(2, "0")).join(""), "hexOf");
 var rid3 = /* @__PURE__ */ __name(() => hexOf2(crypto.getRandomValues(new Uint8Array(24))), "rid");
 var isHex483 = /* @__PURE__ */ __name((v) => typeof v === "string" && /^[0-9a-f]{48}$/.test(v), "isHex48");
 var portOf3 = /* @__PURE__ */ __name((v) => Number.isInteger(Number(v)) && Number(v) > 0 && Number(v) < 65536 ? Number(v) : null, "portOf");
@@ -5937,18 +5871,18 @@ __name(googleOAuth, "googleOAuth");
 
 // src/accounts.js
 var JSONH4 = { "content-type": "application/json; charset=utf-8", "cache-control": "no-store", "access-control-allow-origin": "*" };
-var json6 = /* @__PURE__ */ __name((v, status = 200) => new Response(JSON.stringify(v), { status, headers: JSONH4 }), "json");
-var err3 = /* @__PURE__ */ __name((msg, status) => json6({ error: msg }, status), "err");
-var hex2 = /* @__PURE__ */ __name((b) => [...new Uint8Array(b)].map((x) => x.toString(16).padStart(2, "0")).join(""), "hex");
+var json5 = /* @__PURE__ */ __name((v, status = 200) => new Response(JSON.stringify(v), { status, headers: JSONH4 }), "json");
+var err3 = /* @__PURE__ */ __name((msg, status) => json5({ error: msg }, status), "err");
+var hex2 = /* @__PURE__ */ __name((b2) => [...new Uint8Array(b2)].map((x) => x.toString(16).padStart(2, "0")).join(""), "hex");
 var rid4 = /* @__PURE__ */ __name((n = 12) => hex2(crypto.getRandomValues(new Uint8Array(n))), "rid");
 async function sha256(t) {
   return hex2(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(t)));
 }
 __name(sha256, "sha256");
-function same3(a, b) {
-  if (typeof a !== "string" || typeof b !== "string" || a.length !== b.length) return false;
+function same3(a, b2) {
+  if (typeof a !== "string" || typeof b2 !== "string" || a.length !== b2.length) return false;
   let d = 0;
-  for (let i = 0; i < a.length; i++) d |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  for (let i = 0; i < a.length; i++) d |= a.charCodeAt(i) ^ b2.charCodeAt(i);
   return d === 0;
 }
 __name(same3, "same");
@@ -6151,7 +6085,7 @@ async function accounts(req, env, url) {
       const t = await newEmailToken(env, a2.id, "reset", 36e5);
       await sendReset(env, body.email.trim(), url.origin + "/account/reset?t=" + t + "&lang=" + lang(body.lang), body.lang);
     }
-    return json6({ ok: true });
+    return json5({ ok: true });
   }
   if (p === "/reset" && m === "POST") {
     if (await tooMany(env, ["reset:" + ip], [10])) return err3("too many tries: wait 15 minutes", 429);
@@ -6172,7 +6106,7 @@ async function accounts(req, env, url) {
       env.DB.prepare("DELETE FROM account_sessions WHERE account_id=?1").bind(id2),
       env.DB.prepare("DELETE FROM email_tokens WHERE account_id=?1").bind(id2)
     ]);
-    return json6({ ok: true });
+    return json5({ ok: true });
   }
   if (p === "/register" && m === "POST") {
     if (await tooMany(env, ["reg:" + ip], [5])) return err3("too many new accounts from this network, try later", 429);
@@ -6180,7 +6114,7 @@ async function accounts(req, env, url) {
     if (typeof body.email !== "string" || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(body.email) || !isKey(body.auth) || !isB64(body.wrappedKey, 200)) return err3("missing email, key or data key", 400);
     const display = cleanName(body.display);
     if (!display) return err3("choose a public name", 400);
-    if (await nameTaken(env, display, "")) return json6({ error: "this nickname is already taken, choose another one", code: "name_taken" }, 409);
+    if (await nameTaken(env, display, "")) return json5({ error: "this nickname is already taken, choose another one", code: "name_taken" }, 409);
     const eh = await emailHash(env, body.email);
     if (await env.DB.prepare("SELECT id FROM accounts WHERE email_hash=?1").bind(eh).first()) {
       await fail(env, ["reg:" + ip]);
@@ -6191,18 +6125,18 @@ async function accounts(req, env, url) {
     if (body.sid) {
       steam = await useSteamGrant(env, body.sid, "signup", body.code);
       if (!steam) return err3("this Steam sign-in is not valid any more, sign in with Steam again", 400);
-      if (await steamAccountId(env, steam.steamid)) return json6({ error: "this Steam account is already linked to another account", code: "taken" }, 409);
+      if (await steamAccountId(env, steam.steamid)) return json5({ error: "this Steam account is already linked to another account", code: "taken" }, 409);
     }
     if (body.discordSid) {
       discord = await useDiscordGrant(env, body.discordSid, "signup", body.code);
       if (!discord) return err3("this Discord sign-in is not valid any more, sign in with Discord again", 400);
-      if (await discordLinkedAny(env, discord.discord_id)) return json6({ error: "this Discord account is already linked to another account", code: "taken" }, 409);
+      if (await discordLinkedAny(env, discord.discord_id)) return json5({ error: "this Discord account is already linked to another account", code: "taken" }, 409);
     }
     let google = null;
     if (body.googleSid) {
       google = await useGoogleGrant(env, body.googleSid, "signup", body.code);
       if (!google) return err3("this Google sign-in is not valid any more, sign in with Google again", 400);
-      if (await googleAccountId(env, google.sub, null)) return json6({ error: "this Google account is already linked to another account", code: "taken" }, 409);
+      if (await googleAccountId(env, google.sub, null)) return json5({ error: "this Google account is already linked to another account", code: "taken" }, 409);
     }
     await fail(env, ["reg:" + ip]);
     const id2 = rid4(), salt = rid4(16);
@@ -6221,19 +6155,19 @@ async function accounts(req, env, url) {
     const mailed = await mailVerify(env, url, id2, body.email.trim(), body.lang).catch(() => false);
     if (mailed && body.gate) {
       const token2 = await newSession(env, id2, body.device, true);
-      return json6({ id: id2, token: token2, display, nameKind: body.nameKind === "iracing" ? "iracing" : "nick", wrappedKey: body.wrappedKey, keyTag: await keyTag(body.wrappedKey), admin: isAdmin(env, id2), tester: isTester(env, id2), verified: false, mailed: true, gated: true, escrow: false, ...taken });
+      return json5({ id: id2, token: token2, display, nameKind: body.nameKind === "iracing" ? "iracing" : "nick", wrappedKey: body.wrappedKey, keyTag: await keyTag(body.wrappedKey), admin: isAdmin(env, id2), tester: isTester(env, id2), verified: false, mailed: true, gated: true, escrow: false, ...taken });
     }
-    if (mailed) return json6({ verifyFirst: true, mailed: true, error: "verify your email first: we sent you a link, open it and then sign in", code: "verify_first", ...taken }, 202);
+    if (mailed) return json5({ verifyFirst: true, mailed: true, error: "verify your email first: we sent you a link, open it and then sign in", code: "verify_first", ...taken }, 202);
     const token = await newSession(env, id2, body.device);
-    return json6({ id: id2, token, display, nameKind: body.nameKind === "iracing" ? "iracing" : "nick", wrappedKey: body.wrappedKey, keyTag: await keyTag(body.wrappedKey), admin: isAdmin(env, id2), tester: isTester(env, id2), verified: false, mailed, escrow: false, ...taken });
+    return json5({ id: id2, token, display, nameKind: body.nameKind === "iracing" ? "iracing" : "nick", wrappedKey: body.wrappedKey, keyTag: await keyTag(body.wrappedKey), admin: isAdmin(env, id2), tester: isTester(env, id2), verified: false, mailed, escrow: false, ...taken });
   }
-  const signedIn = /* @__PURE__ */ __name(async (a2, token, social) => json6({ id: a2.id, token, display: a2.display, nameKind: a2.name_kind, anon: !!a2.anon, wrappedKey: social ? void 0 : a2.wrapped_key, keyTag: await keyTag(a2.wrapped_key), admin: isAdmin(env, a2.id), tester: isTester(env, a2.id, a2), verified: !!a2.verified, twoFactor: !!a2.totp_on, escrow: !!a2.escrow, noPassword: noPassword(a2) || void 0, ...social ? await escrowLogin(env, a2) : {} }), "signedIn");
+  const signedIn = /* @__PURE__ */ __name(async (a2, token, social) => json5({ id: a2.id, token, display: a2.display, nameKind: a2.name_kind, anon: !!a2.anon, wrappedKey: social ? void 0 : a2.wrapped_key, keyTag: await keyTag(a2.wrapped_key), admin: isAdmin(env, a2.id), tester: isTester(env, a2.id, a2), verified: !!a2.verified, twoFactor: !!a2.totp_on, escrow: !!a2.escrow, noPassword: noPassword(a2) || void 0, ...social ? await escrowLogin(env, a2) : {} }), "signedIn");
   if (p === "/steam/login/start" && (m === "GET" || m === "POST")) {
     if (await tooMany(env, ["steam:" + ip], [30])) return err3("too many tries: wait 15 minutes", 429);
     await fail(env, ["steam:" + ip]);
     const q2 = m === "GET" ? url.searchParams : null;
     const r4 = await steamStart(env, url, "login", null, q2 ? q2.get("device") : body.device, q2 ? q2.get("port") : body.port, body.app || url.searchParams.get("app"));
-    return json6(r4, r4.error ? 400 : 200);
+    return json5(r4, r4.error ? 400 : 200);
   }
   if (p === "/discord/login/start" && (m === "GET" || m === "POST")) {
     if (!oauthReady(env)) return err3("Discord sign-in is not set up on this server yet", 503);
@@ -6241,7 +6175,7 @@ async function accounts(req, env, url) {
     await fail(env, ["discord:" + ip]);
     const q2 = m === "GET" ? url.searchParams : null;
     const r4 = await discordStart(env, url, "login", null, q2 ? q2.get("device") : body.device, q2 ? q2.get("port") : body.port, body.app || url.searchParams.get("app"));
-    return json6(r4, r4.error ? 400 : 200);
+    return json5(r4, r4.error ? 400 : 200);
   }
   if (p === "/google/login/start" && (m === "GET" || m === "POST")) {
     if (!googleReady(env)) return err3("Google sign-in is not set up on this server yet", 503);
@@ -6249,7 +6183,7 @@ async function accounts(req, env, url) {
     await fail(env, ["google:" + ip]);
     const q2 = m === "GET" ? url.searchParams : null;
     const r4 = await googleStart(env, url, q2 ? q2.get("device") : body.device, q2 ? q2.get("port") : body.port, body.app || url.searchParams.get("app"));
-    return json6(r4, r4.error ? 400 : 200);
+    return json5(r4, r4.error ? 400 : 200);
   }
   if (p === "/login" && m === "POST") {
     if (typeof body.email !== "string" || !isKey(body.auth)) return err3("missing email or key", 400);
@@ -6258,11 +6192,11 @@ async function accounts(req, env, url) {
     const a2 = await env.DB.prepare("SELECT * FROM accounts WHERE email_hash=?1").bind(eh).first();
     if (!a2) {
       await fail(env, [ip]);
-      return json6({ error: "there is no account with this email: create one", code: "no_account" }, 404);
+      return json5({ error: "there is no account with this email: create one", code: "no_account" }, 404);
     }
     if (noPassword(a2)) {
       await fail(env, keys);
-      return json6({ error: "this account signs in with Steam, Discord or Google", code: "social_only" }, 401);
+      return json5({ error: "this account signs in with Steam, Discord or Google", code: "social_only" }, 401);
     }
     if (!same3(await authHash(a2.auth_salt, body.auth), a2.auth_hash)) {
       await fail(env, keys);
@@ -6271,8 +6205,8 @@ async function accounts(req, env, url) {
     if (mustVerify(env, a2)) {
       const recent2 = await env.DB.prepare("SELECT 1 FROM email_tokens WHERE account_id=?1 AND kind='verify' AND expires>?2").bind(a2.id, Date.now() + 7 * 864e5 - 12e4).first();
       if (!recent2) await mailVerify(env, url, a2.id, body.email.trim(), body.lang).catch(() => false);
-      if (body.gate) return json6({ ...await (await signedIn(a2, await newSession(env, a2.id, body.device, true))).json(), gated: true });
-      return json6({ error: "verify your email first: we sent you a link, open it and then sign in", code: "verify_first" }, 403);
+      if (body.gate) return json5({ ...await (await signedIn(a2, await newSession(env, a2.id, body.device, true))).json(), gated: true });
+      return json5({ error: "verify your email first: we sent you a link, open it and then sign in", code: "verify_first" }, 403);
     }
     if (a2.totp_on) {
       const t = rid4(24);
@@ -6280,7 +6214,7 @@ async function accounts(req, env, url) {
         env.DB.prepare("DELETE FROM login_pending WHERE expires<?1").bind(Date.now()),
         env.DB.prepare("INSERT INTO login_pending (token_hash, account_id, device, expires) VALUES (?1,?2,?3,?4)").bind(await sha256(t), a2.id, cleanName(body.device) || "PC", Date.now() + 5 * 6e4)
       ]);
-      return json6({ twoFactor: true, pending: t });
+      return json5({ twoFactor: true, pending: t });
     }
     return signedIn(a2, await newSession(env, a2.id, body.device));
   }
@@ -6303,8 +6237,8 @@ async function accounts(req, env, url) {
     }
     const device = cleanName(body.device) || g.device || "PC";
     if (mustVerify(env, a2)) {
-      if (body.gate) return json6({ ...await (await signedIn(a2, await newSession(env, a2.id, device, true), true)).json(), gated: true });
-      return json6({ error: "verify your email first: we sent you a link, open it and then sign in", code: "verify_first" }, 403);
+      if (body.gate) return json5({ ...await (await signedIn(a2, await newSession(env, a2.id, device, true), true)).json(), gated: true });
+      return json5({ error: "verify your email first: we sent you a link, open it and then sign in", code: "verify_first" }, 403);
     }
     if (a2.totp_on) {
       const t = rid4(24);
@@ -6313,7 +6247,7 @@ async function accounts(req, env, url) {
         // steam 1: the session comes without the wrapped key, with the server's copy of the data key (Steam or Discord signed in)
         env.DB.prepare("INSERT INTO login_pending (token_hash, account_id, device, expires, steam) VALUES (?1,?2,?3,?4,1)").bind(await sha256(t), a2.id, device, Date.now() + 5 * 6e4)
       ]);
-      return json6({ twoFactor: true, pending: t, needKey: !a2.escrow });
+      return json5({ twoFactor: true, pending: t, needKey: !a2.escrow });
     }
     return signedIn(a2, await newSession(env, a2.id, device), true);
   }
@@ -6344,12 +6278,12 @@ async function accounts(req, env, url) {
   if (!a) return err3("signed out: sign in again", 401);
   const gated = !!a.session_gated && !a.verified;
   if (gated && !(p === "/me" && m === "GET" || p === "/verify/resend" || p === "/logout" || p === "/delete"))
-    return json6({ error: "verify your email first: we sent you a link, open it and then sign in", code: "verify_first" }, 403);
+    return json5({ error: "verify your email first: we sent you a link, open it and then sign in", code: "verify_first" }, 403);
   if (m === "GET" && (p === "/me" || p === "/sync" || p === "/sync/meta")) await notePresence(env, req, a);
   const reauth = /* @__PURE__ */ __name(async () => noPassword(a) || isKey(body.auth) && same3(await authHash(a.auth_salt, body.auth), a.auth_hash), "reauth");
-  const SOCIAL_ONLY = /* @__PURE__ */ __name(() => json6({ error: "this account signs in with Steam, Discord or Google", code: "social_only" }, 400), "SOCIAL_ONLY");
+  const SOCIAL_ONLY = /* @__PURE__ */ __name(() => json5({ error: "this account signs in with Steam, Discord or Google", code: "social_only" }, 400), "SOCIAL_ONLY");
   if (noPassword(a) && m === "POST" && (p === "/steam/unlink" || p === "/discord/unlink" || p === "/google/unlink") && await signInWays(env, a.id) <= 1)
-    return json6({ error: "this is the only way you sign in to this account", code: "last_way" }, 409);
+    return json5({ error: "this is the only way you sign in to this account", code: "last_way" }, 409);
   const passCheck = /* @__PURE__ */ __name(async () => {
     if (await tooMany(env, ["login:" + a.email_hash], [5])) return err3("too many wrong passwords: wait 15 minutes", 429);
     if (await reauth()) return null;
@@ -6357,27 +6291,27 @@ async function accounts(req, env, url) {
     return err3("the password is wrong", 401);
   }, "passCheck");
   if (p === "/steam" || p.startsWith("/steam/")) return steamAccount(env, a, p, m, body, url, passCheck);
-  if (p === "/google" && m === "GET") return json6({ linked: !!await env.DB.prepare("SELECT 1 FROM google_links WHERE account_id=?1").bind(a.id).first(), oauth: googleReady(env) });
+  if (p === "/google" && m === "GET") return json5({ linked: !!await env.DB.prepare("SELECT 1 FROM google_links WHERE account_id=?1").bind(a.id).first(), oauth: googleReady(env) });
   if (p === "/google/unlink" && m === "POST") {
     const no = await passCheck();
     if (no) return no;
     await env.DB.prepare("DELETE FROM google_links WHERE account_id=?1").bind(a.id).run();
-    return json6({ ok: true });
+    return json5({ ok: true });
   }
   if (p === "/discord" || p.startsWith("/discord/")) return discordAccount(env, a, p, m, body, url, passCheck);
   if (p === "/key" && m === "POST") {
     if (noPassword(a)) return SOCIAL_ONLY();
     const no = await passCheck();
     if (no) return no;
-    return json6({ wrappedKey: a.wrapped_key, keyTag: await keyTag(a.wrapped_key) });
+    return json5({ wrappedKey: a.wrapped_key, keyTag: await keyTag(a.wrapped_key) });
   }
   if (p === "/escrow" && m === "POST") {
     const r4 = await sealEscrow(env, body.key, body.email, async (e) => same3(await emailHash(env, e), a.email_hash));
     if (r4.error) return err3(r4.error, r4.status);
     await env.DB.prepare("UPDATE accounts SET escrow=?2 WHERE id=?1").bind(a.id, r4.value).run();
-    return json6({ ok: true, escrow: true });
+    return json5({ ok: true, escrow: true });
   }
-  if (p === "/me" && m === "GET") return json6({ id: a.id, display: a.display, nameKind: a.name_kind, anon: !!a.anon, created: a.created, admin: isAdmin(env, a.id), tester: isTester(env, a.id, a), supporter: !!a.supporter, supporterHidden: !!a.supporter_hidden, ...proOf(a), ...await proHere(env, a, url.searchParams), proGate: await proGate(env), verified: !!a.verified, mail: mailReady(env), twoFactor: !!a.totp_on, escrow: !!a.escrow, noPassword: noPassword(a) || void 0, gated: gated || void 0, google: !!await env.DB.prepare("SELECT 1 FROM google_links WHERE account_id=?1").bind(a.id).first(), recoveryLeft: a.totp_on ? (await env.DB.prepare("SELECT COUNT(*) AS n FROM recovery_codes WHERE account_id=?1").bind(a.id).first() || {}).n || 0 : 0 });
+  if (p === "/me" && m === "GET") return json5({ id: a.id, display: a.display, nameKind: a.name_kind, anon: !!a.anon, created: a.created, admin: isAdmin(env, a.id), tester: isTester(env, a.id, a), supporter: !!a.supporter, supporterHidden: !!a.supporter_hidden, ...proOf(a), ...await proHere(env, a, url.searchParams), proGate: await proGate(env), verified: !!a.verified, mail: mailReady(env), twoFactor: !!a.totp_on, escrow: !!a.escrow, noPassword: noPassword(a) || void 0, gated: gated || void 0, google: !!await env.DB.prepare("SELECT 1 FROM google_links WHERE account_id=?1").bind(a.id).first(), recoveryLeft: a.totp_on ? (await env.DB.prepare("SELECT COUNT(*) AS n FROM recovery_codes WHERE account_id=?1").bind(a.id).first() || {}).n || 0 : 0 });
   if (p === "/2fa/setup" && m === "POST") {
     if (noPassword(a)) return SOCIAL_ONLY();
     if (await tooMany(env, ["login:" + a.email_hash], [5])) return err3("too many wrong passwords: wait 15 minutes", 429);
@@ -6388,7 +6322,7 @@ async function accounts(req, env, url) {
     if (a.totp_on) return err3("two-step sign-in is already on", 409);
     const secret = newTotpSecret();
     await env.DB.prepare("UPDATE accounts SET totp_pending=?2 WHERE id=?1").bind(a.id, await sealData(env, secret)).run();
-    return json6({ secret, url: otpauthURL(secret, a.display || a.id) });
+    return json5({ secret, url: otpauthURL(secret, a.display || a.id) });
   }
   if (p === "/2fa/enable" && m === "POST") {
     if (a.totp_on) return err3("two-step sign-in is already on", 409);
@@ -6407,10 +6341,10 @@ async function accounts(req, env, url) {
       env.DB.prepare("DELETE FROM account_sessions WHERE account_id=?1 AND id<>?2").bind(a.id, a.sid)
       // every other device signs in again, with the code
     ]);
-    return json6({ ok: true, codes });
+    return json5({ ok: true, codes });
   }
   if (p === "/2fa/disable" && m === "POST") {
-    if (!a.totp_on) return json6({ ok: true });
+    if (!a.totp_on) return json5({ ok: true });
     if (await tooMany(env, ["login:" + a.email_hash, "2fa:" + a.id], [5, 5])) return err3("too many attempts: wait 15 minutes", 429);
     const code = String(body.code || "").trim().toLowerCase();
     let codeOK = await totpOK(await openData(env, a.totp), code);
@@ -6423,12 +6357,12 @@ async function accounts(req, env, url) {
       env.DB.prepare("UPDATE accounts SET totp=NULL, totp_on=0, totp_pending=NULL WHERE id=?1").bind(a.id),
       env.DB.prepare("DELETE FROM recovery_codes WHERE account_id=?1").bind(a.id)
     ]);
-    return json6({ ok: true });
+    return json5({ ok: true });
   }
   if (p === "/me" && m === "POST") {
     const display = cleanName(body.display);
     if (!display) return err3("choose a public name", 400);
-    if (await nameTaken(env, display, a.id)) return json6({ error: "this nickname is already taken, choose another one", code: "name_taken" }, 409);
+    if (await nameTaken(env, display, a.id)) return json5({ error: "this nickname is already taken, choose another one", code: "name_taken" }, 409);
     const anon = body.anon === void 0 ? !!a.anon : body.anon ? 1 : 0;
     const kind = body.nameKind === "iracing" ? "iracing" : "nick", was = a.name_kind === "iracing" ? "iracing" : "nick";
     const q2 = [
@@ -6439,34 +6373,34 @@ async function accounts(req, env, url) {
     if (kind !== was) for (const t of ["community_laps", "community_reports"])
       q2.push(env.DB.prepare(`UPDATE ${t} SET shown=?2 WHERE user_id=?1 AND anon=0 AND COALESCE(shown,'nick')=?3`).bind(a.id, kind, was));
     await env.DB.batch(q2);
-    return json6({ ok: true, display, nameKind: kind, anon: !!anon });
+    return json5({ ok: true, display, nameKind: kind, anon: !!anon });
   }
   if (p === "/verify/resend" && m === "POST") {
-    if (a.verified) return json6({ ok: true, verified: true });
+    if (a.verified) return json5({ ok: true, verified: true });
     if (!mailReady(env)) return err3("emails are not set up on this server", 503);
     if (typeof body.email !== "string" || !same3(await emailHash(env, body.email), a.email_hash)) return err3("this is not the email of your account", 400);
     if (await tooMany(env, ["mail:" + a.id], [3])) return err3("too many emails: try again in 15 minutes", 429);
     await fail(env, ["mail:" + a.id]);
-    return json6({ ok: await mailVerify(env, url, a.id, body.email.trim(), body.lang) });
+    return json5({ ok: await mailVerify(env, url, a.id, body.email.trim(), body.lang) });
   }
   if (p === "/mail/test" && m === "POST") {
     if (!isAdmin(env, a.id)) return err3("only the admins of this server can do this", 403);
     if (!mailReady(env)) return err3("emails are not set up on this server (RESEND_API_KEY and EMAIL_FROM)", 503);
     if (typeof body.email !== "string" || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(body.email)) return err3("write a valid email", 400);
-    return json6(await sendTest(env, body.email.trim(), body.lang));
+    return json5(await sendTest(env, body.email.trim(), body.lang));
   }
   if (p === "/logout" && m === "POST") {
     await env.DB.prepare("DELETE FROM account_sessions WHERE id=?1").bind(a.sid).run();
-    return json6({ ok: true });
+    return json5({ ok: true });
   }
   if (p === "/sessions" && m === "GET") {
     const r4 = await env.DB.prepare("SELECT id, device, created, last_seen AS lastSeen FROM account_sessions WHERE account_id=?1 ORDER BY last_seen DESC").bind(a.id).all();
-    return json6({ sessions: (r4.results || []).map((s) => ({ ...s, current: s.id === a.sid })) });
+    return json5({ sessions: (r4.results || []).map((s) => ({ ...s, current: s.id === a.sid })) });
   }
   if (p === "/sessions/revoke" && m === "POST") {
     if (body.id === "others") await env.DB.prepare("DELETE FROM account_sessions WHERE account_id=?1 AND id<>?2").bind(a.id, a.sid).run();
     else await env.DB.prepare("DELETE FROM account_sessions WHERE account_id=?1 AND id=?2").bind(a.id, String(body.id || "")).run();
-    return json6({ ok: true });
+    return json5({ ok: true });
   }
   if (p === "/password" && m === "POST") {
     if (noPassword(a)) return SOCIAL_ONLY();
@@ -6482,7 +6416,7 @@ async function accounts(req, env, url) {
       env.DB.prepare("DELETE FROM account_sessions WHERE account_id=?1 AND id<>?2").bind(a.id, a.sid)
       // sign out everywhere else
     ]);
-    return json6({ ok: true });
+    return json5({ ok: true });
   }
   if (p === "/delete" && m === "POST") {
     if (!gated && !await reauth()) {
@@ -6490,17 +6424,17 @@ async function accounts(req, env, url) {
       return err3("the password is wrong", 401);
     }
     await deleteAccount(env, a.id);
-    return json6({ deleted: true });
+    return json5({ deleted: true });
   }
   if (p === "/sync/meta" && m === "GET") {
     const s = await env.DB.prepare("SELECT version, updated FROM account_sync WHERE account_id=?1").bind(a.id).first();
-    return json6({ version: s ? s.version : 0, updated: s ? s.updated : null });
+    return json5({ version: s ? s.version : 0, updated: s ? s.updated : null });
   }
   if (p === "/sync" && m === "GET") {
     const s = await env.DB.prepare("SELECT version, updated, chunks FROM account_sync WHERE account_id=?1").bind(a.id).first();
-    if (!s) return json6({ version: 0, blob: "" });
+    if (!s) return json5({ version: 0, blob: "" });
     const r4 = await env.DB.prepare("SELECT data FROM account_sync_chunks WHERE account_id=?1 AND idx<?2 ORDER BY idx").bind(a.id, s.chunks).all();
-    return json6({ version: s.version, updated: s.updated, blob: (r4.results || []).map((x) => x.data).join("") });
+    return json5({ version: s.version, updated: s.updated, blob: (r4.results || []).map((x) => x.data).join("") });
   }
   if (p === "/sync" && m === "PUT") {
     if (!isB64(body.blob, 8 * 1024 * 1024)) return err3("missing or too large data (8 MB max)", 400);
@@ -6519,31 +6453,31 @@ async function accounts(req, env, url) {
     ]);
     if (env.LIVE) await env.LIVE.get(env.LIVE.idFromName(a.id)).fetch(new Request("https://live/nudge", { headers: { "x-live-nudge": "sync", "x-live-version": String(v) } })).catch(() => {
     });
-    return json6({ version: v });
+    return json5({ version: v });
   }
   return err3("not found", 404);
 }
 __name(accounts, "accounts");
 async function quickRegister(env, body, ip, req) {
-  if (!escrowReady(env)) return json6({ error: "sign up with an email on this server", code: "no_quick" }, 503);
+  if (!escrowReady(env)) return json5({ error: "sign up with an email on this server", code: "no_quick" }, 503);
   if ([body.sid, body.discordSid, body.googleSid].filter(Boolean).length !== 1) return err3("sign up with one of them", 400);
   let g = null, prov = "steam", name2 = "", email = "";
   if (body.sid) {
     g = await useSteamGrant(env, body.sid, "signup", body.code);
     if (!g) return err3("this Steam sign-in is not valid any more, sign in with Steam again", 400);
-    if (await steamAccountId(env, g.steamid)) return json6({ error: "this Steam account is already linked to another account", code: "taken" }, 409);
+    if (await steamAccountId(env, g.steamid)) return json5({ error: "this Steam account is already linked to another account", code: "taken" }, 409);
     name2 = g.persona;
   } else if (body.discordSid) {
     prov = "discord";
     g = await useDiscordGrant(env, body.discordSid, "signup", body.code);
     if (!g) return err3("this Discord sign-in is not valid any more, sign in with Discord again", 400);
-    if (await discordLinkedAny(env, g.discord_id)) return json6({ error: "this Discord account is already linked to another account", code: "taken" }, 409);
+    if (await discordLinkedAny(env, g.discord_id)) return json5({ error: "this Discord account is already linked to another account", code: "taken" }, 409);
     name2 = g.name || g.handle;
   } else {
     prov = "google";
     g = await useGoogleGrant(env, body.googleSid, "signup", body.code);
     if (!g) return err3("this Google sign-in is not valid any more, sign in with Google again", 400);
-    if (await googleAccountId(env, g.sub, g.email_hash)) return json6({ error: "this Google account already has an account, sign in with Google", code: "taken" }, 409);
+    if (await googleAccountId(env, g.sub, g.email_hash)) return json5({ error: "this Google account already has an account, sign in with Google", code: "taken" }, 409);
     name2 = g.name;
     email = g.email && g.email_hash ? g.email : "";
   }
@@ -6569,7 +6503,7 @@ async function quickRegister(env, body, ip, req) {
   }
   const a = await env.DB.prepare("SELECT * FROM accounts WHERE id=?1").bind(id2).first();
   const token = await newSession(env, id2, cleanName(body.device) || g.device || "PC");
-  return json6({ id: a.id, token, display: a.display, nameKind: "nick", anon: false, keyTag: await keyTag(a.wrapped_key), admin: isAdmin(env, a.id), tester: isTester(env, a.id, a), verified: true, twoFactor: false, escrow: true, noPassword: true, created: true, dataKey: key2, email: email || void 0 });
+  return json5({ id: a.id, token, display: a.display, nameKind: "nick", anon: false, keyTag: await keyTag(a.wrapped_key), admin: isAdmin(env, a.id), tester: isTester(env, a.id, a), verified: true, twoFactor: false, escrow: true, noPassword: true, created: true, dataKey: key2, email: email || void 0 });
 }
 __name(quickRegister, "quickRegister");
 function signupSrc(env, req, id2, body) {
@@ -6578,6 +6512,473 @@ function signupSrc(env, req, id2, body) {
   return env.DB.prepare(SQL_ACCOUNT_SRC).bind(id2, src, v ? v.page : null, countryOf(req.cf));
 }
 __name(signupSrc, "signupSrc");
+
+// src/discordserverlib.js
+var API2 = "https://discord.com/api/v10";
+var b = /* @__PURE__ */ __name((n) => 1n << BigInt(n), "b");
+var P = {
+  INVITE: b(0),
+  KICK: b(1),
+  BAN: b(2),
+  ADMIN: b(3),
+  REACT: b(6),
+  AUDIT: b(7),
+  STREAM: b(9),
+  VIEW: b(10),
+  SEND: b(11),
+  MANAGE_MESSAGES: b(13),
+  EMBED: b(14),
+  ATTACH: b(15),
+  HISTORY: b(16),
+  MENTION_ALL: b(17),
+  EXT_EMOJI: b(18),
+  CONNECT: b(20),
+  SPEAK: b(21),
+  MUTE: b(22),
+  MOVE: b(24),
+  VAD: b(25),
+  NICK: b(26),
+  MANAGE_NICKS: b(27),
+  APP_CMDS: b(31),
+  MANAGE_THREADS: b(34),
+  PUB_THREADS: b(35),
+  PRIV_THREADS: b(36),
+  EXT_STICKERS: b(37),
+  SEND_THREADS: b(38),
+  TIMEOUT: b(40),
+  VOICE_MSG: b(46),
+  POLLS: b(49)
+};
+var or = /* @__PURE__ */ __name((...a) => a.reduce((x, y) => x | y, 0n), "or");
+var EVERYONE_BASE = or(
+  P.INVITE,
+  P.REACT,
+  P.STREAM,
+  P.VIEW,
+  P.SEND,
+  P.EMBED,
+  P.ATTACH,
+  P.HISTORY,
+  P.EXT_EMOJI,
+  P.CONNECT,
+  P.SPEAK,
+  P.VAD,
+  P.NICK,
+  P.APP_CMDS,
+  P.PUB_THREADS,
+  P.EXT_STICKERS,
+  P.SEND_THREADS,
+  P.VOICE_MSG,
+  P.POLLS
+);
+var NO_POST = or(P.SEND, P.PUB_THREADS, P.PRIV_THREADS, P.POLLS, P.SEND_THREADS);
+var MOD = or(P.KICK, P.BAN, P.MANAGE_MESSAGES, P.MANAGE_THREADS, P.TIMEOUT, P.MUTE, P.MOVE, P.MANAGE_NICKS, P.AUDIT, P.MENTION_ALL);
+var ROLES = [
+  { key: "admin", name: "Admin", color: 16756782, hoist: true, perms: P.ADMIN },
+  { key: "tester", name: "Tester", color: 11104511, hoist: true, perms: 0n },
+  { key: "supporter", name: "\u2665 Supporter", color: 16739226, hoist: true, perms: 0n },
+  { key: "driver", name: "Driver", color: 5227511, hoist: false, perms: 0n },
+  { key: "iracing", name: "iRacing", color: 0, hoist: false, perms: 0n },
+  { key: "lmu", name: "Le Mans Ultimate", color: 0, hoist: false, perms: 0n }
+];
+var T2 = { text: 0, voice: 2, cat: 4, news: 5, forum: 15 };
+var LAYOUT = [
+  { cat: "START HERE", kind: "read", channels: [
+    { key: "welcome", name: "\u{1F44B}\u30FBwelcome", type: T2.text },
+    { key: "rules", name: "\u{1F4DC}\u30FBrules", type: T2.text },
+    { key: "announcements", name: "\u{1F4E3}\u30FBannouncements", type: T2.news, topic: "News about Pitlane HQ." },
+    { key: "changelog", name: "\u{1F195}\u30FBchangelog", type: T2.text, topic: "What is new in each version." }
+  ] },
+  { cat: "PITLANE HQ", kind: "open", channels: [
+    { key: "general", name: "\u{1F4AC}\u30FBgeneral", type: T2.text, topic: "Talk about anything sim racing." },
+    { key: "support", name: "\u{1F6DF}\u30FBsupport", type: T2.text, topic: "Questions about the agent, the web or the phone apps." },
+    {
+      key: "bugs",
+      name: "\u{1F41E}\u30FBbug-reports",
+      type: T2.forum,
+      topic: "One post per bug. Say the device (Windows agent, web, Android, iOS), the game, what you did and what happened. Screenshots help.",
+      tags: ["Windows agent", "Web", "Android", "iOS", "Overlays", "Coach", "iRacing", "Le Mans Ultimate", { name: "Fixed", moderated: true }, { name: "Known", moderated: true }]
+    },
+    {
+      key: "feedback",
+      name: "\u{1F4A1}\u30FBfeedback",
+      type: T2.forum,
+      topic: "One post per idea. React to the ideas you want.",
+      tags: ["Coach", "Overlays", "Analysis", "Phones", "Community", "Discord bot", "Uninstall", { name: "Planned", moderated: true }, { name: "Done", moderated: true }]
+    },
+    { key: "laps", name: "\u{1F3C6}\u30FBlaps-and-records", type: T2.text, kind: "read", topic: "New best laps and records from this server's drivers." },
+    { key: "bot", name: "\u{1F916}\u30FBbot-commands", type: T2.text, topic: "Try /record, /driver, /track and /board here." }
+  ] },
+  { cat: "SIM RACING", kind: "open", channels: [
+    { key: "setups", name: "\u{1F527}\u30FBsetups-and-telemetry", type: T2.text, topic: "Setups, data and driving technique." },
+    { key: "iracing", name: "\u{1F3C1}\u30FBiracing", type: T2.text, topic: "iRacing talk, series and races." },
+    { key: "lmu", name: "\u{1F3CE}\uFE0F\u30FBle-mans-ultimate", type: T2.text, topic: "Le Mans Ultimate talk, series and races." },
+    { key: "showcase", name: "\u{1F4F8}\u30FBscreenshots-and-clips", type: T2.text, topic: "Your best moments on track." }
+  ] },
+  { cat: "SUPPORTERS", kind: "supporters", channels: [{ key: "supporters", name: "\u2665\u30FBsupporters-lounge", type: T2.text, topic: "Thank you for keeping Pitlane HQ going." }] },
+  { cat: "TESTERS", kind: "testers", channels: [{ key: "testers", name: "\u{1F9EA}\u30FBtester-chat", type: T2.text, topic: "Features in development, before everyone gets them." }] },
+  { cat: "STAFF", kind: "staff", channels: [
+    { key: "staff", name: "\u{1F6E0}\uFE0F\u30FBstaff", type: T2.text },
+    { key: "modlog", name: "\u{1F4CB}\u30FBdiscord-updates", type: T2.text, topic: "Discord's messages for the server's moderators." }
+  ] },
+  { cat: "VOICE", kind: "open", channels: [
+    { key: "v1", name: "\u{1F50A} Lounge", type: T2.voice },
+    { key: "v2", name: "\u{1F3C1} Race night", type: T2.voice },
+    { key: "v3", name: "\u{1F3CE}\uFE0F Endurance", type: T2.voice }
+  ] }
+];
+var welcomeText = /* @__PURE__ */ __name((ch) => [
+  "# Welcome to Pitlane HQ \u{1F3C1}",
+  "Pitlane HQ records your laps in iRacing and Le Mans Ultimate and shows you where the time is. The coach, the overlays and your whole history, on your PC, on the web and on your phone. Everything is free during the beta.",
+  "",
+  "## Get started",
+  "1. Download Pitlane HQ at https://pitlanehq.app",
+  "2. Drive. Your laps show up in the app by themselves.",
+  `3. Link your Discord in Account \u2192 Discord to use the bot here. Your best laps then show up in ${ch("laps")}.`,
+  "",
+  "## Where to go",
+  `\u{1F4DC} ${ch("rules")} first.`,
+  `\u{1F4E3} ${ch("announcements")} and \u{1F195} ${ch("changelog")} for news.`,
+  `\u{1F6DF} Questions go in ${ch("support")}. Something broken goes in ${ch("bugs")}. Ideas go in ${ch("feedback")}.`,
+  `\u{1F916} Try \`/record\`, \`/driver\` and \`/track\` in ${ch("bot")}.`
+].join("\n"), "welcomeText");
+var rulesText = /* @__PURE__ */ __name((ch) => [
+  "# Rules",
+  "**1.** Be respectful. No harassment, hate or personal attacks. Racing incidents are discussed, not fought over.",
+  "**2.** Keep it clean. No NSFW, piracy, cheats or exploits.",
+  "**3.** No spam or ads. Leagues and streams are welcome in the right channel.",
+  `**4.** Use the right channel. One bug per post in ${ch("bugs")}, one idea per post in ${ch("feedback")}.`,
+  "**5.** Never post your password, codes or tokens, nor anyone else's private details. Staff will never ask for your password.",
+  "**6.** English is the main language here. Espa\xF1ol y portugu\xEAs tamb\xE9m s\xE3o bem-vindos.",
+  "**7.** Follow Discord's Terms of Service and Community Guidelines. Admins have the final word.",
+  "",
+  "Breaking the rules can get you a warning, a timeout or a ban."
+].join("\n"), "rulesText");
+var strip = /* @__PURE__ */ __name((s) => String(s || "").toLowerCase().replace(/[^\p{L}\p{N}]+/gu, ""), "strip");
+var ow = /* @__PURE__ */ __name((id2, type, allow, deny) => ({ id: id2, type, allow: String(allow || 0n), deny: String(deny || 0n) }), "ow");
+async function buildServer({ token, guild: gid, step, apply, fetchFn = fetch, notes = [] }) {
+  const log = [];
+  const api2 = /* @__PURE__ */ __name(async (method, path, body) => {
+    for (let i = 0; i < 4; i++) {
+      const r4 = await fetchFn(API2 + path, {
+        method,
+        headers: { authorization: "Bot " + token, "content-type": "application/json" },
+        body: body === void 0 ? void 0 : JSON.stringify(body, (_, v) => typeof v === "bigint" ? v.toString() : v)
+      });
+      if (r4.status === 429) {
+        const j = await r4.json().catch(() => ({}));
+        await new Promise((s) => setTimeout(s, Math.min(5, j.retry_after || 1) * 1e3 + 200));
+        continue;
+      }
+      const t = await r4.text();
+      if (!r4.ok) throw new Error(`${method} ${path.replace(/\d{15,}/g, "\u2026")} \u2192 ${r4.status} ${t.slice(0, 300)}`);
+      return t ? JSON.parse(t) : null;
+    }
+    throw new Error("Discord keeps saying too many requests, try again in a minute");
+  }, "api");
+  const act = /* @__PURE__ */ __name(async (what, fn) => {
+    log.push(what);
+    if (apply) return fn();
+  }, "act");
+  const soft = /* @__PURE__ */ __name(async (what, fn) => {
+    try {
+      return await act(what, fn);
+    } catch (e) {
+      log.push("  \u26A0 " + e.message);
+    }
+  }, "soft");
+  const me2 = await api2("GET", "/users/@me");
+  const guild = await api2("GET", `/guilds/${gid}`);
+  const member = await api2("GET", `/guilds/${gid}/members/${me2.id}`);
+  const mine = guild.roles.filter((r4) => member.roles.includes(r4.id));
+  if (!mine.some((r4) => BigInt(r4.permissions) & P.ADMIN)) return { ok: false, error: "The bot does not have Administrator in this server. Invite it again with Administrator first." };
+  const R = {};
+  for (const w of ROLES) R[w.key] = guild.roles.find((r4) => r4.id !== guild.id && strip(r4.name) === strip(w.name)) || { id: "new-" + w.key };
+  const existing = await api2("GET", `/guilds/${gid}/channels`);
+  const find = /* @__PURE__ */ __name((name2, type) => existing.find((c) => strip(c.name) === strip(name2) && (c.type === type || (type === T2.news || type === T2.text) && (c.type === T2.news || c.type === T2.text))), "find");
+  const C = {};
+  for (const g of LAYOUT) for (const c of g.channels) C[c.key] = find(c.name, c.type) || { id: "new-" + c.key };
+  const isCommunity = guild.features.includes("COMMUNITY");
+  const overwrites = /* @__PURE__ */ __name((kind) => {
+    const bot = ow(me2.id, 1, or(P.VIEW, P.SEND, P.EMBED, P.HISTORY, P.ATTACH), 0n);
+    const admin = ow(R.admin.id, 0, or(P.VIEW, P.SEND, P.SEND_THREADS, P.PUB_THREADS, MOD), 0n);
+    if (kind === "read") return [ow(guild.id, 0, or(P.VIEW, P.HISTORY, P.REACT), NO_POST), admin, bot];
+    if (kind === "staff") return [ow(guild.id, 0, 0n, P.VIEW), admin, bot];
+    if (kind === "testers") return [ow(guild.id, 0, 0n, P.VIEW), ow(R.tester.id, 0, P.VIEW, 0n), admin, bot];
+    if (kind === "supporters") return [ow(guild.id, 0, 0n, P.VIEW), ow(R.supporter.id, 0, P.VIEW, 0n), ow(R.tester.id, 0, P.VIEW, 0n), admin, bot];
+    return [admin, bot];
+  }, "overwrites");
+  if (step === 1) {
+    for (const w of ROLES) {
+      const body = { name: w.name, color: w.color, hoist: w.hoist, mentionable: false, permissions: w.perms };
+      if (!R[w.key].id.startsWith("new-")) await act(`Update the role ${w.name}`, () => api2("PATCH", `/guilds/${gid}/roles/${R[w.key].id}`, body));
+      else R[w.key] = await act(`Create the role ${w.name}`, () => api2("POST", `/guilds/${gid}/roles`, body)) || R[w.key];
+    }
+    await act("Set what everyone can do (chat, voice, threads, the bot's commands, no @everyone)", () => api2("PATCH", `/guilds/${gid}/roles/${guild.id}`, { permissions: EVERYONE_BASE }));
+    const top = Math.max(...mine.map((r4) => r4.position));
+    await soft("Order the roles Admin, Tester, \u2665 Supporter, Driver, iRacing, Le Mans Ultimate", () => api2("PATCH", `/guilds/${gid}/roles`, ROLES.map((w, i) => ({ id: R[w.key].id, position: Math.max(1, top - 1 - i) }))));
+  }
+  if (step === 2) {
+    let pos = 0;
+    for (const g of LAYOUT) {
+      let cat = find(g.cat, T2.cat);
+      if (cat) await act(`Update the category ${g.cat}`, () => api2("PATCH", `/channels/${cat.id}`, { position: pos, permission_overwrites: overwrites(g.kind) }));
+      else cat = await act(`Create the category ${g.cat}`, () => api2("POST", `/guilds/${gid}/channels`, { name: g.cat, type: T2.cat, position: pos, permission_overwrites: overwrites(g.kind) })) || { id: "new-cat" };
+      pos++;
+      for (const c of g.channels) {
+        if (c.type === T2.forum) {
+          pos++;
+          continue;
+        }
+        const type = c.type === T2.news && !isCommunity ? T2.text : c.type;
+        const body = { name: c.name, parent_id: cat.id, position: pos++, permission_overwrites: overwrites(c.kind || g.kind) };
+        if (c.topic && type !== T2.voice) body.topic = c.topic;
+        const have = C[c.key];
+        if (!have.id.startsWith("new-")) await act(`Update #${c.name}`, () => api2("PATCH", `/channels/${have.id}`, body));
+        else await act(`Create #${c.name}`, () => api2("POST", `/guilds/${gid}/channels`, { ...body, type }));
+      }
+    }
+  }
+  if (step === 3) {
+    if (apply && (C.rules.id.startsWith("new-") || C.modlog.id.startsWith("new-"))) return { ok: false, error: "Run step 2 first, the channels are not there yet." };
+    if (!isCommunity) await act("Turn on Community (rules channel, updates channel, email verification, media filter)", () => api2("PATCH", `/guilds/${gid}`, {
+      features: [...guild.features, "COMMUNITY"],
+      rules_channel_id: C.rules.id,
+      public_updates_channel_id: C.modlog.id,
+      verification_level: Math.max(1, guild.verification_level),
+      explicit_content_filter: 2
+    }));
+    await soft("Notify only on mentions, join messages in #general, English", () => api2("PATCH", `/guilds/${gid}`, {
+      default_message_notifications: 1,
+      system_channel_id: C.general.id,
+      preferred_locale: "en-US",
+      rules_channel_id: C.rules.id,
+      public_updates_channel_id: C.modlog.id
+    }));
+    if (C.announcements.type === T2.text) await soft("Make #announcements an announcement channel", () => api2("PATCH", `/channels/${C.announcements.id}`, { type: T2.news }));
+    for (const g of LAYOUT) for (const c of g.channels) {
+      if (c.type !== T2.forum) continue;
+      const cat = find(g.cat, T2.cat);
+      const body = {
+        name: c.name,
+        topic: c.topic,
+        parent_id: cat && cat.id,
+        permission_overwrites: overwrites(c.kind || g.kind),
+        available_tags: c.tags.map((t) => typeof t === "string" ? { name: t } : t),
+        default_reaction_emoji: { emoji_name: c.key === "feedback" ? "\u{1F44D}" : "\u2795" }
+      };
+      if (C[c.key].id.startsWith("new-")) C[c.key] = await act(`Create the forum #${c.name}`, () => api2("POST", `/guilds/${gid}/channels`, { ...body, type: T2.forum })) || C[c.key];
+      else await act(`Update the forum #${c.name}`, () => api2("PATCH", `/channels/${C[c.key].id}`, { ...body, available_tags: void 0 }));
+    }
+    const ch = /* @__PURE__ */ __name((k) => `<#${C[k].id}>`, "ch");
+    const postOnce = /* @__PURE__ */ __name(async (key2, content) => {
+      if (apply && !C[key2].id.startsWith("new-")) {
+        const msgs = await api2("GET", `/channels/${C[key2].id}/messages?limit=50`).catch(() => []);
+        if (msgs.some((m) => m.author && m.author.id === me2.id)) {
+          log.push(`#${key2} already has the bot's post, kept`);
+          return;
+        }
+      }
+      await soft(`Post the ${key2} message`, () => api2("POST", `/channels/${C[key2].id}/messages`, { content: content.slice(0, 1990), allowed_mentions: { parse: [] } }));
+    }, "postOnce");
+    await postOnce("welcome", welcomeText(ch));
+    await postOnce("rules", rulesText(ch));
+    if (notes.length) await postOnce("changelog", notes.join("\n").slice(0, 1990));
+    let sf = BigInt(Date.now() - 14200704e5) << 22n;
+    const nid = /* @__PURE__ */ __name(() => String(sf += 1n), "nid");
+    await soft('Onboarding asks "What do you drive?" and gives Driver plus iRacing or Le Mans Ultimate', () => api2("PUT", `/guilds/${gid}/onboarding`, {
+      enabled: true,
+      mode: 0,
+      default_channel_ids: ["welcome", "rules", "announcements", "changelog", "general", "support", "bugs", "feedback", "laps", "bot", "setups", "showcase"].map((k) => C[k].id),
+      prompts: [{ id: nid(), type: 0, title: "What do you drive?", single_select: false, required: true, in_onboarding: true, options: [
+        { id: nid(), title: "iRacing", emoji: { name: "\u{1F3C1}" }, role_ids: [R.driver.id, R.iracing.id], channel_ids: [C.iracing.id] },
+        { id: nid(), title: "Le Mans Ultimate", emoji: { name: "\u{1F3CE}\uFE0F" }, role_ids: [R.driver.id, R.lmu.id], channel_ids: [C.lmu.id] },
+        { id: nid(), title: "Something else", emoji: { name: "\u{1F3AE}" }, role_ids: [R.driver.id], channel_ids: [] }
+      ] }]
+    }));
+  }
+  return { ok: true, guild: guild.name, step, apply: !!apply, log };
+}
+__name(buildServer, "buildServer");
+
+// src/discordserver.js
+async function discordServerRoute(req, env, url) {
+  const json17 = /* @__PURE__ */ __name((o, s = 200) => new Response(JSON.stringify(o), { status: s, headers: { "content-type": "application/json", "cache-control": "no-store" } }), "json");
+  const acc = await sessionAccount(req, env);
+  if (!acc || !isAdmin(env, acc.id)) return json17({ error: "only the admins of this server can do this" }, 403);
+  if (!env.DISCORD_BOT_TOKEN) return json17({ error: "The bot's token is not set on this server" }, 503);
+  const token = env.DISCORD_BOT_TOKEN;
+  try {
+    if (req.method === "GET") {
+      const r4 = await fetch(API2 + "/users/@me/guilds?with_counts=true", { headers: { authorization: "Bot " + token } });
+      if (!r4.ok) return json17({ error: "Discord answered " + r4.status }, 502);
+      const gs = await r4.json();
+      const rows = (await env.DB.prepare("SELECT guild_id, everyone, alerts_channel, records_channel, feedback_channel FROM discord_guilds").all().catch(() => ({ results: [] }))).results || [];
+      const by = new Map(rows.map((x) => [x.guild_id, x]));
+      return json17({ guilds: gs.map((g) => {
+        const d = by.get(g.id) || {};
+        return { id: g.id, name: g.name, members: g.approximate_member_count || 0, admin: !!(BigInt(g.permissions || "0") & P.ADMIN), everyone: !!d.everyone, feedback: !!d.feedback_channel, channel: !!(d.alerts_channel || d.records_channel) };
+      }) });
+    }
+    if (req.method !== "POST") return json17({ error: "method not allowed" }, 405);
+    const body = await req.json().catch(() => ({}));
+    if (typeof body.everyone === "boolean") {
+      if (!/^\d{15,22}$/.test(String(body.guild || ""))) return json17({ error: "bad request" }, 400);
+      await env.DB.prepare("INSERT INTO discord_guilds (guild_id, set_by, updated, everyone) VALUES (?1,?2,?3,?4) ON CONFLICT(guild_id) DO UPDATE SET everyone=excluded.everyone, updated=excluded.updated").bind(String(body.guild), acc.id, Date.now(), body.everyone ? 1 : 0).run();
+      return json17({ ok: true, everyone: body.everyone });
+    }
+    if (typeof body.feedback === "boolean") {
+      if (!/^\d{15,22}$/.test(String(body.guild || ""))) return json17({ error: "bad request" }, 400);
+      let ch = null;
+      if (body.feedback) {
+        const r4 = await fetch(`${API2}/guilds/${body.guild}/channels`, { headers: { authorization: "Bot " + token } });
+        if (!r4.ok) return json17({ error: "Discord answered " + r4.status }, 502);
+        const cs = (await r4.json()).filter((c2) => (c2.type === 15 || c2.type === 0) && /feedback/i.test(c2.name));
+        const c = cs.find((x) => x.type === 15) || cs[0];
+        if (!c) return json17({ error: "This server has no feedback channel. Build the server first." }, 400);
+        ch = c.id;
+      }
+      await env.DB.prepare("INSERT INTO discord_guilds (guild_id, set_by, updated, feedback_channel) VALUES (?1,?2,?3,?4) ON CONFLICT(guild_id) DO UPDATE SET feedback_channel=excluded.feedback_channel, updated=excluded.updated").bind(String(body.guild), acc.id, Date.now(), ch).run();
+      return json17({ ok: true, feedback: !!ch });
+    }
+    const step = Number(body.step);
+    if (!/^\d{15,22}$/.test(String(body.guild || "")) || ![1, 2, 3].includes(step)) return json17({ error: "bad request" }, 400);
+    let notes = [];
+    if (step === 3) {
+      try {
+        const v = ((await (await env.ASSETS.fetch(new Request(new URL("/whats-new.json", url.origin)))).json()).versions || [])[0];
+        if (v && v.en) notes = [`## ${v.v} beta`, ...v.en.map((x) => "- " + x), "", "Download at https://pitlanehq.app"];
+      } catch (e) {
+      }
+    }
+    return json17(await buildServer({ token, guild: String(body.guild), step, apply: !!body.apply, notes }));
+  } catch (e) {
+    return json17({ error: String(e.message || e) }, 502);
+  }
+}
+__name(discordServerRoute, "discordServerRoute");
+
+// src/voiceice.js
+var STUN = [{ urls: ["stun:stun.cloudflare.com:3478", "stun:stun.l.google.com:19302"] }];
+var json6 = /* @__PURE__ */ __name((o) => new Response(JSON.stringify(o), { headers: { "content-type": "application/json", "access-control-allow-origin": "*", "cache-control": "no-store" } }), "json");
+async function voiceIce(env) {
+  if (!env.TURN_KEY_ID || !env.TURN_KEY_TOKEN) return json6({ iceServers: STUN });
+  try {
+    const r4 = await fetch(`https://rtc.live.cloudflare.com/v1/turn/keys/${env.TURN_KEY_ID}/credentials/generate-ice-servers`, {
+      method: "POST",
+      headers: { authorization: "Bearer " + env.TURN_KEY_TOKEN, "content-type": "application/json" },
+      body: JSON.stringify({ ttl: 86400 })
+    });
+    const j = await r4.json();
+    const got = Array.isArray(j.iceServers) ? j.iceServers : j.iceServers ? [j.iceServers] : [];
+    return json6({ iceServers: got.length ? got : STUN });
+  } catch (e) {
+    return json6({ iceServers: STUN });
+  }
+}
+__name(voiceIce, "voiceIce");
+
+// src/downloads.js
+var H = { "content-type": "text/html; charset=utf-8", "cache-control": "no-cache", "referrer-policy": "no-referrer", vary: "Accept-Language" };
+var esc3 = /* @__PURE__ */ __name((s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]), "esc");
+var TYPES = { exe: "application/vnd.microsoft.portable-executable", zip: "application/zip", apk: "application/vnd.android.package-archive", aab: "application/octet-stream", ipa: "application/octet-stream", json: "application/json; charset=utf-8", md: "text/markdown; charset=utf-8" };
+var MS_STORE = "";
+async function downloads(req, env, url) {
+  const p = url.pathname;
+  if (!env.DL) return new Response(JSON.stringify({ error: "downloads are not set up on this server (R2 bucket DL)" }), { status: 404, headers: { "content-type": "application/json" } });
+  if (p.startsWith("/dl/")) {
+    const name2 = decodeURIComponent(p.slice(4));
+    if (!/^[A-Za-z0-9._-]{1,80}$/.test(name2)) return new Response("not found", { status: 404 });
+    const o = await env.DL.get(name2);
+    if (!o) return new Response("not found", { status: 404 });
+    if (name2 === "version.json") return pcVersion(await o.text());
+    const ext = name2.split(".").pop().toLowerCase();
+    const h = new Headers({ "content-type": TYPES[ext] || "application/octet-stream", "cache-control": ext === "json" || ext === "md" ? "no-cache" : "public, max-age=300", "x-content-type-options": "nosniff", "access-control-allow-origin": "*" });
+    if (o.httpEtag) h.set("etag", o.httpEtag);
+    if (!["json", "md"].includes(ext)) h.set("content-disposition", `attachment; filename="${name2}"`);
+    h.set("content-length", String(o.size));
+    return new Response(o.body, { headers: h });
+  }
+  const read = /* @__PURE__ */ __name(async (n) => {
+    const o = await env.DL.get(n);
+    return o ? o.text() : null;
+  }, "read");
+  const json17 = /* @__PURE__ */ __name(async (n) => {
+    try {
+      return JSON.parse(await read(n) || "null");
+    } catch (e) {
+      return null;
+    }
+  }, "json");
+  const es = (req.headers.get("accept-language") || "").toLowerCase().startsWith("es");
+  if (p === "/downloads/" || p === "/changelog/") return Response.redirect("https://pitlanehq.app" + p.slice(0, -1), 301);
+  if (p === "/downloads") {
+    const pc = await json17("version.json") || {}, ph = await json17("phones.json") || {};
+    const t = /* @__PURE__ */ __name((en, s) => es ? s : en, "t");
+    const row = /* @__PURE__ */ __name((title, sub, file) => `<a class="c" href="/dl/${esc3(file)}"><b>${esc3(title)}</b><span>${esc3(sub)}</span></a>`, "row");
+    const body = `<h1>${t("Download Pitlane HQ", "Descargar Pitlane HQ")}</h1><p>${t("Free. One account for the PC, the web and the phone apps.", "Gratis. Una cuenta para el PC, la web y las apps de m\xF3vil.")}</p>
+<h2>Windows ${pc.version ? `<small>v${esc3(pc.version)} beta</small>` : ""}</h2><div class="g">
+${row(t("Pitlane HQ for Windows", "Pitlane HQ para Windows"), t("Records your laps and uploads them so you can analyse them", "Graba tus vueltas y las sube para que las analices"), "PitlaneHQ-Setup.exe")}${MS_STORE ? `<a class="c" href="${esc3(MS_STORE)}" rel="noopener"><b>Microsoft Store</b><span>${t("The same app, updated by the Store", "La misma app, actualizada por la Store")}</span></a>` : `<div class="c" style="opacity:.7"><b>Microsoft Store</b><span>${t("Coming soon", "Pr\xF3ximamente")}</span></div>`}<div class="c" style="opacity:.7"><b>Steam</b><span>${t("Coming soon", "Pr\xF3ximamente")}</span></div></div>
+<h2>${t("Phones", "M\xF3viles")} ${ph.version ? `<small>v${esc3(String(ph.version).replace(/^v/, "").replace(/-?beta$/i, ""))} beta</small>` : ""}</h2><div class="g">
+${ph.apk ? row("Android", t("App (APK). Google Play soon", "App (APK). Pronto en Google Play"), ph.apk) : ""}<div class="c" style="opacity:.7"><b>iPhone</b><span>${t("Coming to the App Store", "Pronto en la App Store")}</span></div></div>
+<p class="n"><a href="/changelog">${t("What changed in each version", "Qu\xE9 cambi\xF3 en cada versi\xF3n")}</a> \xB7 <a href="/">${t("Open the web app", "Abrir la app web")}</a></p>`;
+    return new Response(page2(body, { lang: es ? "es" : "en" }), { headers: H });
+  }
+  if (p === "/changelog" || p === "/changelog/phones") {
+    let vs = [];
+    try {
+      vs = (await (await env.ASSETS.fetch(new Request(new URL("/whats-new.json", url.origin)))).json()).versions || [];
+    } catch (e) {
+    }
+    const l = es ? "es" : "en";
+    const body = `<h1>${es ? "Novedades" : "What's new"}</h1>` + vs.map((x) => `<h2 id="${esc3(String(x.v).replace(/\./g, ""))}-beta">${esc3(x.v)} <small>${esc3(x.date || "")}</small></h2><ul>${(x[l] || x.en || []).map((t) => `<li>${esc3(t)}</li>`).join("")}</ul>`).join("");
+    return new Response(page2(
+      body + `<p class="n"><a href="/downloads">${es ? "Descargas" : "Downloads"}</a> \xB7 <a href="/">${es ? "Abrir la app" : "Open the app"}</a></p>`,
+      { lang: es ? "es" : "en", path: p, title: "What's new in Pitlane HQ \xB7 Changelog", desc: "What changed in each version of Pitlane HQ, the iRacing and Le Mans Ultimate telemetry app for Windows, the web and Android." }
+    ), { headers: H });
+  }
+  return new Response("not found", { status: 404 });
+}
+__name(downloads, "downloads");
+var page2 = /* @__PURE__ */ __name((body, o = {}) => `<!doctype html><html lang="${o.lang || "en"}"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${o.title || "Download Pitlane HQ \xB7 iRacing and LMU telemetry for Windows"}</title><meta name="description" content="${o.desc || "Download Pitlane HQ Agent for Windows, which records your iRacing and Le Mans Ultimate laps, and the Android app. Free."}"><link rel="canonical" href="https://pitlanehq.app${o.path || "/downloads"}"><meta property="og:image" content="https://pitlanehq.app/og.png"><link rel="icon" href="/favicon.ico" sizes="any"><link rel="icon" href="/logo.svg" type="image/svg+xml">
+<style>body{margin:0;background:#11151b;color:#e7ebf1;font:16px/1.55 system-ui,sans-serif}main{max-width:760px;margin:0 auto;padding:28px 16px 48px}h1{font-size:26px;letter-spacing:.04em;text-transform:uppercase;margin:0 0 6px}h2{font-size:18px;margin:26px 0 10px;letter-spacing:.03em}h2 small{color:#8a97a9;font-weight:600;font-size:12px;margin-left:8px}
+h3{font-size:14px;color:#ffb02e;margin:18px 0 4px}p{color:#a9b4c3;margin:6px 0}ul{padding-left:20px;color:#c9d2de}li{margin:4px 0}code{background:#19202a;padding:1px 5px;border-radius:4px;font-size:13px}a{color:#ffb02e}
+.g{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px}.c{display:grid;gap:3px;padding:14px;border:1px solid #2b3542;border-radius:12px;background:#19202a;text-decoration:none;color:#e7ebf1}.c:hover{border-color:#ffb02e}.c span{color:#8a97a9;font-size:13px}.n{margin-top:26px;font-size:14px}
+.top{display:flex;align-items:center;gap:10px;margin-bottom:18px}.top b{font-size:15px;letter-spacing:.06em}.top img{width:28px;height:28px;border-radius:7px}</style>
+<main><div class="top"><img src="/icon-192.png" alt=""><b>PITLANE HQ</b></div>${body}</main>${VISIT_JS}</html>`, "page");
+var PC_MIN = "0.9.0";
+var vparts = /* @__PURE__ */ __name((v) => String(v || "0").replace(/^v/, "").split("+")[0].split(".").map((x) => parseInt(x, 10) || 0), "vparts");
+function versionLess(a, b2) {
+  const x = vparts(a), y = vparts(b2);
+  for (let i = 0; i < Math.max(x.length, y.length); i++) if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) < (y[i] || 0);
+  return false;
+}
+__name(versionLess, "versionLess");
+function pcVersion(text2) {
+  let body = text2;
+  try {
+    const v = JSON.parse(text2);
+    if (v && typeof v === "object" && versionLess(v.min, PC_MIN)) body = JSON.stringify({ ...v, min: PC_MIN });
+  } catch (e) {
+  }
+  return new Response(body, { headers: { "content-type": TYPES.json, "cache-control": "no-cache", "x-content-type-options": "nosniff", "access-control-allow-origin": "*" } });
+}
+__name(pcVersion, "pcVersion");
+var buildCache = { at: 0, build: "" };
+async function latestBuild(env) {
+  const now = Date.now();
+  if (now - buildCache.at < 6e4) return buildCache.build;
+  buildCache.at = now;
+  try {
+    const o = env.DL && await env.DL.get("version.json");
+    const v = o ? JSON.parse(await o.text()) : null;
+    buildCache.build = v && typeof v.build === "string" ? v.build : "";
+  } catch (e) {
+    buildCache.build = "";
+  }
+  return buildCache.build;
+}
+__name(latestBuild, "latestBuild");
 
 // src/coachplan.js
 var MIN_PLAN_VOTES = 15;
@@ -6632,7 +7033,7 @@ var PW = globalThis.PW_ANALYSIS;
 var COMBOS = 6;
 var LAPS = 14;
 function calibrate(laps) {
-  const ref = laps.reduce((a, b) => b.time < a.time ? b : a);
+  const ref = laps.reduce((a, b2) => b2.time < a.time ? b2 : a);
   const kinds = {}, steps = {};
   let n = 0, corners = 0, tips = 0, planN = 0;
   for (const A of laps) {
@@ -6655,7 +7056,7 @@ function calibrate(laps) {
     for (const k of seenK) kinds[k] = (kinds[k] || 0) + 1;
     for (const k of seenS) steps[k] = (steps[k] || 0) + 1;
   }
-  const share = /* @__PURE__ */ __name((o) => Object.fromEntries(Object.entries(o).sort((a, b) => b[1] - a[1]).map(([k, v]) => [k, Math.round(v / Math.max(1, n) * 100)])), "share");
+  const share = /* @__PURE__ */ __name((o) => Object.fromEntries(Object.entries(o).sort((a, b2) => b2[1] - a[1]).map(([k, v]) => [k, Math.round(v / Math.max(1, n) * 100)])), "share");
   return { laps: n, corners: n ? Math.round(corners / n * 10) / 10 : 0, tips: n ? Math.round(tips / n * 10) / 10 : 0, plan: n ? Math.round(planN / n * 10) / 10 : 0, kinds: share(kinds), steps: share(steps) };
 }
 __name(calibrate, "calibrate");
@@ -6687,7 +7088,7 @@ async function calibrateRun(env) {
     for (const [k, v] of Object.entries(c.kinds)) sum.kinds[k] = (sum.kinds[k] || 0) + v * c.laps / 100;
     for (const [k, v] of Object.entries(c.steps)) sum.steps[k] = (sum.steps[k] || 0) + v * c.laps / 100;
   }
-  const pc = /* @__PURE__ */ __name((o) => Object.fromEntries(Object.entries(o).sort((a, b) => b[1] - a[1]).map(([k, v]) => [k, Math.round(v / Math.max(1, sum.laps) * 100)])), "pc");
+  const pc = /* @__PURE__ */ __name((o) => Object.fromEntries(Object.entries(o).sort((a, b2) => b2[1] - a[1]).map(([k, v]) => [k, Math.round(v / Math.max(1, sum.laps) * 100)])), "pc");
   return { combos: out, total: { laps: sum.laps, kinds: pc(sum.kinds), steps: pc(sum.steps) } };
 }
 __name(calibrateRun, "calibrateRun");
@@ -6722,17 +7123,17 @@ function refForLap(m, t) {
     const x = L[i];
     if (x && x.time < t - 1e-3 && Array.isArray(x.bins)) {
       const out = [];
-      x.bins.forEach((b, k) => {
+      x.bins.forEach((b2, k) => {
         const nx = x.bins[k + 1];
-        out.push([b[0], b[1], b[2], b[3], b[4], 0, null]);
-        out.push(nx ? [(b[0] + nx[0]) / 2, (b[1] + nx[1]) / 2, b[2], b[3], b[4], 0, null] : [b[0], b[1], b[2], b[3], b[4], 0, null]);
+        out.push([b2[0], b2[1], b2[2], b2[3], b2[4], 0, null]);
+        out.push(nx ? [(b2[0] + nx[0]) / 2, (b2[1] + nx[1]) / 2, b2[2], b2[3], b2[4], 0, null] : [b2[0], b2[1], b2[2], b2[3], b2[4], 0, null]);
       });
       const bins = out.slice(0, m.nb);
       if (bins.length) return { ref: "level", lap: { time: x.time, bins, maxBin: bins.length - 1, est: !!x.field } };
     }
   }
   if (Array.isArray(m.ideal) && m.ideal.length && m.idealTime < t - 1e-3) {
-    const bins = m.ideal.map((b) => [b[0], b[1], b[2], b[3], b[4], b[5], null]);
+    const bins = m.ideal.map((b2) => [b2[0], b2[1], b2[2], b2[3], b2[4], b2[5], null]);
     return { ref: "record", lap: { time: m.idealTime, bins, maxBin: bins.length - 1, est: !!m.idealField } };
   }
   return null;
@@ -6765,7 +7166,7 @@ async function bestLap(env, sessionId, nb) {
     const g = goodLap(x.time, tr2);
     if (!g) continue;
     if (nb > 0 && Math.abs(g.bins.length - nb) > nb * 0.03) continue;
-    const bins = g.bins.map((b) => [b[0], b[1], b[2], b[3], b[4], b[5], null]);
+    const bins = g.bins.map((b2) => [b2[0], b2[1], b2[2], b2[3], b2[4], b2[5], null]);
     return { time: g.time, bins, maxBin: bins.length - 1, flags: Array.isArray(tr2.f) ? tr2.f : [] };
   }
   return null;
@@ -6850,11 +7251,11 @@ async function answerRun(env, now = Date.now()) {
 __name(answerRun, "answerRun");
 var SHRINK = 15;
 var MIN_RATINGS2 = 20;
-function weightOf(b, rt, prior = 1) {
+function weightOf(b2, rt, prior = 1) {
   let w = prior;
-  const n = b && b.n || 0;
+  const n = b2 && b2.n || 0;
   if (n > 0) {
-    const raw = b.up != null ? 1 + Math.max(-0.3, Math.min(0.3, b.up)) : 0.8 + 0.4 * ((b.win || 0) / n);
+    const raw = b2.up != null ? 1 + Math.max(-0.3, Math.min(0.3, b2.up)) : 0.8 + 0.4 * ((b2.win || 0) / n);
     w = prior + (raw - prior) * (n / (n + SHRINK));
   }
   w = Math.min(1.3, Math.max(0.7, w));
@@ -6867,24 +7268,24 @@ function upliftOf(rows) {
   for (const x of rows) {
     if (!x.kind || x.rec == null || !(x.n > 0)) continue;
     const k = x.kind + "|" + (x.cls || "");
-    const b = by[k] = by[k] || { n: 0, rec: 0, nu: 0, recu: 0 };
+    const b2 = by[k] = by[k] || { n: 0, rec: 0, nu: 0, recu: 0 };
     if (x.src === "auto") {
-      b.nu += x.n;
-      b.recu += x.rec * x.n;
+      b2.nu += x.n;
+      b2.recu += x.rec * x.n;
       const c = base2[x.cls || ""] = base2[x.cls || ""] || { n: 0, s: 0 };
       c.n += x.n;
       c.s += x.rec * x.n;
     } else {
-      b.n += x.n;
-      b.rec += x.rec * x.n;
+      b2.n += x.n;
+      b2.rec += x.rec * x.n;
     }
   }
   const out = {};
-  for (const [k, b] of Object.entries(by)) {
+  for (const [k, b2] of Object.entries(by)) {
     const cls = k.split("|")[1], cb = base2[cls];
-    const rec = b.n ? b.rec / b.n : null, recu = b.nu ? b.recu / b.nu : null, all = cb && cb.n ? cb.s / cb.n : null;
-    const baseK = recu != null && all != null ? all + (recu - all) * (b.nu / (b.nu + 5)) : recu != null && b.nu >= 5 ? recu : all;
-    out[k] = { rec: rec != null ? r3(rec) : null, nu: b.nu, base: baseK != null ? r3(baseK) : null, up: rec != null && baseK != null ? r3(rec - baseK) : null };
+    const rec = b2.n ? b2.rec / b2.n : null, recu = b2.nu ? b2.recu / b2.nu : null, all = cb && cb.n ? cb.s / cb.n : null;
+    const baseK = recu != null && all != null ? all + (recu - all) * (b2.nu / (b2.nu + 5)) : recu != null && b2.nu >= 5 ? recu : all;
+    out[k] = { rec: rec != null ? r3(rec) : null, nu: b2.nu, base: baseK != null ? r3(baseK) : null, up: rec != null && baseK != null ? r3(rec - baseK) : null };
   }
   return out;
 }
@@ -6965,7 +7366,7 @@ var median2 = /* @__PURE__ */ __name((a) => {
 var flagsOf = /* @__PURE__ */ __name((f) => (Array.isArray(f) ? f.filter((x) => FLAGS[x]).slice(0, 4).join(",") : "") || null, "flagsOf");
 async function buckets(env, account, grp, min = MIN_CASES) {
   const who2 = account ? " AND account=?2" : "";
-  const b = await env.DB.prepare(
+  const b2 = await env.DB.prepare(
     `SELECT COALESCE(cat,'') AS cat, kind, cls, COUNT(*) AS n, SUM(outcome>?1) AS win, SUM(outcome<-?1) AS loss, SUM(outcome) AS tot
        FROM coach_tips WHERE outcome IS NOT NULL AND kind<>'' AND COALESCE(src,'app')='app'${who2} GROUP BY cat, kind, cls`
   ).bind(...account ? [GAIN_S2, account] : [GAIN_S2]).all();
@@ -6982,7 +7383,7 @@ async function buckets(env, account, grp, min = MIN_CASES) {
     return g && g.up + g.down >= MIN_RATINGS ? g : ratings[kind];
   }, "rtOf");
   const pool = /* @__PURE__ */ new Map(), mine = /* @__PURE__ */ new Map();
-  for (const x of b.results || []) {
+  for (const x of b2.results || []) {
     const k = x.kind + "|" + (x.cls || ""), o = pool.get(k) || { kind: x.kind, cls: x.cls || "", n: 0, win: 0, loss: 0, tot: 0 };
     o.n += x.n;
     o.win += x.win || 0;
@@ -7135,8 +7536,8 @@ async function coachTipRoutes(req, env, p, m, body, game) {
   }
   if (p === "/coach/weights" && m === "GET") {
     const grp = await groupQ(env, game, new URL(req.url));
-    const { buckets: b } = await buckets(env, null, grp);
-    return json7({ min: MIN_CASES, cat: grp, buckets: b.filter((x) => x.w !== 1 || x.ask || x.n >= MIN_CASES), off: await offList(env), confidence: await confidenceOn(env), plan: await planWeightsFor(env, grp) }, 200, { "cache-control": "private, max-age=3600" });
+    const { buckets: b2 } = await buckets(env, null, grp);
+    return json7({ min: MIN_CASES, cat: grp, buckets: b2.filter((x) => x.w !== 1 || x.ask || x.n >= MIN_CASES), off: await offList(env), confidence: await confidenceOn(env), plan: await planWeightsFor(env, grp) }, 200, { "cache-control": "private, max-age=3600" });
   }
   if (p === "/coach/last" && m === "GET") {
     const u = new URL(req.url), trackId = +u.searchParams.get("trackId") || 0, carId = (+u.searchParams.get("carId") || 0) && await famId(env, game, +u.searchParams.get("carId")), before = +u.searchParams.get("before") || Date.now();
@@ -7202,14 +7603,14 @@ async function coachTipRoutes(req, env, p, m, body, game) {
   }
   if (p === "/admin/coach" && m === "GET") {
     if (!isAdmin(env, acc.id)) return err4("only the admins of this server can do this", 403);
-    const { buckets: b, ratings } = await buckets(env);
+    const { buckets: b2, ratings } = await buckets(env);
     const tot = await env.DB.prepare(
       `SELECT SUM(src='app') AS tips, SUM(kind<>'' AND src='app') AS withTip, SUM(outcome IS NOT NULL AND src='app') AS scored, SUM(rating<>0) AS rated, COUNT(DISTINCT account) AS drivers,
          COUNT(DISTINCT track_id||':'||car_id) AS combos, SUM(created>?1) AS week, SUM(src='auto') AS auto, SUM(src='auto' AND outcome IS NOT NULL) AS autoScored FROM coach_tips`
     ).bind(Date.now() - 7 * 864e5).first();
     const kinds = await env.DB.prepare("SELECT kind, COUNT(*) AS n, SUM(outcome IS NOT NULL) AS scored FROM coach_tips WHERE kind<>'' AND COALESCE(src,'app')='app' GROUP BY kind ORDER BY n DESC").all();
     const pv = await planVotes(env);
-    return json7({ min: MIN_CASES, gain: GAIN_S2, totals: tot || {}, buckets: b, ratings, kinds: kinds.results || [], off: await offList(env), confidence: await confidenceOn(env), plan: pv, planMin: MIN_PLAN_VOTES });
+    return json7({ min: MIN_CASES, gain: GAIN_S2, totals: tot || {}, buckets: b2, ratings, kinds: kinds.results || [], off: await offList(env), confidence: await confidenceOn(env), plan: pv, planMin: MIN_PLAN_VOTES });
   }
   return null;
 }
@@ -7437,16 +7838,16 @@ async function readBody(req) {
   return JSON.parse(new TextDecoder().decode(all));
 }
 __name(readBody, "readBody");
-function lmuRows(b) {
-  const version = str2(b && b.version, 64);
-  if (!VER.test(version) || !Array.isArray(b.items)) return null;
+function lmuRows(b2) {
+  const version = str2(b2 && b2.version, 64);
+  if (!VER.test(version) || !Array.isArray(b2.items)) return null;
   const rows = [];
-  for (const it of b.items.slice(0, ITEMS_MAX)) {
+  for (const it of b2.items.slice(0, ITEMS_MAX)) {
     const path = str2(it && it.path, 512);
     if (!path || !(path.startsWith("/") || path.startsWith("#"))) continue;
     rows.push({ path, status: int2(it.status), ctype: str2(it.ctype, 120), size: int2(it.size), ms: int2(it.ms), body: str2(it.body, LMU_BODY_MAX) });
   }
-  return { version, build: int2(b.build), rows };
+  return { version, build: int2(b2.build), rows };
 }
 __name(lmuRows, "lmuRows");
 async function lmuApiRoutes(req, env, p, m, url) {
@@ -7454,13 +7855,13 @@ async function lmuApiRoutes(req, env, p, m, url) {
   const acc = await sessionAccount(req, env);
   if (!acc || !isAdmin(env, acc.id)) return err5("only the admins of this server can do this", 403);
   if (p === "/admin/lmu-api" && m === "POST") {
-    let b;
+    let b2;
     try {
-      b = await readBody(req);
+      b2 = await readBody(req);
     } catch (e) {
       return err5("unreadable upload", 400);
     }
-    const up = lmuRows(b);
+    const up = lmuRows(b2);
     if (!up) return err5("version and items", 400);
     const now = Date.now();
     const st = env.DB.prepare(`INSERT INTO lmu_api (account_id, at, game_version, path, status, ctype, size, ms, body) VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9)
@@ -7529,7 +7930,7 @@ async function sessionSummary(DB, { from, tz, game, uploader, now }) {
   const upTo = /* @__PURE__ */ __name((n2) => args.slice(0, n2), "upTo");
   const used = /* @__PURE__ */ __name((sql) => upTo(Math.max(...[...sql.matchAll(/\?(\d)/g)].map((m) => +m[1]))), "used");
   const sq = summarySql(game, uploader), bq = bestSql(game, uploader);
-  const [r4, b] = await Promise.all([DB.prepare(sq).bind(...used(sq)).first(), DB.prepare(bq).bind(...used(bq)).first()]);
+  const [r4, b2] = await Promise.all([DB.prepare(sq).bind(...used(sq)).first(), DB.prepare(bq).bind(...used(bq)).first()]);
   const n = /* @__PURE__ */ __name((v) => +v || 0, "n");
   return {
     laps: n(r4 && r4.laps),
@@ -7538,7 +7939,7 @@ async function sessionSummary(DB, { from, tz, game, uploader, now }) {
     days: n(r4 && r4.days),
     races: n(r4 && r4.races),
     top5: n(r4 && r4.top5),
-    best: b ? { pos: b.pos, field: b.field || null, cls: b.pos_cls === 1, track: b.track, track_config: b.track_config || null, car: b.car, started: b.started } : null,
+    best: b2 ? { pos: b2.pos, field: b2.field || null, cls: b2.pos_cls === 1, track: b2.track, track_config: b2.track_config || null, car: b2.car, started: b2.started } : null,
     from,
     at: now
   };
@@ -7553,7 +7954,7 @@ var SQL_TOKEN_DEL = "DELETE FROM push_tokens WHERE token=?1";
 var SQL_TOKENS = "SELECT token FROM push_tokens WHERE account_id=?1 ORDER BY updated DESC LIMIT " + TOKENS_MAX;
 var SQL_TOKEN_PRUNE = "DELETE FROM push_tokens WHERE updated<?1";
 var isPushToken = /* @__PURE__ */ __name((t) => typeof t === "string" && t.length >= 20 && t.length <= 400 && /^[A-Za-z0-9:_\-]+$/.test(t), "isPushToken");
-var b64url = /* @__PURE__ */ __name((b) => btoa(typeof b === "string" ? b : String.fromCharCode(...new Uint8Array(b))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, ""), "b64url");
+var b64url = /* @__PURE__ */ __name((b2) => btoa(typeof b2 === "string" ? b2 : String.fromCharCode(...new Uint8Array(b2))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, ""), "b64url");
 var cache2 = null;
 async function accessToken(sa, { fetch: f = fetch, now = Date.now() } = {}) {
   if (cache2 && cache2.email === sa.client_email && cache2.exp > now + 3e5) return cache2.token;
@@ -7635,7 +8036,7 @@ var SQL_PBS = `SELECT s.track, s.track_config, s.car, MIN(s.best) AS b,
   (SELECT MIN(p.best) FROM sessions p WHERE p.uploader=?1 AND p.track=s.track AND COALESCE(p.track_config,'')=COALESCE(s.track_config,'') AND p.car=s.car AND p.started<?2 AND p.best>0) AS before
   FROM sessions s WHERE s.uploader=?1 AND s.started>=?2 AND s.best>0 GROUP BY s.track, s.track_config, s.car`;
 var rid6 = /* @__PURE__ */ __name(() => crypto.randomUUID().replace(/-/g, "").slice(0, 20), "rid");
-var pbsOf = /* @__PURE__ */ __name((rows) => (rows || []).filter((r4) => r4.before != null && r4.b < r4.before).sort((a, b) => b.before - b.b - (a.before - a.b)).slice(0, 3), "pbsOf");
+var pbsOf = /* @__PURE__ */ __name((rows) => (rows || []).filter((r4) => r4.before != null && r4.b < r4.before).sort((a, b2) => b2.before - b2.b - (a.before - a.b)).slice(0, 3), "pbsOf");
 function hm(secs) {
   const h = Math.floor(secs / 3600), m = Math.round(secs % 3600 / 60);
   return h ? `${h} h ${m} min` : `${m} min`;
@@ -7719,15 +8120,15 @@ async function handleAlerts(req, env, url, { sessionAccount: sessionAccount2 }, 
   }
   if (p === "/community/alerts/on" && m === "GET") return json9({ on: !!await env.DB.prepare(SQL_SUB_GET).bind(acc.id).first() });
   if (p === "/community/alerts/on" && m === "POST") {
-    const b = await req.json().catch(() => null) || {};
-    if (b.on) await env.DB.prepare(SQL_SUB_ON).bind(acc.id, L3(String(b.lang || "").slice(0, 2))).run();
+    const b2 = await req.json().catch(() => null) || {};
+    if (b2.on) await env.DB.prepare(SQL_SUB_ON).bind(acc.id, L3(String(b2.lang || "").slice(0, 2))).run();
     else await env.DB.prepare(SQL_SUB_OFF).bind(acc.id).run();
-    const tok = b.push && b.push.token;
+    const tok = b2.push && b2.push.token;
     if (isPushToken(tok)) {
-      if (b.on) await env.DB.prepare(SQL_TOKEN_ADD).bind(tok, acc.id, b.push.platform === "ios" ? "ios" : "android", now).run();
+      if (b2.on) await env.DB.prepare(SQL_TOKEN_ADD).bind(tok, acc.id, b2.push.platform === "ios" ? "ios" : "android", now).run();
       else await env.DB.prepare(SQL_TOKEN_DEL).bind(tok).run();
     }
-    return json9({ on: !!b.on });
+    return json9({ on: !!b2.on });
   }
   return json9({ error: "not found" }, 404);
 }
@@ -8100,13 +8501,13 @@ async function follows(env, account, id2) {
   return !!await env.DB.prepare("SELECT 1 AS x FROM follows WHERE account_id=?1 AND driver_id=?2").bind(account, id2).first().catch(() => null);
 }
 __name(follows, "follows");
-async function target(env, b) {
+async function target(env, b2) {
   let id2 = null;
-  if (typeof b.lap === "string" && b.lap) {
-    const l = await env.DB.prepare("SELECT user_id, anon FROM community_laps WHERE id=?1").bind(b.lap.slice(0, 80)).first();
+  if (typeof b2.lap === "string" && b2.lap) {
+    const l = await env.DB.prepare("SELECT user_id, anon FROM community_laps WHERE id=?1").bind(b2.lap.slice(0, 80)).first();
     if (!l || l.anon === 1) return null;
     id2 = l.user_id;
-  } else if (ID_RE.test(String(b.id || ""))) id2 = b.id;
+  } else if (ID_RE.test(String(b2.id || ""))) id2 = b2.id;
   if (!id2) return null;
   const a = await env.DB.prepare("SELECT id, anon FROM accounts WHERE id=?1").bind(id2).first();
   return a && !a.anon ? a.id : null;
@@ -8175,8 +8576,8 @@ var ACCT_TRACE_WHERE = `s.uploader='acct:'||?1 AND ABS(a.time-?2)<0.002 AND s.ga
 var ACCT_TRACE = `(EXISTS (SELECT 1 FROM laps a JOIN sessions s ON s.id=a.session_id WHERE s.uploader='acct:'||l.user_id AND ABS(a.time-l.time)<0.002 AND s.game=l.game AND a.valid=1 AND a.trace IS NOT NULL)
   AND EXISTS (SELECT 1 FROM community_laps c2 WHERE c2.user_id=l.user_id AND c2.trace IS NOT NULL))`;
 async function sha2562(t) {
-  const b = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(t));
-  return [...new Uint8Array(b)].map((x) => x.toString(16).padStart(2, "0")).join("");
+  const b2 = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(t));
+  return [...new Uint8Array(b2)].map((x) => x.toString(16).padStart(2, "0")).join("");
 }
 __name(sha2562, "sha256");
 var cleanAlias = /* @__PURE__ */ __name((a) => (str3(a, 32) || "").replace(/[\u0000-\u001f<>]/g, "").trim() || "Driver", "cleanAlias");
@@ -8256,7 +8657,7 @@ async function keepBestLap(env, uid, x) {
   ).bind(rid7(), uid, x.carId, str3(x.car), x.trackId, str3(x.track), x.time, sectors, x.trace || null, Date.now(), x.anon ? 1 : 0, x.game, x.shown || "nick", licOf(x.lic), str3(x.cat, 20), officialOf(x.official), x.ai ? 1 : null, cls, wet ?? null).run();
   await markModel(env, x.game, x.trackId, x.carId);
   const improved = !old || old.game !== x.game || x.time < old.time;
-  const res = { shared: true, traced: !!x.trace, improved, prev: old && old.game === x.game ? old.time : null, game: x.game, trackId: x.trackId, carId: x.carId, track: x.track, car: x.car, time: x.time, anon: !!x.anon };
+  const res = { shared: true, traced: !!x.trace, improved, prev: old && old.game === x.game ? old.time : null, game: x.game, trackId: x.trackId, carId: x.carId, track: x.track, car: x.car, time: x.time, anon: !!x.anon, ai: !!x.ai, shown: x.shown };
   if (improved && x.ctx) x.ctx.waitUntil(discordLapAlert(env, uid, res).catch(() => {
   }));
   return res;
@@ -8296,7 +8697,7 @@ async function comboIds(env, s, name2, g, uid, body) {
 __name(comboIds, "comboIds");
 async function autoShare(env, accountId, sessionId, laps, hint, ctx) {
   const ok = new Set(((await env.DB.prepare("SELECT id FROM laps WHERE session_id=?1 AND valid=1 AND drv IS NULL").bind(sessionId).all()).results || []).map((r4) => String(r4.id)));
-  const best = (laps || []).filter((l) => l && ok.has(String(l.id)) && !(typeof l.drv === "string" && l.drv.trim()) && num2(l.time) > 10 && l.time < 3600).sort((a, b) => a.time - b.time || (b.trace ? 1 : 0) - (a.trace ? 1 : 0))[0];
+  const best = (laps || []).filter((l) => l && ok.has(String(l.id)) && !(typeof l.drv === "string" && l.drv.trim()) && num2(l.time) > 10 && l.time < 3600).sort((a, b2) => a.time - b2.time || (b2.trace ? 1 : 0) - (a.trace ? 1 : 0))[0];
   if (!best) return null;
   const acc = await env.DB.prepare("SELECT a.anon, a.name_kind FROM accounts a JOIN community_users u ON u.id=a.id WHERE a.id=?1").bind(accountId).first();
   const s = await env.DB.prepare("SELECT * FROM sessions WHERE id=?1 AND uploader=?2").bind(sessionId, "acct:" + accountId).first();
@@ -8317,9 +8718,9 @@ async function unshareInvalid(env, accountId, sid) {
   const { trackId, carId } = await comboIds(env, s, name2, g, accountId, null);
   if (!trackId || !carId) return;
   const fam = await famId(env, g, carId);
-  for (const b of bad) {
-    await env.DB.prepare("DELETE FROM community_laps WHERE user_id=?1 AND car_id=?2 AND track_id=?3 AND game=?4 AND abs(time-?5)<0.0006").bind(accountId, fam, trackId, g, b.time).run();
-    await forgetLap(env, g, trackId, carId, "acct:" + accountId, b.time);
+  for (const b2 of bad) {
+    await env.DB.prepare("DELETE FROM community_laps WHERE user_id=?1 AND car_id=?2 AND track_id=?3 AND game=?4 AND abs(time-?5)<0.0006").bind(accountId, fam, trackId, g, b2.time).run();
+    await forgetLap(env, g, trackId, carId, "acct:" + accountId, b2.time);
   }
   await reshareSession(env, accountId, sid);
 }
@@ -8366,7 +8767,7 @@ async function reshareSession(env, accountId, sid) {
   for (const [k, laps] of by) {
     const w = await who2(k, laps[0].drv).catch(() => null);
     if (!w) continue;
-    const best = laps.sort((a, b) => a.time - b.time || (b.trace ? 1 : 0) - (a.trace ? 1 : 0))[0];
+    const best = laps.sort((a, b2) => a.time - b2.time || (b2.trace ? 1 : 0) - (a.trace ? 1 : 0))[0];
     await keepBestLap(env, w.uid, { game: g, carId, trackId, car: s.car, track: name2, time: best.time, sectors: best.sectors, trace: best.trace, anon: w.anon, shown: w.shown, official: s.official, ai: s.ai === 1 });
   }
 }
@@ -8610,15 +9011,15 @@ async function community(req, env, url, ctx) {
     const t = +url.searchParams.get("trackId");
     if (!t) return err7("trackId", 400);
     const r4 = await env.DB.prepare("SELECT n, pts, updated FROM track_pits WHERE game=?1 AND track_id=?2").bind(game, t).first();
-    const pts = r4 ? Object.entries(JSON.parse(r4.pts)).map(([i, v]) => [+i, v]).sort((a, b) => a[0] - b[0]) : [];
+    const pts = r4 ? Object.entries(JSON.parse(r4.pts)).map(([i, v]) => [+i, v]).sort((a, b2) => a[0] - b2[0]) : [];
     return new Response(JSON.stringify({ trackId: t, game, n: r4 ? r4.n : 0, pts, updated: r4 ? r4.updated : 0 }), { headers: { ...JSONH8, "cache-control": "public, max-age=600" } });
   }
   if (p === "/turns" && m === "POST") {
     const acc = await sessionAccount(req, env);
     if (!acc || !isAdmin(env, acc.id)) return err7("only the admins of this server can do this", 403);
-    const b = body;
-    const t = +b.trackId, g = String(b.game || "iracing").slice(0, 20);
-    const turns = Array.isArray(b.turns) ? b.turns.map(Number).filter((x) => isFinite(x) && x >= 0 && x < 1).slice(0, 60) : null;
+    const b2 = body;
+    const t = +b2.trackId, g = String(b2.game || "iracing").slice(0, 20);
+    const turns = Array.isArray(b2.turns) ? b2.turns.map(Number).filter((x) => isFinite(x) && x >= 0 && x < 1).slice(0, 60) : null;
     if (!t || !turns) return err7("trackId and turns", 400);
     if (!turns.length) await env.DB.prepare("DELETE FROM track_turns WHERE game=?1 AND track_id=?2").bind(g, t).run();
     else await env.DB.prepare("INSERT INTO track_turns (game, track_id, turns, updated) VALUES (?1, ?2, ?3, ?4) ON CONFLICT(game, track_id) DO UPDATE SET turns=excluded.turns, updated=excluded.updated").bind(g, t, JSON.stringify(turns.map((x) => Math.round(x * 1e5) / 1e5)), Date.now()).run();
@@ -8701,7 +9102,7 @@ async function community(req, env, url, ctx) {
       FROM community_${t} x JOIN community_users u ON u.id=x.user_id LEFT JOIN accounts o ON o.id=u.owner LEFT JOIN accounts ac ON ac.id=u.id
       ORDER BY x.created DESC LIMIT 300`).all(), "q");
     const [l, r4] = await Promise.all([q2("laps", "x.time,"), q2("reports", "x.best AS time,")]);
-    const items = [...l.results || [], ...r4.results || []].sort((a, b) => b.created - a.created).map((x) => ({
+    const items = [...l.results || [], ...r4.results || []].sort((a, b2) => b2.created - a.created).map((x) => ({
       ...x,
       shownAs: x.anon ? "Anonymous" : x.shown === "iracing" && x.iracing ? x.iracing : x.alias,
       // a rival of a race ("o:…", shared by the PC that raced them) is not a Drinks driver ("guest-…", who drove that PC)
@@ -8762,7 +9163,7 @@ async function community(req, env, url, ctx) {
       out.push({ game: r4.game, trackId: r4.track_id, track: r4.track || "", len: (r4.n || 0) * 5, official: r4.nturns || 0, placed, found, fitted });
     }
     const bad = /* @__PURE__ */ __name((x) => (x.placed ? 0 : 2) + (x.official && x.fitted !== x.official ? 1 : 0), "bad");
-    out.sort((a, b) => bad(b) - bad(a) || a.track.localeCompare(b.track));
+    out.sort((a, b2) => bad(b2) - bad(a) || a.track.localeCompare(b2.track));
     return json11({ tracks: out });
   }
   if (p === "/admin/trackmaps-rebuild" && m === "POST") {
@@ -9044,7 +9445,7 @@ async function community(req, env, url, ctx) {
     if (txt(body.web, 200) && !web) return err7("the website must be an https:// address", 400);
     if (!discord && !web) return err7("give drivers a way in: a Discord invite or a website", 400);
     const cats = Array.isArray(body.cats) ? [...new Set(body.cats.filter((c) => CATS.includes(c)))] : CATS.includes(body.cat) ? [body.cat] : [];
-    const days = Array.isArray(body.days) ? [...new Set(body.days.map(Number).filter((d) => Number.isInteger(d) && d >= 0 && d <= 6))].sort((a, b) => a - b) : [];
+    const days = Array.isArray(body.days) ? [...new Set(body.days.map(Number).filter((d) => Number.isInteger(d) && d >= 0 && d <= 6))].sort((a, b2) => a - b2) : [];
     const time = /^([01]\d|2[0-3]):[0-5]\d$/.test(String(body.time || "")) ? String(body.time) : "";
     let tz = txt(body.tz, 60);
     try {
@@ -9130,8 +9531,8 @@ async function community(req, env, url, ctx) {
         by.get(k).push(x.best);
       }
       for (const [k, list] of by) {
-        let b = Infinity;
-        const run = list.map((v) => b = Math.min(b, v));
+        let b2 = Infinity;
+        const run = list.map((v) => b2 = Math.min(b2, v));
         if (run.length > 1) trend[k] = run.slice(-8).map((v) => Math.round(v * 1e3) / 1e3);
       }
     }
@@ -9294,7 +9695,7 @@ async function community(req, env, url, ctx) {
     if (typeof body.data !== "string" || !/^[A-Za-z0-9+/=]+$/.test(body.data) || body.data.length > 56e4) return err7("setup missing or too large (400 KB max)", 400);
     if (typeof body.sha !== "string" || !/^[0-9a-f]{64}$/.test(body.sha)) return err7("missing checksum", 400);
     const bytes = Uint8Array.from(atob(body.data), (c) => c.charCodeAt(0));
-    if (await crypto.subtle.digest("SHA-256", bytes).then((b) => [...new Uint8Array(b)].map((x) => x.toString(16).padStart(2, "0")).join("")) !== body.sha) return err7("checksum does not match", 400);
+    if (await crypto.subtle.digest("SHA-256", bytes).then((b2) => [...new Uint8Array(b2)].map((x) => x.toString(16).padStart(2, "0")).join("")) !== body.sha) return err7("checksum does not match", 400);
     if (!await countUpload(env, u)) return err7("too many uploads today", 429);
     const id2 = rid7();
     const r4 = await env.DB.prepare(
@@ -9512,13 +9913,13 @@ var TOLERANCE = 300;
 async function hmacHex2(secret, body) {
   const k = await crypto.subtle.importKey("raw", new TextEncoder().encode(secret), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
   const s = new Uint8Array(await crypto.subtle.sign("HMAC", k, new TextEncoder().encode(body)));
-  return [...s].map((b) => b.toString(16).padStart(2, "0")).join("");
+  return [...s].map((b2) => b2.toString(16).padStart(2, "0")).join("");
 }
 __name(hmacHex2, "hmacHex");
-var same4 = /* @__PURE__ */ __name((a, b) => {
-  if (a.length !== b.length) return false;
+var same4 = /* @__PURE__ */ __name((a, b2) => {
+  if (a.length !== b2.length) return false;
   let d = 0;
-  for (let i = 0; i < a.length; i++) d |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  for (let i = 0; i < a.length; i++) d |= a.charCodeAt(i) ^ b2.charCodeAt(i);
   return d === 0;
 }, "same");
 async function stripeSigned(secret, header, body, nowSec = Math.floor(Date.now() / 1e3)) {
@@ -9691,7 +10092,7 @@ function traceHole(tr2) {
 __name(traceHole, "traceHole");
 
 // src/worker.js
-import VIEWER from "./08b98ecbb95c8d52a3cf408dc7ea49553569cdf3-viewer.html";
+import VIEWER from "./3331f307511edf753055329e75a1efc3651ddbe6-viewer.html";
 
 // src/live.js
 import { DurableObject } from "cloudflare:workers";
@@ -10562,7 +10963,7 @@ var GUIDES = { en: "Guides", es: "Gu\xEDas", pt: "Guias" };
 
 // src/seo.js
 var SITE5 = "https://pitlanehq.app";
-var SEO_VER = "13";
+var SEO_VER = "14";
 var SEO_DATE = "2026-11-01";
 var esc4 = /* @__PURE__ */ __name((s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]), "esc");
 var slug2 = /* @__PURE__ */ __name((s) => String(s || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 80), "slug");
@@ -10597,7 +10998,7 @@ var CAT2 = {
   es: { oval: "\xD3valo", sports_car: "Sports Car", formula_car: "F\xF3rmula", dirt_oval: "\xD3valo de tierra", dirt_road: "Tierra" },
   pt: { oval: "Oval", sports_car: "Sports Car", formula_car: "F\xF3rmula", dirt_oval: "Oval de terra", dirt_road: "Terra" }
 };
-var T2 = {
+var T3 = {
   en: {
     tel: { iracing: "iRacing telemetry", lmu: "LMU telemetry" },
     lmuH: "Le Mans Ultimate",
@@ -10733,7 +11134,7 @@ h1,h2,h3{font-family:var(--hd);font-weight:700;line-height:1.1;letter-spacing:.0
 .btn{display:inline-block;padding:12px 18px;border-radius:8px;font:700 15px/1 var(--hd);letter-spacing:.06em;text-transform:uppercase;text-decoration:none;border:1px solid var(--line);color:var(--fg)}
 .btn.p{background:var(--acc);color:#11151b;border-color:var(--acc)}.g{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px}
 .c{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:18px}.c p{margin:0;color:#c9d1dc}.m{color:var(--mut)}a.c{text-decoration:none;color:inherit}
-.x{margin:22px 0 0;padding:14px 16px;border:1px solid var(--line);border-radius:10px;background:var(--card)}
+#what h2{margin:0 0 8px}#what p{margin:0 0 8px;color:#c9d1dc}.x{margin:22px 0 0;padding:14px 16px;border:1px solid var(--line);border-radius:10px;background:var(--card)}
 table{width:100%;border-collapse:collapse;font-size:15px}th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line)}th{color:var(--mut);font-weight:400;font-size:13px;text-transform:uppercase;letter-spacing:.06em}
 td.t{font-family:'JetBrains Mono',ui-monospace,monospace;color:var(--acc)}.n{width:44px;color:var(--mut)}.tw{overflow-x:auto}
 details{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px 16px;margin:8px 0}summary{cursor:pointer;font-weight:600}
@@ -10778,7 +11179,10 @@ var shot = /* @__PURE__ */ __name((l, f) => `<figure class="shot">${img(l, f, SH
 var phones = /* @__PURE__ */ __name((l, list) => `<div class="phs">${list.map((f) => `<figure>${img(l, f, SHOT_ALT[l][f] || "Pitlane HQ")}<figcaption>${esc4(SHOT_ALT[l][f] || "")}</figcaption></figure>`).join("")}</div>`, "phones");
 var HAS = { lmuLeagues: false, lmuRecords: false };
 var HAS_MEMO = /* @__PURE__ */ new WeakMap();
+var DC = "";
+var invite2 = /* @__PURE__ */ __name((v) => /^https:\/\/(discord\.gg|discord\.com\/invite)\/[A-Za-z0-9-]+$/.test(String(v || "").trim()) ? String(v).trim() : "", "invite");
 async function readHas(env) {
+  DC = invite2(env.DISCORD_INVITE);
   const m = HAS_MEMO.get(env);
   if (m && Date.now() - m.at < 5 * 6e4) return HAS = m.has;
   const [lg, rc] = await Promise.all([leaguesData(env, "lmu").then((D) => D.posted.length + D.found.length).catch(() => 0), topCombos(env, 1, "lmu").then((x) => x.length).catch(() => 0)]);
@@ -10803,7 +11207,7 @@ var lmuLinks = /* @__PURE__ */ __name((l) => [
 ], "lmuLinks");
 var iracingLinks = /* @__PURE__ */ __name((l) => [...TOPICS.filter((x) => x.game !== "lmu").map((x) => [x[l].path, x[l].h1]), [OVL[l].path, OVL[l].h1], [LEAG[l].path, LEAG[l].h1], [REC_IDX.iracing[l], S2[l].recH(GNAME.iracing)]], "iracingLinks");
 function page3(l, { title, desc, path, alts, body, ld, noindex, game = "iracing", mod }) {
-  const t = T2[l], other = game === "lmu" ? "iracing" : "lmu";
+  const t = T3[l], other = game === "lmu" ? "iracing" : "lmu";
   if (path && !noindex) ld = [webPageLd(l, path, title, desc, mod), ...ld || []];
   const lg = game === "lmu" && HAS.lmuLeagues ? LEAGL[l].path : LEAG[l].path, rc = game === "lmu" && HAS.lmuRecords ? REC_IDX.lmu[l] : REC_IDX.iracing[l];
   const hl = alts ? LANGS2.map((k) => `<link rel="alternate" hreflang="${HLANG[k]}" href="${SITE5}${alts[k]}">`).join("") + `<link rel="alternate" hreflang="x-default" href="${SITE5}${alts.en}">` : "";
@@ -10818,10 +11222,49 @@ ${hl}
 <style>${CSS}</style><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="${FONTS}" media="print" onload="this.media='all'"><noscript><link rel="stylesheet" href="${FONTS}"></noscript>
 ${ld ? `<script type="application/ld+json">${JSON.stringify(ld).replace(/</g, "\\u003c")}<\/script>` : ""}</head><body>
 <header><div class="w"><a class="b" href="/">${LOGO}Pitlane HQ</a><nav><a href="${(game === "lmu" ? LANDL : LAND)[l].path}">${esc4(t.tel[game])}</a><a href="${(game === "lmu" ? OVLL : OVL)[l].path}">${esc4(t.ov)}</a><a href="${lg}">${esc4(t.lgs)}</a><a href="${rc}">${esc4(t.rec)}</a><a href="${(other === "lmu" ? LANDL : LAND)[l].path}">${esc4(GNAME[other])}</a><a href="/downloads">${esc4(t.dl)}</a><a href="/">${esc4(t.app)}</a>${others}</nav></div></header>
-<main class="w">${body}</main>
-<footer><div class="w"><p class="m">${esc4(GUIDES[l])} \xB7 iRacing \xB7 ${iracingLinks(l).map(([p, h]) => `<a href="${p}">${esc4(h)}</a>`).join(" \xB7 ")}</p><p class="m">${esc4(t.lmuH)} \xB7 ${lmuLinks(l).map(([p, h]) => `<a href="${p}">${esc4(h)}</a>`).join(" \xB7 ")}</p>Pitlane HQ \xB7 ${esc4(t.free)} \xB7 <a href="/downloads">${esc4(t.dl)}</a> \xB7 <a href="mailto:support@pitlanehq.app">support@pitlanehq.app</a> \xB7 ${LANGS2.map((k) => `<a href="${LAND[k].path}" hreflang="${HLANG[k]}">${NAME[k]}</a>`).join(" \xB7 ")}</div></footer>${VISIT_JS}</body></html>`;
+<main class="w">${body}${path && !noindex ? whatIs(l) : ""}</main>
+<footer><div class="w"><p class="m">${esc4(GUIDES[l])} \xB7 iRacing \xB7 ${iracingLinks(l).map(([p, h]) => `<a href="${p}">${esc4(h)}</a>`).join(" \xB7 ")}</p><p class="m">${esc4(t.lmuH)} \xB7 ${lmuLinks(l).map(([p, h]) => `<a href="${p}">${esc4(h)}</a>`).join(" \xB7 ")}</p>Pitlane HQ \xB7 ${esc4(t.free)} \xB7 <a href="/downloads">${esc4(t.dl)}</a> \xB7 <a href="mailto:support@pitlanehq.app">support@pitlanehq.app</a> \xB7 ${DC ? `<a href="${esc4(DC)}" rel="noopener">Discord</a> \xB7 ` : ""}${LANGS2.map((k) => `<a href="${LAND[k].path}" hreflang="${HLANG[k]}">${NAME[k]}</a>`).join(" \xB7 ")}</div></footer>${VISIT_JS}</body></html>`;
 }
 __name(page3, "page");
+var WHAT = {
+  en: { t: "What is Pitlane HQ", p: [
+    "Pitlane HQ (also written PitlaneHQ) is a free sim racing telemetry app for iRacing and Le Mans Ultimate. It is in beta, and everything in it is free during the beta.",
+    "Pitlane HQ Agent runs on the Windows PC where you race. It records every lap by itself and draws overlays on top of the game, also in VR. The web app and the Android app show your laps with a lap analyzer, lap comparison, sectors and braking points, and a coach that learns from real laps, shows corner by corner where you lose time and gives a plan marked on the track map.",
+    "Every lap syncs to your account with your whole history. Pitlane HQ also has live telemetry on your phone, race summaries with the fuel of each stint, leaderboards by car and track, friends, leagues and a Discord bot."
+  ] },
+  es: { t: "Qu\xE9 es Pitlane HQ", p: [
+    "Pitlane HQ (tambi\xE9n escrito PitlaneHQ) es una app gratis de telemetr\xEDa para sim racing en iRacing y Le Mans Ultimate. Est\xE1 en beta, y durante la beta todo es gratis.",
+    "Pitlane HQ Agent funciona en el PC con Windows donde corres. Graba cada vuelta solo y dibuja overlays encima del juego, tambi\xE9n en VR. La app web y la app de Android te ense\xF1an tus vueltas con un analizador de vueltas, comparaci\xF3n de vueltas, sectores y puntos de frenada, y un coach que aprende de vueltas reales, te ense\xF1a curva a curva d\xF3nde pierdes tiempo y te da un plan marcado en el mapa.",
+    "Cada vuelta se sincroniza con tu cuenta, con todo tu historial. Pitlane HQ tambi\xE9n tiene telemetr\xEDa en vivo en el m\xF3vil, res\xFAmenes de carrera con el combustible de cada stint, clasificaciones por coche y circuito, amigos, ligas y un bot de Discord."
+  ] },
+  pt: { t: "O que \xE9 o Pitlane HQ", p: [
+    "O Pitlane HQ (tamb\xE9m escrito PitlaneHQ) \xE9 um app gr\xE1tis de telemetria para sim racing no iRacing e no Le Mans Ultimate. Ele est\xE1 em beta, e durante a beta tudo \xE9 gr\xE1tis.",
+    "O Pitlane HQ Agent roda no PC com Windows onde voc\xEA corre. Ele grava cada volta sozinho e desenha overlays sobre o jogo, tamb\xE9m em VR. O app web e o app de Android mostram suas voltas com um analisador de voltas, compara\xE7\xE3o de voltas, setores e pontos de frenagem, e um coach que aprende com voltas reais, mostra curva a curva onde voc\xEA perde tempo e d\xE1 um plano marcado no mapa da pista.",
+    "Cada volta sincroniza com a sua conta, com todo o seu hist\xF3rico. O Pitlane HQ tamb\xE9m tem telemetria ao vivo no celular, resumos de corrida com o combust\xEDvel de cada stint, classifica\xE7\xF5es por carro e pista, amigos, ligas e um bot de Discord."
+  ] }
+};
+var DCW = {
+  en: {
+    p: "Drivers meet on the Pitlane HQ Discord server, open to everyone, to ask for help, share ideas and see new records as they happen.",
+    a: "Join the Pitlane HQ Discord",
+    q: "Is there a Pitlane HQ community on Discord?",
+    ans: "Yes. The Pitlane HQ Discord server is open to everyone. Come to ask for help, report bugs, share ideas and see every driver's new records as they happen."
+  },
+  es: {
+    p: "Los pilotos se juntan en el servidor de Discord de Pitlane HQ, abierto a todos, para pedir ayuda, compartir ideas y ver los nuevos r\xE9cords al momento.",
+    a: "\xDAnete al Discord de Pitlane HQ",
+    q: "\xBFHay una comunidad de Pitlane HQ en Discord?",
+    ans: "S\xED. El servidor de Discord de Pitlane HQ est\xE1 abierto a todos. Entra para pedir ayuda, avisar de fallos, compartir ideas y ver los nuevos r\xE9cords de todos los pilotos al momento."
+  },
+  pt: {
+    p: "Os pilotos se encontram no servidor de Discord do Pitlane HQ, aberto a todos, para pedir ajuda, compartilhar ideias e ver os novos recordes na hora.",
+    a: "Entre no Discord do Pitlane HQ",
+    q: "Existe uma comunidade do Pitlane HQ no Discord?",
+    ans: "Sim. O servidor de Discord do Pitlane HQ \xE9 aberto a todos. Entre para pedir ajuda, avisar de bugs, compartilhar ideias e ver os novos recordes de todos os pilotos na hora."
+  }
+};
+var dcFaq = /* @__PURE__ */ __name((l) => DC ? [[DCW[l].q, DCW[l].ans + " " + DC]] : [], "dcFaq");
+var whatIs = /* @__PURE__ */ __name((l) => `<section class="x" id="what"><h2>${esc4(WHAT[l].t)}</h2>${WHAT[l].p.map((x) => `<p>${esc4(x)}</p>`).join("")}${DC ? `<p>${esc4(DCW[l].p)} <a href="${esc4(DC)}" rel="noopener">${esc4(DCW[l].a)} \u2192</a></p>` : ""}</section>`, "whatIs");
 var webPageLd = /* @__PURE__ */ __name((l, path, name2, description, mod) => ({
   "@context": "https://schema.org",
   "@type": "WebPage",
@@ -10887,7 +11330,7 @@ var appLd = /* @__PURE__ */ __name((l, desc, shots, features) => ({
 }), "appLd");
 var siteLd = /* @__PURE__ */ __name((l) => [
   { "@context": "https://schema.org", "@type": "WebSite", "@id": SITE5 + "/#website", name: "Pitlane HQ", alternateName: ["PitlaneHQ", "Pitlane"], url: SITE5 + "/", inLanguage: HLANG[l], publisher: { "@id": SITE5 + "/#org" } },
-  { "@context": "https://schema.org", "@type": "Organization", "@id": SITE5 + "/#org", name: "Pitlane HQ", alternateName: "PitlaneHQ", url: SITE5 + "/", logo: SITE5 + "/icon-512.png", email: "support@pitlanehq.app" }
+  { "@context": "https://schema.org", "@type": "Organization", "@id": SITE5 + "/#org", name: "Pitlane HQ", alternateName: "PitlaneHQ", url: SITE5 + "/", logo: SITE5 + "/icon-512.png", email: "support@pitlanehq.app", ...DC ? { sameAs: [DC] } : {} }
 ], "siteLd");
 var etagOf = /* @__PURE__ */ __name((s) => {
   let h = 2166136261;
@@ -10900,30 +11343,34 @@ var etagOf = /* @__PURE__ */ __name((s) => {
 var html = /* @__PURE__ */ __name((s, cache3 = 600, status = 200) => new Response(s, { status, headers: { "content-type": "text/html; charset=utf-8", "cache-control": `public, max-age=${cache3}, stale-while-revalidate=86400`, etag: etagOf(s), "x-content-type-options": "nosniff" } }), "html");
 var cross = /* @__PURE__ */ __name((l, game) => {
   const o = game === "lmu" ? LAND[l] : LANDL[l];
-  return `<p class="x">${esc4(T2[l].other[game])} <a href="${o.path}">${esc4(o.h1)} \u2192</a></p>`;
+  return `<p class="x">${esc4(T3[l].other[game])} <a href="${o.path}">${esc4(o.h1)} \u2192</a></p>`;
 }, "cross");
 var LAND = {
   en: {
     path: "/iracing-telemetry",
     title: "iRacing telemetry, lap analysis and overlays \xB7 Pitlane HQ",
-    desc: "Free iRacing telemetry from Pitlane HQ. Record every lap, see where you lose time, compare with faster drivers and race with overlays on top of the game.",
+    desc: "Free iRacing telemetry from Pitlane HQ. Record every lap, see corner by corner where you lose time with the coach, compare laps and race with overlays.",
     h1: "iRacing telemetry and a coach for your laps",
     lead: "Pitlane HQ records every lap you drive in iRacing and shows where you lose time, against your own best lap, the record and the driver just ahead of you in the same car. It is free and works on Windows, Android and the web.",
     cards: [
       ["Telemetry from every lap", "Pitlane HQ Agent runs next to iRacing and saves speed, throttle, brake, gear and steering on every lap, with nothing to set up. The laps go to your account, so you can open them later on the web or on your phone."],
       ["Compare two laps", "Speed, inputs and the time gap along the lap, the track map, the sectors and the braking points. Pick any two laps, yours, one from another session or one from the leaderboard."],
-      ["A coach that uses real laps", "For each car and track Pitlane HQ learns from real laps driven by real people. The coach compares your lap with the record and with the driver just ahead of you, and tells you which corners cost the most."],
+      ["A coach that uses real laps", "For each car and track Pitlane HQ learns from real laps driven by real people, and from every session you drive. The coach compares your lap with the record and with the driver just ahead of you, shows corner by corner where the time goes and gives a plan with each point marked on the track map."],
       ["Live telemetry on your phone", "While you drive, watch your telemetry on the phone or in a browser. Share a code and a friend can watch too."],
       ["Leaderboards by car and track", "The fastest lap of every driver on each car and track, by discipline, oval, sports car, formula, dirt oval and dirt road."],
-      ["Race summaries and iRating", "After each race, your result, your laps, your incidents, your iRating and how you compared with the drivers around you."],
-      ["Overlays on top of the game", "Relative, standings, radar, delta bar, fuel, tyres, track map, flags, a live coach and more, drawn by Pitlane HQ Agent over iRacing and also shown in VR."]
+      ["Race summaries and iRating", "After each race, your result, your laps, your incidents, your iRating, your race pace and fuel per stint, and how you compared with the drivers around you."],
+      ["Overlays on top of the game", "Relative, standings, radar, delta bar, fuel, tyres, track map, flags, a live coach and more, drawn by Pitlane HQ Agent over iRacing and also shown in VR. Place them on a picture of your screen in the Overlays tab and set each one with a live preview."],
+      ["Your laps on every device", "Every lap goes to your account and syncs to the web and the phone, with your whole history. Days you drove opens as a calendar with the races and sessions of each day."],
+      ["Friends and a Discord bot", "Follow your friends and see their newest laps in Community. The Discord bot posts new best laps and records in your server and answers with leaderboards, records and lap comparisons."]
     ],
     recs: "Records by car and track",
     recsLead: "The fastest laps driven with Pitlane HQ.",
     faqT: "Questions",
     faq: [
-      ["What is Pitlane HQ?", "Pitlane HQ (also written PitlaneHQ) is a free sim racing telemetry app for iRacing and Le Mans Ultimate. Pitlane HQ Agent records your laps on Windows, and the web and the phone app show them with a coach, leaderboards and overlays."],
-      ["Is it free?", "Yes. The telemetry, the coach, the leaderboards and the basic overlays are free, and during the beta everything is."],
+      ["What is Pitlane HQ?", "Pitlane HQ (also written PitlaneHQ) is a free sim racing telemetry app for iRacing and Le Mans Ultimate. Pitlane HQ Agent records your laps on Windows and draws overlays over the game, and the web and the Android app show the laps with a lap analyzer, a coach, leaderboards and race summaries."],
+      ["Is it free?", "Yes. The telemetry, the coach, the leaderboards, the basic overlays, sync and your whole lap history are free, and during the beta everything is."],
+      ["Does Pitlane HQ have an AI coach?", "Yes. The coach learns from the real laps of every driver on each car and track and from each of your sessions. It shows corner by corner where you lose time and gives a plan with each point marked on the track map."],
+      ["Do I keep all my laps?", "Yes. Every lap goes to your account and syncs between your PC, the web and your phone, with your whole history."],
       ["Which sims does it work with?", "iRacing and Le Mans Ultimate (in beta). ACC and Assetto Corsa are in development."],
       ["What do I need?", "A Windows PC where you race in iRacing or Le Mans Ultimate, to record the laps. To look at them, any browser or the Android app."],
       ["Who sees my laps?", "Your laps are in your account. On the leaderboards only your fastest lap of each car and track appears, under your public name or as Anonymous."],
@@ -10935,24 +11382,28 @@ var LAND = {
   es: {
     path: "/es/telemetria-iracing",
     title: "Telemetr\xEDa de iRacing, an\xE1lisis y overlays \xB7 Pitlane HQ",
-    desc: "Telemetr\xEDa gratis para iRacing con Pitlane HQ. Graba tus vueltas, mira d\xF3nde pierdes tiempo, comp\xE1rate con pilotos m\xE1s r\xE1pidos y usa overlays en el juego.",
+    desc: "Telemetr\xEDa gratis para iRacing con Pitlane HQ. Graba tus vueltas, mira curva a curva d\xF3nde pierdes tiempo con el coach, compara vueltas y usa overlays.",
     h1: "Telemetr\xEDa para iRacing y un coach para tus vueltas",
     lead: "Pitlane HQ graba cada vuelta que das en iRacing y te ense\xF1a d\xF3nde pierdes tiempo, frente a tu mejor vuelta, frente al r\xE9cord y frente al piloto que va justo por delante con el mismo coche. Es gratis y funciona en Windows, Android y la web.",
     cards: [
       ["Telemetr\xEDa de cada vuelta", "Pitlane HQ Agent funciona junto a iRacing y guarda velocidad, acelerador, freno, marcha y volante en cada vuelta, sin configurar nada. Las vueltas van a tu cuenta, as\xED que luego las abres en la web o en el m\xF3vil."],
       ["Comparar dos vueltas", "Velocidad, pedales y diferencia de tiempo a lo largo de la vuelta, el mapa del circuito, los sectores y los puntos de frenada. Eliges dos vueltas cualquiera, tuyas, de otra sesi\xF3n o de la clasificaci\xF3n."],
-      ["Un coach con vueltas reales", "Para cada coche y circuito, Pitlane HQ aprende de vueltas reales de pilotos reales. El coach compara tu vuelta con el r\xE9cord y con el piloto que va justo por delante, y te dice qu\xE9 curvas te cuestan m\xE1s."],
+      ["Un coach con vueltas reales", "Para cada coche y circuito, Pitlane HQ aprende de vueltas reales de pilotos reales y de cada sesi\xF3n que corres. El coach compara tu vuelta con el r\xE9cord y con el piloto que va justo por delante, te ense\xF1a curva a curva d\xF3nde se va el tiempo y te da un plan con cada punto marcado en el mapa."],
       ["Telemetr\xEDa en vivo en el m\xF3vil", "Mientras corres, mira tu telemetr\xEDa en el m\xF3vil o en el navegador. Comparte un c\xF3digo y un amigo tambi\xE9n puede verla."],
       ["Clasificaciones por coche y circuito", "La vuelta m\xE1s r\xE1pida de cada piloto en cada coche y circuito, por disciplina, \xF3valo, sports car, f\xF3rmula, \xF3valo de tierra y tierra."],
-      ["Resumen de carrera e iRating", "Despu\xE9s de cada carrera, tu resultado, tus vueltas, tus incidentes, tu iRating y c\xF3mo ibas frente a los pilotos de tu alrededor."],
-      ["Overlays encima del juego", "Relative, clasificaci\xF3n, radar, barra de delta, combustible, neum\xE1ticos, mapa, banderas, un coach en vivo y m\xE1s, dibujados por Pitlane HQ Agent sobre iRacing y tambi\xE9n en VR."]
+      ["Resumen de carrera e iRating", "Despu\xE9s de cada carrera, tu resultado, tus vueltas, tus incidentes, tu iRating, tu ritmo de carrera y el combustible de cada stint, y c\xF3mo ibas frente a los pilotos de tu alrededor."],
+      ["Overlays encima del juego", "Relative, clasificaci\xF3n, radar, barra de delta, combustible, neum\xE1ticos, mapa, banderas, un coach en vivo y m\xE1s, dibujados por Pitlane HQ Agent sobre iRacing y tambi\xE9n en VR. Los colocas sobre un dibujo de tu pantalla en la pesta\xF1a Overlays y ajustas cada uno con una vista previa en vivo."],
+      ["Tus vueltas en todos tus dispositivos", "Cada vuelta va a tu cuenta y se sincroniza con la web y el m\xF3vil, con todo tu historial. D\xEDas que has corrido se abre como un calendario con las carreras y sesiones de cada d\xEDa."],
+      ["Amigos y un bot de Discord", "Sigue a tus amigos y mira sus \xFAltimas vueltas en Comunidad. El bot de Discord publica en tu servidor las nuevas mejores vueltas y los r\xE9cords, y responde con clasificaciones, r\xE9cords y comparaciones de vueltas."]
     ],
     recs: "R\xE9cords por coche y circuito",
     recsLead: "Las vueltas m\xE1s r\xE1pidas hechas con Pitlane HQ.",
     faqT: "Preguntas",
     faq: [
-      ["\xBFQu\xE9 es Pitlane HQ?", "Pitlane HQ (tambi\xE9n escrito PitlaneHQ) es una app gratis de telemetr\xEDa para sim racing en iRacing y Le Mans Ultimate. Pitlane HQ Agent graba tus vueltas en Windows, y la web y la app del m\xF3vil te las ense\xF1an con un coach, clasificaciones y overlays."],
-      ["\xBFEs gratis?", "S\xED. La telemetr\xEDa, el coach, las clasificaciones y los overlays b\xE1sicos son gratis, y durante la beta lo es todo."],
+      ["\xBFQu\xE9 es Pitlane HQ?", "Pitlane HQ (tambi\xE9n escrito PitlaneHQ) es una app gratis de telemetr\xEDa para sim racing en iRacing y Le Mans Ultimate. Pitlane HQ Agent graba tus vueltas en Windows y dibuja overlays sobre el juego, y la web y la app de Android te las ense\xF1an con un analizador de vueltas, un coach, clasificaciones y res\xFAmenes de carrera."],
+      ["\xBFEs gratis?", "S\xED. La telemetr\xEDa, el coach, las clasificaciones, los overlays b\xE1sicos, la sincronizaci\xF3n y todo tu historial de vueltas son gratis, y durante la beta lo es todo."],
+      ["\xBFPitlane HQ tiene un coach con IA?", "S\xED. El coach aprende de las vueltas reales de todos los pilotos en cada coche y circuito y de cada una de tus sesiones. Te ense\xF1a curva a curva d\xF3nde pierdes tiempo y te da un plan con cada punto marcado en el mapa."],
+      ["\xBFGuardo todas mis vueltas?", "S\xED. Cada vuelta va a tu cuenta y se sincroniza entre tu PC, la web y tu m\xF3vil, con todo tu historial."],
       ["\xBFCon qu\xE9 simuladores funciona?", "Con iRacing y Le Mans Ultimate (en beta). ACC y Assetto Corsa est\xE1n en desarrollo."],
       ["\xBFQu\xE9 necesito?", "Un PC con Windows donde corras en iRacing o Le Mans Ultimate, para grabar las vueltas. Para verlas, cualquier navegador o la app de Android."],
       ["\xBFQui\xE9n ve mis vueltas?", "Tus vueltas est\xE1n en tu cuenta. En las clasificaciones solo aparece tu vuelta m\xE1s r\xE1pida de cada coche y circuito, con tu nombre p\xFAblico o como An\xF3nimo."],
@@ -10964,24 +11415,28 @@ var LAND = {
   pt: {
     path: "/pt/telemetria-iracing",
     title: "Telemetria do iRacing, an\xE1lise e overlays \xB7 Pitlane HQ",
-    desc: "Telemetria gr\xE1tis para iRacing com o Pitlane HQ. Grave suas voltas, veja onde perde tempo, compare com pilotos mais r\xE1pidos e use overlays no jogo.",
+    desc: "Telemetria gr\xE1tis para iRacing com o Pitlane HQ. Grave suas voltas, veja curva a curva onde perde tempo com o coach, compare voltas e use overlays.",
     h1: "Telemetria para iRacing e um coach para suas voltas",
     lead: "O Pitlane HQ grava cada volta que voc\xEA d\xE1 no iRacing e mostra onde voc\xEA perde tempo, contra a sua melhor volta, contra o recorde e contra o piloto logo \xE0 sua frente no mesmo carro. \xC9 gr\xE1tis e funciona no Windows, no Android e na web.",
     cards: [
       ["Telemetria de cada volta", "O Pitlane HQ Agent roda ao lado do iRacing e salva velocidade, acelerador, freio, marcha e volante em cada volta, sem configurar nada. As voltas v\xE3o para a sua conta, ent\xE3o voc\xEA as abre depois na web ou no celular."],
       ["Compare duas voltas", "Velocidade, pedais e a diferen\xE7a de tempo ao longo da volta, o mapa da pista, os setores e os pontos de frenagem. Escolha duas voltas quaisquer, suas, de outra sess\xE3o ou da classifica\xE7\xE3o."],
-      ["Um coach com voltas reais", "Para cada carro e pista, o Pitlane HQ aprende com voltas reais de pilotos reais. O coach compara a sua volta com o recorde e com o piloto logo \xE0 frente e diz quais curvas custam mais."],
+      ["Um coach com voltas reais", "Para cada carro e pista, o Pitlane HQ aprende com voltas reais de pilotos reais e com cada sess\xE3o que voc\xEA corre. O coach compara a sua volta com o recorde e com o piloto logo \xE0 frente, mostra curva a curva para onde vai o tempo e d\xE1 um plano com cada ponto marcado no mapa da pista."],
       ["Telemetria ao vivo no celular", "Enquanto voc\xEA corre, veja a sua telemetria no celular ou no navegador. Compartilhe um c\xF3digo e um amigo tamb\xE9m pode acompanhar."],
       ["Classifica\xE7\xF5es por carro e pista", "A volta mais r\xE1pida de cada piloto em cada carro e pista, por disciplina, oval, sports car, f\xF3rmula, oval de terra e terra."],
-      ["Resumo de corrida e iRating", "Depois de cada corrida, o seu resultado, as suas voltas, os seus incidentes, o seu iRating e como voc\xEA foi contra os pilotos ao seu redor."],
-      ["Overlays sobre o jogo", "Relative, classifica\xE7\xE3o, radar, barra de delta, combust\xEDvel, pneus, mapa, bandeiras, um coach ao vivo e mais, desenhados pelo Pitlane HQ Agent sobre o iRacing e tamb\xE9m em VR."]
+      ["Resumo de corrida e iRating", "Depois de cada corrida, o seu resultado, as suas voltas, os seus incidentes, o seu iRating, o seu ritmo de corrida e o combust\xEDvel de cada stint, e como voc\xEA foi contra os pilotos ao seu redor."],
+      ["Overlays sobre o jogo", "Relative, classifica\xE7\xE3o, radar, barra de delta, combust\xEDvel, pneus, mapa, bandeiras, um coach ao vivo e mais, desenhados pelo Pitlane HQ Agent sobre o iRacing e tamb\xE9m em VR. Posicione sobre um desenho da sua tela na aba Overlays e ajuste cada um com uma pr\xE9via ao vivo."],
+      ["Suas voltas em todos os aparelhos", "Cada volta vai para a sua conta e sincroniza com a web e o celular, com todo o seu hist\xF3rico. Dias em que correu abre como um calend\xE1rio com as corridas e sess\xF5es de cada dia."],
+      ["Amigos e um bot de Discord", "Siga seus amigos e veja as voltas mais novas deles em Comunidade. O bot de Discord publica no seu servidor as novas melhores voltas e os recordes, e responde com classifica\xE7\xF5es, recordes e compara\xE7\xF5es de voltas."]
     ],
     recs: "Recordes por carro e pista",
     recsLead: "As voltas mais r\xE1pidas feitas com o Pitlane HQ.",
     faqT: "Perguntas",
     faq: [
-      ["O que \xE9 o Pitlane HQ?", "O Pitlane HQ (tamb\xE9m escrito PitlaneHQ) \xE9 um app gr\xE1tis de telemetria para sim racing no iRacing e no Le Mans Ultimate. O Pitlane HQ Agent grava suas voltas no Windows, e a web e o app de celular mostram com um coach, classifica\xE7\xF5es e overlays."],
-      ["\xC9 gr\xE1tis?", "Sim. A telemetria, o coach, as classifica\xE7\xF5es e os overlays b\xE1sicos s\xE3o gr\xE1tis, e durante a beta tudo \xE9."],
+      ["O que \xE9 o Pitlane HQ?", "O Pitlane HQ (tamb\xE9m escrito PitlaneHQ) \xE9 um app gr\xE1tis de telemetria para sim racing no iRacing e no Le Mans Ultimate. O Pitlane HQ Agent grava suas voltas no Windows e desenha overlays sobre o jogo, e a web e o app de Android mostram as voltas com um analisador de voltas, um coach, classifica\xE7\xF5es e resumos de corrida."],
+      ["\xC9 gr\xE1tis?", "Sim. A telemetria, o coach, as classifica\xE7\xF5es, os overlays b\xE1sicos, a sincroniza\xE7\xE3o e todo o seu hist\xF3rico de voltas s\xE3o gr\xE1tis, e durante a beta tudo \xE9."],
+      ["O Pitlane HQ tem um coach com IA?", "Sim. O coach aprende com as voltas reais de todos os pilotos em cada carro e pista e com cada uma das suas sess\xF5es. Ele mostra curva a curva onde voc\xEA perde tempo e d\xE1 um plano com cada ponto marcado no mapa da pista."],
+      ["Eu guardo todas as minhas voltas?", "Sim. Cada volta vai para a sua conta e sincroniza entre o seu PC, a web e o seu celular, com todo o seu hist\xF3rico."],
       ["Com quais simuladores funciona?", "Com o iRacing e o Le Mans Ultimate (em beta). ACC e Assetto Corsa est\xE3o em desenvolvimento."],
       ["Do que eu preciso?", "Um PC com Windows onde voc\xEA corre no iRacing ou no Le Mans Ultimate, para gravar as voltas. Para v\xEA-las, qualquer navegador ou o app de Android."],
       ["Quem v\xEA as minhas voltas?", "As suas voltas ficam na sua conta. Nas classifica\xE7\xF5es aparece s\xF3 a sua volta mais r\xE1pida de cada carro e pista, com o seu nome p\xFAblico ou como An\xF4nimo."],
@@ -11001,11 +11456,12 @@ var LANDL = {
     cards: [
       ["Nothing to install in the game", "Pitlane HQ Agent reads the game's own data. Turn on Enable Plugins in the game's Settings \u2192 Gameplay and drive. Every lap is saved with its speed, pedals, gear, steering and official sectors."],
       ["Compare laps and reference laps", "Put two laps side by side, yours or the leaderboard's, with the time gap, the inputs, the racing line on the map and the braking points."],
-      ["A coach with real laps", "The coach compares your lap with the record and with the driver just ahead of your pace on the same car and track, and lists the corners that cost the most."],
+      ["A coach with real laps", "The coach compares your lap with the record and with the driver just ahead of your pace on the same car and track, shows corner by corner where the time goes and gives a plan with each point marked on the track map."],
       ["Overlays for multiclass races", "Relative and standings with class colours, radar, delta bar, fuel, a track map with every class, flags and a dash with TC, ABS, brake bias and the virtual energy left."],
       ["Live on your phone", "Watch position, delta, fuel, the relative and the map on a phone or tablet next to the wheel, over Wi-Fi or mobile data."],
       ["Race summaries and rivals", "After each race, your place, your laps and the field as the game shows it, with the best lap of every rival."],
-      ["Leaderboards and leagues", "Your fastest lap of each car and track goes to its leaderboard by itself, and the leagues hub lists Le Mans Ultimate leagues with their Discord."]
+      ["Leaderboards and leagues", "Your fastest lap of each car and track goes to its leaderboard by itself, and the leagues hub lists Le Mans Ultimate leagues with their Discord."],
+      ["Your laps on every device", "Every lap goes to your account and syncs to the web and the phone, with your whole history, and you can follow your friends and see their newest laps."]
     ],
     recs: "Le Mans Ultimate records by car and track",
     recsLead: "The fastest Le Mans Ultimate laps driven with Pitlane HQ.",
@@ -11030,11 +11486,12 @@ var LANDL = {
     cards: [
       ["Nada que instalar en el juego", "Pitlane HQ Agent lee los datos del propio juego. Activa Enable Plugins en Settings \u2192 Gameplay del juego y conduce. Cada vuelta se guarda con su velocidad, pedales, marcha, volante y sectores oficiales."],
       ["Compara vueltas y vueltas de referencia", "Pon dos vueltas una al lado de la otra, tuyas o de la clasificaci\xF3n, con la diferencia de tiempo, los pedales, la trazada en el mapa y los puntos de frenada."],
-      ["Un coach con vueltas reales", "El coach compara tu vuelta con el r\xE9cord y con el piloto justo por encima de tu ritmo en el mismo coche y circuito, y pone primero las curvas que m\xE1s te cuestan."],
+      ["Un coach con vueltas reales", "El coach compara tu vuelta con el r\xE9cord y con el piloto justo por encima de tu ritmo en el mismo coche y circuito, te ense\xF1a curva a curva d\xF3nde se va el tiempo y te da un plan con cada punto marcado en el mapa."],
       ["Overlays para carreras multiclase", "Relative y clasificaci\xF3n con los colores de cada clase, radar, barra de delta, combustible, mapa con todas las clases, banderas y un dash con TC, ABS, reparto de frenada y la energ\xEDa virtual que queda."],
       ["En vivo en el m\xF3vil", "Mira posici\xF3n, delta, combustible, el relative y el mapa en un m\xF3vil o una tablet junto al volante, con Wi-Fi o datos."],
       ["Res\xFAmenes de carrera y rivales", "Despu\xE9s de cada carrera, tu posici\xF3n, tus vueltas y la parrilla como la muestra el juego, con la mejor vuelta de cada rival."],
-      ["Clasificaciones y ligas", "Tu vuelta m\xE1s r\xE1pida de cada coche y circuito entra sola en su clasificaci\xF3n, y el hub de ligas re\xFAne ligas de Le Mans Ultimate con su Discord."]
+      ["Clasificaciones y ligas", "Tu vuelta m\xE1s r\xE1pida de cada coche y circuito entra sola en su clasificaci\xF3n, y el hub de ligas re\xFAne ligas de Le Mans Ultimate con su Discord."],
+      ["Tus vueltas en todos tus dispositivos", "Cada vuelta va a tu cuenta y se sincroniza con la web y el m\xF3vil, con todo tu historial, y puedes seguir a tus amigos y ver sus \xFAltimas vueltas."]
     ],
     recs: "R\xE9cords de Le Mans Ultimate por coche y circuito",
     recsLead: "Las vueltas m\xE1s r\xE1pidas de Le Mans Ultimate hechas con Pitlane HQ.",
@@ -11059,11 +11516,12 @@ var LANDL = {
     cards: [
       ["Nada para instalar no jogo", "O Pitlane HQ Agent l\xEA os dados do pr\xF3prio jogo. Ative Enable Plugins em Settings \u2192 Gameplay do jogo e pilote. Cada volta \xE9 salva com velocidade, pedais, marcha, volante e setores oficiais."],
       ["Compare voltas e voltas de refer\xEAncia", "Coloque duas voltas lado a lado, suas ou da classifica\xE7\xE3o, com a diferen\xE7a de tempo, os pedais, o tra\xE7ado no mapa e os pontos de frenagem."],
-      ["Um coach com voltas reais", "O coach compara sua volta com o recorde e com o piloto logo acima do seu ritmo no mesmo carro e pista, e mostra primeiro as curvas que mais custam."],
+      ["Um coach com voltas reais", "O coach compara sua volta com o recorde e com o piloto logo acima do seu ritmo no mesmo carro e pista, mostra curva a curva para onde vai o tempo e d\xE1 um plano com cada ponto marcado no mapa da pista."],
       ["Overlays para corridas multiclasse", "Relative e classifica\xE7\xE3o com as cores de cada classe, radar, barra de delta, combust\xEDvel, mapa com todas as classes, bandeiras e um dash com TC, ABS, balan\xE7o de freio e a energia virtual que resta."],
       ["Ao vivo no celular", "Veja posi\xE7\xE3o, delta, combust\xEDvel, o relative e o mapa num celular ou tablet ao lado do volante, com Wi-Fi ou dados."],
       ["Resumos de corrida e rivais", "Depois de cada corrida, a sua posi\xE7\xE3o, as suas voltas e o grid como o jogo mostra, com a melhor volta de cada rival."],
-      ["Classifica\xE7\xF5es e ligas", "Sua volta mais r\xE1pida de cada carro e pista entra sozinha na classifica\xE7\xE3o, e o hub de ligas re\xFAne ligas de Le Mans Ultimate com o Discord delas."]
+      ["Classifica\xE7\xF5es e ligas", "Sua volta mais r\xE1pida de cada carro e pista entra sozinha na classifica\xE7\xE3o, e o hub de ligas re\xFAne ligas de Le Mans Ultimate com o Discord delas."],
+      ["Suas voltas em todos os aparelhos", "Cada volta vai para a sua conta e sincroniza com a web e o celular, com todo o seu hist\xF3rico, e voc\xEA pode seguir seus amigos e ver as voltas mais novas deles."]
     ],
     recs: "Recordes do Le Mans Ultimate por carro e pista",
     recsLead: "As voltas mais r\xE1pidas do Le Mans Ultimate feitas com o Pitlane HQ.",
@@ -11183,14 +11641,14 @@ function overlaysPage(l, game) {
   const O = (game === "lmu" ? OVLL : OVL)[l], W2 = OVW[l], L = (game === "lmu" ? LANDL : LAND)[l];
   const shots = OV_IMGS[l];
   const body = `<h1>${esc4(O.h1)}</h1><p class="lead">${esc4(O.lead)}</p>
-<div class="cta"><a class="btn p" href="/dl/PitlaneHQ-Setup.exe">${esc4(L.dl)}</a><a class="btn" href="${L.path}">${esc4(T2[l].tel[game])}</a></div>
+<div class="cta"><a class="btn p" href="/dl/PitlaneHQ-Setup.exe">${esc4(L.dl)}</a><a class="btn" href="${L.path}">${esc4(T3[l].tel[game])}</a></div>
 <h2>${esc4(W2.listT)}</h2><div class="g">${O.items.map(([h, p]) => `<section class="c"><h3>${esc4(h)}</h3><p>${esc4(p)}</p></section>`).join("")}</div>
 <h2>${esc4(W2.shotsT)}</h2><div class="ovs">${shots.map(([f, c]) => `<figure>${img(l, f, c)}<figcaption>${esc4(c)}</figcaption></figure>`).join("")}</div>
 <h2>${esc4(W2.expT)}</h2><p>${esc4(W2.exp)}</p>
 <h2>${esc4(W2.vrT)}</h2><p>${esc4(W2.vr)}</p>
 <h2>${esc4(W2.howT)}</h2><ul>${W2.how.map((x) => `<li>${esc4(x)}</li>`).join("")}</ul>
 <h2>${esc4(L.faqT)}</h2>${O.faq.map(([q2, a]) => `<details open><summary>${esc4(q2)}</summary><p>${esc4(a)}</p></details>`).join("")}
-${game === "lmu" ? `<p class="x">${esc4(T2[l].other.lmu)} <a href="${OVL[l].path}">${esc4(OVL[l].h1)} \u2192</a></p>` : `<p class="x">${esc4(T2[l].other.iracing)} <a href="${OVLL[l].path}">${esc4(OVLL[l].h1)} \u2192</a></p>`}`;
+${game === "lmu" ? `<p class="x">${esc4(T3[l].other.lmu)} <a href="${OVL[l].path}">${esc4(OVL[l].h1)} \u2192</a></p>` : `<p class="x">${esc4(T3[l].other.iracing)} <a href="${OVLL[l].path}">${esc4(OVLL[l].h1)} \u2192</a></p>`}`;
   const ld = [
     crumbs(game === "lmu" ? [["Pitlane HQ", LAND[l].path], ["Le Mans Ultimate", LANDL[l].path], [O.h1, O.path]] : [["Pitlane HQ", LAND[l].path], [O.h1, O.path]]),
     appLd(l, O.desc, shots.map(([f]) => f)),
@@ -11415,7 +11873,7 @@ ${x.days.length ? `<p style="margin:0 0 4px">${esc4(W2.races)} ${esc4(x.days.map
   const faq = cat ? [G.catQ(cn), ...G.faq] : G.faq;
   const otherLg = lmu ? `<p class="x"><a href="${LEAG[l].path}">${esc4(LEAG[l].h1)} \u2192</a></p>` : HAS.lmuLeagues ? `<p class="x"><a href="${LEAGL[l].path}">${esc4(LEAGL[l].h1)} \u2192</a></p>` : "";
   const body = `<h1>${esc4(cat ? G.catH(cn) : G.h1)}</h1><p class="lead">${esc4(cat ? G.catLead(cn) : G.lead)}</p>
-<div class="cta"><a class="btn p" href="/?league-post=1" rel="nofollow">${esc4(W2.post)}</a><a class="btn" href="${(lmu ? LANDL : LAND)[l].path}">${esc4(T2[l].tel[game])}</a></div>
+<div class="cta"><a class="btn p" href="/?league-post=1" rel="nofollow">${esc4(W2.post)}</a><a class="btn" href="${(lmu ? LANDL : LAND)[l].path}">${esc4(T3[l].tel[game])}</a></div>
 ${cats.length ? `<div class="cats" aria-label="${esc4(W2.byCat)}"><a href="${lgPath(l)}"${cat ? "" : ' class="on"'}>${esc4(W2.all)}</a>${cats.map((k) => `<a href="${lgPath(l, k)}"${k === cat ? ' class="on"' : ""}>${esc4(CAT2[l][k])}</a>`).join("")}</div>` : ""}
 ${posted.length ? `<h2>${esc4(W2.posted)}</h2><div class="g">${postedHTML}</div>` : ""}
 ${found.length ? `<h2>${esc4(G.active)}</h2><div class="g">${foundHTML}</div>${D.updated ? `<p class="m" style="font-size:14px">${esc4(W2.upd)} ${day(D.updated)}</p>` : ""}` : ""}
@@ -11439,7 +11897,7 @@ var recPath = /* @__PURE__ */ __name((l, x, game = "iracing") => `${PRE2[l]}/rec
 var recAlts = /* @__PURE__ */ __name((x, game) => ({ en: recPath("en", x, game), es: recPath("es", x, game), pt: recPath("pt", x, game) }), "recAlts");
 var catFor = /* @__PURE__ */ __name((cm, game, x, hint, track2, car) => game === "lmu" ? "sports_car" : catOf(cm, x.t, x.c, hint, track2, car), "catFor");
 async function landing(env, l, game) {
-  const lmu = game === "lmu", L = (lmu ? LANDL : LAND)[l], combos2 = await topCombos(env, 8, game);
+  const lmu = game === "lmu", L = (lmu ? LANDL : LAND)[l], combos2 = await topCombos(env, 8, game), faq = [...L.faq, ...dcFaq(l)];
   const guides = lmu ? [...TOPICS.filter((x) => x.game === "lmu").map((x) => x[l]), OVLL[l], ...HAS.lmuLeagues ? [LEAGL[l]] : [], ...lmuToo(l)] : [...TOPICS.filter((x) => x.game !== "lmu").map((x) => x[l]), OVL[l], LEAG[l]];
   const body = `<h1>${esc4(L.h1)}</h1><p class="lead">${esc4(L.lead)}</p>
 <div class="cta"><a class="btn p" href="/dl/PitlaneHQ-Setup.exe">${esc4(L.dl)}</a><a class="btn" href="/">${esc4(L.app)}</a></div>
@@ -11448,9 +11906,9 @@ ${shot(l, lmu ? "coach.jpg" : "compare.jpg")}
 <h2 id="start">${esc4(START[l].t)}</h2><ol>${START[l].steps(GNAME[game]).map((x) => `<li>${esc4(x)}</li>`).join("")}</ol>
 ${cross(l, game)}
 <h2>${esc4(GUIDES[l])}</h2><div class="g">${guides.map((x) => `<a class="c" href="${x.path}"><h3>${esc4(x.h1)} \u2192</h3><p>${esc4(x.desc)}</p></a>`).join("")}</div>
-${combos2.length ? `<h2>${esc4(L.recs)}</h2><p class="m">${esc4(L.recsLead)}</p><div class="tw"><table><tbody>${combos2.map((x) => `<tr><td><a href="${recPath(l, x, game)}">${esc4(fix2(x.track))}</a></td><td class="m">${esc4(fix2(x.car))}</td><td class="t">${fmt2(x.best)}</td></tr>`).join("")}</tbody></table></div><p><a href="${REC_IDX[game][l]}">${esc4(T2[l].rec)} \u2192</a></p>` : ""}
-<h2>${esc4(L.faqT)}</h2>${L.faq.map(([q2, a]) => `<details><summary>${esc4(q2)}</summary><p>${esc4(a)}</p></details>`).join("")}`;
-  const ld = [...lmu ? [crumbs([["Pitlane HQ", LAND[l].path], ["Le Mans Ultimate", L.path]])] : [], appLd(l, L.desc, [lmu ? "coach.jpg" : "compare.jpg"], L.cards.map(([h]) => h)), ...siteLd(l), howToLd(l, GNAME[game], L.path), faqLd(L.faq)];
+${combos2.length ? `<h2>${esc4(L.recs)}</h2><p class="m">${esc4(L.recsLead)}</p><div class="tw"><table><tbody>${combos2.map((x) => `<tr><td><a href="${recPath(l, x, game)}">${esc4(fix2(x.track))}</a></td><td class="m">${esc4(fix2(x.car))}</td><td class="t">${fmt2(x.best)}</td></tr>`).join("")}</tbody></table></div><p><a href="${REC_IDX[game][l]}">${esc4(T3[l].rec)} \u2192</a></p>` : ""}
+<h2>${esc4(L.faqT)}</h2>${faq.map(([q2, a]) => `<details><summary>${esc4(q2)}</summary><p>${esc4(a)}</p></details>`).join("")}`;
+  const ld = [...lmu ? [crumbs([["Pitlane HQ", LAND[l].path], ["Le Mans Ultimate", L.path]])] : [], appLd(l, L.desc, [lmu ? "coach.jpg" : "compare.jpg"], L.cards.map(([h]) => h)), ...siteLd(l), howToLd(l, GNAME[game], L.path), faqLd(faq)];
   return html(page3(l, { title: L.title, desc: L.desc, path: L.path, alts: lmu ? LANDL_ALTS : LAND_ALTS, body, ld, game }));
 }
 __name(landing, "landing");
@@ -11467,7 +11925,7 @@ ${cats.length > 1 ? `<div class="cats"><a href="${base2}"${cat ? "" : ' class="o
 ${list.length ? `<div class="tw"><table><thead><tr><th>${esc4(W2.track)}</th><th>${esc4(W2.car)}</th><th>${esc4(W2.record)}</th><th>${esc4(W2.drivers)}</th></tr></thead><tbody>${list.map((x) => `<tr><td><a href="${recPath(l, x, game)}">${esc4(fix2(x.track))}</a></td><td class="m">${esc4(fix2(x.car))}</td><td class="t">${fmt2(x.best)}</td><td class="m">${x.drivers}</td></tr>`).join("")}</tbody></table></div>` : `<p class="m">${esc4(W2.none)}</p>`}
 <h2>${esc4(W2.howT)}</h2><p>${esc4(W2.how(gn))}</p>
 <h2>${esc4(LAND[l].faqT)}</h2>${W2.faq(gn).map(([q3, a]) => `<details open><summary>${esc4(q3)}</summary><p>${esc4(a)}</p></details>`).join("")}${cross(l, game)}`;
-  const root = game === "lmu" ? [["Pitlane HQ", LAND[l].path], ["Le Mans Ultimate", LANDL[l].path], [T2[l].rec, base2]] : [["Pitlane HQ", LAND[l].path], [T2[l].rec, base2]];
+  const root = game === "lmu" ? [["Pitlane HQ", LAND[l].path], ["Le Mans Ultimate", LANDL[l].path], [T3[l].rec, base2]] : [["Pitlane HQ", LAND[l].path], [T3[l].rec, base2]];
   const ld = [
     crumbs(root),
     { "@context": "https://schema.org", "@type": "ItemList", name: W2.recH(gn), itemListElement: list.slice(0, 100).map((x, i) => ({ "@type": "ListItem", position: i + 1, url: SITE5 + recPath(l, x, game), name: fix2(x.car) + " \xB7 " + fix2(x.track) })) },
@@ -11504,8 +11962,8 @@ async function recordsCombo(env, l, t, c, asked, game = "iracing") {
 <h1>${esc4(car)}<br><span class="m" style="font-size:.7em">${esc4(track2)}</span></h1>
 <p class="lead">${esc4(W2.cL(rec))}</p>
 <div class="tw"><table><thead><tr><th class="n">#</th><th>${esc4(W2.driver)}</th><th>${esc4(W2.time)}</th><th>${esc4(W2.date)}</th></tr></thead><tbody>${laps.map((v, i) => `<tr><td class="n">${i + 1}</td><td>${esc4(v.alias || W2.anon)}</td><td class="t">${fmt2(v.time)}</td><td class="m">${day(v.created)}</td></tr>`).join("")}</tbody></table></div>
-<div class="c" style="margin-top:22px"><h2>${esc4(W2.cQ)}</h2><p>${esc4(W2.cA(gn))}</p><div class="cta" style="margin-bottom:0"><a class="btn p" href="/dl/PitlaneHQ-Setup.exe">${esc4(L.dl)}</a><a class="btn" href="${L.path}">${esc4(T2[l].tel[game])}</a></div></div>`;
-  const ld = [crumbs([["Pitlane HQ", LAND[l].path], ...game === "lmu" ? [["Le Mans Ultimate", LANDL[l].path]] : [], [T2[l].rec, idx], [car + " \xB7 " + track2, recPath(l, x, game)]])];
+<div class="c" style="margin-top:22px"><h2>${esc4(W2.cQ)}</h2><p>${esc4(W2.cA(gn))}</p><div class="cta" style="margin-bottom:0"><a class="btn p" href="/dl/PitlaneHQ-Setup.exe">${esc4(L.dl)}</a><a class="btn" href="${L.path}">${esc4(T3[l].tel[game])}</a></div></div>`;
+  const ld = [crumbs([["Pitlane HQ", LAND[l].path], ...game === "lmu" ? [["Le Mans Ultimate", LANDL[l].path]] : [], [T3[l].rec, idx], [car + " \xB7 " + track2, recPath(l, x, game)]])];
   return html(page3(l, { title, desc, path: recPath(l, x, game), alts: recAlts(x, game), body, ld, game, mod: later2(SEO_DATE, day(Math.max(0, ...laps.map((v) => +v.created || 0)))) }));
 }
 __name(recordsCombo, "recordsCombo");
@@ -11514,7 +11972,7 @@ var notFound = /* @__PURE__ */ __name((l) => noIndex(html(page3(l, {
   desc: S2[l].nf,
   path: null,
   noindex: true,
-  body: `<h1>${esc4(S2[l].nf)}</h1><p><a href="${LAND[l].path}">${esc4(T2[l].tel.iracing)}</a> \xB7 <a href="${LANDL[l].path}">${esc4(T2[l].tel.lmu)}</a> \xB7 <a href="${REC_IDX.iracing[l]}">${esc4(T2[l].rec)}</a> \xB7 <a href="/">${esc4(T2[l].app)}</a></p>`
+  body: `<h1>${esc4(S2[l].nf)}</h1><p><a href="${LAND[l].path}">${esc4(T3[l].tel.iracing)}</a> \xB7 <a href="${LANDL[l].path}">${esc4(T3[l].tel.lmu)}</a> \xB7 <a href="${REC_IDX.iracing[l]}">${esc4(T3[l].rec)}</a> \xB7 <a href="/">${esc4(T3[l].app)}</a></p>`
 }), 600, 404)), "notFound");
 var noIndex = /* @__PURE__ */ __name((r4) => {
   r4.headers.set("x-robots-tag", "noindex");
@@ -11530,7 +11988,7 @@ function topicPage(x, l) {
 <div class="cta"><a class="btn p" href="/dl/PitlaneHQ-Setup.exe">${esc4(L.dl)}</a><a class="btn" href="/">${esc4(L.app)}</a></div>
 <div class="g">${G.secs.map(([h, p]) => `<section class="c"><h2>${esc4(h)}</h2><p>${esc4(p)}</p></section>`).join("")}</div>
 ${x.img ? shot(l, x.img) : ""}${x.phones ? phones(l, x.phones) : ""}
-${to ? `<p class="x">${esc4(T2[l].other[game])} <a href="${to.path}">${esc4(to.h1)} \u2192</a></p>` : ""}
+${to ? `<p class="x">${esc4(T3[l].other[game])} <a href="${to.path}">${esc4(to.h1)} \u2192</a></p>` : ""}
 <h2>${esc4(L.faqT)}</h2>${G.faq.map(([q2, a]) => `<details open><summary>${esc4(q2)}</summary><p>${esc4(a)}</p></details>`).join("")}
 <h2>${esc4(GUIDES[l])}</h2><ul>${more.map(([p, h]) => `<li><a href="${p}">${esc4(h)}</a></li>`).join("")}</ul>`;
   const ld = [
@@ -11641,7 +12099,21 @@ async function indexNow(env) {
 }
 __name(indexNow, "indexNow");
 var mdLink = /* @__PURE__ */ __name(([path, h, d]) => `- [${h}](${SITE5}${path})${d ? ": " + d : ""}`, "mdLink");
-var ABOUT = "Pitlane HQ (also written PitlaneHQ) is a free sim racing telemetry app for iRacing and Le Mans Ultimate. Le Mans Ultimate support is in beta, and ACC and Assetto Corsa are in development. Pitlane HQ Agent, a Windows program, runs next to the game and records every lap by itself. The web app and the Android app show the laps with a coach that compares them with real faster laps, lap comparison, braking points, leaderboards by car and track, race summaries with the iRating and leagues to join. Pitlane HQ Agent also draws overlays on top of the game, in six looks and in VR, and sends live telemetry to a phone. Everything is free during the beta. The pages are in English, Spanish and Portuguese (Brazil).";
+var about = /* @__PURE__ */ __name(() => WHAT.en.p.join(" ") + (DC ? " " + DCW.en.p + " " + DC : "") + " ACC and Assetto Corsa are in development. The pages are in English, Spanish and Portuguese (Brazil).", "about");
+var FACTS = [
+  ["Price", "Free. Everything in Pitlane HQ is free while it is in beta, with no card asked for. Sync and the whole lap history are part of the free account."],
+  ["Games", "iRacing, and Le Mans Ultimate (in beta). ACC and Assetto Corsa are in development."],
+  ["Devices", "Pitlane HQ Agent on Windows records the laps and draws the overlays. The web app at pitlanehq.app works on any computer or phone browser, and there is an Android app. One account on every device, with sign-up by email, Steam or Discord."],
+  ["Telemetry", "Speed, throttle, brake, gear and steering of every lap, saved by itself with nothing to set up. Live telemetry on a phone or a browser while you drive, and a code to share it with a friend."],
+  ["Overlays", "Relative, standings, radar, delta bar, fuel, tyres, track map, flags, braking markers, a live coach, weather and more, drawn natively over the game, in six looks, also in VR through SteamVR. In the Overlays tab you place them on a picture of your screen. Each overlay has a settings window with a live preview and its own frame rate, and can open by itself in every game it works with."],
+  ["Coach", "Learns from the real laps of every driver on each car and track and from each of your sessions, apart for road, oval, dirt oval and dirt road. It compares your lap with the record and with the driver just ahead of your pace, shows corner by corner where the time goes, how consistent each corner is and how it improves over time, and gives a plan with each point marked on the track map, saying what happened, why it costs time and what to do instead. On the first laps of a track the coach overlay calls the braking points."],
+  ["Lap analyzer", "Compare any two laps, your own, from another session or from the leaderboard, with speed, inputs, the time gap, the sectors, the braking points, the racing line on the map and a replay of both laps. More charts add the G-G chart, steering against speed and tyre temperatures lap by lap. Every off shows on the map with what the lap did just before it."],
+  ["Races", "A summary after each race with the result, laps, incidents, race pace, the fuel per lap and per stint, and in iRacing the iRating and a licence summary."],
+  ["History", "Every lap syncs to your account with the whole history, and Days you drove opens as a calendar with the races and sessions of each day."],
+  ["Community", "Leaderboards and records by car and track, friends to follow, a leagues hub with leagues to join, and a Discord bot that posts new best laps and records in a server and answers with leaderboards, records and lap comparisons."],
+  ["Languages", "English, Spanish and Portuguese (Brazil)."]
+];
+var factsMd = /* @__PURE__ */ __name(() => [...FACTS, ...DC ? [["Discord community", `The Pitlane HQ Discord server is open to everyone, for help, bug reports, ideas and every driver's new records as they happen. ${DC}`]] : []].map(([k, v]) => `- **${k}.** ${v}`).join("\n"), "factsMd");
 function llmsTxt() {
   const l = "en", g = /* @__PURE__ */ __name((x) => [x.path, x.h1, x.desc], "g");
   const ir = [g(LAND.en), g(OVL.en), ...TOPICS.filter((x) => x.game !== "lmu").map((x) => g(x.en)), g(LEAG.en), [REC_IDX.iracing.en, S2.en.recH("iRacing"), S2.en.recD("iRacing")]];
@@ -11655,13 +12127,19 @@ function llmsTxt() {
   const other = LANGS2.filter((k) => k !== l).flatMap((k) => [[LAND[k].path, LAND[k].h1 + " (" + NAME[k] + ")"], [LANDL[k].path, LANDL[k].h1 + " (" + NAME[k] + ")"]]);
   return `# Pitlane HQ
 
-> Free iRacing and Le Mans Ultimate telemetry with a lap coach, overlays, leaderboards and leagues, on Windows, the web and Android.
+> Sim racing telemetry for iRacing and Le Mans Ultimate, all free during the beta, with a coach that learns from real laps, a lap analyzer, live overlays, sync with the whole lap history, leaderboards, friends, leagues and a Discord bot, on Windows, the web and Android.
 
-${ABOUT}
+${about()}
+
+## Key facts
+
+${factsMd()}
+
+## Links
 
 - Website and web app ${SITE5}/
 - Download ${SITE5}/downloads
-- Support support@pitlanehq.app
+- Support support@pitlanehq.app${DC ? "\n- Discord community " + DC : ""}
 
 ## iRacing
 
@@ -11694,12 +12172,16 @@ ${lead}
 ${parts.map(([h, p]) => `## ${h}
 
 ${p}`).join("\n\n")}${faq && faq.length ? "\n\n## " + LAND[l].faqT + "\n\n" + qa(faq) : ""}`, "sec");
-  const land = /* @__PURE__ */ __name((L, gn) => sec(L.path, L.h1, L.lead, [...L.cards, [START[l].t, START[l].steps(gn).map((x, i) => `${i + 1}. ${x}`).join("\n")]], L.faq), "land");
+  const land = /* @__PURE__ */ __name((L, gn) => sec(L.path, L.h1, L.lead, [...L.cards, [START[l].t, START[l].steps(gn).map((x, i) => `${i + 1}. ${x}`).join("\n")]], [...L.faq, ...dcFaq(l)]), "land");
   const W2 = OVW[l], ov = /* @__PURE__ */ __name((O) => sec(O.path, O.h1, O.lead, [...O.items, [W2.expT, W2.exp], [W2.vrT, W2.vr], [W2.howT, W2.how.map((x) => "- " + x).join("\n")]], O.faq), "ov");
   return [
     `# Pitlane HQ
 
-${ABOUT}`,
+${about()}
+
+## Key facts
+
+${factsMd()}`,
     land(LAND[l], "iRacing"),
     ov(OVL[l]),
     ...TOPICS.filter((x) => x.game !== "lmu").map((x) => sec(x[l].path, x[l].h1, x[l].lead, x[l].secs, x[l].faq)),
@@ -11966,42 +12448,42 @@ var USAGE_GAMES = ["iracing", "lmu", "acc", "ac"];
 var gameKeyOk = /* @__PURE__ */ __name((k) => !k.startsWith("game:") || USAGE_GAMES.includes(k.slice(5)), "gameKeyOk");
 var day2 = /* @__PURE__ */ __name((t) => new Date(t).toISOString().slice(0, 10), "day");
 var cleanV2 = /* @__PURE__ */ __name((v) => String(v == null ? "" : v).replace(/[^0-9a-zA-Z.+-]/g, "").slice(0, 24), "cleanV");
-function cleanUsage(b) {
-  if (!b || typeof b !== "object") return { error: "missing body" };
-  const device = String(b.device || "").toLowerCase();
+function cleanUsage(b2) {
+  if (!b2 || typeof b2 !== "object") return { error: "missing body" };
+  const device = String(b2.device || "").toLowerCase();
   if (!DEVICES2.includes(device)) return { error: "unknown device" };
   const counts = [];
-  if (b.counts && typeof b.counts === "object" && !Array.isArray(b.counts)) {
-    for (const [k0, n0] of Object.entries(b.counts)) {
+  if (b2.counts && typeof b2.counts === "object" && !Array.isArray(b2.counts)) {
+    for (const [k0, n0] of Object.entries(b2.counts)) {
       if (counts.length >= MAX_KEYS) break;
       const k = String(k0).toLowerCase(), n = Math.floor(Number(n0));
       if (!KEY_RE.test(k) || !gameKeyOk(k) || !(n > 0)) continue;
       counts.push([k, Math.min(n, MAX_N)]);
     }
   }
-  const ms = Math.max(0, Math.min(MAX_MS, Math.floor(Number(b.ms) || 0)));
-  return { device, v: cleanV2(b.v), counts, ms };
+  const ms = Math.max(0, Math.min(MAX_MS, Math.floor(Number(b2.ms) || 0)));
+  return { device, v: cleanV2(b2.v), counts, ms };
 }
 __name(cleanUsage, "cleanUsage");
-function cleanFeedback(b) {
-  if (!b || typeof b !== "object") return { error: "missing body" };
-  const text2 = String(b.text == null ? "" : b.text).replace(/\r\n?/g, "\n").replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f]/g, "").trim();
+function cleanFeedback(b2) {
+  if (!b2 || typeof b2 !== "object") return { error: "missing body" };
+  const text2 = String(b2.text == null ? "" : b2.text).replace(/\r\n?/g, "\n").replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f]/g, "").trim();
   if (!text2) return { error: "write something first" };
   if (text2.length > FEEDBACK_MAX) return { error: "too long (" + FEEDBACK_MAX + " characters at most)" };
   let rating = null;
-  if (b.rating != null && b.rating !== "" && b.rating !== 0) {
-    const r4 = Number(b.rating);
+  if (b2.rating != null && b2.rating !== "" && b2.rating !== 0) {
+    const r4 = Number(b2.rating);
     if (!Number.isInteger(r4) || r4 < 1 || r4 > 5) return { error: "the rating goes from 1 to 5" };
     rating = r4;
   }
-  const kind = b.kind === "overlays" ? "overlays" : "general";
+  const kind = b2.kind === "overlays" ? "overlays" : "general";
   let style = null;
   if (kind === "overlays") {
-    style = cleanStyle(b.style);
+    style = cleanStyle(b2.style);
     if (!style) return { error: "unknown overlay design" };
   }
-  const device = String(b.device || "").toLowerCase();
-  return { text: text2, rating, kind, style, device: DEVICES2.includes(device) ? device : "", v: cleanV2(b.v), view: String(b.view || "").replace(/[^a-z0-9_.:-]/gi, "").slice(0, 40) };
+  const device = String(b2.device || "").toLowerCase();
+  return { text: text2, rating, kind, style, device: DEVICES2.includes(device) ? device : "", v: cleanV2(b2.v), view: String(b2.view || "").replace(/[^a-z0-9_.:-]/gi, "").slice(0, 40) };
 }
 __name(cleanFeedback, "cleanFeedback");
 function cleanStyle(v) {
@@ -12010,15 +12492,15 @@ function cleanStyle(v) {
   return STYLE_RE.test(s) ? s : null;
 }
 __name(cleanStyle, "cleanStyle");
-function cleanOvRace(b) {
-  if (!b || typeof b !== "object") return { error: "missing body" };
-  const style = cleanStyle(b.style);
+function cleanOvRace(b2) {
+  if (!b2 || typeof b2 !== "object") return { error: "missing body" };
+  const style = cleanStyle(b2.style);
   if (!style) return { error: "unknown overlay design" };
-  const game = String(b.game || "").toLowerCase();
+  const game = String(b2.game || "").toLowerCase();
   if (!OV_GAMES.includes(game)) return { error: "unknown game" };
-  const ovs = [...new Set((Array.isArray(b.ovs) ? b.ovs : []).map((x) => String(x).toLowerCase()).filter((x) => OV_RE.test(x)))].slice(0, OV_MAX);
+  const ovs = [...new Set((Array.isArray(b2.ovs) ? b2.ovs : []).map((x) => String(x).toLowerCase()).filter((x) => OV_RE.test(x)))].slice(0, OV_MAX);
   if (!ovs.length) return { error: "no overlay was open" };
-  const sid = String(b.sid == null ? "" : b.sid).replace(/[^A-Za-z0-9._:-]/g, "").slice(0, 80);
+  const sid = String(b2.sid == null ? "" : b2.sid).replace(/[^A-Za-z0-9._:-]/g, "").slice(0, 80);
   return { style, game, ovs, sid };
 }
 __name(cleanOvRace, "cleanOvRace");
@@ -12052,14 +12534,14 @@ function analyticsOf(days, perDay, rows, presence, accounts2) {
       versions.set(k, (versions.get(k) || 0) + 1);
     }
   }
-  const list = /* @__PURE__ */ __name((m, name2) => [...m].map(([k, x]) => ({ [name2]: k, users: x.users.size, n: x.n })).sort((a, b) => b.n - a.n), "list");
+  const list = /* @__PURE__ */ __name((m, name2) => [...m].map(([k, x]) => ({ [name2]: k, users: x.users.size, n: x.n })).sort((a, b2) => b2.n - a.n), "list");
   return {
     days,
     active: perDay.map((x) => ({ day: x.day, users: x.users })),
     byDevice: list(byDev, "device"),
     top: list(byKey, "key").slice(0, 60),
     games: list(byGame, "game"),
-    versions: [...versions].map(([k, n]) => ({ device: k.split("|")[0], v: k.split("|")[1], devices: n })).sort((a, b) => b.devices - a.devices),
+    versions: [...versions].map(([k, n]) => ({ device: k.split("|")[0], v: k.split("|")[1], devices: n })).sort((a, b2) => b2.devices - a.devices),
     users: [...byUser].map(([id2, u]) => ({
       id: id2,
       nick: (accounts2.get(id2) || {}).display || "",
@@ -12067,8 +12549,8 @@ function analyticsOf(days, perDay, rows, presence, accounts2) {
       lastDay: u.last,
       devices: [...u.devices],
       n: u.n,
-      top: [...u.keys].map(([key2, n]) => ({ key: key2, n })).sort((a, b) => b.n - a.n).slice(0, 6)
-    })).sort((a, b) => b.lastSeen - a.lastSeen).slice(0, 300)
+      top: [...u.keys].map(([key2, n]) => ({ key: key2, n })).sort((a, b2) => b2.n - a.n).slice(0, 6)
+    })).sort((a, b2) => b2.lastSeen - a.lastSeen).slice(0, 300)
   };
 }
 __name(analyticsOf, "analyticsOf");
@@ -12121,7 +12603,7 @@ function analyticsMore({ from, t0, actDays, rows, sessions, prevSessions, prevAc
   const fresh = accounts2.filter((a) => a.created >= t0);
   const has = /* @__PURE__ */ __name((id2, set) => [...keys.get(id2) || []].some((k) => set.has(k)), "has");
   const daysList = [...userDays.values()].map((x) => x.size);
-  const list = /* @__PURE__ */ __name((m) => [...m].sort((a, b) => a[0] < b[0] ? -1 : 1).map(([day4, u]) => ({ day: day4, users: u.size })), "list");
+  const list = /* @__PURE__ */ __name((m) => [...m].sort((a, b2) => a[0] < b2[0] ? -1 : 1).map(([day4, u]) => ({ day: day4, users: u.size })), "list");
   return {
     active: list(perDay),
     activeApp: list(app),
@@ -12131,7 +12613,7 @@ function analyticsMore({ from, t0, actDays, rows, sessions, prevSessions, prevAc
     prev: { active: prevActive, newAccounts: accounts2.length - fresh.length, sessions: prevSessions.sessions || 0, drove: prevSessions.drivers || 0, secs: Math.round(prevSessions.secs || 0) },
     funnel: { accounts: fresh.length, opened: fresh.filter((a) => keys.has(a.id)).length, drove: fresh.filter((a) => drivers.has(a.id)).length, laps: fresh.filter((a) => has(a.id, LAPS_KEYS)).length, coach: fresh.filter((a) => has(a.id, COACH_KEYS)).length },
     comeback: { d1: daysList.filter((n) => n === 1).length, d23: daysList.filter((n) => n >= 2 && n <= 3).length, d4: daysList.filter((n) => n >= 4).length },
-    driven: [...games.values()].map((g) => ({ game: g.game, drivers: g.drivers.size, sessions: g.sessions, races: g.races, laps: g.laps, secs: Math.round(g.secs) })).sort((a, b) => b.sessions - a.sessions)
+    driven: [...games.values()].map((g) => ({ game: g.game, drivers: g.drivers.size, sessions: g.sessions, races: g.races, laps: g.laps, secs: Math.round(g.secs) })).sort((a, b2) => b2.sessions - a.sessions)
   };
 }
 __name(analyticsMore, "analyticsMore");
@@ -12195,17 +12677,17 @@ async function usageRoute(req, env, url) {
   const ours = ["/community/usage", "/community/feedback", "/community/feedback/ask", "/community/feedback/seen", "/community/feedback/ovrace", "/community/admin/analytics", "/community/admin/feedback"];
   if (p === "/community/visit" && m === "POST") {
     if (isBot(req.headers.get("user-agent"))) return json13({ ok: true });
-    let b = null;
+    let b2 = null;
     try {
-      b = JSON.parse((await req.text()).slice(0, 4e3));
+      b2 = JSON.parse((await req.text()).slice(0, 4e3));
     } catch {
-      b = null;
+      b2 = null;
     }
-    const v = visitOf(b);
+    const v = visitOf(b2);
     if (v.src) await env.DB.prepare(SQL_VISIT_ADD).bind(day2(Date.now()), v.src, countryOf(req.cf), v.page).run();
     return json13({ ok: true });
   }
-  if (!ours.includes(p)) return null;
+  if (!ours.includes(p) && !p.startsWith("/community/admin/feedback/")) return null;
   const acc = await sessionAccount(req, env);
   if (!acc) return err9("sign in with your Pitlane HQ account", 401);
   const now = Date.now();
@@ -12233,8 +12715,8 @@ async function usageRoute(req, env, url) {
     return json13({ ask: shouldAsk(r4.used, races), used: r4.used, races, ov: shouldAskOv(!!r4.ov_answered, r4.ov_races || 0), ovRaces: r4.ov_races || 0, ovStyle: r4.ov_last_style || "classic" });
   }
   if (p === "/community/feedback/seen" && m === "POST") {
-    const b = await req.json().catch(() => null);
-    if (b && b.kind === "overlays") await env.DB.prepare(SQL_OV_SEEN).bind(acc.id).run();
+    const b2 = await req.json().catch(() => null);
+    if (b2 && b2.kind === "overlays") await env.DB.prepare(SQL_OV_SEEN).bind(acc.id).run();
     else await env.DB.prepare(SQL_ASK_SEEN).bind(acc.id, now).run();
     return json13({ ok: true });
   }
@@ -12245,7 +12727,7 @@ async function usageRoute(req, env, url) {
     return json13({ ok: true });
   }
   if (p === "/community/feedback" && m === "POST") {
-    const b = await req.json().catch(() => null), f = cleanFeedback(b);
+    const b2 = await req.json().catch(() => null), f = cleanFeedback(b2);
     if (f.error) return err9(f.error, 400);
     const c = await env.DB.prepare("SELECT COUNT(*) AS n FROM feedback WHERE account_id=?1 AND created>?2").bind(acc.id, now - 864e5).first();
     if (c && c.n >= FEEDBACK_PER_DAY) return err9("thank you, that is enough for today", 429);
@@ -12254,18 +12736,46 @@ async function usageRoute(req, env, url) {
       env.DB.prepare("INSERT INTO feedback (id, account_id, created, device, v, rating, text, view, kind, style) VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10)").bind(id2, acc.id, now, f.device, f.v, f.rating, f.text, f.view, f.kind, f.style),
       f.kind === "overlays" ? env.DB.prepare(SQL_OV_ANSWERED).bind(acc.id, now) : env.DB.prepare(SQL_ASK_SEEN).bind(acc.id, now),
       // and it is a message of the driver's support chat (support.js), so they see it there
-      ...driverMessage(env, acc.id, id2, now, { ...f, lang: cleanLang(b && b.lang) })
+      ...driverMessage(env, acc.id, id2, now, { ...f, lang: cleanLang(b2 && b2.lang) })
     ]);
-    const esc6 = await openEscrow(env, acc.escrow).catch(() => null);
-    const mailed = await sendFeedback(env, { ...f, nick: acc.display || "", accountId: acc.id, email: esc6 && esc6.email || "" }).catch(() => false);
+    const esc7 = await openEscrow(env, acc.escrow).catch(() => null);
+    const mailed = await sendFeedback(env, { ...f, nick: acc.display || "", accountId: acc.id, email: esc7 && esc7.email || "" }).catch(() => false);
+    if (await discordFeedback(env, f).catch(() => 0) > 0) await env.DB.prepare("UPDATE feedback SET discord_at=?2 WHERE id=?1").bind(id2, now).run().catch(() => {
+    });
     return json13({ ok: true, id: id2, mailed });
   }
   if (!isAdmin(env, acc.id)) return err9("only the admins of this server can do this", 403);
   if (p === "/community/admin/feedback" && m === "GET") {
-    const r4 = await env.DB.prepare("SELECT f.id, f.account_id AS accountId, f.created, f.device, f.v, f.rating, f.text, f.view, f.kind, f.style, a.display AS nick FROM feedback f LEFT JOIN accounts a ON a.id=f.account_id ORDER BY f.created DESC LIMIT 300").all();
+    const r4 = await env.DB.prepare("SELECT f.id, CASE WHEN f.kind='uninstall' THEN NULL ELSE f.account_id END AS accountId, f.created, f.device, f.v, f.rating, f.text, f.view, f.kind, f.style, f.discord_at AS discordAt, a.display AS nick FROM feedback f LEFT JOIN accounts a ON a.id=f.account_id ORDER BY f.created DESC LIMIT 300").all();
     const items = r4.results || [];
     const rated = items.filter((x) => x.rating);
-    return json13({ items, count: items.length, avg: rated.length ? Math.round(rated.reduce((s, x) => s + x.rating, 0) / rated.length * 10) / 10 : null });
+    const np = await env.DB.prepare("SELECT COUNT(*) AS n FROM feedback WHERE discord_at IS NULL").first().catch(() => null);
+    const fc = await env.DB.prepare("SELECT COUNT(*) AS n FROM discord_guilds WHERE feedback_channel IS NOT NULL").first().catch(() => null);
+    return json13({ notOnDiscord: fc && fc.n ? np && np.n || 0 : 0, items, count: items.length, avg: rated.length ? Math.round(rated.reduce((s, x) => s + x.rating, 0) / rated.length * 10) / 10 : null });
+  }
+  if (p.startsWith("/community/admin/feedback/") && m === "DELETE") {
+    const id2 = decodeURIComponent(p.slice("/community/admin/feedback/".length));
+    if (!/^[0-9a-f-]{8,40}$/i.test(id2)) return err9("bad id", 400);
+    const r4 = await env.DB.prepare("DELETE FROM feedback WHERE id=?1").bind(id2).run();
+    return json13({ ok: true, deleted: r4.meta && r4.meta.changes || 0 });
+  }
+  if (p === "/community/admin/feedback/old" && m === "POST") {
+    const b2 = await req.json().catch(() => ({})), days = Math.floor(Number(b2 && b2.days));
+    if (!(days >= 1 && days <= 3650)) return err9("days from 1 to 3650", 400);
+    const r4 = await env.DB.prepare("DELETE FROM feedback WHERE created<?1").bind(now - days * 864e5).run();
+    return json13({ ok: true, deleted: r4.meta && r4.meta.changes || 0 });
+  }
+  if (p === "/community/admin/feedback/discord" && m === "POST") {
+    const rows = (await env.DB.prepare("SELECT id, device, v, rating, text, kind, style FROM feedback WHERE discord_at IS NULL ORDER BY created ASC LIMIT 8").all()).results || [];
+    let posted = 0;
+    for (const x of rows) {
+      const n = await discordFeedback(env, x).catch(() => 0);
+      if (!n) return json13({ error: posted ? "Discord stopped answering, press it again in a minute" : "No Discord feedback forum is chosen, or Discord did not answer", posted }, posted ? 200 : 400);
+      await env.DB.prepare("UPDATE feedback SET discord_at=?2 WHERE id=?1").bind(x.id, Date.now()).run();
+      posted++;
+    }
+    const left = await env.DB.prepare("SELECT COUNT(*) AS n FROM feedback WHERE discord_at IS NULL").first();
+    return json13({ ok: true, posted, left: left && left.n || 0 });
   }
   if (p === "/community/admin/analytics" && m === "GET") {
     const days = Math.max(1, Math.min(MAX_DAYS, Math.floor(Number(url.searchParams.get("days")) || 30)));
@@ -12497,6 +13007,100 @@ function legal(req, url) {
 }
 __name(legal, "legal");
 
+// src/uninstall.js
+var esc6 = /* @__PURE__ */ __name((s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]), "esc");
+var json14 = /* @__PURE__ */ __name((o, s = 200) => new Response(JSON.stringify(o), { status: s, headers: { "content-type": "application/json", "cache-control": "no-store" } }), "json");
+var UNINSTALL_PER_DAY = 3;
+var UNINSTALL_ALL_DAY = 200;
+var REASONS = {
+  game: { en: "It does not work with my game", es: "No funciona con mi juego", pt: "N\xE3o funciona com o meu jogo" },
+  bugs: { en: "Bugs or crashes", es: "Errores o cierres", pt: "Erros ou travamentos" },
+  slow: { en: "It slows down my PC or my game", es: "Hace ir lento mi PC o mi juego", pt: "Deixa meu PC ou meu jogo lento" },
+  missing: { en: "It is missing something I need", es: "Le falta algo que necesito", pt: "Falta algo de que eu preciso" },
+  hard: { en: "Hard to use", es: "Dif\xEDcil de usar", pt: "Dif\xEDcil de usar" },
+  other_app: { en: "I use another app", es: "Uso otra app", pt: "Uso outro app" },
+  little: { en: "I do not race enough", es: "No corro lo suficiente", pt: "N\xE3o corro o suficiente" },
+  reinstall: { en: "I am going to install it again", es: "Lo voy a volver a instalar", pt: "Vou instalar de novo" },
+  other: { en: "Something else", es: "Otra cosa", pt: "Outra coisa" }
+};
+var TXT = {
+  en: { title: "Why did you uninstall Pitlane HQ?", more: "Anything else you want to tell us", send: "Send", thanks: "Thank you. We read every answer.", pick: "Choose a reason or write something first.", fail: "It could not be sent. Try again in a minute.", again: "Download Pitlane HQ" },
+  es: { title: "\xBFPor qu\xE9 has desinstalado Pitlane HQ?", more: "Algo m\xE1s que quieras contarnos", send: "Enviar", thanks: "Gracias. Leemos todas las respuestas.", pick: "Elige un motivo o escribe algo primero.", fail: "No se pudo enviar. Prueba otra vez en un minuto.", again: "Descargar Pitlane HQ" },
+  pt: { title: "Por que voc\xEA desinstalou o Pitlane HQ?", more: "Algo mais que queira nos contar", send: "Enviar", thanks: "Obrigado. Lemos todas as respostas.", pick: "Escolha um motivo ou escreva algo primeiro.", fail: "N\xE3o foi poss\xEDvel enviar. Tente de novo em um minuto.", again: "Baixar o Pitlane HQ" }
+};
+function uninstallLang(req, url) {
+  const q2 = (url.searchParams.get("lang") || "").slice(0, 2).toLowerCase();
+  if (TXT[q2]) return q2;
+  for (const part of (req.headers.get("accept-language") || "").toLowerCase().split(",")) {
+    const l = part.trim().slice(0, 2);
+    if (TXT[l]) return l;
+  }
+  return "en";
+}
+__name(uninstallLang, "uninstallLang");
+var cleanV3 = /* @__PURE__ */ __name((v) => String(v == null ? "" : v).replace(/[^0-9a-z.+-]/gi, "").slice(0, 20), "cleanV");
+function cleanUninstall(b2) {
+  if (!b2 || typeof b2 !== "object") return { error: "missing body" };
+  const got = Array.isArray(b2.reasons) ? b2.reasons.map((x) => String(x)) : [];
+  const reasons = Object.keys(REASONS).filter((k) => got.includes(k));
+  const text2 = String(b2.text == null ? "" : b2.text).replace(/\r\n?/g, "\n").replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f]/g, "").trim();
+  if (text2.length > FEEDBACK_MAX) return { error: "too long (" + FEEDBACK_MAX + " characters at most)" };
+  if (!reasons.length && !text2) return { error: "choose a reason or write something first" };
+  const said = [reasons.map((k) => REASONS[k].en).join(" \xB7 "), text2].filter(Boolean).join("\n\n");
+  return { reasons, text: said, rating: null, kind: "uninstall", style: reasons.join(",").slice(0, 100) || null, device: "pc", v: cleanV3(b2.v), view: "uninstall" };
+}
+__name(cleanUninstall, "cleanUninstall");
+function uninstallPage(l, v) {
+  const t = TXT[l] || TXT.en;
+  const chips = Object.entries(REASONS).map(([k, n]) => `<label class="c"><input type="checkbox" value="${k}"><span>${esc6(n[l] || n.en)}</span></label>`).join("");
+  return `<!doctype html><html lang="${l === "pt" ? "pt-BR" : l}"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><title>${esc6(t.title)} \xB7 Pitlane HQ</title><link rel="icon" href="/favicon.ico" sizes="any">
+<style>*{box-sizing:border-box}body{margin:0;background:#0d1116;color:#e7ebf1;font:16px/1.5 system-ui,sans-serif}main{max-width:640px;margin:0 auto;padding:28px 16px 48px}h1{font-size:24px;margin:0 0 18px}.top{display:flex;align-items:center;gap:10px;margin-bottom:22px}.top b{font-size:15px;letter-spacing:.06em}.top img{width:28px;height:28px;border-radius:7px}
+.cs{display:flex;flex-wrap:wrap;gap:8px}.c{cursor:pointer}.c input{position:absolute;opacity:0;pointer-events:none}.c span{display:inline-block;padding:9px 14px;border-radius:999px;background:#151c25;border:1px solid #263140;color:#c9d2de;font-size:14px}.c input:checked+span{background:#2a2112;border-color:#ffb02e;color:#ffb02e}.c input:focus-visible+span{outline:2px solid #ffb02e;outline-offset:2px}
+textarea{width:100%;min-height:110px;margin-top:16px;padding:12px;border-radius:12px;border:1px solid #263140;background:#151c25;color:#e7ebf1;font:inherit;resize:vertical}textarea:focus{outline:none;border-color:#ffb02e}
+button{margin-top:14px;padding:11px 22px;border:0;border-radius:10px;background:#ffb02e;color:#0d1116;font:600 15px system-ui,sans-serif;cursor:pointer}button:disabled{opacity:.6;cursor:default}#e{color:#ff7a6b;font-size:14px;min-height:20px;margin:10px 0 0}#ok{font-size:18px}a{color:#ffb02e}.m{color:#8a97a9;font-size:14px;margin-top:22px}</style>
+<main><div class="top"><img src="/icon-192.png" alt=""><b>PITLANE HQ</b></div>
+<form id="f"><h1>${esc6(t.title)}</h1><div class="cs">${chips}</div><textarea id="t" maxlength="${FEEDBACK_MAX}" placeholder="${esc6(t.more)}"></textarea><button id="s" type="submit">${esc6(t.send)}</button><p id="e" role="alert"></p></form>
+<div id="done" hidden><p id="ok">${esc6(t.thanks)}</p><p class="m"><a href="/downloads">${esc6(t.again)}</a></p></div></main>
+<script>(()=>{const f=document.getElementById("f"),e=document.getElementById("e"),s=document.getElementById("s"),V=${JSON.stringify(cleanV3(v))};
+f.onsubmit=async(ev)=>{ev.preventDefault();const reasons=[...f.querySelectorAll("input:checked")].map(x=>x.value),text=document.getElementById("t").value.trim();
+if(!reasons.length&&!text){e.textContent=${JSON.stringify(t.pick)};return}e.textContent="";s.disabled=true;
+try{const r=await fetch("/community/feedback/uninstall",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({reasons,text,v:V})});if(!r.ok)throw 0;f.hidden=true;document.getElementById("done").hidden=false}
+catch(x){e.textContent=${JSON.stringify(t.fail)};s.disabled=false}}})()<\/script></html>`;
+}
+__name(uninstallPage, "uninstallPage");
+async function netKey(req, now) {
+  const raw = "uninstall|" + new Date(now).toISOString().slice(0, 10) + "|" + (req.headers.get("cf-connecting-ip") || "");
+  const h = new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(raw)));
+  return "uninstall:" + [...h.slice(0, 8)].map((b2) => b2.toString(16).padStart(2, "0")).join("");
+}
+__name(netKey, "netKey");
+async function uninstallRoute(req, env, url, { send: send2 = /* @__PURE__ */ __name(async () => false, "send"), discord = /* @__PURE__ */ __name(async () => 0, "discord") } = {}) {
+  const p = url.pathname.replace(/\/+$/, "");
+  if (p === "/uninstalled" && req.method === "GET") {
+    return new Response(uninstallPage(uninstallLang(req, url), url.searchParams.get("v")), { headers: { "content-type": "text/html; charset=utf-8", "cache-control": "public, max-age=3600", vary: "Accept-Language" } });
+  }
+  if (p !== "/community/feedback/uninstall" || req.method !== "POST") return null;
+  if (isBot(req.headers.get("user-agent"))) return json14({ ok: true });
+  let b2 = null;
+  try {
+    b2 = JSON.parse((await req.text()).slice(0, 2e4));
+  } catch {
+    b2 = null;
+  }
+  const f = cleanUninstall(b2);
+  if (f.error) return json14({ error: f.error }, 400);
+  const now = Date.now(), who2 = await netKey(req, now);
+  const c = await env.DB.prepare("SELECT SUM(account_id=?1) AS mine, COUNT(*) AS n FROM feedback WHERE kind='uninstall' AND created>?2").bind(who2, now - 864e5).first();
+  if (c && (c.mine >= UNINSTALL_PER_DAY || c.n >= UNINSTALL_ALL_DAY)) return json14({ error: "thank you, that is enough for today" }, 429);
+  const id2 = crypto.randomUUID();
+  await env.DB.prepare("INSERT INTO feedback (id, account_id, created, device, v, rating, text, view, kind, style) VALUES (?1,?2,?3,?4,?5,NULL,?6,?7,?8,?9)").bind(id2, who2, now, f.device, f.v, f.text, f.view, f.kind, f.style).run();
+  const mailed = await send2(env, { ...f, nick: "", accountId: "" }).catch(() => false);
+  if (await discord(env, f).catch(() => 0) > 0) await env.DB.prepare("UPDATE feedback SET discord_at=?2 WHERE id=?1").bind(id2, now).run().catch(() => {
+  });
+  return json14({ ok: true, mailed });
+}
+__name(uninstallRoute, "uninstallRoute");
+
 // src/reportslib.js
 var APPS = ["pc", "web", "android", "ios"];
 var STACK_MAX = 8e3;
@@ -12506,7 +13110,7 @@ var LOGS_PER_DAY = 3;
 var CRASH_DAYS = 30;
 var USAGE_DAYS = 30;
 var clean = /* @__PURE__ */ __name((v, max) => String(v == null ? "" : v).replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f]/g, "").slice(0, max), "clean");
-var cleanV3 = /* @__PURE__ */ __name((v) => String(v == null ? "" : v).replace(/[^0-9a-zA-Z.+-]/g, "").slice(0, 24), "cleanV");
+var cleanV4 = /* @__PURE__ */ __name((v) => String(v == null ? "" : v).replace(/[^0-9a-zA-Z.+-]/g, "").slice(0, 24), "cleanV");
 function crashSig(app, where, msg, stack) {
   const norm = /* @__PURE__ */ __name((s2) => String(s2 || "").replace(/0x[0-9a-f]+/gi, "0x").replace(/\d+/g, "0"), "norm");
   const frames = String(stack || "").split("\n").map((l) => l.trim()).filter((l) => l && !/^goroutine |^\s*$/.test(l)).slice(0, 6).map(norm).join("|");
@@ -12519,14 +13123,14 @@ function crashSig(app, where, msg, stack) {
   return app + "-" + h.toString(36);
 }
 __name(crashSig, "crashSig");
-function cleanCrash(b) {
-  if (!b || typeof b !== "object") return { error: "missing body" };
-  const app = String(b.app || "").toLowerCase();
+function cleanCrash(b2) {
+  if (!b2 || typeof b2 !== "object") return { error: "missing body" };
+  const app = String(b2.app || "").toLowerCase();
   if (!APPS.includes(app)) return { error: "unknown app" };
-  const msg = clean(b.msg, MSG_MAX).trim();
+  const msg = clean(b2.msg, MSG_MAX).trim();
   if (!msg) return { error: "missing msg" };
-  const where = clean(b.where, 80).trim(), stack = clean(b.stack, STACK_MAX);
-  return { app, v: cleanV3(b.v), os: clean(b.os, 60), where, msg, stack, sig: crashSig(app, where, msg, stack) };
+  const where = clean(b2.where, 80).trim(), stack = clean(b2.stack, STACK_MAX);
+  return { app, v: cleanV4(b2.v), os: clean(b2.os, 60), where, msg, stack, sig: crashSig(app, where, msg, stack) };
 }
 __name(cleanCrash, "cleanCrash");
 var SQL_CRASH_ADD = `INSERT INTO crash_reports (sig, app, v, os, at_where, msg, stack, first, last, n, last_account) VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?8,1,?9)
@@ -12558,7 +13162,7 @@ function usageOf(rows) {
     d.written += r4.rows_written;
     days.set(r4.day, d);
   }
-  return { routes: [...by.values()].sort((a, b) => b.read - a.read), days: [...days.values()].sort((a, b) => a.day < b.day ? -1 : 1) };
+  return { routes: [...by.values()].sort((a, b2) => b2.read - a.read), days: [...days.values()].sort((a, b2) => a.day < b2.day ? -1 : 1) };
 }
 __name(usageOf, "usageOf");
 function routeKey(method, path) {
@@ -12566,62 +13170,62 @@ function routeKey(method, path) {
   return (method || "GET") + " " + (segs.join("/").slice(0, 80) || "/");
 }
 __name(routeKey, "routeKey");
-var json14 = /* @__PURE__ */ __name((o, s = 200) => new Response(JSON.stringify(o), { status: s, headers: { "content-type": "application/json", "cache-control": "no-store" } }), "json");
-var err10 = /* @__PURE__ */ __name((m, s) => json14({ error: m }, s), "err");
+var json15 = /* @__PURE__ */ __name((o, s = 200) => new Response(JSON.stringify(o), { status: s, headers: { "content-type": "application/json", "cache-control": "no-store" } }), "json");
+var err10 = /* @__PURE__ */ __name((m, s) => json15({ error: m }, s), "err");
 async function handleReports(req, env, url, { sessionAccount: sessionAccount2, isAdmin: isAdmin2 }) {
   const p = url.pathname, m = req.method, now = Date.now();
   if (p === "/community/crash" && m === "POST") {
     const raw = await req.text().catch(() => "");
     if (raw.length > STACK_MAX * 2) return err10("too big", 413);
-    let b = null;
+    let b2 = null;
     try {
-      b = JSON.parse(raw);
+      b2 = JSON.parse(raw);
     } catch (e) {
     }
-    const c = cleanCrash(b);
+    const c = cleanCrash(b2);
     if (c.error) return err10(c.error, 400);
     const acc2 = await sessionAccount2(req, env).catch(() => null);
     await env.DB.prepare(SQL_CRASH_ADD).bind(c.sig, c.app, c.v, c.os, c.where, c.msg, c.stack, now, acc2 ? acc2.id : null).run();
-    return json14({ ok: true });
+    return json15({ ok: true });
   }
   const ours = p === "/community/support/logs" || p === "/community/admin/crashes" || p.startsWith("/community/admin/crashes/") || p.startsWith("/community/admin/support/logs/") || p === "/community/admin/d1";
   if (!ours) return null;
   const acc = await sessionAccount2(req, env);
   if (!acc) return err10("sign in with your Pitlane HQ account", 401);
   if (p === "/community/support/logs" && m === "POST") {
-    const b = await req.json().catch(() => null) || {};
-    const text2 = clean(b.text, LOG_MAX + 1).replace(/\r\n?/g, "\n");
+    const b2 = await req.json().catch(() => null) || {};
+    const text2 = clean(b2.text, LOG_MAX + 1).replace(/\r\n?/g, "\n");
     if (!text2.trim()) return err10("the log is empty", 400);
     if (text2.length > LOG_MAX) return err10("the log is too big", 413);
     const c = await env.DB.prepare(SQL_LOGS_SINCE).bind(acc.id, now - 864e5).first();
     if (c && c.n >= LOGS_PER_DAY) return err10("that is enough for today, we answer soon", 429);
-    const id2 = crypto.randomUUID(), mid = crypto.randomUUID(), device = APPS.includes(String(b.device)) ? String(b.device) : "", v = cleanV3(b.v);
+    const id2 = crypto.randomUUID(), mid = crypto.randomUUID(), device = APPS.includes(String(b2.device)) ? String(b2.device) : "", v = cleanV4(b2.v);
     const kb = Math.max(1, Math.round(text2.length / 1024));
     const line = "Logs sent, " + kb + " KB";
     await env.DB.batch([
       env.DB.prepare(SQL_LOG_ADD).bind(id2, acc.id, now, device, v, text2.length, text2),
       ...driverMessage(env, acc.id, mid, now, { text: line, device, v, view: "log:" + id2, kind: "logs" })
     ]);
-    return json14({ ok: true, msg: { id: mid, me: true, text: line, created: now, kind: "logs" } });
+    return json15({ ok: true, msg: { id: mid, me: true, text: line, created: now, kind: "logs" } });
   }
   if (!isAdmin2(env, acc.id)) return err10("only the admins of this server can do this", 403);
   const days = Math.min(90, Math.max(1, parseInt(url.searchParams.get("days") || "7", 10) || 7));
   if (p === "/community/admin/crashes" && m === "GET") {
     const r4 = await env.DB.prepare(SQL_CRASHES).bind(now - days * 864e5).all();
-    return json14({ items: (r4.results || []).map((x) => ({ sig: x.sig, app: x.app, v: x.v, os: x.os, where: x.at_where, msg: x.msg, stack: x.stack, first: x.first, last: x.last, n: x.n, nick: x.nick || "" })) });
+    return json15({ items: (r4.results || []).map((x) => ({ sig: x.sig, app: x.app, v: x.v, os: x.os, where: x.at_where, msg: x.msg, stack: x.stack, first: x.first, last: x.last, n: x.n, nick: x.nick || "" })) });
   }
   if (p.startsWith("/community/admin/crashes/") && m === "DELETE") {
     await env.DB.prepare(SQL_CRASH_DEL).bind(decodeURIComponent(p.slice(25))).run();
-    return json14({ ok: true });
+    return json15({ ok: true });
   }
   if (p.startsWith("/community/admin/support/logs/") && m === "GET") {
     const r4 = await env.DB.prepare(SQL_LOG_GET).bind(decodeURIComponent(p.slice(30))).first();
     if (!r4) return err10("not found", 404);
-    return json14({ id: r4.id, accountId: r4.account_id, created: r4.created, device: r4.device || "", v: r4.v || "", bytes: r4.bytes, text: r4.text });
+    return json15({ id: r4.id, accountId: r4.account_id, created: r4.created, device: r4.device || "", v: r4.v || "", bytes: r4.bytes, text: r4.text });
   }
   if (p === "/community/admin/d1" && m === "GET") {
     const r4 = await env.DB.prepare(SQL_USAGE_DAYS).bind(day3(now - (days - 1) * 864e5)).all();
-    return json14(usageOf(r4.results || []));
+    return json15(usageOf(r4.results || []));
   }
   return err10("not found", 404);
 }
@@ -12693,18 +13297,18 @@ var reportsRoute = /* @__PURE__ */ __name((req, env, url) => handleReports(req, 
 
 // src/worker.js
 var JSONH10 = { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" };
-var json15 = /* @__PURE__ */ __name((v, status = 200) => new Response(JSON.stringify(v), { status, headers: JSONH10 }), "json");
-var err11 = /* @__PURE__ */ __name((msg, status) => json15({ error: msg }, status), "err");
-function same5(a, b) {
-  if (typeof a !== "string" || typeof b !== "string" || !a || a.length !== b.length) return false;
+var json16 = /* @__PURE__ */ __name((v, status = 200) => new Response(JSON.stringify(v), { status, headers: JSONH10 }), "json");
+var err11 = /* @__PURE__ */ __name((msg, status) => json16({ error: msg }, status), "err");
+function same5(a, b2) {
+  if (typeof a !== "string" || typeof b2 !== "string" || !a || a.length !== b2.length) return false;
   let d = 0;
-  for (let i = 0; i < a.length; i++) d |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  for (let i = 0; i < a.length; i++) d |= a.charCodeAt(i) ^ b2.charCodeAt(i);
   return d === 0;
 }
 __name(same5, "same");
 async function sha2563(t) {
-  const b = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(t));
-  return [...new Uint8Array(b)].map((x) => x.toString(16).padStart(2, "0")).join("");
+  const b2 = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(t));
+  return [...new Uint8Array(b2)].map((x) => x.toString(16).padStart(2, "0")).join("");
 }
 __name(sha2563, "sha256");
 async function who(req, env) {
@@ -12799,7 +13403,7 @@ async function api(req, env, url, ctx) {
   const role = me2.role;
   const p = url.pathname;
   const m = req.method;
-  if (p === "/api/me") return json15({ role, name: me2.name, display: me2.display });
+  if (p === "/api/me") return json16({ role, name: me2.name, display: me2.display });
   const admins = (env.ADMINS || env.SEASON_UPLOADERS || "").split(",").map((x) => x.trim()).filter(Boolean);
   const admin = role === "account" && admins.includes(me2.name.replace(/^acct:/, ""));
   const own = role === "account" ? me2.name : null;
@@ -12816,7 +13420,7 @@ async function api(req, env, url, ctx) {
       ).bind(me2.name, str4(body.session.track), str4(body.session.car), st - 12 * 36e5, st + 12 * 36e5).all().catch(() => ({ results: [] }));
       const times = (have.results || []).map((x) => x.time);
       body.laps = body.laps.filter((l) => l && (l.repair === true || !(num3(l.time) && times.some((t) => Math.abs(t - l.time) < 6e-4))));
-      if (!body.laps.length) return json15({ ok: true, shared: false, duplicate: true });
+      if (!body.laps.length) return json16({ ok: true, shared: false, duplicate: true });
     }
     let e = await upsertSession(env, body.session, me2.name);
     if (!e && posInt(body.session.trackId) && posInt(body.session.carId)) await reconcileIds(env, gameOf(body.session.game), str4(body.session.track), str4(body.session.trackConfig), str4(body.session.car), posInt(body.session.trackId), posInt(body.session.carId)).catch(() => {
@@ -12836,14 +13440,14 @@ async function api(req, env, url, ctx) {
     let shared = null;
     const imported = body.session.imported === true;
     if (role === "account") shared = await autoShare(env, me2.name.slice(5), body.session.id, body.laps, { trackId: body.session.trackId, carId: body.session.carId, lic: body.session.lic, cat: body.session.cat, imported }, imported ? null : ctx).catch(() => null);
-    return json15({ ok: true, shared: !!(shared && shared.shared) });
+    return json16({ ok: true, shared: !!(shared && shared.shared) });
   }
   if (p === "/api/sessions/summary" && m === "GET") {
     const q2 = url.searchParams;
-    return json15(await sessionSummary(env.DB, { from: q2.get("from"), tz: q2.get("tz"), game: q2.get("game") ? gameOf(q2.get("game")) : null, uploader: own || q2.get("who") || null }));
+    return json16(await sessionSummary(env.DB, { from: q2.get("from"), tz: q2.get("tz"), game: q2.get("game") ? gameOf(q2.get("game")) : null, uploader: own || q2.get("who") || null }));
   }
   if (p === "/api/sessions-owned" && m === "GET") {
-    if (!own) return json15({ tracks: [], cars: [] });
+    if (!own) return json16({ tracks: [], cars: [] });
     const { results } = await env.DB.prepare(
       "SELECT DISTINCT track, track_config, car FROM sessions WHERE uploader=?1 AND COALESCE(game,'iracing')='iracing' AND LOWER(COALESCE(kind,'')) NOT LIKE '%test%' LIMIT 2000"
     ).bind(own).all();
@@ -12853,7 +13457,7 @@ async function api(req, env, url, ctx) {
       if (r4.track) tracks2.set(r4.track + "\0" + cfg, [r4.track, cfg]);
       if (r4.car) cars.add(r4.car);
     }
-    return json15({ tracks: [...tracks2.values()], cars: [...cars] });
+    return json16({ tracks: [...tracks2.values()], cars: [...cars] });
   }
   if (p === "/api/sessions" && m === "GET") {
     const q2 = url.searchParams;
@@ -12887,7 +13491,7 @@ async function api(req, env, url, ctx) {
       } catch (e) {
       }
     }
-    return json15((results || []).map(placeOut).map(({ cat, lic, ...x }) => {
+    return json16((results || []).map(placeOut).map(({ cat, lic, ...x }) => {
       const ir = (x.game || "iracing") === "iracing";
       const c = ir ? catOf(cm, x.track_id, x.car_id, cat, x.track + (x.track_config ? " \xB7 " + x.track_config : ""), x.car) : "sports_car";
       return { ...x, cons: x.cons != null && x.cons >= 0 ? Math.round(Math.sqrt(x.cons) * 1e3) / 1e3 : null, cat: c, lic: lic || ir && c && lics[c] || null };
@@ -12907,7 +13511,7 @@ async function api(req, env, url, ctx) {
        FROM laps l JOIN sessions s ON s.id=l.session_id WHERE l.valid=1 AND l.drv IS NULL AND (?1 IS NULL OR s.uploader=?1)
        GROUP BY s.game, s.track, s.track_config, s.car, who ORDER BY last DESC LIMIT 600`
     ).bind(own).all();
-    return json15(results);
+    return json16(results);
   }
   let mm = p.match(/^\/api\/sessions\/([A-Za-z0-9_.:-]+)\/validate$/);
   if (mm && m === "POST") {
@@ -12924,8 +13528,8 @@ async function api(req, env, url, ctx) {
       }
     }, "secs");
     const med = /* @__PURE__ */ __name((a) => {
-      const b = a.filter((x) => x > 0).sort((x, y) => x - y);
-      return b.length ? b[Math.floor(b.length / 2)] : 0;
+      const b2 = a.filter((x) => x > 0).sort((x, y) => x - y);
+      return b2.length ? b2[Math.floor(b2.length / 2)] : 0;
     }, "med");
     const whole = ls.filter((l) => secs(l));
     let mt = med(whole.map((l) => l.time)), ms = [0, 1, 2].map((k) => med(whole.map((l) => secs(l)[k])));
@@ -12939,28 +13543,28 @@ async function api(req, env, url, ctx) {
     const ok = ls.filter((l) => !l.inc && secs(l) && mt > 0 && l.time >= 0.85 * mt && secs(l).every((v, k) => v >= 0.5 * ms[k]));
     if (ok.length) await env.DB.batch(ok.map((l) => env.DB.prepare("UPDATE laps SET valid=1 WHERE id=?1").bind(l.id)));
     await validityChanged(env, sid);
-    return json15({ ok: true, laps: ok.length });
+    return json16({ ok: true, laps: ok.length });
   }
   mm = p.match(/^\/api\/sessions\/([A-Za-z0-9_.:-]+)\/driver$/);
   if (mm && m === "POST") {
     const sid = decodeURIComponent(mm[1]);
     const s = await env.DB.prepare("SELECT uploader FROM sessions WHERE id=?1").bind(sid).first();
     if (!s || role === "viewer" || own && s.uploader !== own) return err11("not found", 404);
-    const b = await req.json().catch(() => ({}));
-    const n = Math.round(num3(b.n) || 0);
+    const b2 = await req.json().catch(() => ({}));
+    const n = Math.round(num3(b2.n) || 0);
     if (!n) return err11("which lap?", 400);
-    await env.DB.batch([env.DB.prepare("UPDATE laps SET drv=?3 WHERE session_id=?1 AND n=?2").bind(sid, n, lapDrv(b)), env.DB.prepare(SESSION_SUMS).bind(sid)]);
+    await env.DB.batch([env.DB.prepare("UPDATE laps SET drv=?3 WHERE session_id=?1 AND n=?2").bind(sid, n, lapDrv(b2)), env.DB.prepare(SESSION_SUMS).bind(sid)]);
     if (String(s.uploader).startsWith("acct:")) await reshareSession(env, String(s.uploader).slice(5), sid).catch(() => {
     });
-    return json15({ ok: true });
+    return json16({ ok: true });
   }
   mm = p.match(/^\/api\/sessions\/([A-Za-z0-9_.:-]+)\/incidents$/);
   if (mm && m === "POST") {
     const sid = decodeURIComponent(mm[1]);
     const s = await env.DB.prepare("SELECT uploader FROM sessions WHERE id=?1").bind(sid).first();
     if (!s || role === "viewer" || own && s.uploader !== own) return err11("not found", 404);
-    const b = await req.json().catch(() => ({}));
-    const laps = Array.isArray(b.laps) ? b.laps.slice(0, 200) : [];
+    const b2 = await req.json().catch(() => ({}));
+    const laps = Array.isArray(b2.laps) ? b2.laps.slice(0, 200) : [];
     const stmts = [];
     const have = (await env.DB.prepare("SELECT n, trace FROM laps WHERE session_id=?1 AND COALESCE(inc,0)=0").bind(sid).all()).results || [];
     const byN = new Map(have.map((r4) => [r4.n, r4]));
@@ -12982,18 +13586,18 @@ async function api(req, env, url, ctx) {
       stmts.push(env.DB.prepare("UPDATE laps SET inc=?3, trace=?4 WHERE session_id=?1 AND n=?2 AND COALESCE(inc,0)=0").bind(sid, n, inc, trace));
     }
     if (stmts.length) await env.DB.batch(stmts);
-    return json15({ ok: true, laps: stmts.length });
+    return json16({ ok: true, laps: stmts.length });
   }
   mm = p.match(/^\/api\/laps\/([A-Za-z0-9_.:-]+)\/valid$/);
   if (mm && m === "POST") {
     const admins2 = (env.ADMINS || env.SEASON_UPLOADERS || "").split(",").map((x) => x.trim()).filter(Boolean);
     if (role !== "account" || !admins2.includes(me2.name.replace(/^acct:/, ""))) return err11("only the admins of this server can do this", 403);
-    const b = await req.json().catch(() => ({}));
+    const b2 = await req.json().catch(() => ({}));
     const lid = decodeURIComponent(mm[1]);
-    const r4 = await env.DB.prepare("UPDATE laps SET valid=?2 WHERE id=?1").bind(lid, b.valid === false ? 0 : 1).run();
+    const r4 = await env.DB.prepare("UPDATE laps SET valid=?2 WHERE id=?1").bind(lid, b2.valid === false ? 0 : 1).run();
     const lr = await env.DB.prepare("SELECT session_id FROM laps WHERE id=?1").bind(lid).first();
     if (lr) await validityChanged(env, lr.session_id);
-    return json15({ ok: true, changed: r4.meta ? r4.meta.changes : void 0, valid: b.valid !== false });
+    return json16({ ok: true, changed: r4.meta ? r4.meta.changes : void 0, valid: b2.valid !== false });
   }
   mm = p.match(/^\/api\/sessions\/([A-Za-z0-9_.:-]+)$/);
   if (mm) {
@@ -13001,7 +13605,7 @@ async function api(req, env, url, ctx) {
       const own2 = await env.DB.prepare("SELECT uploader FROM sessions WHERE id=?1").bind(mm[1]).first();
       if (role === "viewer" || (role === "member" || role === "account") && (!own2 || own2.uploader !== me2.name)) return err11("you can only delete your own sessions", 403);
       await env.DB.batch([env.DB.prepare("DELETE FROM laps WHERE session_id=?1").bind(mm[1]), env.DB.prepare("DELETE FROM sessions WHERE id=?1").bind(mm[1])]);
-      return json15({ ok: true });
+      return json16({ ok: true });
     }
     const sid = decodeURIComponent(mm[1]);
     const s = await env.DB.prepare("SELECT * FROM sessions WHERE id=?1").bind(sid).first();
@@ -13015,25 +13619,25 @@ async function api(req, env, url, ctx) {
       const a = await env.DB.prepare("SELECT display FROM accounts WHERE id=?1").bind(String(s.uploader).slice(5)).first().catch(() => null);
       who2 = a && a.display || "";
     }
-    return json15({ session: { ...placeOut(s), cons: s.cons != null && s.cons >= 0 ? Math.round(Math.sqrt(s.cons) * 1e3) / 1e3 : null, ...who2 !== void 0 ? { other: true, who: who2 } : {} }, laps });
+    return json16({ session: { ...placeOut(s), cons: s.cons != null && s.cons >= 0 ? Math.round(Math.sqrt(s.cons) * 1e3) / 1e3 : null, ...who2 !== void 0 ? { other: true, who: who2 } : {} }, laps });
   }
   if (p === "/api/teambest" && m === "GET") {
     const q2 = url.searchParams;
     const l = await env.DB.prepare(
       `SELECT l.id FROM laps l JOIN sessions s ON s.id=l.session_id WHERE l.valid=1 AND l.drv IS NULL AND l.trace IS NOT NULL AND s.track=?1 AND COALESCE(s.track_config,'')=?2 AND s.car=?3 AND (?4 IS NULL OR s.uploader=?4) AND s.game=?5 ORDER BY l.time LIMIT 1`
     ).bind(q2.get("track") || "", q2.get("config") || "", q2.get("car") || "", own, gameOf(q2.get("game"))).first();
-    return json15(l || {});
+    return json16(l || {});
   }
   if (p === "/api/team") {
-    if (role === "account") return json15({ members: [], me: me2.display || me2.name, role });
+    if (role === "account") return json16({ members: [], me: me2.display || me2.name, role });
     if (m === "GET") {
       const { results } = await env.DB.prepare("SELECT name, created FROM members ORDER BY name").all();
-      return json15({ members: results, me: me2.name, role });
+      return json16({ members: results, me: me2.name, role });
     }
     if (role !== "owner") return err11("only the owner manages the team", 403);
     if (m === "POST") {
-      const b = await req.json().catch(() => ({}));
-      const name2 = str4(b.name, 40);
+      const b2 = await req.json().catch(() => ({}));
+      const name2 = str4(b2.name, 40);
       if (!name2 || !/^[\p{L}\p{N} _.'-]{2,40}$/u.test(name2) || name2 === "owner" || name2 === "viewer") return err11("choose a name of 2 to 40 letters", 400);
       const key2 = [...crypto.getRandomValues(new Uint8Array(24))].map((x) => x.toString(16).padStart(2, "0")).join("");
       try {
@@ -13041,37 +13645,37 @@ async function api(req, env, url, ctx) {
       } catch (e) {
         return err11("that name is already in the team", 400);
       }
-      return json15({ name: name2, key: key2 });
+      return json16({ name: name2, key: key2 });
     }
   }
   mm = p.match(/^\/api\/team\/(.+)$/);
   if (mm && m === "DELETE") {
     if (role !== "owner") return err11("only the owner manages the team", 403);
     await env.DB.prepare("DELETE FROM members WHERE name=?1").bind(decodeURIComponent(mm[1])).run();
-    return json15({ ok: true });
+    return json16({ ok: true });
   }
   mm = p.match(/^\/api\/laps\/([A-Za-z0-9_.:-]+)\/valid$/);
   if (mm && m === "POST") {
     if (!admin) return err11("only the admins of this server can do this", 403);
-    const b = await req.json().catch(() => ({}));
+    const b2 = await req.json().catch(() => ({}));
     const l = await env.DB.prepare("SELECT l.session_id, s.uploader FROM laps l JOIN sessions s ON s.id=l.session_id WHERE l.id=?1").bind(decodeURIComponent(mm[1])).first();
     if (!l) return err11("not found", 404);
-    await env.DB.batch([env.DB.prepare("UPDATE laps SET valid=?2 WHERE id=?1").bind(decodeURIComponent(mm[1]), b.valid ? 1 : 0), env.DB.prepare(SESSION_SUMS).bind(l.session_id)]);
+    await env.DB.batch([env.DB.prepare("UPDATE laps SET valid=?2 WHERE id=?1").bind(decodeURIComponent(mm[1]), b2.valid ? 1 : 0), env.DB.prepare(SESSION_SUMS).bind(l.session_id)]);
     if (String(l.uploader).startsWith("acct:")) {
       const uid = String(l.uploader).slice(5);
-      if (b.valid) await reshareSession(env, uid, l.session_id).catch(() => {
+      if (b2.valid) await reshareSession(env, uid, l.session_id).catch(() => {
       });
       else await unshareInvalid(env, uid, l.session_id).catch(() => {
       });
     }
-    return json15({ ok: true });
+    return json16({ ok: true });
   }
   mm = p.match(/^\/api\/laps\/([A-Za-z0-9_.:-]+)$/);
   if (mm && m === "GET") {
     const lid = decodeURIComponent(mm[1]);
     const l = await env.DB.prepare("SELECT l.*, s.track, s.car, s.started, s.driver, s.uploader FROM laps l JOIN sessions s ON s.id=l.session_id WHERE l.id=?1").bind(lid).first();
     if (!l || ownRead && l.uploader !== ownRead) return err11("not found", 404);
-    return json15({ ...l, trace: l.trace ? JSON.parse(await openData(env, l.trace)) : null, sectors: l.sectors ? JSON.parse(l.sectors) : null });
+    return json16({ ...l, trace: l.trace ? JSON.parse(await openData(env, l.trace)) : null, sectors: l.sectors ? JSON.parse(l.sectors) : null });
   }
   return err11("not found", 404);
 }
@@ -13242,9 +13846,14 @@ async function handle(req, env, ctx) {
     const lp = legal(req, url);
     if (lp) return lp;
   }
+  if (url.pathname.startsWith("/uninstalled") || url.pathname === "/community/feedback/uninstall") {
+    const r4 = await uninstallRoute(req, env, url, { send: sendFeedback, discord: discordFeedback }).catch((e) => new Response(JSON.stringify({ error: "server error: " + (e && e.message) }), { status: 500, headers: { "content-type": "application/json" } }));
+    if (r4) return r4;
+  }
   if (url.pathname.startsWith("/dl/") || url.pathname.startsWith("/downloads") || url.pathname.startsWith("/changelog")) return downloads(req, env, url);
+  if (url.pathname === "/community/admin/discord-server") return discordServerRoute(req, env, url);
   if (url.pathname === "/community/admin/online" && req.method === "GET") return onlineRoute(req, env).catch((e) => new Response(JSON.stringify({ error: "server error: " + (e && e.message) }), { status: 500, headers: { "content-type": "application/json" } }));
-  if (url.pathname.startsWith("/community/usage") || url.pathname.startsWith("/community/feedback") || url.pathname === "/community/visit" || url.pathname === "/community/admin/analytics" || url.pathname === "/community/admin/feedback") {
+  if (url.pathname.startsWith("/community/usage") || url.pathname.startsWith("/community/feedback") || url.pathname === "/community/visit" || url.pathname === "/community/admin/analytics" || url.pathname.startsWith("/community/admin/feedback")) {
     const r4 = await usageRoute(req, env, url).catch((e) => new Response(JSON.stringify({ error: "server error: " + (e && e.message) }), { status: 500, headers: { "content-type": "application/json" } }));
     if (r4) return r4;
   }
@@ -13273,8 +13882,8 @@ async function handle(req, env, ctx) {
         const res = await accounts(req, env, url);
         if (res && url.pathname === "/account/sync/meta") {
           try {
-            const b = await latestBuild(env);
-            if (b) res.headers.set("X-Pitlane-Build", b);
+            const b2 = await latestBuild(env);
+            if (b2) res.headers.set("X-Pitlane-Build", b2);
           } catch (e) {
           }
         }

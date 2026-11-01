@@ -20,6 +20,9 @@
   const IRP = () => ({ es: "/es/telemetria-iracing", pt: "/pt/telemetria-iracing" })[L()] || "/iracing-telemetry";
   const LMUP = () => ({ es: "/es/telemetria-le-mans-ultimate", pt: "/pt/telemetria-le-mans-ultimate" })[L()] || "/le-mans-ultimate-telemetry";
 
+  // the Microsoft Store listing (apps.microsoft.com/detail/<Store ID>): "Coming soon" until it is set, the same
+  // address as MS_STORE in cloud/src/downloads.js and index.html
+  const MS_STORE = "";
   const ICON = {
     dl: '<svg viewBox="0 0 24 24"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>',
     rec: '<svg viewBox="0 0 24 24"><path d="M8 21h8"/><path d="M12 17v4"/><path d="M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M17 5h3v2a3 3 0 0 1-3 3"/><path d="M7 5H4v2a3 3 0 0 0 3 3"/></svg>',
@@ -27,6 +30,7 @@
     lang: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3a14 14 0 0 1 0 18a14 14 0 0 1 0-18"/></svg>',
     win: '<svg viewBox="0 0 24 24"><path d="M3 5.5 10.5 4.4v7.1H3zM11.5 4.3 21 3v8.5h-9.5zM3 12.5h7.5v7.1L3 18.5zM11.5 12.5H21V21l-9.5-1.3z"/></svg>',
     and: '<svg viewBox="0 0 24 24"><path d="M6 10h12v7a1 1 0 0 1-1 1h-1v3h-2v-3h-4v3H8v-3H7a1 1 0 0 1-1-1zM3.5 10h1.5v6H3.5zM19 10h1.5v6H19zM7.6 4.2l1.1 1.6A6 6 0 0 0 6 9h12a6 6 0 0 0-2.7-3.2l1.1-1.6"/></svg>',
+    ms: '<svg viewBox="0 0 24 24"><path d="M3 3h8.5v8.5H3zM12.5 3H21v8.5h-8.5zM3 12.5h8.5V21H3zM12.5 12.5H21V21h-8.5z"/></svg>',
     steam: '<svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 0 0-9.9 8.6l5.4 2.2a2.8 2.8 0 0 1 1.6-.5h.2l2.4-3.5v-.1a3.8 3.8 0 1 1 3.8 3.8h-.1l-3.4 2.5v.2a2.8 2.8 0 0 1-5.6.4l-3.9-1.6A10 10 0 1 0 12 2zm3.5 4.7a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5z"/></svg>',
     discord: '<svg viewBox="0 0 24 24"><path d="M19.6 5.3A17 17 0 0 0 15.4 4l-.5 1a16 16 0 0 0-5.8 0l-.5-1a17 17 0 0 0-4.2 1.3C1.7 9.4 1 13.4 1.3 17.3A17 17 0 0 0 6.5 20l1.1-1.7a11 11 0 0 1-1.7-.8l.4-.3a12 12 0 0 0 11.4 0l.4.3a11 11 0 0 1-1.7.8l1.1 1.7a17 17 0 0 0 5.2-2.7c.4-4.5-.7-8.5-3.1-12zM8.5 14.9c-1 0-1.9-1-1.9-2.2s.8-2.2 1.9-2.2 1.9 1 1.9 2.2-.8 2.2-1.9 2.2zm7 0c-1 0-1.9-1-1.9-2.2s.8-2.2 1.9-2.2 1.9 1 1.9 2.2-.8 2.2-1.9 2.2z"/></svg>',
   };
@@ -161,7 +165,7 @@
     return `<section class="tr-hero"><div><div class="tr-eyb">iRacing <span>·</span> Le Mans Ultimate <span>(beta)</span></div>
 <h1>${t("Telemetry, coach and <em>overlays</em> for your laps", "Telemetría, coach y <em>overlays</em> para tus vueltas", "Telemetria, coach e <em>overlays</em> para suas voltas")}</h1>
 <p class="tr-lead">${esc(t("Pitlane HQ records every iRacing and Le Mans Ultimate lap while you drive, tells you which corner costs you time and puts the overlays over the game.", "Pitlane HQ guarda cada vuelta de iRacing y Le Mans Ultimate mientras conduces, te dice en qué curva pierdes tiempo y pone los overlays encima del juego.", "O Pitlane HQ grava cada volta do iRacing e do Le Mans Ultimate enquanto você pilota, diz em qual curva você perde tempo e coloca os overlays sobre o jogo."))}</p>
-<div class="tr-ctas"><button type="button" class="tr-b tr-p" data-tr="create">${esc(t("Create account", "Crear cuenta", "Criar conta"))}</button><a class="tr-b" href="/dl/PitlaneHQ-Setup.exe">${ICON.win}${esc(t("Download for Windows", "Descargar para Windows", "Baixar para Windows"))}</a><a class="tr-b" href="/dl/PitlaneHQ-Android.apk">${ICON.and}Android</a><span class="tr-b tr-soon" aria-disabled="true">${ICON.steam}Steam<small>${esc(t("Coming soon", "Próximamente", "Em breve"))}</small></span></div>
+<div class="tr-ctas"><button type="button" class="tr-b tr-p" data-tr="create">${esc(t("Create account", "Crear cuenta", "Criar conta"))}</button><a class="tr-b" href="/dl/PitlaneHQ-Setup.exe">${ICON.win}${esc(t("Download for Windows", "Descargar para Windows", "Baixar para Windows"))}</a><a class="tr-b" href="/dl/PitlaneHQ-Android.apk">${ICON.and}Android</a>${MS_STORE ? `<a class="tr-b" href="${MS_STORE}" rel="noopener">${ICON.ms}Microsoft Store</a>` : `<span class="tr-b tr-soon" aria-disabled="true">${ICON.ms}Microsoft Store<small>${esc(t("Coming soon", "Próximamente", "Em breve"))}</small></span>`}<span class="tr-b tr-soon" aria-disabled="true">${ICON.steam}Steam<small>${esc(t("Coming soon", "Próximamente", "Em breve"))}</small></span></div>
 <p class="tr-hint">${esc(t("Run an iRacing or LMU league?", "¿Organizas una liga de iRacing o LMU?", "Organiza uma liga de iRacing ou LMU?"))} <button type="button" data-tr="league">${esc(t("Post it for free", "Publícala gratis", "Publique de graça"))} →</button></p></div>
 <div class="tr-auth"></div></section>
 <section class="tr-sec">${head(t("What Pitlane HQ does", "Qué hace Pitlane HQ", "O que o Pitlane HQ faz"), t("See it from the inside", "Míralo por dentro", "Veja por dentro"))}

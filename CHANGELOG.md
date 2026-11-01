@@ -10,6 +10,7 @@ improvements". 1.0.0 comes when the beta ends. Newest first.
 - The Discord bot's /pro shows what will be part of Pitlane HQ Pro when the beta ends and what stays free.
 - When you uninstall Pitlane HQ from your PC, a short page asks why, so we can make it better.
 - The downloads show Steam as coming soon.
+- Pitlane HQ is coming to the Microsoft Store, beside the download from our website. The Store keeps that copy up to date by itself.
 - Fixes and improvements.
 
 ## 0.9.8 beta

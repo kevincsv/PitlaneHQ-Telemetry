@@ -771,3 +771,37 @@ func TestLMUFieldVarsInImage(t *testing.T) {
 		}
 	}
 }
+
+func TestLMUEnergyPerLap(t *testing.T) {
+	var e lmuEnergy
+	e.note(0, 1, true) // out of the pits
+	e.note(0, 0.99, false)
+	e.note(1, 0.98, false) // the out lap went through the pits: not counted
+	if e.perLap() != 0 {
+		t.Fatalf("out lap counted: %v", e.perLap())
+	}
+	e.note(2, 0.93, false)
+	e.note(3, 0.87, false)
+	if u := e.perLap(); math.Abs(u-0.055) > 1e-9 {
+		t.Fatalf("per lap %v, want 0.055", u)
+	}
+	e.note(3, 0.5, true) // a stop: the refill lap teaches nothing
+	e.note(4, 1, false)
+	if u := e.perLap(); math.Abs(u-0.055) > 1e-9 {
+		t.Fatalf("stop lap counted: %v", u)
+	}
+	e.note(0, 1, false) // a restart
+	if e.perLap() != 0 {
+		t.Fatalf("restart kept %v", e.perLap())
+	}
+}
+
+func TestLMUFuelPerLap(t *testing.T) {
+	e := lmuEnergy{max: 30}
+	e.note(1, 60, false)
+	e.note(2, 56.5, false)
+	e.note(3, 53.1, false)
+	if u := e.perLap(); math.Abs(u-3.45) > 1e-9 {
+		t.Fatalf("fuel per lap %v, want 3.45", u)
+	}
+}

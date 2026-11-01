@@ -23,6 +23,10 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   laps, best lap, LMU marked) with "Open Pitlane HQ". /track (free, public): a track's record on each of its 10 most
   driven cars with how many drivers, and your three best places there (not for an anonymous account); the track picked
   from a list as you type (`tracks`).
+- Le Mans Ultimate as much as iRacing: /record, /coach, /board and /track list both games' cars and tracks as you type
+  (`combos`, `tracks`; an LMU one reads "LMU · " in the list, its value starts with "lmu:", an iRacing one stays "t-c"),
+  answer from that game's laps (its model for /coach) with "Le Mans Ultimate · " before the title and the LMU record
+  page; /compare and the weekly post take both games, LMU marked.
 - /league (the server's managers): links the server to its league in the leagues hub (picked as you type; empty
   unlinks). The league's invite must lead to that server (the bot asks Discord where it goes, `inviteGuild`), so nobody
   takes another server's league. A linked league shows "Pitlane HQ bot" in the hub (`bot` on GET /community/leagues;

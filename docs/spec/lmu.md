@@ -26,3 +26,8 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   are per game on the server (`track_maps`, `track_pits`, `track_turns` keyed by game and track id, the agent's
   `/api/trackmap` and `/api/turns` default to the game being read). The map's position is made from the game's
   world frame (left-handed: north = -z, east = -x, to be confirmed against a real circuit).
+- Virtual energy (Hypercars, LMGT3): besides the % on the dash, the agent measures what a green lap takes (`lmuEnergy`:
+  the energy between two crossings of the line on a lap that never went through the pits, the average of the last five,
+  `VirtualEnergyPerLap`), and the fuel the same way in litres (`FuelUsePerLap`, which the phones read). The fuel overlay
+  (native and web, `energyLine`, `#fuelEnergy`) and the phones' Fuel card add a line only for a car with energy: the
+  energy left, its use a lap and the laps it lasts, amber when it falls short of the finish or runs out before the fuel.

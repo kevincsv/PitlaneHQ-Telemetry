@@ -15,8 +15,9 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   the three languages, linked at the foot of every public page and in the app's <noscript>: the coach, comparing laps,
   braking points, the racing line, the iRating, the shift beep, telemetry on the phone, free telemetry, the fuel
   calculator /iracing-fuel-calculator (the fuel overlay, which measures each lap; never a form to fill in), and for Le
-  Mans Ultimate the coach /le-mans-ultimate-coach, comparing laps /le-mans-ultimate-lap-comparison and braking points
-  /le-mans-ultimate-braking-points; the iRacing guides that work in Le Mans Ultimate say so and link its page (its
+  Mans Ultimate the coach /le-mans-ultimate-coach, comparing laps /le-mans-ultimate-lap-comparison, braking points
+  /le-mans-ultimate-braking-points and virtual energy /le-mans-ultimate-virtual-energy (energy and fuel measured per lap, never
+  a form to fill in); the iRacing guides that work in Le Mans Ultimate say so and link its page (its
   guide, its telemetry page or its overlays page), the iRating one stays iRacing only); the overlays pages name the six
   looks and the per-overlay settings; /records, /es/records and /pt/records, one page per car and track (BreadcrumbList; the
   records index an ItemList and a FAQPage; the landings WebSite, Organization, SoftwareApplication and FAQPage; every
@@ -33,7 +34,7 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   page names the game in full, then as "LMU", then not at all while its car and track do not fit, `recTitle`; one
   driver's record says it is the only lap). A Le Mans Ultimate page promises only what the game gives (no pit lane
   limit, the rivals' positions about five times a second), the Le Mans Ultimate pages name the shared guides without
-  "iRacing" (`LMU_TOO_H`), the league pages say their leagues are found on Reddit, and the 404 page has no canonical.
+  "iRacing" (`LMU_TOO_H`: the phone, free and shift beep guides), the league pages say their leagues are found on Reddit, and the 404 page has no canonical.
   `cloud/test/seo.test.mjs` draws every page in the three languages and checks the titles, descriptions, canonical,
   hreflang, JSON-LD, links, sitemap and index.html's head and <noscript>. The sitemap carries every language
   (xhtml:link) and a lastmod everywhere (`SEO_DATE` for the pages without data); IndexNow sends every page again when

@@ -61,6 +61,10 @@ func lmuVarDefs() []demoVar {
 		{name: "dcEngineMapMax", desc: "Highest engine map of this car", typ: TypeFloat},
 		{name: "dcBrakeBias", desc: "In car brake bias (front)", unit: "%", typ: TypeFloat},
 		{name: "VirtualEnergyPct", desc: "Virtual energy left (Le Mans Ultimate)", unit: "%", typ: TypeFloat},
+		// the virtual energy a green lap takes (the average of the last ones, lmuEnergy), so the fuel overlay, the web and
+		// the phones say the laps it lasts and whether it runs out before the fuel
+		{name: "FuelUsePerLap", desc: "Fuel used per lap, the average of the last laps", unit: "l", typ: TypeFloat},
+		{name: "VirtualEnergyPerLap", desc: "Virtual energy used per lap, the average of the last laps (Le Mans Ultimate)", unit: "%", typ: TypeFloat},
 		{name: "WindVel", desc: "Wind velocity at start/finish line", unit: "m/s", typ: TypeFloat},
 		{name: "WindDir", desc: "Wind direction at start/finish line", unit: "rad", typ: TypeFloat},
 		// the game's own verdict on the lap under way: 2 the lap and its time count, 1 the lap only, 0 neither
@@ -135,7 +139,9 @@ type lmuSource struct {
 	secStore   map[string][3]float64 // the learned sector starts of every track, kept in secPath
 	secPath    string                // "" in tests: nothing is written
 	fuel       lmuFuel
-	onTrack    bool // the game in its realtime (driving, or in the car in the garage): its REST API is left alone (lmurest.go)
+	energy     lmuEnergy
+	fuelLap    lmuEnergy // the fuel a green lap takes, in litres (FuelUsePerLap, which the phones read)
+	onTrack    bool      // the game in its realtime (driving, or in the car in the garage): its REST API is left alone (lmurest.go)
 	// kept between frames, so a frame allocates nothing once warm: the cars, the telemetry slots by vehicle id, each
 	// car's texts as last decoded (by vehicle id, read again only when their bytes change), the classes and the
 	// image's per-car variables, looked up once
@@ -447,6 +453,63 @@ func (f *lmuFuel) note(et, level, speed, lap float64, pits bool) {
 
 var lmuNumRe = regexp.MustCompile(`#\s*(\d{1,3})`)
 
+// lmuEnergy measures the virtual energy a lap takes (Hypercars and LMGT3 run on an energy allowance per stint, which often
+// runs out before the fuel): what went between two crossings of the line, for a lap that never went through the pits
+// (a refill) and whose use looks like a lap's (a reset or a new car teach nothing); perLap is the average of the last
+// five such laps. The same measure, with max set to litres, gives the fuel a lap takes (s.fuelLap).
+const lmuEnergyMax = 0.5
+
+type lmuEnergy struct {
+	max   float64 // the most a lap can take (0: lmuEnergyMax, the energy's fraction); more is a reset or a new car
+	init  bool
+	lap   int
+	start float64 // the energy left when this lap began
+	pit   bool    // this lap went through the pits or the garage
+	uses  []float64
+}
+
+func (e *lmuEnergy) note(lap int, ve float64, pits bool) {
+	if !e.init || lap < e.lap { // the first frame, or the laps counted again (another session, a restart)
+		*e = lmuEnergy{max: e.max, init: true, lap: lap, start: ve, pit: pits, uses: e.uses[:0]}
+		return
+	}
+	if pits {
+		e.pit = true
+	}
+	if lap == e.lap {
+		return
+	}
+	if lap == e.lap+1 && !e.pit {
+		mx := e.max
+		if mx <= 0 {
+			mx = lmuEnergyMax
+		}
+		if use := e.start - ve; use > mx/250 && use < mx {
+			e.uses = append(e.uses, use)
+			if len(e.uses) > 10 {
+				e.uses = e.uses[1:]
+			}
+		}
+	}
+	e.lap, e.start, e.pit = lap, ve, pits
+}
+
+func (e *lmuEnergy) perLap() float64 {
+	n := len(e.uses)
+	if n == 0 {
+		return 0
+	}
+	k := n
+	if k > 5 {
+		k = 5
+	}
+	sum := 0.0
+	for _, v := range e.uses[n-k:] {
+		sum += v
+	}
+	return sum / float64(k)
+}
+
 // lmuDriverID: a stable id for a driver of Le Mans Ultimate, from the name the game shows (the game gives no id):
 // the same driver takes the same id in every session, two drivers never the same one in practice, and far above
 // iRacing's ids, so their rivals never meet on the server (driverKey hashes it as "pitlanehq-other|<id>")
@@ -506,6 +569,7 @@ func (s *lmuSource) convert(b []byte) bool {
 
 	if session != s.sessNum || s.idxByID == nil { // another session: the indexes start again (writeSession forgets the bests)
 		s.idxByID, s.idxSeen = map[int]int{}, map[int]float64{}
+		s.energy, s.fuelLap = lmuEnergy{}, lmuEnergy{max: 30} // another car, another allowance
 	}
 	cars := s.cars[:0]
 	player := -1 // the player's place in cars (cars[player].idx is their index in the image)
@@ -781,6 +845,15 @@ func (s *lmuSource) playerTelemetry(b []byte, to int, cars []lmuCar, player int)
 	if player >= 0 {
 		p := cars[player]
 		s.fuel.note(lf64(b, to+vt_mElapsedTime), fuel, math.Hypot(vel.x, vel.z), lmuTime(p.last), p.inPits || p.garage)
+		if fuel > 0 {
+			if s.fuelLap.max == 0 {
+				s.fuelLap.max = 30
+			}
+			s.fuelLap.note(p.laps, fuel, p.inPits || p.garage)
+		}
+	}
+	if u := s.fuelLap.perLap(); u > 0 {
+		m.set("FuelUsePerLap", u)
 	}
 	if s.fuel.rate > 0 {
 		m.set("FuelUsePerHour", s.fuel.rate*lmuFuelKgPerLtr)
@@ -810,6 +883,13 @@ func (s *lmuSource) playerTelemetry(b []byte, to int, cars []lmuCar, player int)
 	}
 	if ve := lf32(b, to+vt_mVirtualEnergy); ve > 0 {
 		m.set("VirtualEnergyPct", ve)
+		if player >= 0 {
+			p := cars[player]
+			s.energy.note(p.laps, ve, p.inPits || p.garage)
+		}
+	}
+	if u := s.energy.perLap(); u > 0 {
+		m.set("VirtualEnergyPerLap", u)
 	}
 	warn := 0
 	if lu8(b, to+vt_mOverheating) != 0 {

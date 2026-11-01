@@ -168,8 +168,10 @@
     const don = (() => { try { return typeof donateUrl === "function" ? donateUrl() : ""; } catch (e) { return ""; } })();
     return `<section class="tr-sec" id="pricing">${head(t("Pricing", "Precios", "Preços"), t("Free while it is in beta", "Gratis mientras está en beta", "Grátis enquanto está em beta"), t("Every feature is open to everyone during the beta. Pro arrives when it ends.", "Todas las funciones están abiertas a todos durante la beta. Pro llega cuando termine.", "Todos os recursos estão abertos a todos durante o beta. O Pro chega quando ele terminar."))}
 <div class="tr-plans">${plan("", "Free", "$0", t("forever", "para siempre", "para sempre"), "", FREE(), `<button type="button" class="tr-b tr-p" data-tr="create">${esc(t("Create account", "Crear cuenta", "Criar conta"))}</button>`)}
-${plan(" tr-pro", "Pro", "$0", t("during the beta", "durante la beta", "durante o beta"), t("Free in beta", "Gratis en beta", "Grátis no beta"), PROL(), `<p class="tr-after">${esc(t("After the beta $3 a month or $29 a year.", "Después de la beta $3 al mes o $29 al año.", "Depois do beta $3 por mês ou $29 por ano."))}</p>`)}</div>
-${don ? `<p class="tr-hint">${esc(t("Want to help Pitlane HQ grow?", "¿Quieres ayudar a que Pitlane HQ crezca?", "Quer ajudar o Pitlane HQ a crescer?"))} <a href="${esc(don)}" target="_blank" rel="noopener">${esc(t("Support it", "Apóyalo", "Apoie"))} →</a></p>` : ""}</section>`;
+${plan(" tr-pro", "Pro", "$0", t("during the beta", "durante la beta", "durante o beta"), t("Free in beta", "Gratis en beta", "Grátis no beta"), PROL(), `<p class="tr-after">${esc(t("After the beta $6 a month or $59 a year.", "Después de la beta $6 al mes o $59 al año.", "Depois do beta $6 por mês ou $59 por ano."))}</p>`)}</div>
+<div class="tr-card tr-sup"><div><span class="tr-tag">${esc(t("Supporters", "Supporters", "Apoiadores"))}</span><h3>${esc(t("Support the beta and pay half, forever", "Apoya la beta y paga la mitad, para siempre", "Apoie o beta e pague metade, para sempre"))}</h3>
+<ul><li>${CHK}${esc(t("Pro at 50% for as long as you keep it, $3 a month or $29.50 a year", "Pro al 50% mientras lo mantengas, $3 al mes o $29,50 al año", "Pro com 50% enquanto você mantiver, $3 por mês ou $29,50 por ano"))}</li><li>${CHK}${esc(t("Pro for life for $30, for the first two months after the beta", "Pro de por vida por $30, durante los dos primeros meses tras la beta", "Pro vitalício por $30, nos dois primeiros meses depois do beta"))}</li><li>${CHK}${esc(t("Any amount counts, from $1", "Cualquier cantidad cuenta, desde $1", "Qualquer valor conta, a partir de $1"))}</li></ul></div>
+${don ? `<a class="tr-b tr-p" href="${esc(don)}" target="_blank" rel="noopener">${esc(t("Support Pitlane HQ", "Apoya Pitlane HQ", "Apoie o Pitlane HQ"))}</a>` : ""}</div></section>`;
   }
   const DISC = { oval: ["Oval", "Óvalo", "Oval"], sports_car: ["Sports Car", "Sports Car", "Sports Car"], formula_car: ["Formula Car", "Fórmula", "Fórmula"], dirt_oval: ["Dirt Oval", "Óvalo de tierra", "Oval de terra"], dirt_road: ["Dirt Road", "Tierra", "Terra"] };
   const head = (eyb, h2, p) => `<header class="tr-sh"><div><span class="tr-eyb">${esc(eyb)}</span><h2>${esc(h2)}</h2></div>${p ? `<p>${esc(p)}</p>` : ""}</header>`;
@@ -358,6 +360,12 @@ html.tour-on #v-me>.vhead,html.tour-on #meBody>.me-welcome,html.tour-on #meBody>
 #tour .tr-plan li{display:flex;gap:10px;align-items:flex-start;font-size:14px;line-height:1.45;color:#cfd6de}
 #tour .tr-plan li svg{width:16px;height:16px;flex:none;margin-top:2px;fill:none;stroke:#ffb02e;stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round}
 #tour .tr-after{margin:0;padding:12px 14px;border-radius:8px;background:#11161d;border:1px solid #263140;color:#cfd6de;font-size:14px}
+#tour .tr-sup{max-width:880px;box-sizing:border-box;margin-top:14px;display:flex;align-items:center;justify-content:space-between;gap:24px;padding:22px 24px;border-style:dashed;border-color:#ffb02e66}
+#tour .tr-sup h3{margin:10px 0 12px}#tour .tr-sup ul{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+#tour .tr-sup li{display:flex;gap:10px;align-items:flex-start;font-size:14px;line-height:1.45;color:#cfd6de}
+#tour .tr-sup li svg{width:16px;height:16px;flex:none;margin-top:2px;fill:none;stroke:#ffb02e;stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round}
+#tour .tr-sup .tr-b{flex:none}
+@media(max-width:720px){#tour .tr-sup{flex-direction:column;align-items:stretch}}
 #tour .tr-hint a{color:#ffb02e;font-weight:600;text-decoration:none}
 #tour #pricing{scroll-margin-top:72px}
 #tour .tr-steps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}#tour .tr-steps s{text-decoration:none;font:700 13px var(--f-data);color:#ffb02e}

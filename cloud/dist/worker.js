@@ -2426,29 +2426,29 @@ var same = /* @__PURE__ */ __name((a, b2) => {
   return r4 === 0;
 }, "same");
 async function patreonWebhook(req, env) {
-  const json17 = /* @__PURE__ */ __name((o, s = 200) => new Response(JSON.stringify(o), { status: s, headers: { "content-type": "application/json" } }), "json");
-  if (!env.PATREON_WEBHOOK_SECRET) return json17({ error: "Patreon is not set up on this server" }, 404);
+  const json18 = /* @__PURE__ */ __name((o, s = 200) => new Response(JSON.stringify(o), { status: s, headers: { "content-type": "application/json" } }), "json");
+  if (!env.PATREON_WEBHOOK_SECRET) return json18({ error: "Patreon is not set up on this server" }, 404);
   const body = await req.text();
-  if (body.length > 2e5) return json17({ error: "too large" }, 413);
+  if (body.length > 2e5) return json18({ error: "too large" }, 413);
   const sig = (req.headers.get("x-patreon-signature") || "").toLowerCase();
-  if (!sig || !same(sig, hmacMd5Hex(env.PATREON_WEBHOOK_SECRET, body))) return json17({ error: "bad signature" }, 401);
+  if (!sig || !same(sig, hmacMd5Hex(env.PATREON_WEBHOOK_SECRET, body))) return json18({ error: "bad signature" }, 401);
   let j = null;
   try {
     j = JSON.parse(body);
   } catch (e) {
-    return json17({ error: "not JSON" }, 400);
+    return json18({ error: "not JSON" }, 400);
   }
   const ev = req.headers.get("x-patreon-event") || "";
   const at2 = j && j.data && j.data.attributes || {};
   const email = String(at2.email || "").trim().toLowerCase();
-  if (!email) return json17({ ok: true, skipped: "no email" });
+  if (!email) return json18({ ok: true, skipped: "no email" });
   const active = !/delete/.test(ev) && at2.patron_status === "active_patron";
   const eh = await emailHash(env, email), now = Date.now();
   await env.DB.batch([
     env.DB.prepare("INSERT INTO patreon_patrons (email_hash, active, updated) VALUES (?1,?2,?3) ON CONFLICT(email_hash) DO UPDATE SET active=excluded.active, updated=excluded.updated").bind(eh, active ? 1 : 0, now),
     active ? env.DB.prepare("UPDATE accounts SET supporter=1, supporter_src=COALESCE(supporter_src,'patreon') WHERE email_hash=?1").bind(eh) : env.DB.prepare("UPDATE accounts SET supporter=0, supporter_src=NULL WHERE email_hash=?1 AND supporter_src='patreon'").bind(eh)
   ]);
-  return json17({ ok: true, active });
+  return json18({ ok: true, active });
 }
 __name(patreonWebhook, "patreonWebhook");
 async function patreonOnRegister(env, id2, eh) {
@@ -5618,9 +5618,9 @@ async function prunePresence(env) {
 }
 __name(prunePresence, "prunePresence");
 async function onlineRoute(req, env) {
-  const json17 = /* @__PURE__ */ __name((o, s = 200) => new Response(JSON.stringify(o), { status: s, headers: { "content-type": "application/json", "cache-control": "no-store" } }), "json");
+  const json18 = /* @__PURE__ */ __name((o, s = 200) => new Response(JSON.stringify(o), { status: s, headers: { "content-type": "application/json", "cache-control": "no-store" } }), "json");
   const acc = await sessionAccount(req, env);
-  if (!acc || !isAdmin(env, acc.id)) return json17({ error: "only the admins of this server can do this" }, 403);
+  if (!acc || !isAdmin(env, acc.id)) return json18({ error: "only the admins of this server can do this" }, 403);
   const now = Date.now(), on = now - 3 * 6e4;
   const r4 = await env.DB.prepare(
     `SELECT p.account_id AS accountId, p.kind, p.name AS device, p.app_version AS version, p.last_seen AS lastSeen, a.display AS nick
@@ -5637,7 +5637,7 @@ async function onlineRoute(req, env) {
     return { ...c, accounts: accs.size, devices: list.length };
   }, "count");
   const online = rows.filter((x) => x.lastSeen > on), recent2 = rows.filter((x) => x.lastSeen <= on);
-  return json17({ now, online, recent: recent2, counts: { online: count(online), recent: count(rows) } });
+  return json18({ now, online, recent: recent2, counts: { online: count(online), recent: count(rows) } });
 }
 __name(onlineRoute, "onlineRoute");
 
@@ -6867,50 +6867,50 @@ __name(buildServer, "buildServer");
 
 // src/discordserver.js
 async function discordServerRoute(req, env, url) {
-  const json17 = /* @__PURE__ */ __name((o, s = 200) => new Response(JSON.stringify(o), { status: s, headers: { "content-type": "application/json", "cache-control": "no-store" } }), "json");
+  const json18 = /* @__PURE__ */ __name((o, s = 200) => new Response(JSON.stringify(o), { status: s, headers: { "content-type": "application/json", "cache-control": "no-store" } }), "json");
   const acc = await sessionAccount(req, env);
-  if (!acc || !isAdmin(env, acc.id)) return json17({ error: "only the admins of this server can do this" }, 403);
-  if (!env.DISCORD_BOT_TOKEN) return json17({ error: "The bot's token is not set on this server" }, 503);
+  if (!acc || !isAdmin(env, acc.id)) return json18({ error: "only the admins of this server can do this" }, 403);
+  if (!env.DISCORD_BOT_TOKEN) return json18({ error: "The bot's token is not set on this server" }, 503);
   const token = env.DISCORD_BOT_TOKEN;
   try {
     if (req.method === "GET") {
       const r4 = await fetch(API2 + "/users/@me/guilds?with_counts=true", { headers: { authorization: "Bot " + token } });
-      if (!r4.ok) return json17({ error: "Discord answered " + r4.status }, 502);
+      if (!r4.ok) return json18({ error: "Discord answered " + r4.status }, 502);
       const gs = await r4.json();
       const rows = (await env.DB.prepare("SELECT guild_id, everyone, alerts_channel, records_channel, feedback_channel FROM discord_guilds").all().catch(() => ({ results: [] }))).results || [];
       const by = new Map(rows.map((x) => [x.guild_id, x]));
-      return json17({ guilds: gs.map((g) => {
+      return json18({ guilds: gs.map((g) => {
         const d = by.get(g.id) || {};
         return { id: g.id, name: g.name, members: g.approximate_member_count || 0, admin: !!(BigInt(g.permissions || "0") & P.ADMIN), everyone: !!d.everyone, feedback: !!d.feedback_channel, channel: !!(d.alerts_channel || d.records_channel) };
       }) });
     }
-    if (req.method !== "POST") return json17({ error: "method not allowed" }, 405);
+    if (req.method !== "POST") return json18({ error: "method not allowed" }, 405);
     const body = await req.json().catch(() => ({}));
     if (body.records === true) {
-      if (!/^\d{15,22}$/.test(String(body.guild || ""))) return json17({ error: "bad request" }, 400);
-      return json17(await discordRecords(env, String(body.guild), Number(body.from) || 0));
+      if (!/^\d{15,22}$/.test(String(body.guild || ""))) return json18({ error: "bad request" }, 400);
+      return json18(await discordRecords(env, String(body.guild), Number(body.from) || 0));
     }
     if (typeof body.everyone === "boolean") {
-      if (!/^\d{15,22}$/.test(String(body.guild || ""))) return json17({ error: "bad request" }, 400);
+      if (!/^\d{15,22}$/.test(String(body.guild || ""))) return json18({ error: "bad request" }, 400);
       await env.DB.prepare("INSERT INTO discord_guilds (guild_id, set_by, updated, everyone) VALUES (?1,?2,?3,?4) ON CONFLICT(guild_id) DO UPDATE SET everyone=excluded.everyone, updated=excluded.updated").bind(String(body.guild), acc.id, Date.now(), body.everyone ? 1 : 0).run();
-      return json17({ ok: true, everyone: body.everyone });
+      return json18({ ok: true, everyone: body.everyone });
     }
     if (typeof body.feedback === "boolean") {
-      if (!/^\d{15,22}$/.test(String(body.guild || ""))) return json17({ error: "bad request" }, 400);
+      if (!/^\d{15,22}$/.test(String(body.guild || ""))) return json18({ error: "bad request" }, 400);
       let ch = null;
       if (body.feedback) {
         const r4 = await fetch(`${API2}/guilds/${body.guild}/channels`, { headers: { authorization: "Bot " + token } });
-        if (!r4.ok) return json17({ error: "Discord answered " + r4.status }, 502);
+        if (!r4.ok) return json18({ error: "Discord answered " + r4.status }, 502);
         const cs = (await r4.json()).filter((c2) => (c2.type === 15 || c2.type === 0) && /feedback/i.test(c2.name));
         const c = cs.find((x) => x.type === 15) || cs[0];
-        if (!c) return json17({ error: "This server has no feedback channel. Build the server first." }, 400);
+        if (!c) return json18({ error: "This server has no feedback channel. Build the server first." }, 400);
         ch = c.id;
       }
       await env.DB.prepare("INSERT INTO discord_guilds (guild_id, set_by, updated, feedback_channel) VALUES (?1,?2,?3,?4) ON CONFLICT(guild_id) DO UPDATE SET feedback_channel=excluded.feedback_channel, updated=excluded.updated").bind(String(body.guild), acc.id, Date.now(), ch).run();
-      return json17({ ok: true, feedback: !!ch });
+      return json18({ ok: true, feedback: !!ch });
     }
     const step = Number(body.step);
-    if (!/^\d{15,22}$/.test(String(body.guild || "")) || ![1, 2, 3].includes(step)) return json17({ error: "bad request" }, 400);
+    if (!/^\d{15,22}$/.test(String(body.guild || "")) || ![1, 2, 3].includes(step)) return json18({ error: "bad request" }, 400);
     let notes = [];
     if (step === 3) {
       try {
@@ -6919,9 +6919,9 @@ async function discordServerRoute(req, env, url) {
       } catch (e) {
       }
     }
-    return json17(await buildServer({ token, guild: String(body.guild), step, apply: !!body.apply, notes }));
+    return json18(await buildServer({ token, guild: String(body.guild), step, apply: !!body.apply, notes }));
   } catch (e) {
-    return json17({ error: String(e.message || e) }, 502);
+    return json18({ error: String(e.message || e) }, 502);
   }
 }
 __name(discordServerRoute, "discordServerRoute");
@@ -6972,7 +6972,7 @@ async function downloads(req, env, url) {
     const o = await env.DL.get(n);
     return o ? o.text() : null;
   }, "read");
-  const json17 = /* @__PURE__ */ __name(async (n) => {
+  const json18 = /* @__PURE__ */ __name(async (n) => {
     try {
       return JSON.parse(await read(n) || "null");
     } catch (e) {
@@ -6982,7 +6982,7 @@ async function downloads(req, env, url) {
   const es = (req.headers.get("accept-language") || "").toLowerCase().startsWith("es");
   if (p === "/downloads/" || p === "/changelog/") return Response.redirect("https://pitlanehq.app" + p.slice(0, -1), 301);
   if (p === "/downloads") {
-    const pc = await json17("version.json") || {}, ph = await json17("phones.json") || {};
+    const pc = await json18("version.json") || {}, ph = await json18("phones.json") || {};
     const t = /* @__PURE__ */ __name((en, s) => es ? s : en, "t");
     const row = /* @__PURE__ */ __name((title, sub, file) => `<a class="c" href="/dl/${esc3(file)}"><b>${esc3(title)}</b><span>${esc3(sub)}</span></a>`, "row");
     const body = `<h1>${t("Download Pitlane HQ", "Descargar Pitlane HQ")}</h1><p>${t("Free. One account for the PC, the web and the phone apps.", "Gratis. Una cuenta para el PC, la web y las apps de m\xF3vil.")}</p>
@@ -8277,11 +8277,62 @@ async function testerAlert(env, acc, now = Date.now()) {
   await wake(env, acc);
 }
 __name(testerAlert, "testerAlert");
+async function testAskAlert(env, admins, data, now = Date.now()) {
+  for (const a of admins) {
+    await env.DB.prepare(SQL_ALERT_ADD).bind(rid6(), a, "test_ask", now, JSON.stringify(data)).run();
+    await wake(env, a);
+  }
+}
+__name(testAskAlert, "testAskAlert");
 var pruneAlerts = /* @__PURE__ */ __name((env, now = Date.now()) => env.DB.prepare(SQL_ALERT_PRUNE).bind(now - ALERT_DAYS * 864e5).run(), "pruneAlerts");
 
 // src/alerts.js
 var alertsRoute = /* @__PURE__ */ __name((req, env, url) => handleAlerts(req, env, url, { sessionAccount }), "alertsRoute");
 var weeklyAlerts2 = /* @__PURE__ */ __name((env, now) => weeklyAlerts(env, { sessionSummary }, now), "weeklyAlerts");
+
+// src/testask.js
+var SQL_ASK = "UPDATE accounts SET test_ask=?2, test_ask_what=?3 WHERE id=?1 AND test_ask IS NULL AND tester IS NULL";
+var SQL_PENDING = "SELECT id, display, test_ask AS asked, test_ask_what AS what FROM accounts WHERE test_ask>0 AND tester IS NULL ORDER BY test_ask DESC LIMIT 200";
+var SQL_PENDING_N = "SELECT COUNT(*) AS n FROM accounts WHERE test_ask>0 AND tester IS NULL";
+var SQL_YES = "UPDATE accounts SET tester=1, test_ask=NULL WHERE id=?1 AND test_ask>0";
+var SQL_NO = "UPDATE accounts SET test_ask=?2 WHERE id=?1 AND test_ask>0";
+var ASK_WHAT = /* @__PURE__ */ new Set(["leagues", "planner", "acc", "ac", "nascar", "team", "coach", "general"]);
+var adminIds = /* @__PURE__ */ __name((env) => String(env.ADMINS || env.SEASON_UPLOADERS || "").split(",").map((x) => x.trim()).filter(Boolean), "adminIds");
+var json10 = /* @__PURE__ */ __name((o, status = 200) => new Response(JSON.stringify(o), { status, headers: { "content-type": "application/json; charset=utf-8", "cache-control": "no-store", "access-control-allow-origin": "*" } }), "json");
+var err6 = /* @__PURE__ */ __name((error, status) => json10({ error }, status), "err");
+async function testAskRoutes(req, env, p, m, body, deps, now = Date.now()) {
+  if (p !== "/tester/ask" && p !== "/admin/test-asks") return null;
+  const acc = await deps.sessionAccount(req, env);
+  if (!acc) return err6("sign in with your Pitlane HQ account", 401);
+  const admin = deps.isAdmin(env, acc.id), tester = deps.isTester(env, acc.id, acc);
+  if (p === "/tester/ask") {
+    if (m === "GET") {
+      const pending = admin ? (await env.DB.prepare(SQL_PENDING_N).first() || {}).n || 0 : void 0;
+      return json10({ asked: acc.test_ask != null, tester: tester || admin, pending });
+    }
+    if (m !== "POST") return err6("not found", 404);
+    if (tester || admin) return json10({ ok: true, tester: true });
+    const what = ASK_WHAT.has(String(body.what || "")) ? String(body.what) : "general";
+    const r5 = await env.DB.prepare(SQL_ASK).bind(acc.id, now, what).run();
+    const changed = r5 && (r5.meta ? r5.meta.changes : r5.changes);
+    if (changed) await deps.testAskAlert(env, adminIds(env).filter((a) => a !== acc.id), { account: acc.id, name: String(acc.display || "").slice(0, 60), what }, now);
+    return json10({ ok: true, asked: true });
+  }
+  if (!admin) return err6("only the admins of this server can do this", 403);
+  if (m === "GET") return json10({ items: ((await env.DB.prepare(SQL_PENDING).all()).results || []).map((x) => ({ ...x, what: x.what || "general" })) });
+  if (m !== "POST") return err6("not found", 404);
+  const id2 = String(body.id || "");
+  if (body.yes) {
+    const r5 = await env.DB.prepare(SQL_YES).bind(id2).run();
+    if (!(r5 && (r5.meta ? r5.meta.changes : r5.changes))) return err6("this request is no longer waiting", 404);
+    await deps.testerAlert(env, id2, now);
+    return json10({ ok: true, tester: true });
+  }
+  const r4 = await env.DB.prepare(SQL_NO).bind(id2, -now).run();
+  if (!(r4 && (r4.meta ? r4.meta.changes : r4.changes))) return err6("this request is no longer waiting", 404);
+  return json10({ ok: true, tester: false });
+}
+__name(testAskRoutes, "testAskRoutes");
 
 // src/leaguescan.js
 var FEEDS = [
@@ -8611,8 +8662,8 @@ __name(fillSectors, "fillSectors");
 
 // src/friends.js
 var JSONH7 = { "content-type": "application/json; charset=utf-8", "cache-control": "no-store", "access-control-allow-origin": "*" };
-var json10 = /* @__PURE__ */ __name((v, status = 200) => new Response(JSON.stringify(v), { status, headers: JSONH7 }), "json");
-var err6 = /* @__PURE__ */ __name((msg, status) => json10({ error: msg }, status), "err");
+var json11 = /* @__PURE__ */ __name((v, status = 200) => new Response(JSON.stringify(v), { status, headers: JSONH7 }), "json");
+var err7 = /* @__PURE__ */ __name((msg, status) => json11({ error: msg }, status), "err");
 var FOLLOW_MAX = 200;
 var ID_RE = /^[A-Za-z0-9]{8,40}$/;
 async function follows(env, account, id2) {
@@ -8634,20 +8685,20 @@ async function target(env, b2) {
 __name(target, "target");
 async function friendRoutes(req, env, p, m, body, url, game, acc) {
   if (!p.startsWith("/friends")) return null;
-  if (!acc) return err6("sign in with your Pitlane HQ account to follow drivers", 401);
+  if (!acc) return err7("sign in with your Pitlane HQ account to follow drivers", 401);
   if ((p === "/friends/follow" || p === "/friends/unfollow") && m === "POST") {
     const id2 = await target(env, body || {});
     if (p === "/friends/unfollow") {
       const del = id2 || (ID_RE.test(String((body || {}).id || "")) ? body.id : null);
       if (del) await env.DB.prepare("DELETE FROM follows WHERE account_id=?1 AND driver_id=?2").bind(acc.id, del).run();
-      return json10({ following: false });
+      return json11({ following: false });
     }
-    if (!id2) return err6("this driver is anonymous", 404);
-    if (id2 === acc.id) return err6("that is you", 400);
+    if (!id2) return err7("this driver is anonymous", 404);
+    if (id2 === acc.id) return err7("that is you", 400);
     const n = await env.DB.prepare("SELECT COUNT(*) AS n FROM follows WHERE account_id=?1").bind(acc.id).first();
-    if (n && n.n >= FOLLOW_MAX) return err6(`you follow ${FOLLOW_MAX} drivers already`, 400);
+    if (n && n.n >= FOLLOW_MAX) return err7(`you follow ${FOLLOW_MAX} drivers already`, 400);
     await env.DB.prepare("INSERT OR IGNORE INTO follows (account_id, driver_id, created) VALUES (?1,?2,?3)").bind(acc.id, id2, Date.now()).run();
-    return json10({ following: true, id: id2 });
+    return json11({ following: true, id: id2 });
   }
   if (p === "/friends" && m === "GET") {
     const fr = (await env.DB.prepare(
@@ -8666,26 +8717,26 @@ async function friendRoutes(req, env, p, m, body, url, game, acc) {
       if (k.length < 8) k.push(l);
       by.set(l.uid, k);
     }
-    return json10({ friends: fr.map((f) => ({ id: f.id, name: f.name || "Driver", sup: !!f.sup, since: f.created, laps: (by.get(f.id) || []).map(({ uid, ...l }) => l) })) });
+    return json11({ friends: fr.map((f) => ({ id: f.id, name: f.name || "Driver", sup: !!f.sup, since: f.created, laps: (by.get(f.id) || []).map(({ uid, ...l }) => l) })) });
   }
   if (p === "/friends/laps" && m === "GET") {
     const t = +url.searchParams.get("trackId"), c = await famId(env, game, url.searchParams.get("carId"));
-    if (!t || !c) return err6("trackId and carId", 400);
+    if (!t || !c) return err7("trackId and carId", 400);
     const r4 = await env.DB.prepare(
       `SELECT l.id, l.user_id AS fid, u.alias, l.time, l.sectors, l.wet FROM community_laps l JOIN community_users u ON u.id=l.user_id JOIN accounts a ON a.id=l.user_id
        WHERE l.track_id=?1 AND l.car_id=?2 AND l.game=?3 AND l.anon=0 AND COALESCE(a.anon,0)=0 AND COALESCE(l.shown,'')<>'model'
          AND l.user_id IN (SELECT driver_id FROM follows WHERE account_id=?4) ORDER BY l.time LIMIT ${FOLLOW_MAX}`
     ).bind(t, c, game, acc.id).all();
-    return json10({ laps: (r4.results || []).map((x) => ({ ...x, sectors: x.sectors ? JSON.parse(x.sectors) : null })) });
+    return json11({ laps: (r4.results || []).map((x) => ({ ...x, sectors: x.sectors ? JSON.parse(x.sectors) : null })) });
   }
-  return err6("not found", 404);
+  return err7("not found", 404);
 }
 __name(friendRoutes, "friendRoutes");
 
 // src/community.js
 var JSONH8 = { "content-type": "application/json; charset=utf-8", "cache-control": "no-store", "access-control-allow-origin": "*" };
-var json11 = /* @__PURE__ */ __name((v, status = 200) => new Response(JSON.stringify(v), { status, headers: JSONH8 }), "json");
-var err7 = /* @__PURE__ */ __name((msg, status) => json11({ error: msg }, status), "err");
+var json12 = /* @__PURE__ */ __name((v, status = 200) => new Response(JSON.stringify(v), { status, headers: JSONH8 }), "json");
+var err8 = /* @__PURE__ */ __name((msg, status) => json12({ error: msg }, status), "err");
 var str3 = /* @__PURE__ */ __name((v, max = 120) => typeof v === "string" ? v.slice(0, max) : v == null ? null : String(v).slice(0, max), "str");
 var num2 = /* @__PURE__ */ __name((v) => typeof v === "number" && isFinite(v) ? v : null, "num");
 var int3 = /* @__PURE__ */ __name((v) => Number.isInteger(v) && v > 0 && v < 1e9 ? v : null, "int");
@@ -8924,7 +8975,7 @@ async function minuteCache(env, k, fn) {
 }
 __name(minuteCache, "minuteCache");
 async function community(req, env, url, ctx) {
-  if (env.COMMUNITY !== "1") return err7("the community is not enabled on this server", 404);
+  if (env.COMMUNITY !== "1") return err8("the community is not enabled on this server", 404);
   const p = url.pathname.replace(/^\/community/, ""), m = req.method;
   if (m === "OPTIONS") return new Response(null, { headers: { ...JSONH8, "access-control-allow-methods": "GET,POST,DELETE", "access-control-max-age": "86400", "access-control-allow-headers": "authorization,content-type" } });
   {
@@ -8935,11 +8986,15 @@ async function community(req, env, url, ctx) {
   if (p === "/register" && m === "POST") {
     const id2 = rid7(), token = rid7() + rid7();
     await env.DB.prepare("INSERT INTO community_users (id, token_hash, alias, created) VALUES (?1,?2,?3,?4)").bind(id2, await sha2562(token), cleanAlias(body.alias), Date.now()).run();
-    return json11({ id: id2, token });
+    return json12({ id: id2, token });
   }
   {
     const pr = await proRoutes(req, env, p, m, body);
     if (pr) return pr;
+  }
+  {
+    const ta = await testAskRoutes(req, env, p, m, body, { sessionAccount, isAdmin, isTester, testerAlert, testAskAlert });
+    if (ta) return ta;
   }
   const game = gameOf(url.searchParams.get("game") || body.game);
   {
@@ -8953,27 +9008,27 @@ async function community(req, env, url, ctx) {
     ).bind(game).all();
     const cm = game === "iracing" ? await catMap(env) : { tc: {}, c: {} };
     const fams = await famGroups(env, game);
-    return json11({ combos: (r4.results || []).map(({ hint, ...x }) => ({ ...x, ...fams.has(x.carId) ? { ids: [...fams.get(x.carId)] } : {}, car: famName(game, x.carId, x.car), cat: game === "iracing" ? catOf(cm, x.trackId, x.carId, hint, x.track, x.car) : "sports_car" })) });
+    return json12({ combos: (r4.results || []).map(({ hint, ...x }) => ({ ...x, ...fams.has(x.carId) ? { ids: [...fams.get(x.carId)] } : {}, car: famName(game, x.carId, x.car), cat: game === "iracing" ? catOf(cm, x.trackId, x.carId, hint, x.track, x.car) : "sports_car" })) });
   }
   if (p === "/model" && m === "GET") {
     const t = +url.searchParams.get("trackId"), c = await famId(env, game, url.searchParams.get("carId"));
-    if (!t || !c) return err7("trackId and carId", 400);
+    if (!t || !c) return err8("trackId and carId", 400);
     const cq = url.searchParams.get("cmp"), tq = url.searchParams.get("temp");
     const md2 = forCompound(await getModel(env, game, t, c), cq != null && /^\d{1,2}$/.test(cq) ? +cq : null, tq != null && /^-?\d{1,2}(\.\d+)?$/.test(tq) ? +tq : null);
     const rivals = seesRivals(req, env, await me(req, env).catch(() => null));
     const fs = await env.DB.prepare(`SELECT l.time, ${shownName("l", "u", rivals)} AS alias FROM community_laps l JOIN community_users u ON u.id=l.user_id WHERE l.track_id=?1 AND l.car_id=?2 AND l.game=?3 AND COALESCE(l.shown,'')<>'model' ORDER BY l.time LIMIT 1`).bind(t, c, game).first();
-    return json11({ ...md2, car: await getCarCard(env, game, c).catch(() => null), fastShared: fs || null });
+    return json12({ ...md2, car: await getCarCard(env, game, c).catch(() => null), fastShared: fs || null });
   }
   if (p === "/car" && m === "GET") {
     const c = await famId(env, game, url.searchParams.get("carId"));
-    if (!c) return err7("carId", 400);
-    return json11(await getCarCard(env, game, c).catch(() => null) || {});
+    if (!c) return err8("carId", 400);
+    return json12(await getCarCard(env, game, c).catch(() => null) || {});
   }
   if (p === "/like" && m === "GET") {
     const t = +url.searchParams.get("trackId") || 0, c = await famId(env, game, url.searchParams.get("carId"));
-    if (!c) return err7("carId", 400);
+    if (!c) return err8("carId", 400);
     const grp = await groupFor(env, game, t, c, String(url.searchParams.get("cat") || "").slice(0, 20)).catch(() => "");
-    return json11({ ...await likeFor(env, game, t, c, grp), cat: grp });
+    return json12({ ...await likeFor(env, game, t, c, grp), cat: grp });
   }
   if (p === "/records" && m === "GET") {
     const lim = Math.min(100, Math.max(1, +url.searchParams.get("limit") || 40));
@@ -8993,11 +9048,11 @@ async function community(req, env, url, ctx) {
        WHERE l.rk=1 ORDER BY l.created DESC LIMIT ?2`
     ).bind(game, lim).all());
     const cm = all || game === "iracing" ? await catMap(env) : null;
-    return json11({ records: (r4.results || []).map(({ uid, hint, prevTime, prevAlias, ...x }) => ({ ...x, game: gameOf(x.game), car: famName(gameOf(x.game), x.carId, x.car), cat: cm && gameOf(x.game) === "iracing" ? catOf(cm, x.trackId, x.carId, hint, x.track, x.car) : "sports_car", prof: !!x.prof, sup: !!x.sup, hasTrace: !!x.hasTrace, mine: !!who2 && uid === who2.id, field: String(uid).startsWith("o:"), prev: prevTime ? { time: prevTime, alias: prevAlias } : null })) });
+    return json12({ records: (r4.results || []).map(({ uid, hint, prevTime, prevAlias, ...x }) => ({ ...x, game: gameOf(x.game), car: famName(gameOf(x.game), x.carId, x.car), cat: cm && gameOf(x.game) === "iracing" ? catOf(cm, x.trackId, x.carId, hint, x.track, x.car) : "sports_car", prof: !!x.prof, sup: !!x.sup, hasTrace: !!x.hasTrace, mine: !!who2 && uid === who2.id, field: String(uid).startsWith("o:"), prev: prevTime ? { time: prevTime, alias: prevAlias } : null })) });
   }
   if (p === "/track" && m === "GET") {
     const t = +url.searchParams.get("trackId");
-    if (!t) return err7("trackId", 400);
+    if (!t) return err8("trackId", 400);
     const who2 = await me(req, env).catch(() => null);
     const [lay, tu, r4, tot] = await Promise.all([
       env.DB.prepare("SELECT track, n, len, pts FROM track_maps WHERE game=?1 AND track_id=?2").bind(game, t).first(),
@@ -9017,7 +9072,7 @@ async function community(req, env, url, ctx) {
     const cm = game === "iracing" ? await catMap(env) : null;
     const pts = lay && lay.pts ? JSON.parse(lay.pts) : null;
     const name2 = tot && tot.track || lay && lay.track || "";
-    return json11({
+    return json12({
       trackId: t,
       game,
       track: name2,
@@ -9033,10 +9088,10 @@ async function community(req, env, url, ctx) {
     if (cq && +url.searchParams.get("trackId")) {
       const who3 = await me(req, env).catch(() => null);
       const rows = await classLaps(env, +url.searchParams.get("trackId"), cq, { admin: !!who3 && isAdmin(env, who3.id), rivals: seesRivals(req, env, who3), acctTrace: ACCT_TRACE });
-      return json11({ cat: "sports_car", cls: cq, laps: rows.map(({ uid, ...x }) => ({ ...x, car: famName(game, x.carId, x.car), lic: licOf(x.lic), prof: !!x.prof, sup: !!x.sup, mine: !!who3 && uid === who3.id, field: String(uid).startsWith("o:"), hasTrace: !!x.hasTrace, sectors: x.sectors ? JSON.parse(x.sectors) : null })) });
+      return json12({ cat: "sports_car", cls: cq, laps: rows.map(({ uid, ...x }) => ({ ...x, car: famName(game, x.carId, x.car), lic: licOf(x.lic), prof: !!x.prof, sup: !!x.sup, mine: !!who3 && uid === who3.id, field: String(uid).startsWith("o:"), hasTrace: !!x.hasTrace, sectors: x.sectors ? JSON.parse(x.sectors) : null })) });
     }
     const t = +url.searchParams.get("trackId"), c = await famId(env, game, url.searchParams.get("carId"));
-    if (!t || !c) return err7("trackId and carId", 400);
+    if (!t || !c) return err8("trackId and carId", 400);
     const who2 = await me(req, env).catch(() => null);
     const h = await env.DB.prepare("SELECT MAX(cat) AS hint, MAX(track) AS track, MAX(car) AS car, MAX(cls) AS cls FROM community_laps WHERE track_id=?1 AND car_id=?2 AND game=?3").bind(t, c, game).first().catch(() => null);
     const cat = game === "iracing" ? catOf(await catMap(env), t, c, h && h.hint, h && h.track, h && h.car) : "sports_car";
@@ -9047,12 +9102,12 @@ async function community(req, env, url, ctx) {
        FROM community_laps l JOIN community_users u ON u.id=l.user_id LEFT JOIN accounts ac ON ac.id=l.user_id
        WHERE l.track_id=?1 AND l.car_id=?2 AND l.game=?3 AND COALESCE(l.shown,'')<>'model' ORDER BY l.time LIMIT 200`
     ).bind(t, c, game, cat).all();
-    return json11({ cat, cls: game === "lmu" ? h && h.cls || lmuClass(null, h && h.car) : null, laps: (r4.results || []).map(({ uid, ...x }) => ({ ...x, lic: licOf(x.lic), prof: !!x.prof, sup: !!x.sup, mine: !!who2 && uid === who2.id, field: String(uid).startsWith("o:"), hasTrace: !!x.hasTrace, sectors: x.sectors ? JSON.parse(x.sectors) : null })) });
+    return json12({ cat, cls: game === "lmu" ? h && h.cls || lmuClass(null, h && h.car) : null, laps: (r4.results || []).map(({ uid, ...x }) => ({ ...x, lic: licOf(x.lic), prof: !!x.prof, sup: !!x.sup, mine: !!who2 && uid === who2.id, field: String(uid).startsWith("o:"), hasTrace: !!x.hasTrace, sectors: x.sectors ? JSON.parse(x.sectors) : null })) });
   }
   if (p.startsWith("/laps/") && m === "GET") {
     const rivals = seesRivals(req, env, await me(req, env).catch(() => null));
     const l = await env.DB.prepare(`SELECT l.*, ${shownName("l", "u", rivals)} AS alias FROM community_laps l JOIN community_users u ON u.id=l.user_id WHERE l.id=?1`).bind(p.slice(6)).first();
-    if (!l) return err7("not found", 404);
+    if (!l) return err8("not found", 404);
     let trace = l.trace;
     if (!trace) {
       const a = await env.DB.prepare(`SELECT a.trace FROM laps a JOIN sessions s ON s.id=a.session_id WHERE ${ACCT_TRACE_WHERE} LIMIT 1`).bind(l.user_id, l.time, l.game).first();
@@ -9063,7 +9118,7 @@ async function community(req, env, url, ctx) {
       const card = await getCarCard(env, l.game, l.car_id).catch(() => null);
       tr2 = estimateTrace(tr2, card && card.pedals, card && card.shifts);
     }
-    return json11({ id: l.id, alias: l.alias, game: l.game, time: l.time, car: famName(l.game, l.car_id, l.car), track: l.track, carId: l.car_id, trackId: l.track_id, sectors: l.sectors ? JSON.parse(l.sectors) : null, trace: tr2 });
+    return json12({ id: l.id, alias: l.alias, game: l.game, time: l.time, car: famName(l.game, l.car_id, l.car), track: l.track, carId: l.car_id, trackId: l.track_id, sectors: l.sectors ? JSON.parse(l.sectors) : null, trace: tr2 });
   }
   if (p === "/reports" && m === "GET") {
     const t = +url.searchParams.get("trackId"), c = +url.searchParams.get("carId");
@@ -9075,16 +9130,16 @@ async function community(req, env, url, ctx) {
        FROM community_reports r JOIN community_users u ON u.id=r.user_id WHERE (?1=0 OR r.track_id=?1) AND (?2=0 OR r.car_id IN (${fam.map((n) => +n || 0).join(",")})) AND r.game=?3 ORDER BY r.created DESC LIMIT 100`
     ).bind(t || 0, c || 0, game).all();
     const who2 = await me(req, env).catch(() => null);
-    return json11({ reports: (r4.results || []).map(({ uid, ...x }) => ({ ...x, car: famName(game, c, x.car), mine: !!who2 && uid === who2.id })) });
+    return json12({ reports: (r4.results || []).map(({ uid, ...x }) => ({ ...x, car: famName(game, c, x.car), mine: !!who2 && uid === who2.id })) });
   }
   if (p === "/trackmaps" && m === "GET") {
     const t = +url.searchParams.get("trackId");
-    if (!t) return err7("trackId", 400);
+    if (!t) return err8("trackId", 400);
     const [r4, ed] = await Promise.all([
       env.DB.prepare("SELECT track, n, len, pts, time, created, geo FROM track_maps WHERE game=?1 AND track_id=?2").bind(game, t).first(),
       env.DB.prepare("SELECT n, laps, data FROM track_edges WHERE game=?1 AND track_id=?2").bind(game, t).first().catch(() => null)
     ]);
-    if (!r4) return err7("no layout for this track yet", 404);
+    if (!r4) return err8("no layout for this track yet", 404);
     let edges = null;
     try {
       const e = ed && ed.n === r4.n ? JSON.parse(ed.data) : null;
@@ -9103,7 +9158,7 @@ async function community(req, env, url, ctx) {
   }
   if (p === "/turns" && m === "GET") {
     const t = +url.searchParams.get("trackId");
-    if (!t) return err7("trackId", 400);
+    if (!t) return err8("trackId", 400);
     const r4 = await env.DB.prepare("SELECT turns, updated FROM track_turns WHERE game=?1 AND track_id=?2").bind(game, t).first();
     let turns = [], auto = false, count = 0;
     try {
@@ -9128,45 +9183,45 @@ async function community(req, env, url, ctx) {
   }
   if (p === "/pitlane" && m === "GET") {
     const t = +url.searchParams.get("trackId");
-    if (!t) return err7("trackId", 400);
+    if (!t) return err8("trackId", 400);
     const r4 = await env.DB.prepare("SELECT n, pts, updated FROM track_pits WHERE game=?1 AND track_id=?2").bind(game, t).first();
     const pts = r4 ? Object.entries(JSON.parse(r4.pts)).map(([i, v]) => [+i, v]).sort((a, b2) => a[0] - b2[0]) : [];
     return new Response(JSON.stringify({ trackId: t, game, n: r4 ? r4.n : 0, pts, updated: r4 ? r4.updated : 0 }), { headers: { ...JSONH8, "cache-control": "public, max-age=600" } });
   }
   if (p === "/turns" && m === "POST") {
     const acc = await sessionAccount(req, env);
-    if (!acc || !isAdmin(env, acc.id)) return err7("only the admins of this server can do this", 403);
+    if (!acc || !isAdmin(env, acc.id)) return err8("only the admins of this server can do this", 403);
     const b2 = body;
     const t = +b2.trackId, g = String(b2.game || "iracing").slice(0, 20);
     const turns = Array.isArray(b2.turns) ? b2.turns.map(Number).filter((x) => isFinite(x) && x >= 0 && x < 1).slice(0, 60) : null;
-    if (!t || !turns) return err7("trackId and turns", 400);
+    if (!t || !turns) return err8("trackId and turns", 400);
     if (!turns.length) await env.DB.prepare("DELETE FROM track_turns WHERE game=?1 AND track_id=?2").bind(g, t).run();
     else await env.DB.prepare("INSERT INTO track_turns (game, track_id, turns, updated) VALUES (?1, ?2, ?3, ?4) ON CONFLICT(game, track_id) DO UPDATE SET turns=excluded.turns, updated=excluded.updated").bind(g, t, JSON.stringify(turns.map((x) => Math.round(x * 1e5) / 1e5)), Date.now()).run();
-    return json11({ ok: true, trackId: t, game: g, turns });
+    return json12({ ok: true, trackId: t, game: g, turns });
   }
   const um = p.match(/^\/admin\/reports\/([A-Za-z0-9_.:-]{1,64})\/uncut$/);
   if (um && m === "POST") {
     const acc = await sessionAccount(req, env);
-    if (!acc || !isAdmin(env, acc.id)) return err7("only the admins of this server can do this", 403);
+    if (!acc || !isAdmin(env, acc.id)) return err8("only the admins of this server can do this", 403);
     const r4 = await env.DB.prepare("SELECT data FROM community_reports WHERE id=?1").bind(um[1]).first();
-    if (!r4) return err7("not found", 404);
+    if (!r4) return err8("not found", 404);
     const d = JSON.parse(await openData(env, r4.data));
     if (Array.isArray(d.laps)) d.laps = d.laps.map((l) => l.i ? l : { ...l, cut: false });
     await env.DB.prepare("UPDATE community_reports SET data=?2 WHERE id=?1").bind(um[1], await sealData(env, JSON.stringify(d))).run();
-    return json11({ ok: true });
+    return json12({ ok: true });
   }
   const du = p.match(/^\/admin\/users\/([A-Za-z0-9]{8,40})$/);
   if (du && m === "DELETE") {
     const acc = await sessionAccount(req, env);
-    if (!acc || !isAdmin(env, acc.id)) return err7("only the admins of this server can do this", 403);
+    if (!acc || !isAdmin(env, acc.id)) return err8("only the admins of this server can do this", 403);
     const id2 = du[1];
-    if (id2 === acc.id || isAdmin(env, id2)) return err7("an admin account cannot be deleted from here", 400);
+    if (id2 === acc.id || isAdmin(env, id2)) return err8("an admin account cannot be deleted from here", 400);
     await purgeAccount(env, id2);
-    return json11({ deleted: true });
+    return json12({ deleted: true });
   }
   if (m === "GET" && p === "/admin/status") {
     const acc = await sessionAccount(req, env);
-    if (!acc || !isAdmin(env, acc.id)) return err7("only the admins of this server can do this", 403);
+    if (!acc || !isAdmin(env, acc.id)) return err8("only the admins of this server can do this", 403);
     const st = await env.DB.prepare("SELECT k, v, at FROM app_state WHERE k IN ('mail_error','mail_ok')").all().catch(() => ({ results: [] }));
     const get = /* @__PURE__ */ __name((k) => (st.results || []).find((x) => x.k === k), "get");
     const e = get("mail_error"), ok = get("mail_ok");
@@ -9180,7 +9235,7 @@ async function community(req, env, url, ctx) {
       (SELECT COUNT(*) FROM leagues) AS leagues, (SELECT COUNT(*) FROM accounts WHERE supporter=1) AS supporters, (SELECT COUNT(*) FROM accounts WHERE supporter=1 AND supporter_src='patreon') AS supportersPatreon,
       (SELECT COUNT(*) FROM patreon_patrons WHERE active=1) AS patrons, (SELECT MAX(updated) FROM patreon_patrons) AS patreonLast,
       (SELECT COUNT(*) FROM auth_fails) AS authFails`).bind(d7, d30, d1).first().catch((x) => ({ error: String(x && x.message || x) }));
-    return json11({
+    return json12({
       mail: { ready: mailReady(env), via: env.RESEND_API_KEY ? "resend" : "", from: env.EMAIL_FROM || "", lastOk: ok ? ok.at : 0, lastError: e && (!ok || e.at > ok.at) ? { at: e.at, ...JSON.parse(e.v || "{}") } : null },
       counts,
       config: { patreon: !!env.PATREON_WEBHOOK_SECRET, leaguesOpen: env.LEAGUES_OPEN === "1", community: env.COMMUNITY !== "0", dataKey: !!env.DATA_KEY, pepper: !!env.EMAIL_PEPPER, admins: String(env.ADMINS || env.SEASON_UPLOADERS || "").split(",").filter(Boolean).length }
@@ -9188,20 +9243,20 @@ async function community(req, env, url, ctx) {
   }
   if (m === "GET" && p === "/admin/mail") {
     const acc = await sessionAccount(req, env);
-    if (!acc || !isAdmin(env, acc.id)) return err7("only the admins of this server can do this", 403);
+    if (!acc || !isAdmin(env, acc.id)) return err8("only the admins of this server can do this", 403);
     const [items, domain] = await Promise.all([mailLog(env), mailDomain(env).catch(() => null)]);
-    return json11({ items, domain });
+    return json12({ items, domain });
   }
   if (m === "GET" && p === "/admin/guests") {
     const acc = await sessionAccount(req, env);
-    if (!acc || !isAdmin(env, acc.id)) return err7("only the admins of this server can do this", 403);
+    if (!acc || !isAdmin(env, acc.id)) return err8("only the admins of this server can do this", 403);
     const r4 = await env.DB.prepare(`SELECT g.id, g.alias, g.created, g.owner, o.display AS ownerName, (SELECT COUNT(*) FROM community_laps l WHERE l.user_id=g.id) AS laps, gl.account_id AS linked, la.display AS linkedName
       FROM community_users g LEFT JOIN accounts o ON o.id=g.owner LEFT JOIN guest_links gl ON gl.gid=g.id LEFT JOIN accounts la ON la.id=gl.account_id WHERE g.id LIKE 'guest-%' ORDER BY g.created DESC LIMIT 300`).all();
-    return json11({ guests: (r4.results || []).map((x) => ({ id: x.id, name: x.alias, created: x.created, owner: x.owner, ownerName: x.ownerName || "", laps: x.laps || 0, linked: x.linked || null, linkedName: x.linkedName || null })) });
+    return json12({ guests: (r4.results || []).map((x) => ({ id: x.id, name: x.alias, created: x.created, owner: x.owner, ownerName: x.ownerName || "", laps: x.laps || 0, linked: x.linked || null, linkedName: x.linkedName || null })) });
   }
   if (m === "GET" && (p === "/admin/uploads" || p === "/admin/users")) {
     const acc = await sessionAccount(req, env);
-    if (!acc || !isAdmin(env, acc.id)) return err7("only the admins of this server can do this", 403);
+    if (!acc || !isAdmin(env, acc.id)) return err8("only the admins of this server can do this", 403);
     if (p === "/admin/users") {
       const q3 = String(url.searchParams.get("q") || "").trim().slice(0, 60);
       const r5 = await env.DB.prepare(`SELECT a.id, a.display, a.name_kind AS nameKind, a.anon, a.verified, a.created, a.member_since AS memberSince, a.totp_on AS twoFactor, a.supporter, a.supporter_src AS supporterSrc, a.supporter_hidden AS supporterHidden, a.tester,
@@ -9214,7 +9269,7 @@ async function community(req, env, url, ctx) {
         EXISTS (SELECT 1 FROM driver_links d WHERE d.account_id=a.id) AS driverLinked,
         (SELECT group_concat(d.game, ',') FROM driver_links d WHERE d.account_id=a.id) AS driverGames
         FROM accounts a ${q3 ? "WHERE a.display LIKE ?1 OR a.id LIKE ?1" : ""} ORDER BY a.created DESC LIMIT 500`).bind(...q3 ? ["%" + q3.replace(/[%_]/g, "") + "%"] : []).all();
-      return json11({ users: (r5.results || []).map((x) => ({ ...x, admin: isAdmin(env, x.id), tester: isTester(env, x.id, x), testerSet: testersSet(env, x.id) })) });
+      return json12({ users: (r5.results || []).map((x) => ({ ...x, admin: isAdmin(env, x.id), tester: isTester(env, x.id, x), testerSet: testersSet(env, x.id) })) });
     }
     const q2 = /* @__PURE__ */ __name((t, extra) => env.DB.prepare(`SELECT x.id, '${t}' AS kind, x.car, x.track, x.created, x.anon, COALESCE(x.shown,'nick') AS shown, ${extra}
       u.id AS userId, u.alias, u.iracing, u.owner, o.display AS ownerName, ac.display AS account
@@ -9228,37 +9283,37 @@ async function community(req, env, url, ctx) {
       via: !x.owner ? "account" : String(x.userId).startsWith("o:") ? "rival" : "drinks",
       realUploader: !x.owner ? x.account || x.alias : String(x.userId).startsWith("o:") ? `${x.alias} (race rival \xB7 shared by ${x.ownerName || x.owner})` : `${x.alias} (Drinks \xB7 ${x.ownerName || x.owner})`
     }));
-    return json11({ items });
+    return json12({ items });
   }
   if (p === "/admin/supporter" && m === "POST") {
     const acc = await sessionAccount(req, env);
-    if (!acc || !isAdmin(env, acc.id)) return err7("only the admins of this server can do this", 403);
+    if (!acc || !isAdmin(env, acc.id)) return err8("only the admins of this server can do this", 403);
     const id2 = String(body.id || "");
     const r4 = await env.DB.prepare("UPDATE accounts SET supporter=?2, supporter_src=?3 WHERE id=?1").bind(id2, body.on ? 1 : 0, body.on ? "manual" : null).run();
-    return r4.meta && r4.meta.changes ? json11({ ok: true, supporter: !!body.on }) : err7("account not found", 404);
+    return r4.meta && r4.meta.changes ? json12({ ok: true, supporter: !!body.on }) : err8("account not found", 404);
   }
   if (p === "/admin/tester" && m === "POST") {
     const acc = await sessionAccount(req, env);
-    if (!acc || !isAdmin(env, acc.id)) return err7("only the admins of this server can do this", 403);
+    if (!acc || !isAdmin(env, acc.id)) return err8("only the admins of this server can do this", 403);
     const id2 = String(body.id || "");
     const was = await env.DB.prepare("SELECT tester FROM accounts WHERE id=?1").bind(id2).first();
-    if (!was) return err7("account not found", 404);
-    if (!body.on && testersSet(env, id2)) return err7("this driver is a tester in the server's settings (TESTERS)", 409);
-    await env.DB.prepare("UPDATE accounts SET tester=?2 WHERE id=?1").bind(id2, body.on ? 1 : null).run();
+    if (!was) return err8("account not found", 404);
+    if (!body.on && testersSet(env, id2)) return err8("this driver is a tester in the server's settings (TESTERS)", 409);
+    await env.DB.prepare("UPDATE accounts SET tester=?2, test_ask=NULL WHERE id=?1").bind(id2, body.on ? 1 : null).run();
     if (body.on && !was.tester && !testersSet(env, id2)) await testerAlert(env, id2);
-    return json11({ ok: true, tester: !!body.on });
+    return json12({ ok: true, tester: !!body.on });
   }
   if (p === "/admin/since" && m === "POST") {
     const acc = await sessionAccount(req, env);
-    if (!acc || !isAdmin(env, acc.id)) return err7("only the admins of this server can do this", 403);
+    if (!acc || !isAdmin(env, acc.id)) return err8("only the admins of this server can do this", 403);
     const since = body.since == null || body.since === "" ? null : Number(body.since);
-    if (since !== null && !(isFinite(since) && since > 9466848e5 && since < Date.now() + 864e5)) return err7("that date is not valid", 400);
+    if (since !== null && !(isFinite(since) && since > 9466848e5 && since < Date.now() + 864e5)) return err8("that date is not valid", 400);
     const r4 = await env.DB.prepare("UPDATE accounts SET member_since=?2 WHERE id=?1").bind(String(body.id || ""), since === null ? null : Math.round(since)).run();
-    return r4.meta && r4.meta.changes ? json11({ ok: true, since }) : err7("account not found", 404);
+    return r4.meta && r4.meta.changes ? json12({ ok: true, since }) : err8("account not found", 404);
   }
   if (p === "/admin/turns-check" && m === "GET") {
     const acc = await sessionAccount(req, env);
-    if (!acc || !isAdmin(env, acc.id)) return err7("only the admins of this server can do this", 403);
+    if (!acc || !isAdmin(env, acc.id)) return err8("only the admins of this server can do this", 403);
     const rows = (await env.DB.prepare(
       `SELECT m.game, m.track_id, m.track, m.n, m.pts, i.nturns, t.turns FROM track_maps m
        LEFT JOIN track_info i ON i.game=m.game AND i.track_id=m.track_id LEFT JOIN track_turns t ON t.game=m.game AND t.track_id=m.track_id
@@ -9283,24 +9338,24 @@ async function community(req, env, url, ctx) {
     }
     const bad = /* @__PURE__ */ __name((x) => (x.placed ? 0 : 2) + (x.official && x.fitted !== x.official ? 1 : 0), "bad");
     out.sort((a, b2) => bad(b2) - bad(a) || a.track.localeCompare(b2.track));
-    return json11({ tracks: out });
+    return json12({ tracks: out });
   }
   if (p === "/admin/trackmaps-rebuild" && m === "POST") {
     const acc = await sessionAccount(req, env);
-    if (!acc || !isAdmin(env, acc.id)) return err7("only the admins of this server can do this", 403);
-    return json11({ ok: true, ...await rebuildTrackMaps(env, { all: true }) });
+    if (!acc || !isAdmin(env, acc.id)) return err8("only the admins of this server can do this", 403);
+    return json12({ ok: true, ...await rebuildTrackMaps(env, { all: true }) });
   }
   if (p === "/admin/models" && m === "POST") {
     const acc = await sessionAccount(req, env);
-    if (!acc || !isAdmin(env, acc.id)) return err7("only the admins of this server can do this", 403);
+    if (!acc || !isAdmin(env, acc.id)) return err8("only the admins of this server can do this", 403);
     const r4 = await env.DB.prepare("UPDATE model_cache SET dirty=1").run();
     await env.DB.prepare("UPDATE car_cards SET dirty=1").run().catch(() => {
     });
-    return json11({ ok: true, models: r4.meta && r4.meta.changes || 0 });
+    return json12({ ok: true, models: r4.meta && r4.meta.changes || 0 });
   }
   if (p === "/admin/blocked" && m === "GET") {
     const acc = await sessionAccount(req, env);
-    if (!acc || !isAdmin(env, acc.id)) return err7("only the admins of this server can do this", 403);
+    if (!acc || !isAdmin(env, acc.id)) return err8("only the admins of this server can do this", 403);
     const since = Date.now() - 15 * 6e4;
     const rows = (await env.DB.prepare("SELECT k, COUNT(*) AS n, MAX(t) AS last FROM auth_fails WHERE t>=?1 GROUP BY k ORDER BY last DESC LIMIT 200").bind(since).all()).results || [];
     const hashes = rows.map((x) => /^(login|mail):([0-9a-f]{64})$/.exec(x.k)).filter(Boolean).map((x) => x[2]), ids = rows.map((x) => /^2fa:(.+)$/.exec(x.k)).filter(Boolean).map((x) => x[1]);
@@ -9315,7 +9370,7 @@ async function community(req, env, url, ctx) {
     }
     const mask2 = /* @__PURE__ */ __name((v) => /^ip:[0-9a-f]{6}/.test(v) ? "#" + v.slice(3, 9) : "#" + String(v).slice(0, 6), "mask");
     const limit = { login: 5, "2fa": 5, mail: 3, reset: 10, reg: 5, ip: 30 };
-    return json11({ blocked: rows.map((x) => {
+    return json12({ blocked: rows.map((x) => {
       const m2 = /^(login|mail|2fa|reset|reg):(.+)$/.exec(x.k), kind = m2 ? m2[1] : "ip", v = m2 ? m2[2] : x.k, a = who2[v];
       const net = kind === "ip" || (kind === "mail" || kind === "reset" || kind === "reg") && !/^[0-9a-f]{64}$/.test(v);
       return { k: x.k, kind, n: x.n, last: x.last, account: a ? { id: a.id, display: a.display } : null, net: net ? mask2(v) : null, blocked: x.n >= (net && kind === "mail" ? 10 : limit[kind] || 5) };
@@ -9323,26 +9378,26 @@ async function community(req, env, url, ctx) {
   }
   if (p === "/admin/unlock" && m === "POST") {
     const acc = await sessionAccount(req, env);
-    if (!acc || !isAdmin(env, acc.id)) return err7("only the admins of this server can do this", 403);
+    if (!acc || !isAdmin(env, acc.id)) return err8("only the admins of this server can do this", 403);
     let r4;
     if (typeof body.k === "string" && body.k) r4 = await env.DB.prepare("DELETE FROM auth_fails WHERE k=?1").bind(body.k.slice(0, 200)).run();
     else if (typeof body.account === "string" && /^[A-Za-z0-9]{8,40}$/.test(body.account)) {
       const a = await env.DB.prepare("SELECT id, email_hash FROM accounts WHERE id=?1").bind(body.account).first();
-      if (!a) return err7("account not found", 404);
+      if (!a) return err8("account not found", 404);
       r4 = await env.DB.prepare("DELETE FROM auth_fails WHERE k IN (?1, ?2, ?3)").bind("login:" + a.email_hash, "mail:" + a.email_hash, "2fa:" + a.id).run();
     } else if (typeof body.email === "string" && body.email.includes("@")) {
       const eh = await emailHash(env, body.email), a = await env.DB.prepare("SELECT id FROM accounts WHERE email_hash=?1").bind(eh).first();
       r4 = await env.DB.prepare("DELETE FROM auth_fails WHERE k IN (?1, ?2, ?3)").bind("login:" + eh, "mail:" + eh, "2fa:" + (a ? a.id : "-")).run();
     } else if (body.all === true) r4 = await env.DB.prepare("DELETE FROM auth_fails").run();
-    else return err7("say what to unblock", 400);
-    return json11({ ok: true, cleared: r4.meta && r4.meta.changes || 0 });
+    else return err8("say what to unblock", 400);
+    return json12({ ok: true, cleared: r4.meta && r4.meta.changes || 0 });
   }
   const ua = p.match(/^\/admin\/users\/([A-Za-z0-9]{8,40})\/(verify|2fa-off|signout|rename|unlink-driver|link-guest|unlink-guest)$/);
   if (ua && m === "POST") {
     const acc = await sessionAccount(req, env);
-    if (!acc || !isAdmin(env, acc.id)) return err7("only the admins of this server can do this", 403);
+    if (!acc || !isAdmin(env, acc.id)) return err8("only the admins of this server can do this", 403);
     const id2 = ua[1], a = await env.DB.prepare("SELECT id FROM accounts WHERE id=?1").bind(id2).first();
-    if (!a) return err7("account not found", 404);
+    if (!a) return err8("account not found", 404);
     if (ua[2] === "verify") await env.DB.prepare("UPDATE accounts SET verified=1 WHERE id=?1").bind(id2).run();
     if (ua[2] === "2fa-off") await env.DB.batch([env.DB.prepare("UPDATE accounts SET totp=NULL, totp_on=0, totp_pending=NULL WHERE id=?1").bind(id2), env.DB.prepare("DELETE FROM recovery_codes WHERE account_id=?1").bind(id2)]);
     if (ua[2] === "signout") await env.DB.prepare("DELETE FROM account_sessions WHERE account_id=?1").bind(id2).run();
@@ -9352,15 +9407,15 @@ async function community(req, env, url, ctx) {
     }
     if (ua[2] === "link-guest" || ua[2] === "unlink-guest") {
       const want = String(body.guest || body.name || "").trim();
-      if (!want) return err7("which DRINKS driver?", 400);
+      if (!want) return err8("which DRINKS driver?", 400);
       const g = want.startsWith("guest-") ? await env.DB.prepare("SELECT id, alias FROM community_users WHERE id=?1 AND id LIKE 'guest-%'").bind(want).first() : await env.DB.prepare("SELECT id, alias FROM community_users WHERE id LIKE 'guest-%' AND lower(alias)=lower(?1) ORDER BY (owner=?2) DESC LIMIT 1").bind(cleanAlias(want), acc.id).first();
-      if (!g) return err7("DRINKS driver not found", 404);
+      if (!g) return err8("DRINKS driver not found", 404);
       if (ua[2] === "unlink-guest") {
         await env.DB.prepare("DELETE FROM guest_links WHERE gid=?1 AND account_id=?2").bind(g.id, id2).run();
-        return json11({ ok: true, name: g.alias });
+        return json12({ ok: true, name: g.alias });
       }
       const had = await env.DB.prepare("SELECT account_id FROM guest_links WHERE gid=?1").bind(g.id).first();
-      if (had && had.account_id !== id2) return err7("this DRINKS driver is already joined to another account", 409);
+      if (had && had.account_id !== id2) return err8("this DRINKS driver is already joined to another account", 409);
       const target2 = await env.DB.prepare("SELECT anon, name_kind FROM accounts WHERE id=?1").bind(id2).first();
       const shown = target2 && target2.name_kind === "iracing" ? "iracing" : "nick";
       const laps = (await env.DB.prepare("SELECT id, car_id, track_id, time, game, trace IS NOT NULL AS traced FROM community_laps WHERE user_id=?1").bind(g.id).all()).results || [];
@@ -9387,32 +9442,32 @@ async function community(req, env, url, ctx) {
         await markModel(env, gm, +t, +cId).catch(() => {
         });
       }
-      return json11({ ok: true, name: g.alias, moved: laps.length });
+      return json12({ ok: true, name: g.alias, moved: laps.length });
     }
     if (ua[2] === "rename") {
       const display = cleanName(body.name);
-      if (!display) return err7("choose a public name", 400);
-      if (await nameTaken(env, display, id2)) return err7("this nickname is already taken", 409);
+      if (!display) return err8("choose a public name", 400);
+      if (await nameTaken(env, display, id2)) return err8("this nickname is already taken", 409);
       await env.DB.batch([env.DB.prepare("UPDATE accounts SET display=?2, name_kind='nick' WHERE id=?1").bind(id2, display), env.DB.prepare("UPDATE community_users SET alias=?2 WHERE id=?1").bind(id2, display)]);
     }
-    return json11({ ok: true });
+    return json12({ ok: true });
   }
   if (p === "/admin/sessions" && m === "GET") {
     const acc = await sessionAccount(req, env);
-    if (!acc || !isAdmin(env, acc.id)) return err7("only the admins of this server can do this", 403);
+    if (!acc || !isAdmin(env, acc.id)) return err8("only the admins of this server can do this", 403);
     const r4 = await env.DB.prepare(`SELECT s.id, s.started, s.track, s.track_config AS trackConfig, s.car, s.kind, s.laps, s.game, s.official, s.cat, a.display AS who, a.id AS accountId
       FROM sessions s LEFT JOIN accounts a ON 'acct:'||a.id=s.uploader ORDER BY s.started DESC LIMIT 100`).all();
-    return json11({ sessions: r4.results || [] });
+    return json12({ sessions: r4.results || [] });
   }
   if (p === "/profile/badge" && m === "POST") {
     const who2 = await sessionAccount(req, env);
-    if (!who2) return err7("sign in with your Pitlane HQ account", 401);
+    if (!who2) return err8("sign in with your Pitlane HQ account", 401);
     await env.DB.prepare("UPDATE accounts SET supporter_hidden=?2 WHERE id=?1").bind(who2.id, body.hidden ? 1 : 0).run();
-    return json11({ ok: true, hidden: !!body.hidden });
+    return json12({ ok: true, hidden: !!body.hidden });
   }
   if (p === "/profile/races" && m === "POST") {
     const who2 = await sessionAccount(req, env);
-    if (!who2) return err7("sign in with your Pitlane HQ account", 401);
+    if (!who2) return err8("sign in with your Pitlane HQ account", 401);
     const n = /* @__PURE__ */ __name((v, lo, hi) => typeof v === "number" && isFinite(v) && v >= lo && v <= hi ? v : null, "n");
     const list = (Array.isArray(body.races) ? body.races : []).slice(0, 30).map((x) => x && typeof x.id === "string" && /^[A-Za-z0-9_.:-]{1,80}$/.test(x.id) && n(x.when, 1e12, 1e13) ? {
       id: x.id,
@@ -9438,29 +9493,29 @@ async function community(req, env, url, ctx) {
       env.DB.prepare("DELETE FROM profile_races WHERE account_id=?1").bind(who2.id),
       ...list.map((x) => env.DB.prepare("INSERT INTO profile_races (account_id, id, at, data) VALUES (?1,?2,?3,?4) ON CONFLICT DO NOTHING").bind(who2.id, x.id, x.when, JSON.stringify(x)))
     ]);
-    return json11({ ok: true, races: list.length });
+    return json12({ ok: true, races: list.length });
   }
   if (p === "/leagues" || p.startsWith("/leagues/")) {
     const who2 = await sessionAccount(req, env).catch(() => null), admin = !!who2 && isAdmin(env, who2.id);
     const parts = p.slice(9).split("/").filter(Boolean), lid = parts[0] || "", sub = parts[1] || "";
     const lgGame = leagueGame(url.searchParams.get("game") || m === "POST" && body && body.game);
-    if (lid === "found" && !sub && m === "GET") return json11(await foundLeagues(env, admin, lgGame));
-    if (env.LEAGUES_OPEN !== "1" && !admin && !(who2 && isTester(env, who2.id, who2))) return err7("leagues are in development", 403);
+    if (lid === "found" && !sub && m === "GET") return json12(await foundLeagues(env, admin, lgGame));
+    if (env.LEAGUES_OPEN !== "1" && !admin && !(who2 && isTester(env, who2.id, who2))) return err8("leagues are in development", 403);
     if (lid === "found") {
-      if (m === "GET") return json11(await foundLeagues(env, admin, lgGame));
-      if (m !== "POST" || !admin) return err7("only the admins can do this", 403);
-      if (sub && "edit" in body) return await editFound(env, sub, body.edit) ? json11(await foundLeagues(env, admin, lgGame)) : err7("league not found", 404);
+      if (m === "GET") return json12(await foundLeagues(env, admin, lgGame));
+      if (m !== "POST" || !admin) return err8("only the admins can do this", 403);
+      if (sub && "edit" in body) return await editFound(env, sub, body.edit) ? json12(await foundLeagues(env, admin, lgGame)) : err8("league not found", 404);
       if (sub) {
         await env.DB.prepare("UPDATE league_found SET hidden=?2 WHERE guild=?1").bind(sub, body.hidden ? 1 : 0).run();
-        return json11({ ok: true });
+        return json12({ ok: true });
       }
       if (body.invite) {
         const r4 = await addFound(env, body.invite, body.game);
-        if (r4.error) return err7(r4.error, 400);
-        return json11(await foundLeagues(env, admin, lgGame));
+        if (r4.error) return err8(r4.error, 400);
+        return json12(await foundLeagues(env, admin, lgGame));
       }
       await scanLeagues(env, true);
-      return json11(await foundLeagues(env, admin, lgGame));
+      return json12(await foundLeagues(env, admin, lgGame));
     }
     const lst = /* @__PURE__ */ __name((v) => {
       try {
@@ -9509,10 +9564,10 @@ async function community(req, env, url, ctx) {
       const r4 = await env.DB.prepare("SELECT l.*, u.alias, EXISTS (SELECT 1 FROM discord_guilds g WHERE g.league_id=l.id) AS bot FROM leagues l LEFT JOIN community_users u ON u.id=l.owner WHERE l.game=?1 ORDER BY l.updated DESC LIMIT 300").bind(lgGame).all();
       const limit2 = await leagueLimit();
       const mineN = who2 ? (await env.DB.prepare("SELECT COUNT(*) AS n FROM leagues WHERE owner=?1").bind(who2.id).first().catch(() => null) || {}).n || 0 : 0;
-      return json11({ game: lgGame, posted: mineN, leagues: (r4.results || []).map(row), admin, open: env.LEAGUES_OPEN === "1", limit: limit2, supporter: limit2 === LEAGUES_SUPPORTER, limits: { free: LEAGUES_FREE, supporter: LEAGUES_SUPPORTER } });
+      return json12({ game: lgGame, posted: mineN, leagues: (r4.results || []).map(row), admin, open: env.LEAGUES_OPEN === "1", limit: limit2, supporter: limit2 === LEAGUES_SUPPORTER, limits: { free: LEAGUES_FREE, supporter: LEAGUES_SUPPORTER } });
     }
     const cur = lid ? await env.DB.prepare("SELECT l.*, u.alias FROM leagues l LEFT JOIN community_users u ON u.id=l.owner WHERE l.id=?1").bind(lid).first() : null;
-    if (lid && !cur) return err7("league not found", 404);
+    if (lid && !cur) return err8("league not found", 404);
     if (m === "GET") {
       const o = row(cur);
       let days2 = [];
@@ -9521,17 +9576,17 @@ async function community(req, env, url, ctx) {
         const r4 = await env.DB.prepare("SELECT day, views, clicks FROM league_days WHERE league_id=?1 AND day>=?2 ORDER BY day").bind(lid, since).all();
         days2 = (r4.results || []).map((d) => ({ day: d.day, views: d.views || 0, clicks: d.clicks || 0 }));
       }
-      return json11({ league: o, days: days2 });
+      return json12({ league: o, days: days2 });
     }
-    if (m !== "POST") return err7("not found", 404);
+    if (m !== "POST") return err8("not found", 404);
     if (lid && sub === "hit") {
       const kind = ["view", "discord", "web"].includes(body.kind) ? body.kind : "";
-      if (!kind) return err7("what was it", 400);
-      if (who2 && who2.id === cur.owner) return json11({ ok: true, counted: false });
+      if (!kind) return err8("what was it", 400);
+      if (who2 && who2.id === cur.owner) return json12({ ok: true, counted: false });
       const viewer = who2 ? "a:" + who2.id : "n:" + (await sha2562("league-viewer|" + (env.DATA_KEY || "") + "|" + (req.headers.get("cf-connecting-ip") || "") + "|" + (req.headers.get("user-agent") || ""))).slice(0, 24);
       const day4 = (/* @__PURE__ */ new Date()).toISOString().slice(0, 10);
       const ins = await env.DB.prepare("INSERT OR IGNORE INTO league_hits (league_id, viewer, day, kind) VALUES (?1,?2,?3,?4)").bind(lid, viewer, day4, kind).run();
-      if (!(ins.meta && ins.meta.changes)) return json11({ ok: true, counted: false });
+      if (!(ins.meta && ins.meta.changes)) return json12({ ok: true, counted: false });
       const col = kind === "view" ? "views" : "clicks";
       const q2 = [
         env.DB.prepare(`UPDATE leagues SET ${col}=${col}+1 WHERE id=?1`).bind(lid),
@@ -9539,17 +9594,17 @@ async function community(req, env, url, ctx) {
       ];
       if (Math.random() < 0.02) q2.push(env.DB.prepare("DELETE FROM league_hits WHERE day < ?1").bind(new Date(Date.now() - 45 * 864e5).toISOString().slice(0, 10)));
       await env.DB.batch(q2);
-      return json11({ ok: true, counted: true });
+      return json12({ ok: true, counted: true });
     }
-    if (!who2) return err7("sign in with your Pitlane HQ account", 401);
-    if (lid && cur.owner !== who2.id && !admin) return err7("league not found", 404);
+    if (!who2) return err8("sign in with your Pitlane HQ account", 401);
+    if (lid && cur.owner !== who2.id && !admin) return err8("league not found", 404);
     if (lid && body.delete) {
       await env.DB.batch([
         env.DB.prepare("DELETE FROM league_hits WHERE league_id=?1").bind(lid),
         env.DB.prepare("DELETE FROM league_days WHERE league_id=?1").bind(lid),
         env.DB.prepare("DELETE FROM leagues WHERE id=?1").bind(lid)
       ]);
-      return json11({ ok: true, deleted: true });
+      return json12({ ok: true, deleted: true });
     }
     const txt = /* @__PURE__ */ __name((v, n2) => typeof v === "string" ? v.replace(/[\u0000-\u001f\u007f]/g, " ").replace(/\s+/g, " ").trim().slice(0, n2) : "", "txt");
     const link = /* @__PURE__ */ __name((v, re) => {
@@ -9559,10 +9614,10 @@ async function community(req, env, url, ctx) {
     const discord = link(body.discord, /^https:\/\/(discord\.gg|(www\.)?discord\.com\/invite)\/[A-Za-z0-9-]{2,40}\/?$/);
     const web = link(body.web, /^https:\/\/[^\s"'<>]{4,190}$/);
     const name2 = txt(body.name, 60);
-    if (name2.length < 3) return err7("the league needs a name", 400);
-    if (txt(body.discord, 200) && !discord) return err7("the Discord link must be an invite: https://discord.gg/\u2026 or https://discord.com/invite/\u2026", 400);
-    if (txt(body.web, 200) && !web) return err7("the website must be an https:// address", 400);
-    if (!discord && !web) return err7("give drivers a way in: a Discord invite or a website", 400);
+    if (name2.length < 3) return err8("the league needs a name", 400);
+    if (txt(body.discord, 200) && !discord) return err8("the Discord link must be an invite: https://discord.gg/\u2026 or https://discord.com/invite/\u2026", 400);
+    if (txt(body.web, 200) && !web) return err8("the website must be an https:// address", 400);
+    if (!discord && !web) return err8("give drivers a way in: a Discord invite or a website", 400);
     const cats = Array.isArray(body.cats) ? [...new Set(body.cats.filter((c) => CATS.includes(c)))] : CATS.includes(body.cat) ? [body.cat] : [];
     const days = Array.isArray(body.days) ? [...new Set(body.days.map(Number).filter((d) => Number.isInteger(d) && d >= 0 && d <= 6))].sort((a, b2) => a - b2) : [];
     const time = /^([01]\d|2[0-3]):[0-5]\d$/.test(String(body.time || "")) ? String(body.time) : "";
@@ -9591,14 +9646,14 @@ async function community(req, env, url, ctx) {
     const now = Date.now();
     if (cur) {
       await env.DB.prepare("UPDATE leagues SET name=?2, about=?3, cat=?4, cats=?5, days=?6, time=?7, tz=?8, open=?9, discord=?10, web=?11, schedule=?12, cars=?13, lang=?14, updated=?15, game=?16 WHERE id=?1").bind(lid, x.name, x.about, x.cat, x.cats, x.days, x.time, x.tz, x.open, x.discord, x.web, x.schedule, x.cars, x.lang, now, x.game).run();
-      return json11({ ok: true, id: lid });
+      return json12({ ok: true, id: lid });
     }
     const n = await env.DB.prepare("SELECT COUNT(*) AS n FROM leagues WHERE owner=?1").bind(who2.id).first();
     const limit = await leagueLimit();
-    if (n && n.n >= limit && !admin) return err7(limit === LEAGUES_SUPPORTER ? `you can post up to ${limit} leagues` : `you can post up to ${limit} leagues (${LEAGUES_SUPPORTER} as a supporter)`, 429);
+    if (n && n.n >= limit && !admin) return err8(limit === LEAGUES_SUPPORTER ? `you can post up to ${limit} leagues` : `you can post up to ${limit} leagues (${LEAGUES_SUPPORTER} as a supporter)`, 429);
     const id2 = rid7();
     await env.DB.prepare("INSERT INTO leagues (id, owner, name, about, cat, cats, days, time, tz, open, discord, web, schedule, cars, lang, created, updated, game) VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14,?15,?16,?16,?17)").bind(id2, who2.id, x.name, x.about, x.cat, x.cats, x.days, x.time, x.tz, x.open, x.discord, x.web, x.schedule, x.cars, x.lang, now, x.game).run();
-    return json11({ ok: true, id: id2, game: x.game });
+    return json12({ ok: true, id: id2, game: x.game });
   }
   if (p === "/profile" && m === "GET") {
     const viewer = await sessionAccount(req, env).catch(() => null), admin = !!viewer && isAdmin(env, viewer.id);
@@ -9614,7 +9669,7 @@ async function community(req, env, url, ctx) {
     }
     const a = uid ? await env.DB.prepare("SELECT a.id, a.anon, a.name_kind, a.created, a.member_since, a.supporter, a.supporter_hidden, u.alias, u.lics FROM accounts a JOIN community_users u ON u.id=a.id WHERE a.id=?1").bind(uid).first() : null;
     const mine = !!a && !!viewer && viewer.id === a.id;
-    if (!a || (fromAnon || a.anon) && !admin && !mine) return err7("this driver is anonymous", 404);
+    if (!a || (fromAnon || a.anon) && !admin && !mine) return err8("this driver is anonymous", 404);
     const laps = (await env.DB.prepare(
       `SELECT id, track, car, track_id AS trackId, car_id AS carId, time, created, anon, game, cat, lic,
          (SELECT COUNT(*) FROM community_laps o WHERE o.track_id=l.track_id AND o.car_id=l.car_id AND o.game=l.game AND COALESCE(o.shown,'')<>'model' AND o.time<l.time)+1 AS pos,
@@ -9655,7 +9710,7 @@ async function community(req, env, url, ctx) {
         if (run.length > 1) trend[k] = run.slice(-8).map((v) => Math.round(v * 1e3) / 1e3);
       }
     }
-    return json11({
+    return json12({
       name: a.alias || "Driver",
       since: a.member_since || a.created,
       mine,
@@ -9680,7 +9735,7 @@ async function community(req, env, url, ctx) {
   const am = p.match(/^\/admin\/(laps|reports|setups|trackmaps)\/([A-Za-z0-9_.:-]{1,64})$/);
   if (am && m === "DELETE") {
     const acc = await sessionAccount(req, env);
-    if (!acc || !isAdmin(env, acc.id)) return err7("only the admins of this server can do this", 403);
+    if (!acc || !isAdmin(env, acc.id)) return err8("only the admins of this server can do this", 403);
     const [, kind, id2] = am;
     const q2 = {
       laps: ["DELETE FROM community_laps WHERE id=?1", id2],
@@ -9689,31 +9744,31 @@ async function community(req, env, url, ctx) {
       trackmaps: ["DELETE FROM track_maps WHERE track_id=?1 AND game=?2", +id2 || 0, game]
     }[kind];
     const r4 = await env.DB.prepare(q2[0]).bind(...q2.slice(1)).run();
-    return json11({ deleted: !!(r4.meta && r4.meta.changes) });
+    return json12({ deleted: !!(r4.meta && r4.meta.changes) });
   }
   if (p.startsWith("/reports/") && m === "GET") {
     const r4 = await env.DB.prepare("SELECT r.*, CASE WHEN r.anon=1 THEN 'Anonymous' WHEN r.shown='iracing' AND COALESCE(u.iracing,'')<>'' THEN u.iracing ELSE u.alias END AS alias FROM community_reports r JOIN community_users u ON u.id=r.user_id WHERE r.id=?1").bind(p.slice(9)).first();
-    if (!r4) return err7("not found", 404);
+    if (!r4) return err8("not found", 404);
     const data = JSON.parse(await openData(env, r4.data));
     const rivals = seesRivals(req, env, await me(req, env).catch(() => null));
     for (const k of ["results", "brakes"]) if (Array.isArray(data[k])) data[k] = data[k].map((x) => !x ? x : x.me ? r4.anon ? { ...x, name: "Anonymous" } : x : rivals ? x : { ...x, name: "Anonymous" });
-    return json11({ ...data, id: r4.id, alias: r4.alias, game: r4.game, shared: true });
+    return json12({ ...data, id: r4.id, alias: r4.alias, game: r4.game, shared: true });
   }
   if (p === "/season/info" && m === "GET") {
     const c = await env.DB.prepare("SELECT updated FROM season_cache WHERE k='current'").first();
     const i = await env.DB.prepare("SELECT data FROM season_chunks WHERE k='info' AND idx=0").first();
-    return json11({ updated: c ? c.updated : null, ...i ? JSON.parse(i.data) : {} });
+    return json12({ updated: c ? c.updated : null, ...i ? JSON.parse(i.data) : {} });
   }
   if (p === "/season" && m === "GET") {
     const c = await env.DB.prepare("SELECT updated, chunks FROM season_cache WHERE k='current'").first();
-    if (!c) return err7("no season schedule on this server yet", 404);
+    if (!c) return err8("no season schedule on this server yet", 404);
     const r4 = await env.DB.prepare("SELECT data FROM season_chunks WHERE k='current' AND idx<?1 ORDER BY idx").bind(c.chunks).all();
     const seen2 = await seenSummary(env).catch(() => ({}));
     return new Response('{"updated":' + c.updated + ',"seen":' + JSON.stringify(seen2) + ',"season":' + (r4.results || []).map((x) => x.data).join("") + "}", { headers: { ...JSONH8, "cache-control": "public, max-age=900" } });
   }
   if (p === "/setups/cars" && m === "GET") {
     const r4 = await env.DB.prepare("SELECT car_path AS carPath, MAX(car) AS car, COUNT(*) AS n FROM community_setups WHERE game=?1 GROUP BY car_path ORDER BY n DESC LIMIT 500").bind(game).all();
-    return json11({ cars: r4.results || [] });
+    return json12({ cars: r4.results || [] });
   }
   if (p === "/setups" && m === "GET") {
     const car = url.searchParams.get("car") || "", track2 = (url.searchParams.get("track") || "").slice(0, 80), q2 = (url.searchParams.get("q") || "").slice(0, 60);
@@ -9722,32 +9777,32 @@ async function community(req, env, url, ctx) {
        WHERE (?1='' OR s.car_path=?1) AND (?2='' OR s.track LIKE '%'||?2||'%') AND (?3='' OR s.name LIKE '%'||?3||'%' OR s.car LIKE '%'||?3||'%' OR s.track LIKE '%'||?3||'%') AND s.game=?4
        ORDER BY s.downloads DESC, s.created DESC LIMIT 200`
     ).bind(car, track2, q2, game).all();
-    return json11({ setups: r4.results || [] });
+    return json12({ setups: r4.results || [] });
   }
   if (p.startsWith("/setups/") && p !== "/setups/mine" && m === "GET") {
     const id2 = p.slice(8);
     const s = await env.DB.prepare("SELECT s.*, u.alias FROM community_setups s JOIN community_users u ON u.id=s.user_id WHERE s.id=?1").bind(id2).first();
-    if (!s) return err7("not found", 404);
+    if (!s) return err8("not found", 404);
     await env.DB.prepare("UPDATE community_setups SET downloads=downloads+1 WHERE id=?1").bind(id2).run();
-    return json11({ id: s.id, alias: s.alias, carPath: s.car_path, car: s.car, track: s.track, name: s.name, notes: s.notes, sha: s.sha, data: s.data });
+    return json12({ id: s.id, alias: s.alias, carPath: s.car_path, car: s.car, track: s.track, name: s.name, notes: s.notes, sha: s.sha, data: s.data });
   }
   if (p === "/preview/sample" && m === "GET") {
     const t = await pickSample(env, game);
-    return t ? new Response(t, { headers: { ...JSONH8, "cache-control": "public, max-age=600" } }) : json11({ frames: [] });
+    return t ? new Response(t, { headers: { ...JSONH8, "cache-control": "public, max-age=600" } }) : json12({ frames: [] });
   }
   let u = await me(req, env);
-  if (!u) return err7("wrong or missing token", 401);
+  if (!u) return err8("wrong or missing token", 401);
   if (p === "/guests" && m === "GET") {
-    if (!u.account || !isAdmin(env, u.id)) return err7("only the admins of this server can do this", 403);
+    if (!u.account || !isAdmin(env, u.id)) return err8("only the admins of this server can do this", 403);
     const r4 = await env.DB.prepare("SELECT g.id, g.alias, g.created, (SELECT COUNT(*) FROM community_laps l WHERE l.user_id=g.id) AS laps, (SELECT a.display FROM guest_links gl JOIN accounts a ON a.id=gl.account_id WHERE gl.gid=g.id) AS linked FROM community_users g WHERE g.owner=?1 AND g.id LIKE 'guest-%' ORDER BY g.created DESC LIMIT 60").bind(u.id).all();
-    return json11({ guests: (r4.results || []).map((x) => ({ id: x.id, name: x.alias, laps: x.laps || 0, created: x.created, linked: x.linked || null })) });
+    return json12({ guests: (r4.results || []).map((x) => ({ id: x.id, name: x.alias, laps: x.laps || 0, created: x.created, linked: x.linked || null })) });
   }
   if (m === "POST" && (p === "/laps" || p === "/reports") && typeof body.guest === "string" && body.guest.trim()) {
-    if (!u.account || !isAdmin(env, u.id)) return err7("only the admins of this server can share laps for other drivers", 403);
+    if (!u.account || !isAdmin(env, u.id)) return err8("only the admins of this server can share laps for other drivers", 403);
     const name2 = cleanAlias(body.guest);
     const had = await env.DB.prepare("SELECT id FROM community_users WHERE owner=?1 AND id LIKE 'guest-%' AND lower(alias)=lower(?2)").bind(u.id, name2).first();
     const gid = had ? had.id : "guest-" + (await sha2562(u.id + ":" + name2.toLowerCase())).slice(0, 20);
-    if (await nameTaken(env, name2, u.id)) return json11({ error: `"${name2}" is already used by another driver on Pitlane HQ, choose another name`, code: "name_taken" }, 409);
+    if (await nameTaken(env, name2, u.id)) return json12({ error: `"${name2}" is already used by another driver on Pitlane HQ, choose another name`, code: "name_taken" }, 409);
     await env.DB.prepare("INSERT INTO community_users (id, token_hash, alias, created, owner) VALUES (?1,?2,?3,?4,?5) ON CONFLICT(id) DO UPDATE SET alias=excluded.alias, owner=excluded.owner").bind(gid, await sha2562("guest:" + gid + ":" + rid7()), name2, Date.now(), u.id).run();
     const gl = await env.DB.prepare("SELECT l.account_id AS id, a.anon, a.name_kind FROM guest_links l JOIN accounts a ON a.id=l.account_id WHERE l.gid=?1").bind(gid).first();
     const to = gl ? await env.DB.prepare("SELECT id, alias, uploads_day, uploads FROM community_users WHERE id=?1").bind(gl.id).first() : null;
@@ -9761,39 +9816,39 @@ async function community(req, env, url, ctx) {
   if (shownAs === "iracing" && typeof body.iracingName === "string" && body.iracingName.trim())
     await env.DB.prepare("UPDATE community_users SET iracing=?2 WHERE id=?1").bind(u.id, cleanAlias(body.iracingName)).run();
   if (p === "/guest-rename" && m === "POST") {
-    if (!u.account || !isAdmin(env, u.id)) return err7("only the admins of this server can do this", 403);
+    if (!u.account || !isAdmin(env, u.id)) return err8("only the admins of this server can do this", 403);
     const from = cleanAlias(body.from || ""), to = cleanAlias(body.to || "");
-    if (!from || !to) return err7("both names are needed", 400);
-    if (await nameTaken(env, to, u.id)) return json11({ error: `"${to}" is already used by another driver on Pitlane HQ, choose another name`, code: "name_taken" }, 409);
+    if (!from || !to) return err8("both names are needed", 400);
+    if (await nameTaken(env, to, u.id)) return json12({ error: `"${to}" is already used by another driver on Pitlane HQ, choose another name`, code: "name_taken" }, 409);
     const row = await env.DB.prepare("SELECT id FROM community_users WHERE owner=?1 AND id LIKE 'guest-%' AND lower(alias)=lower(?2)").bind(u.id, from).first();
     if (from.toLowerCase() !== to.toLowerCase()) {
       const clash = await env.DB.prepare("SELECT id FROM community_users WHERE owner=?1 AND id LIKE 'guest-%' AND lower(alias)=lower(?2)").bind(u.id, to).first();
-      if (clash) return json11({ error: `You already have a driver called "${to}"`, code: "name_taken" }, 409);
+      if (clash) return json12({ error: `You already have a driver called "${to}"`, code: "name_taken" }, 409);
     }
     if (row) await env.DB.prepare("UPDATE community_users SET alias=?2 WHERE id=?1").bind(row.id, to).run();
     await env.DB.prepare("UPDATE laps SET drv=?3 WHERE lower(drv)=lower(?2) AND session_id IN (SELECT id FROM sessions WHERE uploader=?1)").bind("acct:" + u.id, from, to).run().catch(() => {
     });
     await env.DB.prepare("UPDATE sessions SET drvs=(SELECT group_concat(DISTINCT drv) FROM laps WHERE session_id=sessions.id) WHERE uploader=?1 AND drvs IS NOT NULL").bind("acct:" + u.id).run().catch(() => {
     });
-    return json11({ ok: true, renamed: !!row, name: to });
+    return json12({ ok: true, renamed: !!row, name: to });
   }
   if (p === "/name-check" && m === "POST") {
-    if (!u.account || !isAdmin(env, u.id)) return err7("only the admins of this server can do this", 403);
-    return json11({ free: !await nameTaken(env, cleanAlias(body.name), u.id) });
+    if (!u.account || !isAdmin(env, u.id)) return err8("only the admins of this server can do this", 403);
+    return json12({ free: !await nameTaken(env, cleanAlias(body.name), u.id) });
   }
   if (p === "/preview/sample" && m === "POST") {
     const r4 = await storeSample(env, u.id, body);
-    return r4.error ? err7(r4.error, r4.status) : json11(r4);
+    return r4.error ? err8(r4.error, r4.status) : json12(r4);
   }
   if (p === "/season/seen" && m === "POST") {
     const r4 = await recordSeen(env, u.id, body);
-    return r4.error ? err7(r4.error, r4.status) : json11(r4);
+    return r4.error ? err8(r4.error, r4.status) : json12(r4);
   }
   if ((p === "/season" || p === "/admin/season") && m === "POST") {
     const allowed = String(env.SEASON_UPLOADERS || env.ADMINS || "").split(",").map((x) => x.trim()).filter(Boolean);
-    if (!u.account || !(allowed.includes(u.id) || isAdmin(env, u.id))) return err7("this account cannot publish the season schedule", 403);
+    if (!u.account || !(allowed.includes(u.id) || isAdmin(env, u.id))) return err8("this account cannot publish the season schedule", 403);
     const data = JSON.stringify(body.season || null);
-    if (data.length < 100 || data.length > 12e6 || !Array.isArray(body.season.seasons)) return err7("season schedule missing or too large", 400);
+    if (data.length < 100 || data.length > 12e6 || !Array.isArray(body.season.seasons)) return err8("season schedule missing or too large", 400);
     const parts = [];
     for (let i = 0; i < data.length; i += 9e5) parts.push(data.slice(i, i + 9e5));
     await env.DB.batch([
@@ -9803,36 +9858,36 @@ async function community(req, env, url, ctx) {
       // what the admin page's Season says about it without reading the whole season
       env.DB.prepare("INSERT INTO season_chunks (k, idx, data) VALUES ('info',0,?1) ON CONFLICT(k, idx) DO UPDATE SET data=excluded.data").bind(JSON.stringify(seasonInfo(body.season, u.id)))
     ]);
-    return json11({ published: true, size: data.length });
+    return json12({ published: true, size: data.length });
   }
   if (p === "/setups/mine" && m === "GET") {
     const r4 = await env.DB.prepare("SELECT id, car_path AS carPath, car, track, name, notes, size, downloads, created FROM community_setups WHERE user_id=?1 ORDER BY created DESC").bind(u.id).all();
-    return json11({ setups: (r4.results || []).map((x) => ({ ...x, alias: u.alias, mine: true })) });
+    return json12({ setups: (r4.results || []).map((x) => ({ ...x, alias: u.alias, mine: true })) });
   }
   if (p === "/setups" && m === "POST") {
-    if (typeof body.carPath !== "string" || !CAR_RE.test(body.carPath) || body.carPath.includes("..")) return err7("unknown car folder", 400);
-    if (typeof body.data !== "string" || !/^[A-Za-z0-9+/=]+$/.test(body.data) || body.data.length > 56e4) return err7("setup missing or too large (400 KB max)", 400);
-    if (typeof body.sha !== "string" || !/^[0-9a-f]{64}$/.test(body.sha)) return err7("missing checksum", 400);
+    if (typeof body.carPath !== "string" || !CAR_RE.test(body.carPath) || body.carPath.includes("..")) return err8("unknown car folder", 400);
+    if (typeof body.data !== "string" || !/^[A-Za-z0-9+/=]+$/.test(body.data) || body.data.length > 56e4) return err8("setup missing or too large (400 KB max)", 400);
+    if (typeof body.sha !== "string" || !/^[0-9a-f]{64}$/.test(body.sha)) return err8("missing checksum", 400);
     const bytes = Uint8Array.from(atob(body.data), (c) => c.charCodeAt(0));
-    if (await crypto.subtle.digest("SHA-256", bytes).then((b2) => [...new Uint8Array(b2)].map((x) => x.toString(16).padStart(2, "0")).join("")) !== body.sha) return err7("checksum does not match", 400);
-    if (!await countUpload(env, u)) return err7("too many uploads today", 429);
+    if (await crypto.subtle.digest("SHA-256", bytes).then((b2) => [...new Uint8Array(b2)].map((x) => x.toString(16).padStart(2, "0")).join("")) !== body.sha) return err8("checksum does not match", 400);
+    if (!await countUpload(env, u)) return err8("too many uploads today", 429);
     const id2 = rid7();
     const r4 = await env.DB.prepare(
       "INSERT INTO community_setups (id, user_id, car_path, car, track, name, notes, data, sha, size, created, game) VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12) ON CONFLICT(user_id, sha) DO NOTHING"
     ).bind(id2, u.id, body.carPath, str3(body.car), str3(body.track, 80), cleanFile(body.name), str3(body.notes, 1e3), body.data, body.sha, bytes.length, Date.now(), game).run();
-    if (!r4.meta || !r4.meta.changes) return json11({ kept: "you already shared this setup" });
-    return json11({ shared: true, id: id2 });
+    if (!r4.meta || !r4.meta.changes) return json12({ kept: "you already shared this setup" });
+    return json12({ shared: true, id: id2 });
   }
   if (p.startsWith("/setups/") && m === "DELETE") {
     await env.DB.prepare("DELETE FROM community_setups WHERE id=?1 AND user_id=?2").bind(p.slice(8), u.id).run();
-    return json11({ deleted: true });
+    return json12({ deleted: true });
   }
   if (p === "/adopt" && m === "POST") {
-    if (!u.account) return err7("sign in with your Pitlane HQ account", 401);
+    if (!u.account) return err8("sign in with your Pitlane HQ account", 401);
     const t = typeof body.token === "string" ? body.token.trim() : "";
-    if (t.length < 20) return err7("missing token", 400);
+    if (t.length < 20) return err8("missing token", 400);
     const d = await env.DB.prepare("SELECT id FROM community_users WHERE token_hash=?1").bind(await sha2562(t)).first();
-    if (!d || d.id === u.id || /^(o:|guest-)/.test(d.id) || await env.DB.prepare("SELECT 1 FROM accounts WHERE id=?1").bind(d.id).first()) return json11({ adopted: 0 });
+    if (!d || d.id === u.id || /^(o:|guest-)/.test(d.id) || await env.DB.prepare("SELECT 1 FROM accounts WHERE id=?1").bind(d.id).first()) return json12({ adopted: 0 });
     const laps = (await env.DB.prepare("SELECT id, car_id, track_id, time, game, trace IS NOT NULL AS traced FROM community_laps WHERE user_id=?1").bind(d.id).all()).results || [];
     const q2 = [], combos2 = /* @__PURE__ */ new Set();
     for (const l of laps) {
@@ -9859,10 +9914,10 @@ async function community(req, env, url, ctx) {
       const [g, tr2, ca] = c.split("|");
       await markModel(env, g, +tr2, +ca);
     }
-    return json11({ adopted: laps.length });
+    return json12({ adopted: laps.length });
   }
   if (p === "/rival-names" && m === "POST") {
-    if (!u.account) return err7("sign in with your Pitlane HQ account", 401);
+    if (!u.account) return err8("sign in with your Pitlane HQ account", 401);
     const items = (Array.isArray(body.items) ? body.items : []).slice(0, 600);
     let named = 0;
     for (const x of items) {
@@ -9878,16 +9933,16 @@ async function community(req, env, url, ctx) {
       await env.DB.prepare("UPDATE community_users SET alias=?2 WHERE id=?1 AND (alias='Anonymous' OR alias=?3)").bind(ids[0], full, short).run();
       named++;
     }
-    return json11({ named });
+    return json12({ named });
   }
   if (p === "/link-driver" && m === "POST") {
-    if (!u.account) return err7("sign in with your Pitlane HQ account", 401);
-    if (typeof body.key !== "string" || !/^[0-9a-f]{16,64}$/i.test(body.key)) return err7("missing key", 400);
+    if (!u.account) return err8("sign in with your Pitlane HQ account", 401);
+    if (typeof body.key !== "string" || !/^[0-9a-f]{16,64}$/i.test(body.key)) return err8("missing key", 400);
     const r4 = await linkDriver(env, u.id, await otherId(env, body.key), game);
-    return r4.error ? err7(r4.error, r4.status) : json11(r4);
+    return r4.error ? err8(r4.error, r4.status) : json12(r4);
   }
   if (p === "/lics" && m === "POST") {
-    if (!u.account) return err7("sign in with your Pitlane HQ account", 401);
+    if (!u.account) return err8("sign in with your Pitlane HQ account", 401);
     const row = await env.DB.prepare("SELECT lics FROM community_users WHERE id=?1").bind(u.id).first();
     let out = {};
     try {
@@ -9902,14 +9957,14 @@ async function community(req, env, url, ctx) {
         n++;
       }
     }
-    if (!n) return err7("no license classes", 400);
+    if (!n) return err8("no license classes", 400);
     await env.DB.prepare("UPDATE community_users SET lics=?2 WHERE id=?1").bind(u.id, JSON.stringify(out)).run();
-    return json11({ ok: true, lics: out });
+    return json12({ ok: true, lics: out });
   }
   if (p === "/me" && m === "POST") {
-    if (u.account) return err7("change your public name in your account", 400);
+    if (u.account) return err8("change your public name in your account", 400);
     await env.DB.prepare("UPDATE community_users SET alias=?2 WHERE id=?1").bind(u.id, cleanAlias(body.alias)).run();
-    return json11({ ok: true });
+    return json12({ ok: true });
   }
   if (p === "/me" && m === "DELETE") {
     await env.DB.batch([
@@ -9918,101 +9973,101 @@ async function community(req, env, url, ctx) {
       env.DB.prepare("DELETE FROM community_setups WHERE user_id=?1").bind(u.id),
       ...u.account ? [] : [env.DB.prepare("DELETE FROM community_users WHERE id=?1").bind(u.id)]
     ]);
-    return json11({ deleted: true });
+    return json12({ deleted: true });
   }
   if (p === "/share-lap" && m === "POST") {
-    if (!u.account) return err7("sign in with your Pitlane HQ account", 401);
+    if (!u.account) return err8("sign in with your Pitlane HQ account", 401);
     const s = await env.DB.prepare("SELECT * FROM sessions WHERE id=?1 AND uploader=?2").bind(String(body.sessionId || ""), "acct:" + u.id).first();
-    if (!s) return err7("session not found in your account", 404);
+    if (!s) return err8("session not found in your account", 404);
     const lap = body.lapId ? await env.DB.prepare("SELECT time, sectors, trace, valid FROM laps WHERE id=?1 AND session_id=?2 AND drv IS NULL").bind(String(body.lapId), s.id).first() : await env.DB.prepare("SELECT time, sectors, trace FROM laps WHERE session_id=?1 AND valid=1 AND drv IS NULL AND time>0 AND trace IS NOT NULL ORDER BY time LIMIT 1").bind(s.id).first() || await env.DB.prepare("SELECT time, sectors, trace FROM laps WHERE session_id=?1 AND valid=1 AND drv IS NULL AND time>0 ORDER BY time LIMIT 1").bind(s.id).first();
-    if (!lap || !(lap.time > 10)) return err7("this session has no valid lap to share", 404);
-    if (body.lapId && lap.valid !== 1) return err7("this lap is not valid (off track or the pit lane): it cannot be shared", 400);
+    if (!lap || !(lap.time > 10)) return err8("this session has no valid lap to share", 404);
+    if (body.lapId && lap.valid !== 1) return err8("this lap is not valid (off track or the pit lane): it cannot be shared", 400);
     const name2 = s.track + (s.track_config ? " \xB7 " + s.track_config : "");
     const g = s.game || "iracing";
     const { trackId, carId } = await comboIds(env, s, name2, g, u.id, body);
     const r4 = await keepBestLap(env, u.id, { game: g, carId, trackId, car: s.car, track: name2, time: lap.time, sectors: lap.sectors, trace: lap.trace, anon: !!body.anon, shown: shownAs, count: /* @__PURE__ */ __name(() => countUpload(env, u), "count"), ctx });
-    if (r4.limit) return err7("too many uploads today", 429);
-    if (r4.kept) return json11({ kept: "your faster lap is already shared", traced: r4.traced });
-    return json11({ shared: true, traced: r4.traced });
+    if (r4.limit) return err8("too many uploads today", 429);
+    if (r4.kept) return json12({ kept: "your faster lap is already shared", traced: r4.traced });
+    return json12({ shared: true, traced: r4.traced });
   }
   if (p === "/laps" && m === "POST") {
     const carId = int3(body.carId), trackId = int3(body.trackId), time = num2(body.time);
-    if (!carId || !trackId || !time || time <= 10 || time > 3600) return err7("lap needs carId, trackId and time", 400);
-    if (isTestDrive(body.kind)) return json11({ kept: "laps of a test drive are not shared" });
+    if (!carId || !trackId || !time || time <= 10 || time > 3600) return err8("lap needs carId, trackId and time", 400);
+    if (isTestDrive(body.kind)) return json12({ kept: "laps of a test drive are not shared" });
     const sectors = Array.isArray(body.sectors) ? JSON.stringify(body.sectors.filter((x) => typeof x === "number").slice(0, 10)) : null;
     if (typeof body.other === "string" && /^[0-9a-f]{16,64}$/i.test(body.other)) {
-      if (!u.account) return err7("sign in with your Pitlane HQ account to share other drivers' times", 401);
+      if (!u.account) return err8("sign in with your Pitlane HQ account to share other drivers' times", 401);
       const oid = await otherId(env, body.other);
       const plain2 = body.trace && Array.isArray(body.trace.d) && body.trace.d.length >= 60 ? JSON.stringify({ ...body.trace, src: body.trace.src === "real" ? "real" : "field" }) : null;
-      if (plain2 && plain2.length > 9e5) return err7("lap trace too large", 400);
+      if (plain2 && plain2.length > 9e5) return err8("lap trace too large", 400);
       const link = await env.DB.prepare("SELECT l.account_id AS id, a.anon, a.name_kind FROM driver_links l JOIN accounts a ON a.id=l.account_id WHERE l.oid=?1 AND l.game=?2").bind(oid, game).first();
       if (link) {
         const r6 = await keepBestLap(env, link.id, { game, carId, trackId, car: body.car, track: body.track, time, sectors, trace: await sealData(env, plain2), len: traceLen(body.trace), cls: body.cls, wet: wetOf(body.trace && body.trace.f), anon: !!link.anon, shown: link.name_kind === "iracing" ? "iracing" : "nick", lic: body.lic, cat: body.cat, official: body.official, ai: body.ai === true, count: /* @__PURE__ */ __name(() => countUpload(env, u), "count"), ctx });
-        if (r6.limit) return err7("too many uploads today", 429);
-        return json11(r6.kept ? { kept: "a faster lap of this driver is already shared" } : { shared: true });
+        if (r6.limit) return err8("too many uploads today", 429);
+        return json12(r6.kept ? { kept: "a faster lap of this driver is already shared" } : { shared: true });
       }
       const short = driverName(body.name || body.short);
       await env.DB.prepare("INSERT INTO community_users (id, token_hash, alias, created, owner) VALUES (?1,?2,?5,?3,?4) ON CONFLICT(id) DO UPDATE SET alias=excluded.alias WHERE excluded.alias<>'Anonymous'").bind(oid, "other:" + oid, Date.now(), u.id, short || "Anonymous").run();
       const r5 = await keepBestLap(env, oid, { game, carId, trackId, car: body.car, track: body.track, time, sectors, trace: await sealData(env, plain2), len: traceLen(body.trace), cls: body.cls, wet: wetOf(body.trace && body.trace.f), anon: true, shown: "nick", lic: body.lic, cat: body.cat, official: body.official, ai: body.ai === true, count: /* @__PURE__ */ __name(() => countUpload(env, u), "count") });
-      if (r5.limit) return err7("too many uploads today", 429);
-      return json11(r5.kept ? { kept: "a faster lap of this driver is already shared" } : { shared: true });
+      if (r5.limit) return err8("too many uploads today", 429);
+      return json12(r5.kept ? { kept: "a faster lap of this driver is already shared" } : { shared: true });
     }
     const plainTrace = body.trace ? JSON.stringify(body.trace) : null;
-    if (plainTrace && plainTrace.length > 9e5) return err7("lap trace too large", 400);
+    if (plainTrace && plainTrace.length > 9e5) return err8("lap trace too large", 400);
     const trace = await sealData(env, plainTrace);
     const r4 = await keepBestLap(env, u.id, { game, carId, trackId, car: body.car, track: body.track, time, sectors, trace, len: traceLen(body.trace), cls: body.cls, wet: wetOf(body.trace && body.trace.f), anon: !!body.anon, shown: shownAs, lic: body.lic, cat: body.cat, official: body.official, ai: body.ai === true, count: /* @__PURE__ */ __name(() => countUpload(env, u), "count"), ctx });
-    if (r4.limit) return err7("too many uploads today", 429);
-    return json11(r4.kept ? { kept: "your faster lap is already shared" } : { shared: true });
+    if (r4.limit) return err8("too many uploads today", 429);
+    return json12(r4.kept ? { kept: "your faster lap is already shared" } : { shared: true });
   }
   if (p === "/trackinfo" && m === "POST") {
     const trackId = int3(body.trackId);
-    if (!trackId || !(Number.isInteger(body.nturns) && body.nturns >= 1 && body.nturns <= 60)) return err7("trackInfo needs trackId and nturns", 400);
-    return json11({ ok: true, changed: await noteTurnCount(env, game, trackId, str3(body.track), body.nturns) });
+    if (!trackId || !(Number.isInteger(body.nturns) && body.nturns >= 1 && body.nturns <= 60)) return err8("trackInfo needs trackId and nturns", 400);
+    return json12({ ok: true, changed: await noteTurnCount(env, game, trackId, str3(body.track), body.nturns) });
   }
   if (p === "/trackmaps" && m === "POST") {
     const trackId = int3(body.trackId), time = num2(body.time), n = int3(body.n);
     if (trackId && Number.isInteger(body.nturns)) await noteTurnCount(env, game, trackId, str3(body.track), body.nturns).catch(() => {
     });
     const x = body.x, y = body.y;
-    if (!trackId || !time || time <= 10 || time > 3600) return err7("layout needs trackId and the lap time", 400);
-    if (body.clean !== true) return err7("only laps without incidents", 400);
-    if (!(n >= 100 && n <= 3e3) || !Array.isArray(x) || !Array.isArray(y) || x.length !== n || y.length !== n) return err7("layout points missing", 400);
+    if (!trackId || !time || time <= 10 || time > 3600) return err8("layout needs trackId and the lap time", 400);
+    if (body.clean !== true) return err8("only laps without incidents", 400);
+    if (!(n >= 100 && n <= 3e3) || !Array.isArray(x) || !Array.isArray(y) || x.length !== n || y.length !== n) return err8("layout points missing", 400);
     const ok = /* @__PURE__ */ __name((v) => typeof v === "number" && isFinite(v) && Math.abs(v) < 3e4, "ok");
-    if (!x.every(ok) || !y.every(ok)) return err7("layout points out of range", 400);
+    if (!x.every(ok) || !y.every(ok)) return err8("layout points out of range", 400);
     const g = Array.isArray(body.g) && body.g.length === 2 && body.g.every((v) => typeof v === "number" && isFinite(v)) && Math.abs(body.g[0]) <= 90 && Math.abs(body.g[1]) <= 180 ? body.g.map((v) => Math.round(v * 1e5) / 1e5) : null;
     const r22 = /* @__PURE__ */ __name((v) => Math.round(v * 10) / 10, "r2");
     const old = await env.DB.prepare("SELECT time, geo FROM track_maps WHERE game=?1 AND track_id=?2").bind(game, trackId).first();
-    if (old && old.geo && !g) return json11({ kept: "a layout from the game's position already draws this track" });
-    if (old && old.time <= time && !(g && !old.geo)) return json11({ kept: "a faster clean lap already drew this track" });
-    if (!await countUpload(env, u)) return err7("too many uploads today", 429);
+    if (old && old.geo && !g) return json12({ kept: "a layout from the game's position already draws this track" });
+    if (old && old.time <= time && !(g && !old.geo)) return json12({ kept: "a faster clean lap already drew this track" });
+    if (!await countUpload(env, u)) return err8("too many uploads today", 429);
     await env.DB.prepare(
       `INSERT INTO track_maps (game, track_id, track, n, len, pts, time, user_id, created, geo) VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10)
        ON CONFLICT(game, track_id) DO UPDATE SET track=excluded.track, n=excluded.n, len=excluded.len, pts=excluded.pts, time=excluded.time, user_id=excluded.user_id, created=excluded.created, geo=excluded.geo`
     ).bind(game, trackId, str3(body.track), n, num2(body.len), JSON.stringify({ x: x.map(r22), y: y.map(r22) }), time, u.id, Date.now(), g ? JSON.stringify(g) : null).run();
-    return json11({ shared: true });
+    return json12({ shared: true });
   }
   if (p === "/pitlane" && m === "POST") {
     const trackId = int3(body.trackId), n = int3(body.n), pts = body.pts;
-    if (!trackId || !(n >= 60 && n <= 4e3) || !Array.isArray(pts) || pts.length < 10 || pts.length > 2e3) return err7("pit lane needs trackId, n and its points", 400);
+    if (!trackId || !(n >= 60 && n <= 4e3) || !Array.isArray(pts) || pts.length < 10 || pts.length > 2e3) return err8("pit lane needs trackId, n and its points", 400);
     const ok = pts.every((q2) => Array.isArray(q2) && q2.length === 2 && Number.isInteger(q2[0]) && q2[0] >= 0 && q2[0] < n && typeof q2[1] === "number" && isFinite(q2[1]) && Math.abs(q2[1]) <= 80);
-    if (!ok) return err7("pit lane points out of range", 400);
-    if (!await countUpload(env, u)) return err7("too many uploads today", 429);
+    if (!ok) return err8("pit lane points out of range", 400);
+    if (!await countUpload(env, u)) return err8("too many uploads today", 429);
     const old = await env.DB.prepare("SELECT n, pts FROM track_pits WHERE game=?1 AND track_id=?2").bind(game, trackId).first();
     const keep = old && Math.abs(old.n - n) <= 4 ? JSON.parse(old.pts) : {};
     for (const [i, v] of pts) keep[i] = keep[i] == null ? v : Math.round((keep[i] * 0.6 + v * 0.4) * 10) / 10;
     await env.DB.prepare(`INSERT INTO track_pits (game, track_id, n, pts, updated) VALUES (?1,?2,?3,?4,?5)
        ON CONFLICT(game, track_id) DO UPDATE SET n=excluded.n, pts=excluded.pts, updated=excluded.updated`).bind(game, trackId, n, JSON.stringify(keep), Date.now()).run();
-    return json11({ shared: true, points: Object.keys(keep).length });
+    return json12({ shared: true, points: Object.keys(keep).length });
   }
   if (p === "/reports" && m === "POST") {
     const data = JSON.stringify(body.report || {});
-    if (data.length < 20 || data.length > 9e5) return err7("report missing or too large", 400);
-    if (!await countUpload(env, u)) return err7("too many uploads today", 429);
+    if (data.length < 20 || data.length > 9e5) return err8("report missing or too large", 400);
+    if (!await countUpload(env, u)) return err8("too many uploads today", 429);
     const r4 = body.report;
     await env.DB.prepare("INSERT INTO community_reports (id, user_id, car_id, car, track_id, track, data, created, anon, game, finish, field, best, shown) VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14)").bind(rid7(), u.id, int3(r4.carId), str3(r4.car), int3(r4.trackId), str3(r4.track), await sealData(env, data), Date.now(), body.anon ? 1 : 0, gameOf(body.game || r4.game), int3(r4.finish), int3(r4.field), num2(r4.best), shownAs).run();
-    return json11({ shared: true });
+    return json12({ shared: true });
   }
-  return err7("not found", 404);
+  return err8("not found", 404);
 }
 __name(community, "community");
 function seasonInfo(season, by) {
@@ -10023,8 +10078,8 @@ __name(seasonInfo, "seasonInfo");
 
 // src/stripe.js
 var JSONH9 = { "content-type": "application/json" };
-var json12 = /* @__PURE__ */ __name((o, s = 200) => new Response(JSON.stringify(o), { status: s, headers: JSONH9 }), "json");
-var err8 = /* @__PURE__ */ __name((e, s = 400) => json12({ error: e }, s), "err");
+var json13 = /* @__PURE__ */ __name((o, s = 200) => new Response(JSON.stringify(o), { status: s, headers: JSONH9 }), "json");
+var err9 = /* @__PURE__ */ __name((e, s = 400) => json13({ error: e }, s), "err");
 var DAY2 = 864e5;
 var GRACE = 3 * DAY2;
 var FIRST = 35 * DAY2;
@@ -10061,15 +10116,15 @@ var payOrder = /* @__PURE__ */ __name((id2) => "stripe:pay:" + id2, "payOrder");
 var donOrder = /* @__PURE__ */ __name((id2) => "stripe:don:" + id2, "donOrder");
 var orderRow = /* @__PURE__ */ __name((env, id2) => env.DB.prepare("SELECT account_id, email_hash, kind, until, status FROM pro_orders WHERE id=?1").bind(id2).first().catch(() => null), "orderRow");
 async function stripeWebhook(req, env, emailHash2, opts = {}) {
-  if (!env.STRIPE_WEBHOOK_SECRET) return err8("Stripe is not set up on this server", 404);
+  if (!env.STRIPE_WEBHOOK_SECRET) return err9("Stripe is not set up on this server", 404);
   const body = await req.text();
-  if (body.length > 3e5) return err8("too large", 413);
-  if (!await stripeSigned(env.STRIPE_WEBHOOK_SECRET, req.headers.get("stripe-signature"), body)) return err8("bad signature", 401);
+  if (body.length > 3e5) return err9("too large", 413);
+  if (!await stripeSigned(env.STRIPE_WEBHOOK_SECRET, req.headers.get("stripe-signature"), body)) return err9("bad signature", 401);
   let j;
   try {
     j = JSON.parse(body);
   } catch (e) {
-    return err8("not JSON");
+    return err9("not JSON");
   }
   const ev = String(j.type || ""), o = j.data && j.data.object || {}, now = Date.now();
   if (ev === "checkout.session.completed" || ev === "checkout.session.async_payment_succeeded") {
@@ -10084,52 +10139,52 @@ async function stripeWebhook(req, env, emailHash2, opts = {}) {
     const email = String(o.customer_details && o.customer_details.email || o.customer_email || "").trim().toLowerCase();
     const eh = email ? await emailHash2(env, email) : null;
     if (support) {
-      if (o.payment_status !== "paid") return json12({ ok: true, skipped: "not paid yet" });
+      if (o.payment_status !== "paid") return json13({ ok: true, skipped: "not paid yet" });
       if (!accountId && eh) {
         const a = await env.DB.prepare("SELECT id FROM accounts WHERE email_hash=?1").bind(eh).first().catch(() => null);
         if (a) accountId = a.id;
       }
       await env.DB.prepare("INSERT INTO pro_orders (id, account_id, email_hash, kind, status, until, at) VALUES (?1,?2,?3,'supporter','on',0,?4) ON CONFLICT(id) DO NOTHING").bind(donOrder(o.id), accountId, eh, now).run();
       if (accountId) await env.DB.prepare("UPDATE accounts SET supporter=1, supporter_src=COALESCE(supporter_src,'stripe') WHERE id=?1").bind(accountId).run();
-      return json12({ ok: true, supporter: !!accountId });
+      return json13({ ok: true, supporter: !!accountId });
     }
     if (o.mode === "subscription" && o.subscription) {
       const id2 = subOrder(typeof o.subscription === "string" ? o.subscription : o.subscription.id);
       const had = await orderRow(env, id2);
       if (had && had.status === "off") {
         await setPro(env, { accountId, eh, kind: "subscription", until: had.until, on: false, order: id2 });
-        return json12({ ok: true, subscription: false });
+        return json13({ ok: true, subscription: false });
       }
       const until = Math.max(had && had.until || 0, now + FIRST);
       await setPro(env, { accountId, eh, kind: "subscription", until, on: true, order: id2 });
-      return json12({ ok: true, subscription: true });
+      return json13({ ok: true, subscription: true });
     }
     if (o.mode === "payment") {
-      if (o.payment_status !== "paid") return json12({ ok: true, skipped: "not paid yet" });
+      if (o.payment_status !== "paid") return json13({ ok: true, skipped: "not paid yet" });
       const pi = typeof o.payment_intent === "string" ? o.payment_intent : o.payment_intent && o.payment_intent.id || o.id;
       await setPro(env, { accountId, eh, kind: "lifetime", until: 0, on: true, order: payOrder(pi) });
-      return json12({ ok: true, lifetime: true });
+      return json13({ ok: true, lifetime: true });
     }
-    return json12({ ok: true, skipped: "mode " + o.mode });
+    return json13({ ok: true, skipped: "mode " + o.mode });
   }
   if (/^customer\.subscription\.(created|updated|deleted)$/.test(ev) && o.id) {
-    if (o.status === "incomplete") return json12({ ok: true, skipped: "incomplete" });
+    if (o.status === "incomplete") return json13({ ok: true, skipped: "incomplete" });
     const id2 = subOrder(o.id), had = await orderRow(env, id2);
     const end = o.current_period_end || o.items && o.items.data && o.items.data[0] && o.items.data[0].current_period_end || 0;
     const live2 = ev !== "customer.subscription.deleted" && ["active", "trialing", "past_due"].includes(o.status);
     const until = end ? end * 1e3 + GRACE : had && had.until || now + FIRST;
     const on = live2 && until > now;
     await setPro(env, { accountId: had && had.account_id || null, eh: had && had.email_hash || null, kind: "subscription", until: on ? until : now, on, order: id2 });
-    return json12({ ok: true, subscription: on });
+    return json13({ ok: true, subscription: on });
   }
   if (ev === "charge.refunded" && o.refunded && o.payment_intent) {
     const pi = typeof o.payment_intent === "string" ? o.payment_intent : o.payment_intent.id;
     const had = await orderRow(env, payOrder(pi));
-    if (!had || had.kind !== "lifetime") return json12({ ok: true, skipped: "not a lifetime payment" });
+    if (!had || had.kind !== "lifetime") return json13({ ok: true, skipped: "not a lifetime payment" });
     await setPro(env, { accountId: had.account_id, eh: had.email_hash, kind: "lifetime", until: 0, on: false, order: payOrder(pi) });
-    return json12({ ok: true, lifetime: false });
+    return json13({ ok: true, lifetime: false });
   }
-  return json12({ ok: true, skipped: ev });
+  return json13({ ok: true, skipped: ev });
 }
 __name(stripeWebhook, "stripeWebhook");
 
@@ -12946,13 +13001,13 @@ var SQL_OV_SEEN = "UPDATE feedback_ask SET ov_races=0 WHERE account_id=?1";
 var SQL_OV_ANSWERED = "INSERT INTO feedback_ask (account_id, shown, used, ov_races, ov_answered) VALUES (?1,?2,0,0,1) ON CONFLICT(account_id) DO UPDATE SET ov_races=0, ov_answered=1";
 
 // src/usage.js
-var json13 = /* @__PURE__ */ __name((o, s = 200) => new Response(JSON.stringify(o), { status: s, headers: { "content-type": "application/json", "cache-control": "no-store" } }), "json");
-var err9 = /* @__PURE__ */ __name((m, s) => json13({ error: m }, s), "err");
+var json14 = /* @__PURE__ */ __name((o, s = 200) => new Response(JSON.stringify(o), { status: s, headers: { "content-type": "application/json", "cache-control": "no-store" } }), "json");
+var err10 = /* @__PURE__ */ __name((m, s) => json14({ error: m }, s), "err");
 async function usageRoute(req, env, url) {
   const p = url.pathname, m = req.method;
   const ours = ["/community/usage", "/community/feedback", "/community/feedback/ask", "/community/feedback/seen", "/community/feedback/ovrace", "/community/admin/analytics", "/community/admin/feedback"];
   if (p === "/community/visit" && m === "POST") {
-    if (isBot(req.headers.get("user-agent"))) return json13({ ok: true });
+    if (isBot(req.headers.get("user-agent"))) return json14({ ok: true });
     let b2 = null;
     try {
       b2 = JSON.parse((await req.text()).slice(0, 4e3));
@@ -12961,52 +13016,52 @@ async function usageRoute(req, env, url) {
     }
     const v = visitOf(b2);
     if (v.src) await env.DB.prepare(SQL_VISIT_ADD).bind(day2(Date.now()), v.src, countryOf(req.cf), v.page).run();
-    return json13({ ok: true });
+    return json14({ ok: true });
   }
   if (!ours.includes(p) && !p.startsWith("/community/admin/feedback/")) return null;
   const acc = await sessionAccount(req, env);
-  if (!acc) return err9("sign in with your Pitlane HQ account", 401);
+  if (!acc) return err10("sign in with your Pitlane HQ account", 401);
   const now = Date.now();
   if (p === "/community/usage" && m === "POST") {
     const u = cleanUsage(await req.json().catch(() => null));
-    if (u.error) return err9(u.error, 400);
+    if (u.error) return err10(u.error, 400);
     const d = day2(now), st = [];
     for (const [k, n] of u.counts)
       st.push(env.DB.prepare(SQL_USAGE_ADD).bind(d, acc.id, u.device, k, n));
     if (u.ms) st.push(env.DB.prepare(SQL_ASK_USED).bind(acc.id, now, u.ms));
     if (st.length) await env.DB.batch(st);
-    return json13({ ok: true, kept: u.counts.length });
+    return json14({ ok: true, kept: u.counts.length });
   }
   if (p === "/community/feedback/ask" && m === "GET") {
     const r4 = await env.DB.prepare("SELECT shown, used, ov_races, ov_answered, ov_last_style FROM feedback_ask WHERE account_id=?1").bind(acc.id).first();
     if (!r4) {
       await env.DB.prepare("INSERT OR IGNORE INTO feedback_ask (account_id, shown, used) VALUES (?1,?2,0)").bind(acc.id, now).run();
-      return json13({ ask: false, ov: false });
+      return json14({ ask: false, ov: false });
     }
     let races = 0;
     if (r4.used < ASK_USED) {
       const c = await env.DB.prepare(SQL_RACES_SINCE).bind("acct:" + acc.id, r4.shown).first();
       races = c && c.n || 0;
     }
-    return json13({ ask: shouldAsk(r4.used, races), used: r4.used, races, ov: shouldAskOv(!!r4.ov_answered, r4.ov_races || 0), ovRaces: r4.ov_races || 0, ovStyle: r4.ov_last_style || "classic" });
+    return json14({ ask: shouldAsk(r4.used, races), used: r4.used, races, ov: shouldAskOv(!!r4.ov_answered, r4.ov_races || 0), ovRaces: r4.ov_races || 0, ovStyle: r4.ov_last_style || "classic" });
   }
   if (p === "/community/feedback/seen" && m === "POST") {
     const b2 = await req.json().catch(() => null);
     if (b2 && b2.kind === "overlays") await env.DB.prepare(SQL_OV_SEEN).bind(acc.id).run();
     else await env.DB.prepare(SQL_ASK_SEEN).bind(acc.id, now).run();
-    return json13({ ok: true });
+    return json14({ ok: true });
   }
   if (p === "/community/feedback/ovrace" && m === "POST") {
     const o = cleanOvRace(await req.json().catch(() => null));
-    if (o.error) return err9(o.error, 400);
+    if (o.error) return err10(o.error, 400);
     await env.DB.prepare(SQL_OV_RACE).bind(acc.id, now, o.style, o.sid || crypto.randomUUID()).run();
-    return json13({ ok: true });
+    return json14({ ok: true });
   }
   if (p === "/community/feedback" && m === "POST") {
     const b2 = await req.json().catch(() => null), f = cleanFeedback(b2);
-    if (f.error) return err9(f.error, 400);
+    if (f.error) return err10(f.error, 400);
     const c = await env.DB.prepare("SELECT COUNT(*) AS n FROM feedback WHERE account_id=?1 AND created>?2").bind(acc.id, now - 864e5).first();
-    if (c && c.n >= FEEDBACK_PER_DAY) return err9("thank you, that is enough for today", 429);
+    if (c && c.n >= FEEDBACK_PER_DAY) return err10("thank you, that is enough for today", 429);
     const id2 = crypto.randomUUID();
     await env.DB.batch([
       env.DB.prepare("INSERT INTO feedback (id, account_id, created, device, v, rating, text, view, kind, style) VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10)").bind(id2, acc.id, now, f.device, f.v, f.rating, f.text, f.view, f.kind, f.style),
@@ -13018,40 +13073,40 @@ async function usageRoute(req, env, url) {
     const mailed = await sendFeedback(env, { ...f, nick: acc.display || "", accountId: acc.id, email: esc7 && esc7.email || "" }).catch(() => false);
     if (await discordFeedback(env, f).catch(() => 0) > 0) await env.DB.prepare("UPDATE feedback SET discord_at=?2 WHERE id=?1").bind(id2, now).run().catch(() => {
     });
-    return json13({ ok: true, id: id2, mailed });
+    return json14({ ok: true, id: id2, mailed });
   }
-  if (!isAdmin(env, acc.id)) return err9("only the admins of this server can do this", 403);
+  if (!isAdmin(env, acc.id)) return err10("only the admins of this server can do this", 403);
   if (p === "/community/admin/feedback" && m === "GET") {
     const r4 = await env.DB.prepare("SELECT f.id, CASE WHEN f.kind='uninstall' THEN NULL ELSE f.account_id END AS accountId, f.created, f.device, f.v, f.rating, f.text, f.view, f.kind, f.style, f.discord_at AS discordAt, a.display AS nick FROM feedback f LEFT JOIN accounts a ON a.id=f.account_id ORDER BY f.created DESC LIMIT 300").all();
     const items = r4.results || [];
     const rated = items.filter((x) => x.rating);
     const np = await env.DB.prepare("SELECT COUNT(*) AS n FROM feedback WHERE discord_at IS NULL").first().catch(() => null);
     const fc = await env.DB.prepare("SELECT COUNT(*) AS n FROM discord_guilds WHERE feedback_channel IS NOT NULL").first().catch(() => null);
-    return json13({ notOnDiscord: fc && fc.n ? np && np.n || 0 : 0, items, count: items.length, avg: rated.length ? Math.round(rated.reduce((s, x) => s + x.rating, 0) / rated.length * 10) / 10 : null });
+    return json14({ notOnDiscord: fc && fc.n ? np && np.n || 0 : 0, items, count: items.length, avg: rated.length ? Math.round(rated.reduce((s, x) => s + x.rating, 0) / rated.length * 10) / 10 : null });
   }
   if (p.startsWith("/community/admin/feedback/") && m === "DELETE") {
     const id2 = decodeURIComponent(p.slice("/community/admin/feedback/".length));
-    if (!/^[0-9a-f-]{8,40}$/i.test(id2)) return err9("bad id", 400);
+    if (!/^[0-9a-f-]{8,40}$/i.test(id2)) return err10("bad id", 400);
     const r4 = await env.DB.prepare("DELETE FROM feedback WHERE id=?1").bind(id2).run();
-    return json13({ ok: true, deleted: r4.meta && r4.meta.changes || 0 });
+    return json14({ ok: true, deleted: r4.meta && r4.meta.changes || 0 });
   }
   if (p === "/community/admin/feedback/old" && m === "POST") {
     const b2 = await req.json().catch(() => ({})), days = Math.floor(Number(b2 && b2.days));
-    if (!(days >= 1 && days <= 3650)) return err9("days from 1 to 3650", 400);
+    if (!(days >= 1 && days <= 3650)) return err10("days from 1 to 3650", 400);
     const r4 = await env.DB.prepare("DELETE FROM feedback WHERE created<?1").bind(now - days * 864e5).run();
-    return json13({ ok: true, deleted: r4.meta && r4.meta.changes || 0 });
+    return json14({ ok: true, deleted: r4.meta && r4.meta.changes || 0 });
   }
   if (p === "/community/admin/feedback/discord" && m === "POST") {
     const rows = (await env.DB.prepare("SELECT id, device, v, rating, text, kind, style FROM feedback WHERE discord_at IS NULL ORDER BY created ASC LIMIT 8").all()).results || [];
     let posted = 0;
     for (const x of rows) {
       const n = await discordFeedback(env, x).catch(() => 0);
-      if (!n) return json13({ error: posted ? "Discord stopped answering, press it again in a minute" : "No Discord feedback forum is chosen, or Discord did not answer", posted }, posted ? 200 : 400);
+      if (!n) return json14({ error: posted ? "Discord stopped answering, press it again in a minute" : "No Discord feedback forum is chosen, or Discord did not answer", posted }, posted ? 200 : 400);
       await env.DB.prepare("UPDATE feedback SET discord_at=?2 WHERE id=?1").bind(x.id, Date.now()).run();
       posted++;
     }
     const left = await env.DB.prepare("SELECT COUNT(*) AS n FROM feedback WHERE discord_at IS NULL").first();
-    return json13({ ok: true, posted, left: left && left.n || 0 });
+    return json14({ ok: true, posted, left: left && left.n || 0 });
   }
   if (p === "/community/admin/analytics" && m === "GET") {
     const days = Math.max(1, Math.min(MAX_DAYS, Math.floor(Number(url.searchParams.get("days")) || 30)));
@@ -13080,9 +13135,9 @@ async function usageRoute(req, env, url) {
     const vNow = vis.filter((x) => x.day >= from), vPrev = vis.filter((x) => x.day < from);
     const all = { ...out, ...more, sources: sourcesOf(vNow, vPrev, accs.filter((a) => a.created >= t0), accs.filter((a) => a.created < t0)) };
     all.sources.bySource = all.sources.bySource.map((x) => ({ ...x, name: srcName(x.src), kindName: KIND_NAMES[x.kind] || KIND_NAMES.other }));
-    return json13({ ...all, highlights: highlightsOf(all).map((h) => ({ ...h, text: hiText(h.k, h.a) })), areas: areasOf(all.top || []) });
+    return json14({ ...all, highlights: highlightsOf(all).map((h) => ({ ...h, text: hiText(h.k, h.a) })), areas: areasOf(all.top || []) });
   }
-  return err9("not found", 404);
+  return err10("not found", 404);
 }
 __name(usageRoute, "usageRoute");
 async function pruneUsage(env) {
@@ -13285,7 +13340,7 @@ __name(legal, "legal");
 
 // src/uninstall.js
 var esc6 = /* @__PURE__ */ __name((s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]), "esc");
-var json14 = /* @__PURE__ */ __name((o, s = 200) => new Response(JSON.stringify(o), { status: s, headers: { "content-type": "application/json", "cache-control": "no-store" } }), "json");
+var json15 = /* @__PURE__ */ __name((o, s = 200) => new Response(JSON.stringify(o), { status: s, headers: { "content-type": "application/json", "cache-control": "no-store" } }), "json");
 var UNINSTALL_PER_DAY = 3;
 var UNINSTALL_ALL_DAY = 200;
 var REASONS = {
@@ -13356,7 +13411,7 @@ async function uninstallRoute(req, env, url, { send: send2 = /* @__PURE__ */ __n
     return new Response(uninstallPage(uninstallLang(req, url), url.searchParams.get("v")), { headers: { "content-type": "text/html; charset=utf-8", "cache-control": "public, max-age=3600", vary: "Accept-Language" } });
   }
   if (p !== "/community/feedback/uninstall" || req.method !== "POST") return null;
-  if (isBot(req.headers.get("user-agent"))) return json14({ ok: true });
+  if (isBot(req.headers.get("user-agent"))) return json15({ ok: true });
   let b2 = null;
   try {
     b2 = JSON.parse((await req.text()).slice(0, 2e4));
@@ -13364,16 +13419,16 @@ async function uninstallRoute(req, env, url, { send: send2 = /* @__PURE__ */ __n
     b2 = null;
   }
   const f = cleanUninstall(b2);
-  if (f.error) return json14({ error: f.error }, 400);
+  if (f.error) return json15({ error: f.error }, 400);
   const now = Date.now(), who2 = await netKey(req, now);
   const c = await env.DB.prepare("SELECT SUM(account_id=?1) AS mine, COUNT(*) AS n FROM feedback WHERE kind='uninstall' AND created>?2").bind(who2, now - 864e5).first();
-  if (c && (c.mine >= UNINSTALL_PER_DAY || c.n >= UNINSTALL_ALL_DAY)) return json14({ error: "thank you, that is enough for today" }, 429);
+  if (c && (c.mine >= UNINSTALL_PER_DAY || c.n >= UNINSTALL_ALL_DAY)) return json15({ error: "thank you, that is enough for today" }, 429);
   const id2 = crypto.randomUUID();
   await env.DB.prepare("INSERT INTO feedback (id, account_id, created, device, v, rating, text, view, kind, style) VALUES (?1,?2,?3,?4,?5,NULL,?6,?7,?8,?9)").bind(id2, who2, now, f.device, f.v, f.text, f.view, f.kind, f.style).run();
   const mailed = await send2(env, { ...f, nick: "", accountId: "" }).catch(() => false);
   if (await discord(env, f).catch(() => 0) > 0) await env.DB.prepare("UPDATE feedback SET discord_at=?2 WHERE id=?1").bind(id2, now).run().catch(() => {
   });
-  return json14({ ok: true, mailed });
+  return json15({ ok: true, mailed });
 }
 __name(uninstallRoute, "uninstallRoute");
 
@@ -13446,35 +13501,35 @@ function routeKey(method, path) {
   return (method || "GET") + " " + (segs.join("/").slice(0, 80) || "/");
 }
 __name(routeKey, "routeKey");
-var json15 = /* @__PURE__ */ __name((o, s = 200) => new Response(JSON.stringify(o), { status: s, headers: { "content-type": "application/json", "cache-control": "no-store" } }), "json");
-var err10 = /* @__PURE__ */ __name((m, s) => json15({ error: m }, s), "err");
+var json16 = /* @__PURE__ */ __name((o, s = 200) => new Response(JSON.stringify(o), { status: s, headers: { "content-type": "application/json", "cache-control": "no-store" } }), "json");
+var err11 = /* @__PURE__ */ __name((m, s) => json16({ error: m }, s), "err");
 async function handleReports(req, env, url, { sessionAccount: sessionAccount2, isAdmin: isAdmin2 }) {
   const p = url.pathname, m = req.method, now = Date.now();
   if (p === "/community/crash" && m === "POST") {
     const raw = await req.text().catch(() => "");
-    if (raw.length > STACK_MAX * 2) return err10("too big", 413);
+    if (raw.length > STACK_MAX * 2) return err11("too big", 413);
     let b2 = null;
     try {
       b2 = JSON.parse(raw);
     } catch (e) {
     }
     const c = cleanCrash(b2);
-    if (c.error) return err10(c.error, 400);
+    if (c.error) return err11(c.error, 400);
     const acc2 = await sessionAccount2(req, env).catch(() => null);
     await env.DB.prepare(SQL_CRASH_ADD).bind(c.sig, c.app, c.v, c.os, c.where, c.msg, c.stack, now, acc2 ? acc2.id : null).run();
-    return json15({ ok: true });
+    return json16({ ok: true });
   }
   const ours = p === "/community/support/logs" || p === "/community/admin/crashes" || p.startsWith("/community/admin/crashes/") || p.startsWith("/community/admin/support/logs/") || p === "/community/admin/d1";
   if (!ours) return null;
   const acc = await sessionAccount2(req, env);
-  if (!acc) return err10("sign in with your Pitlane HQ account", 401);
+  if (!acc) return err11("sign in with your Pitlane HQ account", 401);
   if (p === "/community/support/logs" && m === "POST") {
     const b2 = await req.json().catch(() => null) || {};
     const text2 = clean(b2.text, LOG_MAX + 1).replace(/\r\n?/g, "\n");
-    if (!text2.trim()) return err10("the log is empty", 400);
-    if (text2.length > LOG_MAX) return err10("the log is too big", 413);
+    if (!text2.trim()) return err11("the log is empty", 400);
+    if (text2.length > LOG_MAX) return err11("the log is too big", 413);
     const c = await env.DB.prepare(SQL_LOGS_SINCE).bind(acc.id, now - 864e5).first();
-    if (c && c.n >= LOGS_PER_DAY) return err10("that is enough for today, we answer soon", 429);
+    if (c && c.n >= LOGS_PER_DAY) return err11("that is enough for today, we answer soon", 429);
     const id2 = crypto.randomUUID(), mid = crypto.randomUUID(), device = APPS.includes(String(b2.device)) ? String(b2.device) : "", v = cleanV4(b2.v);
     const kb = Math.max(1, Math.round(text2.length / 1024));
     const line = "Logs sent, " + kb + " KB";
@@ -13482,28 +13537,28 @@ async function handleReports(req, env, url, { sessionAccount: sessionAccount2, i
       env.DB.prepare(SQL_LOG_ADD).bind(id2, acc.id, now, device, v, text2.length, text2),
       ...driverMessage(env, acc.id, mid, now, { text: line, device, v, view: "log:" + id2, kind: "logs" })
     ]);
-    return json15({ ok: true, msg: { id: mid, me: true, text: line, created: now, kind: "logs" } });
+    return json16({ ok: true, msg: { id: mid, me: true, text: line, created: now, kind: "logs" } });
   }
-  if (!isAdmin2(env, acc.id)) return err10("only the admins of this server can do this", 403);
+  if (!isAdmin2(env, acc.id)) return err11("only the admins of this server can do this", 403);
   const days = Math.min(90, Math.max(1, parseInt(url.searchParams.get("days") || "7", 10) || 7));
   if (p === "/community/admin/crashes" && m === "GET") {
     const r4 = await env.DB.prepare(SQL_CRASHES).bind(now - days * 864e5).all();
-    return json15({ items: (r4.results || []).map((x) => ({ sig: x.sig, app: x.app, v: x.v, os: x.os, where: x.at_where, msg: x.msg, stack: x.stack, first: x.first, last: x.last, n: x.n, nick: x.nick || "" })) });
+    return json16({ items: (r4.results || []).map((x) => ({ sig: x.sig, app: x.app, v: x.v, os: x.os, where: x.at_where, msg: x.msg, stack: x.stack, first: x.first, last: x.last, n: x.n, nick: x.nick || "" })) });
   }
   if (p.startsWith("/community/admin/crashes/") && m === "DELETE") {
     await env.DB.prepare(SQL_CRASH_DEL).bind(decodeURIComponent(p.slice(25))).run();
-    return json15({ ok: true });
+    return json16({ ok: true });
   }
   if (p.startsWith("/community/admin/support/logs/") && m === "GET") {
     const r4 = await env.DB.prepare(SQL_LOG_GET).bind(decodeURIComponent(p.slice(30))).first();
-    if (!r4) return err10("not found", 404);
-    return json15({ id: r4.id, accountId: r4.account_id, created: r4.created, device: r4.device || "", v: r4.v || "", bytes: r4.bytes, text: r4.text });
+    if (!r4) return err11("not found", 404);
+    return json16({ id: r4.id, accountId: r4.account_id, created: r4.created, device: r4.device || "", v: r4.v || "", bytes: r4.bytes, text: r4.text });
   }
   if (p === "/community/admin/d1" && m === "GET") {
     const r4 = await env.DB.prepare(SQL_USAGE_DAYS).bind(day3(now - (days - 1) * 864e5)).all();
-    return json15(usageOf(r4.results || []));
+    return json16(usageOf(r4.results || []));
   }
-  return err10("not found", 404);
+  return err11("not found", 404);
 }
 __name(handleReports, "handleReports");
 var pruneReports = /* @__PURE__ */ __name((env, now = Date.now()) => env.DB.batch([
@@ -13573,8 +13628,8 @@ var reportsRoute = /* @__PURE__ */ __name((req, env, url) => handleReports(req, 
 
 // src/worker.js
 var JSONH10 = { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" };
-var json16 = /* @__PURE__ */ __name((v, status = 200) => new Response(JSON.stringify(v), { status, headers: JSONH10 }), "json");
-var err11 = /* @__PURE__ */ __name((msg, status) => json16({ error: msg }, status), "err");
+var json17 = /* @__PURE__ */ __name((v, status = 200) => new Response(JSON.stringify(v), { status, headers: JSONH10 }), "json");
+var err12 = /* @__PURE__ */ __name((msg, status) => json17({ error: msg }, status), "err");
 function same5(a, b2) {
   if (typeof a !== "string" || typeof b2 !== "string" || !a || a.length !== b2.length) return false;
   let d = 0;
@@ -13675,19 +13730,19 @@ async function addLap(env, sessionId, l) {
 __name(addLap, "addLap");
 async function api(req, env, url, ctx) {
   const me2 = await who(req, env);
-  if (!me2) return err11(env.PITLANE_KEY ? "wrong or missing key" : "sign in with your Pitlane HQ account (this server has no PITLANE_KEY)", 401);
+  if (!me2) return err12(env.PITLANE_KEY ? "wrong or missing key" : "sign in with your Pitlane HQ account (this server has no PITLANE_KEY)", 401);
   const role = me2.role;
   const p = url.pathname;
   const m = req.method;
-  if (p === "/api/me") return json16({ role, name: me2.name, display: me2.display });
+  if (p === "/api/me") return json17({ role, name: me2.name, display: me2.display });
   const admins = (env.ADMINS || env.SEASON_UPLOADERS || "").split(",").map((x) => x.trim()).filter(Boolean);
   const admin = role === "account" && admins.includes(me2.name.replace(/^acct:/, ""));
   const own = role === "account" ? me2.name : null;
   const ownRead = admin ? null : own;
   if (p === "/api/upload" && m === "POST") {
-    if (role === "viewer") return err11("this key can only read", 403);
+    if (role === "viewer") return err12("this key can only read", 403);
     const body = await req.json().catch(() => null);
-    if (!body || !body.session) return err11("bad upload", 400);
+    if (!body || !body.session) return err12("bad upload", 400);
     if ((role === "member" || role === "account") && body.session.id) body.session.id = (me2.name.replace(/[^A-Za-z0-9_.-]/g, "_") + ":" + body.session.id).slice(0, 80);
     if (body.session.imported === true && Array.isArray(body.laps) && body.laps.length) {
       const st = Number(body.session.started) || 0;
@@ -13696,7 +13751,7 @@ async function api(req, env, url, ctx) {
       ).bind(me2.name, str4(body.session.track), str4(body.session.car), st - 12 * 36e5, st + 12 * 36e5).all().catch(() => ({ results: [] }));
       const times = (have.results || []).map((x) => x.time);
       body.laps = body.laps.filter((l) => l && (l.repair === true || !(num3(l.time) && times.some((t) => Math.abs(t - l.time) < 6e-4))));
-      if (!body.laps.length) return json16({ ok: true, shared: false, duplicate: true });
+      if (!body.laps.length) return json17({ ok: true, shared: false, duplicate: true });
     }
     let e = await upsertSession(env, body.session, me2.name);
     if (!e && posInt(body.session.trackId) && posInt(body.session.carId)) await reconcileIds(env, gameOf(body.session.game), str4(body.session.track), str4(body.session.trackConfig), str4(body.session.car), posInt(body.session.trackId), posInt(body.session.carId)).catch(() => {
@@ -13704,10 +13759,10 @@ async function api(req, env, url, ctx) {
     if (!e && posInt(body.session.carId)) await noteCar(env, gameOf(body.session.game), posInt(body.session.carId), str4(body.session.car)).catch(() => {
     });
     if (role === "member" || role === "account") body.laps = (body.laps || []).map((l) => ({ ...l, id: (me2.name.replace(/[^A-Za-z0-9_.-]/g, "_") + ":" + l.id).slice(0, 80) }));
-    if (e) return err11(e, 400);
+    if (e) return err12(e, 400);
     for (const l of (body.laps || []).slice(0, 50)) {
       e = await addLap(env, body.session.id, l);
-      if (e) return err11(e, 400);
+      if (e) return err12(e, 400);
     }
     const dropped = await dropImpossibleLaps(env, body.session.id).catch(() => 0);
     if (dropped && role === "account") await unshareInvalid(env, me2.name.slice(5), body.session.id).catch(() => {
@@ -13716,14 +13771,14 @@ async function api(req, env, url, ctx) {
     let shared = null;
     const imported = body.session.imported === true;
     if (role === "account") shared = await autoShare(env, me2.name.slice(5), body.session.id, body.laps, { trackId: body.session.trackId, carId: body.session.carId, lic: body.session.lic, cat: body.session.cat, imported }, imported ? null : ctx).catch(() => null);
-    return json16({ ok: true, shared: !!(shared && shared.shared) });
+    return json17({ ok: true, shared: !!(shared && shared.shared) });
   }
   if (p === "/api/sessions/summary" && m === "GET") {
     const q2 = url.searchParams;
-    return json16(await sessionSummary(env.DB, { from: q2.get("from"), tz: q2.get("tz"), game: q2.get("game") ? gameOf(q2.get("game")) : null, uploader: own || q2.get("who") || null }));
+    return json17(await sessionSummary(env.DB, { from: q2.get("from"), tz: q2.get("tz"), game: q2.get("game") ? gameOf(q2.get("game")) : null, uploader: own || q2.get("who") || null }));
   }
   if (p === "/api/sessions-owned" && m === "GET") {
-    if (!own) return json16({ tracks: [], cars: [] });
+    if (!own) return json17({ tracks: [], cars: [] });
     const { results } = await env.DB.prepare(
       "SELECT DISTINCT track, track_config, car FROM sessions WHERE uploader=?1 AND COALESCE(game,'iracing')='iracing' AND LOWER(COALESCE(kind,'')) NOT LIKE '%test%' LIMIT 2000"
     ).bind(own).all();
@@ -13733,7 +13788,7 @@ async function api(req, env, url, ctx) {
       if (r4.track) tracks2.set(r4.track + "\0" + cfg, [r4.track, cfg]);
       if (r4.car) cars.add(r4.car);
     }
-    return json16({ tracks: [...tracks2.values()], cars: [...cars] });
+    return json17({ tracks: [...tracks2.values()], cars: [...cars] });
   }
   if (p === "/api/sessions" && m === "GET") {
     const q2 = url.searchParams;
@@ -13767,7 +13822,7 @@ async function api(req, env, url, ctx) {
       } catch (e) {
       }
     }
-    return json16((results || []).map(placeOut).map(({ cat, lic, ...x }) => {
+    return json17((results || []).map(placeOut).map(({ cat, lic, ...x }) => {
       const ir = (x.game || "iracing") === "iracing";
       const c = ir ? catOf(cm, x.track_id, x.car_id, cat, x.track + (x.track_config ? " \xB7 " + x.track_config : ""), x.car) : "sports_car";
       return { ...x, cons: x.cons != null && x.cons >= 0 ? Math.round(Math.sqrt(x.cons) * 1e3) / 1e3 : null, cat: c, lic: lic || ir && c && lics[c] || null };
@@ -13787,12 +13842,12 @@ async function api(req, env, url, ctx) {
        FROM laps l JOIN sessions s ON s.id=l.session_id WHERE l.valid=1 AND l.drv IS NULL AND (?1 IS NULL OR s.uploader=?1)
        GROUP BY s.game, s.track, s.track_config, s.car, who ORDER BY last DESC LIMIT 600`
     ).bind(own).all();
-    return json16(results);
+    return json17(results);
   }
   let mm = p.match(/^\/api\/sessions\/([A-Za-z0-9_.:-]+)\/validate$/);
   if (mm && m === "POST") {
     const admins2 = (env.ADMINS || env.SEASON_UPLOADERS || "").split(",").map((x) => x.trim()).filter(Boolean);
-    if (role !== "account" || !admins2.includes(me2.name.replace(/^acct:/, ""))) return err11("only the admins of this server can do this", 403);
+    if (role !== "account" || !admins2.includes(me2.name.replace(/^acct:/, ""))) return err12("only the admins of this server can do this", 403);
     const sid = decodeURIComponent(mm[1]);
     const ls = (await env.DB.prepare("SELECT id, time, sectors, COALESCE(inc,0) AS inc FROM laps WHERE session_id=?1 AND time>0").bind(sid).all()).results || [];
     const secs = /* @__PURE__ */ __name((l) => {
@@ -13819,26 +13874,26 @@ async function api(req, env, url, ctx) {
     const ok = ls.filter((l) => !l.inc && secs(l) && mt > 0 && l.time >= 0.85 * mt && secs(l).every((v, k) => v >= 0.5 * ms[k]));
     if (ok.length) await env.DB.batch(ok.map((l) => env.DB.prepare("UPDATE laps SET valid=1 WHERE id=?1").bind(l.id)));
     await validityChanged(env, sid);
-    return json16({ ok: true, laps: ok.length });
+    return json17({ ok: true, laps: ok.length });
   }
   mm = p.match(/^\/api\/sessions\/([A-Za-z0-9_.:-]+)\/driver$/);
   if (mm && m === "POST") {
     const sid = decodeURIComponent(mm[1]);
     const s = await env.DB.prepare("SELECT uploader FROM sessions WHERE id=?1").bind(sid).first();
-    if (!s || role === "viewer" || own && s.uploader !== own) return err11("not found", 404);
+    if (!s || role === "viewer" || own && s.uploader !== own) return err12("not found", 404);
     const b2 = await req.json().catch(() => ({}));
     const n = Math.round(num3(b2.n) || 0);
-    if (!n) return err11("which lap?", 400);
+    if (!n) return err12("which lap?", 400);
     await env.DB.batch([env.DB.prepare("UPDATE laps SET drv=?3 WHERE session_id=?1 AND n=?2").bind(sid, n, lapDrv(b2)), env.DB.prepare(SESSION_SUMS).bind(sid)]);
     if (String(s.uploader).startsWith("acct:")) await reshareSession(env, String(s.uploader).slice(5), sid).catch(() => {
     });
-    return json16({ ok: true });
+    return json17({ ok: true });
   }
   mm = p.match(/^\/api\/sessions\/([A-Za-z0-9_.:-]+)\/incidents$/);
   if (mm && m === "POST") {
     const sid = decodeURIComponent(mm[1]);
     const s = await env.DB.prepare("SELECT uploader FROM sessions WHERE id=?1").bind(sid).first();
-    if (!s || role === "viewer" || own && s.uploader !== own) return err11("not found", 404);
+    if (!s || role === "viewer" || own && s.uploader !== own) return err12("not found", 404);
     const b2 = await req.json().catch(() => ({}));
     const laps = Array.isArray(b2.laps) ? b2.laps.slice(0, 200) : [];
     const stmts = [];
@@ -13862,30 +13917,30 @@ async function api(req, env, url, ctx) {
       stmts.push(env.DB.prepare("UPDATE laps SET inc=?3, trace=?4 WHERE session_id=?1 AND n=?2 AND COALESCE(inc,0)=0").bind(sid, n, inc, trace));
     }
     if (stmts.length) await env.DB.batch(stmts);
-    return json16({ ok: true, laps: stmts.length });
+    return json17({ ok: true, laps: stmts.length });
   }
   mm = p.match(/^\/api\/laps\/([A-Za-z0-9_.:-]+)\/valid$/);
   if (mm && m === "POST") {
     const admins2 = (env.ADMINS || env.SEASON_UPLOADERS || "").split(",").map((x) => x.trim()).filter(Boolean);
-    if (role !== "account" || !admins2.includes(me2.name.replace(/^acct:/, ""))) return err11("only the admins of this server can do this", 403);
+    if (role !== "account" || !admins2.includes(me2.name.replace(/^acct:/, ""))) return err12("only the admins of this server can do this", 403);
     const b2 = await req.json().catch(() => ({}));
     const lid = decodeURIComponent(mm[1]);
     const r4 = await env.DB.prepare("UPDATE laps SET valid=?2 WHERE id=?1").bind(lid, b2.valid === false ? 0 : 1).run();
     const lr = await env.DB.prepare("SELECT session_id FROM laps WHERE id=?1").bind(lid).first();
     if (lr) await validityChanged(env, lr.session_id);
-    return json16({ ok: true, changed: r4.meta ? r4.meta.changes : void 0, valid: b2.valid !== false });
+    return json17({ ok: true, changed: r4.meta ? r4.meta.changes : void 0, valid: b2.valid !== false });
   }
   mm = p.match(/^\/api\/sessions\/([A-Za-z0-9_.:-]+)$/);
   if (mm) {
     if (m === "DELETE") {
       const own2 = await env.DB.prepare("SELECT uploader FROM sessions WHERE id=?1").bind(mm[1]).first();
-      if (role === "viewer" || (role === "member" || role === "account") && (!own2 || own2.uploader !== me2.name)) return err11("you can only delete your own sessions", 403);
+      if (role === "viewer" || (role === "member" || role === "account") && (!own2 || own2.uploader !== me2.name)) return err12("you can only delete your own sessions", 403);
       await env.DB.batch([env.DB.prepare("DELETE FROM laps WHERE session_id=?1").bind(mm[1]), env.DB.prepare("DELETE FROM sessions WHERE id=?1").bind(mm[1])]);
-      return json16({ ok: true });
+      return json17({ ok: true });
     }
     const sid = decodeURIComponent(mm[1]);
     const s = await env.DB.prepare("SELECT * FROM sessions WHERE id=?1").bind(sid).first();
-    if (!s || ownRead && s.uploader !== ownRead) return err11("not found", 404);
+    if (!s || ownRead && s.uploader !== ownRead) return err12("not found", 404);
     const withTraces = url.searchParams.get("traces") === "1";
     const { results } = await env.DB.prepare(`SELECT id, n, time, valid, fuel, vmax, sectors, inc, drv${withTraces ? ", trace" : ""} FROM laps WHERE session_id=?1 ORDER BY n`).bind(sid).all();
     const laps = [];
@@ -13895,47 +13950,47 @@ async function api(req, env, url, ctx) {
       const a = await env.DB.prepare("SELECT display FROM accounts WHERE id=?1").bind(String(s.uploader).slice(5)).first().catch(() => null);
       who2 = a && a.display || "";
     }
-    return json16({ session: { ...placeOut(s), cons: s.cons != null && s.cons >= 0 ? Math.round(Math.sqrt(s.cons) * 1e3) / 1e3 : null, ...who2 !== void 0 ? { other: true, who: who2 } : {} }, laps });
+    return json17({ session: { ...placeOut(s), cons: s.cons != null && s.cons >= 0 ? Math.round(Math.sqrt(s.cons) * 1e3) / 1e3 : null, ...who2 !== void 0 ? { other: true, who: who2 } : {} }, laps });
   }
   if (p === "/api/teambest" && m === "GET") {
     const q2 = url.searchParams;
     const l = await env.DB.prepare(
       `SELECT l.id FROM laps l JOIN sessions s ON s.id=l.session_id WHERE l.valid=1 AND l.drv IS NULL AND l.trace IS NOT NULL AND s.track=?1 AND COALESCE(s.track_config,'')=?2 AND s.car=?3 AND (?4 IS NULL OR s.uploader=?4) AND s.game=?5 ORDER BY l.time LIMIT 1`
     ).bind(q2.get("track") || "", q2.get("config") || "", q2.get("car") || "", own, gameOf(q2.get("game"))).first();
-    return json16(l || {});
+    return json17(l || {});
   }
   if (p === "/api/team") {
-    if (role === "account") return json16({ members: [], me: me2.display || me2.name, role });
+    if (role === "account") return json17({ members: [], me: me2.display || me2.name, role });
     if (m === "GET") {
       const { results } = await env.DB.prepare("SELECT name, created FROM members ORDER BY name").all();
-      return json16({ members: results, me: me2.name, role });
+      return json17({ members: results, me: me2.name, role });
     }
-    if (role !== "owner") return err11("only the owner manages the team", 403);
+    if (role !== "owner") return err12("only the owner manages the team", 403);
     if (m === "POST") {
       const b2 = await req.json().catch(() => ({}));
       const name2 = str4(b2.name, 40);
-      if (!name2 || !/^[\p{L}\p{N} _.'-]{2,40}$/u.test(name2) || name2 === "owner" || name2 === "viewer") return err11("choose a name of 2 to 40 letters", 400);
+      if (!name2 || !/^[\p{L}\p{N} _.'-]{2,40}$/u.test(name2) || name2 === "owner" || name2 === "viewer") return err12("choose a name of 2 to 40 letters", 400);
       const key2 = [...crypto.getRandomValues(new Uint8Array(24))].map((x) => x.toString(16).padStart(2, "0")).join("");
       try {
         await env.DB.prepare("INSERT INTO members (name, key_hash, created) VALUES (?1,?2,?3)").bind(name2, await sha2563(key2), Date.now()).run();
       } catch (e) {
-        return err11("that name is already in the team", 400);
+        return err12("that name is already in the team", 400);
       }
-      return json16({ name: name2, key: key2 });
+      return json17({ name: name2, key: key2 });
     }
   }
   mm = p.match(/^\/api\/team\/(.+)$/);
   if (mm && m === "DELETE") {
-    if (role !== "owner") return err11("only the owner manages the team", 403);
+    if (role !== "owner") return err12("only the owner manages the team", 403);
     await env.DB.prepare("DELETE FROM members WHERE name=?1").bind(decodeURIComponent(mm[1])).run();
-    return json16({ ok: true });
+    return json17({ ok: true });
   }
   mm = p.match(/^\/api\/laps\/([A-Za-z0-9_.:-]+)\/valid$/);
   if (mm && m === "POST") {
-    if (!admin) return err11("only the admins of this server can do this", 403);
+    if (!admin) return err12("only the admins of this server can do this", 403);
     const b2 = await req.json().catch(() => ({}));
     const l = await env.DB.prepare("SELECT l.session_id, s.uploader FROM laps l JOIN sessions s ON s.id=l.session_id WHERE l.id=?1").bind(decodeURIComponent(mm[1])).first();
-    if (!l) return err11("not found", 404);
+    if (!l) return err12("not found", 404);
     await env.DB.batch([env.DB.prepare("UPDATE laps SET valid=?2 WHERE id=?1").bind(decodeURIComponent(mm[1]), b2.valid ? 1 : 0), env.DB.prepare(SESSION_SUMS).bind(l.session_id)]);
     if (String(l.uploader).startsWith("acct:")) {
       const uid = String(l.uploader).slice(5);
@@ -13944,16 +13999,16 @@ async function api(req, env, url, ctx) {
       else await unshareInvalid(env, uid, l.session_id).catch(() => {
       });
     }
-    return json16({ ok: true });
+    return json17({ ok: true });
   }
   mm = p.match(/^\/api\/laps\/([A-Za-z0-9_.:-]+)$/);
   if (mm && m === "GET") {
     const lid = decodeURIComponent(mm[1]);
     const l = await env.DB.prepare("SELECT l.*, s.track, s.car, s.started, s.driver, s.uploader FROM laps l JOIN sessions s ON s.id=l.session_id WHERE l.id=?1").bind(lid).first();
-    if (!l || ownRead && l.uploader !== ownRead) return err11("not found", 404);
-    return json16({ ...l, trace: l.trace ? JSON.parse(await openData(env, l.trace)) : null, sectors: l.sectors ? JSON.parse(l.sectors) : null });
+    if (!l || ownRead && l.uploader !== ownRead) return err12("not found", 404);
+    return json17({ ...l, trace: l.trace ? JSON.parse(await openData(env, l.trace)) : null, sectors: l.sectors ? JSON.parse(l.sectors) : null });
   }
-  return err11("not found", 404);
+  return err12("not found", 404);
 }
 __name(api, "api");
 function traceLapTime(t) {
@@ -14173,7 +14228,7 @@ async function handle(req, env, ctx) {
         return res;
       }
     } catch (e) {
-      return err11("server error: " + (e && e.message), 500);
+      return err12("server error: " + (e && e.message), 500);
     }
   }
   if (url.pathname === "/app" || url.pathname.startsWith("/app/")) {
@@ -14189,7 +14244,7 @@ async function handle(req, env, ctx) {
   }
   const isAppFile = /^\/(fonts\.css|pitwall-[a-z0-9-]+\.js|app-news\.json|whats-new\.json|server\.json|manifest\.webmanifest|favicon\.ico|favicon-32\.png|icon-\d+\.png|logo\.svg|bimi\.svg|og(?:-es|-pt)?\.png|robots\.txt|landing\/(?:en\/|es\/|pt\/)?[a-z0-9-]+\.(?:jpg|png)|landing\/live-lap\.json)$/.test(url.pathname);
   if (url.pathname === "/" && url.searchParams.get("embed") !== "1" || isAppFile) {
-    if (!env.ASSETS) return err11("the app is not published on this server", 404);
+    if (!env.ASSETS) return err12("the app is not published on this server", 404);
     if (url.pathname === "/server.json" && env.LOCAL === "1") return new Response(JSON.stringify({ url: url.origin }), { headers: { "content-type": "application/json", "cache-control": "no-cache" } });
     const r4 = await env.ASSETS.fetch(new Request(new URL(url.pathname, url.origin), req));
     const h = new Headers(r4.headers);
@@ -14204,7 +14259,7 @@ async function handle(req, env, ctx) {
     try {
       return await discordInteraction(req, env, ctx);
     } catch (e) {
-      return err11("server error", 500);
+      return err12("server error", 500);
     }
   }
   if (url.pathname === "/discord/oauth" && req.method === "GET") return discordOAuth(req, env, url).catch(() => Response.redirect("https://pitlanehq.app/?discordLogin=0", 302));
@@ -14219,7 +14274,7 @@ async function handle(req, env, ctx) {
     try {
       return await api(req, env, url, ctx);
     } catch (e) {
-      return err11("server error: " + (e && e.message), 500);
+      return err12("server error: " + (e && e.message), 500);
     }
   }
   if (url.pathname !== "/" && url.pathname.replace(/\/+$/, "") !== "/laps") {

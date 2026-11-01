@@ -15,7 +15,7 @@ const TYPES = { exe: "application/vnd.microsoft.portable-executable", zip: "appl
 
 // the Microsoft Store listing (apps.microsoft.com/detail/<Store ID>): "Coming soon" until it is set, the same address as
 // MS_STORE in web/dist/index.html and pitwall-tour.js
-const MS_STORE = "";
+const MS_STORE = "https://apps.microsoft.com/detail/9P3642QCS9ZG";
 
 export async function downloads(req, env, url) {
   const p = url.pathname;

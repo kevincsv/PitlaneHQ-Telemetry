@@ -33,6 +33,7 @@ import { onlineRoute, prunePresence } from "./presence.js";
 import { usageRoute, pruneUsage } from "./usage.js";
 import { supportRoute } from "./support.js";
 import { sessionSummary, SESSION_SUMS, ALL_SESSION_SUMS } from "./sessionsum.js";
+import { SQL_PBS, pbsOf } from "./alertslib.js";
 import { pruneSeen } from "./seasonseen.js";
 import { legal } from "./legal.js";
 import { uninstallRoute } from "./uninstall.js";
@@ -216,7 +217,10 @@ async function api(req, env, url, ctx) {
   // Home's four numbers over every session of the account since the device's start of the month (sessionsum.js)
   if (p === "/api/sessions/summary" && m === "GET") {
     const q = url.searchParams;
-    return json(await sessionSummary(env.DB, { from: q.get("from"), tz: q.get("tz"), game: q.get("game") ? gameOf(q.get("game")) : null, uploader: own || q.get("who") || null }));
+    const sum = await sessionSummary(env.DB, { from: q.get("from"), tz: q.get("tz"), game: q.get("game") ? gameOf(q.get("game")) : null, uploader: own || q.get("who") || null });
+    // ?pbs=1 (Home's "Your week", own account only): the cars and tracks whose best this period beats every one before
+    if (q.get("pbs") === "1" && own) sum.pbs = pbsOf(((await env.DB.prepare(SQL_PBS).bind(own, sum.from).all().catch(() => ({ results: [] }))).results) || []).map((r) => ({ track: r.track, track_config: r.track_config || null, car: r.car, best: r.b, before: r.before }));
+    return json(sum);
   }
 
   // the iRacing tracks and cars the account has driven outside a test drive (official, hosted, league or AI sessions all

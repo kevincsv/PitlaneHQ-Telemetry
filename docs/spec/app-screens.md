@@ -124,3 +124,10 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   phones' race page the same): the start and the places after lap 1, every lap that won or lost places, the pit stops,
   each incident with its points, its kind and where on the lap, and the finish against the start.
 
+## Your week
+
+- Home (and the phones' Home) shows "Your week" once the account drove since Monday (`homeWeekHTML`, GET
+  `/api/sessions/summary?from=<Monday>&pbs=1`, which adds the cars and tracks whose best this week beats every one
+  before, `pbsOf` in alertslib.js, the account's own only): sessions, laps, time on track, races, the new bests with
+  what they gained. Share copies it as text (the phone's share sheet on the web and the phones).
+

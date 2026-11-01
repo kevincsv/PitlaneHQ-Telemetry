@@ -14,7 +14,7 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   server (DATA_KEY), which opens it to teach the model and share the fastest laps; live telemetry with a code is
   end-to-end. The analysis of your laps runs on your device.
 - Signing in with an email that has no account says so and offers to create it (`no_account`).
-- Steam, Discord and Google (the owner's choice, Oct 31): "Continue with …" on the sign-in screen of every device. When
+- Steam, Discord and Google (the owner's choice, Oct 31): "Continue with …" on the sign-in screen of every device, and above the "Create an account" form of the web and the PC (the phones send "Create an account" to the web). When
   that Steam, Discord or Google account has no Pitlane HQ account yet, it is made at once with no form (`quick` on POST
   /account/register, `quickRegister` in `accounts.js`): no password (`auth_hash` ''), the public name the sign-in gave
   (made free with a number, `freeName`), the server makes the data key and keeps it sealed (escrow, so DATA_KEY is

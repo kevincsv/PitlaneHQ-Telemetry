@@ -222,9 +222,10 @@ export async function freeName(env, want) {
 export const isAdmin = (env, id) => env.LOCAL === "1" || String(env.ADMINS || env.SEASON_UPLOADERS || "").split(",").map((x) => x.trim()).filter(Boolean).includes(id);
 // testers of this server: the accounts an admin made testers in the admin page (accounts.tester, migration 0086) and the
 // account ids in TESTERS; they use what is in development (the planner, the games and modes still being made) on every
-// device, with none of the admins' tools. `row` is the account's row when the caller has it.
+// device, with none of the admins' tools. `row` is the account's row when the caller has it. accounts.tester: 1 made a
+// tester, 0 the level taken away in the admin page (also for an id in TESTERS), NULL never set (TESTERS decides).
 export const testersSet = (env, id) => !!id && String(env.TESTERS || "").split(",").map((x) => x.trim()).filter(Boolean).includes(id);
-export const isTester = (env, id, row) => !!id && (!!(row && row.tester) || testersSet(env, id));
+export const isTester = (env, id, row) => !!id && (row && row.tester != null ? !!row.tester : testersSet(env, id));
 
 export async function accounts(req, env, url) {
   if (env.COMMUNITY !== "1") return err("accounts are not enabled on this server", 404);

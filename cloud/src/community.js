@@ -2,7 +2,7 @@
 // want the whole lap trace) and race analyses. Reading is public; writing
 // needs the device token given at registration. Turn it on for the central
 // server with the variable COMMUNITY = "1".
-import { sessionAccount, isAdmin, isTester, testersSet, nameTaken, purgeAccount, emailHash, cleanName } from "./accounts.js";
+import { sessionAccount, isAdmin, isTester, nameTaken, purgeAccount, emailHash, cleanName } from "./accounts.js";
 import { mailReady, mailLog, mailDomain } from "./email.js";
 import { sealData, openData } from "./crypt.js";
 import { getModel, forCompound, getCarCard, likeFor, markModel, forgetLap, pseudoId, PSEUDO_MIN, moveDriver, slowsOf } from "./model.js";
@@ -580,7 +580,7 @@ export async function community(req, env, url, ctx) {
         EXISTS (SELECT 1 FROM driver_links d WHERE d.account_id=a.id) AS driverLinked,
         (SELECT group_concat(d.game, ',') FROM driver_links d WHERE d.account_id=a.id) AS driverGames
         FROM accounts a ${q ? "WHERE a.display LIKE ?1 OR a.id LIKE ?1" : ""} ORDER BY a.created DESC LIMIT 500`).bind(...(q ? ["%" + q.replace(/[%_]/g, "") + "%"] : [])).all();
-      return json({ users: (r.results || []).map((x) => ({ ...x, admin: isAdmin(env, x.id), tester: isTester(env, x.id, x), testerSet: testersSet(env, x.id) })) });
+      return json({ users: (r.results || []).map((x) => ({ ...x, admin: isAdmin(env, x.id), tester: isTester(env, x.id, x) })) });
     }
     const q = (t, extra) => env.DB.prepare(`SELECT x.id, '${t}' AS kind, x.car, x.track, x.created, x.anon, COALESCE(x.shown,'nick') AS shown, ${extra}
       u.id AS userId, u.alias, u.iracing, u.owner, o.display AS ownerName, ac.display AS account
@@ -610,9 +610,9 @@ export async function community(req, env, url, ctx) {
     const id = String(body.id || "");
     const was = await env.DB.prepare("SELECT tester FROM accounts WHERE id=?1").bind(id).first();
     if (!was) return err("account not found", 404);
-    if (!body.on && testersSet(env, id)) return err("this driver is a tester in the server's settings (TESTERS)", 409);
-    await env.DB.prepare("UPDATE accounts SET tester=?2, test_ask=NULL WHERE id=?1").bind(id, body.on ? 1 : null).run(); // a request to test is answered too
-    if (body.on && !was.tester && !testersSet(env, id)) await testerAlert(env, id);
+    // taken away is 0, not NULL, so it also holds for an id in TESTERS
+    await env.DB.prepare("UPDATE accounts SET tester=?2, test_ask=NULL WHERE id=?1").bind(id, body.on ? 1 : 0).run(); // a request to test is answered too
+    if (body.on && !isTester(env, id, was)) await testerAlert(env, id);
     return json({ ok: true, tester: !!body.on });
   }
   // "in Pitlane HQ since" by hand (empty: the day the account was created)

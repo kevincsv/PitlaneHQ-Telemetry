@@ -9,9 +9,9 @@
 // GET  /community/admin/test-asks         {items: [{id, display, asked, what}]}, the newest first
 // POST /community/admin/test-asks         {id, yes} → {ok, tester}: yes makes the driver a tester, no closes the request
 
-export const SQL_ASK = "UPDATE accounts SET test_ask=?2, test_ask_what=?3 WHERE id=?1 AND test_ask IS NULL AND tester IS NULL";
-export const SQL_PENDING = "SELECT id, display, test_ask AS asked, test_ask_what AS what FROM accounts WHERE test_ask>0 AND tester IS NULL ORDER BY test_ask DESC LIMIT 200";
-export const SQL_PENDING_N = "SELECT COUNT(*) AS n FROM accounts WHERE test_ask>0 AND tester IS NULL";
+export const SQL_ASK = "UPDATE accounts SET test_ask=?2, test_ask_what=?3 WHERE id=?1 AND test_ask IS NULL AND COALESCE(tester,0)=0";
+export const SQL_PENDING = "SELECT id, display, test_ask AS asked, test_ask_what AS what FROM accounts WHERE test_ask>0 AND COALESCE(tester,0)=0 ORDER BY test_ask DESC LIMIT 200";
+export const SQL_PENDING_N = "SELECT COUNT(*) AS n FROM accounts WHERE test_ask>0 AND COALESCE(tester,0)=0";
 export const SQL_YES = "UPDATE accounts SET tester=1, test_ask=NULL WHERE id=?1 AND test_ask>0";
 export const SQL_NO = "UPDATE accounts SET test_ask=?2 WHERE id=?1 AND test_ask>0";
 

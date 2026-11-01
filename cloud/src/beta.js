@@ -37,7 +37,7 @@ export async function betaSignIn(res, env) {
   let j;
   try { j = await res.clone().json(); } catch (e) { return res; }
   if (!j || typeof j.token !== "string" || !j.id) return res;
-  if (isAdmin(env, j.id) || j.tester || isTester(env, j.id, null)) return res;
+  if (isAdmin(env, j.id) || j.tester) return res; // every sign-in answer says tester (isTester, with the account's row)
   try { await env.DB.prepare("DELETE FROM account_sessions WHERE token_hash=?1").bind(await sha256(j.token)).run(); } catch (e) { /* it expires by itself */ }
   return NO();
 }

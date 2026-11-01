@@ -71,7 +71,7 @@ area you are changing before you change it, and update it in the same commit whe
 
 - In development (shown with "In development", usable only by admins with admin mode on and by testers, every device; `wipOk()`/
   `wipView()` in index.html, `wipAllowed()` in Go): the Planner (until iRacing switches its data API back on), ACC,
-  Assetto Corsa, NASCAR 26, team mode, the SimHub plugin and Ask the coach (the AI coach with the driver's own API key).
+  Assetto Corsa, NASCAR 26, team mode and Ask the coach (the AI coach with the driver's own API key).
 - Switched off for now: setups, per-car settings (`carProfilesOn` in carprofiles.go), the Data view and sharing race
   analyses. Hidden from everyone on the PC (admins too) until the owner says otherwise: profiles and Settings →
   Connections (`CONN_ON` in index.html). Full telemetry is gone everywhere.
@@ -90,7 +90,6 @@ must keep this server's protocol.
 - `cloud/`: the Cloudflare Worker behind pitlanehq.app (`src/worker.js`, one file per area in `src/`), D1 migrations in
   `cloud/migrations/` (next number after the highest there), tests in `cloud/test/`.
 - `desktop/PitlaneHQ.Desktop/`: the C#/WPF main window that shows `web/dist` in WebView2. `installer/`: Inno Setup.
-- `simhub/`: the plugin for SimHub (C#, .NET Framework 4.8), reading the agent's `/api/simhub` (`simhub.go`).
 - `vr/`, `ovfonts/`, `assets/` (the logo master), `tools/` (`local.cmd`, `ui-sweep.js`, `flags-sprite.js`).
 - `vendor/`: Go dependencies, vendored; go-webview2 carries a patch for the microphone (keep it if re-vendored).
 
@@ -128,5 +127,4 @@ must keep this server's protocol.
 | `seo.md` | Public pages, sitemap, JSON-LD, IndexNow |
 | `leagues.md` | The leagues hub and the Reddit/Discord scan |
 | `discord.md` | The Discord bot |
-| `simhub.md` | The SimHub plugin (`simhub/`) and the agent's `/api/simhub` |
 | `email-and-branding.md` | Emails through Resend, the logo |

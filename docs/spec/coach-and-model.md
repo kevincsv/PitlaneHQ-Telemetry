@@ -64,7 +64,7 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   with `--capture web/dist/index.html` and says why in the commit). The Go copies (`compareLaps`, `cornerZones` in
   ovnative4.go, racingline.go) still serve the overlays.
 - Ovals get their own coach (`ovalOf`, `liftZones`, the oval tips and `ovalStep` in pitwall-analysis.js; `ovalKind`,
-  `liftZones`, `ovalTip` in ovoval.go for the coach overlay and the SimHub plugin). The kind of oval comes from iRacing's
+  `liftZones`, `ovalTip` in ovoval.go for the coach overlay). The kind of oval comes from iRacing's
   category (`cat` on the laps and `ctx.track`, which the web takes from the session or, for a lap recorded live, from the
   session the agent reads with its TrackType and length; the phones from their session), never a road layout (Road
   Course, Roval, Infield): "superspeedway" (Daytona, Talladega, or a long oval of 3 km or more the reference takes flat out

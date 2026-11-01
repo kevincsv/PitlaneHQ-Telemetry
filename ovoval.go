@@ -1,6 +1,6 @@
 package main
 
-// The oval coach of the coach overlay and the SimHub plugin, like ovalOf, liftZones and the oval tips of
+// The oval coach of the coach overlay, like ovalOf, liftZones and the oval tips of
 // web/dist/pitwall-analysis.js: on an oval the corners are lifts as much as braking zones, and a corner the reference takes
 // with a lift hears about the lift (where, how deep, how long) and the speed through the middle of the corner.
 

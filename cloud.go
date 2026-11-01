@@ -800,12 +800,9 @@ func lapRecorder() {
 		if !st.connected() || (st.Demo && !cloudDemo) {
 			ls.reset()
 			lapQ.reset()
-			simhubLapLive(nil)
 			continue
 		}
-		if lapQ.drain(ls.step) > 0 {
-			simhubLapLive(ls.cur)
-		}
+		lapQ.drain(ls.step)
 	}
 }
 
@@ -1065,7 +1062,6 @@ func (liveLapEnv) sessionEnded(s cloudSession) { queueSession(s) }
 func (liveLapEnv) lapEnded(sn int, done *lapRec, s cloudSession, fuelNow, prevLast float64) {
 	notePlace(s)                                  // the laps still waiting for their time carry the newest place
 	setLapCut(sn, done.n, done.invalid())         // the race report reads the same verdict
-	simhubLapDone(done.n, !done.invalid())        // and the SimHub plugin (simhub.go)
 	setLapIncs(sn, done.n, done.incAt, done.incK) // and the same incidents
 	setLapDriver(sn, done.n, done.driver)         // and the same driver
 	go func() {                                   // iRacing updates the last lap time a moment after the line
@@ -1076,7 +1072,6 @@ func (liveLapEnv) lapEnded(sn int, done *lapRec, s cloudSession, fuelNow, prevLa
 		if !done.invalid() && currentGame() == "iracing" && !gameAccepts(done.bestAt0, lt, func() float64 { return telNums([]string{"LapBestLapTime"})[0] }, 15) {
 			done.bad = true
 			setLapCut(sn, done.n, true)
-			simhubLapDone(done.n, false)
 			log.Printf("lap %d: iRacing did not count %.3f as its best (best before %.3f): not valid", done.n, lt, done.bestAt0)
 		}
 		finishLap(done, s, fuelNow, lt)

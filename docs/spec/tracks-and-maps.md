@@ -69,3 +69,11 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   POST `/community/turns` with `names` alone, `track_turns.names`, migration 0096; "" a turn without one). `/turns`
   serves them as `names` with official turns only, and the analysis heads a named turn's tips "T5 Tertre Rouge"
   (`turnLab` and `ctx.turnNames` in pitwall-analysis.js; the phones note them when they read the turns).
+
+## Height
+
+- iRacing laps carry the car's altitude every 25 m (`trace.z`, `Alt` in `lapVars`, `addAlt`/`altitude` in cloud.go;
+  laps read again from a .ibt file get it too). The lap analysis's More charts has "Height" (`heightSVG`), from the
+  lap's lowest point, and a corner of the coach braked 3 % or more downhill or uphill shows ↘/↗ with the slope
+  (`slopePill`, `slopeOf` in pitwall-analysis.js; the phones the same). Flat 2D only.
+

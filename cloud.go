@@ -88,6 +88,7 @@ type lapTrace struct {
 	TT   []float64    `json:"tt,omitempty"`   // the tyres' carcass temperatures over the lap (°C, the lap's average): LF inner/left, middle, right, then RF, LR and RR the same; only where the game gives them
 	ST   float64      `json:"st,omitempty"`   // the session time the lap started at (s): a moment of the lap is ST plus its lap time there ("Watch in replay")
 	Bat  []float64    `json:"bat,omitempty"`  // the hybrid battery's charge (%) every batBin (50) m from the line; only a car with one (Le Mans Ultimate's hybrids)
+	Z    []float64    `json:"z,omitempty"`    // the car's altitude (m) every altBin (25) m from the line (iRacing): the height strip and the coach's slopes
 }
 
 type cloudItem struct {
@@ -522,7 +523,12 @@ var lapVars = []string{"Lap", "LapDist", "LapDistPct", "Speed", "Throttle", "Bra
 	// the tyres' carcass temperatures, left, middle and right of each tyre (34 to 45): the "More charts" tyre chart
 	"LFtempCL", "LFtempCM", "LFtempCR", "RFtempCL", "RFtempCM", "RFtempCR", "LRtempCL", "LRtempCM", "LRtempCR", "RRtempCL", "RRtempCM", "RRtempCR",
 	// the hybrid battery's charge (Le Mans Ultimate's hybrids; 46): the lap analysis's battery chart
-	"EnergyERSBatteryPct"}
+	"EnergyERSBatteryPct",
+	// the car's altitude (iRacing, 47): the lap analysis's height strip and the coach's downhill and uphill corners
+	"Alt"}
+
+// altVar: the altitude in lapVars; altBin: kept every this many metres
+const altVar, altBin = 47, 25
 
 // tyreVar0: where the tyre temperatures start in lapVars
 const tyreVar0 = 34
@@ -592,6 +598,9 @@ type lapRec struct {
 	tyreN   int
 	// the hybrid battery's charge (%) at every batBin metres, -1 where no sample came; nil for a car without one
 	bat []float64
+	// the car's altitude (m) every altBin metres, and which points had a sample
+	alt   []float64
+	altOK []bool
 }
 
 // lapHealth: how well a lap was recorded, carried in its trace (h): the longest stretch with no telemetry (m), the share
@@ -1005,6 +1014,9 @@ func (ls *lapStream) step(v []float64) {
 	if len(v) > batVar && env.has("EnergyERSBatteryPct") {
 		cur.addBat(dist, v[batVar])
 	}
+	if len(v) > altVar && env.has("Alt") {
+		cur.addAlt(dist, v[altVar])
+	}
 	// an incident alone does not make a lap invalid; leaving the track for a third of a second (all four wheels out,
 	// cutting a corner) does, so it is never shared; only where the game reports the surface, and never on a kerb, a
 	// painted run-off or a concrete apron: with the material under the car known, only grass, dirt, sand and gravel
@@ -1071,6 +1083,55 @@ func (r *lapRec) battery() []float64 {
 						break
 					}
 				}
+			}
+		}
+	}
+	return out
+}
+
+// addAlt keeps the car's altitude (m) at lap distance d, once per altBin metres
+func (r *lapRec) addAlt(d, z float64) {
+	if d < 0 || z == 0 || math.IsNaN(z) {
+		return
+	}
+	b := int(d / altBin)
+	if b > 1000 {
+		return
+	}
+	for len(r.alt) <= b {
+		r.alt = append(r.alt, math.NaN())
+		r.altOK = append(r.altOK, false)
+	}
+	if !r.altOK[b] {
+		r.alt[b], r.altOK[b] = round(z, 1), true
+	}
+}
+
+// altitude: the lap's height trace, the holes filled from the point before (nil when it has under half the lap)
+func (r *lapRec) altitude() []float64 {
+	n := 0
+	for _, ok := range r.altOK {
+		if ok {
+			n++
+		}
+	}
+	if n < 8 || n*2 < len(r.alt) {
+		return nil
+	}
+	out := append([]float64(nil), r.alt...)
+	first := 0.0
+	for i, ok := range r.altOK {
+		if ok {
+			first = out[i]
+			break
+		}
+	}
+	for i := range out {
+		if !r.altOK[i] {
+			if i > 0 {
+				out[i] = out[i-1]
+			} else {
+				out[i] = first
 			}
 		}
 	}
@@ -1337,6 +1398,7 @@ func buildLap(r *lapRec, s cloudSession, fuelNow, lt float64) (cloudLap, bool) {
 	}
 	l.Trace.TT = r.tyres()
 	l.Trace.Bat = r.battery()
+	l.Trace.Z = r.altitude()
 	if r.cmp > 0 { // the compound only when the car has several (the first, or the only one, is 0)
 		l.Trace.F = append(l.Trace.F, fmt.Sprintf("cmp:%d", r.cmp))
 	}

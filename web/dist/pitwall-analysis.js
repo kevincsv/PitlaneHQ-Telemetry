@@ -1169,6 +1169,15 @@
     return out;
   }
 
+  /* the slope of a lap between two distances (m), in % (positive uphill), from its height trace (z every 25 m,
+     iRacing); null without one */
+  function slopeOf(l, d0, d1) {
+    const z = l && Array.isArray(l.z) ? l.z : null;
+    if (!z || z.length < 8 || !(d1 > d0)) return null;
+    const at = (d) => { const f = Math.max(0, Math.min(z.length - 1, d / 25)), i = Math.floor(f), k = Math.min(z.length - 1, i + 1); return z[i] + (z[k] - z[i]) * (f - i); };
+    return Math.round((at(d1) - at(d0)) / (d1 - d0) * 1000) / 10;
+  }
+
   function insights(A, B, ctx) {
     ctx = ctx || {};
     const laps = Array.isArray(ctx.laps) ? ctx.laps : [];
@@ -1179,7 +1188,7 @@
   const api = { VERSION, BIN, lapSeries, serOf, lapShape, sameFrame, lineOffsets, cornerLine, lineTip, brakeZones, PHASES, phaseName, turnNo, COACH_GEN, cornerClass, cornerZones,
     OVAL_KINDS, ovalOf, liftZones, ovalZones, dirtLineTip, coachCompare, cornerConsistency, pairSecs, lapDriving, kindName, stepName, tipMain, tipShort, tipTodo, coachPlan, stepText, analyzerFacts, analyse,
     estOf, failedOf, progressLines, followUp, trackGuide, cornerRanks, clsLines, racePace, edgeUse, notesOf, guideItems, likeOf, likeSteps, catGroup,
-    turnLab, lapSpread, cornerSpread, offsExplained, ggOf, steerOf, understeer, tyreLaps, fuelUse, fuelPlan, insights, pedalCheck };
+    turnLab, lapSpread, cornerSpread, offsExplained, ggOf, steerOf, understeer, tyreLaps, fuelUse, fuelPlan, insights, pedalCheck, slopeOf };
   root.PW_ANALYSIS = api;
   if (typeof module !== "undefined" && module.exports) module.exports = api;
 })(typeof window !== "undefined" ? window : typeof globalThis !== "undefined" ? globalThis : this);

@@ -190,8 +190,8 @@ overlay windows' code and the Telemetry tab's settings window (`openWidgetCfg`);
   drawn by its own code, `ovtPic`; on the web the overlay page with `preview=1`; scaled to the column, at its opacity), Open or
   Close (its window; "Open here" in a browser on the PC's address; nothing on the web), All settings (`ovtSettings`),
   the Auto switch "Open by itself" (`ovtAutoSwitch`, the owner's choice: one clear setting per overlay; on, it opens
-  when you get in the car in every game it works in, `ovtAutoToggle`), with the games as badges under it, never
-  buttons (iRacing, LMU, always gold where it works: `autoIn`/`setAutoIn`; a game that does not send what it needs is dashed and
+  when you get in the car in every game it works in, `ovtAutoToggle`); at the top, under its name, "Compatible with" and the games as badges,
+  never buttons (`ovtCompat`, also in its settings window) (iRacing, LMU, always gold where it works: `autoIn`/`setAutoIn`; a game that does not send what it needs is dashed and
   crossed out and says so on hover), its own design, opacity, text size, Hide by itself and Show the title (the same keys as
   its settings window: `ui.<overlay>.style`, `alpha`, `textScale`, `hide`, `title`). The experimental ones ask for Pro
   only when `proGated()`.

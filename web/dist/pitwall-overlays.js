@@ -71,6 +71,7 @@ function ovtThumb(w){
   return `<div class="ovt-th" aria-hidden="true">${(k[w]||(()=>rows(4)))()}</div>`}
 
 /* ---------- the parts of the list and the chosen overlay ---------- */
+const ovtCompat=w=>`<div class="ovt-compat"><span class="ovt-lab">${esc(T3("Compatible with","Compatible con","Compatível com"))}</span>${ovtAutoPills(w)}</div>`;
 // the games it works in, as badges (gold for every game it works in; dashed where the game does not send what it needs)
 function ovtAutoPills(w){return `<span class="ovt-games">${VIEW_GAMES.map(g=>{const ok=gameHas(g,"widgets",w);
   return `<span class="ovt-gp${ok?" on":" no"}"${ok?"":` title="${esc(gameLacks(g,"widgets",w))}"`}>${esc(GAME_SHORT[g])}</span>`}).join("")}</span>`}
@@ -134,11 +135,11 @@ function ovtRenderScreen(){const sel=ovtPick();OVT.sel=sel;
   $("#ovtStageBar").innerHTML=`${ovtDesignHTML()}<span class="ovt-legend"><i class="open"></i>${esc(T3("Open","Abierto","Aberto"))}<i class="closed"></i>${esc(T3("Closed","Cerrado","Fechado"))}</span><button type="button" class="btn small" data-a="reset"${ovtRemote()?"":" disabled"}>${L("resetPos",true)}</button>`;
   ovtRenderInsp()}
 function ovtRenderInsp(){const w=OVT.sel,g=ui(w),own=(CFG.ui||{})[w]||{},alpha=ovAlphaOf(w),ts=g.textScale||1,hd=g.hide||"";
-  $("#ovtInspHead").innerHTML=`<div class="ovt-ih" data-ovw="${w}"><h2>${esc(ovtName(w))}</h2>${ovtExpPill(w)}<span class="ovt-state">${ovtDot(w)}<span class="on-t">${esc(T3("Open","Abierto","Aberto"))}</span><span class="off-t">${esc(T3("Closed","Cerrado","Fechado"))}</span></span></div>`;
+  $("#ovtInspHead").innerHTML=`<div class="ovt-ih" data-ovw="${w}"><h2>${esc(ovtName(w))}</h2>${ovtExpPill(w)}<span class="ovt-state">${ovtDot(w)}<span class="on-t">${esc(T3("Open","Abierto","Aberto"))}</span><span class="off-t">${esc(T3("Closed","Cerrado","Fechado"))}</span></span></div>${ovtCompat(w)}`;
   ovtPreview(w);
   const seg=(a,list,cur)=>`<div class="seg3 ovt-seg3">${list.map(([v,...n])=>`<button type="button" data-a="${a}" data-k="${v}" aria-pressed="${String(cur)===String(v)}">${esc(T3(...n))}</button>`).join("")}</div>`;
   $("#ovtInsp").innerHTML=`<div class="ovt-row2" data-ovw="${w}">${ovtOpenBtn(w)}${ovtCfgBtn(w).replace('class="btn small ovt-cfg"','class="btn small ovt-cfg wide"').replace(ovtIcon.cfg,ovtIcon.cfg+`<span>${esc(T3("All settings","Todos los ajustes","Todos os ajustes"))}</span>`)}</div>
-    <div class="ovt-f">${ovtAutoSwitch(w)}${ovtAutoPills(w)}</div>
+    <div class="ovt-f">${ovtAutoSwitch(w)}</div>
     <label class="ovt-f"><span class="ovt-lab">${esc(T3("Design","Diseño","Design"))}</span><select data-c="ovstyle" data-w="${w}"><option value="">${esc(T3("Same as all","Igual que todos","Igual a todos"))} · ${esc(ovStyleLabel(ovtStyleAll()))}</option>${OV_STYLES.map(([k])=>`<option value="${k}"${own.style===k?" selected":""}>${esc(ovStyleLabel(k))}${k==="classic"?"":" · Beta"}</option>`).join("")}</select></label>
     <label class="ovt-f"><span class="ovt-lab">${esc(T3("Opacity","Opacidad","Opacidade"))} <b id="ovtAlphaV">${Math.round(alpha/255*100)}%</b></span><input type="range" min="60" max="255" step="5" value="${alpha}" data-c="alpha" data-w="${w}"></label>
     <div class="ovt-f"><span class="ovt-lab">${esc(T3("Text size","Tamaño del texto","Tamanho do texto"))}</span>${seg("ts",[[.85,"Small","Pequeño","Pequeno"],[1,"Normal","Normal","Normal"],[1.2,"Large","Grande","Grande"]],ts)}</div>
@@ -256,7 +257,7 @@ setInterval(refreshScreenRects,1500);
 .ovt-dot{flex:none;width:8px;height:8px;border-radius:50%;box-sizing:border-box;border:1.5px solid var(--line2,var(--muted))}
 .is-open .ovt-dot,.is-open>.ovt-dot{background:var(--good);border-color:var(--good)}
 .ovt-autob{font:700 11px var(--f-data);letter-spacing:.08em;text-transform:uppercase;color:var(--accent);margin-right:6px}.ovs-sw[disabled]{opacity:.45;cursor:default}
-.ovt-games{display:inline-flex;flex-wrap:wrap;gap:6px}
+.ovt-games{display:inline-flex;flex-wrap:wrap;gap:6px}.ovt-compat{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin-top:8px}.ovt-compat .ovt-lab{margin:0}
 .ovt-gp{display:inline-flex;align-items:center;min-height:22px;padding:0 8px;border-radius:5px;border:1px solid var(--line);color:var(--muted);font:600 10px var(--f-data);letter-spacing:.04em}
 .ovt-gp.on{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 14%,transparent);color:var(--accent)}
 .ovt-gp.no{border-style:dashed;opacity:.45;text-decoration:line-through}

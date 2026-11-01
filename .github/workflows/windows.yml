@@ -45,6 +45,10 @@ jobs:
   desktop:
     runs-on: windows-latest
     needs: build
+    # code signing (Azure Artifact Signing, formerly Trusted Signing): the agent, the window and the installer are signed
+    # when these secrets are set (Settings → Secrets and variables → Actions); without them the build is unsigned as before
+    env:
+      SIGN_ACCOUNT: ${{ secrets.AZURE_SIGNING_ACCOUNT }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-dotnet@v4
@@ -62,6 +66,27 @@ jobs:
           dotnet publish desktop/PitlaneHQ.Desktop/PitlaneHQ.Desktop.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=false -p:Version=$ver -o out-desktop
           if ($LASTEXITCODE -ne 0) { exit 1 }
           Copy-Item engine/PitlaneHQ.exe out-desktop/
+          # only our two programs go to the signer (the .NET runtime's own files are already Microsoft's)
+          New-Item -ItemType Directory -Force to-sign | Out-Null
+          Move-Item out-desktop/PitlaneHQ.exe, out-desktop/PitlaneHQ.Desktop.exe to-sign/
+      - name: Sign the agent and the window
+        if: env.SIGN_ACCOUNT != ''
+        uses: azure/trusted-signing-action@v0
+        with:
+          azure-tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          azure-client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          azure-client-secret: ${{ secrets.AZURE_CLIENT_SECRET }}
+          endpoint: ${{ secrets.AZURE_SIGNING_ENDPOINT }}
+          trusted-signing-account-name: ${{ secrets.AZURE_SIGNING_ACCOUNT }}
+          certificate-profile-name: ${{ secrets.AZURE_SIGNING_PROFILE }}
+          files-folder: ${{ github.workspace }}\to-sign
+          files-folder-filter: exe
+          file-digest: SHA256
+          timestamp-rfc3161: http://timestamp.acs.microsoft.com
+          timestamp-digest: SHA256
+      - name: Put the programs back
+        shell: pwsh
+        run: Move-Item to-sign/*.exe out-desktop/
       - name: Build the installer (Inno Setup)
         shell: pwsh
         run: |
@@ -70,6 +95,30 @@ jobs:
           if (-not (Test-Path $iscc)) { choco install innosetup -y --no-progress | Out-Null }
           & $iscc "/DAppVersion=$ver" installer\PitlaneHQ.iss
           if ($LASTEXITCODE -ne 0) { exit 1 }
+      - name: Sign the installer
+        if: env.SIGN_ACCOUNT != ''
+        uses: azure/trusted-signing-action@v0
+        with:
+          azure-tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          azure-client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          azure-client-secret: ${{ secrets.AZURE_CLIENT_SECRET }}
+          endpoint: ${{ secrets.AZURE_SIGNING_ENDPOINT }}
+          trusted-signing-account-name: ${{ secrets.AZURE_SIGNING_ACCOUNT }}
+          certificate-profile-name: ${{ secrets.AZURE_SIGNING_PROFILE }}
+          files-folder: ${{ github.workspace }}\dist-installer
+          files-folder-filter: exe
+          file-digest: SHA256
+          timestamp-rfc3161: http://timestamp.acs.microsoft.com
+          timestamp-digest: SHA256
+      - name: Check the signatures
+        if: env.SIGN_ACCOUNT != ''
+        shell: pwsh
+        run: |
+          foreach ($f in 'out-desktop/PitlaneHQ.exe','out-desktop/PitlaneHQ.Desktop.exe','dist-installer/PitlaneHQ-Setup.exe') {
+            $s = Get-AuthenticodeSignature $f
+            Write-Host "$f $($s.Status) $($s.SignerCertificate.Subject)"
+            if ($s.Status -ne 'Valid') { exit 1 }
+          }
       - uses: actions/upload-artifact@v4
         with:
           name: PitlaneHQ-Setup

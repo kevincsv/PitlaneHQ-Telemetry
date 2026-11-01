@@ -2,6 +2,12 @@
 
 How this part of Pitlane HQ behaves. Read it before changing this area; keep it up to date when the behaviour changes.
 
+- Code signing: the Windows build signs PitlaneHQ.exe, PitlaneHQ.Desktop.exe and PitlaneHQ-Setup.exe with Azure
+  Artifact Signing (formerly Trusted Signing, `azure/trusted-signing-action` in `windows.yml`, timestamped) when the
+  secrets `AZURE_TENANT_ID`, `AZURE_CLIENT_ID`, `AZURE_CLIENT_SECRET`, `AZURE_SIGNING_ENDPOINT`, `AZURE_SIGNING_ACCOUNT`
+  and `AZURE_SIGNING_PROFILE` are set, and checks the signatures; without them the build is unsigned as before. The
+  updater's zip carries the signed programs. The .NET runtime's files keep Microsoft's signatures. SmartScreen
+  reputation builds with downloads of signed files, so the warning can still show for the first days.
 - One Windows app, "Pitlane HQ" (never "preview" or a second download): one installer (`installer/PitlaneHQ.iss`,
   `PitlaneHQ-Setup.exe`; `PitlaneHQ-Desktop-Setup.exe` is the same file for old links) puts the native window
   (`PitlaneHQ.Desktop.exe`, self-contained) and the agent next to it, and its shortcuts open the window, which runs the

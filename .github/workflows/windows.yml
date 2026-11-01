@@ -223,7 +223,7 @@ jobs:
       - name: Take the test build
         shell: bash
         run: |
-          curl -fsSL https://pitlanehq.app/dl/beta/version.json -o beta.json || { echo "::error::There is no test build yet: run this workflow with channel beta first"; exit 1; }
+          curl -fsSL https://beta.pitlanehq.app/dl/beta/version.json -o beta.json || { echo "::error::There is no test build yet: run this workflow with channel beta first"; exit 1; }
           b=$(node -p 'require("./beta.json").build||""')
           bv=$(node -p 'require("./beta.json").version||""')
           ver=$(sed -n 's/^const appVersion = "\(.*\)"/\1/p' main.go)
@@ -236,8 +236,8 @@ jobs:
             exit 1
           fi
           [ "$bv" = "$ver" ] || { echo "::error::The test build is $bv and master is $ver"; exit 1; }
-          curl -fsSL https://pitlanehq.app/dl/beta/PitlaneHQ-windows.zip -o PitlaneHQ-windows.zip
-          curl -fsSL https://pitlanehq.app/dl/beta/PitlaneHQ-Setup.exe -o PitlaneHQ-Setup.exe
+          curl -fsSL https://beta.pitlanehq.app/dl/beta/PitlaneHQ-windows.zip -o PitlaneHQ-windows.zip
+          curl -fsSL https://beta.pitlanehq.app/dl/beta/PitlaneHQ-Setup.exe -o PitlaneHQ-Setup.exe
           echo "BETA_BUILD=$b" >> "$GITHUB_ENV"
       - name: Publish to everyone
         shell: bash

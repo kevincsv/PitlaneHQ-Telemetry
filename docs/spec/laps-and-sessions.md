@@ -49,3 +49,13 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   and the server a lap without sector times where its session's other laps have them (`dropImpossibleLaps` on every
   upload, migration 0046 for the old ones, `repairImpossibleShares` once a day at 03:00 UTC, like `fixLapTimes`, because both read the whole laps table and
   D1's reads per day are limited).
+
+## Recording health and repair
+
+- The reader queues every frame it copies (lapfeed.go, `lapQ`, 300 at most) and the lap recorder drains the queue, so a
+  late recorder or a paused live link never leaves a hole. A lap starts on the lap counter or on the jump of LapDistPct.
+- Every trace carries its health `h` {gap: the largest hole in metres, seen: the share of points really seen, hz}. The
+  model never learns a lap with a hole over 40 m or under 90 % seen (`goodLap`).
+- The .ibt import repairs a live lap: a lap the account has as not valid that the file has whole and valid goes up again
+  marked `repair`, and the server replaces the account's copy only when that copy really has a hole (`traceHole`,
+  laphealth.js: by its `h`, or, without one, when it was not judged off the track).

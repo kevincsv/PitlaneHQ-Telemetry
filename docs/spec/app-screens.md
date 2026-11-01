@@ -67,3 +67,9 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   race summaries with the driver notes); Home's "See all" opens My races. The phone apps have the same four (and
   Telemetry, Standings and Tyres under Telemetry). A finished race shows no notice on the PC
   (it appears in My races); only the phones tell you.
+
+- Home shows the track guide's brief (the three corners that matter most) while the agent sees a session on a track and
+  car the model knows (`homeBriefHTML`); pressed, it opens the whole guide.
+- The lap compare map (Analysis and the coach, every device) has "▶ Replay": A and B drive the map together on the same
+  clock, four times as fast, with the gap in metres and seconds and a bar to scrub (`cmpReplay`; the phones' TrackMap).
+- The race summary has "Race pace" against the cars around you (coach-and-model.md, `racePace`).

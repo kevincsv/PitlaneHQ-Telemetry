@@ -158,3 +158,40 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   PlayerTireCompound, `liveCmp`, which the laps recorded live keep as `cmp`) and gets that compound's references
   when the model has them, else every lap's; `cmps` lists the compounds it has apart. The pace among the drivers
   (`times`) is every lap's.
+
+## Beyond one lap against another
+
+- **Track guide** (`trackGuide` in pitwall-analysis.js, from the model): every corner with where the fast drivers brake
+  (`b0`–`b1`), the gear they take the apex in (the corner card's `g`, real laps only), the apex speed, how hard it is
+  (its `spread` against the hardest corner), the most common tip there (`mistake`, set in `buildModel` from `coach_tips`
+  when 3 accounts or more got it) and what the drivers who improved found there (`improve`). `brief` is the three corners
+  that matter most. It needs no lap of the driver's own: the coach shows it under the plan, the track page has a "Track
+  guide" button per car (the phones' car and track board too), Home shows the brief while the agent sees a session
+  (`homeBriefHTML`), and the coach overlay calls it on the first laps (overlays.md).
+- **Your last session's plan** (`followUp`): GET `/community/coach/last` gives the tips of the driver's last session on
+  this car and track before this one; each corner that lost time then says whether this lap is faster there than that
+  session's best lap (✓), slower (✗) or the same, and what it still loses to the reference.
+- **Strengths and weaknesses**: `cornerRanks` places lap A's time in every corner among every driver the model knows
+  (`ranks`, `cornerRanksOf`: "top 20 %"), and `clsLines` the driver's slow, medium and fast corners across their tracks
+  (`byCls` of `/community/coach/me`, 5 corners or more).
+- **Drivers who improved** (`progressPairs`, `improveSteps`): the same driver's two laps here at least 0.3 % apart, compared
+  corner by corner; where 3 drivers or more found time is the model's `improve`.
+- **Conditions**: the model keeps a ladder per track-temperature band (`bandsOf`, `byBand`, 5 laps from 3 drivers per band)
+  and `/community/model?temp=` picks the band of the session's track temperature (`forCompound`).
+- **Estimated pedals**: when lap B's pedals are estimated from its speed (a rival's lap, `est`/`field`, or `ctx.estB`),
+  `coachCompare` never says brake-shape, trail, coasting, throttle or gear tips (`estOf`): `brake_speed` says the speed
+  instead, and the plan's steps follow.
+- **Track left unused** (`edgeUse`): on each corner's exit (30 to 150 m after the apex) how far lap A stayed from the
+  outside edge the drivers' laps give (`/community/trackmaps` `edges`, tracks-and-maps.md); 1.5 m or more is said, three
+  corners at most. Both laps need the game's position.
+- **Race pace** (`racePace`): a race report's laps against the cars that finished up to 3 places either side (their `pace`,
+  every lap the agent saw them time, field.go `fieldPace`). Clean laps only (not the first, pits, off track, or 3 % over
+  the median), each car's average, spread and gap a lap over the race and its second half, and the lines that matter
+  (who was faster in the second half, your pace dropping more than theirs, your spread). The race summary shows it on
+  every device.
+- **The phones** read all of it from the module's `notes` (`notesOf`: the last session's plan, strengths and weaknesses,
+  the track left unused, the track guide as plain titled lists) and call `racePace` and `trackGuide` (`guideItems`) the
+  same way.
+- **The thresholds on real laps**: Admin → Coach → "The coach on real laps" (GET `/community/admin/coach/calibrate`,
+  coachcalib.js) runs the coach over the busiest cars and tracks' model laps and shows how often each tip and step fires.
+  On a superspeedway a race lap in traffic can be lap A by default.

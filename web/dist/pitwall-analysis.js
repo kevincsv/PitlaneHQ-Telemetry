@@ -754,6 +754,24 @@
   }
 
   /* ---------- everything at once, for the phones ---------- */
+  /* the sections the web shows beside the coach (the last session's plan, strengths and weaknesses, the track left unused,
+     the track guide) as plain lists the phones draw as they are: [{k, title, items: [{t, text, tone}]}], tone "good", "bad"
+     or "" */
+  function notesOf(o, ctx) {
+    const Tx = txOf(ctx), out = [];
+    if (o.followup && o.followup.length) out.push({ k: "followup", title: Tx("Your last session's plan", "El plan de tu última sesión", "O plano da sua última sessão"), items: o.followup.map((x) => ({ t: (x.ok > 0 ? "✓ " : x.ok < 0 ? "✗ " : "= ") + x.t, text: x.text, tone: x.ok > 0 ? "good" : x.ok < 0 ? "bad" : "" })) });
+    const st = [...(o.ranks || []).map((x) => ({ t: `T${x.n}`, text: Tx(`top ${x.top} % among ${x.drivers} drivers`, `top ${x.top} % entre ${x.drivers} pilotos`, `top ${x.top} % entre ${x.drivers} pilotos`), tone: x.top <= 25 ? "good" : x.top >= 60 ? "bad" : "" })), ...(o.cls || []).map((x) => ({ t: x.t, text: x.text, tone: "" }))];
+    if (st.length) out.push({ k: "stand", title: Tx("Strengths and weaknesses", "Puntos fuertes y débiles", "Pontos fortes e fracos"), items: st });
+    if (o.edges && o.edges.length) out.push({ k: "edges", title: Tx("Track left unused", "Pista sin usar", "Pista sem usar"), items: o.edges.map((x) => ({ t: `T${x.n}`, text: x.text, tone: "bad" })) });
+    if (o.guide && o.guide.corners.length) out.push({ k: "guide", title: Tx("Track guide", "Guía del circuito", "Guia da pista"), items: guideItems(o.guide) });
+    return out;
+  }
+  /* the track guide as plain rows: the corners that matter most first, then every corner in lap order */
+  function guideItems(g) {
+    const tone = (c) => (c.level === "hard" ? "bad" : c.level === "easy" ? "good" : "");
+    return g.corners.map((c) => ({ t: `T${c.n} · ${c.levelText}`, text: c.lines.join(" "), tone: tone(c) }));
+  }
+
   /* the analyzer's and the coach's answers for lap A against lap B as plain JSON (a string with opts.json): the gap, every
      corner (tip in en, es and pt, text in ctx.lang), the coach's plan with its corners, phases, sectors and areas, and the
      analyzer's key facts */
@@ -767,12 +785,13 @@
     if (ctx.model) { const g = trackGuide(ctx.model, ctx), rk = cornerRanks(A, ctx.model, ctx); if (g) out.guide = g; if (rk.length) out.ranks = rk; } // the track guide and where lap A stands in every corner
     if (Array.isArray(ctx.byCls)) out.cls = clsLines(ctx.byCls, ctx); // the corner types across the driver's tracks
     if (ctx.map && ctx.map.edges) { const eu = edgeUse(A, ctx.map, ctx); if (eu.length) out.edges = eu; } // the track left unused on the exits
+    out.notes = notesOf(out, ctx);
     return opts && opts.json ? JSON.stringify(out) : out;
   }
 
   const api = { VERSION, BIN, lapSeries, serOf, lapShape, sameFrame, lineOffsets, cornerLine, lineTip, brakeZones, PHASES, phaseName, turnNo, COACH_GEN, cornerClass, cornerZones,
     OVAL_KINDS, ovalOf, liftZones, ovalZones, dirtLineTip, coachCompare, cornerConsistency, pairSecs, lapDriving, kindName, stepName, tipMain, tipShort, tipTodo, coachPlan, stepText, analyzerFacts, analyse,
-    estOf, followUp, trackGuide, cornerRanks, clsLines, racePace, edgeUse };
+    estOf, followUp, trackGuide, cornerRanks, clsLines, racePace, edgeUse, notesOf, guideItems };
   root.PW_ANALYSIS = api;
   if (typeof module !== "undefined" && module.exports) module.exports = api;
 })(typeof window !== "undefined" ? window : typeof globalThis !== "undefined" ? globalThis : this);

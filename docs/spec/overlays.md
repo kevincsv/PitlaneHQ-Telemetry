@@ -18,6 +18,10 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   track's the game is on, `coachTurnsHere`); on the PC it opens
   the coach overlay when it is closed, on the web it writes `ui.coach` into the account's settings.json (`cpSetUI`) and the
   PC takes it at its next sync.
+- With no lap of the driver's own to compare yet (the first laps on a track, or nobody faster known), the coach overlay
+  calls the track guide (`guideTips`, from the model's corner card): where the fast drivers brake before the apex, the
+  apex speed and the gear, "BRAKE 120 M" in the big style, the hardest corners first; its title is "Track guide" and it
+  gives no verdict (there is no reference). The fast drivers' hint line is not repeated under it.
 - Overlay windows (what is in development or switched off is in CLAUDE.md, "Feature status"):
   A sync reload never closes or reopens the overlays. An overlay
   window is the widget itself, with Windows 11's rounded corners and a quiet border (`ovwin`, `noWinBorder`); it

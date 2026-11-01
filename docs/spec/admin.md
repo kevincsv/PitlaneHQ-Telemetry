@@ -67,3 +67,8 @@ season (or its text). It reads the file in the browser (pdf.js in `pitwall-pdf.j
 cars it found and the series whose race times it could not read, and Publish for everyone sends it to
 `POST /community/admin/season` (admins and `SEASON_UPLOADERS`). The race times are then corrected by the official
 races the PCs report (`seasonseen.js`). The PC app passes that post through `/api/sync/get` with a 16 MB limit.
+
+- Tools → "Turns to check": the tracks with no official turns placed and the ones whose corners (from the layout and how
+  the drivers slow down) do not match the game's count, with the layout's length (GET `/community/admin/turns-check`).
+- Coach → "The coach on real laps": how often each tip and plan step fires on the busiest cars and tracks' model laps
+  (GET `/community/admin/coach/calibrate`).

@@ -50,3 +50,18 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   (analyzer, coach, race summary, phones, map overlay) draws the direction arrow beside the start/finish line.
 - The coach's line: when the reference is a rival's lap (no path), the model's `lineXY` (the fastest lap of the car
   and track with a path) or, on the phones, your own best lap gives the line to compare with.
+
+## Corners from how drivers drive, edges and the wrong layout
+
+- The automatic turns (`/community/turns` without official ones) also read where the fast drivers slow down: `slowsOf`
+  (model.js) takes the braking zones of the models already built for the track's cars, and `cornersOf(x, y, 5, want,
+  slows)` drops a bend nobody slows for first (a kink taken flat) and adds a corner wider than the radius limit that the
+  drivers brake for. Admin → Tools → "Turns to check" (GET `/community/admin/turns-check`) lists the tracks with no
+  official turns placed and the ones whose corners do not match the game's count.
+- **Edges**: `rebuildEdges` (trackmaps.js, two tracks per ten-minute run, again after a week) puts up to 40 laps with the
+  game's position beside the layout (`lateral`) and keeps the outermost 3 % at each point as the road's edges
+  (`edgesOf`, table `track_edges`, migration 0085). `/community/trackmaps` serves them as `edges` {l, r, laps} when they
+  were measured on the same layout. The coach's "Track left unused" reads them (coach-and-model.md).
+- **The wrong track or layout**: a lap more than 6 % longer or shorter than its track's layout (`fitsLayout`, the trace's
+  points times its bin against the layout's points every 5 m) never goes into that track's model (`learnNewLaps`) nor
+  onto its leaderboard (`keepBestLap` with `len`).

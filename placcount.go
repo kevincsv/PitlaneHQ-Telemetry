@@ -55,7 +55,6 @@ type plAccount struct {
 	LastHash     string    `json:"lastHash"`           // hash of the data at that time
 	LastSync     time.Time `json:"lastSync"`
 	SyncErr      string    `json:"syncErr,omitempty"`
-	NoLaps       bool      `json:"noLaps,omitempty"`    // do not keep my laps on the server
 	Admin        bool      `json:"admin,omitempty"`     // an admin of the Pitlane HQ server (sees Connections)
 	Tester       bool      `json:"tester,omitempty"`    // a tester of the server: uses what is in development
 	Verified     bool      `json:"verified,omitempty"`  // the email was confirmed
@@ -242,10 +241,8 @@ func prefsJSON() []byte {
 	commMu.Lock()
 	c := commCfg
 	commMu.Unlock()
-	plMu.Lock()
-	laps := !plAcc.NoLaps
-	plMu.Unlock()
-	b, _ := json.Marshal(syncPrefs{c.ShareTimes, c.ShareTraces, c.ShareReports, !c.NoMaps, !c.NoLive, !c.NoField, c.DeleteAfter, c.Asked, laps})
+	// LapsToAccount is always true: the laps always go to the account (older PCs that read it turn their switch back on)
+	b, _ := json.Marshal(syncPrefs{c.ShareTimes, c.ShareTraces, c.ShareReports, !c.NoMaps, !c.NoLive, !c.NoField, c.DeleteAfter, c.Asked, true})
 	return b
 }
 
@@ -259,12 +256,6 @@ func applyPrefs(b []byte) {
 	c.ShareReports, c.DeleteAfter, c.Asked = p.ShareReports, p.DeleteAfter, p.Asked // the laps, rivals, layouts and live always go (loadCommunity)
 	saveCommLocked()
 	commMu.Unlock()
-	plMu.Lock()
-	if plAcc.NoLaps != !p.LapsToAccount {
-		plAcc.NoLaps = !p.LapsToAccount
-		savePLLocked()
-	}
-	plMu.Unlock()
 }
 
 // bundleFiles: what goes to the account, file name → content
@@ -1068,7 +1059,7 @@ func plStatus() map[string]any {
 	defer plMu.Unlock()
 	a := plAcc
 	out := map[string]any{"ready": commBase() != "", "signedIn": a.Token != "", "id": a.ID, "email": a.Email, "display": a.Display, "nameKind": a.NameKind,
-		"lapsToAccount": !a.NoLaps, "admin": a.Admin, "tester": a.Tester, "supporter": a.Supporter, "supporterHidden": a.SupHidden, "pro": a.Pro, "proSrc": a.ProSrc, "proGate": a.ProGate, "proElsewhere": a.ProElsewhere, "verified": a.Verified, "mail": a.Mail, "twoFactor": a.TwoFactor, "gated": a.Gated, "noPassword": a.NoPassword, "recoveryLeft": plRecovery, "version": a.Version, "error": a.SyncErr, "ended": a.Ended}
+		"admin": a.Admin, "tester": a.Tester, "supporter": a.Supporter, "supporterHidden": a.SupHidden, "pro": a.Pro, "proSrc": a.ProSrc, "proGate": a.ProGate, "proElsewhere": a.ProElsewhere, "verified": a.Verified, "mail": a.Mail, "twoFactor": a.TwoFactor, "gated": a.Gated, "noPassword": a.NoPassword, "recoveryLeft": plRecovery, "version": a.Version, "error": a.SyncErr, "ended": a.Ended}
 	if !a.LastSync.IsZero() {
 		out["lastSync"] = a.LastSync.UnixMilli()
 	}
@@ -1647,12 +1638,6 @@ func registerPLRoutes(mux *http.ServeMux) {
 				}
 				wrapped, _ := sealAES(newWrap, key)
 				_, err = plCall("POST", "/password", map[string]string{"auth": oldAuth, "newAuth": newAuth, "wrappedKey": wrapped})
-			case "laps":
-				plMu.Lock()
-				plAcc.NoLaps = !in.On
-				savePLLocked()
-				plMu.Unlock()
-				kickCloud()
 			case "refresh": // read the account again (public name, email confirmed, admin) and sync
 				plRefreshMe()
 				kickSync()

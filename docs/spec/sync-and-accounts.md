@@ -47,8 +47,10 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   answers "signed out" to the PC's token (`plSessionEnded`), the PC signs out by itself keeping the email and
   shows the sign-in screen with a note; a wrong password never signs it out. My account has "Sign out on this
   PC" and says when the PC could not sync; it shows no sync card (no last sync, no version) on any device (the PC's
-  "My laps": keep my laps in my account and see them on the web). Nobody syncs by hand: no "Sync now" button and no switch to turn the sync
-  off anywhere (PC, web, Pitlane HQ Desktop, phones); the sync is always on while signed in. One
+  "My laps" has only "See my laps on the web" and the note that every lap is uploaded by itself). Nobody syncs by hand: no "Sync now" button and no switch to turn the sync
+  or the lap upload off anywhere (PC, web, Pitlane HQ Desktop, phones); the sync and the laps always go up while signed in. The old
+  "Keep my laps in my account" switch is gone: a PC that had it off uploads again (its `noLaps` is ignored and the synced prefs always say
+  `lapsToAccount: true`, so an older PC that reads them turns its switch back on). One
   public name per account: changing it anywhere changes it everywhere, shared laps included.
 - Deleting your own account never deletes what the leaderboard shows or what the model learns from:
   those laps stay as an anonymous driver (`deleteAccount` in `cloud/src/accounts.js`); everything

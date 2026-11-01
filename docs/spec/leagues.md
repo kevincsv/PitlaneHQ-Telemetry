@@ -29,3 +29,6 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   directory's data without its permission. Up to 3 leagues per driver, 10 for a supporter (a donation, Patreon or by hand; `LEAGUES_FREE`/`LEAGUES_SUPPORTER`,
   `limit` in the list): under "Post the league" the form says how many you have posted and, to the rest, that supporters
   post up to 10, with a small "♥ Donate" link (PC and web; the phones show no link).
+- Le Mans Ultimate leagues name their classes: the server reads Hypercar, LMP2, LMP3, LMGTE and LMGT3 from a league's
+  name, cars and about (posted) or its name and post title (found), `lmuClasses` in leaguescan.js, as `cls`; the cards
+  show them in place of "Le Mans Ultimate" (web, phones).

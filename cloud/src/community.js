@@ -67,9 +67,9 @@ import { estimateTrace } from "./pedals.js";
 import { discordLapAlert } from "./discord.js";
 import { recordBeaten, testerAlert, testAskAlert } from "./alerts.js";
 import { testAskRoutes } from "./testask.js";
-import { addFound, editFound, foundLeagues, leagueGame, scanLeagues } from "./leaguescan.js";
+import { addFound, editFound, foundLeagues, leagueGame, lmuClasses, scanLeagues } from "./leaguescan.js";
 import { catMap, catOf, licOf, CATS, groupFor } from "./categories.js";
-import { lmuClass, wetOf, clsParam, classLaps } from "./lmuclass.js";
+import { lmuClass, wetOf, clsParam, classLaps, lmuVersions, verAt } from "./lmuclass.js";
 import { sealedSectors } from "./lapsectors.js";
 import { friendRoutes, follows } from "./friends.js";
 
@@ -271,6 +271,8 @@ async function rememberLic(env, uid, cat, lic) {
 }
 
 // an answer of the database kept a minute in the server's cache (the same for everyone who asks it): fn() → {results}
+// Le Mans Ultimate's versions (lmuapi.js), read from the database once a minute
+const lmuVers = async (env) => ((await minuteCache(env, "lmu-versions", async () => ({ results: await lmuVersions(env) }))).results || []);
 async function minuteCache(env, k, fn) {
   const cache = env.LOCAL !== "1" && typeof caches !== "undefined" && caches.default ? caches.default : null;
   const key = new Request("https://db.cache/" + k);
@@ -363,7 +365,8 @@ export async function community(req, env, url, ctx) {
        WHERE l.rk=1 ORDER BY l.created DESC LIMIT ?2`
     ).bind(game, lim).all());
     const cm = all || game === "iracing" ? await catMap(env) : null;
-    return json({ records: (r.results || []).map(({ uid, hint, prevTime, prevAlias, ...x }) => ({ ...x, game: gameOf(x.game), car: famName(gameOf(x.game), x.carId, x.car), cat: cm && gameOf(x.game) === "iracing" ? catOf(cm, x.trackId, x.carId, hint, x.track, x.car) : "sports_car", prof: !!x.prof, sup: !!x.sup, hasTrace: !!x.hasTrace, mine: !!who && uid === who.id, field: String(uid).startsWith("o:"), prev: prevTime ? { time: prevTime, alias: prevAlias } : null })) });
+    const lv = all || game === "lmu" ? await lmuVers(env) : null;
+    return json({ records: (r.results || []).map(({ uid, hint, prevTime, prevAlias, ...x }) => ({ ...x, ver: lv && gameOf(x.game) === "lmu" ? verAt(lv, x.created) || undefined : undefined, game: gameOf(x.game), car: famName(gameOf(x.game), x.carId, x.car), cat: cm && gameOf(x.game) === "iracing" ? catOf(cm, x.trackId, x.carId, hint, x.track, x.car) : "sports_car", prof: !!x.prof, sup: !!x.sup, hasTrace: !!x.hasTrace, mine: !!who && uid === who.id, field: String(uid).startsWith("o:"), prev: prevTime ? { time: prevTime, alias: prevAlias } : null })) });
   }
   // one track: its layout and official turns, how many drivers and laps it has, and the record of every car on it
   // (the track page, in development)
@@ -402,7 +405,8 @@ export async function community(req, env, url, ctx) {
     if (cq && +url.searchParams.get("trackId")) {
       const who = await me(req, env).catch(() => null);
       const rows = await classLaps(env, +url.searchParams.get("trackId"), cq, { admin: !!who && isAdmin(env, who.id), rivals: seesRivals(req, env, who), acctTrace: ACCT_TRACE });
-      return json({ cat: "sports_car", cls: cq, laps: rows.map(({ uid, ...x }) => ({ ...x, car: famName(game, x.carId, x.car), lic: licOf(x.lic), prof: !!x.prof, sup: !!x.sup, mine: !!who && uid === who.id, field: String(uid).startsWith("o:"), hasTrace: !!x.hasTrace, sectors: x.sectors ? JSON.parse(x.sectors) : null })) });
+      const lv = await lmuVers(env);
+      return json({ cat: "sports_car", cls: cq, laps: rows.map(({ uid, ...x }) => ({ ...x, ver: verAt(lv, x.created) || undefined, car: famName(game, x.carId, x.car), lic: licOf(x.lic), prof: !!x.prof, sup: !!x.sup, mine: !!who && uid === who.id, field: String(uid).startsWith("o:"), hasTrace: !!x.hasTrace, sectors: x.sectors ? JSON.parse(x.sectors) : null })) });
     }
     const t = +url.searchParams.get("trackId"), c = await famId(env, game, url.searchParams.get("carId"));
     if (!t || !c) return err("trackId and carId", 400);
@@ -419,7 +423,8 @@ export async function community(req, env, url, ctx) {
     ).bind(t, c, game, cat).all();
     // field: another driver of a race someone drove, anonymous (their speed trace with estimated pedals)
     // cls: the board's Le Mans Ultimate class (its class board, ?cls=), null in iRacing
-    return json({ cat, cls: game === "lmu" ? (h && h.cls) || lmuClass(null, h && h.car) : null, laps: (r.results || []).map(({ uid, ...x }) => ({ ...x, lic: licOf(x.lic), prof: !!x.prof, sup: !!x.sup, mine: !!who && uid === who.id, field: String(uid).startsWith("o:"), hasTrace: !!x.hasTrace, sectors: x.sectors ? JSON.parse(x.sectors) : null })) });
+    const lv = game === "lmu" ? await lmuVers(env) : null;
+    return json({ cat, cls: game === "lmu" ? (h && h.cls) || lmuClass(null, h && h.car) : null, laps: (r.results || []).map(({ uid, ...x }) => ({ ...x, ver: lv ? verAt(lv, x.created) || undefined : undefined, lic: licOf(x.lic), prof: !!x.prof, sup: !!x.sup, mine: !!who && uid === who.id, field: String(uid).startsWith("o:"), hasTrace: !!x.hasTrace, sectors: x.sectors ? JSON.parse(x.sectors) : null })) });
   }
   if (p.startsWith("/laps/") && m === "GET") {
     const rivals = seesRivals(req, env, await me(req, env).catch(() => null));
@@ -470,9 +475,10 @@ export async function community(req, env, url, ctx) {
   if (p === "/turns" && m === "GET") {
     const t = +url.searchParams.get("trackId");
     if (!t) return err("trackId", 400);
-    const r = await env.DB.prepare("SELECT turns, updated FROM track_turns WHERE game=?1 AND track_id=?2").bind(game, t).first();
-    let turns = [], auto = false, count = 0;
+    const r = await env.DB.prepare("SELECT turns, names, updated FROM track_turns WHERE game=?1 AND track_id=?2").bind(game, t).first();
+    let turns = [], auto = false, count = 0, names = [];
     try { turns = r ? JSON.parse(r.turns) : []; } catch (e) { turns = []; }
+    try { names = r && r.names ? JSON.parse(r.names) : []; } catch (e) { names = []; }
     // no official turns placed yet: the corners come from the geometry of the track's layout (trackgeo.js), the same on
     // every device, until an admin places them
     if (!turns.length) {
@@ -482,7 +488,8 @@ export async function community(req, env, url, ctx) {
       if (lay) { try { const p = JSON.parse(lay.pts); turns = turnsFromPath(p.x, p.y, want, slows); auto = true; } catch (e) { turns = []; } }
       if (want) count = want;
     }
-    return new Response(JSON.stringify({ trackId: t, game, turns, auto, ...(count ? { count } : {}), updated: r ? r.updated : 0 }), { headers: { ...JSONH, "cache-control": "public, max-age=300" } });
+    // the names only go with the official turns they were typed for
+    return new Response(JSON.stringify({ trackId: t, game, turns, auto, ...(!auto && names.some(Boolean) ? { names } : {}), ...(count ? { count } : {}), updated: r ? r.updated : 0 }), { headers: { ...JSONH, "cache-control": "public, max-age=300" } });
   }
   // the pit lane of a track, from laps through the pits: [point of the lap (5 m), metres to the left of the track]
   if (p === "/pitlane" && m === "GET") {
@@ -498,6 +505,13 @@ export async function community(req, env, url, ctx) {
     const b = body;
     const t = +b.trackId, g = String(b.game || "iracing").slice(0, 20);
     const turns = Array.isArray(b.turns) ? b.turns.map(Number).filter(x => isFinite(x) && x >= 0 && x < 1).slice(0, 60) : null; // in the order T1 … Tn
+    // the turns' names alone (the turns stay as they are): "" for a turn without one
+    if (t && !turns && Array.isArray(b.names)) {
+      const names = b.names.slice(0, 60).map((x) => String(x || "").replace(/[\u0000-\u001f<>]/g, "").trim().slice(0, 40));
+      const r = await env.DB.prepare("UPDATE track_turns SET names=?3, updated=?4 WHERE game=?1 AND track_id=?2").bind(g, t, names.some(Boolean) ? JSON.stringify(names) : null, Date.now()).run();
+      if (!r.meta || !r.meta.changes) return err("place the official turns first", 400);
+      return json({ ok: true, trackId: t, game: g, names });
+    }
     if (!t || !turns) return err("trackId and turns", 400);
     if (!turns.length) await env.DB.prepare("DELETE FROM track_turns WHERE game=?1 AND track_id=?2").bind(g, t).run();
     else await env.DB.prepare("INSERT INTO track_turns (game, track_id, turns, updated) VALUES (?1, ?2, ?3, ?4) ON CONFLICT(game, track_id) DO UPDATE SET turns=excluded.turns, updated=excluded.updated")
@@ -823,7 +837,7 @@ export async function community(req, env, url, ctx) {
       const cats = lst(x.cats).filter((c) => CATS.includes(c));
       const o = { id: x.id, name: x.name, about: x.about || "", cat: cats.length === 1 ? cats[0] : null, cats, days: lst(x.days).map(Number).filter((d) => d >= 0 && d <= 6),
         time: x.time || "", tz: x.tz || "", open: !!x.open, discord: x.discord || "", web: x.web || "", schedule: x.schedule || "", cars: x.cars || "", lang: x.lang || "",
-        created: x.created, updated: x.updated, game: x.game || "iracing", mine: !!who && x.owner === who.id, by: x.alias || "Driver", bot: !!x.bot };
+        created: x.created, updated: x.updated, game: x.game || "iracing", cls: x.game === "lmu" ? lmuClasses([x.name, x.cars, x.about].join(" ")) : undefined, mine: !!who && x.owner === who.id, by: x.alias || "Driver", bot: !!x.bot };
       if (o.mine || admin) { o.views = x.views || 0; o.clicks = x.clicks || 0; }
       return o;
     };

@@ -114,3 +114,7 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   allows only to their followers and the admins). The comparator's community laps (`pickCommLap*`) list every friend's
   lap on that car and track first, marked ★, wherever it sits on the board (`/community/friends/laps`), then the fastest
   fifteen. A friend who goes anonymous drops out of the list; only their laps that are not anonymous ever show.
+- Le Mans Ultimate's game version: every LMU record (`/community/records`) and board lap (`/community/laps`, class boards
+  too) carries `ver`, the version the admins' PCs had first seen last before the lap was set (`lmuVersions`/`verAt` in
+  lmuclass.js, from `lmu_api`; "1.2-fc78d7e6" reads "1.2"), shown as "v1.2" beside the lap on every device, since BoP
+  and physics change with the version.

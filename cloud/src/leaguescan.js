@@ -16,6 +16,9 @@ const FEEDS = [
 export const LEAGUE_GAMES = ["iracing", "lmu"];
 export const leagueGame = (g) => { const x = gameOf(String(g || "").toLowerCase()); return LEAGUE_GAMES.includes(x) ? x : "iracing"; };
 const LMU_RE = /le ?mans ultimate|\blmu\b/i;
+// the Le Mans Ultimate classes a league's text names (its name, post, cars and about), in the game's order
+const LMU_CLS = [["Hypercar", /hyper ?cars?|\blmh\b|\blmdh\b/i], ["LMP2", /\blmp ?2\b/i], ["LMP3", /\blmp ?3\b/i], ["LMGTE", /\b(lm ?)?gte\b/i], ["LMGT3", /\b(lm ?)?gt ?3\b/i]];
+export const lmuClasses = (t) => LMU_CLS.filter(([, re]) => re.test(String(t || ""))).map(([k]) => k);
 const gameOfPost = (t) => (/iracing/i.test(t) ? "iracing" : LMU_RE.test(t) ? "lmu" : "");
 const UA = "web:app.pitlanehq.leagues:v1.0 (+https://pitlanehq.app)"; // the form Reddit asks automated clients to use
 const EVERY = 6 * 3600e3, RETRY = 30 * 60e3, STUCK = 24 * 3600e3, KEEP = 60 * 86400e3, RECHECK = 6 * 3600e3, MIN_ONLINE = 5;
@@ -175,7 +178,7 @@ export async function foundLeagues(env, admin, game) {
       const e = editOf(x), cats = (() => { try { return JSON.parse(x.cats || "[]"); } catch (er) { return []; } })();
       return { guild: x.guild, name: e.name || x.name || "", icon: x.icon || "", invite: "https://discord.gg/" + x.code, title: e.title != null ? e.title : x.title || "", url: x.url || "",
         sub: x.sub || "", posted: x.posted, posts: x.posts, members: x.members || 0, online: x.online || 0, cats: e.cats || cats,
-        game: x.game || "iracing", checked: x.checked, hidden: admin ? !!x.hidden : undefined, edited: admin ? !!x.edit : undefined };
+        game: x.game || "iracing", cls: g === "lmu" ? lmuClasses([e.name || x.name, e.title != null ? e.title : x.title].join(" ")) : undefined, checked: x.checked, hidden: admin ? !!x.hidden : undefined, edited: admin ? !!x.edit : undefined };
     }),
   };
 }

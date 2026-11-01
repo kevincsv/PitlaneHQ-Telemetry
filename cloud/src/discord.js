@@ -92,7 +92,7 @@ export async function discordInteraction(req, env, ctx) {
   if (x.guild && chans.length && PUBLIC_CMDS.has(name) && !chans.includes(it.channel_id) && !chans.includes(it.channel && it.channel.parent_id))
     return text(tr(l, "In this server the bot answers in ", "En este servidor el bot responde en ", "Neste servidor o bot responde em ") + chans.map((c) => `<#${c}>`).join(" ") + ".");
   if (PRO.has(name) && !(await isPro(env, x.account))) return proOnly(x);
-  const run = { record, driver, link: linkStart, unlink, download, help, language, setup, coach, compare, board, alerts, recent, track, league }[name];
+  const run = { record, driver, link: linkStart, unlink, download, help, pro: proList, language, setup, coach, compare, board, alerts, recent, track, league }[name];
   if (!run) return text(tr(l, "Unknown command", "Comando desconocido", "Comando desconhecido"));
   try {
     return await run(x);
@@ -275,10 +275,26 @@ async function download(x) {
   });
 }
 
+// /pro: what will be part of Pitlane HQ Pro when the beta ends (the PRO badges of the apps, docs/spec/pro.md) and what
+// stays free; only to who asked
+function proList(x) {
+  const paid = tr(x.l,
+    "• The coach's plan on the track map\n• Compare with the community (the next level, the record and your friends' laps)\n• How consistent you are in each corner\n• Offs explained on the map\n• Race fuel\n• More charts (G-G, steering against speed, tyre temperatures)\n• The experimental overlays\n• More than 3 programs starting by themselves",
+    "• El plan del coach en el mapa del circuito\n• Comparar con la comunidad (el siguiente nivel, el récord y las vueltas de tus amigos)\n• Tu constancia en cada curva\n• Las salidas de pista explicadas en el mapa\n• Combustible de carrera\n• Más gráficas (G-G, volante contra velocidad, temperaturas de neumáticos)\n• Los overlays experimentales\n• Más de 3 programas que se abren solos",
+    "• O plano do coach no mapa da pista\n• Comparar com a comunidade (o próximo nível, o recorde e as voltas dos seus amigos)\n• A sua constância em cada curva\n• As saídas de pista explicadas no mapa\n• Combustível de corrida\n• Mais gráficos (G-G, volante contra velocidade, temperaturas dos pneus)\n• Os overlays experimentais\n• Mais de 3 programas que abrem sozinhos");
+  const free = tr(x.l,
+    "Recording your laps, your own analysis and the coach's tips, the standard overlays, your whole history on the web and the phones, the leaderboards, and every command of this bot.",
+    "Grabar tus vueltas, tu análisis y los consejos del coach, los overlays normales, todo tu historial en la web y los móviles, las leaderboards y todos los comandos de este bot.",
+    "Gravar as suas voltas, a sua análise e as dicas do coach, os overlays normais, todo o seu histórico na web e nos celulares, as classificações e todos os comandos deste bot.");
+  return say({ embeds: [{ color: AMBER, title: "Pitlane HQ Pro", url: SITE,
+    description: tr(x.l, "Everything is free while Pitlane HQ is in beta. When the beta ends, these will be part of Pitlane HQ Pro.", "Todo es gratis mientras Pitlane HQ está en beta. Cuando acabe la beta, esto será parte de Pitlane HQ Pro.", "Tudo é grátis enquanto o Pitlane HQ está em beta. Quando a beta acabar, isto fará parte do Pitlane HQ Pro."),
+    fields: [{ name: "PRO", value: paid }, { name: tr(x.l, "Always free", "Siempre gratis", "Sempre grátis"), value: free }] }] }, true);
+}
+
 function help(x) {
   const free = tr(x.l,
-    "`/record` the record and top 10 of a car and track\n`/driver` a driver's profile, or yours\n`/link` · `/unlink` your Pitlane HQ account\n`/recent` your last sessions\n`/track` a track's records on every car\n`/download` the apps\n`/language` the bot's language",
-    "`/record` el récord y el top 10 de un coche y circuito\n`/driver` el perfil de un piloto, o el tuyo\n`/link` · `/unlink` tu cuenta de Pitlane HQ\n`/recent` tus últimas sesiones\n`/track` los récords de un circuito en cada coche\n`/download` las apps\n`/language` el idioma del bot", "`/record` o recorde e o top 10 de um carro e pista\n`/driver` o perfil de um piloto, ou o seu\n`/link` · `/unlink` a sua conta do Pitlane HQ\n`/recent` as suas últimas sessões\n`/track` os recordes de uma pista em cada carro\n`/download` os apps\n`/language` o idioma do bot");
+    "`/record` the record and top 10 of a car and track\n`/driver` a driver's profile, or yours\n`/link` · `/unlink` your Pitlane HQ account\n`/recent` your last sessions\n`/track` a track's records on every car\n`/download` the apps\n`/pro` what will be part of Pitlane HQ Pro\n`/language` the bot's language",
+    "`/record` el récord y el top 10 de un coche y circuito\n`/driver` el perfil de un piloto, o el tuyo\n`/link` · `/unlink` tu cuenta de Pitlane HQ\n`/recent` tus últimas sesiones\n`/track` los récords de un circuito en cada coche\n`/download` las apps\n`/pro` lo que será parte de Pitlane HQ Pro\n`/language` el idioma del bot", "`/record` o recorde e o top 10 de um carro e pista\n`/driver` o perfil de um piloto, ou o seu\n`/link` · `/unlink` a sua conta do Pitlane HQ\n`/recent` as suas últimas sessões\n`/track` os recordes de uma pista em cada carro\n`/download` os apps\n`/pro` o que fará parte do Pitlane HQ Pro\n`/language` o idioma do bot");
   const pro = tr(x.l,
     "`/coach` your best lap against the next level and the record\n`/compare` your laps against another driver's\n`/board` this server's ranking on a car and track\n`/alerts` this server's new best laps and records, posted in a channel",
     "`/coach` tu mejor vuelta contra el siguiente nivel y el récord\n`/compare` tus vueltas contra las de otro piloto\n`/board` el ranking de este servidor en un coche y circuito\n`/alerts` las mejores vueltas y récords de este servidor, en un canal", "`/coach` a sua melhor volta contra o próximo nível e o recorde\n`/compare` as suas voltas contra as de outro piloto\n`/board` o ranking deste servidor em um carro e pista\n`/alerts` as melhores voltas e recordes deste servidor, em um canal");

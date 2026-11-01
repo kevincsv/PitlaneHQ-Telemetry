@@ -47,3 +47,5 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   its feedback forum" (`feedback_channel`, migration 0092, the server's channel named feedback, a forum first) makes every
   Share your feedback answer a post there (`discordFeedback`, from POST /community/feedback): the text, the stars, the
   device, the version and the overlay design, never the driver's name; the forum's tags of the device and Overlays.
+- /pro (only to who asked): everything is free during the beta, the list of what will be part of Pitlane HQ Pro when it
+  ends (the apps' PRO badges, without what is still in development) and what stays free, every command of the bot too.

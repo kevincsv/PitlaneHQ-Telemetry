@@ -28,6 +28,8 @@ export const COMMANDS = [
     ...loc(["desvincular", "Desvincula tu cuenta de Pitlane HQ de Discord"], ["desvincular", "Desvincule a sua conta do Pitlane HQ do Discord"]) },
   { name: "download", description: "Download Pitlane HQ",
     ...loc(["descargar", "Descargar Pitlane HQ"], ["baixar", "Baixar o Pitlane HQ"]) },
+  { name: "pro", description: "What will be part of Pitlane HQ Pro when the beta ends",
+    ...loc(["pro", "Lo que será parte de Pitlane HQ Pro cuando acabe la beta"], ["pro", "O que fará parte do Pitlane HQ Pro quando a beta acabar"]) },
   { name: "help", description: "What the Pitlane HQ bot does",
     ...loc(["ayuda", "Qué hace el bot de Pitlane HQ"], ["ajuda", "O que o bot do Pitlane HQ faz"]) },
   { name: "language", description: "The language the bot answers you in",

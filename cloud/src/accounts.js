@@ -323,6 +323,7 @@ export async function accounts(req, env, url) {
       env.DB.prepare("INSERT INTO community_users (id, token_hash, alias, created) VALUES (?1,?2,?3,?4)").bind(id, "acct:" + id, display, Date.now()),
       signupSrc(env, req, id, body),
     ]);
+    await inviteFollow(env, id, body).catch(() => {});
     if (steam) await linkSteam(env, steam.steamid, id, steam.persona);
     if (google) await linkGoogle(env, google.sub, id);
     // that Discord was linked to another account in the meantime: the account is made without it, and the page says so
@@ -720,6 +721,7 @@ async function quickRegister(env, body, ip, req) {
     env.DB.prepare("INSERT INTO community_users (id, token_hash, alias, created) VALUES (?1,?2,?3,?4)").bind(id, "acct:" + id, display, Date.now()),
       signupSrc(env, req, id, body),
   ]);
+  await inviteFollow(env, id, body).catch(() => {});
   if (prov === "steam") await linkSteam(env, g.steamid, id, g.persona);
   else if (prov === "discord") await linkDiscordLogin(env, g, id);
   else await linkGoogle(env, g.sub, id);
@@ -730,6 +732,17 @@ async function quickRegister(env, body, ip, req) {
   const a = await env.DB.prepare("SELECT * FROM accounts WHERE id=?1").bind(id).first();
   const token = await newSession(env, id, cleanName(body.device) || g.device || "PC");
   return json({ id: a.id, token, display: a.display, nameKind: "nick", anon: false, keyTag: await keyTag(a.wrapped_key), admin: isAdmin(env, a.id), tester: isTester(env, a.id, a), verified: true, twoFactor: false, escrow: true, noPassword: true, created: true, dataKey: key, email: email || undefined });
+}
+
+// "Invite a friend": a driver's link (https://pitlanehq.app/?ref=invite-<their account id>) is the first visit of the
+// browser the new account is made in; the two accounts then follow each other (Friends on every device)
+export async function inviteFollow(env, id, body) {
+  const v = body && body.src && typeof body.src === "object" ? visitOf(body.src) : null, by = v && v.inviter;
+  if (!by || by === id) return;
+  const ok = await env.DB.prepare("SELECT id FROM accounts WHERE id=?1").bind(by).first().catch(() => null);
+  if (!ok) return;
+  const now = Date.now(), add = "INSERT OR IGNORE INTO follows (account_id, driver_id, created) VALUES (?1,?2,?3)";
+  await env.DB.batch([env.DB.prepare(add).bind(id, by, now), env.DB.prepare(add).bind(by, id, now)]).catch(() => {});
 }
 
 // where a new account came from (the admin page's Analytics, sourceslib.js): the first visit of the browser it was made

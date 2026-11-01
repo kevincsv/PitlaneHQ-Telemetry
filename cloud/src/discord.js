@@ -25,7 +25,7 @@ const gap = (d) => (d < 0 ? "−" : "+") + Math.abs(d).toFixed(3);
 const fix = (s) => { s = String(s || ""); if (!/[ÃÂ]/.test(s)) return s; try { return decodeURIComponent(escape(s)); } catch (e) { return s; } };
 const slug = (s) => String(s || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 80);
 const PRE = { en: "", es: "/es", pt: "/pt" };
-const recUrl = (l, x) => `${SITE}${PRE[l]}/records/${x.t}-${x.c}/${slug(fix(x.track) + " " + fix(x.car))}`;
+const recUrl = (l, x, game) => `${SITE}${PRE[l]}/records/${game === "lmu" ? "lmu/" : ""}${x.t}-${x.c}/${slug(fix(x.track) + " " + fix(x.car))}`;
 // Discord's markdown: a name never formats nor mentions anyone
 const md = (s) => String(s || "").replace(/[\\*_~`|[\]]/g, (c) => "\\" + c);
 const CAT = {
@@ -581,6 +581,57 @@ export async function discordWeekly(env, now = Date.now()) {
   return n;
 }
 
+// a new version's notes (web/dist/whats-new.json, the ones the apps show) in the changelog channel (the channel named
+// changelog) of every server an admin set to get every driver's laps (`everyone`): once per version (app_state
+// discord_changelog), from the scheduled run; the first run posts the current one
+export async function discordChangelog(env) {
+  if (!env.DISCORD_BOT_TOKEN || !env.ASSETS) return 0;
+  const vs = await env.ASSETS.fetch(new Request(SITE + "/whats-new.json")).then((r) => r.json()).then((j) => j.versions || []).catch(() => []);
+  const v = vs[0];
+  if (!v || !v.v) return 0;
+  const was = await env.DB.prepare("SELECT v FROM app_state WHERE k='discord_changelog'").first().catch(() => null);
+  if (was && was.v === v.v) return 0;
+  const gs = (await env.DB.prepare("SELECT guild_id, lang FROM discord_guilds WHERE everyone=1").all().catch(() => ({ results: [] }))).results || [];
+  const H = { authorization: "Bot " + env.DISCORD_BOT_TOKEN };
+  let n = 0;
+  for (const g of gs) {
+    const cs = await fetch(`${API}/guilds/${g.guild_id}/channels`, { headers: H }).then((r) => (r.ok ? r.json() : [])).catch(() => []);
+    const c = cs.find((x) => (x.type === 0 || x.type === 5) && /changelog/i.test(x.name));
+    if (!c) continue;
+    const l = ["es", "pt"].includes(g.lang) ? g.lang : "en", notes = v[l] || v.en || [];
+    if (await post(env, c.id, { embeds: [{ color: AMBER, title: `Pitlane HQ ${v.v} beta`, url: `${SITE}/changelog`,
+      description: notes.map((x) => "• " + x).join("\n").slice(0, 3800) + "\n\n" + tr(l, "[Download Pitlane HQ](https://pitlanehq.app/downloads) · [Open the web app](https://pitlanehq.app/app)", "[Descargar Pitlane HQ](https://pitlanehq.app/downloads) · [Abrir la app web](https://pitlanehq.app/app)", "[Baixar o Pitlane HQ](https://pitlanehq.app/downloads) · [Abrir o app web](https://pitlanehq.app/app)") }] })) n++;
+  }
+  if (n || !gs.length) await env.DB.prepare("INSERT INTO app_state (k, v, at) VALUES ('discord_changelog', ?1, ?2) ON CONFLICT(k) DO UPDATE SET v=excluded.v, at=excluded.at").bind(v.v, Date.now()).run();
+  return n;
+}
+
+// the current records, the oldest first (`from` records skipped), 10 to a message, in the records channel (else the
+// alerts one) of one server: the admin page's "Post the current records", for a server that just started
+export async function discordRecords(env, guildId, from) {
+  const g = await env.DB.prepare("SELECT records_channel, alerts_channel, lang FROM discord_guilds WHERE guild_id=?1").bind(guildId).first();
+  const ch = g && (g.records_channel || g.alerts_channel);
+  if (!ch) return { error: "Run /setup in that server first to choose the records channel" };
+  const r = await env.DB.prepare(
+    `WITH rk AS (SELECT *, ROW_NUMBER() OVER (PARTITION BY game, track_id, car_id ORDER BY time) AS rk, COUNT(*) OVER (PARTITION BY game, track_id, car_id) AS n
+       FROM community_laps WHERE game IN ('iracing','lmu') AND COALESCE(shown,'')<>'model')
+     SELECT l.game, l.track_id AS t, l.car_id AS c, l.track, l.car, l.time, l.n, l.created,
+       CASE WHEN l.anon=1 OR l.user_id LIKE 'o:%' OR COALESCE(ac.anon,0)=1 THEN 'Anonymous' WHEN l.shown='iracing' AND COALESCE(u.iracing,'')<>'' THEN u.iracing ELSE u.alias END AS who
+     FROM rk l JOIN community_users u ON u.id=l.user_id LEFT JOIN accounts ac ON ac.id=l.user_id
+     WHERE l.rk=1 ORDER BY l.created ASC LIMIT 30 OFFSET ?1`).bind(Math.max(0, from | 0)).all();
+  const rows = r.results || [];
+  const l = ["es", "pt"].includes(g.lang) ? g.lang : "en";
+  let posted = 0;
+  for (let i = 0; i < rows.length; i += 10) {
+    const embeds = rows.slice(i, i + 10).map((x) => ({ color: PURPLE, url: recUrl(l, x, x.game),
+      title: (x.game === "lmu" ? "Le Mans Ultimate · " : "") + `🏆 ${fix(x.track)}`.slice(0, 240),
+      description: `${md(x.game === "iracing" ? famName("iracing", x.c, fix(x.car)) : fix(x.car))}\n\`${fmt(x.time)}\` **${md(x.who)}** · ${x.n} ${tr(l, x.n === 1 ? "driver" : "drivers", x.n === 1 ? "piloto" : "pilotos", x.n === 1 ? "piloto" : "pilotos")}` }));
+    if (!(await post(env, ch, { embeds }))) return { error: posted ? "Discord stopped answering, press it again in a minute" : "Discord did not take the post. Check the bot can write in the records channel.", posted, next: from + posted };
+    posted += embeds.length;
+  }
+  return { ok: true, posted, next: rows.length === 30 ? from + posted : null };
+}
+
 // an answer of Share your feedback (usage.js), posted without the driver's name in every server an admin chose for it
 // (`feedback_channel`): a post of its own in a forum, with the tags of its device and Overlays when they are there; a
 // message in a text channel
@@ -622,7 +673,7 @@ async function post(env, channel, msg) {
 // a new best lap of a linked driver (keepBestLap improved what the account shares): posted in the alerts
 // channel of every server where they use the bot, while the account that set the alerts up has Pro
 export async function discordLapAlert(env, accountId, lap) {
-  if (!env.DISCORD_BOT_TOKEN || !lap || !lap.improved || lap.game !== "iracing" || lap.anon || String(accountId).startsWith("o:")) return;
+  if (!env.DISCORD_BOT_TOKEN || !lap || !lap.improved || !["iracing", "lmu"].includes(lap.game) || lap.anon || String(accountId).startsWith("o:")) return;
   const a = await env.DB.prepare("SELECT a.anon, u.alias, u.iracing, dl.discord_id FROM accounts a JOIN community_users u ON u.id=a.id LEFT JOIN discord_links dl ON dl.account_id=a.id WHERE a.id=?1").bind(accountId).first();
   if (!a || a.anon) return;
   // the servers its driver is in, and the servers an admin set to get every driver's laps (`everyone`, not the laps
@@ -632,9 +683,9 @@ export async function discordLapAlert(env, accountId, lap) {
   const gs = [...new Map([...mine, ...all].map((g) => [g.guild_id, g])).values()];
   if (!gs.length) return;
   const st = await env.DB.prepare(
-    `SELECT (SELECT COUNT(*) FROM community_laps l WHERE l.track_id=?1 AND l.car_id=?2 AND l.game='iracing' AND ${NOT_MODEL} AND l.time<?3)+1 AS pos,
-            (SELECT COUNT(*) FROM community_laps l WHERE l.track_id=?1 AND l.car_id=?2 AND l.game='iracing' AND ${NOT_MODEL}) AS total`
-  ).bind(lap.trackId, lap.carId, lap.time).first();
+    `SELECT (SELECT COUNT(*) FROM community_laps l WHERE l.track_id=?1 AND l.car_id=?2 AND l.game=?4 AND ${NOT_MODEL} AND l.time<?3)+1 AS pos,
+            (SELECT COUNT(*) FROM community_laps l WHERE l.track_id=?1 AND l.car_id=?2 AND l.game=?4 AND ${NOT_MODEL}) AS total`
+  ).bind(lap.trackId, lap.carId, lap.time, lap.game).first();
   const k = { t: lap.trackId, c: lap.carId, track: lap.track, car: lap.car };
   const name = lap.shown === "iracing" && a.iracing ? a.iracing : a.alias;
   for (const g of gs) {
@@ -646,7 +697,7 @@ export async function discordLapAlert(env, accountId, lap) {
       { name: tr(l, "Position", "Posición", "Posição"), value: `**P${st.pos}** ${tr(l, "of", "de", "de")} ${st.total}`, inline: true },
     ];
     await post(env, channel, {
-      embeds: [{ color: rec ? PURPLE : AMBER, url: recUrl(l, k), title: rec ? tr(l, "🏆 New record", "🏆 Nuevo récord", "🏆 Novo recorde") : tr(l, "⏱️ New best lap", "⏱️ Nueva mejor vuelta", "⏱️ Nova melhor volta"),
+      embeds: [{ color: rec ? PURPLE : AMBER, url: recUrl(l, k, lap.game), title: (lap.game === "lmu" ? "Le Mans Ultimate · " : "") + (rec ? tr(l, "🏆 New record", "🏆 Nuevo récord", "🏆 Novo recorde") : tr(l, "⏱️ New best lap", "⏱️ Nueva mejor vuelta", "⏱️ Nova melhor volta")),
         description: `${a.discord_id ? `<@${a.discord_id}> ` : ""}**${md(name)}**\n${md(fix(lap.car))} · ${md(fix(lap.track))}`, fields }],
     });
   }

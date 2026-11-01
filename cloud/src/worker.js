@@ -24,7 +24,7 @@ import { fillSectors } from "./lapsectors.js";
 import { accounts, sessionAccount, emailHash } from "./accounts.js";
 import { live } from "./live.js";
 import { seoPage, indexNow, notFound } from "./seo.js";
-import { discordInteraction, discordOAuth, discordWeekly, discordFeedback } from "./discord.js";
+import { discordInteraction, discordOAuth, discordWeekly, discordFeedback, discordChangelog } from "./discord.js";
 import { steamReturn } from "./steam.js";
 import { googleOAuth } from "./google.js";
 import { scanLeagues } from "./leaguescan.js";
@@ -543,6 +543,8 @@ export default {
     if (hourly && at.getUTCDay() === 1 && at.getUTCHours() >= 7) ctx.waitUntil(weeklyAlerts(env, at.getTime()).catch(() => {}));
     // Monday from 09:00 UTC: the Discord servers' best laps of the week (discord.js)
     if (hourly && at.getUTCDay() === 1 && at.getUTCHours() >= 9) ctx.waitUntil(discordWeekly(env, at.getTime()).catch(() => {}));
+    // a new version's notes in the community server's changelog channel, once (discord.js)
+    ctx.waitUntil(discordChangelog(env).catch(() => {}));
     const all = [];
     const wait = ctx.waitUntil.bind(ctx); ctx = { ...ctx, waitUntil: (pr) => { all.push(pr); wait(pr); } };
     ctx.waitUntil(rebuildDirty(env, { daily })); ctx.waitUntil(indexNow(env).catch(() => {}));

@@ -1,6 +1,7 @@
 // The admin page's Discord server tool (Server → Discord server): the route; what it builds is in discordserverlib.js
 import { sessionAccount, isAdmin } from "./accounts.js";
 import { buildServer, API, P } from "./discordserverlib.js";
+import { discordRecords } from "./discord.js";
 
 // GET /community/admin/discord-server: the servers the bot is in, and whether it has Administrator there
 // POST /community/admin/discord-server {guild, step 1-3, apply}: one step; {guild, everyone}: every driver's laps there or not
@@ -23,6 +24,11 @@ export async function discordServerRoute(req, env, url) {
     if (req.method !== "POST") return json({ error: "method not allowed" }, 405);
     const body = await req.json().catch(() => ({}));
     // every driver's new best laps and records in this server's alerts channels (discordLapAlert), or only its own drivers'
+    // the current records posted in that server's records channel, 30 per request from `from` (discord.js)
+    if (body.records === true) {
+      if (!/^\d{15,22}$/.test(String(body.guild || ""))) return json({ error: "bad request" }, 400);
+      return json(await discordRecords(env, String(body.guild), Number(body.from) || 0));
+    }
     if (typeof body.everyone === "boolean") {
       if (!/^\d{15,22}$/.test(String(body.guild || ""))) return json({ error: "bad request" }, 400);
       await env.DB.prepare("INSERT INTO discord_guilds (guild_id, set_by, updated, everyone) VALUES (?1,?2,?3,?4) ON CONFLICT(guild_id) DO UPDATE SET everyone=excluded.everyone, updated=excluded.updated")

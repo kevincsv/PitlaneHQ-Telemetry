@@ -49,3 +49,8 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   device, the version and the overlay design, never the driver's name; the forum's tags of the device and Overlays.
 - /pro (only to who asked): everything is free during the beta, the list of what will be part of Pitlane HQ Pro when it
   ends (the apps' PRO badges, without what is still in development) and what stays free, every command of the bot too.
+- The lap alerts take Le Mans Ultimate laps too (their place among the same car's laps, the title saying the game, the
+  LMU record page). The servers set to get every driver's laps also get each new version's notes (whats-new.json) in
+  their channel named changelog, once per version from the scheduled run (`discordChangelog`, app_state
+  discord_changelog), and the admin page's "Post the current records" posts every current record there (`discordRecords`,
+  10 to a message, the oldest first).

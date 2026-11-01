@@ -1,7 +1,7 @@
 // node cloud/test/trackmaps.test.mjs: the track maps drawn by dead reckoning are rebuilt from a stored lap with the
 // game's own position, and the official number of turns is kept per track.
 import assert from "node:assert/strict";
-import { geoPath, rebuildTrackMaps, noteTurnCount, turnCount } from "../src/trackmaps.js";
+import { geoPath, rebuildTrackMaps, noteTurnCount, turnCount, traceLen, fitsLayout, lateral, edgesOf } from "../src/trackmaps.js";
 
 const ring = (n, g) => ({ bin: 5, d: [], x: Array.from({ length: n }, (_, i) => 300 * Math.cos((2 * Math.PI * i) / n)), y: Array.from({ length: n }, (_, i) => 300 * Math.sin((2 * Math.PI * i) / n)), ...(g ? { g } : {}) });
 assert.equal(geoPath(ring(400)), null, "a dead-reckoning path is no exact layout");
@@ -57,5 +57,37 @@ function fakeDB() {
   assert.equal(await noteTurnCount(env, "iracing", 7, "Spa", 19), false, "the same count is not written again");
   assert.equal(await noteTurnCount(env, "iracing", 7, "Spa", 0), false);
   assert.equal(await noteTurnCount(env, "iracing", 7, "Spa", 99), false);
+}
+// the wrong track or layout: a lap more than 6 % longer or shorter than the layout is another track
+{
+  assert.equal(traceLen({ d: new Array(800).fill([0]) }), 4000);
+  assert.equal(traceLen({ d: new Array(400).fill([0]), bin: 10 }), 4000);
+  assert.equal(traceLen(null), 0);
+  assert.equal(fitsLayout(4000, 800), true);
+  assert.equal(fitsLayout(4200, 800), true);
+  assert.equal(fitsLayout(4400, 800), false, "10 % longer");
+  assert.equal(fitsLayout(3500, 800), false);
+  assert.equal(fitsLayout(4400, 0), true, "no layout: nothing to compare with");
+  assert.equal(fitsLayout(0, 800), true);
+}
+// the edges: laps on a circle of 1 km, spread 4 m to the left and 6 m to the right of the layout, another origin each
+{
+  const N = 1257, R = 200, circ = (off, g) => {
+    const x = [], y = [];
+    const dx = (g[1] - 7) * 111320 * Math.cos(45 * Math.PI / 180), dy = (g[0] - 45) * 110540;
+    for (let i = 0; i < N; i++) { const a = (i * 5) / R; x.push((R - off) * Math.cos(a) - dx); y.push((R - off) * Math.sin(a) - dy); }
+    return { x, y, g };
+  };
+  const lay = circ(0, [45, 7]);
+  const offs = [];
+  for (let k = 0; k < 20; k++) {
+    const off = -6 + (10 * k) / 19, o = lateral(circ(off, [45 + k * 1e-5, 7]), lay);
+    assert.ok(o && Math.abs(o[300] - off) < 0.2, `lap ${k}: ${o && o[300]} vs ${off}`);
+    offs.push(o);
+  }
+  assert.equal(lateral({ x: lay.x, y: lay.y, g: null }, lay), null, "no frame: nothing");
+  const e = edgesOf(offs, N);
+  assert.ok(Math.abs(e.l[100] - 4) < 0.7 && Math.abs(e.r[900] + 6) < 0.7, `${e.l[100]} ${e.r[900]}`);
+  assert.equal(edgesOf(offs.slice(0, 5), N), null, "too few laps");
 }
 console.log("trackmaps ok");

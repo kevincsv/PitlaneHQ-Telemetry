@@ -5,7 +5,7 @@
 import { sessionAccount, isAdmin, isTester, nameTaken, purgeAccount, emailHash, cleanName } from "./accounts.js";
 import { mailReady, mailLog, mailDomain } from "./email.js";
 import { sealData, openData } from "./crypt.js";
-import { getModel, forCompound, getCarCard, markModel, forgetLap, pseudoId, PSEUDO_MIN, moveDriver } from "./model.js";
+import { getModel, forCompound, getCarCard, markModel, forgetLap, pseudoId, PSEUDO_MIN, moveDriver, slowsOf } from "./model.js";
 import { linkDriver, unlinkDriver } from "./driverlinks.js";
 import { recordSeen, seenSummary } from "./seasonseen.js";
 const JSONH = { "content-type": "application/json; charset=utf-8", "cache-control": "no-store", "access-control-allow-origin": "*" };
@@ -61,7 +61,7 @@ import { proRoutes } from "./lemon.js";
 import { coachTipRoutes } from "./coachtips.js";
 import { lmuApiRoutes } from "./lmuapi.js";
 import { turnsFromPath } from "./trackgeo.js";
-import { turnCount, noteTurnCount, rebuildTrackMaps } from "./trackmaps.js";
+import { turnCount, noteTurnCount, rebuildTrackMaps, traceLen, fitsLayout, layoutN } from "./trackmaps.js";
 import { estimateTrace } from "./pedals.js";
 import { discordLapAlert } from "./discord.js";
 import { recordBeaten } from "./alerts.js";
@@ -110,6 +110,8 @@ export async function keepBestLap(env, uid, x) {
   x = { ...x, carId: await noteCar(env, x.game, x.carId, x.car) }; // one board for the brands of one car (carfamily.js)
   const old = await env.DB.prepare("SELECT time, game, trace IS NOT NULL AS traced FROM community_laps WHERE user_id=?1 AND car_id=?2 AND track_id=?3").bind(uid, x.carId, x.trackId).first();
   if (old && old.game === x.game && old.time <= x.time && (old.traced || !x.trace)) return { kept: true, traced: !!old.traced };
+  // a lap of another length than the track's layout is another track or layout: never on this one's board
+  if (x.len > 0 && !fitsLayout(x.len, await layoutN(env, x.game, x.trackId))) return { kept: true, layout: true };
   if (x.count && !(await x.count())) return { limit: true };
   // a faster lap than another driver's record here: that driver hears about it (alerts.js)
   await recordBeaten(env, uid, x).catch(() => {});
@@ -439,13 +441,17 @@ export async function community(req, env, url, ctx) {
   if (p === "/trackmaps" && m === "GET") {
     const t = +url.searchParams.get("trackId");
     if (!t) return err("trackId", 400);
-    const r = await env.DB.prepare("SELECT track, n, len, pts, time, created, geo FROM track_maps WHERE game=?1 AND track_id=?2").bind(game, t).first();
+    const [r, ed] = await Promise.all([env.DB.prepare("SELECT track, n, len, pts, time, created, geo FROM track_maps WHERE game=?1 AND track_id=?2").bind(game, t).first(),
+      env.DB.prepare("SELECT n, laps, data FROM track_edges WHERE game=?1 AND track_id=?2").bind(game, t).first().catch(() => null)]);
     if (!r) return err("no layout for this track yet", 404);
+    // the edges of the road the drivers use, measured from many laps (trackmaps.js rebuildEdges), for the same layout
+    let edges = null;
+    try { const e = ed && ed.n === r.n ? JSON.parse(ed.data) : null; if (e && Array.isArray(e.l) && e.l.length === r.n) edges = { l: e.l, r: e.r, laps: ed.laps }; } catch (e) { edges = null; }
     const pts = JSON.parse(r.pts);
     // g: the origin [lat, lon] of x=0, y=0 when the layout comes from the game's position (the apps put their own laps in the same frame)
     let g = null;
     try { g = r.geo ? JSON.parse(r.geo) : null; } catch (e) { g = null; }
-    return new Response(JSON.stringify({ trackId: t, game, track: r.track, n: r.n, len: r.len, x: pts.x, y: pts.y, g, time: r.time, updated: r.created }), { headers: { ...JSONH, "cache-control": "public, max-age=3600" } });
+    return new Response(JSON.stringify({ trackId: t, game, track: r.track, n: r.n, len: r.len, x: pts.x, y: pts.y, g, time: r.time, updated: r.created, ...(edges ? { edges } : {}) }), { headers: { ...JSONH, "cache-control": "public, max-age=3600" } });
   }
   // the official turn numbers of a track (placed by an admin on its map): anyone reads them, only admins change them
   if (p === "/turns" && m === "GET") {
@@ -458,8 +464,9 @@ export async function community(req, env, url, ctx) {
     // every device, until an admin places them
     if (!turns.length) {
       // fitted to the track's official number of turns when the game said it (iRacing's TrackNumTurns, track_info)
-      const [lay, want] = await Promise.all([env.DB.prepare("SELECT pts FROM track_maps WHERE game=?1 AND track_id=?2").bind(game, t).first(), turnCount(env, game, t)]);
-      if (lay) { try { const p = JSON.parse(lay.pts); turns = turnsFromPath(p.x, p.y, want); auto = true; } catch (e) { turns = []; } }
+      // and to where the drivers really slow down (the models of the cars on this track): kinks taken flat go first
+      const [lay, want, slows] = await Promise.all([env.DB.prepare("SELECT pts FROM track_maps WHERE game=?1 AND track_id=?2").bind(game, t).first(), turnCount(env, game, t), slowsOf(env, game, t)]);
+      if (lay) { try { const p = JSON.parse(lay.pts); turns = turnsFromPath(p.x, p.y, want, slows); auto = true; } catch (e) { turns = []; } }
       if (want) count = want;
     }
     return new Response(JSON.stringify({ trackId: t, game, turns, auto, ...(count ? { count } : {}), updated: r ? r.updated : 0 }), { headers: { ...JSONH, "cache-control": "public, max-age=300" } });
@@ -591,6 +598,31 @@ export async function community(req, env, url, ctx) {
     if (since !== null && !(isFinite(since) && since > 946684800000 && since < Date.now() + 86400e3)) return err("that date is not valid", 400);
     const r = await env.DB.prepare("UPDATE accounts SET member_since=?2 WHERE id=?1").bind(String(body.id || ""), since === null ? null : Math.round(since)).run();
     return r.meta && r.meta.changes ? json({ ok: true, since }) : err("account not found", 404);
+  }
+  // the tracks whose turns need an admin: no official turns placed, and the corners the layout and the drivers give
+  // against the game's official count (the ones that do not match first)
+  if (p === "/admin/turns-check" && m === "GET") {
+    const acc = await sessionAccount(req, env);
+    if (!acc || !isAdmin(env, acc.id)) return err("only the admins of this server can do this", 403);
+    const rows = (await env.DB.prepare(
+      `SELECT m.game, m.track_id, m.track, m.n, m.pts, i.nturns, t.turns FROM track_maps m
+       LEFT JOIN track_info i ON i.game=m.game AND i.track_id=m.track_id LEFT JOIN track_turns t ON t.game=m.game AND t.track_id=m.track_id
+       ORDER BY m.track LIMIT 400`).all().catch(() => ({ results: [] }))).results || [];
+    const out = [];
+    for (const r of rows) {
+      let placed = 0;
+      try { placed = r.turns ? JSON.parse(r.turns).length : 0; } catch (e) { placed = 0; }
+      let found = 0, fitted = 0;
+      try {
+        const q = JSON.parse(r.pts), slows = await slowsOf(env, r.game, r.track_id);
+        found = turnsFromPath(q.x, q.y, 0, slows).length;
+        fitted = r.nturns ? turnsFromPath(q.x, q.y, r.nturns, slows).length : found;
+      } catch (e) { /* a layout that does not read */ }
+      out.push({ game: r.game, trackId: r.track_id, track: r.track || "", len: (r.n || 0) * 5, official: r.nturns || 0, placed, found, fitted });
+    }
+    const bad = (x) => (x.placed ? 0 : 2) + (x.official && x.fitted !== x.official ? 1 : 0);
+    out.sort((a, b) => bad(b) - bad(a) || a.track.localeCompare(b.track));
+    return json({ tracks: out });
   }
   // the track maps drawn by dead reckoning take a lap of the same track with the game's own position (trackmaps.js)
   if (p === "/admin/trackmaps-rebuild" && m === "POST") {
@@ -1217,7 +1249,7 @@ export async function community(req, env, url, ctx) {
       // its public name or as Anonymous, as the account chose
       const link = await env.DB.prepare("SELECT l.account_id AS id, a.anon, a.name_kind FROM driver_links l JOIN accounts a ON a.id=l.account_id WHERE l.oid=?1 AND l.game=?2").bind(oid, game).first();
       if (link) {
-        const r = await keepBestLap(env, link.id, { game, carId, trackId, car: body.car, track: body.track, time, sectors, trace: await sealData(env, plain), cls: body.cls, wet: wetOf(body.trace && body.trace.f), anon: !!link.anon, shown: link.name_kind === "iracing" ? "iracing" : "nick", lic: body.lic, cat: body.cat, official: body.official, ai: body.ai === true, count: () => countUpload(env, u), ctx });
+        const r = await keepBestLap(env, link.id, { game, carId, trackId, car: body.car, track: body.track, time, sectors, trace: await sealData(env, plain), len: traceLen(body.trace), cls: body.cls, wet: wetOf(body.trace && body.trace.f), anon: !!link.anon, shown: link.name_kind === "iracing" ? "iracing" : "nick", lic: body.lic, cat: body.cat, official: body.official, ai: body.ai === true, count: () => countUpload(env, u), ctx });
         if (r.limit) return err("too many uploads today", 429);
         return json(r.kept ? { kept: "a faster lap of this driver is already shared" } : { shared: true });
       }
@@ -1228,7 +1260,7 @@ export async function community(req, env, url, ctx) {
         .bind(oid, "other:" + oid, Date.now(), u.id, short || "Anonymous").run();
       // every rival's best lap is on the leaderboard (as Anonymous), whatever the PC says (older agents mark the slower
       // ones "hidden"); a faster lap of theirs replaces it
-      const r = await keepBestLap(env, oid, { game, carId, trackId, car: body.car, track: body.track, time, sectors, trace: await sealData(env, plain), cls: body.cls, wet: wetOf(body.trace && body.trace.f), anon: true, shown: "nick", lic: body.lic, cat: body.cat, official: body.official, ai: body.ai === true, count: () => countUpload(env, u) });
+      const r = await keepBestLap(env, oid, { game, carId, trackId, car: body.car, track: body.track, time, sectors, trace: await sealData(env, plain), len: traceLen(body.trace), cls: body.cls, wet: wetOf(body.trace && body.trace.f), anon: true, shown: "nick", lic: body.lic, cat: body.cat, official: body.official, ai: body.ai === true, count: () => countUpload(env, u) });
       if (r.limit) return err("too many uploads today", 429);
       return json(r.kept ? { kept: "a faster lap of this driver is already shared" } : { shared: true });
     }
@@ -1236,7 +1268,7 @@ export async function community(req, env, url, ctx) {
     if (plainTrace && plainTrace.length > 900000) return err("lap trace too large", 400);
     const trace = await sealData(env, plainTrace);
     // your faster lap stays, unless it has no telemetry and this one does: then the whole lap is worth more
-    const r = await keepBestLap(env, u.id, { game, carId, trackId, car: body.car, track: body.track, time, sectors, trace, cls: body.cls, wet: wetOf(body.trace && body.trace.f), anon: !!body.anon, shown: shownAs, lic: body.lic, cat: body.cat, official: body.official, ai: body.ai === true, count: () => countUpload(env, u), ctx });
+    const r = await keepBestLap(env, u.id, { game, carId, trackId, car: body.car, track: body.track, time, sectors, trace, len: traceLen(body.trace), cls: body.cls, wet: wetOf(body.trace && body.trace.f), anon: !!body.anon, shown: shownAs, lic: body.lic, cat: body.cat, official: body.official, ai: body.ai === true, count: () => countUpload(env, u), ctx });
     if (r.limit) return err("too many uploads today", 429);
     return json(r.kept ? { kept: "your faster lap is already shared" } : { shared: true });
   }

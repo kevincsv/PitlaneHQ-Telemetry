@@ -11,6 +11,7 @@
 import { famId, famSql } from "./carfamily.js";
 import { lineOffsets, sameFrame, insideSign } from "./trackgeo.js";
 import { openData } from "./crypt.js";
+import { traceLen, fitsLayout, layoutN } from "./trackmaps.js";
 import { pedalEnvelope, estimatePedals } from "./pedals.js";
 
 // raise it when the way the model learns changes: every model is rebuilt from its memory
@@ -135,6 +136,7 @@ async function learnNewLaps(env, game, trackId, carId) {
     await env.DB.prepare("DELETE FROM model_laps WHERE game=?1 AND track_id=?2 AND car_id=?3 AND k=?4").bind(game, trackId, carId, k).run();
   }
   let added = 0, read = 0;
+  const layN = await layoutN(env, game, trackId); // a lap of another length than the layout is another track or layout
   for (const x of [...(a.results || []), ...(c.results || [])]) {
     const k = await sha(x.up + ":" + x.time.toFixed(3));
     const old = known.has(k);
@@ -152,7 +154,7 @@ async function learnNewLaps(env, game, trackId, carId) {
     }
     if (!tr) { known.set(k, -1); continue; }
     known.set(k, -1);
-    if (!goodLap(x.time, tr)) continue;
+    if (!fitsLayout(traceLen(tr), layN) || !goodLap(x.time, tr)) continue;
     // the memory keeps where a rival's lap came from: "field" (its pedals made again at every build) or "real" (the
     // game's own pedals); an account's lap goes in as the points alone. And the lap's tyre compound (lapCompound)
     await env.DB.prepare("INSERT INTO model_laps (game, track_id, car_id, k, drv, time, data, created, temp, cmp) VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10) ON CONFLICT DO NOTHING")
@@ -761,6 +763,21 @@ async function rebuild(env, game, trackId, carId) {
      ON CONFLICT(game, track_id, car_id) DO UPDATE SET dirty=excluded.dirty, built=excluded.built, data=excluded.data`
   ).bind(game, trackId, carId, m.built, await gz(JSON.stringify(m)), m.more ? 1 : 0).run();
   return m;
+}
+
+// where the fast drivers slow down for a corner on a track, from the models already built for its cars (never one built
+// here): fractions of the lap of each braking zone's slowest point, for the turns of the geometry (trackgeo.js cornersOf)
+export async function slowsOf(env, game, trackId) {
+  const rows = (await env.DB.prepare("SELECT data FROM model_cache WHERE game=?1 AND track_id=?2 AND data IS NOT NULL ORDER BY built DESC LIMIT 4").bind(game, trackId).all().catch(() => ({ results: [] }))).results || [];
+  const out = [];
+  for (const row of rows) {
+    try {
+      const m = JSON.parse(await gunz(row.data)), L = (m.nb || 0) * 5;
+      if (!(L > 500)) continue;
+      for (const c of m.corners || []) if ((c.n || 0) >= 3 && c.apex > 0 && c.apex < L) out.push(Math.round(c.apex / L * 1e4) / 1e4);
+    } catch (e) { /* a model that does not open says nothing */ }
+  }
+  return out;
 }
 
 // what the apps ask for: the model of a car and track, rebuilt when new laps came in

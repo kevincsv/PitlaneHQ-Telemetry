@@ -1,5 +1,1360 @@
+var __create = Object.create;
 var __defProp = Object.defineProperty;
+var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+var __getOwnPropNames = Object.getOwnPropertyNames;
+var __getProtoOf = Object.getPrototypeOf;
+var __hasOwnProp = Object.prototype.hasOwnProperty;
 var __name = (target, value) => __defProp(target, "name", { value, configurable: true });
+var __commonJS = (cb, mod) => function __require() {
+  try {
+    return mod || (0, cb[__getOwnPropNames(cb)[0]])((mod = { exports: {} }).exports, mod), mod.exports;
+  } catch (e) {
+    throw mod = 0, e;
+  }
+};
+var __copyProps = (to, from, except, desc) => {
+  if (from && typeof from === "object" || typeof from === "function") {
+    for (let key of __getOwnPropNames(from))
+      if (!__hasOwnProp.call(to, key) && key !== except)
+        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
+  }
+  return to;
+};
+var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__getProtoOf(mod)) : {}, __copyProps(
+  // If the importer is in node compatibility mode or this is not an ESM
+  // file that has been converted to a CommonJS file using a Babel-
+  // compatible transform (i.e. "__esModule" has not been set), then set
+  // "default" to the CommonJS "module.exports" for node compatibility.
+  isNodeMode || !mod || !mod.__esModule ? __defProp(target, "default", { value: mod, enumerable: true }) : target,
+  mod
+));
+
+// ../web/dist/pitwall-analysis.js
+var require_pitwall_analysis = __commonJS({
+  "../web/dist/pitwall-analysis.js"(exports, module) {
+    (function(root) {
+      "use strict";
+      const VERSION = 1, BIN2 = 5;
+      const langOf2 = /* @__PURE__ */ __name((ctx) => {
+        const l = ctx && ctx.lang;
+        return l === "es" || l === "pt" ? l : "en";
+      }, "langOf");
+      const txOf = /* @__PURE__ */ __name((ctx) => {
+        const l = langOf2(ctx), post2 = ctx && typeof ctx.post === "function" ? ctx.post : (s) => s;
+        return (en, es, pt) => post2(l === "es" ? es : l === "pt" ? pt != null ? pt : en : en);
+      }, "txOf");
+      const unitsOf = /* @__PURE__ */ __name((ctx) => {
+        const imp = !!(ctx && ctx.units === "imperial");
+        return { spd: /* @__PURE__ */ __name((ms) => imp ? ms * 2.23694 : ms * 3.6, "spd"), spdU: /* @__PURE__ */ __name(() => imp ? "mph" : "km/h", "spdU") };
+      }, "unitsOf");
+      const turnsOf = /* @__PURE__ */ __name((ctx) => ctx && Array.isArray(ctx.turns) ? ctx.turns : null, "turnsOf");
+      const sgn = /* @__PURE__ */ __name((d, n = 3) => d == null || isNaN(d) ? "\u2013" : (d >= 0 ? "+" : "\u2212") + Math.abs(d).toFixed(n), "sgn");
+      function coachOf(ctx) {
+        const W2 = ctx && ctx.weights || {}, ME = ctx && ctx.me || {}, w = W2.w || {}, b = W2.b || {}, mw = ME.w || {};
+        const off = W2.off instanceof Set ? W2.off : new Set(Array.isArray(W2.off) ? W2.off : []);
+        return {
+          weight: /* @__PURE__ */ __name((c) => c && c.kind ? (w[c.kind + "|" + c.cls] || 1) * (mw[c.kind + "|" + c.cls] || 1) : 1, "weight"),
+          ask: /* @__PURE__ */ __name((k, cls) => {
+            const x = b[k + "|" + cls];
+            return x && x.ask > 0 ? x.ask : null;
+          }, "ask"),
+          off: /* @__PURE__ */ __name((k, cls) => off.has(k + "|" + cls), "off"),
+          habits: Array.isArray(ME.habits) ? ME.habits : [],
+          // the drivers' 👍/👎 on the plan's steps (/community/coach/weights plan: a step's id, or its kind before the colon)
+          plan: /* @__PURE__ */ __name((id2) => {
+            const pw = W2.plan || {};
+            return id2 ? pw[id2] || pw[String(id2).split(":")[0]] || 1 : 1;
+          }, "plan")
+        };
+      }
+      __name(coachOf, "coachOf");
+      function hintOf(ctx) {
+        if (ctx && typeof ctx.hint === "function") return ctx.hint;
+        const cs = ctx && Array.isArray(ctx.cards) ? ctx.cards : null;
+        if (!cs || !cs.length) return () => null;
+        const mx = Math.max(0, ...cs.map((c) => c.spread || 0));
+        return (apex) => {
+          if (!(apex >= 0)) return null;
+          let b = null;
+          for (const c of cs) {
+            const g = Math.abs(c.apex - apex);
+            if (g <= 60 && (!b || g < Math.abs(b.apex - apex))) b = c;
+          }
+          return b ? { ...b, spreadMax: b.spreadMax != null ? b.spreadMax : mx } : null;
+        };
+      }
+      __name(hintOf, "hintOf");
+      const estOf = /* @__PURE__ */ __name((B, ctx) => !!(ctx && ctx.estB || B && (B.est || B.field)), "estOf");
+      function lapSeries(l) {
+        const out = [];
+        let last = null;
+        const lim = Math.min(l.bins.length, (l.maxBin || l.bins.length - 1) + 1);
+        for (let i = 0; i < lim; i++) {
+          const b = l.bins[i] || last;
+          if (!l.bins[i] && !last) continue;
+          out[i] = b;
+          last = b;
+        }
+        const end = out.length;
+        return { arr: out, end };
+      }
+      __name(lapSeries, "lapSeries");
+      function serOf(l) {
+        if (!l._ser || l._serN !== l.bins.length) {
+          l._ser = lapSeries(l).arr;
+          l._serN = l.bins.length;
+        }
+        return l._ser;
+      }
+      __name(serOf, "serOf");
+      const lapShape = /* @__PURE__ */ __name((l) => l && l.xy && l.xy.x.length > 10 ? { x: l.xy.x, y: l.xy.y, N: l.xy.x.length, g: l.xy.g || null, lap: true } : null, "lapShape");
+      function sameFrame2(a, b) {
+        if (!a || !b || !!a.g !== !!b.g) return null;
+        if (!a.g || a.g[0] === b.g[0] && a.g[1] === b.g[1]) return b;
+        const dx = (b.g[1] - a.g[1]) * 111320 * Math.cos(a.g[0] * Math.PI / 180), dy = (b.g[0] - a.g[0]) * 110540;
+        return { ...b, x: b.x.map((v) => v + dx), y: b.y.map((v) => v + dy) };
+      }
+      __name(sameFrame2, "sameFrame");
+      function lineOffsets2(A, B) {
+        const a = lapShape(A), b = sameFrame2(a, lapShape(B));
+        if (!a || !b) return null;
+        const n = Math.min(a.N, b.N);
+        if (n < 60) return null;
+        const lat = new Array(n), lon = new Array(n);
+        for (let i = 0; i < n; i++) {
+          const i0 = Math.max(0, i - 2), i1 = Math.min(n - 1, i + 2);
+          let tx = b.x[i1] - b.x[i0], ty = b.y[i1] - b.y[i0];
+          const tm = Math.hypot(tx, ty) || 1;
+          tx /= tm;
+          ty /= tm;
+          const dx = a.x[i] - b.x[i], dy = a.y[i] - b.y[i];
+          lat[i] = -ty * dx + tx * dy;
+          lon[i] = tx * dx + ty * dy;
+        }
+        const W2 = 80, sm = /* @__PURE__ */ __name((v) => {
+          const pre = [0];
+          v.forEach((x, i) => pre.push(pre[i] + x));
+          return v.map((x, i) => {
+            const lo = Math.max(0, i - W2), hi = Math.min(n - 1, i + W2);
+            return x - (pre[hi + 1] - pre[lo]) / (hi - lo + 1);
+          });
+        }, "sm");
+        const lc = sm(lat), oc = sm(lon), ab = oc.map(Math.abs).sort((p, q2) => p - q2);
+        if (ab[n >> 1] > 6) return null;
+        return lc.map((v, i) => Math.abs(oc[i]) > 20 || Math.abs(v) > 25 ? NaN : v);
+      }
+      __name(lineOffsets2, "lineOffsets");
+      function cornerLine(lat, B, brake, apex) {
+        const b = lapShape(B);
+        if (!lat || !b) return null;
+        const n = Math.min(lat.length, b.N);
+        if (apex <= 0 || apex >= n - 1) return null;
+        const tan = /* @__PURE__ */ __name((i) => {
+          const i0 = Math.max(0, i - 2), i1 = Math.min(n - 1, i + 2), tx = b.x[i1] - b.x[i0], ty = b.y[i1] - b.y[i0], m = Math.hypot(tx, ty) || 1;
+          return [tx / m, ty / m];
+        }, "tan");
+        const t1 = tan(Math.max(0, apex - 8)), t2 = tan(Math.min(n - 1, apex + 8)), cr = t1[0] * t2[1] - t1[1] * t2[0];
+        if (Math.abs(cr) < 0.05) return null;
+        const sg = cr < 0 ? -1 : 1;
+        const at2 = /* @__PURE__ */ __name((i) => {
+          let s = 0, c = 0;
+          for (let k = Math.max(0, i - 2); k <= Math.min(n - 1, i + 2); k++) if (!isNaN(lat[k])) {
+            s += lat[k];
+            c++;
+          }
+          return c ? s / c * sg : NaN;
+        }, "at");
+        const r2 = { entry: at2(brake), apex: at2(apex), exit: at2(Math.min(n - 1, apex + 16)) };
+        return isNaN(r2.entry) || isNaN(r2.apex) || isNaN(r2.exit) ? null : r2;
+      }
+      __name(cornerLine, "cornerLine");
+      function lineTip(c, sameBrake) {
+        if (!c) return null;
+        const f = /* @__PURE__ */ __name((v) => Math.abs(v).toFixed(1), "f"), o = [];
+        if (c.entry >= 1.5) o.push([
+          c.entry,
+          sameBrake ? `You brake where the reference does but ${f(c.entry)} m more to the inside. Turn in from the outside` : `You turn in ${f(c.entry)} m more to the inside. Start the corner from the outside`,
+          sameBrake ? `Frenas donde la referencia pero ${f(c.entry)} m m\xE1s por dentro. Entra a la curva desde fuera` : `Entras ${f(c.entry)} m m\xE1s por dentro. Empieza la curva desde fuera`,
+          sameBrake ? "line_same_brake" : "line_turnin",
+          sameBrake ? `Voc\xEA freia onde a refer\xEAncia freia, mas ${f(c.entry)} m mais por dentro. Entre na curva por fora` : `Voc\xEA entra na curva ${f(c.entry)} m mais por dentro. Comece a curva por fora`
+        ]);
+        if (c.apex <= -1.5) o.push([-c.apex, `You pass ${f(c.apex)} m away from the apex. Get closer to the inside`, `Pasas a ${f(c.apex)} m del v\xE9rtice. Ac\xE9rcate m\xE1s por dentro`, "line_apex", `Voc\xEA passa a ${f(c.apex)} m do \xE1pice. Chegue mais perto da parte de dentro`]);
+        if (c.exit >= 1.5) o.push([c.exit, `You use ${f(c.exit)} m less track on exit. Let the car run out to the outside`, `Usas ${f(c.exit)} m menos de pista a la salida. Deja correr el coche hacia fuera`, "line_exit", `Voc\xEA usa ${f(c.exit)} m a menos de pista na sa\xEDda. Deixe o carro abrir at\xE9 a parte de fora`]);
+        if (!o.length) return null;
+        o.sort((p, q2) => q2[0] - p[0]);
+        return [o[0][1], o[0][2], o[0][3], o[0][4]];
+      }
+      __name(lineTip, "lineTip");
+      const OVAL_KINDS = ["superspeedway", "intermediate", "mile", "short", "dirt"];
+      const fullShare = /* @__PURE__ */ __name((s) => {
+        let f = 0, c = 0;
+        for (const b of s) {
+          if (!b) continue;
+          c++;
+          if (b[2] > 0.95) f++;
+        }
+        return c ? f / c : 0;
+      }, "fullShare");
+      function ovalOf(A, B, ctx) {
+        const o = ctx && ctx.oval;
+        if (o === false) return null;
+        if (OVAL_KINDS.includes(o)) return o;
+        const T3 = ctx && ctx.track || {}, has = /* @__PURE__ */ __name((x, k) => x && x[k] != null && x[k] !== "", "has"), get = /* @__PURE__ */ __name((k) => has(T3, k) ? T3[k] : has(A, k) ? A[k] : has(B, k) ? B[k] : "", "get");
+        const cat = String(get("cat")).toLowerCase().replace(/[^a-z]/g, ""), name2 = String(get("track")), cfg = String(get("track_config")), type = String(get("trackType")).toLowerCase(), car = String(get("car"));
+        if (/road|roval|infield|rallycross/i.test(cfg) || /road/.test(type) || ["sportscar", "formulacar", "formula", "dirtroad", "road"].includes(cat)) return null;
+        const dirt = cat === "dirtoval" || /dirt/.test(type) || !cat && /\bdirt\b|sprint car|midget/i.test(car);
+        if (!dirt && cat !== "oval" && !/oval|speedway/.test(type) && !(!cat && /\boval\b|superspeedway/i.test(name2 + " " + cfg))) return null;
+        if (dirt) return "dirt";
+        const L = +get("len") || (A && Array.isArray(A.bins) ? ((A.maxBin || A.bins.length - 1) + 1) * BIN2 : 0);
+        if (/super ?speedway/.test(type) || /daytona|talladega/i.test(name2)) return "superspeedway";
+        if (L >= 3e3 && B && Array.isArray(B.bins) && fullShare(serOf(B)) >= 0.97) return "superspeedway";
+        return L > 0 && L < 1450 ? "short" : L > 0 && L < 2100 ? "mile" : "intermediate";
+      }
+      __name(ovalOf, "ovalOf");
+      function liftZones(s) {
+        const out = [];
+        for (let i = 1; i < s.length; i++) {
+          const a = s[i], b = s[i - 1];
+          if (!a || !b || !(a[2] < 0.9 && b[2] >= 0.9 && a[3] <= 0.12)) continue;
+          let k = i, vmin = a[0], imin = i, brk = false;
+          while (k < s.length && k < i + 160 && s[k] && s[k][2] < 0.9) {
+            if (s[k][0] < vmin) {
+              vmin = s[k][0];
+              imin = k;
+            }
+            if (s[k][3] > 0.12) brk = true;
+            k++;
+          }
+          for (let q2 = k; q2 < Math.min(s.length, k + 6); q2++) if (s[q2] && s[q2][0] < vmin) {
+            vmin = s[q2][0];
+            imin = q2;
+          }
+          if (!brk && b[0] - vmin > 1.5) out.push({ i, v: b[0], vmin, imin, lift: true });
+          i = k;
+        }
+        return out;
+      }
+      __name(liftZones, "liftZones");
+      function ovalZones(s) {
+        const zb = brakeZones2(s);
+        return zb.concat(liftZones(s).filter((l) => !zb.some((z) => l.i <= z.imin && z.i <= l.imin + 10))).sort((a, b) => a.i - b.i);
+      }
+      __name(ovalZones, "ovalZones");
+      function dirtLineTip(c) {
+        if (!c || !(Math.abs(c.apex) >= 2)) return null;
+        const f = Math.abs(c.apex).toFixed(1);
+        return c.apex < 0 ? [`You run ${f} m higher than the reference through the middle of the corner. Try its lower groove`, `Vas ${f} m m\xE1s arriba que la referencia en mitad de la curva. Prueba su l\xEDnea m\xE1s baja`, "dirt_groove", `Voc\xEA passa ${f} m mais alto que a refer\xEAncia no meio da curva. Experimente a linha mais baixa dela`] : [`The reference runs ${f} m higher through the middle of the corner. Try its groove higher up`, `La referencia va ${f} m m\xE1s arriba en mitad de la curva. Prueba su l\xEDnea m\xE1s alta`, "dirt_groove", `A refer\xEAncia passa ${f} m mais alto no meio da curva. Experimente a linha mais alta dela`];
+      }
+      __name(dirtLineTip, "dirtLineTip");
+      const lineTipOf = /* @__PURE__ */ __name((c, sameBrake, oval) => oval === "dirt" ? dirtLineTip(c) : oval === "superspeedway" ? null : lineTip(c, sameBrake), "lineTipOf");
+      function brakeZones2(s) {
+        const out = [];
+        for (let i = 1; i < s.length; i++) {
+          const a = s[i], b = s[i - 1];
+          if (!a || !b) continue;
+          if (a[3] > 0.12 && b[3] <= 0.12) {
+            let k = i, vmin = a[0], imin = i;
+            while (k < s.length && k < i + 120 && s[k] && !(s[k][2] > 0.6 && s[k][3] < 0.05)) {
+              if (s[k][0] < vmin) {
+                vmin = s[k][0];
+                imin = k;
+              }
+              k++;
+            }
+            if (a[0] - vmin > 4) out.push({ i, v: a[0], vmin, imin });
+            i = k;
+          }
+        }
+        return out;
+      }
+      __name(brakeZones2, "brakeZones");
+      const PHASES = [["brake", "Braking", "Frenada", "Frenagem"], ["entry", "Entry", "Entrada", "Entrada"], ["apex", "Apex", "V\xE9rtice", "\xC1pice"], ["exit", "Exit", "Salida", "Sa\xEDda"]];
+      const phaseName = /* @__PURE__ */ __name((k, ctx) => {
+        const p = PHASES.find((x) => x[0] === k);
+        return p ? txOf(ctx)(p[1], p[2], p[3]) : "";
+      }, "phaseName");
+      function turnNo(turns, d, L, fb) {
+        const t = turns;
+        if (!t || !t.length || !(L > 0)) return fb;
+        const f = (d / L % 1 + 1) % 1;
+        let bi = 0, bd = 2;
+        t.forEach((x, i) => {
+          let dd = Math.abs(x - f);
+          dd = Math.min(dd, 1 - dd);
+          if (dd < bd) {
+            bd = dd;
+            bi = i;
+          }
+        });
+        return bi + 1;
+      }
+      __name(turnNo, "turnNo");
+      const COACH_GEN = ["brake_generic", "entry_speed", "apex_line", "full_throttle", "brake_same", "entry_before", "apex_longer"];
+      const cornerClass = /* @__PURE__ */ __name((v) => v < 22 ? "slow" : v < 42 ? "medium" : "fast", "cornerClass");
+      function cornerZones(sb, n, turns, oval) {
+        const zb = oval ? ovalZones(sb) : brakeZones2(sb), t = turns;
+        if (!t || !t.length || !(n > 0)) return zb;
+        const ap = t.map((f) => Math.round(f * n)).filter((i) => i > 0 && i < n - 1), near = /* @__PURE__ */ __name((i) => {
+          let b = -1, bd = 1e9;
+          ap.forEach((a, k) => {
+            const d = Math.abs(a - i);
+            if (d < bd) {
+              bd = d;
+              b = k;
+            }
+          });
+          return bd <= 30 ? b : -1;
+        }, "near");
+        const by = /* @__PURE__ */ new Map();
+        zb.forEach((z) => {
+          const k = near(z.imin);
+          if (k < 0) {
+            by.set("z" + z.i, z);
+            return;
+          }
+          const o = by.get(k);
+          if (!o) by.set(k, { ...z, turn: k });
+          else {
+            if (!z.lift) delete o.lift;
+            if (z.vmin < o.vmin) {
+              o.vmin = z.vmin;
+              o.imin = z.imin;
+            }
+            o.i = Math.min(o.i, z.i);
+            o.v = Math.max(o.v, z.v);
+          }
+        });
+        ap.forEach((a, k) => {
+          if (by.has(k)) return;
+          let i0 = Math.max(0, a - 20);
+          for (let i = a; i > Math.max(0, a - 40); i--) if (sb[i] && sb[i][2] > 0.9) {
+            i0 = i;
+            break;
+          }
+          let imin = a, vmin = sb[a] ? sb[a][0] : 0;
+          for (let i = i0; i < Math.min(n, a + 10); i++) if (sb[i] && sb[i][0] < vmin) {
+            vmin = sb[i][0];
+            imin = i;
+          }
+          const v = sb[i0] ? sb[i0][0] : vmin;
+          if (v - vmin > 2) by.set(k, { i: i0, v, vmin, imin, turn: k, lift: true });
+        });
+        return [...by.values()].sort((a, b) => a.i - b.i);
+      }
+      __name(cornerZones, "cornerZones");
+      function coachCompare(A, B, ctx) {
+        const { spd, spdU } = unitsOf(ctx), C = coachOf(ctx), tipAsk = C.ask, tipOff = C.off, turns = turnsOf(ctx);
+        const oval = ovalOf(A, B, ctx), est = estOf(B, ctx), sa = serOf(A), sb = serOf(B), n = Math.min(sa.length, sb.length), zb = cornerZones(sb, n, turns, oval), za = oval ? ovalZones(sa) : brakeZones2(sa), lat = lineOffsets2(A, B);
+        if (oval) za.forEach((q2) => {
+          if (q2.imin >= n || !sb[q2.i] || !sb[q2.imin] || zb.some((z) => q2.imin >= z.i - 20 && q2.i <= z.imin + 30)) return;
+          for (let k = q2.i; k <= q2.imin; k++) if (sb[k] && sb[k][2] < 0.9) return;
+          zb.push({ i: q2.i, imin: q2.imin, v: sb[q2.i][0], vmin: sb[q2.imin][0], lift: true, flatB: true });
+        });
+        if (oval) zb.sort((a, b) => a.i - b.i);
+        const T3 = /* @__PURE__ */ __name((s, i) => s[i] && s[i][1], "T"), seg = /* @__PURE__ */ __name((x, y) => x < y && sa[x] && sa[y] && sb[x] && sb[y] ? T3(sa, y) - T3(sa, x) - (T3(sb, y) - T3(sb, x)) : 0, "seg");
+        const peak = /* @__PURE__ */ __name((s, x, y) => {
+          let p = 0, ip = x;
+          for (let k = x; k <= y && k < s.length; k++) if (s[k] && s[k][3] > p) {
+            p = s[k][3];
+            ip = k;
+          }
+          return [p, ip];
+        }, "peak");
+        const release = /* @__PURE__ */ __name((s, from, to) => {
+          for (let k = from; k <= to && k < s.length; k++) if (s[k] && s[k][3] < 0.05) return k;
+          return to;
+        }, "release");
+        const coast = /* @__PURE__ */ __name((s, x, y) => {
+          let c = 0;
+          for (let k = x; k <= y && k < s.length; k++) if (s[k] && s[k][2] < 0.05 && s[k][3] < 0.05) c++;
+          return c * BIN2;
+        }, "coast");
+        const pickup = /* @__PURE__ */ __name((s, from, to) => {
+          for (let k = from; k <= to && k < s.length; k++) if (s[k] && s[k][2] > 0.5) return k;
+          return null;
+        }, "pickup");
+        return zb.map((z, k) => {
+          const m = za.filter((q2) => Math.abs(q2.i - z.i) <= 20).sort((p, q2) => Math.abs(p.i - z.i) - Math.abs(q2.i - z.i))[0];
+          const i0 = Math.max(0, z.i - 10), i1 = Math.min(n - 1, z.imin + 30);
+          if (!sa[i0] || !sa[i1] || !sb[i0] || !sb[i1]) return null;
+          const lost = sa[i1][1] - sa[i0][1] - (sb[i1][1] - sb[i0][1]);
+          const dd = m ? (m.i - z.i) * BIN2 : null, dmin = m ? spd(m.vmin) - spd(z.vmin) : null;
+          const [pb, ipb] = peak(sb, z.i, z.imin), rel = Math.min(release(sb, ipb, z.imin), z.imin), a0 = Math.max(rel, z.imin - 4), a1 = Math.min(i1, z.imin + 4);
+          const ph = { brake: seg(i0, rel), entry: seg(rel, a0), apex: seg(a0, a1), exit: seg(a1, i1) };
+          const worst = Object.entries(ph).sort((p, q2) => q2[1] - p[1])[0];
+          const [pa, ipa] = m ? peak(sa, m.i, m.imin) : [0, 0], relA = m ? release(sa, ipa, m.imin) : 0;
+          const trailA = m ? (relA - ipa) * BIN2 : null, trailB = (rel - ipb) * BIN2, coastA = coast(sa, i0, i1), coastB = coast(sb, i0, i1);
+          const ramp = /* @__PURE__ */ __name((s, from, to) => {
+            let a = null;
+            for (let k2 = from; k2 <= to && k2 < s.length; k2++) {
+              if (!s[k2]) continue;
+              if (a == null && s[k2][2] > 0.05) a = k2;
+              if (a != null && s[k2][2] > 0.95) return (k2 - a) * BIN2;
+            }
+            return null;
+          }, "ramp"), rampA = m ? ramp(sa, m.imin, i1) : null, rampB = ramp(sb, z.imin, i1);
+          const puA = m ? pickup(sa, m.imin, i1) : null, puB = pickup(sb, z.imin, i1), late = puA != null && puB != null ? (puA - puB) * BIN2 : null;
+          const gearAt = /* @__PURE__ */ __name((s, i) => s[i] && isFinite(s[i][4]) ? Math.round(s[i][4]) : 0, "gearAt"), apexA = m ? m.imin : z.imin, gA = gearAt(sa, apexA), gB = gearAt(sb, z.imin);
+          const lifts = /* @__PURE__ */ __name((s, from, to) => {
+            let n2 = 0, prev = -1;
+            for (let k2 = from; k2 <= to && k2 < s.length; k2++) {
+              if (!s[k2]) continue;
+              const t = s[k2][2];
+              if (prev >= 0 && prev > 0.8 && t < 0.5) n2++;
+              prev = t;
+            }
+            return n2;
+          }, "lifts"), lA = lifts(sa, apexA, i1), lB = lifts(sb, z.imin, i1);
+          const revs = /* @__PURE__ */ __name((s, from, to) => {
+            let n2 = 0, prevD = 0, last = null, has = false;
+            for (let k2 = from; k2 <= to && k2 < s.length; k2++) {
+              if (!s[k2] || !isFinite(s[k2][5])) continue;
+              const v = s[k2][5];
+              if (v !== 0) has = true;
+              if (last != null) {
+                const d = v - last;
+                if (Math.abs(d) > 4e-3) {
+                  if (prevD !== 0 && Math.sign(d) !== Math.sign(prevD)) n2++;
+                  prevD = d;
+                }
+              }
+              last = v;
+            }
+            return [n2, has];
+          }, "revs"), [rA, hasA] = revs(sa, i0, i1), [rB, hasB] = revs(sb, i0, i1);
+          let en = "", es = "", pt = "", phase = null, kind = "";
+          const say2 = /* @__PURE__ */ __name((k2, a, b, c) => {
+            kind = k2;
+            en = a;
+            es = b;
+            pt = c;
+          }, "say");
+          const cls = cornerClass(z.vmin);
+          if (lost > 0.03) {
+            phase = worst[0];
+            if (z.lift && phase === "brake") phase = "entry";
+            const r2 = Math.round;
+            const askA = tipAsk("brake_late_apex", cls), askE = tipAsk("brake_earlier", cls), askL = tipAsk("brake_later", cls);
+            if (m && dd != null && dd > 6 && dmin != null && dmin < -2) say2("brake_late_apex", `You brake ${r2(dd)} m later than the reference and lose ${r2(-dmin)} ${spdU()} at the apex. Brake ${askA && askA < r2(dd) ? askA + " m" : "a little"} earlier and carry the speed`, `Frenas ${r2(dd)} m m\xE1s tarde que la referencia y pierdes ${r2(-dmin)} ${spdU()} en el v\xE9rtice. Frena ${askA && askA < r2(dd) ? askA + " m" : "un poco"} antes y conserva la velocidad`, `Voc\xEA freia ${r2(dd)} m depois da refer\xEAncia e perde ${r2(-dmin)} ${spdU()} no \xE1pice. Freie ${askA && askA < r2(dd) ? askA + " m" : "um pouco"} antes e leve a velocidade`);
+            else if (phase === "brake") {
+              if (dd != null && dd < -6) {
+                const mv = askL && askL < r2(-dd) ? askL : r2(-dd);
+                say2("brake_later", `Brake ${mv} m later`, `Frena ${mv} m m\xE1s tarde`, `Freie ${mv} m depois`);
+              } else if (!est && m && pa < pb - 0.05) say2("brake_harder", `Brake harder at first (${r2(pa * 100)} % vs ${r2(pb * 100)} %)`, `Pisa m\xE1s fuerte al empezar a frenar (${r2(pa * 100)} % frente a ${r2(pb * 100)} %)`, `Freie mais forte no in\xEDcio (${r2(pa * 100)} % contra ${r2(pb * 100)} %)`);
+              else if (dd != null && dd > 6) say2("brake_earlier", `You braked ${r2(dd)} m too late and lost the corner. Brake ${askE && askE < r2(dd) ? askE + " m" : ""} earlier`.replace("  ", " "), `Frenaste ${r2(dd)} m demasiado tarde y perdiste la curva. Frena ${askE && askE < r2(dd) ? askE + " m " : ""}antes`, `Voc\xEA freou ${r2(dd)} m tarde demais e perdeu a curva. Freie ${askE && askE < r2(dd) ? askE + " m " : ""}antes`);
+              else if (!est && trailA != null && trailB - trailA >= 15) say2("trail", `Release the brake more gradually into the turn (trail braking ${r2(trailA)} m vs ${r2(trailB)} m)`, `Suelta el freno m\xE1s progresivamente al entrar (trail braking ${r2(trailA)} m frente a ${r2(trailB)} m)`, `Solte o freio de forma mais gradual ao entrar na curva (trail braking ${r2(trailA)} m contra ${r2(trailB)} m)`);
+              else if (est && dd != null) say2("brake_speed", "You brake where the reference does but it carries more speed through the braking zone. Brake a touch less and roll more speed in", "Frenas donde la referencia pero ella lleva m\xE1s velocidad en la frenada. Frena un poco menos y deja correr m\xE1s velocidad", "Voc\xEA freia onde a refer\xEAncia freia, mas ela leva mais velocidade na zona de frenagem. Freie um pouco menos e leve mais velocidade para dentro");
+              else if (dd != null) say2("brake_same", "Same braking point but slower through the braking zone. Brake hard at once, then release progressively", "Mismo punto de frenada pero m\xE1s lento en la frenada. Pisa fuerte de golpe y suelta progresivamente", "Mesmo ponto de frenagem, mas mais lento na zona de frenagem. Freie forte de uma vez e depois solte aos poucos");
+              else say2("brake_generic", "Brake a little later and harder", "Frena un poco m\xE1s tarde y m\xE1s fuerte", "Freie um pouco depois e mais forte");
+            } else if (phase === "entry") {
+              if (!est && trailA != null && trailB - trailA >= 15) say2("trail", `Release the brake more gradually into the turn (trail braking ${r2(trailA)} m vs ${r2(trailB)} m)`, `Suelta el freno m\xE1s progresivamente al entrar (trail braking ${r2(trailA)} m frente a ${r2(trailB)} m)`, `Solte o freio de forma mais gradual ao entrar na curva (trail braking ${r2(trailA)} m contra ${r2(trailB)} m)`);
+              else if (!est && coastA - coastB >= 10) say2("coast", `Do not coast before the apex. ${r2(coastA)} m without throttle or brake (reference ${r2(coastB)} m)`, `No vayas sin gas ni freno antes del v\xE9rtice. ${r2(coastA)} m (referencia ${r2(coastB)} m)`, `N\xE3o v\xE1 no embalo antes do \xE1pice. ${r2(coastA)} m sem acelerador nem freio (refer\xEAncia ${r2(coastB)} m)`);
+              else if (dmin != null && dmin >= 0) say2("entry_before", "You reach the apex as fast as the reference, so the time goes before it. Release the brake more gradually as you turn in", "Llegas al v\xE9rtice tan r\xE1pido como la referencia, as\xED que el tiempo se va antes. Suelta el freno m\xE1s progresivamente al girar", "Voc\xEA chega ao \xE1pice t\xE3o r\xE1pido quanto a refer\xEAncia, ent\xE3o o tempo se perde antes. Solte o freio de forma mais gradual ao entrar na curva");
+              else say2("entry_speed", "Carry more speed into the turn", "Entra con m\xE1s velocidad en la curva", "Leve mais velocidade para dentro da curva");
+            } else if (phase === "apex") {
+              if (dmin != null && dmin < -2) say2("apex_speed", `Carry ${r2(-dmin)} ${spdU()} more through the apex`, `Pasa ${r2(-dmin)} ${spdU()} m\xE1s r\xE1pido por el v\xE9rtice`, `Passe pelo \xE1pice com ${r2(-dmin)} ${spdU()} a mais`);
+              else if (dmin != null && dmin >= 0) say2("apex_longer", "As fast at the slowest point but slow for longer. Shorten the slow part of the corner (turn in later, later apex)", "Igual de r\xE1pido en el punto m\xE1s lento, pero lento durante m\xE1s metros. Acorta la parte lenta de la curva (gira m\xE1s tarde, v\xE9rtice m\xE1s tard\xEDo)", "T\xE3o r\xE1pido no ponto mais lento, mas lento por mais tempo. Encurte a parte lenta da curva (entre mais tarde, \xE1pice mais tardio)");
+              else say2("apex_line", "A rounder, faster line through the apex", "Una trazada m\xE1s redonda y r\xE1pida por el v\xE9rtice", "Uma linha mais redonda e r\xE1pida pelo \xE1pice");
+            } else {
+              if (late != null && late >= 8) say2("throttle", `Get on the throttle ${r2(late)} m earlier`, `Acelera ${r2(late)} m antes`, `Acelere ${r2(late)} m antes`);
+              else if (!est && rampA != null && rampB != null && rampB - rampA >= 15 && (lA >= 1 && lA > lB || hasA && hasB && rA > rB + 1)) say2("throttle_rough", `You open the throttle faster than the reference and then have to correct. Open it more progressively (${Math.round(rampA)} m to full vs ${Math.round(rampB)} m)`, `Abres el gas m\xE1s r\xE1pido que la referencia y luego tienes que corregir. \xC1brelo m\xE1s progresivo (${Math.round(rampA)} m hasta el fondo frente a ${Math.round(rampB)} m)`, `Voc\xEA abre o acelerador mais r\xE1pido que a refer\xEAncia e depois precisa corrigir. Abra de forma mais progressiva (${Math.round(rampA)} m at\xE9 o fundo contra ${Math.round(rampB)} m)`);
+              else if (!est && rampA != null && rampB != null && rampA - rampB >= 15) say2("throttle_slow", `You take ${Math.round(rampA)} m to reach full throttle (reference ${Math.round(rampB)} m). Squeeze it to full sooner`, `Tardas ${Math.round(rampA)} m en llegar a fondo (referencia ${Math.round(rampB)} m). Llega al 100 % antes`, `Voc\xEA leva ${Math.round(rampA)} m para chegar ao acelerador a fundo (refer\xEAncia ${Math.round(rampB)} m). Pise at\xE9 o fundo mais cedo`);
+              else if (!est && coastA - coastB >= 10) say2("no_wait", "Do not wait between the brake and the throttle", "No esperes entre el freno y el acelerador", "N\xE3o espere entre o freio e o acelerador");
+              else if (late != null && late <= -8 && dmin != null && dmin < -1) say2("exit_speed", `You pick up the throttle ${r2(-late)} m earlier but leave the apex ${r2(-dmin)} ${spdU()} slower. Carry the speed through the apex and the exit follows`, `Aceleras ${r2(-late)} m antes pero sales del v\xE9rtice ${r2(-dmin)} ${spdU()} m\xE1s lento. Conserva la velocidad en el v\xE9rtice y la salida vendr\xE1 sola`, `Voc\xEA acelera ${r2(-late)} m antes, mas sai do \xE1pice ${r2(-dmin)} ${spdU()} mais lento. Leve a velocidade pelo \xE1pice e a sa\xEDda vem junto`);
+              else say2("full_throttle", "Full throttle sooner on exit", "Acelerador a fondo antes en la salida", "Acelerador a fundo mais cedo na sa\xEDda");
+            }
+            if (COACH_GEN.includes(kind)) {
+              if (est) {
+              } else if (gA >= 1 && gB >= 1 && gB > gA) say2("gear_up", `Take this corner in gear ${gB} like the reference (you use gear ${gA})`, `Toma esta curva en ${gB}\xAA como la referencia (t\xFA vas en ${gA}\xAA)`, `Fa\xE7a esta curva em ${gB}\xAA marcha como a refer\xEAncia (voc\xEA usa a ${gA}\xAA)`);
+              else if (gA >= 1 && gB >= 1 && gB < gA) say2("gear_down", `Drop to gear ${gB} for the apex like the reference (you stay in gear ${gA})`, `Baja a ${gB}\xAA en el v\xE9rtice como la referencia (t\xFA te quedas en ${gA}\xAA)`, `Reduza para a ${gB}\xAA marcha no \xE1pice como a refer\xEAncia (voc\xEA fica na ${gA}\xAA)`);
+              else if (phase === "exit" && lA >= 2 && lA > lB + 1) say2("lifts", `Smoother throttle on exit. You lifted ${lA} times after the apex (reference ${lB})`, `Acelera m\xE1s progresivo a la salida. Levantaste ${lA} veces tras el v\xE9rtice (referencia ${lB})`, `Acelerador mais suave na sa\xEDda. Voc\xEA aliviou ${lA} vezes depois do \xE1pice (refer\xEAncia ${lB})`);
+              else if (oval !== "dirt" && hasA && hasB && rA >= 3 && rA > rB + 2) say2("steer", `${rA} steering corrections in this corner (reference ${rB}). Turn in once, smoothly`, `${rA} correcciones de volante en esta curva (referencia ${rB}). Gira una vez, suave`, `${rA} corre\xE7\xF5es de volante nesta curva (refer\xEAncia ${rB}). Gire uma vez, com suavidade`);
+            }
+            if (oval && (z.lift || z.flatB)) {
+              const x0 = Math.max(0, z.i - 30), pc = /* @__PURE__ */ __name((v) => Math.round(v * 100) + " %", "pc"), u = spdU();
+              const thrMin = /* @__PURE__ */ __name((s) => {
+                let t = 1;
+                for (let q2 = x0; q2 <= i1 && q2 < s.length; q2++) if (s[q2] && s[q2][2] < t) t = s[q2][2];
+                return t;
+              }, "thrMin");
+              const offFull = /* @__PURE__ */ __name((s) => {
+                let c = 0;
+                for (let q2 = x0; q2 <= i1 && q2 < s.length; q2++) if (s[q2] && s[q2][2] < 0.9) c++;
+                return c * BIN2;
+              }, "offFull");
+              const mA = thrMin(sa), mB = thrMin(sb), oA = offFull(sa), oB = offFull(sb), bA = peak(sa, x0, i1)[0], bB = peak(sb, x0, i1)[0];
+              if (z.flatB) say2("oval_flat", `The reference stays flat out here and you lift for ${r2(oA)} m (down to ${pc(mA)}). Stay flat out`, `La referencia va a fondo aqu\xED y t\xFA levantas durante ${r2(oA)} m (hasta el ${pc(mA)}). Mant\xE9n el pie a fondo`, `A refer\xEAncia vai de p\xE9 no fundo aqui e voc\xEA alivia por ${r2(oA)} m (at\xE9 ${pc(mA)}). Mantenha o p\xE9 no fundo`);
+              else if (!est && bA > 0.12 && bB <= 0.12) say2("oval_no_brake", `The reference only lifts here (down to ${pc(mB)}) and you brake. Lift instead and roll the speed into the corner`, `La referencia solo levanta aqu\xED (hasta el ${pc(mB)}) y t\xFA frenas. Levanta en vez de frenar y deja correr la velocidad en la curva`, `A refer\xEAncia s\xF3 alivia aqui (at\xE9 ${pc(mB)}) e voc\xEA freia. Alivie em vez de frear e leve a velocidade para dentro da curva`);
+              else if (m && dd != null && dd < -8) say2("oval_lift_later", `You lift ${r2(-dd)} m before the reference. Lift later`, `Levantas ${r2(-dd)} m antes que la referencia. Levanta m\xE1s tarde`, `Voc\xEA alivia ${r2(-dd)} m antes da refer\xEAncia. Alivie mais tarde`);
+              else if (m && dd != null && dd > 8 && dmin != null && dmin < -2) say2("oval_lift_early", `You lift ${r2(dd)} m later than the reference and lose ${r2(-dmin)} ${u} in the middle of the corner. Lift a touch earlier and carry the speed through the center`, `Levantas ${r2(dd)} m m\xE1s tarde que la referencia y pierdes ${r2(-dmin)} ${u} en mitad de la curva. Levanta un poco antes y conserva la velocidad en el centro`, `Voc\xEA alivia ${r2(dd)} m depois da refer\xEAncia e perde ${r2(-dmin)} ${u} no meio da curva. Alivie um pouco antes e leve a velocidade pelo centro`);
+              else if (!est && mA < mB - 0.15) say2("oval_lift_less", `You lift to ${pc(mA)} (reference ${pc(mB)}). A lighter lift is enough here`, `Levantas hasta el ${pc(mA)} (referencia ${pc(mB)}). Aqu\xED basta con levantar menos`, `Voc\xEA alivia at\xE9 ${pc(mA)} (refer\xEAncia ${pc(mB)}). Aqui basta aliviar menos`);
+              else if (!est && oA - oB >= 15) say2("oval_back_flat", `You stay off full throttle for ${r2(oA)} m (reference ${r2(oB)} m). Back to flat out sooner`, `Vas sin el gas a fondo durante ${r2(oA)} m (referencia ${r2(oB)} m). Vuelve a fondo antes`, `Voc\xEA fica sem o acelerador a fundo por ${r2(oA)} m (refer\xEAncia ${r2(oB)} m). Volte ao fundo mais cedo`);
+              else if (dmin != null && dmin < -2) say2("oval_center", `Carry ${r2(-dmin)} ${u} more through the middle of the corner`, `Pasa ${r2(-dmin)} ${u} m\xE1s r\xE1pido por el centro de la curva`, `Passe pelo meio da curva com ${r2(-dmin)} ${u} a mais`);
+              else if (/^(brake|trail|entry_|apex_)/.test(kind)) say2("oval_roll", "Roll more speed into the corner with one smooth, lighter lift", "Deja correr m\xE1s velocidad en la curva con un solo levant\xF3n suave y m\xE1s corto", "Leve mais velocidade para dentro da curva com um s\xF3 al\xEDvio, suave e mais leve");
+            }
+            if (tipOff(kind, cls)) {
+              const G = { brake: ["brake_generic", "Brake a little later and harder", "Frena un poco m\xE1s tarde y m\xE1s fuerte", "Freie um pouco depois e mais forte"], entry: ["entry_speed", "Carry more speed into the turn", "Entra con m\xE1s velocidad en la curva", "Leve mais velocidade para dentro da curva"], apex: ["apex_line", "A rounder, faster line through the apex", "Una trazada m\xE1s redonda y r\xE1pida por el v\xE9rtice", "Uma linha mais redonda e r\xE1pida pelo \xE1pice"], exit: ["full_throttle", "Full throttle sooner on exit", "Acelerador a fondo antes en la salida", "Acelerador a fundo mais cedo na sa\xEDda"] };
+              say2(...G[phase] || G.brake);
+            }
+          }
+          const line = cornerLine(lat, B, z.i, z.imin), lt = lost > 0.03 ? lineTipOf(line, m && dd != null && Math.abs(dd) <= 6, oval) : null;
+          if (lt) {
+            const generic = COACH_GEN.includes(kind) || kind === "oval_roll";
+            if (generic || phase === "brake" && m && Math.abs(dd) <= 6) {
+              en = lt[0];
+              es = lt[1];
+              kind = lt[2];
+              pt = lt[3];
+            } else {
+              en += ". " + lt[0];
+              es += ". " + lt[1];
+              pt += ". " + lt[3];
+            }
+          }
+          const ta = sa[i1][1] - sa[i0][1], tb = sb[i1][1] - sb[i0][1];
+          return { n: z.turn != null ? z.turn + 1 : turnNo(turns, z.imin * BIN2, n * BIN2, k + 1), d: z.i * BIN2, apex: z.imin * BIN2, dd, ve: m ? spd(m.v) : null, vr: spd(z.v), vmin: m ? spd(m.vmin) : null, vminr: spd(z.vmin), lost, ph, phase, coastA, coastB, trailA, trailB, late, line, tip: [en, es, pt], kind, cls, ta, tb, gA, gB, lift: !!z.lift, pua: puA != null ? puA * BIN2 : null, pur: puB != null ? puB * BIN2 : null, stA: hasA && hasB ? steerMax(sa, i0, i1) : null, stB: hasA && hasB ? steerMax(sb, i0, i1) : null, rA, rB, lA, lB, ...oval ? { oval, flatB: !!z.flatB } : {}, ...est ? { est: true } : {} };
+        }).filter(Boolean);
+      }
+      __name(coachCompare, "coachCompare");
+      function steerMax(s, x, y) {
+        let m = 0;
+        for (let k = x; k <= y && k < s.length; k++) if (s[k] && isFinite(s[k][5]) && Math.abs(s[k][5]) > m) m = Math.abs(s[k][5]);
+        return m;
+      }
+      __name(steerMax, "steerMax");
+      function cornerConsistency(laps, R, turns, oval) {
+        const sb = serOf(R), zb = cornerZones(sb, sb.length, turns, oval);
+        if (laps.length < 3) return null;
+        const per = zb.map((z) => {
+          const ts = laps.map((L) => {
+            const s = serOf(L), i0 = Math.max(0, z.i - 10), i1 = Math.min(s.length - 1, z.imin + 30);
+            return s[i0] && s[i1] ? s[i1][1] - s[i0][1] : null;
+          }).filter((x) => x != null);
+          if (ts.length < 3) return null;
+          const mu = ts.reduce((a, b) => a + b, 0) / ts.length;
+          return Math.sqrt(ts.reduce((a, b) => a + (b - mu) * (b - mu), 0) / ts.length);
+        });
+        return per.map((sd2, i) => ({ n: zb[i].turn != null ? zb[i].turn + 1 : i + 1, sd: sd2 })).filter((x) => x.sd != null).sort((a, b) => b.sd - a.sd);
+      }
+      __name(cornerConsistency, "cornerConsistency");
+      function pairSecs(A, B, sa, sb, n) {
+        const third = Math.floor(n / 3), tAt2 = /* @__PURE__ */ __name((s, i) => {
+          for (let k = Math.min(i, n - 1); k >= 0; k--) if (s.arr[k]) return s.arr[k][1];
+          return 0;
+        }, "tAt");
+        const gameSecs = /* @__PURE__ */ __name((L) => Array.isArray(L.sectors) && L.sectors.length >= 2 && L.sectors.every((v) => v > 0) && Math.abs(L.sectors.reduce((p, v) => p + v, 0) - L.time) < 1 ? L.sectors : null, "gameSecs");
+        const traceSecs = /* @__PURE__ */ __name((s, L) => {
+          const c1 = tAt2(s, third), c2 = tAt2(s, 2 * third), ok = c1 > 0 && c2 > c1 && c2 < L.time;
+          return ok ? [c1, c2 - c1, L.time - c2] : null;
+        }, "traceSecs");
+        const ga = gameSecs(A), gb = gameSecs(B), useGame = ga && gb && ga.length === gb.length, qa = useGame ? ga : traceSecs(sa, A), qb = useGame ? gb : traceSecs(sb, B);
+        return qa && qb ? qa.map((v, k) => [v, qb[k]]) : [];
+      }
+      __name(pairSecs, "pairSecs");
+      function lapDriving(sa, sb, n, ctx) {
+        const Tx = txOf(ctx);
+        const m = /* @__PURE__ */ __name((s) => {
+          let full = 0, coast = 0, c = 0, lifts = 0, steer = 0, rev = 0, hasS = false, prevT = null, prevD = 0, lastS = null;
+          for (let i = 0; i < n; i++) {
+            const b2 = s.arr[i];
+            if (!b2) continue;
+            c++;
+            const t = b2[2], k = b2[3];
+            if (t > 0.95) full++;
+            if (t < 0.05 && k < 0.05) coast++;
+            if (prevT != null && prevT > 0.9 && t < 0.6 && k < 0.05) lifts++;
+            prevT = t;
+            if (isFinite(b2[5])) {
+              hasS = true;
+              if (lastS != null) {
+                const d = b2[5] - lastS;
+                steer += Math.abs(d);
+                if (Math.abs(d) > 4e-3 && Math.sign(d) !== Math.sign(prevD) && prevD !== 0) rev++;
+                if (Math.abs(d) > 4e-3) prevD = d;
+              }
+              lastS = b2[5];
+            }
+          }
+          return { full: c ? full / c : 0, coast: c ? coast / c : 0, lifts, steer, rev, hasS };
+        }, "m");
+        if (estOf(null, ctx)) return [];
+        const a = m(sa), b = m(sb), out = [], pc = /* @__PURE__ */ __name((v) => Math.round(v * 100) + "%", "pc");
+        if (b.full - a.full > 0.03) out.push("\u{1F9B6} " + Tx(`A is flat out ${pc(a.full)} of the lap, B ${pc(b.full)}. Get back on the throttle sooner on the corner exits.`, `A va a fondo el ${pc(a.full)} de la vuelta, B el ${pc(b.full)}. Vuelve al acelerador antes a la salida de las curvas.`, `A vai de p\xE9 no fundo ${pc(a.full)} da volta, B ${pc(b.full)}. Volte ao acelerador antes na sa\xEDda das curvas.`));
+        if (a.coast - b.coast > 0.02) out.push("\u{1F4A4} " + Tx(`A spends ${pc(a.coast)} of the lap with no pedal (B ${pc(b.coast)}). Go from brake to throttle without waiting in between.`, `A pasa el ${pc(a.coast)} de la vuelta sin pisar ning\xFAn pedal (B el ${pc(b.coast)}). Pasa del freno al acelerador sin esperar entre medias.`, `A passa ${pc(a.coast)} da volta sem pedal (B ${pc(b.coast)}). V\xE1 do freio ao acelerador sem esperar.`));
+        if (a.lifts > b.lifts + 1) out.push("\u2195\uFE0F " + Tx(`A lifts off the throttle ${a.lifts} times in the middle of a corner (B ${b.lifts}). A smoother entry lets you stay on the throttle.`, `A levanta el pie del acelerador ${a.lifts} veces en mitad de curva (B ${b.lifts}). Una entrada m\xE1s suave te deja mantener el gas.`, `A tira o p\xE9 ${a.lifts} vezes no meio da curva (B ${b.lifts}). Uma entrada mais suave deixa voc\xEA manter o acelerador.`));
+        if (ovalOf(null, null, ctx) !== "dirt" && a.hasS && b.hasS && b.steer > 0 && a.steer > b.steer * 1.15) out.push("\u{1F3AF} " + Tx(`A turns the wheel ${Math.round((a.steer / b.steer - 1) * 100)}% more than B and corrects it ${a.rev} times (B ${b.rev}). The car is sliding or you go in too fast. Smoother hands, a little less speed at the turn-in.`, `A gira el volante un ${Math.round((a.steer / b.steer - 1) * 100)} % m\xE1s que B y lo corrige ${a.rev} veces (B ${b.rev}). El coche desliza o entras demasiado r\xE1pido. Manos m\xE1s suaves y un poco menos de velocidad al girar.`, `A gira o volante ${Math.round((a.steer / b.steer - 1) * 100)}% mais que B e corrige ${a.rev} vezes (B ${b.rev}). O carro est\xE1 escorregando ou voc\xEA entra r\xE1pido demais. M\xE3os mais suaves, um pouco menos de velocidade na entrada.`));
+        return out;
+      }
+      __name(lapDriving, "lapDriving");
+      const KIND_NAMES = {
+        brake_late_apex: ["Brakes later and loses the apex", "Frena m\xE1s tarde y pierde el v\xE9rtice", "Freia depois e perde o \xE1pice"],
+        brake_later: ["Brake later", "Frenar m\xE1s tarde", "Frear depois"],
+        brake_harder: ["Brake harder at first", "Pisar m\xE1s fuerte al empezar", "Frear mais forte no in\xEDcio"],
+        brake_earlier: ["Braked too late", "Fren\xF3 demasiado tarde", "Freou tarde demais"],
+        trail: ["Trail braking", "Trail braking", "Trail braking"],
+        brake_same: ["Same point, slower braking zone", "Mismo punto, frenada m\xE1s lenta", "Mesmo ponto, frenagem mais lenta"],
+        brake_generic: ["Brake later and harder", "Frenar m\xE1s tarde y fuerte", "Frear depois e mais forte"],
+        brake_speed: ["More speed through the braking zone", "M\xE1s velocidad en la frenada", "Mais velocidade na frenagem"],
+        coast: ["Coasting before the apex", "Inercia antes del v\xE9rtice", "Embalo antes do \xE1pice"],
+        entry_before: ["Time before the apex", "Tiempo antes del v\xE9rtice", "Tempo antes do \xE1pice"],
+        entry_speed: ["More speed into the turn", "M\xE1s velocidad al entrar", "Mais velocidade na entrada"],
+        apex_speed: ["More speed at the apex", "M\xE1s velocidad en el v\xE9rtice", "Mais velocidade no \xE1pice"],
+        apex_longer: ["Slow for longer", "Lento durante m\xE1s metros", "Lento por mais tempo"],
+        apex_line: ["Rounder line", "Trazada m\xE1s redonda", "Linha mais redonda"],
+        throttle: ["Throttle earlier", "Acelerar antes", "Acelerar antes"],
+        no_wait: ["Wait between brake and throttle", "Espera entre freno y acelerador", "Espera entre freio e acelerador"],
+        exit_speed: ["Throttle early, slow apex", "Acelera pronto, v\xE9rtice lento", "Acelera cedo, \xE1pice lento"],
+        full_throttle: ["Full throttle sooner", "A fondo antes", "Acelerador a fundo mais cedo"],
+        gear_up: ["Higher gear", "Marcha m\xE1s alta", "Marcha mais alta"],
+        gear_down: ["Lower gear", "Marcha m\xE1s baja", "Marcha mais baixa"],
+        lifts: ["Throttle lifts on exit", "Levanta el gas a la salida", "Al\xEDvios do acelerador na sa\xEDda"],
+        throttle_slow: ["Slow to full throttle", "Tarda en ir a fondo", "Demora para acelerar a fundo"],
+        throttle_rough: ["Throttle too abrupt", "Gas demasiado brusco", "Acelerador brusco demais"],
+        steer: ["Steering corrections", "Correcciones de volante", "Corre\xE7\xF5es de volante"],
+        line_same_brake: ["Line \xB7 turn in from the outside", "Trazada \xB7 entrar desde fuera", "Linha \xB7 entre por fora"],
+        line_turnin: ["Line \xB7 turn-in too inside", "Trazada \xB7 giro muy por dentro", "Linha \xB7 entrada por dentro demais"],
+        line_apex: ["Line \xB7 away from the apex", "Trazada \xB7 lejos del v\xE9rtice", "Linha \xB7 longe do \xE1pice"],
+        line_exit: ["Line \xB7 track unused on exit", "Trazada \xB7 pista sin usar a la salida", "Linha \xB7 pista sem usar na sa\xEDda"],
+        oval_flat: ["Lifts where the reference is flat out", "Levanta donde la referencia va a fondo", "Alivia onde a refer\xEAncia vai no fundo"],
+        oval_no_brake: ["Brakes where a lift is enough", "Frena donde basta levantar", "Freia onde basta aliviar"],
+        oval_lift_later: ["Lifts too early", "Levanta demasiado pronto", "Alivia cedo demais"],
+        oval_lift_early: ["Lifts late and loses the center", "Levanta tarde y pierde el centro", "Alivia tarde e perde o centro"],
+        oval_lift_less: ["Lifts too much", "Levanta demasiado", "Alivia demais"],
+        oval_back_flat: ["Slow back to flat out", "Tarda en volver a fondo", "Demora a voltar ao fundo"],
+        oval_center: ["More speed in the center", "M\xE1s velocidad en el centro", "Mais velocidade no centro"],
+        oval_roll: ["Roll more speed in", "Dejar correr m\xE1s velocidad", "Levar mais velocidade"],
+        dirt_groove: ["Groove on dirt", "L\xEDnea en tierra", "Linha na terra"]
+      };
+      const STEP_NAMES = {
+        plan: ["The whole plan", "El plan entero", "O plano inteiro"],
+        corner: ["Corner", "Curva", "Curva"],
+        phase: ["Phase", "Fase", "Fase"],
+        habit: ["Habit", "H\xE1bito", "H\xE1bito"],
+        oval: ["Oval", "\xD3valo", "Oval"],
+        straight: ["Outside the corners", "Fuera de las curvas", "Fora das curvas"],
+        cons: ["Corner taken differently every lap", "Curva distinta cada vuelta", "Curva diferente a cada volta"],
+        style: ["How the lap is driven", "C\xF3mo se conduce la vuelta", "Como a volta \xE9 pilotada"],
+        trail: ["Trail braking", "Trail braking", "Trail braking"],
+        rotate: ["The car pushes wide", "El coche se va de morro", "O carro sai de frente"],
+        loose: ["The rear steps out", "La trasera se escapa", "A traseira escapa"],
+        gears: ["Gears", "Marchas", "Marchas"],
+        tyres: ["Pace fading over a run", "Ritmo que cae en la tanda", "Ritmo que cai na sequ\xEAncia"],
+        pace: ["Usual lap against the best", "Vuelta habitual frente a la mejor", "Volta habitual contra a melhor"]
+      };
+      function stepName(id2, ctx) {
+        const Tx = txOf(ctx), [k, sub] = String(id2 || "").split(":"), N = STEP_NAMES[k], base2 = N ? Tx(N[0], N[1], N[2]) : k;
+        if (!sub) return base2;
+        const PH = { brake: 0, entry: 1, apex: 2, exit: 3 }, sn = k === "phase" && sub in PH ? phaseName(sub, ctx) : k === "oval" ? OVAL_NAMES[sub] ? Tx(...OVAL_NAMES[sub]) : sub : kindName(sub, ctx);
+        return base2 + " \xB7 " + sn;
+      }
+      __name(stepName, "stepName");
+      const OVAL_NAMES = { superspeedway: ["Superspeedway", "Super\xF3valo", "Superspeedway"], intermediate: ["Intermediate", "Intermedio", "Intermedi\xE1rio"], mile: ["Flat mile", "Una milla", "Uma milha"], short: ["Short track", "\xD3valo corto", "Pista curta"], dirt: ["Dirt", "Tierra", "Terra"] };
+      function kindName(k, ctx) {
+        const N = KIND_NAMES[k];
+        return N ? txOf(ctx)(N[0], N[1], N[2]) : k;
+      }
+      __name(kindName, "kindName");
+      function tipMain(c) {
+        const t = c && c.tip || [], lt = /^(line_|dirt_groove)/.test(String(c && c.kind || "")) ? null : lineTipOf(c && c.line, c && c.dd != null && Math.abs(c.dd) <= 6, c && c.oval);
+        if (!lt) return t;
+        const cut = /* @__PURE__ */ __name((s, x) => s && x && s.endsWith(". " + x) ? s.slice(0, -(x.length + 2)) : s, "cut");
+        return [cut(t[0], lt[0]), cut(t[1], lt[1]), cut(t[2], lt[3])];
+      }
+      __name(tipMain, "tipMain");
+      function tipShort(t) {
+        const q2 = String(t || "").replace(/\s*\([^)]*\)/g, "").trim().split(/\.\s+/).map((x) => x.replace(/\.$/, "").trim()).filter(Boolean);
+        if (q2.length < 2) return q2[0] || "";
+        const last = q2[q2.length - 1], first = q2[0], num4 = /\d/;
+        return num4.test(last) && !num4.test(first) ? first : last;
+      }
+      __name(tipShort, "tipShort");
+      function tipTodo(c, ctx) {
+        if (!c || !(c.lost > 0.03) || !c.tip || !c.tip[0]) return "";
+        const t = tipMain(c);
+        return tipShort(txOf(ctx)(t[0], t[1], t[2]));
+      }
+      __name(tipTodo, "tipTodo");
+      const FAMILY = {
+        brake_late_apex: "late",
+        brake_earlier: "late",
+        oval_lift_early: "late",
+        brake_later: "early",
+        oval_lift_later: "early",
+        brake_harder: "hard",
+        trail: "trail",
+        brake_same: "trail",
+        entry_before: "trail",
+        brake_generic: "trail",
+        coast: "coast",
+        no_wait: "coast",
+        entry_speed: "speed",
+        brake_speed: "speed",
+        apex_speed: "speed",
+        apex_line: "speed",
+        oval_center: "speed",
+        oval_roll: "speed",
+        apex_longer: "long",
+        throttle: "exit",
+        full_throttle: "exit",
+        throttle_slow: "exit",
+        exit_speed: "exit",
+        throttle_rough: "rough",
+        lifts: "rough",
+        gear_up: "gear",
+        gear_down: "gear",
+        steer: "steer",
+        cons: "cons",
+        oval_flat: "lift",
+        oval_no_brake: "lift",
+        oval_lift_less: "lift",
+        oval_back_flat: "lift"
+      };
+      const familyOf = /* @__PURE__ */ __name((k) => FAMILY[k] || (/^(line_|dirt_)/.test(k || "") ? "line" : "speed"), "familyOf");
+      const COST = {
+        late: ["Braking too deep makes the car scrub speed while it is already turning, so it reaches the apex slower and every metre after the apex is slower too. The exit is worth more than the entry.", "Frenar demasiado tarde hace que el coche pierda velocidad cuando ya est\xE1 girando, as\xED que llega m\xE1s lento al v\xE9rtice y cada metro despu\xE9s tambi\xE9n es m\xE1s lento. La salida vale m\xE1s que la entrada.", "Frear fundo demais faz o carro perder velocidade quando j\xE1 est\xE1 virando, ent\xE3o ele chega mais lento ao \xE1pice e cada metro depois tamb\xE9m \xE9 mais lento. A sa\xEDda vale mais do que a entrada."],
+        early: ["Every metre you brake before the reference is a metre at lower speed than it. It is a small loss each time, but it comes in every lap.", "Cada metro que frenas antes que la referencia es un metro a menos velocidad que ella. Es poco cada vez, pero se repite en cada vuelta.", "Cada metro que voc\xEA freia antes da refer\xEAncia \xE9 um metro a menos velocidade. \xC9 pouco a cada vez, mas se repete em toda volta."],
+        early_lift: ["Every metre you lift before the reference is a metre at lower speed than it, and on an oval that speed is carried down the whole straight.", "Cada metro que levantas antes que la referencia es un metro a menos velocidad que ella, y en un \xF3valo esa velocidad se arrastra por toda la recta.", "Cada metro que voc\xEA alivia antes da refer\xEAncia \xE9 um metro a menos velocidade, e num oval essa velocidade vai pela reta inteira."],
+        late_lift: ["Lifting late makes you slow the car in the middle of the corner, where it is already loaded. It loses more speed there than an earlier, lighter lift would.", "Levantar tarde te obliga a frenar el coche en mitad de la curva, donde ya va cargado. Ah\xED pierde m\xE1s velocidad que con un levant\xF3n antes y m\xE1s suave.", "Aliviar tarde obriga voc\xEA a segurar o carro no meio da curva, onde ele j\xE1 est\xE1 carregado. Ali ele perde mais velocidade do que com um al\xEDvio mais cedo e mais leve."],
+        hard: ["A soft first press makes the braking zone longer. The car slows best in the first metres, when it has the most speed and grip.", "Pisar suave al principio alarga la frenada. El coche frena mejor en los primeros metros, cuando tiene m\xE1s velocidad y m\xE1s agarre.", "Pisar suave no in\xEDcio deixa a frenagem mais longa. O carro freia melhor nos primeiros metros, quando tem mais velocidade e ader\xEAncia."],
+        trail: ["Letting go of the brake at once takes the weight off the front tyres just as you turn in. The car pushes wide and you wait before you can turn it.", "Soltar el freno de golpe quita peso a las ruedas delanteras justo cuando giras. El coche se va de morro y tienes que esperar para girarlo.", "Soltar o freio de uma vez tira peso dos pneus dianteiros bem quando voc\xEA entra na curva. O carro sai de frente e voc\xEA espera para conseguir vir\xE1-lo."],
+        coast: ["With neither pedal pressed the car is not slowing down well and not speeding up either, and its balance is loose. Those metres are time given away.", "Sin pisar ning\xFAn pedal el coche ni frena bien ni acelera, y queda suelto de equilibrio. Esos metros son tiempo regalado.", "Sem nenhum pedal o carro nem freia bem nem acelera, e fica solto de equil\xEDbrio. Esses metros s\xE3o tempo dado de gra\xE7a."],
+        speed: ["The speed at the slowest point sets the whole exit. A few km/h less there are carried all the way down the next straight.", "La velocidad en el punto m\xE1s lento marca toda la salida. Unos pocos km/h menos ah\xED se arrastran por toda la recta siguiente.", "A velocidade no ponto mais lento define toda a sa\xEDda. Alguns km/h a menos ali s\xE3o carregados por toda a reta seguinte."],
+        long: ["You are as fast as the reference at the slowest point but you stay slow for more metres. A longer slow part costs time even at the same minimum speed.", "Vas tan r\xE1pido como la referencia en el punto m\xE1s lento, pero te quedas lento durante m\xE1s metros. Una parte lenta m\xE1s larga cuesta tiempo aunque la velocidad m\xEDnima sea la misma.", "Voc\xEA \xE9 t\xE3o r\xE1pido quanto a refer\xEAncia no ponto mais lento, mas fica lento por mais metros. Uma parte lenta mais longa custa tempo mesmo com a mesma velocidade m\xEDnima."],
+        exit: ["The exit sets your speed for the whole straight after it. Time lost there keeps growing until the next braking point.", "La salida marca tu velocidad en toda la recta siguiente. El tiempo perdido ah\xED sigue creciendo hasta la pr\xF3xima frenada.", "A sa\xEDda define sua velocidade em toda a reta seguinte. O tempo perdido ali continua crescendo at\xE9 a pr\xF3xima frenagem."],
+        rough: ["Opening the throttle too fast makes the rear slide and forces you to lift or correct. That costs more than a slower, steady squeeze.", "Abrir el gas demasiado r\xE1pido hace deslizar la trasera y te obliga a levantar o corregir. Eso cuesta m\xE1s que apretarlo despacio y constante.", "Abrir o acelerador r\xE1pido demais faz a traseira escorregar e obriga voc\xEA a aliviar ou corrigir. Isso custa mais do que apertar devagar e constante."],
+        gear: ["In the wrong gear the engine is out of its best revs. Too low and the rear steps out on exit, too high and the car is slow to pull out of the corner.", "En la marcha equivocada el motor est\xE1 fuera de sus mejores revoluciones. Muy corta y la trasera se escapa a la salida, muy larga y el coche tarda en salir de la curva.", "Na marcha errada o motor fica fora da sua melhor rota\xE7\xE3o. Curta demais e a traseira escapa na sa\xEDda, longa demais e o carro demora a sair da curva."],
+        steer: ["Every correction means the car is sliding. A sliding tyre slows the car and heats up, so it grips less in the next corners too.", "Cada correcci\xF3n significa que el coche est\xE1 deslizando. Un neum\xE1tico que desliza frena el coche y se calienta, as\xED que agarra menos tambi\xE9n en las curvas siguientes.", "Cada corre\xE7\xE3o significa que o carro est\xE1 escorregando. Um pneu que escorrega freia o carro e esquenta, ent\xE3o agarra menos tamb\xE9m nas pr\xF3ximas curvas."],
+        line: ["The line sets how tight the corner is. A tighter arc forces a lower speed, so a few metres away from the reference's line cost speed in the whole corner.", "La trazada marca lo cerrada que es la curva. Un arco m\xE1s cerrado obliga a ir m\xE1s lento, as\xED que unos metros fuera de la trazada de la referencia cuestan velocidad en toda la curva.", "A linha define o quanto a curva \xE9 fechada. Um arco mais fechado obriga a ir mais devagar, ent\xE3o alguns metros fora da linha da refer\xEAncia custam velocidade na curva toda."],
+        cons: ["A different braking point every lap means a different corner every lap, so you cannot build on what worked.", "Un punto de frenada distinto cada vuelta es una curva distinta cada vuelta, as\xED que no puedes construir sobre lo que funcion\xF3.", "Um ponto de frenagem diferente a cada volta \xE9 uma curva diferente a cada volta, ent\xE3o voc\xEA n\xE3o consegue evoluir a partir do que deu certo."],
+        lift: ["On an oval the car runs close to its top speed, so every lift costs speed that takes the whole straight to win back.", "En un \xF3valo el coche va cerca de su velocidad punta, as\xED que cada levant\xF3n cuesta una velocidad que tarda toda la recta en recuperarse.", "Num oval o carro anda perto da velocidade m\xE1xima, ent\xE3o cada al\xEDvio custa uma velocidade que leva a reta inteira para recuperar."]
+      };
+      function howOf(f, c, Tx, u) {
+        const r2 = Math.round, d = r2(c.d), vr = c.vminr != null ? r2(c.vminr) : null, lift = c.oval && c.lift;
+        switch (f) {
+          case "late":
+            return lift ? Tx(`Start the lift where the reference does, at B on the map (${d} m from the line), and keep the speed up through the middle of the corner (${vr} ${u}).`, `Empieza a levantar donde la referencia, en B en el mapa (a ${d} m de la l\xEDnea), y mant\xE9n la velocidad por el centro de la curva (${vr} ${u}).`, `Comece a aliviar onde a refer\xEAncia alivia, em B no mapa (a ${d} m da linha), e mantenha a velocidade pelo meio da curva (${vr} ${u}).`) : Tx(`Brake at the reference's point, B on the map (${d} m from the line), a little before your own at A. Press hard at first, then release into the apex so you reach it at ${vr} ${u}.`, `Frena en el punto de la referencia, B en el mapa (a ${d} m de la l\xEDnea), un poco antes que tu punto A. Pisa fuerte al principio y suelta hasta el v\xE9rtice para llegar a ${vr} ${u}.`, `Freie no ponto da refer\xEAncia, B no mapa (a ${d} m da linha), um pouco antes do seu ponto A. Pise forte no in\xEDcio e solte at\xE9 o \xE1pice para chegar a ${vr} ${u}.`);
+          case "early":
+            return lift ? Tx("Move your lift towards B on the map a few metres at a time, until the car starts to feel loose on entry. Then keep that point.", "Lleva tu levant\xF3n hacia B en el mapa unos metros cada vez, hasta que el coche empiece a moverse a la entrada. Luego mant\xE9n ese punto.", "Leve seu al\xEDvio em dire\xE7\xE3o a B no mapa alguns metros por vez, at\xE9 o carro come\xE7ar a ficar solto na entrada. Depois mantenha esse ponto.") : Tx(`Pick a marker by the track (a board, a kerb, a shadow) near B on the map, ${d} m from the line, and move your braking towards it 5 m a lap until the entry starts to feel nervous. Then keep that marker.`, `Elige una referencia junto a la pista (un cartel, un piano, una sombra) cerca de B en el mapa, a ${d} m de la l\xEDnea, y acerca tu frenada 5 m por vuelta hasta que la entrada se ponga nerviosa. Luego mant\xE9n esa referencia.`, `Escolha uma refer\xEAncia ao lado da pista (uma placa, uma zebra, uma sombra) perto de B no mapa, a ${d} m da linha, e aproxime sua frenagem 5 m por volta at\xE9 a entrada ficar nervosa. Depois mantenha essa refer\xEAncia.`);
+          case "hard":
+            return Tx("Hit the brake hard at once, close to full pressure, and ease off as the car slows. Most of the braking is done in the first metres.", "Pisa el freno fuerte de golpe, cerca de la presi\xF3n m\xE1xima, y afloja seg\xFAn el coche se frena. Casi toda la frenada se hace en los primeros metros.", "Pise o freio forte de uma vez, perto da press\xE3o m\xE1xima, e alivie conforme o carro desacelera. Quase toda a frenagem acontece nos primeiros metros.");
+          case "trail":
+            return Tx("Keep a little brake on as you turn in and let it out slowly until the apex. The front stays loaded and the car turns in when you ask.", "Mant\xE9n un poco de freno al girar y su\xE9ltalo despacio hasta el v\xE9rtice. El delantero sigue cargado y el coche gira cuando se lo pides.", "Mantenha um pouco de freio ao entrar na curva e solte devagar at\xE9 o \xE1pice. A dianteira continua carregada e o carro vira quando voc\xEA pede.");
+          case "coast":
+            return Tx("Go straight from the brake to the throttle. As soon as the brake is off, a touch of throttle keeps the car balanced.", "Pasa directamente del freno al acelerador. En cuanto sueltas el freno, un toque de gas mantiene el coche equilibrado.", "Passe direto do freio para o acelerador. Assim que soltar o freio, um toque no acelerador mant\xE9m o carro equilibrado.");
+          case "speed":
+            return Tx(`Aim for ${vr} ${u} at the slowest point. Brake a touch less, turn in smoothly and let the car roll through the middle of the corner.`, `Busca ${vr} ${u} en el punto m\xE1s lento. Frena un poco menos, gira con suavidad y deja rodar el coche por el centro de la curva.`, `Busque ${vr} ${u} no ponto mais lento. Freie um pouco menos, entre com suavidade e deixe o carro rolar pelo meio da curva.`);
+          case "long":
+            return Tx("Turn in a little later and put the apex later, so you can straighten the wheel and pick up the throttle sooner.", "Gira un poco m\xE1s tarde y retrasa el v\xE9rtice, as\xED puedes enderezar el volante y acelerar antes.", "Entre um pouco mais tarde e atrase o \xE1pice, assim voc\xEA endireita o volante e acelera mais cedo.");
+          case "exit":
+            return c.pur != null ? Tx(`Pick up the throttle where the reference does (the green mark on the map, ${r2(c.pur)} m from the line) and squeeze it to full as you unwind the wheel.`, `Acelera donde la referencia (la marca verde en el mapa, a ${r2(c.pur)} m de la l\xEDnea) y llega a fondo mientras abres el volante.`, `Acelere onde a refer\xEAncia acelera (a marca verde no mapa, a ${r2(c.pur)} m da linha) e chegue ao fundo enquanto desfaz o volante.`) : Tx("Pick up the throttle at the apex and squeeze it to full as you unwind the wheel.", "Acelera en el v\xE9rtice y llega a fondo mientras abres el volante.", "Acelere no \xE1pice e chegue ao fundo enquanto desfaz o volante.");
+          case "rough":
+            return Tx("Open the throttle in one smooth movement and straighten the wheel before full throttle. If the rear steps out, you opened it too fast.", "Abre el gas en un solo movimiento suave y endereza el volante antes de ir a fondo. Si la trasera se escapa, lo abriste demasiado r\xE1pido.", "Abra o acelerador num s\xF3 movimento suave e endireite o volante antes de ir ao fundo. Se a traseira escapar, voc\xEA abriu r\xE1pido demais.");
+          case "gear":
+            return c.gB > c.gA ? Tx(`Use gear ${c.gB} here. The engine pulls well enough and the rear stays calmer on exit.`, `Usa la ${c.gB}\xAA aqu\xED. El motor tira lo suficiente y la trasera va m\xE1s tranquila a la salida.`, `Use a ${c.gB}\xAA marcha aqui. O motor puxa o bastante e a traseira fica mais calma na sa\xEDda.`) : Tx(`Shift down to gear ${c.gB} before you turn in, so the engine is in its best revs for the exit.`, `Baja a ${c.gB}\xAA antes de girar, as\xED el motor est\xE1 en sus mejores revoluciones para la salida.`, `Reduza para a ${c.gB}\xAA marcha antes de entrar, assim o motor fica na melhor rota\xE7\xE3o para a sa\xEDda.`);
+          case "steer":
+            return Tx("Turn the wheel once, to the angle the corner needs, and hold it. If you have to correct, you came in too fast, so brake a touch earlier.", "Gira el volante una vez, lo que pide la curva, y mantenlo. Si tienes que corregir es que entraste demasiado r\xE1pido, as\xED que frena un poco antes.", "Gire o volante uma vez, o quanto a curva pede, e segure. Se precisar corrigir, voc\xEA entrou r\xE1pido demais, ent\xE3o freie um pouco antes.");
+          case "line":
+            return Tx("Use the whole track. Start the corner from the outside edge, touch the apex and let the car run out to the edge on exit.", "Usa toda la pista. Empieza la curva desde el borde exterior, toca el v\xE9rtice y deja que el coche salga hasta el borde.", "Use a pista toda. Comece a curva pela borda de fora, toque o \xE1pice e deixe o carro sair at\xE9 a borda.");
+          case "cons":
+            return Tx("Pick one braking marker and one turn-in point and hit them every lap. Only move them once you hit them every time.", "Elige una referencia de frenada y un punto de giro y cl\xE1valos cada vuelta. Mu\xE9velos solo cuando los clavas siempre.", "Escolha uma refer\xEAncia de frenagem e um ponto de entrada e acerte-os em toda volta. S\xF3 mude quando acertar sempre.");
+          case "lift":
+            return c.flatB ? Tx("Keep your foot down here. If the car feels loose, lift earlier in the corner before so you arrive here straight.", "Mant\xE9n el pie a fondo aqu\xED. Si el coche se mueve, levanta antes en la curva anterior para llegar aqu\xED recto.", "Mantenha o p\xE9 no fundo aqui. Se o carro ficar solto, alivie antes na curva anterior para chegar aqui reto.") : Tx("Copy the reference's lift, which starts at B on the map. One smooth lift, and back to full throttle as soon as the car points down the straight.", "Copia el levant\xF3n de la referencia, que empieza en B en el mapa. Un solo levant\xF3n suave, y a fondo otra vez en cuanto el coche apunta a la recta.", "Copie o al\xEDvio da refer\xEAncia, que come\xE7a em B no mapa. Um s\xF3 al\xEDvio suave, e de volta ao fundo assim que o carro apontar para a reta.");
+        }
+        return "";
+      }
+      __name(howOf, "howOf");
+      const PHASE_WHERE = { brake: ["under braking", "en la frenada", "na frenagem"], entry: ["on the way into the corner", "al entrar en la curva", "na entrada da curva"], apex: ["around the apex", "en el v\xE9rtice", "no \xE1pice"], exit: ["on the exit", "a la salida", "na sa\xEDda"] };
+      function whatOf(c, Tx, u) {
+        const r2 = Math.round, r22 = /* @__PURE__ */ __name((v) => Math.round(v * 100) / 100, "r2"), ph = c.phase || "brake", pl = c.ph && c.ph[ph] > 0 ? r22(c.ph[ph]) : null, W2 = PHASE_WHERE[ph] || PHASE_WHERE.brake, lift = c.oval && c.lift, out = [];
+        out.push(pl != null && pl < r22(c.lost) ? Tx(`You lose ${r22(c.lost)} s in T${c.n}, ${pl} s of it ${W2[0]}.`, `Pierdes ${r22(c.lost)} s en T${c.n}, ${pl} s de ellos ${W2[1]}.`, `Voc\xEA perde ${r22(c.lost)} s na T${c.n}, ${pl} s deles ${W2[2]}.`) : Tx(`You lose ${r22(c.lost)} s in T${c.n}, ${W2[0]}.`, `Pierdes ${r22(c.lost)} s en T${c.n}, ${W2[1]}.`, `Voc\xEA perde ${r22(c.lost)} s na T${c.n}, ${W2[2]}.`));
+        if (c.flatB) out.push(Tx("The reference stays flat out here.", "La referencia va a fondo aqu\xED.", "A refer\xEAncia vai de p\xE9 no fundo aqui."));
+        else if (c.dd != null && Math.abs(c.dd) >= 5) {
+          const m = r2(Math.abs(c.dd));
+          out.push(lift ? Tx(`You lift ${m} m ${c.dd > 0 ? "later" : "earlier"} than the reference (A and B on the map).`, `Levantas ${m} m ${c.dd > 0 ? "m\xE1s tarde" : "antes"} que la referencia (A y B en el mapa).`, `Voc\xEA alivia ${m} m ${c.dd > 0 ? "depois" : "antes"} da refer\xEAncia (A e B no mapa).`) : Tx(`You brake ${m} m ${c.dd > 0 ? "later" : "earlier"} than the reference (A and B on the map).`, `Frenas ${m} m ${c.dd > 0 ? "m\xE1s tarde" : "antes"} que la referencia (A y B en el mapa).`, `Voc\xEA freia ${m} m ${c.dd > 0 ? "depois" : "antes"} da refer\xEAncia (A e B no mapa).`));
+        } else if (c.dd != null) out.push(lift ? Tx("You lift at the same point as the reference.", "Levantas en el mismo punto que la referencia.", "Voc\xEA alivia no mesmo ponto da refer\xEAncia.") : Tx("You brake at the same point as the reference.", "Frenas en el mismo punto que la referencia.", "Voc\xEA freia no mesmo ponto da refer\xEAncia."));
+        if (c.vmin != null && c.vminr != null) {
+          const a = r2(c.vmin), b = r2(c.vminr);
+          out.push(a === b ? Tx(`At the slowest point you match it, ${a} ${u}.`, `En el punto m\xE1s lento vas igual, ${a} ${u}.`, `No ponto mais lento voc\xEA empata, ${a} ${u}.`) : Tx(`At the slowest point you are at ${a} ${u} and the reference at ${b}.`, `En el punto m\xE1s lento vas a ${a} ${u} y la referencia a ${b}.`, `No ponto mais lento voc\xEA est\xE1 a ${a} ${u} e a refer\xEAncia a ${b}.`));
+        }
+        if (c.kind === "trail" && c.trailA != null) out.push(Tx(`You hold the brake ${r2(c.trailA)} m into the turn and the reference ${r2(c.trailB)} m.`, `Mantienes el freno ${r2(c.trailA)} m dentro de la curva y la referencia ${r2(c.trailB)} m.`, `Voc\xEA segura o freio ${r2(c.trailA)} m dentro da curva e a refer\xEAncia ${r2(c.trailB)} m.`));
+        if (!c.est && c.coastA - c.coastB >= 10) out.push(Tx(`${r2(c.coastA)} m with no pedal pressed (reference ${r2(c.coastB)} m).`, `${r2(c.coastA)} m sin pisar ning\xFAn pedal (referencia ${r2(c.coastB)} m).`, `${r2(c.coastA)} m sem nenhum pedal (refer\xEAncia ${r2(c.coastB)} m).`));
+        if (c.late != null && Math.abs(c.late) >= 8) out.push(Tx(`You pick up the throttle ${r2(Math.abs(c.late))} m ${c.late > 0 ? "later" : "earlier"}.`, `Aceleras ${r2(Math.abs(c.late))} m ${c.late > 0 ? "m\xE1s tarde" : "antes"}.`, `Voc\xEA acelera ${r2(Math.abs(c.late))} m ${c.late > 0 ? "depois" : "antes"}.`));
+        if (!c.est && c.gA >= 1 && c.gB >= 1 && c.gA !== c.gB) out.push(Tx(`Gear ${c.gA} at the apex (reference ${c.gB}).`, `${c.gA}\xAA en el v\xE9rtice (referencia ${c.gB}\xAA).`, `${c.gA}\xAA marcha no \xE1pice (refer\xEAncia ${c.gB}\xAA).`));
+        return out.join(" ");
+      }
+      __name(whatOf, "whatOf");
+      function cornerMarks(c, L) {
+        const w = /* @__PURE__ */ __name((d) => L > 0 ? (d % L + L) % L : d, "w"), out = [], lift = !!c.lift;
+        if (c.flatB) out.push({ d: w(c.d), k: "a", lift: true });
+        else {
+          if (c.dd != null) out.push({ d: w(c.d + c.dd), k: "a", lift });
+          out.push({ d: w(c.d), k: "b", lift });
+        }
+        out.push({ d: w(c.apex), k: "apex", n: c.n });
+        if (c.pur != null && /^(exit|rough)$/.test(familyOf(c.kind))) {
+          out.push({ d: w(c.pur), k: "thr" });
+          if (c.pua != null) out.push({ d: w(c.pua), k: "thra" });
+        }
+        return out;
+      }
+      __name(cornerMarks, "cornerMarks");
+      const cornerSpan = /* @__PURE__ */ __name((c) => [Math.max(0, c.d - 50), c.apex + 150], "cornerSpan");
+      function cornerStep(c, Tx, u, L, w) {
+        const f = familyOf(c.kind), what = whatOf(c, Tx, u), cf = c.oval && c.lift && COST[f + "_lift"] ? f + "_lift" : f, cost = Tx(...COST[cf] || COST.speed), how = howOf(f, c, Tx, u);
+        return { k: "corner", id: "corner:" + (c.kind || ""), kind: c.kind, turns: [c.n], gain: c.lost, w, t: `T${c.n} \xB7 ${Tx(c.tip[0], c.tip[1], c.tip[2])}`, what, cost, why: what + " " + cost, how, marks: cornerMarks(c, L), spans: [cornerSpan(c)] };
+      }
+      __name(cornerStep, "cornerStep");
+      const turnMarks = /* @__PURE__ */ __name((list) => list.map((c) => ({ d: c.apex, k: "apex", n: c.n })), "turnMarks");
+      const turnSpans = /* @__PURE__ */ __name((list) => list.map(cornerSpan), "turnSpans");
+      const tNames = /* @__PURE__ */ __name((list) => list.map((c) => "T" + c.n).join(", "), "tNames");
+      const lapClock = /* @__PURE__ */ __name((t) => {
+        if (!(t > 0)) return "\u2013";
+        const m = Math.floor(t / 60), s = t - m * 60;
+        return (m ? m + ":" + (s < 10 ? "0" : "") : "") + s.toFixed(3);
+      }, "lapClock");
+      const lapTimeOf = /* @__PURE__ */ __name((l) => {
+        if (l && l.time > 0) return l.time;
+        const b = l && l.bins, lim = b ? Math.min(b.length - 1, l.maxBin != null ? l.maxBin : b.length - 1) : -1;
+        for (let i = lim; i >= 0; i--) if (b[i] && b[i][1] > 0) return b[i][1];
+        return null;
+      }, "lapTimeOf");
+      const medianOf = /* @__PURE__ */ __name((a) => {
+        const v = a.slice().sort((x, y) => x - y), h = v.length >> 1;
+        return v.length % 2 ? v[h] : (v[h - 1] + v[h]) / 2;
+      }, "medianOf");
+      function lapSteps(cs, ov, A, LP, Tx, u) {
+        const P = [], r2 = Math.round, r22 = /* @__PURE__ */ __name((v) => Math.round(v * 100) / 100, "r2"), sum = /* @__PURE__ */ __name((l, f) => l.reduce((q2, c) => q2 + f(c), 0), "sum"), lostOf = /* @__PURE__ */ __name((l) => sum(l, (c) => Math.max(0, c.lost)), "lostOf"), dirt = ov === "dirt", ss = ov === "superspeedway";
+        const T3 = /* @__PURE__ */ __name((a) => Tx(a[0], a[1], a[2]), "T"), step = /* @__PURE__ */ __name((k, list, gain, t, what, cost, how) => P.push({ k, id: k, turns: list.map((c) => c.n), gain, t, what, cost, why: (what + " " + cost).trim(), how, marks: turnMarks(list), spans: turnSpans(list) }), "step");
+        const tr2 = cs.filter((c) => !c.est && !c.lift && c.lost > 0.03 && c.trailA != null && c.trailB - c.trailA >= 12);
+        const gTr = sum(tr2, (c) => Math.max(0, (c.ph.brake || 0) + (c.ph.entry || 0)));
+        if (tr2.length >= 2 && !ss && gTr > 0.06) {
+          const mA = r2(sum(tr2, (c) => c.trailA) / tr2.length), mB = r2(sum(tr2, (c) => c.trailB) / tr2.length), nm = tNames(tr2);
+          step(
+            "trail",
+            tr2,
+            gTr * 0.8,
+            Tx(`Trail braking in ${nm}`, `Trail braking en ${nm}`, `Trail braking em ${nm}`),
+            Tx(`In these corners you let go of the brake about ${mA} m into the turn and the reference about ${mB} m.`, `En estas curvas sueltas el freno unos ${mA} m dentro de la curva y la referencia unos ${mB} m.`, `Nestas curvas voc\xEA solta o freio uns ${mA} m dentro da curva e a refer\xEAncia uns ${mB} m.`),
+            T3(COST.trail),
+            Tx("Brake hard in a straight line, then let the pedal out slowly as you turn the wheel, like letting out a spring. The brake is fully off at the apex, not before.", "Frena fuerte en l\xEDnea recta y suelta el pedal despacio mientras giras el volante, como quien suelta un muelle. El freno queda suelto del todo en el v\xE9rtice, no antes.", "Freie forte em linha reta e solte o pedal devagar enquanto gira o volante, como quem solta uma mola. O freio fica totalmente solto no \xE1pice, n\xE3o antes.")
+          );
+        }
+        const us = dirt ? [] : cs.filter((c) => c.lost > 0.03 && c.stA > 0 && c.stB > 0 && c.stA > c.stB * 1.12 && c.vmin != null && c.vmin < c.vminr - 1);
+        if (us.length >= 2) {
+          const pc = r2(sum(us, (c) => c.stA / c.stB - 1) / us.length * 100), nm = tNames(us);
+          step(
+            "rotate",
+            us,
+            lostOf(us) * 0.6,
+            Tx(`The car pushes wide in ${nm}`, `El coche se va de morro en ${nm}`, `O carro sai de frente em ${nm}`),
+            Tx(`In these corners you turn the wheel about ${pc} % more than the reference and still pass the slowest point slower.`, `En estas curvas giras el volante un ${pc} % m\xE1s que la referencia y aun as\xED pasas m\xE1s lento por el punto m\xE1s lento.`, `Nestas curvas voc\xEA gira o volante uns ${pc} % mais que a refer\xEAncia e ainda passa mais lento no ponto mais lento.`),
+            Tx("That is understeer. The front tyres are past their grip and slide instead of turning the car, so it runs wide and you wait for it before the throttle.", "Eso es subviraje. Las ruedas delanteras han pasado su l\xEDmite y deslizan en vez de girar el coche, as\xED que se abre y tienes que esperar para acelerar.", "Isso \xE9 sair de frente. Os pneus dianteiros passaram do limite e escorregam em vez de virar o carro, ent\xE3o ele abre e voc\xEA espera para acelerar."),
+            ov ? Tx("Roll in with a little less speed and less wheel, and let the car take a set before you go back to the throttle. If it is tight in every corner, the setup helps. Take a little wedge out (less cross weight) or soften the front.", "Entra con un poco menos de velocidad y menos volante, y deja que el coche se asiente antes de volver al gas. Si va duro de morro en todas las curvas, el reglaje ayuda. Quita un poco de cu\xF1a (menos peso cruzado) o ablanda el delantero.", "Entre com um pouco menos de velocidade e menos volante, e deixe o carro assentar antes de voltar ao acelerador. Se sair de frente em todas as curvas, o acerto ajuda. Tire um pouco de cunha (menos peso cruzado) ou amacie a dianteira.") : Tx("Brake a touch earlier, keep a little brake on into the turn to load the front, and turn the wheel less, not more. If it pushes in every corner, the setup helps. A softer front anti-roll bar, a little more front wing or a touch less front tyre pressure.", "Frena un poco antes, mant\xE9n algo de freno al girar para cargar el delantero y gira menos el volante, no m\xE1s. Si se va de morro en todas las curvas, el reglaje ayuda. Una barra estabilizadora delantera m\xE1s blanda, algo m\xE1s de aler\xF3n delantero o un poco menos de presi\xF3n delante.", "Freie um pouco antes, mantenha um pouco de freio ao entrar para carregar a dianteira e gire menos o volante, n\xE3o mais. Se sair de frente em todas as curvas, o acerto ajuda. Uma barra estabilizadora dianteira mais macia, um pouco mais de asa dianteira ou um pouco menos de press\xE3o na frente.")
+          );
+        }
+        const os = dirt ? [] : cs.filter((c) => c.lost > 0.03 && (/^(steer|lifts|throttle_rough)$/.test(c.kind || "") || !c.est && c.lA >= 1 && c.lA > c.lB && c.rA > c.rB + 1));
+        if (os.length >= 2) {
+          const nm = tNames(os);
+          step(
+            "loose",
+            os,
+            lostOf(os) * 0.6,
+            Tx(`The rear steps out on exit in ${nm}`, `La trasera se escapa a la salida en ${nm}`, `A traseira escapa na sa\xEDda em ${nm}`),
+            Tx("In these corners you lift or correct the wheel after the apex more than the reference.", "En estas curvas levantas el gas o corriges el volante tras el v\xE9rtice m\xE1s que la referencia.", "Nestas curvas voc\xEA alivia o acelerador ou corrige o volante depois do \xE1pice mais que a refer\xEAncia."),
+            Tx("That is oversteer. A rear that slides makes you wait with the throttle and heats the rear tyres, so they grip less as the run goes on.", "Eso es sobreviraje. Una trasera que desliza te obliga a esperar con el gas y calienta las ruedas traseras, que agarran menos seg\xFAn avanza la tanda.", "Isso \xE9 sair de traseira. Uma traseira que escorrega obriga voc\xEA a esperar com o acelerador e esquenta os pneus traseiros, que agarram menos conforme a sequ\xEAncia avan\xE7a."),
+            ov ? Tx("Squeeze the throttle off the corner and keep the wheel still. If it is loose in every corner, the setup helps. Add a little wedge (more cross weight) or a touch more rear grip.", "Aprieta el gas progresivamente a la salida y mant\xE9n el volante quieto. Si va suelto en todas las curvas, el reglaje ayuda. Pon un poco m\xE1s de cu\xF1a (m\xE1s peso cruzado) o algo m\xE1s de agarre detr\xE1s.", "Aperte o acelerador aos poucos na sa\xEDda e mantenha o volante parado. Se ficar solto em todas as curvas, o acerto ajuda. Ponha um pouco mais de cunha (mais peso cruzado) ou um pouco mais de ader\xEAncia atr\xE1s.") : Tx("Straighten the wheel before full throttle and squeeze it, never stab it. If it steps out in every corner, the setup helps. A softer rear anti-roll bar, a little more rear wing or one more step of traction control.", "Endereza el volante antes de ir a fondo y aprieta el gas, nunca de golpe. Si la trasera se escapa en todas las curvas, el reglaje ayuda. Una barra estabilizadora trasera m\xE1s blanda, algo m\xE1s de aler\xF3n trasero o un punto m\xE1s de control de tracci\xF3n.", "Endireite o volante antes de ir ao fundo e aperte o acelerador, nunca de uma vez. Se a traseira escapar em todas as curvas, o acerto ajuda. Uma barra estabilizadora traseira mais macia, um pouco mais de asa traseira ou um n\xEDvel a mais de controle de tra\xE7\xE3o.")
+          );
+        }
+        const gs = cs.filter((c) => !c.est && c.lost > 0.03 && c.gA >= 1 && c.gB >= 1 && c.gA !== c.gB);
+        if (gs.length >= 2) {
+          const nm = tNames(gs), ls = gs.map((c) => Tx(`T${c.n} in gear ${c.gA} (reference ${c.gB})`, `T${c.n} en ${c.gA}\xAA (referencia ${c.gB}\xAA)`, `T${c.n} em ${c.gA}\xAA (refer\xEAncia ${c.gB}\xAA)`)).join(", ");
+          step(
+            "gears",
+            gs,
+            lostOf(gs) * 0.6,
+            Tx(`Gears in ${nm}`, `Marchas en ${nm}`, `Marchas em ${nm}`),
+            Tx(`You take ${ls}.`, `Tomas ${ls}.`, `Voc\xEA faz ${ls}.`),
+            T3(COST.gear),
+            Tx("Copy the reference's gear in these corners. Shift down before you turn in, never in the middle of the corner, and shift up as soon as the revs reach the top of the band.", "Copia la marcha de la referencia en estas curvas. Reduce antes de girar, nunca en mitad de la curva, y sube en cuanto las revoluciones lleguen arriba.", "Copie a marcha da refer\xEAncia nestas curvas. Reduza antes de entrar, nunca no meio da curva, e suba assim que a rota\xE7\xE3o chegar ao topo.")
+          );
+        }
+        const same5 = (LP || []).filter((l) => l && l.valid !== false && (!A || !A.sessionId || !l.sessionId || l.sessionId === A.sessionId)).map((l, i) => ({ t: lapTimeOf(l), n: l.n != null ? l.n : i })).filter((x) => x.t > 0).sort((a, b) => a.n - b.n);
+        if (same5.length >= 8) {
+          const ts = same5.map((x) => x.t), first = medianOf(ts.slice(1, 4)), last = medianOf(ts.slice(-3)), fall = last - first;
+          if (fall > 0.4 && fall > first * 3e-3) P.push({
+            k: "tyres",
+            id: "tyres",
+            gain: fall * 0.4,
+            t: Tx(`Your pace fades ${r22(fall)} s over the run`, `Tu ritmo cae ${r22(fall)} s a lo largo de la tanda`, `Seu ritmo cai ${r22(fall)} s ao longo da sequ\xEAncia`),
+            what: Tx(`Your first laps are around ${lapClock(first)} and the last ones around ${lapClock(last)}.`, `Tus primeras vueltas rondan ${lapClock(first)} y las \xFAltimas ${lapClock(last)}.`, `Suas primeiras voltas ficam em torno de ${lapClock(first)} e as \xFAltimas de ${lapClock(last)}.`),
+            cost: Tx("Tyres that slide get hot and wear, and lose grip lap after lap. In a race the laps at the end of a run matter more than the fastest one.", "Los neum\xE1ticos que deslizan se calientan y se gastan, y pierden agarre vuelta tras vuelta. En carrera las vueltas del final de una tanda importan m\xE1s que la m\xE1s r\xE1pida.", "Pneus que escorregam esquentam e se gastam, e perdem ader\xEAncia volta ap\xF3s volta. Na corrida as voltas do fim de uma sequ\xEAncia importam mais do que a mais r\xE1pida."),
+            how: dirt ? Tx("On dirt the track and the tyres change every lap. Move up or down the track to find the grip, and be gentle with the throttle so the rears do not overheat.", "En tierra la pista y los neum\xE1ticos cambian cada vuelta. Sube o baja en la pista para buscar agarre y s\xE9 suave con el gas para que las traseras no se sobrecalienten.", "Na terra a pista e os pneus mudam a cada volta. Suba ou des\xE7a na pista para achar ader\xEAncia e seja suave no acelerador para os traseiros n\xE3o superaquecerem.") : ov ? Tx("On an oval the right-side tyres go first. As the run goes on, lift a little earlier and lighter and do not let the car slide up the track.", "En un \xF3valo los neum\xE1ticos del lado derecho caen primero. Seg\xFAn avanza la tanda, levanta un poco antes y menos y no dejes que el coche resbale hacia arriba.", "Num oval os pneus do lado direito caem primeiro. Conforme a sequ\xEAncia avan\xE7a, alivie um pouco antes e mais leve e n\xE3o deixe o carro escorregar para cima.") : Tx("Be smoother with the wheel and the throttle on the exits and do not let the car slide. Late in the run, brake a touch earlier and give up a little entry speed to keep the rear tyres alive.", "S\xE9 m\xE1s suave con el volante y el gas a la salida y no dejes deslizar el coche. Al final de la tanda, frena un poco antes y sacrifica algo de velocidad de entrada para cuidar las traseras.", "Seja mais suave no volante e no acelerador nas sa\xEDdas e n\xE3o deixe o carro escorregar. No fim da sequ\xEAncia, freie um pouco antes e abra m\xE3o de um pouco de velocidade de entrada para poupar os traseiros."),
+            marks: [],
+            spans: []
+          });
+        }
+        if (same5.length >= 5) {
+          const ts = same5.map((x) => x.t), best = Math.min(...ts), med = medianOf(ts), gap2 = med - best;
+          if (gap2 > 0.5 && gap2 > best * 5e-3) P.push({
+            k: "pace",
+            id: "pace",
+            gain: gap2 * 0.5,
+            t: Tx(`Your usual lap is ${r22(gap2)} s slower than your best`, `Tu vuelta habitual es ${r22(gap2)} s m\xE1s lenta que la mejor`, `Sua volta habitual \xE9 ${r22(gap2)} s mais lenta que a melhor`),
+            what: Tx(`Over ${ts.length} laps your best is ${lapClock(best)} and your middle lap ${lapClock(med)}.`, `En ${ts.length} vueltas tu mejor es ${lapClock(best)} y tu vuelta media ${lapClock(med)}.`, `Em ${ts.length} voltas sua melhor \xE9 ${lapClock(best)} e sua volta m\xE9dia ${lapClock(med)}.`),
+            cost: Tx(`A race is won on the usual lap, not the best one. ${r22(gap2)} s every lap is ${r2(gap2 * 20)} s over 20 laps.`, `Una carrera se gana con la vuelta habitual, no con la mejor. ${r22(gap2)} s cada vuelta son ${r2(gap2 * 20)} s en 20 vueltas.`, `Uma corrida se ganha com a volta habitual, n\xE3o com a melhor. ${r22(gap2)} s por volta s\xE3o ${r2(gap2 * 20)} s em 20 voltas.`),
+            how: Tx("Drive at about 98 %. Use the same markers every lap, brake a touch early rather than late, and after a mistake take the next corner calmly instead of trying to win the time back. In traffic, plan the pass a corner ahead and make it on the exit.", "Conduce al 98 %. Usa las mismas referencias cada vuelta, frena un poco antes mejor que tarde y, despu\xE9s de un error, toma la siguiente curva con calma en vez de intentar recuperar el tiempo. En tr\xE1fico, prepara el adelantamiento una curva antes y hazlo a la salida.", "Pilote a uns 98 %. Use as mesmas refer\xEAncias em toda volta, freie um pouco antes em vez de tarde e, depois de um erro, fa\xE7a a pr\xF3xima curva com calma em vez de tentar recuperar o tempo. No tr\xE1fego, prepare a ultrapassagem uma curva antes e fa\xE7a-a na sa\xEDda."),
+            marks: [],
+            spans: []
+          });
+        }
+        return P;
+      }
+      __name(lapSteps, "lapSteps");
+      function ovalStep(ov, A, R, sa, sb, n, cs, lapD, Tx) {
+        const fA = fullShare(sa.arr.slice(0, n)), fB = fullShare(sb.arr.slice(0, n)), pc = /* @__PURE__ */ __name((v) => Math.round(v * 100) + " %", "pc"), r2 = /* @__PURE__ */ __name((v) => Math.round(v * 100) / 100, "r2");
+        const lA = liftZones(sa.arr).length, lB = liftZones(sb.arr).length, bA = brakeZones2(sa.arr).length, bB = brakeZones2(sb.arr).length;
+        const flat = Tx(`Flat out ${pc(fA)} of the lap (reference ${pc(fB)}).`, `A fondo el ${pc(fA)} de la vuelta (referencia ${pc(fB)}).`, `De p\xE9 no fundo ${pc(fA)} da volta (refer\xEAncia ${pc(fB)}).`), turns = cs.filter((c) => c.lost > 0.05).map((c) => c.n);
+        if (ov === "superspeedway" && fA >= 0.97 && fB >= 0.97 && lapD > 0.05) return {
+          k: "oval",
+          gain: lapD,
+          t: Tx(`Flat out all lap like the reference, so the ${r2(lapD)} s are the draft`, `A fondo toda la vuelta como la referencia, as\xED que los ${r2(lapD)} s son el rebufo`, `De p\xE9 no fundo a volta toda como a refer\xEAncia, ent\xE3o os ${r2(lapD)} s s\xE3o o v\xE1cuo`),
+          why: Tx("On a superspeedway the lap time comes from the cars around you more than from the corners.", "En un super\xF3valo el tiempo de vuelta sale de los coches que te rodean m\xE1s que de las curvas.", "Num superspeedway o tempo de volta vem dos carros ao seu redor mais do que das curvas."),
+          how: Tx("Work in the pack. Stay in line with a partner, make your moves on the straights and keep the wheel still, because every correction scrubs speed.", "Trabaja en el pelot\xF3n. Ponte en fila con un compa\xF1ero, haz tus movimientos en las rectas y mant\xE9n el volante quieto, porque cada correcci\xF3n frena el coche.", "Trabalhe no pelot\xE3o. Fique em fila com um parceiro, fa\xE7a seus movimentos nas retas e mantenha o volante parado, porque cada corre\xE7\xE3o tira velocidade.")
+        };
+        const S3 = {
+          superspeedway: [
+            `Superspeedway \xB7 flat out ${pc(fA)} of the lap (reference ${pc(fB)})`,
+            `Super\xF3valo \xB7 a fondo el ${pc(fA)} de la vuelta (referencia ${pc(fB)})`,
+            `Superspeedway \xB7 de p\xE9 no fundo ${pc(fA)} da volta (refer\xEAncia ${pc(fB)})`,
+            Tx(`You lift in ${lA} corners and the reference in ${lB}.`, `Levantas en ${lA} curvas y la referencia en ${lB}.`, `Voc\xEA alivia em ${lA} curvas e a refer\xEAncia em ${lB}.`),
+            ["Here the car goes flat out all lap. Lift only to stay out of trouble in the pack, keep the wheel still and let the draft do the work.", "Aqu\xED el coche va a fondo toda la vuelta. Levanta solo para evitar problemas en el pelot\xF3n, mant\xE9n el volante quieto y deja que el rebufo haga el trabajo.", "Aqui o carro vai de p\xE9 no fundo a volta toda. Alivie s\xF3 para evitar problemas no pelot\xE3o, mantenha o volante parado e deixe o v\xE1cuo fazer o trabalho."]
+          ],
+          intermediate: [
+            `Intermediate oval \xB7 lifts in ${lA} corners (reference ${lB})`,
+            `\xD3valo intermedio \xB7 levantas en ${lA} curvas (referencia ${lB})`,
+            `Oval intermedi\xE1rio \xB7 al\xEDvios em ${lA} curvas (refer\xEAncia ${lB})`,
+            flat,
+            ["Lift once, early and lightly, roll the middle of the corner and squeeze back to full throttle as the car straightens. The tyres fade over a long run, so lift a little earlier as the laps go by.", "Levanta una vez, pronto y poco, deja rodar el centro de la curva y vuelve a fondo progresivamente cuando el coche se endereza. Los neum\xE1ticos caen en una tanda larga, as\xED que levanta un poco antes seg\xFAn pasan las vueltas.", "Alivie uma vez, cedo e pouco, deixe o carro rolar no meio da curva e volte ao fundo aos poucos quando o carro endireitar. Os pneus caem numa sequ\xEAncia longa, ent\xE3o alivie um pouco antes conforme as voltas passam."]
+          ],
+          mile: [
+            `Flat mile \xB7 ${bA} braking zones and ${lA} lifts (reference ${bB} and ${lB})`,
+            `\xD3valo de una milla \xB7 ${bA} frenadas y ${lA} levantones (referencia ${bB} y ${lB})`,
+            `Oval de uma milha \xB7 ${bA} frenagens e ${lA} al\xEDvios (refer\xEAncia ${bB} e ${lB})`,
+            flat,
+            ["A lift and a light touch of the brake set the car for the corner. Get it turned in the middle and squeeze the throttle so the rear stays planted, because the exit is where the lap is won.", "Un levant\xF3n y un toque suave de freno preparan el coche para la curva. Hazlo girar en el centro y aprieta el gas progresivamente para que la trasera no se mueva, porque la vuelta se gana en la salida.", "Um al\xEDvio e um toque leve no freio preparam o carro para a curva. Fa\xE7a-o virar no meio e aperte o acelerador aos poucos para a traseira ficar plantada, porque a volta se ganha na sa\xEDda."]
+          ],
+          short: [
+            `Short track \xB7 ${bA} braking zones (reference ${bB})`,
+            `\xD3valo corto \xB7 ${bA} frenadas (referencia ${bB})`,
+            `Pista curta \xB7 ${bA} frenagens (refer\xEAncia ${bB})`,
+            flat,
+            ["Brake in a straight line, come off the brake before the middle of the corner and pick up the throttle gently. Wheelspin off the corner costs the whole straight, and in the race a clean exit is how you pass.", "Frena en l\xEDnea recta, suelta el freno antes del centro de la curva y acelera con suavidad. Patinar a la salida te cuesta toda la recta, y en carrera una salida limpia es como se adelanta.", "Freie em linha reta, solte o freio antes do meio da curva e acelere com suavidade. Patinar na sa\xEDda custa a reta inteira, e na corrida uma sa\xEDda limpa \xE9 como se ultrapassa."]
+          ],
+          dirt: [
+            `Dirt oval \xB7 flat out ${pc(fA)} of the lap (reference ${pc(fB)})`,
+            `\xD3valo de tierra \xB7 a fondo el ${pc(fA)} de la vuelta (referencia ${pc(fB)})`,
+            `Oval de terra \xB7 de p\xE9 no fundo ${pc(fA)} da volta (refer\xEAncia ${pc(fB)})`,
+            Tx(`You brake in ${bA} corners and the reference in ${bB}.`, `Frenas en ${bA} curvas y la referencia en ${bB}.`, `Voc\xEA freia em ${bA} curvas e a refer\xEAncia em ${bB}.`),
+            ["Slow the car early and turn it on entry, then steer it with the throttle. The grip moves during the race, so look for the groove from the bottom to the cushion.", "Frena el coche pronto y hazlo girar a la entrada, y luego dir\xEDgelo con el acelerador. El agarre cambia durante la carrera, as\xED que busca la l\xEDnea desde abajo hasta el cushion.", "Segure o carro cedo e fa\xE7a-o virar na entrada, e depois guie-o com o acelerador. A ader\xEAncia muda durante a corrida, ent\xE3o procure a linha de baixo at\xE9 o cushion."]
+          ]
+        }[ov];
+        return S3 ? { k: "oval", turns, gain: 0, t: Tx(S3[0], S3[1], S3[2]), why: S3[3], how: Tx(S3[4][0], S3[4][1], S3[4][2]) } : null;
+      }
+      __name(ovalStep, "ovalStep");
+      function coachPlan(A, R, LP, ctx) {
+        const Tx = txOf(ctx), { spdU } = unitsOf(ctx), C = coachOf(ctx), tipWeight = C.weight, turns = turnsOf(ctx), cornerHint = hintOf(ctx), pn = /* @__PURE__ */ __name((k) => phaseName(k, ctx), "pn");
+        const ov = ovalOf(A, R, ctx), est = estOf(R, ctx), cx = ov || est ? { ...ctx, ...ov ? { oval: ov } : {}, ...est ? { estB: true } : {} } : ctx;
+        const cs = coachCompare(A, R, cx), sa = lapSeries(A), sb = lapSeries(R), n = Math.min(sa.end, sb.end), lapD = A.time - R.time;
+        const lost = cs.reduce((s, c) => s + Math.max(0, c.lost), 0), gained = cs.reduce((s, c) => s + Math.min(0, c.lost), 0), inCorners = cs.reduce((s, c) => s + c.lost, 0), straight = lapD - inCorners;
+        const ph = { brake: 0, entry: 0, apex: 0, exit: 0 }, phN = { brake: 0, entry: 0, apex: 0, exit: 0 };
+        cs.forEach((c) => {
+          if (Object.values(c.ph).some((v) => Math.abs(v) > 1)) return;
+          Object.keys(ph).forEach((k) => {
+            const v = c.ph[k] || 0;
+            if (v > 0) {
+              ph[k] += v;
+              if (v > 0.02) phN[k]++;
+            }
+          });
+        });
+        const secs = pairSecs(A, R, sa, sb, n).map(([a, b], k) => ({ n: k + 1, a, b, d: a - b }));
+        const driving = lapDriving(sa, sb, n, cx), cons = cornerConsistency((LP || []).filter((l) => l.valid !== false), R, turns, ov) || [];
+        const dif = /* @__PURE__ */ __name((c) => {
+          const h = cornerHint(c.apex);
+          return h && h.spread > 0 && h.spreadMax > 0 ? 0.9 + 0.3 * Math.min(1, h.spread / h.spreadMax) : 1;
+        }, "dif");
+        cs.forEach((c) => {
+          const cz = cons.find((x) => x.n === c.n);
+          if (cz && cz.sd > 0.08 && cz.sd > 2 * c.lost && /^brake/.test(c.kind || "")) {
+            c.kind = "cons";
+            c.tip = ["Same braking point every lap, before anything else", "El mismo punto de frenada cada vuelta, antes que nada", "O mesmo ponto de frenagem em toda volta, antes de qualquer outra coisa"];
+          }
+        });
+        const P = [], r2 = /* @__PURE__ */ __name((v) => Math.round(v * 100) / 100, "r2"), L = n * BIN2, T3 = /* @__PURE__ */ __name((a) => Tx(a[0], a[1], a[2]), "T3");
+        cs.filter((c) => c.lost > 0.05).sort((a, b) => b.lost * tipWeight(b) * dif(b) - a.lost * tipWeight(a) * dif(a)).slice(0, 3).forEach((c) => P.push(cornerStep(c, Tx, spdU(), L, tipWeight(c) * dif(c))));
+        const worst = Object.entries(ph).sort((a, b) => b[1] - a[1])[0];
+        const avg = /* @__PURE__ */ __name((a) => a.length ? a.reduce((q2, v) => q2 + v, 0) / a.length : null, "avg"), mdd = avg(cs.filter((c) => c.dd != null).map((c) => c.dd)), mdmin = avg(cs.filter((c) => c.vmin != null).map((c) => c.vmin - c.vminr)), mlate = avg(cs.filter((c) => c.late != null).map((c) => c.late));
+        if (worst && worst[1] > 0.12 && phN[worst[0]] >= 3) {
+          const HOW = {
+            brake: mdd != null && mdd > 4 ? ["You go in deeper than the reference in most corners. Brake a touch earlier and harder, and release the brake into the apex. A later braking point is not buying time here.", "Entras m\xE1s profundo que la referencia en casi todas las curvas. Frena un poco antes y m\xE1s fuerte, y suelta el freno hasta el v\xE9rtice. Frenar m\xE1s tarde no te est\xE1 dando tiempo.", "Voc\xEA entra mais fundo que a refer\xEAncia em quase todas as curvas. Freie um pouco antes e mais forte, e solte o freio at\xE9 o \xE1pice. Frear mais tarde n\xE3o est\xE1 te dando tempo."] : mdd != null && mdd < -4 ? ["Pick a fixed braking marker in every corner and brake 5 m later each lap until the entry gets nervous. Press hard at first, then ease off.", "Elige una referencia fija de frenada en cada curva y frena 5 m m\xE1s tarde cada vuelta hasta que la entrada se ponga nerviosa. Pisa fuerte al principio y luego afloja.", "Escolha uma refer\xEAncia fixa de frenagem em cada curva e freie 5 m mais tarde a cada volta at\xE9 a entrada ficar nervosa. Pise forte no in\xEDcio e depois alivie."] : est ? ["Your braking points match the reference and it carries more speed through the braking zones. Brake a touch less and roll more speed to the apex.", "Tus puntos de frenada coinciden con la referencia y ella lleva m\xE1s velocidad en las frenadas. Frena un poco menos y deja correr m\xE1s velocidad hasta el v\xE9rtice.", "Seus pontos de frenagem coincidem com os da refer\xEAncia e ela leva mais velocidade nas frenagens. Freie um pouco menos e leve mais velocidade at\xE9 o \xE1pice."] : ["Your braking points match the reference, so the time goes in how you brake. Press hard at once, then release progressively as you turn in (trail braking).", "Tus puntos de frenada coinciden con la referencia, as\xED que el tiempo se va en c\xF3mo frenas. Pisa fuerte de golpe y suelta progresivamente mientras giras (trail braking).", "Seus pontos de frenagem coincidem com os da refer\xEAncia, ent\xE3o o tempo se perde na forma de frear. Pise forte de uma vez e solte aos poucos enquanto entra na curva (trail braking)."],
+            entry: est ? ["Carry more speed into the corners. The reference reaches the turn-in faster and loses less speed before the apex.", "Lleva m\xE1s velocidad a las curvas. La referencia llega m\xE1s r\xE1pida al punto de giro y pierde menos velocidad antes del v\xE9rtice.", "Leve mais velocidade para as curvas. A refer\xEAncia chega mais r\xE1pida ao ponto de entrada e perde menos velocidade antes do \xE1pice."] : ["Release the brake gradually as you turn in (trail braking) instead of letting go at once, and do not coast. Brake or throttle, never neither.", "Suelta el freno poco a poco mientras giras (trail braking) en vez de soltarlo de golpe, y no vayas en punto muerto. Freno o acelerador, nunca ninguno.", "Solte o freio aos poucos enquanto entra na curva (trail braking) em vez de soltar de uma vez, e n\xE3o v\xE1 no embalo. Freio ou acelerador, nunca nenhum dos dois."],
+            apex: mdmin != null && mdmin >= 0 ? ["You are as fast as the reference at the slowest point but slow for longer. Turn in later and put the apex later, so the slow part of the corner gets shorter.", "Vas tan r\xE1pido como la referencia en el punto m\xE1s lento, pero lento durante m\xE1s metros. Gira m\xE1s tarde y retrasa el v\xE9rtice para acortar la parte lenta de la curva.", "Voc\xEA \xE9 t\xE3o r\xE1pido quanto a refer\xEAncia no ponto mais lento, mas lento por mais tempo. Entre mais tarde e atrase o \xE1pice para encurtar a parte lenta da curva."] : ["Turn in a little later and look at the exit. A rounder line lets you keep more speed at the slowest point.", "Gira un poco m\xE1s tarde y mira a la salida. Una trazada m\xE1s redonda te deja m\xE1s velocidad en el punto m\xE1s lento.", "Entre na curva um pouco mais tarde e olhe para a sa\xEDda. Uma linha mais redonda deixa voc\xEA levar mais velocidade no ponto mais lento."],
+            exit: mlate != null && mlate <= -5 && mdmin != null && mdmin < -1 ? ["You pick up the throttle earlier than the reference but leave the corners slower. The exit starts at the apex, carry the speed there and the throttle will follow.", "Aceleras antes que la referencia pero sales de las curvas m\xE1s lento. La salida empieza en el v\xE9rtice, conserva la velocidad ah\xED y el acelerador vendr\xE1 solo.", "Voc\xEA acelera antes da refer\xEAncia, mas sai das curvas mais lento. A sa\xEDda come\xE7a no \xE1pice, leve a velocidade ali e o acelerador vem junto."] : ["Unwind the steering sooner and open the throttle progressively from the apex, and use all the track on the way out.", "Abre el volante antes y acelera progresivamente desde el v\xE9rtice, y usa toda la pista a la salida.", "Desfa\xE7a o volante mais cedo e abra o acelerador aos poucos desde o \xE1pice, e use toda a pista na sa\xEDda."]
+          };
+          if (ov && ov !== "short") HOW.entry = ["Lift once, a little earlier and lighter, and roll the speed into the corner instead of slowing the car at the last moment.", "Levanta una sola vez, un poco antes y menos, y deja correr la velocidad en la curva en vez de frenar el coche en el \xFAltimo momento.", "Alivie uma s\xF3 vez, um pouco antes e mais leve, e leve a velocidade para dentro da curva em vez de segurar o carro no \xFAltimo momento."];
+          if (ov) HOW.apex = ["Keep the car rolling through the middle of the corner. A smoother entry with less steering keeps more speed at the slowest point.", "Mant\xE9n el coche rodando por el centro de la curva. Una entrada m\xE1s suave y con menos volante deja m\xE1s velocidad en el punto m\xE1s lento.", "Mantenha o carro rolando pelo meio da curva. Uma entrada mais suave e com menos volante deixa mais velocidade no ponto mais lento."];
+          if (ov) HOW.exit = ov === "dirt" ? ["Feed the throttle in on exit instead of stabbing it. Wheelspin on dirt costs you the whole straight.", "Dosifica el gas a la salida en vez de pisarlo de golpe. En tierra, el patinazo te cuesta toda la recta.", "Dose o acelerador na sa\xEDda em vez de pisar de uma vez. Na terra, a patinada custa a reta inteira."] : ["Back to full throttle as soon as the car stops turning and let it run up towards the wall on exit. The speed off the corner is carried down the whole straight.", "Vuelve a fondo en cuanto el coche deja de girar y d\xE9jalo subir hacia el muro a la salida. La velocidad de salida se lleva toda la recta.", "Volte ao fundo assim que o carro parar de virar e deixe-o subir em dire\xE7\xE3o ao muro na sa\xEDda. A velocidade de sa\xEDda vai pela reta inteira."];
+          P.push({ k: "phase", ph0: worst[0], gain: worst[1], t: Tx(`${pn(worst[0])} phase \xB7 ${r2(worst[1])} s over the lap`, `Fase de ${pn(worst[0]).toLowerCase()} \xB7 ${r2(worst[1])} s en la vuelta`, `Fase de ${pn(worst[0]).toLowerCase()} \xB7 ${r2(worst[1])} s na volta`), why: Tx(`It shows in ${phN[worst[0]]} corners, so it is a habit rather than one mistake.`, `Aparece en ${phN[worst[0]]} curvas, as\xED que es un h\xE1bito m\xE1s que un error puntual.`, `Aparece em ${phN[worst[0]]} curvas, ent\xE3o \xE9 mais um h\xE1bito do que um erro isolado.`), how: Tx(...HOW[worst[0]]) });
+        }
+        if (straight > 0.08 && ov) P.push({ k: "straight", gain: straight, t: Tx(`${r2(straight)} s outside the corners`, `${r2(straight)} s fuera de las curvas`, `${r2(straight)} s fora das curvas`), why: Tx("On an oval the straights are won in the corner before them, in the speed you carry off it and how soon you are back flat out.", "En un \xF3valo las rectas se ganan en la curva anterior, con la velocidad que sacas de ella y lo pronto que vuelves a ir a fondo.", "Num oval as retas se ganham na curva anterior, com a velocidade que voc\xEA leva dela e o quanto antes volta ao fundo."), how: ov === "superspeedway" ? Tx("Here the draft decides most of it. A lap on your own is slower than one behind another car.", "Aqu\xED el rebufo decide casi todo. Una vuelta en solitario es m\xE1s lenta que una detr\xE1s de otro coche.", "Aqui o v\xE1cuo decide quase tudo. Uma volta sozinho \xE9 mais lenta do que uma atr\xE1s de outro carro.") : Tx("Get the car turned early in the corner so you can be flat out sooner, and let it run up to the wall on exit.", "Haz girar el coche pronto en la curva para ir a fondo antes, y d\xE9jalo subir hasta el muro a la salida.", "Fa\xE7a o carro virar cedo na curva para ir ao fundo mais cedo, e deixe-o subir at\xE9 o muro na sa\xEDda.") });
+        else if (straight > 0.08) P.push({ k: "straight", gain: straight, t: Tx(`${r2(straight)} s outside the braking zones`, `${r2(straight)} s fuera de las zonas de frenada`, `${r2(straight)} s fora das zonas de frenagem`), why: Tx("Time lost on the straights comes from the corner exits before them (less speed at the apex and a later throttle) and from the gears.", "El tiempo que se pierde en las rectas viene de las salidas de las curvas anteriores (menos velocidad en el v\xE9rtice y el acelerador m\xE1s tarde) y de las marchas.", "O tempo perdido nas retas vem das sa\xEDdas das curvas anteriores (menos velocidade no \xE1pice e o acelerador mais tarde) e das marchas."), how: Tx("Finish each corner with the throttle fully open as early as you can and check you shift at the right revs.", "Termina cada curva con el acelerador a fondo lo antes posible y comprueba que cambias a las revoluciones correctas.", "Termine cada curva com o acelerador a fundo o quanto antes e confira se voc\xEA troca de marcha na rota\xE7\xE3o certa.") });
+        const wob = cons.filter((x) => x.sd > 0.08).slice(0, 2);
+        wob.forEach((x) => P.push({ k: "cons", turns: [x.n], gain: x.sd * 0.6, t: Tx(`T${x.n} changes \xB1${r2(x.sd)} s from lap to lap`, `T${x.n} cambia \xB1${r2(x.sd)} s de una vuelta a otra`, `T${x.n} muda \xB1${r2(x.sd)} s de uma volta para outra`), why: Tx("Over the session you take this corner differently every lap. The time spread is the gap between your best and your usual lap.", "A lo largo de la sesi\xF3n tomas esta curva distinto cada vuelta. La dispersi\xF3n es la diferencia entre tu mejor vuelta y la habitual.", "Ao longo da sess\xE3o voc\xEA faz esta curva de um jeito diferente a cada volta. A dispers\xE3o \xE9 a diferen\xE7a entre sua melhor volta e a volta habitual."), how: Tx("Same braking marker, same turn-in point, same line, every lap. Consistency first, speed after.", "La misma referencia de frenada, el mismo punto de giro, la misma trazada, cada vuelta. Primero regularidad, luego velocidad.", "A mesma refer\xEAncia de frenagem, o mesmo ponto de entrada, a mesma linha, em toda volta. Primeiro regularidade, depois velocidade.") }));
+        driving.forEach((d) => P.push({ k: "style", gain: 0, t: d.replace(/^\S+\s/, ""), why: "", how: "" }));
+        lapSteps(cs, ov, A, LP, Tx, spdU()).forEach((x) => P.push(x));
+        const PCOST = { brake: ["The braking zones are where the speed changes the most, so a few metres there are worth more than anywhere else on the lap.", "Las frenadas son donde m\xE1s cambia la velocidad, as\xED que unos metros ah\xED valen m\xE1s que en cualquier otra parte de la vuelta.", "As frenagens s\xE3o onde a velocidade mais muda, ent\xE3o alguns metros ali valem mais do que em qualquer outra parte da volta."], entry: ov && ov !== "short" ? COST.lift : est ? COST.speed : COST.trail, apex: COST.speed, exit: COST.exit };
+        const sorted = cs.slice().sort((a, b) => a.d - b.d), tAt2 = /* @__PURE__ */ __name((s, d) => {
+          for (let k = Math.max(0, Math.min(n - 1, Math.round(d / BIN2))); k >= 0; k--) if (s.arr[k]) return s.arr[k][1];
+          return null;
+        }, "tAt");
+        const stretch = /* @__PURE__ */ __name((a0, a1) => {
+          const x = [tAt2(sa, a0), tAt2(sa, a1), tAt2(sb, a0), tAt2(sb, a1)];
+          return x.some((v) => v == null) ? null : x[1] - x[0] - (x[3] - x[2]);
+        }, "stretch");
+        const strs = [];
+        sorted.forEach((c, j) => {
+          const a0 = c.apex + 150, a1 = j + 1 < sorted.length ? sorted[j + 1].d - 50 : L;
+          if (a1 - a0 >= 60) {
+            const v = stretch(a0, a1);
+            if (v != null) strs.push({ after: c.n, spans: [[a0, a1]], v });
+          }
+        });
+        if (sorted.length && sorted[0].d - 50 >= 60) {
+          const v = stretch(0, sorted[0].d - 50), lt = sorted[sorted.length - 1], o = strs.find((x) => x.after === lt.n && x.spans[0][1] === L);
+          if (v != null) {
+            if (o) {
+              o.v += v;
+              o.spans.push([0, sorted[0].d - 50]);
+            } else strs.push({ after: lt.n, spans: [[0, sorted[0].d - 50]], v });
+          }
+        }
+        P.forEach((p) => {
+          if (p.k === "phase") {
+            const ph0 = p.ph0, list = cs.filter((c) => !Object.values(c.ph).some((v) => Math.abs(v) > 1) && (c.ph[ph0] || 0) > 0.02);
+            p.id = "phase:" + ph0;
+            p.what = Tx(`It shows in ${tNames(list)}, so it is a habit rather than one mistake.`, `Aparece en ${tNames(list)}, as\xED que es un h\xE1bito m\xE1s que un error puntual.`, `Aparece em ${tNames(list)}, ent\xE3o \xE9 mais um h\xE1bito do que um erro isolado.`);
+            p.cost = T3(PCOST[ph0] || COST.speed);
+            p.why = p.what + " " + p.cost;
+            p.turns = list.map((c) => c.n);
+            p.marks = turnMarks(list);
+            p.spans = turnSpans(list);
+            delete p.ph0;
+          } else if (p.k === "straight") {
+            const top = strs.filter((x) => x.v > 0.02).sort((a, b) => b.v - a.v).slice(0, 2), nm = top.map((x) => Tx(`after T${x.after} (${r2(x.v)} s)`, `despu\xE9s de T${x.after} (${r2(x.v)} s)`, `depois da T${x.after} (${r2(x.v)} s)`)).join(Tx(" and ", " y ", " e "));
+            p.id = "straight";
+            p.what = top.length ? Tx(`Most of it is on the straight ${nm}.`, `La mayor parte est\xE1 en la recta ${nm}.`, `A maior parte est\xE1 na reta ${nm}.`) : "";
+            p.cost = p.why;
+            p.why = (p.what + " " + p.cost).trim();
+            p.spans = top.flatMap((x) => x.spans);
+            p.marks = top.map((x) => {
+              const [a0, a1] = x.spans[0];
+              return { d: (a0 + a1) / 2, k: "str", n: x.after };
+            });
+          } else if (p.k === "cons") {
+            const c = cs.find((x) => x.n === p.turns[0]);
+            p.id = "cons";
+            p.what = p.why;
+            p.cost = T3(COST.cons);
+            p.why = p.what + " " + p.cost;
+            p.marks = c ? turnMarks([c]) : [];
+            p.spans = c ? turnSpans([c]) : [];
+          } else if (p.k === "style") {
+            p.id = "style";
+            p.what = "";
+            p.cost = "";
+          }
+        });
+        P.sort((a, b) => b.gain * (b.w || 1) * C.plan(b.id) - a.gain * (a.w || 1) * C.plan(a.id));
+        const OI = ov ? ovalStep(ov, A, R, sa, sb, n, cs, lapD, Tx) : null;
+        if (OI) {
+          const list = cs.filter((c) => c.lost > 0.05);
+          P.unshift({ ...OI, id: "oval:" + ov, what: OI.why, cost: "", marks: turnMarks(list), spans: turnSpans(list) });
+        }
+        const H3 = C.habits[0];
+        if (H3 && H3.tracks >= 3) {
+          const inLap = cs.filter((c) => c.kind === H3.kind && c.lost > 0.03), names = inLap.map((c) => "T" + c.n).join(", ");
+          P.unshift({ k: "habit", turns: inLap.map((c) => c.n), gain: inLap.reduce((q2, c) => q2 + c.lost, 0), t: Tx(`${kindName(H3.kind, ctx)} \xB7 a habit of yours`, `${kindName(H3.kind, ctx)} \xB7 un h\xE1bito tuyo`, `${kindName(H3.kind, ctx)} \xB7 um h\xE1bito seu`), why: Tx(`It shows on ${H3.tracks} tracks and ${H3.sessions} sessions${names ? `. In this lap in ${names}` : ""}.`, `Lo arrastras en ${H3.tracks} circuitos y ${H3.sessions} sesiones${names ? `. En esta vuelta en ${names}` : ""}.`, `Aparece em ${H3.tracks} pistas e ${H3.sessions} sess\xF5es${names ? `. Nesta volta em ${names}` : ""}.`), how: "" });
+          const hp = P[0], f = familyOf(H3.kind);
+          hp.id = "habit:" + H3.kind;
+          hp.what = hp.why;
+          hp.cost = T3(COST[f] || COST.speed);
+          hp.why = hp.what + " " + hp.cost;
+          hp.how = inLap[0] ? howOf(f, inLap[0], Tx, spdU()) : "";
+          hp.marks = turnMarks(inLap);
+          hp.spans = turnSpans(inLap);
+        }
+        P.forEach((p) => {
+          p.id = p.id || p.k;
+          p.what = p.what || "";
+          p.cost = p.cost || "";
+          p.marks = (p.marks || []).filter((m) => m.d >= 0 && m.d <= L).map((m) => ({ ...m, d: Math.round(m.d) }));
+          p.spans = (p.spans || []).map(([a, b]) => [Math.round(Math.max(0, a)), Math.round(Math.min(L, b))]).filter(([a, b]) => b > a);
+        });
+        const areas = [["brake", ph.brake], ["entry", ph.entry], ["apex", ph.apex], ["exit", ph.exit], ["straight", Math.max(0, straight)]];
+        return { cs, lapD, lost, gained, straight, ph, phN, secs, driving, cons, plan: P, areas, focus: areas.slice().sort((a, b) => b[1] - a[1])[0] };
+      }
+      __name(coachPlan, "coachPlan");
+      function stepText(step, A, ctx) {
+        if (!Array.isArray(step) || !step.length || !A) return "";
+        const n = A.bins ? A.bins.length : 0, turns = turnsOf(ctx), names = step.map((x, k) => "T" + turnNo(turns, x.apex, n * BIN2, k + 1)).join(", ");
+        return " \xB7 " + txOf(ctx)(`the drivers at your pace make the step in ${names}`, `los pilotos de tu ritmo dan el salto en ${names}`, `os pilotos do seu ritmo d\xE3o o salto em ${names}`);
+      }
+      __name(stepText, "stepText");
+      function analyzerFacts(A, B, ctx) {
+        const Tx = txOf(ctx), sa = lapSeries(A), sb = lapSeries(B), n = Math.min(sa.end, sb.end), ad = A.time - B.time;
+        let peak = 0, peakI = 0, gain = 0, gainI = 0;
+        for (let i = 0; i < n; i++) {
+          const a = sa.arr[i], b = sb.arr[i];
+          if (a && b) {
+            const d = a[1] - b[1];
+            if (d > peak) {
+              peak = d;
+              peakI = i;
+            }
+            if (d < gain) {
+              gain = d;
+              gainI = i;
+            }
+          }
+        }
+        const all = coachCompare(A, B, ctx), cz = all.filter((c) => c.lost > 0.03).sort((x, y) => y.lost - x.lost), items = [];
+        if (cz[0]) {
+          const t = Tx(cz[0].tip[0], cz[0].tip[1], cz[0].tip[2]);
+          items.push(["bad", "T" + cz[0].n, Tx(`Corner ${cz[0].n} costs the most (${sgn(cz[0].lost, 3)} s) \xB7 ${t}`, `La curva ${cz[0].n} es la que m\xE1s cuesta (${sgn(cz[0].lost, 3)} s) \xB7 ${t}`, `A curva ${cz[0].n} \xE9 a que mais custa (${sgn(cz[0].lost, 3)} s) \xB7 ${t}`)]);
+        }
+        if (peak > 0.05) items.push(["warn", sgn(peak, 3) + " s", Tx(`A is furthest behind at ${Math.round(peakI * BIN2)} m (${sgn(peak, 3)} s)`, `A va m\xE1s atr\xE1s en ${Math.round(peakI * BIN2)} m (${sgn(peak, 3)} s)`, `A fica mais atr\xE1s em ${Math.round(peakI * BIN2)} m (${sgn(peak, 3)} s)`)]);
+        if (gain < -0.05) items.push(["good", sgn(gain, 3) + " s", Tx(`A gains most around ${Math.round(gainI * BIN2)} m (${sgn(gain, 3)} s)`, `A gana m\xE1s alrededor de ${Math.round(gainI * BIN2)} m (${sgn(gain, 3)} s)`, `A ganha mais por volta de ${Math.round(gainI * BIN2)} m (${sgn(gain, 3)} s)`)]);
+        const inC = all.reduce((q2, c) => q2 + c.lost, 0), straight = ad - inC, nL = all.filter((c) => c.lost > 0.02).length, nG = all.filter((c) => c.lost < -0.02).length;
+        if (all.length) items.push([Math.abs(straight) > 0.08 && straight > 0 ? "warn" : "muted", sgn(inC, 2) + " s", Tx(`Corners ${sgn(inC, 2)} s (A loses in ${nL}, gains in ${nG}) \xB7 straights ${sgn(straight, 2)} s`, `Curvas ${sgn(inC, 2)} s (A pierde en ${nL}, gana en ${nG}) \xB7 rectas ${sgn(straight, 2)} s`, `Curvas ${sgn(inC, 2)} s (A perde em ${nL}, ganha em ${nG}) \xB7 retas ${sgn(straight, 2)} s`)]);
+        return { ad, items, corners: all };
+      }
+      __name(analyzerFacts, "analyzerFacts");
+      function followUp(prev, cs, ctx) {
+        if (!Array.isArray(prev) || !prev.length || !Array.isArray(cs) || !cs.length) return [];
+        const Tx = txOf(ctx), r2 = /* @__PURE__ */ __name((v) => Math.round(v * 100) / 100, "r2"), seen2 = /* @__PURE__ */ new Set();
+        return prev.filter((p) => p && p.kind && p.lost > 0.05 && p.tbest > 0 && p.apex >= 0).sort((a, b) => b.lost - a.lost).map((p) => {
+          const c = cs.filter((x) => x.ta > 0 && Math.abs(x.apex - p.apex) <= 60).sort((x, y) => Math.abs(x.apex - p.apex) - Math.abs(y.apex - p.apex))[0];
+          if (!c || seen2.has(c.n)) return null;
+          seen2.add(c.n);
+          const d = p.tbest - c.ta, ok = d >= 0.05 ? 1 : d <= -0.05 ? -1 : 0, nm = kindName(p.kind, ctx), left = c.lost > 0.05 ? c.lost : 0;
+          const how = ok > 0 ? Tx(`${r2(d)} s faster than your best lap there last time`, `${r2(d)} s m\xE1s r\xE1pido que tu mejor vuelta ah\xED la \xFAltima vez`, `${r2(d)} s mais r\xE1pido que sua melhor volta ali da \xFAltima vez`) : ok < 0 ? Tx(`${r2(-d)} s slower than your best lap there last time`, `${r2(-d)} s m\xE1s lento que tu mejor vuelta ah\xED la \xFAltima vez`, `${r2(-d)} s mais lento que sua melhor volta ali da \xFAltima vez`) : Tx("the same as your best lap there last time", "igual que tu mejor vuelta ah\xED la \xFAltima vez", "igual \xE0 sua melhor volta ali da \xFAltima vez");
+          const still = left ? " \xB7 " + Tx(`still ${r2(left)} s to the reference`, `a\xFAn ${r2(left)} s frente a la referencia`, `ainda ${r2(left)} s para a refer\xEAncia`) : "";
+          return { n: c.n, apex: Math.round(c.apex), kind: p.kind, name: nm, was: Math.round(p.lost * 1e3) / 1e3, d: Math.round(d * 1e3) / 1e3, ok, left: Math.round(left * 1e3) / 1e3, t: `T${c.n} \xB7 ${nm}`, text: how + still };
+        }).filter(Boolean).slice(0, 5);
+      }
+      __name(followUp, "followUp");
+      function trackGuide(md2, ctx) {
+        const cs = md2 && Array.isArray(md2.corners) ? md2.corners.filter((c) => c && c.apex >= 0) : [];
+        if (!cs.length) return null;
+        const Tx = txOf(ctx), { spd, spdU } = unitsOf(ctx), turns = turnsOf(ctx), L = md2.nb > 0 ? md2.nb * BIN2 : Math.max(...cs.map((c) => c.apex)) + 200, r2 = Math.round, r22 = /* @__PURE__ */ __name((v) => Math.round(v * 100) / 100, "r2");
+        const mx = Math.max(0, ...cs.map((c) => c.spread || 0)), imp = Array.isArray(md2.improve) ? md2.improve : [], u = spdU();
+        const out = cs.slice().sort((a, b) => a.apex - b.apex).map((c, k) => {
+          const n = turnNo(turns, c.apex, L, k + 1), dif = mx > 0 && c.spread > 0 ? c.spread / mx : 0, lines = [];
+          const level = dif >= 0.66 ? "hard" : dif >= 0.33 ? "medium" : "easy";
+          const brake = c.b0 != null && c.b1 != null ? Tx(`Brake between ${r2(c.b0)} and ${r2(c.b1)} m`, `Frena entre ${r2(c.b0)} y ${r2(c.b1)} m`, `Freie entre ${r2(c.b0)} e ${r2(c.b1)} m`) : "";
+          const g = Array.isArray(c.g) && c.g[0] >= 1 ? c.g : null, gear = g ? g[0] === g[1] ? Tx(`gear ${g[0]}`, `${g[0]}\xAA`, `${g[0]}\xAA marcha`) : Tx(`gear ${g[0]} or ${g[1]}`, `${g[0]}\xAA o ${g[1]}\xAA`, `${g[0]}\xAA ou ${g[1]}\xAA marcha`) : "";
+          const apex = c.v0 != null && c.v1 != null ? r2(spd(c.v0)) === r2(spd(c.v1)) ? `${r2(spd(c.v0))} ${u}` : `${r2(spd(c.v0))}\u2013${r2(spd(c.v1))} ${u}` : "";
+          if (brake) lines.push(brake + (gear ? Tx(`, ${gear} at the apex`, `, ${gear} en el v\xE9rtice`, `, ${gear} no \xE1pice`) : "") + (apex ? Tx(` at ${apex}`, ` a ${apex}`, ` a ${apex}`) : "") + ".");
+          const ln = c.line && Array.isArray(c.line.at) ? c.line.at : null;
+          if (ln && (ln[0] >= 1 || ln[1] <= -1)) lines.push(ln[0] >= 1 ? Tx("The fast drivers pass the apex a little inside the record's line.", "Los r\xE1pidos pasan el v\xE9rtice un poco por dentro de la trazada del r\xE9cord.", "Os r\xE1pidos passam o \xE1pice um pouco por dentro da linha do recorde.") : Tx("The fast drivers pass the apex a little outside the record's line.", "Los r\xE1pidos pasan el v\xE9rtice un poco por fuera de la trazada del r\xE9cord.", "Os r\xE1pidos passam o \xE1pice um pouco por fora da linha do recorde."));
+          const mk = c.mistake && c.mistake.kind ? c.mistake : null, mistake = mk ? Tx(`The most common tip here \xB7 ${kindName(mk.kind, ctx)} (${mk.n} drivers)`, `El consejo m\xE1s com\xFAn aqu\xED \xB7 ${kindName(mk.kind, ctx)} (${mk.n} pilotos)`, `A dica mais comum aqui \xB7 ${kindName(mk.kind, ctx)} (${mk.n} pilotos)`) : "";
+          if (mistake) lines.push(mistake);
+          const im = imp.filter((x) => Math.abs(x.apex - c.apex) <= 60).sort((a, b) => b.gain - a.gain)[0], improve = im ? Tx(`The drivers who improved here found ${r22(im.gain)} s in this corner (${im.n} drivers)`, `Los pilotos que mejoraron aqu\xED encontraron ${r22(im.gain)} s en esta curva (${im.n} pilotos)`, `Os pilotos que melhoraram aqui acharam ${r22(im.gain)} s nesta curva (${im.n} pilotos)`) : "";
+          if (improve) lines.push(improve);
+          const score = dif + (im ? Math.min(1, im.gain / 0.2) : 0) + (mk ? Math.min(0.6, mk.n / 10) : 0);
+          return { n, d: Math.round(c.d), apex: Math.round(c.apex), b: c.b0 != null ? [Math.round(c.b0), Math.round(c.b1)] : null, g, v: c.v0 != null ? [r2(spd(c.v0)), r2(spd(c.v1))] : null, dif: Math.round(dif * 100) / 100, level, levelText: level === "hard" ? Tx("Hard", "Dif\xEDcil", "Dif\xEDcil") : level === "medium" ? Tx("Medium", "Media", "M\xE9dia") : Tx("Easy", "F\xE1cil", "F\xE1cil"), brake, gear, apexSpeed: apex, mistake, improve, lines, drivers: c.n || 0, score: Math.round(score * 100) / 100 };
+        });
+        const brief = out.slice().sort((a, b) => b.score - a.score).slice(0, 3).filter((x) => x.score > 0).map((c) => ({ n: c.n, apex: c.apex, t: `T${c.n} \xB7 ${c.levelText}`, text: c.lines[0] || "" }));
+        return { corners: out, brief, drivers: Math.max(0, ...cs.map((c) => c.n || 0)), L: Math.round(L) };
+      }
+      __name(trackGuide, "trackGuide");
+      function cornerRanks(A, md2, ctx) {
+        const R = md2 && Array.isArray(md2.ranks) ? md2.ranks : [];
+        if (!A || !Array.isArray(A.bins) || !R.length) return [];
+        const s = serOf(A), turns = turnsOf(ctx), L = md2.nb > 0 ? md2.nb * BIN2 : s.length * BIN2, tAt2 = /* @__PURE__ */ __name((d) => {
+          for (let k = Math.min(s.length - 1, Math.round(d / BIN2)); k >= 0; k--) if (s[k]) return s[k][1];
+          return null;
+        }, "tAt");
+        return R.slice().sort((a, b) => a.apex - b.apex).map((c, k) => {
+          const q2 = Array.isArray(c.q) ? c.q : [];
+          if (q2.length < 3) return null;
+          const t0 = tAt2(c.i0), t1 = tAt2(c.i1);
+          if (t0 == null || t1 == null || !(t1 > t0)) return null;
+          const t = t1 - t0, faster = q2.filter((x) => x < t - 5e-3).length, top = Math.max(1, Math.round((faster + 1) / (q2.length + 1) * 100));
+          return { n: turnNo(turns, c.apex, L, k + 1), apex: Math.round(c.apex), t: Math.round(t * 1e3) / 1e3, best: q2[0], top, drivers: c.n || q2.length };
+        }).filter(Boolean);
+      }
+      __name(cornerRanks, "cornerRanks");
+      function clsLines(byCls, ctx) {
+        const Tx = txOf(ctx), N = { slow: ["Slow corners", "Curvas lentas", "Curvas lentas"], medium: ["Medium corners", "Curvas medias", "Curvas m\xE9dias"], fast: ["Fast corners", "Curvas r\xE1pidas", "Curvas r\xE1pidas"] };
+        return (Array.isArray(byCls) ? byCls : []).filter((x) => N[x.cls] && x.n >= 5).sort((a, b) => b.avg - a.avg).map((x) => ({ cls: x.cls, avg: x.avg, n: x.n, t: Tx(...N[x.cls]), text: Tx(`${Math.round(x.avg * 100) / 100} s lost on average (${x.n} corners)`, `${Math.round(x.avg * 100) / 100} s perdidos de media (${x.n} curvas)`, `${Math.round(x.avg * 100) / 100} s perdidos em m\xE9dia (${x.n} curvas)`) }));
+      }
+      __name(clsLines, "clsLines");
+      function edgeUse(A, map, ctx) {
+        ctx = ctx || {};
+        const e = map && map.edges, a = lapShape(A);
+        if (!e || !Array.isArray(e.l) || !Array.isArray(e.r) || !a || !a.g || !map.g || !Array.isArray(map.x) || e.l.length !== map.x.length) return [];
+        const nb = map.x.length, b = { x: map.x, y: map.y, g: map.g }, p = sameFrame2(b, { x: a.x, y: a.y, g: a.g }), na = p.x.length;
+        if (na < 60 || nb < 60) return [];
+        const off = new Array(nb).fill(NaN);
+        for (let i = 0; i < nb; i++) {
+          const i0 = (i - 2 + nb) % nb, i1 = (i + 2) % nb;
+          let tx = b.x[i1] - b.x[i0], ty = b.y[i1] - b.y[i0];
+          const tm = Math.hypot(tx, ty) || 1;
+          tx /= tm;
+          ty /= tm;
+          const j0 = Math.round(i * na / nb);
+          let bj = -1, bd = 1e18;
+          for (let k = -30; k <= 30; k++) {
+            const j = ((j0 + k) % na + na) % na, dx2 = p.x[j] - b.x[i], dy2 = p.y[j] - b.y[i], d2 = dx2 * dx2 + dy2 * dy2;
+            if (d2 < bd) {
+              bd = d2;
+              bj = j;
+            }
+          }
+          if (bj < 0 || bd > 1600) continue;
+          const dx = p.x[bj] - b.x[i], dy = p.y[bj] - b.y[i];
+          if (Math.abs(tx * dx + ty * dy) > 6) continue;
+          off[i] = -ty * dx + tx * dy;
+        }
+        const Tx = txOf(ctx), turns = Array.isArray(ctx.turns) && ctx.turns.length ? ctx.turns : null, at2 = /* @__PURE__ */ __name((i) => (i % nb + nb) % nb, "at");
+        let apexes = turns ? turns.map((f) => Math.round(f * nb)) : [];
+        if (!apexes.length) {
+          const s = serOf(A);
+          apexes = brakeZones2(s).map((z) => Math.round(z.imin / s.length * nb));
+        }
+        const out = [];
+        apexes.forEach((i, k) => {
+          const P = /* @__PURE__ */ __name((q2) => [b.x[at2(q2)], b.y[at2(q2)]], "P"), p0 = P(i - 8), p1 = P(i), p2 = P(i + 8), cr = (p1[0] - p0[0]) * (p2[1] - p1[1]) - (p1[1] - p0[1]) * (p2[0] - p1[0]);
+          if (Math.abs(cr) < 1) return;
+          const left = cr > 0;
+          let mn = Infinity, seen2 = 0;
+          for (let j = i + 6; j <= i + 30; j++) {
+            const q2 = at2(j), o = off[q2], l = e.l[q2], r2 = e.r[q2];
+            if (!isFinite(o) || !(l - r2 >= 6)) continue;
+            seen2++;
+            mn = Math.min(mn, left ? o - r2 : l - o);
+          }
+          if (seen2 < 10 || !(mn >= 1.5)) return;
+          const n = turns ? k + 1 : turnNo(ctx.turns, i * BIN2, nb * BIN2, k + 1), m = Math.round(mn * 2) / 2, ms = m.toFixed(1), msEs = ms.replace(".", ",");
+          out.push({ n, apex: i * BIN2, m, text: Tx(`You leave ${ms} m of track unused on the exit of T${n}`, `Dejas ${msEs} m de pista sin usar a la salida de T${n}`, `Voc\xEA deixa ${msEs} m de pista sem usar na sa\xEDda da T${n}`) });
+        });
+        return out.sort((x, y) => y.m - x.m).slice(0, 3);
+      }
+      __name(edgeUse, "edgeUse");
+      function racePace(r2, ctx) {
+        ctx = ctx || {};
+        const Tx = txOf(ctx), PACE_MIN = 4, rr = /* @__PURE__ */ __name((x) => Math.round(x * 1e3) / 1e3, "rr");
+        const stats = /* @__PURE__ */ __name((ts) => {
+          ts = ts.filter((t) => t > 0);
+          if (ts.length < PACE_MIN) return null;
+          const m = ts.slice().sort((a, b) => a - b)[Math.floor(ts.length / 2)];
+          const c = ts.filter((t) => t <= m * 1.03);
+          if (c.length < PACE_MIN) return null;
+          const avg = c.reduce((a, t) => a + t, 0) / c.length, sd2 = Math.sqrt(c.reduce((a, t) => a + (t - avg) ** 2, 0) / c.length);
+          const h = Math.floor(c.length / 2), mean = /* @__PURE__ */ __name((x) => x.reduce((a, t) => a + t, 0) / x.length, "mean");
+          return { avg, sd: sd2, early: mean(c.slice(0, h)), late: mean(c.slice(h)), n: c.length };
+        }, "stats");
+        const mine = stats((r2.laps || []).filter((l) => l.n > 1 && !l.pit && !l.cut).map((l) => l.t));
+        if (!mine) return null;
+        const res = r2.results || [], rows = [];
+        res.forEach((x, i) => {
+          const s = x.me ? mine : stats((x.pace || []).filter((l, k) => k > 0 && !l.x).map((l) => l.t));
+          if (!s) return;
+          rows.push({ pos: x.cpos || i + 1, name: x.name || "", me: !!x.me, avg: rr(s.avg), sd: rr(s.sd), gap: x.me ? 0 : rr(s.avg - mine.avg), late: x.me ? 0 : rr(s.late - mine.late), fade: rr(s.late - s.early), n: s.n });
+        });
+        if (rows.length < 2) return null;
+        const lines = [], others = rows.filter((x) => !x.me);
+        const fast = others.slice().sort((a, b) => a.late - b.late)[0];
+        if (fast && fast.late <= -0.1) lines.push({ good: false, t: Tx(`P${fast.pos} was ${(-fast.late).toFixed(2)} s a lap faster than you in the second half`, `P${fast.pos} fue ${(-fast.late).toFixed(2)} s por vuelta m\xE1s r\xE1pido que t\xFA en la segunda mitad`, `P${fast.pos} foi ${(-fast.late).toFixed(2)} s por volta mais r\xE1pido que voc\xEA na segunda metade`) });
+        const slow = others.slice().sort((a, b) => b.late - a.late)[0];
+        if (slow && slow.late >= 0.1) lines.push({ good: true, t: Tx(`You were ${slow.late.toFixed(2)} s a lap faster than P${slow.pos} in the second half`, `Fuiste ${slow.late.toFixed(2)} s por vuelta m\xE1s r\xE1pido que P${slow.pos} en la segunda mitad`, `Voc\xEA foi ${slow.late.toFixed(2)} s por volta mais r\xE1pido que P${slow.pos} na segunda metade`) });
+        const me2 = rows.find((x) => x.me), fades = others.map((x) => x.fade).sort((a, b) => a - b), fm = fades.length ? fades[Math.floor(fades.length / 2)] : null;
+        if (me2 && fm != null && me2.fade - fm >= 0.15) lines.push({ good: false, t: Tx(`Your pace dropped ${(me2.fade - fm).toFixed(2)} s a lap more than theirs from the first half to the second`, `Tu ritmo cay\xF3 ${(me2.fade - fm).toFixed(2)} s por vuelta m\xE1s que el suyo de la primera mitad a la segunda`, `Seu ritmo caiu ${(me2.fade - fm).toFixed(2)} s por volta mais que o deles da primeira metade para a segunda`) });
+        const sds = others.map((x) => x.sd).sort((a, b) => a - b), sm = sds.length ? sds[Math.floor(sds.length / 2)] : null;
+        if (me2 && sm != null && me2.sd - sm >= 0.15) lines.push({ good: false, t: Tx(`Your laps spread ${me2.sd.toFixed(2)} s against ${sm.toFixed(2)} s for the cars around you`, `Tus vueltas var\xEDan ${me2.sd.toFixed(2)} s frente a ${sm.toFixed(2)} s de los coches de tu alrededor`, `Suas voltas variam ${me2.sd.toFixed(2)} s contra ${sm.toFixed(2)} s dos carros ao seu redor`) });
+        else if (me2 && sm != null && sm - me2.sd >= 0.1) lines.push({ good: true, t: Tx(`More consistent than the cars around you, ${me2.sd.toFixed(2)} s against ${sm.toFixed(2)} s`, `M\xE1s regular que los coches de tu alrededor, ${me2.sd.toFixed(2)} s frente a ${sm.toFixed(2)} s`, `Mais regular que os carros ao seu redor, ${me2.sd.toFixed(2)} s contra ${sm.toFixed(2)} s`) });
+        return { rows, lines };
+      }
+      __name(racePace, "racePace");
+      function analyse(A, B, ctx, opts) {
+        ctx = ctx || {};
+        const Tx = txOf(ctx), withText = /* @__PURE__ */ __name((c) => ({ ...c, text: c.tip[0] ? Tx(c.tip[0], c.tip[1], c.tip[2]) : "", todo: tipTodo(c, ctx) }), "withText");
+        const facts = analyzerFacts(A, B, ctx), plan = coachPlan(A, B, Array.isArray(ctx.laps) ? ctx.laps : [], ctx);
+        const out = { v: VERSION, gap: A.time - B.time, corners: facts.corners.map(withText), facts: { ad: facts.ad, items: facts.items }, coach: { ...plan, cs: plan.cs.map(withText) } };
+        if (Array.isArray(ctx.step)) out.step = stepText(ctx.step, A, ctx);
+        if (Array.isArray(ctx.prev)) out.followup = followUp(ctx.prev, plan.cs, ctx);
+        if (ctx.model) {
+          const g = trackGuide(ctx.model, ctx), rk = cornerRanks(A, ctx.model, ctx);
+          if (g) out.guide = g;
+          if (rk.length) out.ranks = rk;
+        }
+        if (Array.isArray(ctx.byCls)) out.cls = clsLines(ctx.byCls, ctx);
+        if (ctx.map && ctx.map.edges) {
+          const eu = edgeUse(A, ctx.map, ctx);
+          if (eu.length) out.edges = eu;
+        }
+        return opts && opts.json ? JSON.stringify(out) : out;
+      }
+      __name(analyse, "analyse");
+      const api2 = {
+        VERSION,
+        BIN: BIN2,
+        lapSeries,
+        serOf,
+        lapShape,
+        sameFrame: sameFrame2,
+        lineOffsets: lineOffsets2,
+        cornerLine,
+        lineTip,
+        brakeZones: brakeZones2,
+        PHASES,
+        phaseName,
+        turnNo,
+        COACH_GEN,
+        cornerClass,
+        cornerZones,
+        OVAL_KINDS,
+        ovalOf,
+        liftZones,
+        ovalZones,
+        dirtLineTip,
+        coachCompare,
+        cornerConsistency,
+        pairSecs,
+        lapDriving,
+        kindName,
+        stepName,
+        tipMain,
+        tipShort,
+        tipTodo,
+        coachPlan,
+        stepText,
+        analyzerFacts,
+        analyse,
+        estOf,
+        followUp,
+        trackGuide,
+        cornerRanks,
+        clsLines,
+        racePace,
+        edgeUse
+      };
+      root.PW_ANALYSIS = api2;
+      if (typeof module !== "undefined" && module.exports) module.exports = api2;
+    })(typeof window !== "undefined" ? window : typeof globalThis !== "undefined" ? globalThis : exports);
+  }
+});
 
 // src/voiceice.js
 var STUN = [{ urls: ["stun:stun.cloudflare.com:3478", "stun:stun.l.google.com:19302"] }];
@@ -207,14 +1562,38 @@ function curvature(x, y, step = 5) {
   return k;
 }
 __name(curvature, "curvature");
-function cornersOf(x, y, step = 5, want = 0) {
+function cornersOf(x, y, step = 5, want = 0, slows = []) {
   const n = Math.min(x.length, y.length);
   if (n < 20) return [];
-  const k = curvature(x, y, step);
-  const cs = want > 0 && want <= 60 ? fitCount(k, n, step, want) : cornersAt(k, n, step, TURN_RADIUS);
+  const k = curvature(x, y, step), slow = slowTest(slows, n, step);
+  let cs = want > 0 && want <= 60 ? fitCount(k, n, step, want, slows) : cornersAt(k, n, step, TURN_RADIUS);
+  if (!(want > 0) && slow) cs = addDriven(cs, k, n, step, slows);
   return cs.map(({ pts, ...c }) => c);
 }
 __name(cornersOf, "cornersOf");
+var SLOW_NEAR_M = 60;
+var slowAt = /* @__PURE__ */ __name((slows, n) => slows.filter((f) => isFinite(f) && f >= 0 && f < 1).map((f) => Math.round(f * n) % n), "slowAt");
+var ringD = /* @__PURE__ */ __name((a, b, n) => {
+  const d = Math.abs(a - b) % n;
+  return Math.min(d, n - d);
+}, "ringD");
+function slowTest(slows, n, step) {
+  const s = Array.isArray(slows) ? slowAt(slows, n) : [];
+  if (!s.length) return null;
+  const near = Math.round(SLOW_NEAR_M / step);
+  return (c) => s.some((i) => ringD(i, c.i, n) <= near || c.from <= i && i <= c.to);
+}
+__name(slowTest, "slowTest");
+function addDriven(cs, k, n, step, slows) {
+  const wide = cornersAt(k, n, step, RELAX[RELAX.length - 1]), near = Math.round(SLOW_NEAR_M / step), out = cs.slice();
+  for (const i of slowAt(slows, n)) {
+    if (out.some((c) => ringD(c.i, i, n) <= near || c.from <= i && i <= c.to)) continue;
+    const w = wide.filter((c) => ringD(c.i, i, n) <= near).sort((a, b) => ringD(a.i, i, n) - ringD(b.i, i, n))[0];
+    if (w && !out.includes(w)) out.push(w);
+  }
+  return order(out);
+}
+__name(addDriven, "addDriven");
 function cornersAt(k, n, step, radius) {
   const lim = 1 / radius, minPts = Math.max(2, Math.round(TURN_MIN_M / step)), gapPts = Math.round(TURN_GAP_M / step);
   const runs = [];
@@ -254,11 +1633,13 @@ var MERGE_GAP_M = 100;
 var SPLIT_MIN_M = 30;
 var SPLIT_DIP = 0.6;
 var RELAX = [TURN_RADIUS, 400, 550, 750, 1e3];
-function fitCount(k, n, step, want) {
+function fitCount(k, n, step, want, slows = []) {
   let best = [];
+  const slow = slowTest(slows, n, step);
   for (const radius of RELAX) {
     let cs = splitTo(cornersAt(k, n, step, radius), k, want, step);
-    if (cs.length >= want) return reduceTo(cs, want, n, step, k);
+    if (slow) cs = addDriven(cs, k, n, step, slows);
+    if (cs.length >= want) return reduceTo(cs, want, n, step, k, slow);
     if (cs.length > best.length) best = cs;
   }
   return best;
@@ -295,7 +1676,7 @@ function splitTo(cs, k, want, step) {
   return cs;
 }
 __name(splitTo, "splitTo");
-function reduceTo(cs, want, n, step, k) {
+function reduceTo(cs, want, n, step, k, slow = null) {
   cs = order(cs.slice());
   const gapMax = Math.round(MERGE_GAP_M / step);
   while (cs.length > want && cs.length > 1) {
@@ -315,9 +1696,10 @@ function reduceTo(cs, want, n, step, k) {
       cs = cs.filter((c, j) => j !== pick && j !== j2);
       cs.push(joined);
     } else {
-      let g = 0;
+      let g = -1;
+      const pool = slow && cs.some((c) => !slow(c)) ? (c) => !slow(c) : () => true;
       cs.forEach((c, j) => {
-        if (c.r > cs[g].r) g = j;
+        if (pool(c) && (g < 0 || c.r > cs[g].r)) g = j;
       });
       cs.splice(g, 1);
     }
@@ -326,9 +1708,9 @@ function reduceTo(cs, want, n, step, k) {
   return cs;
 }
 __name(reduceTo, "reduceTo");
-function turnsFromPath(x, y, want = 0) {
+function turnsFromPath(x, y, want = 0, slows = []) {
   const n = Math.min(x.length, y.length);
-  return cornersOf(x, y, 5, want).map((c) => Math.round(c.i / n * 1e5) / 1e5);
+  return cornersOf(x, y, 5, want, slows).map((c) => Math.round(c.i / n * 1e5) / 1e5);
 }
 __name(turnsFromPath, "turnsFromPath");
 function lineOffsets(ax, ay, bx, by) {
@@ -477,6 +1859,204 @@ function newRecoveryCodes() {
 }
 __name(newRecoveryCodes, "newRecoveryCodes");
 
+// src/trackmaps.js
+var STATE = "trackmaps_rebuild";
+var PER_RUN = 3;
+var PER_TRACK = 6;
+async function turnCount(env, game, trackId) {
+  const r2 = await env.DB.prepare("SELECT nturns FROM track_info WHERE game=?1 AND track_id=?2").bind(game, trackId).first().catch(() => null);
+  return r2 && r2.nturns > 0 ? r2.nturns : 0;
+}
+__name(turnCount, "turnCount");
+async function noteTurnCount(env, game, trackId, track2, nturns) {
+  const n = Number(nturns);
+  if (!trackId || !Number.isInteger(n) || n < 1 || n > 60) return false;
+  const old = await env.DB.prepare("SELECT nturns, track FROM track_info WHERE game=?1 AND track_id=?2").bind(game, trackId).first().catch(() => null);
+  if (old && old.nturns === n && (old.track || "") === (track2 || old.track || "")) return false;
+  await env.DB.prepare(`INSERT INTO track_info (game, track_id, track, nturns, updated) VALUES (?1,?2,?3,?4,?5)
+     ON CONFLICT(game, track_id) DO UPDATE SET nturns=excluded.nturns, track=COALESCE(excluded.track, track_info.track), updated=excluded.updated`).bind(game, trackId, track2 ? String(track2).slice(0, 120) : null, n, Date.now()).run();
+  return true;
+}
+__name(noteTurnCount, "noteTurnCount");
+var LAYOUT_TOL = 0.06;
+function traceLen(tr2) {
+  if (!tr2 || !Array.isArray(tr2.d) || tr2.d.length < 20) return 0;
+  const b = +tr2.bin > 0 ? +tr2.bin : 5;
+  return tr2.d.length * b;
+}
+__name(traceLen, "traceLen");
+function fitsLayout(lapLen, layN) {
+  if (!(lapLen > 0) || !(layN >= 100)) return true;
+  const L = layN * 5;
+  return Math.abs(lapLen - L) / L <= LAYOUT_TOL;
+}
+__name(fitsLayout, "fitsLayout");
+async function layoutN(env, game, trackId) {
+  const r2 = await env.DB.prepare("SELECT n FROM track_maps WHERE game=?1 AND track_id=?2").bind(game, trackId).first().catch(() => null);
+  return r2 && r2.n > 0 ? r2.n : 0;
+}
+__name(layoutN, "layoutN");
+function geoPath(tr2) {
+  if (!tr2 || !Array.isArray(tr2.g) || tr2.g.length !== 2 || !tr2.g.every((v) => typeof v === "number" && isFinite(v))) return null;
+  const x = tr2.x, y = tr2.y;
+  if (!Array.isArray(x) || !Array.isArray(y) || x.length !== y.length || x.length < 100 || x.length > 3e3) return null;
+  const ok = /* @__PURE__ */ __name((v) => typeof v === "number" && isFinite(v) && Math.abs(v) < 3e4, "ok");
+  if (!x.every(ok) || !y.every(ok)) return null;
+  const r1 = /* @__PURE__ */ __name((v) => Math.round(v * 10) / 10, "r1");
+  return { x: x.map(r1), y: y.map(r1), g: tr2.g.map((v) => Math.round(v * 1e5) / 1e5) };
+}
+__name(geoPath, "geoPath");
+async function rebuildTrackMaps(env, { all = false } = {}) {
+  const st = await env.DB.prepare("SELECT v FROM app_state WHERE k=?1").bind(STATE).first().catch(() => null);
+  let state = { done: false, seen: [] };
+  try {
+    if (st && st.v) state = { done: false, seen: [], ...JSON.parse(st.v) };
+  } catch (e) {
+  }
+  if (all || state.done && Date.now() - (state.at || 0) > 864e5) state = { done: false, seen: [] };
+  if (state.done) return { checked: 0, rebuilt: 0, left: 0, done: true };
+  const rows = (await env.DB.prepare("SELECT game, track_id, time FROM track_maps WHERE geo IS NULL").all()).results || [];
+  const seen2 = new Set(state.seen), todo = rows.filter((r2) => !seen2.has(r2.game + ":" + r2.track_id));
+  const now = todo.slice(0, all ? 40 : PER_RUN);
+  let rebuilt = 0;
+  for (const t of now) {
+    seen2.add(t.game + ":" + t.track_id);
+    const laps = (await env.DB.prepare(
+      `SELECT a.trace, a.time FROM sessions s JOIN laps a ON a.session_id=s.id
+       WHERE s.track_id=?1 AND s.game=?2 AND a.valid=1 AND a.trace IS NOT NULL AND (instr(a.trace,'"g":[')>0 OR substr(a.trace,1,4)='enc:')
+         AND COALESCE(s.kind,'') NOT LIKE '%test%' ORDER BY a.time LIMIT ${PER_TRACK}`
+    ).bind(t.track_id, t.game).all().catch(() => ({ results: [] }))).results || [];
+    for (const l of laps) {
+      let path = null;
+      try {
+        path = geoPath(JSON.parse(await openData(env, l.trace)));
+      } catch (e) {
+        path = null;
+      }
+      if (!path) continue;
+      await env.DB.prepare("UPDATE track_maps SET n=?3, pts=?4, time=?5, geo=?6, created=?7 WHERE game=?1 AND track_id=?2 AND geo IS NULL").bind(t.game, t.track_id, path.x.length, JSON.stringify({ x: path.x, y: path.y }), l.time, JSON.stringify(path.g), Date.now()).run();
+      rebuilt++;
+      break;
+    }
+  }
+  const left = todo.length - now.length;
+  state = { done: left <= 0, seen: [...seen2].slice(-500), at: left <= 0 ? Date.now() : 0 };
+  await env.DB.prepare("INSERT INTO app_state (k, v, at) VALUES (?1, ?2, ?3) ON CONFLICT(k) DO UPDATE SET v=excluded.v, at=excluded.at").bind(STATE, JSON.stringify(state), Date.now()).run();
+  return { checked: now.length, rebuilt, left, done: state.done, withoutGeo: rows.length - rebuilt };
+}
+__name(rebuildTrackMaps, "rebuildTrackMaps");
+var EDGE_LAPS = 40;
+var EDGE_MIN = 8;
+var EDGE_PER_RUN = 2;
+var EDGE_AGE = 7 * 864e5;
+var EDGE_Q = 0.03;
+function inFrame(a, b) {
+  if (!a.g || !b.g) return null;
+  if (a.g[0] === b.g[0] && a.g[1] === b.g[1]) return a;
+  const dx = (a.g[1] - b.g[1]) * 111320 * Math.cos(b.g[0] * Math.PI / 180), dy = (a.g[0] - b.g[0]) * 110540;
+  return { x: a.x.map((v) => v + dx), y: a.y.map((v) => v + dy), g: b.g };
+}
+__name(inFrame, "inFrame");
+function lateral(a, b) {
+  const p = inFrame(a, b);
+  if (!p) return null;
+  const na = p.x.length, nb = b.x.length, out = new Array(nb).fill(NaN);
+  if (na < 60 || nb < 60) return null;
+  for (let i = 0; i < nb; i++) {
+    const i0 = (i - 2 + nb) % nb, i1 = (i + 2) % nb;
+    let tx = b.x[i1] - b.x[i0], ty = b.y[i1] - b.y[i0];
+    const tm = Math.hypot(tx, ty) || 1;
+    tx /= tm;
+    ty /= tm;
+    const j0 = Math.round(i * na / nb);
+    let bj = -1, bd = 1e18;
+    for (let k = -30; k <= 30; k++) {
+      const j = ((j0 + k) % na + na) % na, dx2 = p.x[j] - b.x[i], dy2 = p.y[j] - b.y[i], d2 = dx2 * dx2 + dy2 * dy2;
+      if (d2 < bd) {
+        bd = d2;
+        bj = j;
+      }
+    }
+    if (bj < 0 || bd > 40 * 40) continue;
+    const dx = p.x[bj] - b.x[i], dy = p.y[bj] - b.y[i];
+    if (Math.abs(tx * dx + ty * dy) > 6) continue;
+    out[i] = -ty * dx + tx * dy;
+  }
+  return out;
+}
+__name(lateral, "lateral");
+function edgesOf(offs, nb) {
+  const l = new Array(nb).fill(null), r2 = new Array(nb).fill(null);
+  let have = 0;
+  for (let i = 0; i < nb; i++) {
+    const v = offs.map((o) => o[i]).filter((x) => isFinite(x)).sort((a, b) => a - b);
+    if (v.length < EDGE_MIN) continue;
+    const q2 = /* @__PURE__ */ __name((f) => v[Math.min(v.length - 1, Math.max(0, Math.round(f * (v.length - 1))))], "q");
+    l[i] = Math.max(0, q2(1 - EDGE_Q));
+    r2[i] = Math.min(0, q2(EDGE_Q));
+    have++;
+  }
+  if (have < nb * 0.7) return null;
+  const fill2 = /* @__PURE__ */ __name((a) => {
+    for (let i = 0; i < nb; i++) {
+      if (a[i] != null) continue;
+      let lo = i, hi = i;
+      while (a[(lo - 1 + nb) % nb] == null && hi - lo < nb) lo--;
+      while (a[(hi + 1) % nb] == null && hi - lo < nb) hi++;
+      const va = a[(lo - 1 + nb) % nb], vb = a[(hi + 1) % nb];
+      for (let k = lo; k <= hi; k++) a[(k + nb) % nb] = va + (vb - va) * (k - lo + 1) / (hi - lo + 2);
+    }
+    return a.map((_, i) => {
+      let s = 0;
+      for (let k = -2; k <= 2; k++) s += a[(i + k + nb) % nb];
+      return Math.round(s / 5 * 10) / 10;
+    });
+  }, "fill");
+  return { l: fill2(l), r: fill2(r2) };
+}
+__name(edgesOf, "edgesOf");
+async function rebuildEdges(env) {
+  const rows = (await env.DB.prepare(
+    `SELECT m.game, m.track_id, m.n, m.pts, m.geo FROM track_maps m LEFT JOIN track_edges e ON e.game=m.game AND e.track_id=m.track_id
+     WHERE m.geo IS NOT NULL AND (e.updated IS NULL OR e.updated<?1 OR e.n<>m.n) ORDER BY e.updated LIMIT ${EDGE_PER_RUN}`
+  ).bind(Date.now() - EDGE_AGE).all().catch(() => ({ results: [] }))).results || [];
+  let built = 0;
+  for (const t of rows) {
+    let lay = null;
+    try {
+      const q2 = JSON.parse(t.pts);
+      lay = { x: q2.x, y: q2.y, g: JSON.parse(t.geo) };
+    } catch (e2) {
+      lay = null;
+    }
+    if (!lay) continue;
+    const laps = (await env.DB.prepare(
+      `SELECT a.trace FROM sessions s JOIN laps a ON a.session_id=s.id
+       WHERE s.track_id=?1 AND s.game=?2 AND a.valid=1 AND a.trace IS NOT NULL AND (instr(a.trace,'"g":[')>0 OR substr(a.trace,1,4)='enc:')
+       ORDER BY a.id DESC LIMIT ${EDGE_LAPS * 2}`
+    ).bind(t.track_id, t.game).all().catch(() => ({ results: [] }))).results || [];
+    const offs = [];
+    for (const l of laps) {
+      if (offs.length >= EDGE_LAPS) break;
+      let path = null;
+      try {
+        path = geoPath(JSON.parse(await openData(env, l.trace)));
+      } catch (e2) {
+        path = null;
+      }
+      if (!path || !fitsLayout(path.x.length * 5, t.n)) continue;
+      const o = lateral(path, lay);
+      if (o && o.filter((v) => isFinite(v)).length > t.n * 0.8) offs.push(o);
+    }
+    const e = offs.length >= EDGE_MIN ? edgesOf(offs, t.n) : null;
+    await env.DB.prepare(`INSERT INTO track_edges (game, track_id, n, laps, data, updated) VALUES (?1,?2,?3,?4,?5,?6)
+       ON CONFLICT(game, track_id) DO UPDATE SET n=excluded.n, laps=excluded.laps, data=excluded.data, updated=excluded.updated`).bind(t.game, t.track_id, t.n, offs.length, e ? JSON.stringify(e) : "{}", Date.now()).run();
+    if (e) built++;
+  }
+  return { checked: rows.length, built };
+}
+__name(rebuildEdges, "rebuildEdges");
+
 // src/pedals.js
 var BIN = 5;
 var VSTEP = 5;
@@ -601,7 +2181,7 @@ function estimateTrace(tr2, pe, shifts) {
 __name(estimateTrace, "estimateTrace");
 
 // src/model.js
-var MODEL_VERSION = 11;
+var MODEL_VERSION = 12;
 var CARD_VERSION = 2;
 var SEG_M = 250;
 var MAX_LAPS = 80;
@@ -611,6 +2191,11 @@ var LADDER_SPAN = 0.08;
 var LEVEL_BIN = 2;
 var CMP_MIN = 5;
 var CMP_DRIVERS = 3;
+var BAND_MIN = 5;
+var BAND_DRIVERS = 3;
+var IMPROVE_DRIVERS = 30;
+var IMPROVE_MIN = 3;
+var RANK_Q = 41;
 var median = /* @__PURE__ */ __name((a) => {
   const v = a.filter((x) => x != null && isFinite(x)).sort((x, y) => x - y);
   if (!v.length) return null;
@@ -636,16 +2221,17 @@ function goodLap(time, tr2) {
   if (!tr2 || !Array.isArray(tr2.d) || tr2.d.length < 60) return null;
   if (Array.isArray(tr2.f) && tr2.f.includes("traffic")) return null;
   if (Array.isArray(tr2.f) && tr2.f.includes("wet")) return null;
+  if (tr2.h && typeof tr2.h === "object" && ((+tr2.h.gap || 0) > 40 || (+tr2.h.seen || 1) < 0.9)) return null;
   const bins = tr2.d.map((x) => [+x[0], +x[5], Math.min(1, Math.max(0, +x[1] || 0)), Math.min(1, Math.max(0, +x[2] || 0)), +x[3], +x[4]]);
-  let back = 0, jumps = 0, prev = -1, prevV = null;
+  let back2 = 0, jumps = 0, prev = -1, prevV = null;
   for (const b of bins) {
     if (!(b[0] >= 0 && b[0] < 130) || !isFinite(b[1])) return null;
-    if (b[1] < prev - 0.05) back++;
+    if (b[1] < prev - 0.05) back2++;
     prev = b[1];
     if (prevV != null && Math.abs(b[0] - prevV) > 10) jumps++;
     prevV = b[0];
   }
-  if (back > 2 || jumps > 2) return null;
+  if (back2 > 2 || jumps > 2) return null;
   if (bins[bins.length - 1][1] > time + 2) return null;
   return { time, bins, field: tr2.src === "field", rival: tr2.src === "real" };
 }
@@ -705,6 +2291,7 @@ async function learnNewLaps(env, game, trackId, carId) {
     await env.DB.prepare("DELETE FROM model_laps WHERE game=?1 AND track_id=?2 AND car_id=?3 AND k=?4").bind(game, trackId, carId, k).run();
   }
   let added = 0, read = 0;
+  const layN = await layoutN(env, game, trackId);
   for (const x of [...a.results || [], ...c.results || []]) {
     const k = await sha(x.up + ":" + x.time.toFixed(3));
     const old = known.has(k);
@@ -728,7 +2315,7 @@ async function learnNewLaps(env, game, trackId, carId) {
       continue;
     }
     known.set(k, -1);
-    if (!goodLap(x.time, tr2)) continue;
+    if (!fitsLayout(traceLen(tr2), layN) || !goodLap(x.time, tr2)) continue;
     await env.DB.prepare("INSERT INTO model_laps (game, track_id, car_id, k, drv, time, data, created, temp, cmp) VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10) ON CONFLICT DO NOTHING").bind(game, trackId, carId, k, await sha("drv:" + x.up), x.time, await gz(JSON.stringify(tr2.src === "field" || tr2.src === "real" ? { d: tr2.d, src: tr2.src } : tr2.d)), Date.now(), typeof x.temp === "number" && isFinite(x.temp) ? x.temp : null, lapCompound(tr2)).run();
     added++;
   }
@@ -792,10 +2379,73 @@ function compoundsOf(rows) {
   return [...n.entries()].filter(([c, k]) => k >= CMP_MIN && d.get(c).size >= CMP_DRIVERS).map(([c]) => c).sort((p, q2) => p - q2);
 }
 __name(compoundsOf, "compoundsOf");
+function bandsOf(rows) {
+  const n = /* @__PURE__ */ new Map(), d = /* @__PURE__ */ new Map();
+  for (const x of rows) {
+    const b = bandOf(x.temp);
+    if (!b) continue;
+    n.set(b, (n.get(b) || 0) + 1);
+    if (!d.has(b)) d.set(b, /* @__PURE__ */ new Set());
+    d.get(b).add(x.drv);
+  }
+  if (n.size < 2) return [];
+  return BANDS2.filter((b) => (n.get(b) || 0) >= BAND_MIN && d.get(b).size >= BAND_DRIVERS);
+}
+__name(bandsOf, "bandsOf");
+function progressPairs(rows) {
+  const per = /* @__PURE__ */ new Map();
+  for (const x of rows) {
+    if (!per.has(x.drv)) per.set(x.drv, []);
+    per.get(x.drv).push(x);
+  }
+  const out = [];
+  for (const l of per.values()) {
+    if (l.length < 2) continue;
+    const best = l.reduce((a, b) => b.time < a.time ? b : a);
+    const older = l.filter((x) => x !== best && (x.created || 0) < (best.created || 0) && x.time > best.time * 1.003);
+    if (!older.length) continue;
+    const first = older.reduce((a, b) => (b.created || 0) < (a.created || 0) ? b : a);
+    out.push([first, best, first.time - best.time]);
+  }
+  return out.sort((a, b) => b[2] - a[2]).slice(0, IMPROVE_DRIVERS).map(([a, b]) => [a, b]);
+}
+__name(progressPairs, "progressPairs");
+function improveSteps(pairs, zones, n) {
+  const out = [];
+  for (const z of zones) {
+    const g = [];
+    for (const { old, now } of pairs) {
+      const a = cornerTime(old.bins, z, Math.min(n, old.bins.length)), b = cornerTime(now.bins, z, Math.min(n, now.bins.length));
+      if (a != null && b != null) g.push(a - b);
+    }
+    if (g.length < IMPROVE_MIN) continue;
+    g.sort((p, q2) => p - q2);
+    const gain = g[g.length >> 1];
+    if (gain > 0.02) out.push({ apex: z.imin * 5, gain: r(gain, 1e3), n: g.length });
+  }
+  return out.sort((a, b) => b.gain - a.gain).slice(0, 3);
+}
+__name(improveSteps, "improveSteps");
+function cornerRanksOf(sorted, zones, n) {
+  const best = [], seen2 = /* @__PURE__ */ new Set();
+  for (const l of sorted) {
+    if (seen2.has(l.up)) continue;
+    seen2.add(l.up);
+    best.push(l);
+  }
+  if (best.length < 3) return [];
+  return zones.map((z) => {
+    const ts = best.map((l) => cornerTime(l.bins, z, n)).filter((t) => t != null && t > 0).sort((a, b) => a - b);
+    if (ts.length < 3) return null;
+    const q2 = ts.length <= RANK_Q ? ts : Array.from({ length: RANK_Q }, (_, k) => ts[Math.round(k * (ts.length - 1) / (RANK_Q - 1))]);
+    return { apex: z.imin * 5, i0: Math.max(0, z.i - 10) * 5, i1: Math.min(n - 1, z.imin + 30) * 5, n: ts.length, q: q2.map((t) => r(t, 1e3)) };
+  }).filter(Boolean);
+}
+__name(cornerRanksOf, "cornerRanksOf");
 async function candidates(env, game, trackId, carId) {
   await adoptOldSessions(env, game, trackId, carId);
   const learnt = await learnNewLaps(env, game, trackId, carId);
-  const rows = (await env.DB.prepare("SELECT drv, time, data, temp, cmp FROM model_laps WHERE game=?1 AND track_id=?2 AND car_id=?3 ORDER BY time LIMIT 5000").bind(game, trackId, carId).all()).results || [];
+  const rows = (await env.DB.prepare("SELECT drv, time, data, temp, cmp, created FROM model_laps WHERE game=?1 AND track_id=?2 AND car_id=?3 ORDER BY time LIMIT 5000").bind(game, trackId, carId).all()).results || [];
   const drivers = new Set(rows.map((x) => x.drv)).size;
   const open = /* @__PURE__ */ new Map();
   let card;
@@ -827,7 +2477,14 @@ async function candidates(env, game, trackId, carId) {
   const laps = await lapsOf(pickLaps(rows));
   const byCmp = /* @__PURE__ */ new Map();
   for (const c of compoundsOf(rows)) byCmp.set(c, await lapsOf(pickLaps(rows.filter((x) => x.cmp === c))));
-  return { laps, byCmp, drivers, more: learnt.more, added: learnt.added };
+  const byBand = /* @__PURE__ */ new Map();
+  for (const b of bandsOf(rows)) byBand.set(b, await lapsOf(pickLaps(rows.filter((x) => bandOf(x.temp) === b))));
+  const pairs = [];
+  for (const [o, nw] of progressPairs(rows)) {
+    const [a, b] = await lapsOf([o, nw]);
+    if (a && b && a !== b) pairs.push({ old: a, now: b });
+  }
+  return { laps, byCmp, byBand, pairs, drivers, more: learnt.more, added: learnt.added };
 }
 __name(candidates, "candidates");
 var CORNER_FAST = 0.3;
@@ -899,6 +2556,18 @@ function cornerCard(sorted, fastest, n) {
     const all = range(pick.map(() => true), zones, z);
     if (!all) continue;
     const c = { d: z.i * 5, apex: z.imin * 5, ...all };
+    const gs = [];
+    zones.forEach((q2, k) => {
+      const l = pick[k];
+      if (l.field) return;
+      const mm = q2.filter((x) => Math.abs(x.i - z.i) <= SAME_ZONE).sort((p, w) => Math.abs(p.i - z.i) - Math.abs(w.i - z.i))[0];
+      const g = mm && l.bins[mm.imin] ? Math.round(l.bins[mm.imin][4] || 0) : 0;
+      if (g >= 1) gs.push(g);
+    });
+    if (gs.length >= 2) {
+      gs.sort((a, b) => a - b);
+      c.g = [gs[Math.floor(gs.length * 0.2)], gs[Math.ceil(gs.length * 0.8) - 1]];
+    }
     const bands = {};
     for (const b of BANDS2) {
       const rg = range(pick.map((l) => bandOf(l.temp) === b), zones, z);
@@ -1075,6 +2744,7 @@ async function refsOf(laps, pathFor) {
     idealTime: r(fastest.time, 1e3),
     fastest: r(fastest.time, 1e3),
     lineXY,
+    ranks: cornerRanksOf(sorted, zr, n),
     ideal: record2,
     idealField: !!fastest.field,
     corners,
@@ -1085,7 +2755,7 @@ async function refsOf(laps, pathFor) {
 __name(refsOf, "refsOf");
 async function buildModel(env, game, trackId, carId) {
   carId = await famId(env, game, carId);
-  const { laps: raw, byCmp: rawCmp, drivers, more, added } = await candidates(env, game, trackId, carId);
+  const { laps: raw, byCmp: rawCmp, byBand: rawBand, pairs, drivers, more, added } = await candidates(env, game, trackId, carId);
   if (added) await markCar(env, game, carId);
   const shared = await env.DB.prepare(
     `SELECT COUNT(*) AS n, MIN(time) AS best FROM community_laps WHERE track_id=?1 AND car_id=?2 AND game=?3 AND COALESCE(shown,'')<>'model'`
@@ -1114,15 +2784,45 @@ async function buildModel(env, game, trackId, carId) {
     if (cl.length >= 2) cmps[c] = await refsOf(cl, pathFor);
   }
   if (Object.keys(cmps).length) model.byCmp = cmps;
+  const bands = {};
+  for (const [b, ls] of rawBand || []) {
+    const cl = cleanLaps(ls);
+    if (cl.length >= 2) {
+      const x = await refsOf(cl, async () => null);
+      bands[b] = { n: x.n, ladder: x.ladder.map(({ x: _x, y: _y, g: _g, ...e }) => e) };
+    }
+  }
+  if (Object.keys(bands).length) model.byBand = bands;
+  const nb = model.nb || 0, fastest = laps.reduce((a, b) => b.time < a.time ? b : a);
+  model.improve = improveSteps(pairs || [], brakeZones(fastest.bins, nb), nb);
+  await usualTips(env, game, trackId, carId, model.corners || []).catch(() => {
+  });
   return model;
 }
 __name(buildModel, "buildModel");
-function forCompound(md2, cmp) {
+var MISTAKE_MIN = 3;
+async function usualTips(env, game, trackId, carId, corners) {
+  if (!corners.length) return;
+  const rows = (await env.DB.prepare("SELECT apex, kind, account FROM coach_tips WHERE game=?1 AND track_id=?2 AND car_id=?3 AND kind<>'' AND lost>0.05 LIMIT 5000").bind(game, trackId, carId).all()).results || [];
+  for (const c of corners) {
+    const by = /* @__PURE__ */ new Map();
+    for (const x of rows) {
+      if (Math.abs(x.apex - c.apex) > 60) continue;
+      if (!by.has(x.kind)) by.set(x.kind, /* @__PURE__ */ new Set());
+      by.get(x.kind).add(x.account);
+    }
+    const top = [...by.entries()].map(([kind, s]) => ({ kind, n: s.size })).sort((a, b) => b.n - a.n)[0];
+    if (top && top.n >= MISTAKE_MIN) c.mistake = top;
+  }
+}
+__name(usualTips, "usualTips");
+function forCompound(md2, cmp, temp) {
   if (!md2) return md2;
-  const { byCmp, ...m } = md2;
+  const { byCmp, byBand, ...m } = md2;
   const list = byCmp ? Object.keys(byCmp).map(Number).sort((p, q2) => p - q2) : [];
   const one = byCmp && Number.isInteger(cmp) && cmp >= 0 ? byCmp[cmp] : null;
-  return { ...m, ...list.length ? { cmps: list } : {}, ...one ? { ...one, cmp } : {} };
+  const b = bandOf(temp), bb = !one && b && byBand ? byBand[b] : null;
+  return { ...m, ...list.length ? { cmps: list } : {}, ...one ? { ...one, cmp } : {}, ...bb ? { ladder: bb.ladder, band: b } : {} };
 }
 __name(forCompound, "forCompound");
 var CARD_TRACKS = 12;
@@ -1321,6 +3021,20 @@ async function rebuild(env, game, trackId, carId) {
   return m;
 }
 __name(rebuild, "rebuild");
+async function slowsOf(env, game, trackId) {
+  const rows = (await env.DB.prepare("SELECT data FROM model_cache WHERE game=?1 AND track_id=?2 AND data IS NOT NULL ORDER BY built DESC LIMIT 4").bind(game, trackId).all().catch(() => ({ results: [] }))).results || [];
+  const out = [];
+  for (const row of rows) {
+    try {
+      const m = JSON.parse(await gunz(row.data)), L = (m.nb || 0) * 5;
+      if (!(L > 500)) continue;
+      for (const c of m.corners || []) if ((c.n || 0) >= 3 && c.apex > 0 && c.apex < L) out.push(Math.round(c.apex / L * 1e4) / 1e4);
+    } catch (e) {
+    }
+  }
+  return out;
+}
+__name(slowsOf, "slowsOf");
 async function getModel(env, game, trackId, carId) {
   carId = await famId(env, game, carId);
   const row = await env.DB.prepare("SELECT dirty, built, data FROM model_cache WHERE game=?1 AND track_id=?2 AND car_id=?3").bind(game, trackId, carId).first();
@@ -1364,75 +3078,6 @@ async function rebuildDirty(env, { daily = false } = {}) {
   }
 }
 __name(rebuildDirty, "rebuildDirty");
-
-// src/trackmaps.js
-var STATE = "trackmaps_rebuild";
-var PER_RUN = 3;
-var PER_TRACK = 6;
-async function turnCount(env, game, trackId) {
-  const r2 = await env.DB.prepare("SELECT nturns FROM track_info WHERE game=?1 AND track_id=?2").bind(game, trackId).first().catch(() => null);
-  return r2 && r2.nturns > 0 ? r2.nturns : 0;
-}
-__name(turnCount, "turnCount");
-async function noteTurnCount(env, game, trackId, track2, nturns) {
-  const n = Number(nturns);
-  if (!trackId || !Number.isInteger(n) || n < 1 || n > 60) return false;
-  const old = await env.DB.prepare("SELECT nturns, track FROM track_info WHERE game=?1 AND track_id=?2").bind(game, trackId).first().catch(() => null);
-  if (old && old.nturns === n && (old.track || "") === (track2 || old.track || "")) return false;
-  await env.DB.prepare(`INSERT INTO track_info (game, track_id, track, nturns, updated) VALUES (?1,?2,?3,?4,?5)
-     ON CONFLICT(game, track_id) DO UPDATE SET nturns=excluded.nturns, track=COALESCE(excluded.track, track_info.track), updated=excluded.updated`).bind(game, trackId, track2 ? String(track2).slice(0, 120) : null, n, Date.now()).run();
-  return true;
-}
-__name(noteTurnCount, "noteTurnCount");
-function geoPath(tr2) {
-  if (!tr2 || !Array.isArray(tr2.g) || tr2.g.length !== 2 || !tr2.g.every((v) => typeof v === "number" && isFinite(v))) return null;
-  const x = tr2.x, y = tr2.y;
-  if (!Array.isArray(x) || !Array.isArray(y) || x.length !== y.length || x.length < 100 || x.length > 3e3) return null;
-  const ok = /* @__PURE__ */ __name((v) => typeof v === "number" && isFinite(v) && Math.abs(v) < 3e4, "ok");
-  if (!x.every(ok) || !y.every(ok)) return null;
-  const r1 = /* @__PURE__ */ __name((v) => Math.round(v * 10) / 10, "r1");
-  return { x: x.map(r1), y: y.map(r1), g: tr2.g.map((v) => Math.round(v * 1e5) / 1e5) };
-}
-__name(geoPath, "geoPath");
-async function rebuildTrackMaps(env, { all = false } = {}) {
-  const st = await env.DB.prepare("SELECT v FROM app_state WHERE k=?1").bind(STATE).first().catch(() => null);
-  let state = { done: false, seen: [] };
-  try {
-    if (st && st.v) state = { done: false, seen: [], ...JSON.parse(st.v) };
-  } catch (e) {
-  }
-  if (all || state.done && Date.now() - (state.at || 0) > 864e5) state = { done: false, seen: [] };
-  if (state.done) return { checked: 0, rebuilt: 0, left: 0, done: true };
-  const rows = (await env.DB.prepare("SELECT game, track_id, time FROM track_maps WHERE geo IS NULL").all()).results || [];
-  const seen2 = new Set(state.seen), todo = rows.filter((r2) => !seen2.has(r2.game + ":" + r2.track_id));
-  const now = todo.slice(0, all ? 40 : PER_RUN);
-  let rebuilt = 0;
-  for (const t of now) {
-    seen2.add(t.game + ":" + t.track_id);
-    const laps = (await env.DB.prepare(
-      `SELECT a.trace, a.time FROM sessions s JOIN laps a ON a.session_id=s.id
-       WHERE s.track_id=?1 AND s.game=?2 AND a.valid=1 AND a.trace IS NOT NULL AND (instr(a.trace,'"g":[')>0 OR substr(a.trace,1,4)='enc:')
-         AND COALESCE(s.kind,'') NOT LIKE '%test%' ORDER BY a.time LIMIT ${PER_TRACK}`
-    ).bind(t.track_id, t.game).all().catch(() => ({ results: [] }))).results || [];
-    for (const l of laps) {
-      let path = null;
-      try {
-        path = geoPath(JSON.parse(await openData(env, l.trace)));
-      } catch (e) {
-        path = null;
-      }
-      if (!path) continue;
-      await env.DB.prepare("UPDATE track_maps SET n=?3, pts=?4, time=?5, geo=?6, created=?7 WHERE game=?1 AND track_id=?2 AND geo IS NULL").bind(t.game, t.track_id, path.x.length, JSON.stringify({ x: path.x, y: path.y }), l.time, JSON.stringify(path.g), Date.now()).run();
-      rebuilt++;
-      break;
-    }
-  }
-  const left = todo.length - now.length;
-  state = { done: left <= 0, seen: [...seen2].slice(-500), at: left <= 0 ? Date.now() : 0 };
-  await env.DB.prepare("INSERT INTO app_state (k, v, at) VALUES (?1, ?2, ?3) ON CONFLICT(k) DO UPDATE SET v=excluded.v, at=excluded.at").bind(STATE, JSON.stringify(state), Date.now()).run();
-  return { checked: now.length, rebuilt, left, done: state.done, withoutGeo: rows.length - rebuilt };
-}
-__name(rebuildTrackMaps, "rebuildTrackMaps");
 
 // src/supportlib.js
 var SUPPORT_MAX = 4e3;
@@ -1545,8 +3190,8 @@ async function handleSupport(req, env, url, { sessionAccount: sessionAccount2, i
     if (c && c.n >= SUPPORT_PER_DAY) return err("that is enough for today, we answer soon", 429);
     const id3 = crypto.randomUUID();
     await env.DB.batch(driverMessage(env, acc.id, id3, now, { ...f, kind: "chat" }));
-    const esc5 = await openEscrow2(env, acc.escrow).catch(() => null);
-    const mailed = await sendSupportChat2(env, { ...f, nick: acc.display || "", accountId: acc.id, email: esc5 && esc5.email || "" }).catch(() => false);
+    const esc6 = await openEscrow2(env, acc.escrow).catch(() => null);
+    const mailed = await sendSupportChat2(env, { ...f, nick: acc.display || "", accountId: acc.id, email: esc6 && esc6.email || "" }).catch(() => false);
     return json2({ ok: true, mailed, msg: { id: id3, me: true, text: f.text, created: now, kind: "chat" } });
   }
   if (!p.startsWith("/community/admin/support")) return err("not found", 404);
@@ -1581,8 +3226,8 @@ async function handleSupport(req, env, url, { sessionAccount: sessionAccount2, i
       env.DB.prepare(SQL_SUPPORT_READ).bind(id2, now),
       env.DB.prepare(SQL_SUPPORT_READ_T).bind(id2)
     ]);
-    const [esc5, lr] = await Promise.all([openEscrow2(env, a.escrow).catch(() => null), env.DB.prepare(SQL_LAST_LANG).bind(id2).first()]);
-    const mailed = esc5 && esc5.email ? await sendSupportReply2(env, esc5.email, t.text, lr && lr.lang).catch(() => false) : false;
+    const [esc6, lr] = await Promise.all([openEscrow2(env, a.escrow).catch(() => null), env.DB.prepare(SQL_LAST_LANG).bind(id2).first()]);
+    const mailed = esc6 && esc6.email ? await sendSupportReply2(env, esc6.email, t.text, lr && lr.lang).catch(() => false) : false;
     return json2({ ok: true, mailed, msg: { id: mid, support: true, text: t.text, created: now, read: null, rating: null, device: "", v: "", view: "", kind: "reply", style: null } });
   }
   return err("not found", 404);
@@ -2465,17 +4110,17 @@ async function steamReturn(req, env, url) {
   const state = url.searchParams.get("state") || "";
   if (!isHex48(state)) return Response.redirect(base2 + "/?steamLogin=0", 302);
   const st = await env.DB.prepare("DELETE FROM steam_oauth WHERE state_hash=?1 RETURNING code_hash, account_id, device, kind, port, app, expires").bind(await sha256("steam-oauth:" + state)).first();
-  const back = /* @__PURE__ */ __name((q2) => goOn(base2, "steam", st, state, q2), "back");
-  const fail2 = /* @__PURE__ */ __name(() => back(st && st.kind === "link" ? "steamLinked=0" : "steamLogin=0"), "fail");
+  const back2 = /* @__PURE__ */ __name((q2) => goOn(base2, "steam", st, state, q2), "back");
+  const fail2 = /* @__PURE__ */ __name(() => back2(st && st.kind === "link" ? "steamLinked=0" : "steamLogin=0"), "fail");
   if (!st || st.expires < Date.now()) return fail2();
   try {
-    return await steamAnswer(env, url, base2, state, st, back, fail2);
+    return await steamAnswer(env, url, base2, state, st, back2, fail2);
   } catch (e) {
     return fail2();
   }
 }
 __name(steamReturn, "steamReturn");
-async function steamAnswer(env, url, base2, state, st, back, fail2) {
+async function steamAnswer(env, url, base2, state, st, back2, fail2) {
   const ans = openidAnswer(url.searchParams, returnTo(base2, state));
   if (!ans) return fail2();
   try {
@@ -2487,15 +4132,15 @@ async function steamAnswer(env, url, base2, state, st, back, fail2) {
   const persona = await personaOf(env, ans.steamid);
   if (st.kind === "link") {
     if (!st.account_id) return fail2();
-    return back("steamLink=" + await newGrant(env, "link", st, ans.steamid, persona, 5 * 6e4));
+    return back2("steamLink=" + await newGrant(env, "link", st, ans.steamid, persona, 5 * 6e4));
   }
   if (await steamAccountId(env, ans.steamid)) {
     await nameLink(env, ans.steamid, persona);
-    return back("steamLogin=" + await newGrant(env, "login", st, ans.steamid, persona, 5 * 6e4));
+    return back2("steamLogin=" + await newGrant(env, "login", st, ans.steamid, persona, 5 * 6e4));
   }
   const q2 = new URLSearchParams({ steamLogin: "0", new: "1", sid: await newGrant(env, "signup", st, ans.steamid, persona, 30 * 6e4) });
   if (persona) q2.set("persona", persona);
-  return back(String(q2));
+  return back2(String(q2));
 }
 __name(steamAnswer, "steamAnswer");
 async function steamAccount(env, a, p, m, body, url, passCheck) {
@@ -3279,17 +4924,17 @@ async function discordOAuth(req, env, url) {
   const state = url.searchParams.get("state") || "", code = url.searchParams.get("code") || "";
   if (!isHex482(state)) return Response.redirect(base2 + "/?discordLogin=0", 302);
   const st = await env.DB.prepare("DELETE FROM discord_oauth WHERE state_hash=?1 RETURNING code_hash, account_id, device, kind, port, app, expires").bind(await sha256("discord-oauth:" + state)).first();
-  const back = /* @__PURE__ */ __name((q2) => goOn(base2, "discord", st && st.kind !== "legacy" ? st : null, state, q2), "back");
-  const fail2 = /* @__PURE__ */ __name(() => back(st && st.kind !== "login" ? "discordLinked=0" : "discordLogin=0"), "fail");
+  const back2 = /* @__PURE__ */ __name((q2) => goOn(base2, "discord", st && st.kind !== "legacy" ? st : null, state, q2), "back");
+  const fail2 = /* @__PURE__ */ __name(() => back2(st && st.kind !== "login" ? "discordLinked=0" : "discordLogin=0"), "fail");
   if (!st || st.expires < Date.now() || !code || !oauthReady(env)) return fail2();
   try {
-    return await discordAnswer(env, url, st, code, back, fail2);
+    return await discordAnswer(env, url, st, code, back2, fail2);
   } catch (e) {
     return fail2();
   }
 }
 __name(discordOAuth, "discordOAuth");
-async function discordAnswer(env, url, st, code, back, fail2) {
+async function discordAnswer(env, url, st, code, back2, fail2) {
   let me2 = null;
   try {
     const t = await fetch(API + "/oauth2/token", {
@@ -3308,19 +4953,19 @@ async function discordAnswer(env, url, st, code, back, fail2) {
   if (st.kind === "legacy") {
     if (!st.account_id) return fail2();
     const other = await env.DB.prepare("SELECT account_id FROM discord_links WHERE discord_id=?1").bind(me2.id).first();
-    if (other && other.account_id !== st.account_id) return back("discordLinked=taken");
+    if (other && other.account_id !== st.account_id) return back2("discordLinked=taken");
     await linkPair(env, me2.id, st.account_id, me2.handle, null, false);
-    return back("discordLinked=1");
+    return back2("discordLinked=1");
   }
   if (st.kind === "link") {
     if (!st.account_id) return fail2();
-    return back("discordLink=" + await newGrant2(env, "link", st, me2, 5 * 6e4));
+    return back2("discordLink=" + await newGrant2(env, "link", st, me2, 5 * 6e4));
   }
-  if (await discordAccountId(env, me2.id)) return back("discordLogin=" + await newGrant2(env, "login", st, me2, 5 * 6e4));
-  if (await discordLinkedAny(env, me2.id)) return back("discordLogin=0&relink=1");
+  if (await discordAccountId(env, me2.id)) return back2("discordLogin=" + await newGrant2(env, "login", st, me2, 5 * 6e4));
+  if (await discordLinkedAny(env, me2.id)) return back2("discordLogin=0&relink=1");
   const q2 = new URLSearchParams({ discordLogin: "0", new: "1", sid: await newGrant2(env, "signup", st, me2, 30 * 6e4) });
   if (me2.name) q2.set("name", me2.name);
-  return back(String(q2));
+  return back2(String(q2));
 }
 __name(discordAnswer, "discordAnswer");
 async function discordAccount(env, a, p, m, body, url, passCheck) {
@@ -3469,12 +5114,111 @@ async function escrowLogin(env, a) {
 }
 __name(escrowLogin, "escrowLogin");
 
+// src/google.js
+var SITE4 = "https://pitlanehq.app";
+var AUTH = "https://accounts.google.com/o/oauth2/v2/auth";
+var TOKEN = "https://oauth2.googleapis.com/token";
+var hexOf2 = /* @__PURE__ */ __name((b) => [...new Uint8Array(b)].map((x) => x.toString(16).padStart(2, "0")).join(""), "hexOf");
+var rid3 = /* @__PURE__ */ __name(() => hexOf2(crypto.getRandomValues(new Uint8Array(24))), "rid");
+var isHex483 = /* @__PURE__ */ __name((v) => typeof v === "string" && /^[0-9a-f]{48}$/.test(v), "isHex48");
+var portOf3 = /* @__PURE__ */ __name((v) => Number.isInteger(Number(v)) && Number(v) > 0 && Number(v) < 65536 ? Number(v) : null, "portOf");
+var siteOf2 = /* @__PURE__ */ __name((env, url) => env.LOCAL === "1" && url ? url.origin : SITE4, "siteOf");
+var back = /* @__PURE__ */ __name((env, url) => siteOf2(env, url) + "/google/oauth", "back");
+var googleReady = /* @__PURE__ */ __name((env) => env.GOOGLE_ON === "1" && !!(env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET), "googleReady");
+async function googleStart(env, url, device, port, app) {
+  if (portOf3(port) && appOf(app)) return { error: "port or app, not both" };
+  const state = rid3(), code = rid3(), now = Date.now();
+  await env.DB.batch([
+    env.DB.prepare("DELETE FROM google_oauth WHERE expires<?1").bind(now),
+    env.DB.prepare("INSERT INTO google_oauth (state_hash, code_hash, device, port, app, expires) VALUES (?1,?2,?3,?4,?5,?6)").bind(await sha256("google-oauth:" + state), await sha256("google-code:" + code), cleanName(device) || null, portOf3(port), appOf(app) ? 1 : 0, now + 10 * 6e4)
+  ]);
+  const q2 = new URLSearchParams({ client_id: env.GOOGLE_CLIENT_ID, response_type: "code", scope: "openid email profile", redirect_uri: back(env, url), state, prompt: "select_account" });
+  return { url: AUTH + "?" + q2, state, code };
+}
+__name(googleStart, "googleStart");
+function googleUser(idToken, clientId, now = Date.now()) {
+  try {
+    const p = JSON.parse(atob(String(idToken).split(".")[1].replace(/-/g, "+").replace(/_/g, "/")));
+    if (!p || p.iss !== "https://accounts.google.com" && p.iss !== "accounts.google.com") return null;
+    if (p.aud !== clientId || !(Number(p.exp) * 1e3 > now) || !/^[0-9]{5,40}$/.test(String(p.sub || ""))) return null;
+    const verified = p.email_verified === true || p.email_verified === "true";
+    const email = verified && typeof p.email === "string" && /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(p.email) ? p.email.trim().toLowerCase() : "";
+    return { sub: String(p.sub), email, name: cleanName(p.name || p.given_name || "") };
+  } catch (e) {
+    return null;
+  }
+}
+__name(googleUser, "googleUser");
+async function newGrant3(env, kind, st, me2, ttl) {
+  const g = rid3();
+  await env.DB.batch([
+    env.DB.prepare("DELETE FROM google_grants WHERE expires<?1").bind(Date.now()),
+    env.DB.prepare("INSERT INTO google_grants (grant_hash, code_hash, sub, email_hash, email, name, device, kind, expires) VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9)").bind(await sha256("google-grant:" + g), st.code_hash, me2.sub, me2.email ? await emailHash(env, me2.email) : null, me2.email && env.DATA_KEY ? await sealData(env, me2.email) : null, me2.name || null, st.device, kind, Date.now() + ttl)
+  ]);
+  return g;
+}
+__name(newGrant3, "newGrant");
+async function useGoogleGrant(env, g, kind, code) {
+  if (!isHex483(g) || !isHex483(code)) return null;
+  const r2 = await env.DB.prepare("DELETE FROM google_grants WHERE grant_hash=?1 AND kind=?2 RETURNING code_hash, sub, email_hash, email, name, device, expires").bind(await sha256("google-grant:" + g), kind).first();
+  if (!r2 || r2.expires < Date.now() || r2.code_hash !== await sha256("google-code:" + code)) return null;
+  let email = "";
+  try {
+    email = r2.email ? String(await openData(env, r2.email)) : "";
+  } catch (e) {
+  }
+  return { ...r2, email };
+}
+__name(useGoogleGrant, "useGoogleGrant");
+var googleLinked = /* @__PURE__ */ __name(async (env, sub) => (await env.DB.prepare("SELECT account_id FROM google_links WHERE sub=?1").bind(sub).first() || {}).account_id || null, "googleLinked");
+async function googleAccountId(env, sub, eh) {
+  const id2 = await googleLinked(env, sub);
+  if (id2 || !eh) return id2;
+  return (await env.DB.prepare("SELECT id FROM accounts WHERE email_hash=?1").bind(eh).first() || {}).id || null;
+}
+__name(googleAccountId, "googleAccountId");
+async function linkGoogle(env, sub, accountId) {
+  const other = await googleLinked(env, sub);
+  if (other && other !== accountId) return "taken";
+  await env.DB.batch([
+    env.DB.prepare("DELETE FROM google_links WHERE sub=?1 OR account_id=?2").bind(sub, accountId),
+    env.DB.prepare("INSERT INTO google_links (sub, account_id, created) VALUES (?1,?2,?3)").bind(sub, accountId, Date.now())
+  ]);
+  return "ok";
+}
+__name(linkGoogle, "linkGoogle");
+async function googleOAuth(req, env, url) {
+  const base2 = siteOf2(env, url);
+  const state = url.searchParams.get("state") || "", code = url.searchParams.get("code") || "";
+  if (!isHex483(state)) return Response.redirect(base2 + "/?googleLogin=0", 302);
+  const st = await env.DB.prepare("DELETE FROM google_oauth WHERE state_hash=?1 RETURNING code_hash, device, port, app, expires").bind(await sha256("google-oauth:" + state)).first();
+  const to = /* @__PURE__ */ __name((q2) => goOn(base2, "google", st, state, q2), "to");
+  if (!st || st.expires < Date.now() || !code || !googleReady(env)) return to("googleLogin=0");
+  try {
+    const t = await fetch(TOKEN, {
+      method: "POST",
+      headers: { "content-type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({ client_id: env.GOOGLE_CLIENT_ID, client_secret: env.GOOGLE_CLIENT_SECRET, grant_type: "authorization_code", code, redirect_uri: back(env, url) })
+    });
+    const tok = t.ok ? await t.json() : null;
+    const me2 = tok && tok.id_token ? googleUser(tok.id_token, env.GOOGLE_CLIENT_ID) : null;
+    if (!me2) return to("googleLogin=0");
+    if (await googleAccountId(env, me2.sub, me2.email ? await emailHash(env, me2.email) : null)) return to("googleLogin=" + await newGrant3(env, "login", st, me2, 5 * 6e4));
+    const q2 = new URLSearchParams({ googleLogin: "0", new: "1", sid: await newGrant3(env, "signup", st, me2, 30 * 6e4) });
+    if (me2.name) q2.set("name", me2.name);
+    return to(String(q2));
+  } catch (e) {
+    return to("googleLogin=0");
+  }
+}
+__name(googleOAuth, "googleOAuth");
+
 // src/accounts.js
 var JSONH4 = { "content-type": "application/json; charset=utf-8", "cache-control": "no-store", "access-control-allow-origin": "*" };
 var json6 = /* @__PURE__ */ __name((v, status = 200) => new Response(JSON.stringify(v), { status, headers: JSONH4 }), "json");
 var err3 = /* @__PURE__ */ __name((msg, status) => json6({ error: msg }, status), "err");
 var hex2 = /* @__PURE__ */ __name((b) => [...new Uint8Array(b)].map((x) => x.toString(16).padStart(2, "0")).join(""), "hex");
-var rid3 = /* @__PURE__ */ __name((n = 12) => hex2(crypto.getRandomValues(new Uint8Array(n))), "rid");
+var rid4 = /* @__PURE__ */ __name((n = 12) => hex2(crypto.getRandomValues(new Uint8Array(n))), "rid");
 async function sha256(t) {
   return hex2(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(t)));
 }
@@ -3507,30 +5251,32 @@ async function tooMany(env, keys, limits) {
 }
 __name(tooMany, "tooMany");
 var fail = /* @__PURE__ */ __name((env, keys) => env.DB.batch(keys.map((k) => env.DB.prepare("INSERT INTO auth_fails (k, t) VALUES (?1, ?2)").bind(k, Date.now()))), "fail");
-async function newSession(env, accountId, device) {
-  const token = rid3(32);
-  await env.DB.prepare("INSERT INTO account_sessions (id, account_id, token_hash, device, created, last_seen) VALUES (?1,?2,?3,?4,?5,?5)").bind(rid3(8), accountId, await sha256(token), cleanName(device) || "PC", Date.now()).run();
+async function newSession(env, accountId, device, gated) {
+  const token = rid4(32);
+  await env.DB.prepare("INSERT INTO account_sessions (id, account_id, token_hash, device, created, last_seen, gated) VALUES (?1,?2,?3,?4,?5,?5,?6)").bind(rid4(8), accountId, await sha256(token), cleanName(device) || "PC", Date.now(), gated ? 1 : 0).run();
   return token;
 }
 __name(newSession, "newSession");
-async function sessionAccount(req, env) {
+var gatedError = /* @__PURE__ */ __name(() => Object.assign(new Error("verify your email first: we sent you a link, open it and then sign in"), { gated: true }), "gatedError");
+async function sessionAccount(req, env, gate) {
   const h = req.headers.get("authorization") || "";
   const t = h.startsWith("Bearer ") ? h.slice(7).trim() : "";
   if (t.length < 40) return null;
   const s = await env.DB.prepare(
-    "SELECT s.id AS sid, s.last_seen, s.created AS session_created, s.device AS session_device, a.* FROM account_sessions s JOIN accounts a ON a.id=s.account_id WHERE s.token_hash=?1"
+    "SELECT s.id AS sid, s.last_seen, s.created AS session_created, s.device AS session_device, s.gated AS session_gated, a.* FROM account_sessions s JOIN accounts a ON a.id=s.account_id WHERE s.token_hash=?1"
   ).bind(await sha256(t)).first();
   if (!s) return null;
   if (Date.now() - s.last_seen > SESSION_IDLE || Date.now() - s.session_created > SESSION_MAX) {
     await env.DB.prepare("DELETE FROM account_sessions WHERE id=?1").bind(s.sid).run();
     return null;
   }
+  if (s.session_gated && !s.verified && !gate) throw gatedError();
   if (Date.now() - s.last_seen > 36e5) await env.DB.prepare("UPDATE account_sessions SET last_seen=?2 WHERE id=?1").bind(s.sid, Date.now()).run();
   return s;
 }
 __name(sessionAccount, "sessionAccount");
 async function newEmailToken(env, accountId, kind, ttl) {
-  const t = rid3(24);
+  const t = rid4(24);
   await env.DB.batch([
     env.DB.prepare("DELETE FROM email_tokens WHERE (account_id=?1 AND kind=?2) OR expires<?3").bind(accountId, kind, Date.now()),
     env.DB.prepare("INSERT INTO email_tokens (token_hash, account_id, kind, expires) VALUES (?1,?2,?3,?4)").bind(await sha256(t), accountId, kind, Date.now() + ttl)
@@ -3573,11 +5319,15 @@ var accountRows = /* @__PURE__ */ __name((env, id2) => [
   env.DB.prepare("DELETE FROM steam_links WHERE account_id=?1").bind(id2),
   env.DB.prepare("DELETE FROM steam_oauth WHERE account_id=?1").bind(id2),
   env.DB.prepare("DELETE FROM steam_grants WHERE account_id=?1").bind(id2),
+  env.DB.prepare("DELETE FROM google_links WHERE account_id=?1").bind(id2),
   env.DB.prepare("DELETE FROM usage_days WHERE account_id=?1").bind(id2),
   env.DB.prepare("DELETE FROM feedback WHERE account_id=?1").bind(id2),
   env.DB.prepare("DELETE FROM feedback_ask WHERE account_id=?1").bind(id2),
   env.DB.prepare("DELETE FROM support_msgs WHERE account_id=?1").bind(id2),
   env.DB.prepare("DELETE FROM support_logs WHERE account_id=?1").bind(id2),
+  env.DB.prepare("DELETE FROM alerts WHERE account_id=?1").bind(id2),
+  env.DB.prepare("DELETE FROM alert_subs WHERE account_id=?1").bind(id2),
+  env.DB.prepare("DELETE FROM push_tokens WHERE account_id=?1").bind(id2),
   env.DB.prepare("DELETE FROM alerts WHERE account_id=?1").bind(id2),
   env.DB.prepare("DELETE FROM alert_subs WHERE account_id=?1").bind(id2),
   env.DB.prepare("UPDATE crash_reports SET last_account=NULL WHERE last_account=?1").bind(id2),
@@ -3631,7 +5381,25 @@ async function nameTaken(env, name2, mine) {
   return !!await env.DB.prepare("SELECT 1 FROM community_users WHERE lower(alias)=?1 AND id<>?2 AND (owner IS NULL OR owner<>?2) AND (token_hash LIKE 'acct:%' OR id LIKE 'guest-%') LIMIT 1").bind(n, mine || "").first();
 }
 __name(nameTaken, "nameTaken");
+var noPassword = /* @__PURE__ */ __name((a) => !!a && !a.auth_hash, "noPassword");
+async function signInWays(env, id2) {
+  const n = /* @__PURE__ */ __name(async (sql) => (await env.DB.prepare(sql).bind(id2).first() || {}).n || 0, "n");
+  return await n("SELECT COUNT(*) AS n FROM steam_links WHERE account_id=?1") + await n("SELECT COUNT(*) AS n FROM discord_links WHERE account_id=?1 AND login=1") + await n("SELECT COUNT(*) AS n FROM google_links WHERE account_id=?1");
+}
+__name(signInWays, "signInWays");
+async function freeName(env, want) {
+  const base2 = cleanName(want).replace(/\s+/g, " ").slice(0, 26) || "Driver";
+  if (!await nameTaken(env, base2, "")) return base2;
+  for (let i = 0; i < 12; i++) {
+    const n = i < 6 ? String(i + 2) : String(Math.floor(1e3 + Math.random() * 9e3));
+    const c = base2 + " " + n;
+    if (!await nameTaken(env, c, "")) return c;
+  }
+  return "Driver " + rid4(3);
+}
+__name(freeName, "freeName");
 var isAdmin = /* @__PURE__ */ __name((env, id2) => env.LOCAL === "1" || String(env.ADMINS || env.SEASON_UPLOADERS || "").split(",").map((x) => x.trim()).filter(Boolean).includes(id2), "isAdmin");
+var isTester = /* @__PURE__ */ __name((env, id2) => !!id2 && String(env.TESTERS || "").split(",").map((x) => x.trim()).filter(Boolean).includes(id2), "isTester");
 async function accounts(req, env, url) {
   if (env.COMMUNITY !== "1") return err3("accounts are not enabled on this server", 404);
   const p = url.pathname.replace(/^\/account/, ""), m = req.method;
@@ -3672,7 +5440,7 @@ async function accounts(req, env, url) {
       await fail(env, ["reset:" + ip]);
       return err3("this is not the email of that account", 400);
     }
-    const salt = rid3(16);
+    const salt = rid4(16);
     await env.DB.batch([
       env.DB.prepare("UPDATE accounts SET auth_salt=?2, auth_hash=?3, wrapped_key=?4, verified=1, escrow=NULL WHERE id=?1").bind(id2, salt, await authHash(salt, body.auth), body.wrappedKey),
       // the synced copy was encrypted with the old password: the PCs upload it again
@@ -3685,6 +5453,7 @@ async function accounts(req, env, url) {
   }
   if (p === "/register" && m === "POST") {
     if (await tooMany(env, ["reg:" + ip], [5])) return err3("too many new accounts from this network, try later", 429);
+    if (body.quick) return quickRegister(env, body, ip);
     if (typeof body.email !== "string" || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(body.email) || !isKey(body.auth) || !isB64(body.wrappedKey, 200)) return err3("missing email, key or data key", 400);
     const display = cleanName(body.display);
     if (!display) return err3("choose a public name", 400);
@@ -3695,7 +5464,7 @@ async function accounts(req, env, url) {
       return err3("there is already an account with this email", 409);
     }
     let steam = null, discord = null;
-    if (body.sid && body.discordSid) return err3("sign up with one of the two", 400);
+    if ([body.sid, body.discordSid, body.googleSid].filter(Boolean).length > 1) return err3("sign up with one of them", 400);
     if (body.sid) {
       steam = await useSteamGrant(env, body.sid, "signup", body.code);
       if (!steam) return err3("this Steam sign-in is not valid any more, sign in with Steam again", 400);
@@ -3706,24 +5475,35 @@ async function accounts(req, env, url) {
       if (!discord) return err3("this Discord sign-in is not valid any more, sign in with Discord again", 400);
       if (await discordLinkedAny(env, discord.discord_id)) return json6({ error: "this Discord account is already linked to another account", code: "taken" }, 409);
     }
+    let google = null;
+    if (body.googleSid) {
+      google = await useGoogleGrant(env, body.googleSid, "signup", body.code);
+      if (!google) return err3("this Google sign-in is not valid any more, sign in with Google again", 400);
+      if (await googleAccountId(env, google.sub, null)) return json6({ error: "this Google account is already linked to another account", code: "taken" }, 409);
+    }
     await fail(env, ["reg:" + ip]);
-    const id2 = rid3(), salt = rid3(16);
+    const id2 = rid4(), salt = rid4(16);
     await env.DB.batch([
       env.DB.prepare("INSERT INTO accounts (id, email_hash, auth_salt, auth_hash, wrapped_key, display, name_kind, created) VALUES (?1,?2,?3,?4,?5,?6,?7,?8)").bind(id2, eh, salt, await authHash(salt, body.auth), body.wrappedKey, display, body.nameKind === "iracing" ? "iracing" : "nick", Date.now()),
       env.DB.prepare("INSERT INTO community_users (id, token_hash, alias, created) VALUES (?1,?2,?3,?4)").bind(id2, "acct:" + id2, display, Date.now())
     ]);
     if (steam) await linkSteam(env, steam.steamid, id2, steam.persona);
+    if (google) await linkGoogle(env, google.sub, id2);
     const taken = discord && await linkDiscordLogin(env, discord, id2) === "taken" ? { discordTaken: true } : {};
     await patreonOnRegister(env, id2, eh).catch(() => {
     });
     await proOnRegister(env, id2, eh).catch(() => {
     });
     const mailed = await mailVerify(env, url, id2, body.email.trim(), body.lang).catch(() => false);
+    if (mailed && body.gate) {
+      const token2 = await newSession(env, id2, body.device, true);
+      return json6({ id: id2, token: token2, display, nameKind: body.nameKind === "iracing" ? "iracing" : "nick", wrappedKey: body.wrappedKey, keyTag: await keyTag(body.wrappedKey), admin: isAdmin(env, id2), tester: isTester(env, id2), verified: false, mailed: true, gated: true, escrow: false, ...taken });
+    }
     if (mailed) return json6({ verifyFirst: true, mailed: true, error: "verify your email first: we sent you a link, open it and then sign in", code: "verify_first", ...taken }, 202);
     const token = await newSession(env, id2, body.device);
-    return json6({ id: id2, token, display, nameKind: body.nameKind === "iracing" ? "iracing" : "nick", wrappedKey: body.wrappedKey, keyTag: await keyTag(body.wrappedKey), admin: isAdmin(env, id2), verified: false, mailed, escrow: false, ...taken });
+    return json6({ id: id2, token, display, nameKind: body.nameKind === "iracing" ? "iracing" : "nick", wrappedKey: body.wrappedKey, keyTag: await keyTag(body.wrappedKey), admin: isAdmin(env, id2), tester: isTester(env, id2), verified: false, mailed, escrow: false, ...taken });
   }
-  const signedIn = /* @__PURE__ */ __name(async (a2, token, social) => json6({ id: a2.id, token, display: a2.display, nameKind: a2.name_kind, anon: !!a2.anon, wrappedKey: social ? void 0 : a2.wrapped_key, keyTag: await keyTag(a2.wrapped_key), admin: isAdmin(env, a2.id), verified: !!a2.verified, twoFactor: !!a2.totp_on, escrow: !!a2.escrow, ...social ? await escrowLogin(env, a2) : {} }), "signedIn");
+  const signedIn = /* @__PURE__ */ __name(async (a2, token, social) => json6({ id: a2.id, token, display: a2.display, nameKind: a2.name_kind, anon: !!a2.anon, wrappedKey: social ? void 0 : a2.wrapped_key, keyTag: await keyTag(a2.wrapped_key), admin: isAdmin(env, a2.id), tester: isTester(env, a2.id), verified: !!a2.verified, twoFactor: !!a2.totp_on, escrow: !!a2.escrow, noPassword: noPassword(a2) || void 0, ...social ? await escrowLogin(env, a2) : {} }), "signedIn");
   if (p === "/steam/login/start" && (m === "GET" || m === "POST")) {
     if (await tooMany(env, ["steam:" + ip], [30])) return err3("too many tries: wait 15 minutes", 429);
     await fail(env, ["steam:" + ip]);
@@ -3739,6 +5519,14 @@ async function accounts(req, env, url) {
     const r2 = await discordStart(env, url, "login", null, q2 ? q2.get("device") : body.device, q2 ? q2.get("port") : body.port, body.app || url.searchParams.get("app"));
     return json6(r2, r2.error ? 400 : 200);
   }
+  if (p === "/google/login/start" && (m === "GET" || m === "POST")) {
+    if (!googleReady(env)) return err3("Google sign-in is not set up on this server yet", 503);
+    if (await tooMany(env, ["google:" + ip], [30])) return err3("too many tries: wait 15 minutes", 429);
+    await fail(env, ["google:" + ip]);
+    const q2 = m === "GET" ? url.searchParams : null;
+    const r2 = await googleStart(env, url, q2 ? q2.get("device") : body.device, q2 ? q2.get("port") : body.port, body.app || url.searchParams.get("app"));
+    return json6(r2, r2.error ? 400 : 200);
+  }
   if (p === "/login" && m === "POST") {
     if (typeof body.email !== "string" || !isKey(body.auth)) return err3("missing email or key", 400);
     const eh = await emailHash(env, body.email), keys = ["login:" + eh, ip];
@@ -3748,6 +5536,10 @@ async function accounts(req, env, url) {
       await fail(env, [ip]);
       return json6({ error: "there is no account with this email: create one", code: "no_account" }, 404);
     }
+    if (noPassword(a2)) {
+      await fail(env, keys);
+      return json6({ error: "this account signs in with Steam, Discord or Google", code: "social_only" }, 401);
+    }
     if (!same3(await authHash(a2.auth_salt, body.auth), a2.auth_hash)) {
       await fail(env, keys);
       return err3("wrong email or password", 401);
@@ -3755,10 +5547,11 @@ async function accounts(req, env, url) {
     if (mustVerify(env, a2)) {
       const recent2 = await env.DB.prepare("SELECT 1 FROM email_tokens WHERE account_id=?1 AND kind='verify' AND expires>?2").bind(a2.id, Date.now() + 7 * 864e5 - 12e4).first();
       if (!recent2) await mailVerify(env, url, a2.id, body.email.trim(), body.lang).catch(() => false);
+      if (body.gate) return json6({ ...await (await signedIn(a2, await newSession(env, a2.id, body.device, true))).json(), gated: true });
       return json6({ error: "verify your email first: we sent you a link, open it and then sign in", code: "verify_first" }, 403);
     }
     if (a2.totp_on) {
-      const t = rid3(24);
+      const t = rid4(24);
       await env.DB.batch([
         env.DB.prepare("DELETE FROM login_pending WHERE expires<?1").bind(Date.now()),
         env.DB.prepare("INSERT INTO login_pending (token_hash, account_id, device, expires) VALUES (?1,?2,?3,?4)").bind(await sha256(t), a2.id, cleanName(body.device) || "PC", Date.now() + 5 * 6e4)
@@ -3767,20 +5560,30 @@ async function accounts(req, env, url) {
     }
     return signedIn(a2, await newSession(env, a2.id, body.device));
   }
-  if ((p === "/login/steam" || p === "/login/discord") && m === "POST") {
+  if ((p === "/login/steam" || p === "/login/discord" || p === "/login/google") && m === "POST") {
     if (await tooMany(env, [ip], [30])) return err3("too many tries: wait 15 minutes", 429);
-    const viaDiscord = p === "/login/discord";
-    const g = viaDiscord ? await useDiscordGrant(env, body.grant, "login", body.code) : await useSteamGrant(env, body.grant, "login", body.code);
-    const aid = g ? viaDiscord ? await discordAccountId(env, g.discord_id) : await steamAccountId(env, g.steamid) : null;
-    const a2 = aid ? await env.DB.prepare("SELECT * FROM accounts WHERE id=?1").bind(aid).first() : null;
+    const prov = p.slice(7), label = { steam: "Steam", discord: "Discord", google: "Google" }[prov];
+    const g = prov === "discord" ? await useDiscordGrant(env, body.grant, "login", body.code) : prov === "google" ? await useGoogleGrant(env, body.grant, "login", body.code) : await useSteamGrant(env, body.grant, "login", body.code);
+    const aid = g ? prov === "discord" ? await discordAccountId(env, g.discord_id) : prov === "google" ? await googleAccountId(env, g.sub, g.email_hash) : await steamAccountId(env, g.steamid) : null;
+    let a2 = aid ? await env.DB.prepare("SELECT * FROM accounts WHERE id=?1").bind(aid).first() : null;
+    if (a2 && prov === "google") {
+      if (await linkGoogle(env, g.sub, a2.id) === "taken") a2 = null;
+      else if (!a2.verified && g.email_hash && g.email_hash === a2.email_hash) {
+        await env.DB.prepare("UPDATE accounts SET verified=1 WHERE id=?1").bind(a2.id).run();
+        a2.verified = 1;
+      }
+    }
     if (!a2) {
       await fail(env, [ip]);
-      return err3(viaDiscord ? "this Discord sign-in is not valid any more, sign in with Discord again" : "this Steam sign-in is not valid any more, sign in with Steam again", 401);
+      return err3(`this ${label} sign-in is not valid any more, sign in with ${label} again`, 401);
     }
-    if (mustVerify(env, a2)) return json6({ error: "verify your email first: we sent you a link, open it and then sign in", code: "verify_first" }, 403);
     const device = cleanName(body.device) || g.device || "PC";
+    if (mustVerify(env, a2)) {
+      if (body.gate) return json6({ ...await (await signedIn(a2, await newSession(env, a2.id, device, true), true)).json(), gated: true });
+      return json6({ error: "verify your email first: we sent you a link, open it and then sign in", code: "verify_first" }, 403);
+    }
     if (a2.totp_on) {
-      const t = rid3(24);
+      const t = rid4(24);
       await env.DB.batch([
         env.DB.prepare("DELETE FROM login_pending WHERE expires<?1").bind(Date.now()),
         // steam 1: the session comes without the wrapped key, with the server's copy of the data key (Steam or Discord signed in)
@@ -3813,10 +5616,16 @@ async function accounts(req, env, url) {
     await env.DB.prepare("DELETE FROM login_pending WHERE token_hash=?1").bind(ph).run();
     return signedIn(a2, await newSession(env, a2.id, pend.device), !!pend.steam);
   }
-  const a = await sessionAccount(req, env);
+  const a = await sessionAccount(req, env, true);
   if (!a) return err3("signed out: sign in again", 401);
+  const gated = !!a.session_gated && !a.verified;
+  if (gated && !(p === "/me" && m === "GET" || p === "/verify/resend" || p === "/logout" || p === "/delete"))
+    return json6({ error: "verify your email first: we sent you a link, open it and then sign in", code: "verify_first" }, 403);
   if (m === "GET" && (p === "/me" || p === "/sync" || p === "/sync/meta")) await notePresence(env, req, a);
-  const reauth = /* @__PURE__ */ __name(async () => isKey(body.auth) && same3(await authHash(a.auth_salt, body.auth), a.auth_hash), "reauth");
+  const reauth = /* @__PURE__ */ __name(async () => noPassword(a) || isKey(body.auth) && same3(await authHash(a.auth_salt, body.auth), a.auth_hash), "reauth");
+  const SOCIAL_ONLY = /* @__PURE__ */ __name(() => json6({ error: "this account signs in with Steam, Discord or Google", code: "social_only" }, 400), "SOCIAL_ONLY");
+  if (noPassword(a) && m === "POST" && (p === "/steam/unlink" || p === "/discord/unlink" || p === "/google/unlink") && await signInWays(env, a.id) <= 1)
+    return json6({ error: "this is the only way you sign in to this account", code: "last_way" }, 409);
   const passCheck = /* @__PURE__ */ __name(async () => {
     if (await tooMany(env, ["login:" + a.email_hash], [5])) return err3("too many wrong passwords: wait 15 minutes", 429);
     if (await reauth()) return null;
@@ -3824,8 +5633,16 @@ async function accounts(req, env, url) {
     return err3("the password is wrong", 401);
   }, "passCheck");
   if (p === "/steam" || p.startsWith("/steam/")) return steamAccount(env, a, p, m, body, url, passCheck);
+  if (p === "/google" && m === "GET") return json6({ linked: !!await env.DB.prepare("SELECT 1 FROM google_links WHERE account_id=?1").bind(a.id).first(), oauth: googleReady(env) });
+  if (p === "/google/unlink" && m === "POST") {
+    const no = await passCheck();
+    if (no) return no;
+    await env.DB.prepare("DELETE FROM google_links WHERE account_id=?1").bind(a.id).run();
+    return json6({ ok: true });
+  }
   if (p === "/discord" || p.startsWith("/discord/")) return discordAccount(env, a, p, m, body, url, passCheck);
   if (p === "/key" && m === "POST") {
+    if (noPassword(a)) return SOCIAL_ONLY();
     const no = await passCheck();
     if (no) return no;
     return json6({ wrappedKey: a.wrapped_key, keyTag: await keyTag(a.wrapped_key) });
@@ -3836,8 +5653,9 @@ async function accounts(req, env, url) {
     await env.DB.prepare("UPDATE accounts SET escrow=?2 WHERE id=?1").bind(a.id, r2.value).run();
     return json6({ ok: true, escrow: true });
   }
-  if (p === "/me" && m === "GET") return json6({ id: a.id, display: a.display, nameKind: a.name_kind, anon: !!a.anon, created: a.created, admin: isAdmin(env, a.id), supporter: !!a.supporter, supporterHidden: !!a.supporter_hidden, ...proOf(a), ...await proHere(env, a, url.searchParams), proGate: await proGate(env), verified: !!a.verified, mail: mailReady(env), twoFactor: !!a.totp_on, escrow: !!a.escrow, recoveryLeft: a.totp_on ? (await env.DB.prepare("SELECT COUNT(*) AS n FROM recovery_codes WHERE account_id=?1").bind(a.id).first() || {}).n || 0 : 0 });
+  if (p === "/me" && m === "GET") return json6({ id: a.id, display: a.display, nameKind: a.name_kind, anon: !!a.anon, created: a.created, admin: isAdmin(env, a.id), tester: isTester(env, a.id), supporter: !!a.supporter, supporterHidden: !!a.supporter_hidden, ...proOf(a), ...await proHere(env, a, url.searchParams), proGate: await proGate(env), verified: !!a.verified, mail: mailReady(env), twoFactor: !!a.totp_on, escrow: !!a.escrow, noPassword: noPassword(a) || void 0, gated: gated || void 0, google: !!await env.DB.prepare("SELECT 1 FROM google_links WHERE account_id=?1").bind(a.id).first(), recoveryLeft: a.totp_on ? (await env.DB.prepare("SELECT COUNT(*) AS n FROM recovery_codes WHERE account_id=?1").bind(a.id).first() || {}).n || 0 : 0 });
   if (p === "/2fa/setup" && m === "POST") {
+    if (noPassword(a)) return SOCIAL_ONLY();
     if (await tooMany(env, ["login:" + a.email_hash], [5])) return err3("too many wrong passwords: wait 15 minutes", 429);
     if (!await reauth()) {
       await fail(env, ["login:" + a.email_hash]);
@@ -3927,13 +5745,14 @@ async function accounts(req, env, url) {
     return json6({ ok: true });
   }
   if (p === "/password" && m === "POST") {
+    if (noPassword(a)) return SOCIAL_ONLY();
     if (await tooMany(env, ["login:" + a.email_hash], [5])) return err3("too many wrong passwords: wait 15 minutes", 429);
     if (!await reauth()) {
       await fail(env, ["login:" + a.email_hash]);
       return err3("the current password is wrong", 401);
     }
     if (!isKey(body.newAuth) || !isB64(body.wrappedKey, 200)) return err3("missing new key", 400);
-    const salt = rid3(16);
+    const salt = rid4(16);
     await env.DB.batch([
       env.DB.prepare("UPDATE accounts SET auth_salt=?2, auth_hash=?3, wrapped_key=?4 WHERE id=?1").bind(a.id, salt, await authHash(salt, body.newAuth), body.wrappedKey),
       env.DB.prepare("DELETE FROM account_sessions WHERE account_id=?1 AND id<>?2").bind(a.id, a.sid)
@@ -3942,7 +5761,7 @@ async function accounts(req, env, url) {
     return json6({ ok: true });
   }
   if (p === "/delete" && m === "POST") {
-    if (!await reauth()) {
+    if (!gated && !await reauth()) {
       await fail(env, ["login:" + a.email_hash]);
       return err3("the password is wrong", 401);
     }
@@ -3981,11 +5800,58 @@ async function accounts(req, env, url) {
   return err3("not found", 404);
 }
 __name(accounts, "accounts");
+async function quickRegister(env, body, ip) {
+  if (!escrowReady(env)) return json6({ error: "sign up with an email on this server", code: "no_quick" }, 503);
+  if ([body.sid, body.discordSid, body.googleSid].filter(Boolean).length !== 1) return err3("sign up with one of them", 400);
+  let g = null, prov = "steam", name2 = "", email = "";
+  if (body.sid) {
+    g = await useSteamGrant(env, body.sid, "signup", body.code);
+    if (!g) return err3("this Steam sign-in is not valid any more, sign in with Steam again", 400);
+    if (await steamAccountId(env, g.steamid)) return json6({ error: "this Steam account is already linked to another account", code: "taken" }, 409);
+    name2 = g.persona;
+  } else if (body.discordSid) {
+    prov = "discord";
+    g = await useDiscordGrant(env, body.discordSid, "signup", body.code);
+    if (!g) return err3("this Discord sign-in is not valid any more, sign in with Discord again", 400);
+    if (await discordLinkedAny(env, g.discord_id)) return json6({ error: "this Discord account is already linked to another account", code: "taken" }, 409);
+    name2 = g.name || g.handle;
+  } else {
+    prov = "google";
+    g = await useGoogleGrant(env, body.googleSid, "signup", body.code);
+    if (!g) return err3("this Google sign-in is not valid any more, sign in with Google again", 400);
+    if (await googleAccountId(env, g.sub, g.email_hash)) return json6({ error: "this Google account already has an account, sign in with Google", code: "taken" }, 409);
+    name2 = g.name;
+    email = g.email && g.email_hash ? g.email : "";
+  }
+  await fail(env, ["reg:" + ip]);
+  const id2 = rid4(), key = hex2(crypto.getRandomValues(new Uint8Array(32)));
+  const eh = email ? await emailHash(env, email) : await sha256("pitlanehq-noemail:" + id2 + ":" + rid4(16));
+  const sealed = await sealEscrow(env, key, email, async () => !!email);
+  if (sealed.error) return err3(sealed.error, sealed.status);
+  const display = await freeName(env, cleanName(body.display) || name2);
+  await env.DB.batch([
+    env.DB.prepare("INSERT INTO accounts (id, email_hash, auth_salt, auth_hash, wrapped_key, display, name_kind, created, verified, escrow) VALUES (?1,?2,'','','',?3,'nick',?4,1,?5)").bind(id2, eh, display, Date.now(), sealed.value),
+    env.DB.prepare("INSERT INTO community_users (id, token_hash, alias, created) VALUES (?1,?2,?3,?4)").bind(id2, "acct:" + id2, display, Date.now())
+  ]);
+  if (prov === "steam") await linkSteam(env, g.steamid, id2, g.persona);
+  else if (prov === "discord") await linkDiscordLogin(env, g, id2);
+  else await linkGoogle(env, g.sub, id2);
+  if (email) {
+    await patreonOnRegister(env, id2, eh).catch(() => {
+    });
+    await proOnRegister(env, id2, eh).catch(() => {
+    });
+  }
+  const a = await env.DB.prepare("SELECT * FROM accounts WHERE id=?1").bind(id2).first();
+  const token = await newSession(env, id2, cleanName(body.device) || g.device || "PC");
+  return json6({ id: a.id, token, display: a.display, nameKind: "nick", anon: false, keyTag: await keyTag(a.wrapped_key), admin: isAdmin(env, a.id), tester: isTester(env, a.id), verified: true, twoFactor: false, escrow: true, noPassword: true, created: true, dataKey: key, email: email || void 0 });
+}
+__name(quickRegister, "quickRegister");
 
 // src/driverlinks.js
 var LINK_DAYS = 3;
 var UNDONE = "undone";
-var rid4 = /* @__PURE__ */ __name(() => [...crypto.getRandomValues(new Uint8Array(12))].map((x) => x.toString(16).padStart(2, "0")).join(""), "rid");
+var rid5 = /* @__PURE__ */ __name(() => [...crypto.getRandomValues(new Uint8Array(12))].map((x) => x.toString(16).padStart(2, "0")).join(""), "rid");
 var proofNeeded = /* @__PURE__ */ __name((game) => game !== "iracing", "proofNeeded");
 var COL = /^[a-z_][a-z0-9_]*$/;
 function insertRow(env, table, row) {
@@ -4054,7 +5920,7 @@ async function linkDriver(env, acct, oid, game, deps = {}) {
 }
 __name(linkDriver, "linkDriver");
 async function unlinkDriver(env, acct, game, deps = {}) {
-  const back = deps.moveDriverBack || moveDriverBack, mark = deps.markModel || markModel;
+  const back2 = deps.moveDriverBack || moveDriverBack, mark = deps.markModel || markModel;
   const links = (await env.DB.prepare("SELECT game, oid FROM driver_links WHERE account_id=?1" + (game ? " AND game=?2" : "")).bind(...game ? [acct, game] : [acct]).all()).results || [];
   let restored = 0;
   for (const { game: g, oid } of links) {
@@ -4071,7 +5937,7 @@ async function unlinkDriver(env, acct, game, deps = {}) {
       combos2.add(row.game + "|" + row.track_id + "|" + row.car_id);
       const now = await env.DB.prepare("SELECT user_id, time FROM community_laps WHERE id=?1").bind(row.id).first();
       if (now && now.user_id === acct && Math.abs(now.time - row.time) < 1e-6) q2.push(env.DB.prepare("UPDATE community_laps SET user_id=?2, anon=?3, shown=?4 WHERE id=?1").bind(row.id, row.user_id, row.anon ?? 0, row.shown ?? null));
-      else q2.push(insertRow(env, "community_laps", now ? { ...row, id: rid4() } : row));
+      else q2.push(insertRow(env, "community_laps", now ? { ...row, id: rid5() } : row));
       restored++;
     }
     for (const { row } of moves.filter((x) => x.kind === "dropped")) {
@@ -4084,7 +5950,7 @@ async function unlinkDriver(env, acct, game, deps = {}) {
     q2.push(env.DB.prepare("DELETE FROM driver_link_moves WHERE account_id=?1 AND game=?2").bind(acct, g));
     q2.push(env.DB.prepare("UPDATE community_laps SET anon=1 WHERE user_id=?1").bind(oid));
     await env.DB.batch(q2);
-    for (const { row } of moves.filter((x) => x.kind === "model")) await back(env, row, "acct:" + acct, "acct:" + oid);
+    for (const { row } of moves.filter((x) => x.kind === "model")) await back2(env, row, "acct:" + acct, "acct:" + oid);
     for (const c of combos2) {
       const [cg, tr2, ca] = c.split("|");
       await mark(env, cg, +tr2, +ca);
@@ -4127,6 +5993,99 @@ __name(pruneSeen, "pruneSeen");
 // src/games.js
 var GAMES = ["iracing", "lmu", "acc", "ac"];
 var gameOf = /* @__PURE__ */ __name((g) => GAMES.includes(g) ? g : "iracing", "gameOf");
+
+// src/coachplan.js
+var MIN_PLAN_VOTES = 15;
+var STEP = /^(plan|[a-z_]{1,24}(:[a-z_]{0,32})?@[0-9,]{0,48})$/;
+async function planVotes(env) {
+  const r2 = await env.DB.prepare("SELECT sid, k, SUM(up=1) AS up, SUM(up=-1) AS down, COUNT(DISTINCT account) AS drivers FROM coach_plan_votes GROUP BY sid, k ORDER BY COUNT(*) DESC LIMIT 200").all().catch(() => ({ results: [] }));
+  return (r2.results || []).map((x) => ({ id: x.sid, k: x.k, up: x.up || 0, down: x.down || 0, drivers: x.drivers || 0 }));
+}
+__name(planVotes, "planVotes");
+function planWeights(votes) {
+  const w = {}, byK = {};
+  for (const v of votes) {
+    if (v.id === "plan") continue;
+    const n = v.up + v.down;
+    if (n >= MIN_PLAN_VOTES) w[v.id] = Math.round((0.8 + 0.4 * v.up / n) * 100) / 100;
+    const o = byK[v.k] = byK[v.k] || { up: 0, down: 0 };
+    o.up += v.up;
+    o.down += v.down;
+  }
+  for (const [k, o] of Object.entries(byK)) {
+    const n = o.up + o.down;
+    if (n >= MIN_PLAN_VOTES && w[k] == null) w[k] = Math.round((0.8 + 0.4 * o.up / n) * 100) / 100;
+  }
+  for (const k of Object.keys(w)) if (w[k] === 1) delete w[k];
+  return w;
+}
+__name(planWeights, "planWeights");
+
+// src/coachcalib.js
+var import_pitwall_analysis = __toESM(require_pitwall_analysis(), 1);
+var PW = globalThis.PW_ANALYSIS;
+var COMBOS = 6;
+var LAPS = 14;
+function calibrate(laps) {
+  const ref = laps.reduce((a, b) => b.time < a.time ? b : a);
+  const kinds = {}, steps = {};
+  let n = 0, corners = 0, tips = 0, planN = 0;
+  for (const A of laps) {
+    if (A === ref) continue;
+    let c;
+    try {
+      c = PW.coachPlan(A, ref, [], { lang: "en", units: "metric" });
+    } catch (e) {
+      continue;
+    }
+    n++;
+    corners += c.cs.length;
+    const seenK = /* @__PURE__ */ new Set(), seenS = /* @__PURE__ */ new Set();
+    for (const x of c.cs) if (x.lost > 0.03 && x.kind) {
+      tips++;
+      seenK.add(x.kind);
+    }
+    for (const p of c.plan.slice(0, 5)) seenS.add(p.k);
+    planN += Math.min(5, c.plan.length);
+    for (const k of seenK) kinds[k] = (kinds[k] || 0) + 1;
+    for (const k of seenS) steps[k] = (steps[k] || 0) + 1;
+  }
+  const share = /* @__PURE__ */ __name((o) => Object.fromEntries(Object.entries(o).sort((a, b) => b[1] - a[1]).map(([k, v]) => [k, Math.round(v / Math.max(1, n) * 100)])), "share");
+  return { laps: n, corners: n ? Math.round(corners / n * 10) / 10 : 0, tips: n ? Math.round(tips / n * 10) / 10 : 0, plan: n ? Math.round(planN / n * 10) / 10 : 0, kinds: share(kinds), steps: share(steps) };
+}
+__name(calibrate, "calibrate");
+async function calibrateRun(env) {
+  const top = (await env.DB.prepare("SELECT game, track_id, car_id, COUNT(DISTINCT drv) AS d FROM model_laps GROUP BY game, track_id, car_id HAVING d>=5 ORDER BY d DESC LIMIT ?1").bind(COMBOS).all()).results || [];
+  const out = [], all = [];
+  for (const t of top) {
+    const rows = (await env.DB.prepare("SELECT drv, MIN(time) AS time, data FROM model_laps WHERE game=?1 AND track_id=?2 AND car_id=?3 GROUP BY drv ORDER BY time LIMIT ?4").bind(t.game, t.track_id, t.car_id, LAPS).all()).results || [];
+    const card = await getCarCard(env, t.game, t.car_id).catch(() => null), laps = [];
+    for (const x of rows) {
+      let g = null;
+      try {
+        g = goodLap(x.time, memTrace(JSON.parse(await gunz(x.data))));
+      } catch (e) {
+      }
+      if (!g) continue;
+      const bins = g.field ? estimatePedals(g.bins, card && card.pedals, card && card.shifts) : g.bins;
+      laps.push({ time: g.time, bins, maxBin: bins.length - 1, est: g.field });
+    }
+    const cl = cleanLaps(laps);
+    if (cl.length < 3) continue;
+    const r2 = calibrate(cl);
+    out.push({ game: t.game, trackId: t.track_id, carId: t.car_id, drivers: t.d, ...r2 });
+    all.push(...cl.map((l) => ({ l, k: out.length })));
+  }
+  const sum = { laps: 0, kinds: {}, steps: {} };
+  for (const c of out) {
+    sum.laps += c.laps;
+    for (const [k, v] of Object.entries(c.kinds)) sum.kinds[k] = (sum.kinds[k] || 0) + v * c.laps / 100;
+    for (const [k, v] of Object.entries(c.steps)) sum.steps[k] = (sum.steps[k] || 0) + v * c.laps / 100;
+  }
+  const pc = /* @__PURE__ */ __name((o) => Object.fromEntries(Object.entries(o).sort((a, b) => b[1] - a[1]).map(([k, v]) => [k, Math.round(v / Math.max(1, sum.laps) * 100)])), "pc");
+  return { combos: out, total: { laps: sum.laps, kinds: pc(sum.kinds), steps: pc(sum.steps) } };
+}
+__name(calibrateRun, "calibrateRun");
 
 // src/coachtips.js
 var MIN_CASES = 30;
@@ -4265,9 +6224,32 @@ async function coachTipRoutes(req, env, p, m, body, game) {
     ).bind(acc.id, game, trackId, carId, sid, started, n, apex, kind, cls, up, Date.now()).run();
     return json7({ ok: true });
   }
+  if (p === "/coach/planrate" && m === "POST") {
+    const trackId = int(body.trackId), carId = int(body.carId) && await famId(env, game, body.carId), sid = str(body.sid, 120), started = int(body.started);
+    const step = typeof body.step === "string" && STEP.test(body.step) ? body.step : "";
+    if (!trackId || !carId || !sid || !started || !step) return err4("trackId, carId, sid, started and step", 400);
+    const up = body.up === 1 ? 1 : body.up === -1 ? -1 : 0, id2 = step === "plan" ? "plan" : step.split("@")[0], k = KIND2.test(body.k || "") ? body.k : id2.split(":")[0];
+    const kind = KIND2.test(body.kind || "") ? body.kind : "", turns = Array.isArray(body.turns) ? body.turns.filter((n) => int(n) && n < 1e3).slice(0, 12).join(",") : "";
+    if (!up) await env.DB.prepare("DELETE FROM coach_plan_votes WHERE account=?1 AND session_id=?2 AND step=?3").bind(acc.id, sid, step).run();
+    else await env.DB.prepare(
+      `INSERT INTO coach_plan_votes (account, game, track_id, car_id, session_id, started, step, sid, k, kind, turns, up, created) VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13)
+       ON CONFLICT(account, session_id, step) DO UPDATE SET up=excluded.up, created=excluded.created`
+    ).bind(acc.id, game, trackId, carId, sid, started, step, id2, k, kind, turns, up, Date.now()).run();
+    return json7({ ok: true });
+  }
   if (p === "/coach/weights" && m === "GET") {
     const { buckets: b } = await buckets(env);
-    return json7({ min: MIN_CASES, buckets: b.filter((x) => x.w !== 1 || x.ask || x.n >= MIN_CASES), off: await offList(env), confidence: await confidenceOn(env) }, 200, { "cache-control": "private, max-age=3600" });
+    return json7({ min: MIN_CASES, buckets: b.filter((x) => x.w !== 1 || x.ask || x.n >= MIN_CASES), off: await offList(env), confidence: await confidenceOn(env), plan: planWeights(await planVotes(env)) }, 200, { "cache-control": "private, max-age=3600" });
+  }
+  if (p === "/coach/last" && m === "GET") {
+    const u = new URL(req.url), trackId = +u.searchParams.get("trackId") || 0, carId = (+u.searchParams.get("carId") || 0) && await famId(env, game, +u.searchParams.get("carId")), before = +u.searchParams.get("before") || Date.now();
+    if (!trackId || !carId) return err4("trackId and carId", 400);
+    const last = await env.DB.prepare(
+      `SELECT session_id, started FROM coach_tips WHERE account=?1 AND game=?2 AND track_id=?3 AND car_id=?4 AND started<?5 AND kind<>'' AND tbest IS NOT NULL ORDER BY started DESC LIMIT 1`
+    ).bind(acc.id, game, trackId, carId, before).first();
+    if (!last) return json7({ tips: [] }, 200, { "cache-control": "private, max-age=300" });
+    const t = await env.DB.prepare("SELECT n, apex, kind, lost, tbest FROM coach_tips WHERE account=?1 AND session_id=?2 AND kind<>'' AND lost>0.05 AND tbest IS NOT NULL ORDER BY lost DESC LIMIT 12").bind(acc.id, last.session_id).all();
+    return json7({ started: last.started, tips: (t.results || []).map((x) => ({ n: x.n, apex: x.apex, kind: x.kind, lost: r3(x.lost), tbest: r3(x.tbest) })) }, 200, { "cache-control": "private, max-age=300" });
   }
   if (p === "/coach/me" && m === "GET") {
     const h = await env.DB.prepare(
@@ -4278,7 +6260,11 @@ async function coachTipRoutes(req, env, p, m, body, game) {
     const { buckets: mine } = await buckets(env, acc.id);
     const w = {};
     for (const x of mine) if (x.n >= MIN_PERSONAL && x.w !== 1) w[x.kind + "|" + x.cls] = x.w;
-    return json7({ habits, w, minTracks: HABIT_TRACKS }, 200, { "cache-control": "private, max-age=600" });
+    const bc = await env.DB.prepare(
+      `SELECT cls, COUNT(*) AS n, AVG(CASE WHEN lost>0 THEN lost ELSE 0 END) AS avg FROM coach_tips WHERE account=?1 AND cls<>'' AND lost IS NOT NULL AND ref IN ('level','record') GROUP BY cls`
+    ).bind(acc.id).all().catch(() => ({ results: [] }));
+    const byCls = (bc.results || []).filter((x) => x.n >= 5).map((x) => ({ cls: x.cls, n: x.n, avg: r3(x.avg || 0) }));
+    return json7({ habits, w, minTracks: HABIT_TRACKS, byCls }, 200, { "cache-control": "private, max-age=600" });
   }
   if (p === "/admin/coach/off" && m === "POST") {
     if (!isAdmin(env, acc.id)) return err4("only the admins of this server can do this", 403);
@@ -4293,6 +6279,10 @@ async function coachTipRoutes(req, env, p, m, body, game) {
     await env.DB.prepare("INSERT INTO app_state (k, v, at) VALUES ('coach_confidence', ?1, ?2) ON CONFLICT(k) DO UPDATE SET v=excluded.v, at=excluded.at").bind(body.on ? "1" : "0", Date.now()).run();
     return json7({ ok: true, confidence: !!body.on });
   }
+  if (p === "/admin/coach/calibrate" && m === "GET") {
+    if (!isAdmin(env, acc.id)) return err4("only the admins of this server can do this", 403);
+    return json7(await calibrateRun(env));
+  }
   if (p === "/admin/coach" && m === "GET") {
     if (!isAdmin(env, acc.id)) return err4("only the admins of this server can do this", 403);
     const { buckets: b, ratings } = await buckets(env);
@@ -4301,7 +6291,8 @@ async function coachTipRoutes(req, env, p, m, body, game) {
          COUNT(DISTINCT track_id||':'||car_id) AS combos, SUM(created>?1) AS week FROM coach_tips`
     ).bind(Date.now() - 7 * 864e5).first();
     const kinds = await env.DB.prepare("SELECT kind, COUNT(*) AS n, SUM(outcome IS NOT NULL) AS scored FROM coach_tips WHERE kind<>'' GROUP BY kind ORDER BY n DESC").all();
-    return json7({ min: MIN_CASES, gain: GAIN_S, totals: tot || {}, buckets: b, ratings, kinds: kinds.results || [], off: await offList(env), confidence: await confidenceOn(env) });
+    const pv = await planVotes(env);
+    return json7({ min: MIN_CASES, gain: GAIN_S, totals: tot || {}, buckets: b, ratings, kinds: kinds.results || [], off: await offList(env), confidence: await confidenceOn(env), plan: pv, planMin: MIN_PLAN_VOTES });
   }
   return null;
 }
@@ -4449,6 +6440,74 @@ async function sessionSummary(DB, { from, tz, game, uploader, now }) {
 }
 __name(sessionSummary, "sessionSummary");
 
+// src/pushlib.js
+var TOKEN_DAYS = 270;
+var TOKENS_MAX = 10;
+var SQL_TOKEN_ADD = "INSERT INTO push_tokens (token, account_id, platform, updated) VALUES (?1,?2,?3,?4) ON CONFLICT(token) DO UPDATE SET account_id=excluded.account_id, platform=excluded.platform, updated=excluded.updated";
+var SQL_TOKEN_DEL = "DELETE FROM push_tokens WHERE token=?1";
+var SQL_TOKENS = "SELECT token FROM push_tokens WHERE account_id=?1 ORDER BY updated DESC LIMIT " + TOKENS_MAX;
+var SQL_TOKEN_PRUNE = "DELETE FROM push_tokens WHERE updated<?1";
+var isPushToken = /* @__PURE__ */ __name((t) => typeof t === "string" && t.length >= 20 && t.length <= 400 && /^[A-Za-z0-9:_\-]+$/.test(t), "isPushToken");
+var b64url = /* @__PURE__ */ __name((b) => btoa(typeof b === "string" ? b : String.fromCharCode(...new Uint8Array(b))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, ""), "b64url");
+var cache2 = null;
+async function accessToken(sa, { fetch: f = fetch, now = Date.now() } = {}) {
+  if (cache2 && cache2.email === sa.client_email && cache2.exp > now + 3e5) return cache2.token;
+  const pem = String(sa.private_key || "").replace(/-----[^-]+-----/g, "").replace(/\s+/g, "");
+  const der = Uint8Array.from(atob(pem), (c) => c.charCodeAt(0));
+  const key = await crypto.subtle.importKey("pkcs8", der, { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" }, false, ["sign"]);
+  const iat = Math.floor(now / 1e3);
+  const head = b64url(JSON.stringify({ alg: "RS256", typ: "JWT" }));
+  const claim = b64url(JSON.stringify({ iss: sa.client_email, scope: "https://www.googleapis.com/auth/firebase.messaging", aud: "https://oauth2.googleapis.com/token", iat, exp: iat + 3600 }));
+  const sig = b64url(await crypto.subtle.sign("RSASSA-PKCS1-v1_5", key, new TextEncoder().encode(head + "." + claim)));
+  const r2 = await f("https://oauth2.googleapis.com/token", {
+    method: "POST",
+    headers: { "content-type": "application/x-www-form-urlencoded" },
+    body: "grant_type=" + encodeURIComponent("urn:ietf:params:oauth:grant-type:jwt-bearer") + "&assertion=" + head + "." + claim + "." + sig
+  });
+  const j = await r2.json().catch(() => ({}));
+  if (!r2.ok || !j.access_token) throw new Error("google token: " + r2.status);
+  cache2 = { email: sa.client_email, token: j.access_token, exp: now + (j.expires_in || 3600) * 1e3 };
+  return cache2.token;
+}
+__name(accessToken, "accessToken");
+function serviceAccount(env) {
+  try {
+    const sa = JSON.parse(env.FCM_SERVICE_ACCOUNT || "");
+    return sa && sa.project_id && sa.client_email && sa.private_key ? sa : null;
+  } catch (e) {
+    return null;
+  }
+}
+__name(serviceAccount, "serviceAccount");
+async function pushAccount(env, accountId, kind = "alerts", { fetch: f = fetch, now = Date.now() } = {}) {
+  const sa = serviceAccount(env);
+  if (!sa || !accountId) return { sent: 0, gone: 0 };
+  const rows = (await env.DB.prepare(SQL_TOKENS).bind(accountId).all()).results || [];
+  if (!rows.length) return { sent: 0, gone: 0 };
+  const at2 = await accessToken(sa, { fetch: f, now });
+  let sent = 0, gone = 0;
+  await Promise.all(rows.map(async ({ token }) => {
+    const r2 = await f(`https://fcm.googleapis.com/v1/projects/${encodeURIComponent(sa.project_id)}/messages:send`, {
+      method: "POST",
+      headers: { authorization: "Bearer " + at2, "content-type": "application/json" },
+      body: JSON.stringify({ message: { token, data: { kind }, android: { priority: "HIGH", ttl: "86400s", collapse_key: kind } } })
+    }).catch(() => null);
+    if (r2 && r2.ok) {
+      sent++;
+      return;
+    }
+    const e = r2 ? await r2.json().catch(() => ({})) : {};
+    const code = JSON.stringify(e.error && e.error.details || []) + " " + (e.error && e.error.status || "");
+    if (r2 && (r2.status === 404 || /UNREGISTERED|INVALID_ARGUMENT/.test(code))) {
+      await env.DB.prepare(SQL_TOKEN_DEL).bind(token).run();
+      gone++;
+    }
+  }));
+  return { sent, gone };
+}
+__name(pushAccount, "pushAccount");
+var prunePushTokens = /* @__PURE__ */ __name((env, now = Date.now()) => env.DB.prepare(SQL_TOKEN_PRUNE).bind(now - TOKEN_DAYS * 864e5).run(), "prunePushTokens");
+
 // src/alertslib.js
 var ALERT_DAYS = 30;
 var ALERT_MAX = 20;
@@ -4470,7 +6529,7 @@ var SQL_WEEK_DONE = "UPDATE alert_subs SET week_at=?2 WHERE account_id=?1";
 var SQL_PBS = `SELECT s.track, s.track_config, s.car, MIN(s.best) AS b,
   (SELECT MIN(p.best) FROM sessions p WHERE p.uploader=?1 AND p.track=s.track AND COALESCE(p.track_config,'')=COALESCE(s.track_config,'') AND p.car=s.car AND p.started<?2 AND p.best>0) AS before
   FROM sessions s WHERE s.uploader=?1 AND s.started>=?2 AND s.best>0 GROUP BY s.track, s.track_config, s.car`;
-var rid5 = /* @__PURE__ */ __name(() => crypto.randomUUID().replace(/-/g, "").slice(0, 20), "rid");
+var rid6 = /* @__PURE__ */ __name(() => crypto.randomUUID().replace(/-/g, "").slice(0, 20), "rid");
 var pbsOf = /* @__PURE__ */ __name((rows) => (rows || []).filter((r2) => r2.before != null && r2.b < r2.before).sort((a, b) => b.before - b.b - (a.before - a.b)).slice(0, 3), "pbsOf");
 function hm(secs) {
   const h = Math.floor(secs / 3600), m = Math.round(secs % 3600 / 60);
@@ -4505,6 +6564,13 @@ function weekNote(sum, pbs, l) {
   return { title: w.title, text: lines.join(" ") };
 }
 __name(weekNote, "weekNote");
+function wake(env, acc, ctx) {
+  const p = (env.push || pushAccount)(env, acc).catch(() => {
+  });
+  if (ctx && ctx.waitUntil) ctx.waitUntil(p);
+  return p;
+}
+__name(wake, "wake");
 async function recordBeaten(env, uid, x, now = Date.now()) {
   if (x.shown === "model" || String(uid).startsWith("o:")) return null;
   const rec = await env.DB.prepare(SQL_RECORD).bind(x.game, x.trackId, x.carId).first();
@@ -4523,7 +6589,9 @@ async function recordBeaten(env, uid, x, now = Date.now()) {
     was: rec.time,
     by: who2 && who2.alias || ""
   };
-  await env.DB.prepare(SQL_ALERT_ADD).bind(rid5(), acc, "record_beaten", now, JSON.stringify(data)).run();
+  await env.DB.prepare(SQL_ALERT_ADD).bind(rid6(), acc, "record_beaten", now, JSON.stringify(data)).run();
+  const w = wake(env, acc, x.ctx);
+  if (!x.ctx) await w;
   return { account: acc, ...data };
 }
 __name(recordBeaten, "recordBeaten");
@@ -4549,6 +6617,11 @@ async function handleAlerts(req, env, url, { sessionAccount: sessionAccount2 }, 
     const b = await req.json().catch(() => null) || {};
     if (b.on) await env.DB.prepare(SQL_SUB_ON).bind(acc.id, L3(String(b.lang || "").slice(0, 2))).run();
     else await env.DB.prepare(SQL_SUB_OFF).bind(acc.id).run();
+    const tok = b.push && b.push.token;
+    if (isPushToken(tok)) {
+      if (b.on) await env.DB.prepare(SQL_TOKEN_ADD).bind(tok, acc.id, b.push.platform === "ios" ? "ios" : "android", now).run();
+      else await env.DB.prepare(SQL_TOKEN_DEL).bind(tok).run();
+    }
     return json9({ on: !!b.on });
   }
   return json9({ error: "not found" }, 404);
@@ -4563,8 +6636,9 @@ async function weeklyAlerts(env, { sessionSummary: sessionSummary2 }, now = Date
       const sum = await sessionSummary2(env.DB, { from, tz: 0, game: null, uploader: up, now });
       const note2 = sum && sum.sessions ? weekNote(sum, pbsOf((await env.DB.prepare(SQL_PBS).bind(up, from).all()).results || []), d.lang) : null;
       if (note2) {
-        await env.DB.prepare(SQL_ALERT_ADD).bind(rid5(), d.account_id, "week", now, JSON.stringify(note2)).run();
+        await env.DB.prepare(SQL_ALERT_ADD).bind(rid6(), d.account_id, "week", now, JSON.stringify(note2)).run();
         written++;
+        await wake(env, d.account_id);
       }
     } catch (e) {
     }
@@ -4872,6 +6946,39 @@ async function classLaps(env, trackId, cls, opts = {}) {
 }
 __name(classLaps, "classLaps");
 
+// src/lapsectors.js
+function traceSectors(tr2, time) {
+  const d = tr2 && Array.isArray(tr2.d) ? tr2.d : null;
+  if (!d || d.length < 60 || !(time > 10)) return null;
+  const at2 = /* @__PURE__ */ __name((i) => Array.isArray(d[i]) ? Number(d[i][5]) : NaN, "at");
+  const t1 = at2(Math.floor(d.length / 3)), t2 = at2(Math.floor(2 * d.length / 3));
+  if (!(t1 > 0 && t2 > t1 && time > t2)) return null;
+  const r2 = /* @__PURE__ */ __name((v) => Math.round(v * 1e3) / 1e3, "r");
+  const s1 = r2(t1), s2 = r2(t2 - t1), s3 = r2(time - r2(t1) - s2);
+  if ([s1, s2, s3].some((s) => !(s > 0.1 * time && s < 0.67 * time))) return null;
+  return [s1, s2, s3];
+}
+__name(traceSectors, "traceSectors");
+async function sealedSectors(env, trace, time) {
+  if (!trace) return null;
+  try {
+    const s = traceSectors(JSON.parse(await openData(env, trace)), time);
+    return s ? JSON.stringify(s) : null;
+  } catch {
+    return null;
+  }
+}
+__name(sealedSectors, "sealedSectors");
+async function fillSectors(env, limit = 100) {
+  const rows = (await env.DB.prepare("SELECT id, time, trace FROM community_laps WHERE sectors IS NULL AND trace IS NOT NULL LIMIT ?1").bind(limit).all()).results || [];
+  for (const x of rows) {
+    const s = await sealedSectors(env, x.trace, x.time);
+    await env.DB.prepare("UPDATE community_laps SET sectors=?2 WHERE id=?1 AND sectors IS NULL").bind(x.id, s || "[]").run();
+  }
+  return rows.length;
+}
+__name(fillSectors, "fillSectors");
+
 // src/community.js
 var JSONH7 = { "content-type": "application/json; charset=utf-8", "cache-control": "no-store", "access-control-allow-origin": "*" };
 var json10 = /* @__PURE__ */ __name((v, status = 200) => new Response(JSON.stringify(v), { status, headers: JSONH7 }), "json");
@@ -4879,7 +6986,7 @@ var err6 = /* @__PURE__ */ __name((msg, status) => json10({ error: msg }, status
 var str3 = /* @__PURE__ */ __name((v, max = 120) => typeof v === "string" ? v.slice(0, max) : v == null ? null : String(v).slice(0, max), "str");
 var num2 = /* @__PURE__ */ __name((v) => typeof v === "number" && isFinite(v) ? v : null, "num");
 var int3 = /* @__PURE__ */ __name((v) => Number.isInteger(v) && v > 0 && v < 1e9 ? v : null, "int");
-var rid6 = /* @__PURE__ */ __name(() => [...crypto.getRandomValues(new Uint8Array(12))].map((x) => x.toString(16).padStart(2, "0")).join(""), "rid");
+var rid7 = /* @__PURE__ */ __name(() => [...crypto.getRandomValues(new Uint8Array(12))].map((x) => x.toString(16).padStart(2, "0")).join(""), "rid");
 var SHARES_TRACES = "EXISTS (SELECT 1 FROM community_laps c2 WHERE c2.user_id=?1 AND c2.trace IS NOT NULL)";
 var ACCT_TRACE_WHERE = `s.uploader='acct:'||?1 AND ABS(a.time-?2)<0.002 AND s.game=?3 AND a.valid=1 AND a.trace IS NOT NULL AND ${SHARES_TRACES}`;
 var ACCT_TRACE = `(EXISTS (SELECT 1 FROM laps a JOIN sessions s ON s.id=a.session_id WHERE s.uploader='acct:'||l.user_id AND ABS(a.time-l.time)<0.002 AND s.game=l.game AND a.valid=1 AND a.trace IS NOT NULL)
@@ -4909,7 +7016,7 @@ var cleanFile = /* @__PURE__ */ __name((n) => (typeof n === "string" ? n : "").r
 async function countUpload(env, u) {
   const day4 = (/* @__PURE__ */ new Date()).toISOString().slice(0, 10);
   const n = u.uploads_day === day4 ? u.uploads + 1 : 1;
-  if (n > 300) return false;
+  if (n > 1500) return false;
   await env.DB.prepare("UPDATE community_users SET uploads_day=?2, uploads=?3 WHERE id=?1").bind(u.id, day4, n).run();
   return true;
 }
@@ -4952,16 +7059,18 @@ async function keepBestLap(env, uid, x) {
   x = { ...x, carId: await noteCar(env, x.game, x.carId, x.car) };
   const old = await env.DB.prepare("SELECT time, game, trace IS NOT NULL AS traced FROM community_laps WHERE user_id=?1 AND car_id=?2 AND track_id=?3").bind(uid, x.carId, x.trackId).first();
   if (old && old.game === x.game && old.time <= x.time && (old.traced || !x.trace)) return { kept: true, traced: !!old.traced };
+  if (x.len > 0 && !fitsLayout(x.len, await layoutN(env, x.game, x.trackId))) return { kept: true, layout: true };
   if (x.count && !await x.count()) return { limit: true };
   await recordBeaten(env, uid, x).catch(() => {
   });
   const cls = x.game === "lmu" ? lmuClass(x.cls, x.car) : null;
   const wet = x.wet !== void 0 ? x.wet : await sealedWet(env, x.trace);
+  const sectors = x.sectors && x.sectors !== "[]" ? x.sectors : await sealedSectors(env, x.trace, x.time) || x.sectors || null;
   await env.DB.prepare(
     `INSERT INTO community_laps (id, user_id, car_id, car, track_id, track, time, sectors, trace, created, anon, game, shown, lic, cat, official, ai, cls, wet) VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14,?15,?16,?17,?18,?19)
      ON CONFLICT(user_id, car_id, track_id) DO UPDATE SET time=excluded.time, sectors=excluded.sectors, trace=excluded.trace, created=excluded.created, car=excluded.car, track=excluded.track, anon=excluded.anon, game=excluded.game, shown=excluded.shown,
        lic=COALESCE(excluded.lic, community_laps.lic), cat=COALESCE(excluded.cat, community_laps.cat), official=excluded.official, ai=excluded.ai, cls=COALESCE(excluded.cls, community_laps.cls), wet=excluded.wet`
-  ).bind(rid6(), uid, x.carId, str3(x.car), x.trackId, str3(x.track), x.time, x.sectors || null, x.trace || null, Date.now(), x.anon ? 1 : 0, x.game, x.shown || "nick", licOf(x.lic), str3(x.cat, 20), officialOf(x.official), x.ai ? 1 : null, cls, wet ?? null).run();
+  ).bind(rid7(), uid, x.carId, str3(x.car), x.trackId, str3(x.track), x.time, sectors, x.trace || null, Date.now(), x.anon ? 1 : 0, x.game, x.shown || "nick", licOf(x.lic), str3(x.cat, 20), officialOf(x.official), x.ai ? 1 : null, cls, wet ?? null).run();
   await markModel(env, x.game, x.trackId, x.carId);
   const improved = !old || old.game !== x.game || x.time < old.time;
   const res = { shared: true, traced: !!x.trace, improved, prev: old && old.game === x.game ? old.time : null, game: x.game, trackId: x.trackId, carId: x.carId, track: x.track, car: x.car, time: x.time, anon: !!x.anon };
@@ -5059,7 +7168,7 @@ async function reshareSession(env, accountId, sid) {
     if (!row) {
       if (await nameTaken(env, alias, accountId)) return null;
       const gid = "guest-" + (await sha2562(accountId + ":" + alias.toLowerCase())).slice(0, 20);
-      await env.DB.prepare("INSERT INTO community_users (id, token_hash, alias, created, owner) VALUES (?1,?2,?3,?4,?5) ON CONFLICT(id) DO UPDATE SET alias=excluded.alias, owner=excluded.owner").bind(gid, await sha2562("guest:" + gid + ":" + rid6()), alias, Date.now(), accountId).run();
+      await env.DB.prepare("INSERT INTO community_users (id, token_hash, alias, created, owner) VALUES (?1,?2,?3,?4,?5) ON CONFLICT(id) DO UPDATE SET alias=excluded.alias, owner=excluded.owner").bind(gid, await sha2562("guest:" + gid + ":" + rid7()), alias, Date.now(), accountId).run();
       row = { id: gid };
     }
     const gl = await env.DB.prepare("SELECT l.account_id AS id, a.anon, a.name_kind FROM guest_links l JOIN accounts a ON a.id=l.account_id WHERE l.gid=?1").bind(row.id).first();
@@ -5094,10 +7203,10 @@ async function rememberLic(env, uid, cat, lic) {
 }
 __name(rememberLic, "rememberLic");
 async function minuteCache(env, k, fn) {
-  const cache2 = env.LOCAL !== "1" && typeof caches !== "undefined" && caches.default ? caches.default : null;
+  const cache3 = env.LOCAL !== "1" && typeof caches !== "undefined" && caches.default ? caches.default : null;
   const key = new Request("https://db.cache/" + k);
-  if (cache2) {
-    const hit = await cache2.match(key).catch(() => null);
+  if (cache3) {
+    const hit = await cache3.match(key).catch(() => null);
     if (hit) {
       try {
         return await hit.json();
@@ -5106,7 +7215,7 @@ async function minuteCache(env, k, fn) {
     }
   }
   const r2 = await fn();
-  if (cache2) await cache2.put(key, new Response(JSON.stringify({ results: r2.results || [] }), { headers: { "content-type": "application/json", "cache-control": "max-age=60" } })).catch(() => {
+  if (cache3) await cache3.put(key, new Response(JSON.stringify({ results: r2.results || [] }), { headers: { "content-type": "application/json", "cache-control": "max-age=60" } })).catch(() => {
   });
   return r2;
 }
@@ -5121,7 +7230,7 @@ async function community(req, env, url, ctx) {
   }
   const body = m === "POST" ? await req.json().catch(() => ({})) : {};
   if (p === "/register" && m === "POST") {
-    const id2 = rid6(), token = rid6() + rid6();
+    const id2 = rid7(), token = rid7() + rid7();
     await env.DB.prepare("INSERT INTO community_users (id, token_hash, alias, created) VALUES (?1,?2,?3,?4)").bind(id2, await sha2562(token), cleanAlias(body.alias), Date.now()).run();
     return json10({ id: id2, token });
   }
@@ -5145,8 +7254,8 @@ async function community(req, env, url, ctx) {
   if (p === "/model" && m === "GET") {
     const t = +url.searchParams.get("trackId"), c = await famId(env, game, url.searchParams.get("carId"));
     if (!t || !c) return err6("trackId and carId", 400);
-    const cq = url.searchParams.get("cmp");
-    const md2 = forCompound(await getModel(env, game, t, c), cq != null && /^\d{1,2}$/.test(cq) ? +cq : null);
+    const cq = url.searchParams.get("cmp"), tq = url.searchParams.get("temp");
+    const md2 = forCompound(await getModel(env, game, t, c), cq != null && /^\d{1,2}$/.test(cq) ? +cq : null, tq != null && /^-?\d{1,2}(\.\d+)?$/.test(tq) ? +tq : null);
     const rivals = seesRivals(req, env, await me(req, env).catch(() => null));
     const fs = await env.DB.prepare(`SELECT l.time, ${shownName("l", "u", rivals)} AS alias FROM community_laps l JOIN community_users u ON u.id=l.user_id WHERE l.track_id=?1 AND l.car_id=?2 AND l.game=?3 AND COALESCE(l.shown,'')<>'model' ORDER BY l.time LIMIT 1`).bind(t, c, game).first();
     return json10({ ...md2, car: await getCarCard(env, game, c).catch(() => null), fastShared: fs || null });
@@ -5261,8 +7370,18 @@ async function community(req, env, url, ctx) {
   if (p === "/trackmaps" && m === "GET") {
     const t = +url.searchParams.get("trackId");
     if (!t) return err6("trackId", 400);
-    const r2 = await env.DB.prepare("SELECT track, n, len, pts, time, created, geo FROM track_maps WHERE game=?1 AND track_id=?2").bind(game, t).first();
+    const [r2, ed] = await Promise.all([
+      env.DB.prepare("SELECT track, n, len, pts, time, created, geo FROM track_maps WHERE game=?1 AND track_id=?2").bind(game, t).first(),
+      env.DB.prepare("SELECT n, laps, data FROM track_edges WHERE game=?1 AND track_id=?2").bind(game, t).first().catch(() => null)
+    ]);
     if (!r2) return err6("no layout for this track yet", 404);
+    let edges = null;
+    try {
+      const e = ed && ed.n === r2.n ? JSON.parse(ed.data) : null;
+      if (e && Array.isArray(e.l) && e.l.length === r2.n) edges = { l: e.l, r: e.r, laps: ed.laps };
+    } catch (e) {
+      edges = null;
+    }
     const pts = JSON.parse(r2.pts);
     let g = null;
     try {
@@ -5270,7 +7389,7 @@ async function community(req, env, url, ctx) {
     } catch (e) {
       g = null;
     }
-    return new Response(JSON.stringify({ trackId: t, game, track: r2.track, n: r2.n, len: r2.len, x: pts.x, y: pts.y, g, time: r2.time, updated: r2.created }), { headers: { ...JSONH7, "cache-control": "public, max-age=3600" } });
+    return new Response(JSON.stringify({ trackId: t, game, track: r2.track, n: r2.n, len: r2.len, x: pts.x, y: pts.y, g, time: r2.time, updated: r2.created, ...edges ? { edges } : {} }), { headers: { ...JSONH7, "cache-control": "public, max-age=3600" } });
   }
   if (p === "/turns" && m === "GET") {
     const t = +url.searchParams.get("trackId");
@@ -5283,11 +7402,11 @@ async function community(req, env, url, ctx) {
       turns = [];
     }
     if (!turns.length) {
-      const [lay, want] = await Promise.all([env.DB.prepare("SELECT pts FROM track_maps WHERE game=?1 AND track_id=?2").bind(game, t).first(), turnCount(env, game, t)]);
+      const [lay, want, slows] = await Promise.all([env.DB.prepare("SELECT pts FROM track_maps WHERE game=?1 AND track_id=?2").bind(game, t).first(), turnCount(env, game, t), slowsOf(env, game, t)]);
       if (lay) {
         try {
           const p2 = JSON.parse(lay.pts);
-          turns = turnsFromPath(p2.x, p2.y, want);
+          turns = turnsFromPath(p2.x, p2.y, want, slows);
           auto = true;
         } catch (e) {
           turns = [];
@@ -5385,7 +7504,7 @@ async function community(req, env, url, ctx) {
         EXISTS (SELECT 1 FROM driver_links d WHERE d.account_id=a.id) AS driverLinked,
         (SELECT group_concat(d.game, ',') FROM driver_links d WHERE d.account_id=a.id) AS driverGames
         FROM accounts a ${q3 ? "WHERE a.display LIKE ?1 OR a.id LIKE ?1" : ""} ORDER BY a.created DESC LIMIT 500`).bind(...q3 ? ["%" + q3.replace(/[%_]/g, "") + "%"] : []).all();
-      return json10({ users: (r4.results || []).map((x) => ({ ...x, admin: isAdmin(env, x.id) })) });
+      return json10({ users: (r4.results || []).map((x) => ({ ...x, admin: isAdmin(env, x.id), tester: isTester(env, x.id) })) });
     }
     const q2 = /* @__PURE__ */ __name((t, extra) => env.DB.prepare(`SELECT x.id, '${t}' AS kind, x.car, x.track, x.created, x.anon, COALESCE(x.shown,'nick') AS shown, ${extra}
       u.id AS userId, u.alias, u.iracing, u.owner, o.display AS ownerName, ac.display AS account
@@ -5415,6 +7534,35 @@ async function community(req, env, url, ctx) {
     if (since !== null && !(isFinite(since) && since > 9466848e5 && since < Date.now() + 864e5)) return err6("that date is not valid", 400);
     const r2 = await env.DB.prepare("UPDATE accounts SET member_since=?2 WHERE id=?1").bind(String(body.id || ""), since === null ? null : Math.round(since)).run();
     return r2.meta && r2.meta.changes ? json10({ ok: true, since }) : err6("account not found", 404);
+  }
+  if (p === "/admin/turns-check" && m === "GET") {
+    const acc = await sessionAccount(req, env);
+    if (!acc || !isAdmin(env, acc.id)) return err6("only the admins of this server can do this", 403);
+    const rows = (await env.DB.prepare(
+      `SELECT m.game, m.track_id, m.track, m.n, m.pts, i.nturns, t.turns FROM track_maps m
+       LEFT JOIN track_info i ON i.game=m.game AND i.track_id=m.track_id LEFT JOIN track_turns t ON t.game=m.game AND t.track_id=m.track_id
+       ORDER BY m.track LIMIT 400`
+    ).all().catch(() => ({ results: [] }))).results || [];
+    const out = [];
+    for (const r2 of rows) {
+      let placed = 0;
+      try {
+        placed = r2.turns ? JSON.parse(r2.turns).length : 0;
+      } catch (e) {
+        placed = 0;
+      }
+      let found = 0, fitted = 0;
+      try {
+        const q2 = JSON.parse(r2.pts), slows = await slowsOf(env, r2.game, r2.track_id);
+        found = turnsFromPath(q2.x, q2.y, 0, slows).length;
+        fitted = r2.nturns ? turnsFromPath(q2.x, q2.y, r2.nturns, slows).length : found;
+      } catch (e) {
+      }
+      out.push({ game: r2.game, trackId: r2.track_id, track: r2.track || "", len: (r2.n || 0) * 5, official: r2.nturns || 0, placed, found, fitted });
+    }
+    const bad = /* @__PURE__ */ __name((x) => (x.placed ? 0 : 2) + (x.official && x.fitted !== x.official ? 1 : 0), "bad");
+    out.sort((a, b) => bad(b) - bad(a) || a.track.localeCompare(b.track));
+    return json10({ tracks: out });
   }
   if (p === "/admin/trackmaps-rebuild" && m === "POST") {
     const acc = await sessionAccount(req, env);
@@ -5576,7 +7724,7 @@ async function community(req, env, url, ctx) {
     const parts = p.slice(9).split("/").filter(Boolean), lid = parts[0] || "", sub = parts[1] || "";
     const lgGame = leagueGame(url.searchParams.get("game") || m === "POST" && body && body.game);
     if (lid === "found" && !sub && m === "GET") return json10(await foundLeagues(env, admin, lgGame));
-    if (env.LEAGUES_OPEN !== "1" && !admin) return err6("leagues are in development", 403);
+    if (env.LEAGUES_OPEN !== "1" && !admin && !(who2 && isTester(env, who2.id))) return err6("leagues are in development", 403);
     if (lid === "found") {
       if (m === "GET") return json10(await foundLeagues(env, admin, lgGame));
       if (m !== "POST" || !admin) return err6("only the admins can do this", 403);
@@ -5727,7 +7875,7 @@ async function community(req, env, url, ctx) {
     const n = await env.DB.prepare("SELECT COUNT(*) AS n FROM leagues WHERE owner=?1").bind(who2.id).first();
     const limit = await leagueLimit();
     if (n && n.n >= limit && !admin) return err6(limit === LEAGUES_SUPPORTER ? `you can post up to ${limit} leagues` : `you can post up to ${limit} leagues (${LEAGUES_SUPPORTER} as a supporter)`, 429);
-    const id2 = rid6();
+    const id2 = rid7();
     await env.DB.prepare("INSERT INTO leagues (id, owner, name, about, cat, cats, days, time, tz, open, discord, web, schedule, cars, lang, created, updated, game) VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14,?15,?16,?16,?17)").bind(id2, who2.id, x.name, x.about, x.cat, x.cats, x.days, x.time, x.tz, x.open, x.discord, x.web, x.schedule, x.cars, x.lang, now, x.game).run();
     return json10({ ok: true, id: id2, game: x.game });
   }
@@ -5827,6 +7975,11 @@ async function community(req, env, url, ctx) {
     for (const k of ["results", "brakes"]) if (Array.isArray(data[k])) data[k] = data[k].map((x) => !x ? x : x.me ? r2.anon ? { ...x, name: "Anonymous" } : x : rivals ? x : { ...x, name: "Anonymous" });
     return json10({ ...data, id: r2.id, alias: r2.alias, game: r2.game, shared: true });
   }
+  if (p === "/season/info" && m === "GET") {
+    const c = await env.DB.prepare("SELECT updated FROM season_cache WHERE k='current'").first();
+    const i = await env.DB.prepare("SELECT data FROM season_chunks WHERE k='info' AND idx=0").first();
+    return json10({ updated: c ? c.updated : null, ...i ? JSON.parse(i.data) : {} });
+  }
   if (p === "/season" && m === "GET") {
     const c = await env.DB.prepare("SELECT updated, chunks FROM season_cache WHERE k='current'").first();
     if (!c) return err6("no season schedule on this server yet", 404);
@@ -5867,7 +8020,7 @@ async function community(req, env, url, ctx) {
     const had = await env.DB.prepare("SELECT id FROM community_users WHERE owner=?1 AND id LIKE 'guest-%' AND lower(alias)=lower(?2)").bind(u.id, name2).first();
     const gid = had ? had.id : "guest-" + (await sha2562(u.id + ":" + name2.toLowerCase())).slice(0, 20);
     if (await nameTaken(env, name2, u.id)) return json10({ error: `"${name2}" is already used by another driver on Pitlane HQ, choose another name`, code: "name_taken" }, 409);
-    await env.DB.prepare("INSERT INTO community_users (id, token_hash, alias, created, owner) VALUES (?1,?2,?3,?4,?5) ON CONFLICT(id) DO UPDATE SET alias=excluded.alias, owner=excluded.owner").bind(gid, await sha2562("guest:" + gid + ":" + rid6()), name2, Date.now(), u.id).run();
+    await env.DB.prepare("INSERT INTO community_users (id, token_hash, alias, created, owner) VALUES (?1,?2,?3,?4,?5) ON CONFLICT(id) DO UPDATE SET alias=excluded.alias, owner=excluded.owner").bind(gid, await sha2562("guest:" + gid + ":" + rid7()), name2, Date.now(), u.id).run();
     const gl = await env.DB.prepare("SELECT l.account_id AS id, a.anon, a.name_kind FROM guest_links l JOIN accounts a ON a.id=l.account_id WHERE l.gid=?1").bind(gid).first();
     const to = gl ? await env.DB.prepare("SELECT id, alias, uploads_day, uploads FROM community_users WHERE id=?1").bind(gl.id).first() : null;
     u = to || await env.DB.prepare("SELECT id, alias, uploads_day, uploads FROM community_users WHERE id=?1").bind(gid).first();
@@ -5904,9 +8057,9 @@ async function community(req, env, url, ctx) {
     const r2 = await recordSeen(env, u.id, body);
     return r2.error ? err6(r2.error, r2.status) : json10(r2);
   }
-  if (p === "/season" && m === "POST") {
+  if ((p === "/season" || p === "/admin/season") && m === "POST") {
     const allowed = String(env.SEASON_UPLOADERS || env.ADMINS || "").split(",").map((x) => x.trim()).filter(Boolean);
-    if (!u.account || !allowed.includes(u.id)) return err6("this account cannot publish the season schedule", 403);
+    if (!u.account || !(allowed.includes(u.id) || isAdmin(env, u.id))) return err6("this account cannot publish the season schedule", 403);
     const data = JSON.stringify(body.season || null);
     if (data.length < 100 || data.length > 12e6 || !Array.isArray(body.season.seasons)) return err6("season schedule missing or too large", 400);
     const parts = [];
@@ -5914,7 +8067,9 @@ async function community(req, env, url, ctx) {
     await env.DB.batch([
       env.DB.prepare("DELETE FROM season_chunks WHERE k='current'"),
       ...parts.map((d, i) => env.DB.prepare("INSERT INTO season_chunks (k, idx, data) VALUES ('current',?1,?2)").bind(i, d)),
-      env.DB.prepare("INSERT INTO season_cache (k, updated, chunks) VALUES ('current',?1,?2) ON CONFLICT(k) DO UPDATE SET updated=excluded.updated, chunks=excluded.chunks").bind(Date.now(), parts.length)
+      env.DB.prepare("INSERT INTO season_cache (k, updated, chunks) VALUES ('current',?1,?2) ON CONFLICT(k) DO UPDATE SET updated=excluded.updated, chunks=excluded.chunks").bind(Date.now(), parts.length),
+      // what the admin page's Season says about it without reading the whole season
+      env.DB.prepare("INSERT INTO season_chunks (k, idx, data) VALUES ('info',0,?1) ON CONFLICT(k, idx) DO UPDATE SET data=excluded.data").bind(JSON.stringify(seasonInfo(body.season, u.id)))
     ]);
     return json10({ published: true, size: data.length });
   }
@@ -5929,7 +8084,7 @@ async function community(req, env, url, ctx) {
     const bytes = Uint8Array.from(atob(body.data), (c) => c.charCodeAt(0));
     if (await crypto.subtle.digest("SHA-256", bytes).then((b) => [...new Uint8Array(b)].map((x) => x.toString(16).padStart(2, "0")).join("")) !== body.sha) return err6("checksum does not match", 400);
     if (!await countUpload(env, u)) return err6("too many uploads today", 429);
-    const id2 = rid6();
+    const id2 = rid7();
     const r2 = await env.DB.prepare(
       "INSERT INTO community_setups (id, user_id, car_path, car, track, name, notes, data, sha, size, created, game) VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12) ON CONFLICT(user_id, sha) DO NOTHING"
     ).bind(id2, u.id, body.carPath, str3(body.car), str3(body.track, 80), cleanFile(body.name), str3(body.notes, 1e3), body.data, body.sha, bytes.length, Date.now(), game).run();
@@ -6060,20 +8215,20 @@ async function community(req, env, url, ctx) {
       if (plain2 && plain2.length > 9e5) return err6("lap trace too large", 400);
       const link = await env.DB.prepare("SELECT l.account_id AS id, a.anon, a.name_kind FROM driver_links l JOIN accounts a ON a.id=l.account_id WHERE l.oid=?1 AND l.game=?2").bind(oid, game).first();
       if (link) {
-        const r5 = await keepBestLap(env, link.id, { game, carId, trackId, car: body.car, track: body.track, time, sectors, trace: await sealData(env, plain2), cls: body.cls, wet: wetOf(body.trace && body.trace.f), anon: !!link.anon, shown: link.name_kind === "iracing" ? "iracing" : "nick", lic: body.lic, cat: body.cat, official: body.official, ai: body.ai === true, count: /* @__PURE__ */ __name(() => countUpload(env, u), "count"), ctx });
+        const r5 = await keepBestLap(env, link.id, { game, carId, trackId, car: body.car, track: body.track, time, sectors, trace: await sealData(env, plain2), len: traceLen(body.trace), cls: body.cls, wet: wetOf(body.trace && body.trace.f), anon: !!link.anon, shown: link.name_kind === "iracing" ? "iracing" : "nick", lic: body.lic, cat: body.cat, official: body.official, ai: body.ai === true, count: /* @__PURE__ */ __name(() => countUpload(env, u), "count"), ctx });
         if (r5.limit) return err6("too many uploads today", 429);
         return json10(r5.kept ? { kept: "a faster lap of this driver is already shared" } : { shared: true });
       }
       const short = driverName(body.name || body.short);
       await env.DB.prepare("INSERT INTO community_users (id, token_hash, alias, created, owner) VALUES (?1,?2,?5,?3,?4) ON CONFLICT(id) DO UPDATE SET alias=excluded.alias WHERE excluded.alias<>'Anonymous'").bind(oid, "other:" + oid, Date.now(), u.id, short || "Anonymous").run();
-      const r4 = await keepBestLap(env, oid, { game, carId, trackId, car: body.car, track: body.track, time, sectors, trace: await sealData(env, plain2), cls: body.cls, wet: wetOf(body.trace && body.trace.f), anon: true, shown: body.hidden ? "model" : "nick", lic: body.lic, cat: body.cat, official: body.official, ai: body.ai === true, count: /* @__PURE__ */ __name(() => countUpload(env, u), "count") });
+      const r4 = await keepBestLap(env, oid, { game, carId, trackId, car: body.car, track: body.track, time, sectors, trace: await sealData(env, plain2), len: traceLen(body.trace), cls: body.cls, wet: wetOf(body.trace && body.trace.f), anon: true, shown: "nick", lic: body.lic, cat: body.cat, official: body.official, ai: body.ai === true, count: /* @__PURE__ */ __name(() => countUpload(env, u), "count") });
       if (r4.limit) return err6("too many uploads today", 429);
       return json10(r4.kept ? { kept: "a faster lap of this driver is already shared" } : { shared: true });
     }
     const plainTrace = body.trace ? JSON.stringify(body.trace) : null;
     if (plainTrace && plainTrace.length > 9e5) return err6("lap trace too large", 400);
     const trace = await sealData(env, plainTrace);
-    const r2 = await keepBestLap(env, u.id, { game, carId, trackId, car: body.car, track: body.track, time, sectors, trace, cls: body.cls, wet: wetOf(body.trace && body.trace.f), anon: !!body.anon, shown: shownAs, lic: body.lic, cat: body.cat, official: body.official, ai: body.ai === true, count: /* @__PURE__ */ __name(() => countUpload(env, u), "count"), ctx });
+    const r2 = await keepBestLap(env, u.id, { game, carId, trackId, car: body.car, track: body.track, time, sectors, trace, len: traceLen(body.trace), cls: body.cls, wet: wetOf(body.trace && body.trace.f), anon: !!body.anon, shown: shownAs, lic: body.lic, cat: body.cat, official: body.official, ai: body.ai === true, count: /* @__PURE__ */ __name(() => countUpload(env, u), "count"), ctx });
     if (r2.limit) return err6("too many uploads today", 429);
     return json10(r2.kept ? { kept: "your faster lap is already shared" } : { shared: true });
   }
@@ -6122,12 +8277,17 @@ async function community(req, env, url, ctx) {
     if (data.length < 20 || data.length > 9e5) return err6("report missing or too large", 400);
     if (!await countUpload(env, u)) return err6("too many uploads today", 429);
     const r2 = body.report;
-    await env.DB.prepare("INSERT INTO community_reports (id, user_id, car_id, car, track_id, track, data, created, anon, game, finish, field, best, shown) VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14)").bind(rid6(), u.id, int3(r2.carId), str3(r2.car), int3(r2.trackId), str3(r2.track), await sealData(env, data), Date.now(), body.anon ? 1 : 0, gameOf(body.game || r2.game), int3(r2.finish), int3(r2.field), num2(r2.best), shownAs).run();
+    await env.DB.prepare("INSERT INTO community_reports (id, user_id, car_id, car, track_id, track, data, created, anon, game, finish, field, best, shown) VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14)").bind(rid7(), u.id, int3(r2.carId), str3(r2.car), int3(r2.trackId), str3(r2.track), await sealData(env, data), Date.now(), body.anon ? 1 : 0, gameOf(body.game || r2.game), int3(r2.finish), int3(r2.field), num2(r2.best), shownAs).run();
     return json10({ shared: true });
   }
   return err6("not found", 404);
 }
 __name(community, "community");
+function seasonInfo(season, by) {
+  const ss = season && season.seasons || [], ws = ss.flatMap((x) => x.schedules || []).map((w) => w.start_date).filter(Boolean).sort();
+  return { series: ss.length, weeks: ws.length, from: ws[0] || null, to: ws.at(-1) || null, source: season && season.source || "api", by };
+}
+__name(seasonInfo, "seasonInfo");
 
 // src/news.js
 var FEED = "https://www.iracing.com/feed/";
@@ -6176,10 +8336,10 @@ function parseFeed(xml) {
 __name(parseFeed, "parseFeed");
 async function news(req, env, ctx) {
   if (req.method === "OPTIONS") return new Response(null, { headers: { ...H2, "access-control-allow-methods": "GET" } });
-  const cache2 = caches.default, key = new Request("https://news.cache/iracing");
+  const cache3 = caches.default, key = new Request("https://news.cache/iracing");
   const url = new URL(req.url);
   if (url.searchParams.get("refresh") !== "1") {
-    const hit = await cache2.match(key);
+    const hit = await cache3.match(key);
     if (hit) return new Response(hit.body, { headers: H2 });
   }
   let items;
@@ -6191,12 +8351,20 @@ async function news(req, env, ctx) {
     return new Response(JSON.stringify({ error: "could not read the iRacing news: " + (e && e.message) }), { status: 502, headers: H2 });
   }
   const body = JSON.stringify({ items });
-  const put = cache2.put(key, new Response(body, { headers: { ...H2, "cache-control": "max-age=1800" } }));
+  const put = cache3.put(key, new Response(body, { headers: { ...H2, "cache-control": "max-age=1800" } }));
   if (ctx && ctx.waitUntil) ctx.waitUntil(put);
   else await put;
   return new Response(body, { headers: H2 });
 }
 __name(news, "news");
+
+// src/laphealth.js
+function traceHole(tr2) {
+  if (!tr2 || !Array.isArray(tr2.d)) return true;
+  if (tr2.h && typeof tr2.h === "object") return (+tr2.h.gap || 0) > 40 || (+tr2.h.seen || 0) < 0.9;
+  return !(Array.isArray(tr2.incK) && tr2.incK.includes("off"));
+}
+__name(traceHole, "traceHole");
 
 // src/worker.js
 import VIEWER from "./08b98ecbb95c8d52a3cf408dc7ea49553569cdf3-viewer.html";
@@ -7069,7 +9237,7 @@ var TOPICS = [
 var GUIDES = { en: "Guides", es: "Gu\xEDas", pt: "Guias" };
 
 // src/seo.js
-var SITE4 = "https://pitlanehq.app";
+var SITE5 = "https://pitlanehq.app";
 var SEO_VER = "12";
 var SEO_DATE = "2026-10-30";
 var esc4 = /* @__PURE__ */ __name((s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]), "esc");
@@ -7312,13 +9480,13 @@ var iracingLinks = /* @__PURE__ */ __name((l) => [...TOPICS.filter((x) => x.game
 function page3(l, { title, desc, path, alts, body, ld, noindex, game = "iracing" }) {
   const t = T2[l], other = game === "lmu" ? "iracing" : "lmu";
   const lg = game === "lmu" && HAS.lmuLeagues ? LEAGL[l].path : LEAG[l].path, rc = game === "lmu" && HAS.lmuRecords ? REC_IDX.lmu[l] : REC_IDX.iracing[l];
-  const hl = alts ? LANGS2.map((k) => `<link rel="alternate" hreflang="${HLANG[k]}" href="${SITE4}${alts[k]}">`).join("") + `<link rel="alternate" hreflang="x-default" href="${SITE4}${alts.en}">` : "";
+  const hl = alts ? LANGS2.map((k) => `<link rel="alternate" hreflang="${HLANG[k]}" href="${SITE5}${alts[k]}">`).join("") + `<link rel="alternate" hreflang="x-default" href="${SITE5}${alts.en}">` : "";
   const others = alts ? LANGS2.filter((k) => k !== l).map((k) => `<a href="${alts[k]}" hreflang="${HLANG[k]}" lang="${HLANG[k]}">${NAME[k]}</a>`).join("") : "";
-  const og = `${SITE4}/og${l === "en" ? "" : "-" + l}.png`;
+  const og = `${SITE5}/og${l === "en" ? "" : "-" + l}.png`;
   return `<!doctype html><html lang="${HLANG[l]}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>${esc4(title)}</title><meta name="description" content="${esc4(desc)}">${path ? `<link rel="canonical" href="${SITE4}${path}">` : ""}${noindex ? '<meta name="robots" content="noindex,follow">' : '<meta name="robots" content="index,follow,max-image-preview:large">'}
+<title>${esc4(title)}</title><meta name="description" content="${esc4(desc)}">${path ? `<link rel="canonical" href="${SITE5}${path}">` : ""}${noindex ? '<meta name="robots" content="noindex,follow">' : '<meta name="robots" content="index,follow,max-image-preview:large">'}
 ${hl}
-<meta property="og:type" content="website"><meta property="og:site_name" content="Pitlane HQ"><meta property="og:locale" content="${LOCALE[l]}"><meta property="og:title" content="${esc4(title)}"><meta property="og:description" content="${esc4(desc)}">${path ? `<meta property="og:url" content="${SITE4}${path}">` : ""}<meta property="og:image" content="${og}"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta property="og:image:alt" content="Pitlane HQ">
+<meta property="og:type" content="website"><meta property="og:site_name" content="Pitlane HQ"><meta property="og:locale" content="${LOCALE[l]}"><meta property="og:title" content="${esc4(title)}"><meta property="og:description" content="${esc4(desc)}">${path ? `<meta property="og:url" content="${SITE5}${path}">` : ""}<meta property="og:image" content="${og}"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta property="og:image:alt" content="Pitlane HQ">
 <meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="${esc4(title)}"><meta name="twitter:description" content="${esc4(desc)}"><meta name="twitter:image" content="${og}">
 <meta name="theme-color" content="#11151b"><link rel="icon" href="/favicon.ico" sizes="any"><link rel="icon" href="/logo.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="/icon-180.png">
 <style>${CSS}</style><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="${FONTS}" media="print" onload="this.media='all'"><noscript><link rel="stylesheet" href="${FONTS}"></noscript>
@@ -7328,28 +9496,28 @@ ${ld ? `<script type="application/ld+json">${JSON.stringify(ld).replace(/</g, "\
 <footer><div class="w"><p class="m">${esc4(GUIDES[l])} \xB7 iRacing \xB7 ${iracingLinks(l).map(([p, h]) => `<a href="${p}">${esc4(h)}</a>`).join(" \xB7 ")}</p><p class="m">${esc4(t.lmuH)} \xB7 ${lmuLinks(l).map(([p, h]) => `<a href="${p}">${esc4(h)}</a>`).join(" \xB7 ")}</p>Pitlane HQ \xB7 ${esc4(t.free)} \xB7 <a href="/downloads">${esc4(t.dl)}</a> \xB7 <a href="mailto:support@pitlanehq.app">support@pitlanehq.app</a> \xB7 ${LANGS2.map((k) => `<a href="${LAND[k].path}" hreflang="${HLANG[k]}">${NAME[k]}</a>`).join(" \xB7 ")}</div></footer></body></html>`;
 }
 __name(page3, "page");
-var crumbs = /* @__PURE__ */ __name((items) => ({ "@context": "https://schema.org", "@type": "BreadcrumbList", itemListElement: items.map(([name2, path], i) => ({ "@type": "ListItem", position: i + 1, name: name2, item: SITE4 + path })) }), "crumbs");
+var crumbs = /* @__PURE__ */ __name((items) => ({ "@context": "https://schema.org", "@type": "BreadcrumbList", itemListElement: items.map(([name2, path], i) => ({ "@type": "ListItem", position: i + 1, name: name2, item: SITE5 + path })) }), "crumbs");
 var faqLd = /* @__PURE__ */ __name((faq) => ({ "@context": "https://schema.org", "@type": "FAQPage", mainEntity: faq.map(([q2, a]) => ({ "@type": "Question", name: q2, acceptedAnswer: { "@type": "Answer", text: a } })) }), "faqLd");
 var appLd = /* @__PURE__ */ __name((l, desc, shots) => ({
   "@context": "https://schema.org",
   "@type": "SoftwareApplication",
-  "@id": SITE4 + "/#app",
+  "@id": SITE5 + "/#app",
   name: "Pitlane HQ",
   alternateName: ["PitlaneHQ", "Pitlane HQ Agent"],
-  url: SITE4 + "/",
+  url: SITE5 + "/",
   applicationCategory: "SportsApplication",
   applicationSubCategory: "Sim racing telemetry",
   operatingSystem: "Windows, Android, Web",
   description: desc,
   inLanguage: HLANG[l],
-  image: `${SITE4}/og${l === "en" ? "" : "-" + l}.png`,
-  ...shots && shots.length ? { screenshot: shots.map((f) => ({ "@type": "ImageObject", url: SITE4 + imgSrc(l, f), width: (SHOT[f] || [])[0], height: (SHOT[f] || [])[1] })) } : {},
+  image: `${SITE5}/og${l === "en" ? "" : "-" + l}.png`,
+  ...shots && shots.length ? { screenshot: shots.map((f) => ({ "@type": "ImageObject", url: SITE5 + imgSrc(l, f), width: (SHOT[f] || [])[0], height: (SHOT[f] || [])[1] })) } : {},
   offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
-  publisher: { "@id": SITE4 + "/#org" }
+  publisher: { "@id": SITE5 + "/#org" }
 }), "appLd");
 var siteLd = /* @__PURE__ */ __name((l) => [
-  { "@context": "https://schema.org", "@type": "WebSite", "@id": SITE4 + "/#website", name: "Pitlane HQ", alternateName: ["PitlaneHQ", "Pitlane"], url: SITE4 + "/", inLanguage: HLANG[l], publisher: { "@id": SITE4 + "/#org" } },
-  { "@context": "https://schema.org", "@type": "Organization", "@id": SITE4 + "/#org", name: "Pitlane HQ", alternateName: "PitlaneHQ", url: SITE4 + "/", logo: SITE4 + "/icon-512.png", email: "support@pitlanehq.app" }
+  { "@context": "https://schema.org", "@type": "WebSite", "@id": SITE5 + "/#website", name: "Pitlane HQ", alternateName: ["PitlaneHQ", "Pitlane"], url: SITE5 + "/", inLanguage: HLANG[l], publisher: { "@id": SITE5 + "/#org" } },
+  { "@context": "https://schema.org", "@type": "Organization", "@id": SITE5 + "/#org", name: "Pitlane HQ", alternateName: "PitlaneHQ", url: SITE5 + "/", logo: SITE5 + "/icon-512.png", email: "support@pitlanehq.app" }
 ], "siteLd");
 var etagOf = /* @__PURE__ */ __name((s) => {
   let h = 2166136261;
@@ -7359,7 +9527,7 @@ var etagOf = /* @__PURE__ */ __name((s) => {
   }
   return `W/"${(h >>> 0).toString(36)}-${s.length.toString(36)}"`;
 }, "etagOf");
-var html = /* @__PURE__ */ __name((s, cache2 = 600, status = 200) => new Response(s, { status, headers: { "content-type": "text/html; charset=utf-8", "cache-control": `public, max-age=${cache2}, stale-while-revalidate=86400`, etag: etagOf(s), "x-content-type-options": "nosniff" } }), "html");
+var html = /* @__PURE__ */ __name((s, cache3 = 600, status = 200) => new Response(s, { status, headers: { "content-type": "text/html; charset=utf-8", "cache-control": `public, max-age=${cache3}, stale-while-revalidate=86400`, etag: etagOf(s), "x-content-type-options": "nosniff" } }), "html");
 var cross = /* @__PURE__ */ __name((l, game) => {
   const o = game === "lmu" ? LAND[l] : LANDL[l];
   return `<p class="x">${esc4(T2[l].other[game])} <a href="${o.path}">${esc4(o.h1)} \u2192</a></p>`;
@@ -7931,7 +10099,7 @@ ${list.length ? `<div class="tw"><table><thead><tr><th>${esc4(W2.track)}</th><th
   const root = game === "lmu" ? [["Pitlane HQ", LAND[l].path], ["Le Mans Ultimate", LANDL[l].path], [T2[l].rec, base2]] : [["Pitlane HQ", LAND[l].path], [T2[l].rec, base2]];
   const ld = [
     crumbs(root),
-    { "@context": "https://schema.org", "@type": "ItemList", name: W2.recH(gn), itemListElement: list.slice(0, 100).map((x, i) => ({ "@type": "ListItem", position: i + 1, url: SITE4 + recPath(l, x, game), name: fix2(x.car) + " \xB7 " + fix2(x.track) })) },
+    { "@context": "https://schema.org", "@type": "ItemList", name: W2.recH(gn), itemListElement: list.slice(0, 100).map((x, i) => ({ "@type": "ListItem", position: i + 1, url: SITE5 + recPath(l, x, game), name: fix2(x.car) + " \xB7 " + fix2(x.track) })) },
     faqLd(W2.faq(gn))
   ];
   return html(page3(l, { title, desc, path, alts: { en: A.en + q2, es: A.es + q2, pt: A.pt + q2 }, body, ld, noindex: !list.length, game }));
@@ -7943,7 +10111,7 @@ async function recordsCombo(env, l, t, c, asked, game = "iracing") {
   if (!nm || !nm.track) return null;
   nm.car = famName(game, c, nm.car);
   const canon = recPath(l, { t, c, track: nm.track, car: nm.car }, game);
-  if (asked !== canon) return Response.redirect(SITE4 + canon, 301);
+  if (asked !== canon) return Response.redirect(SITE5 + canon, 301);
   const r2 = await env.DB.prepare(
     `SELECT l.user_id AS uid, CASE WHEN l.anon=1 OR COALESCE(ac.anon,0)=1 OR u.alias='Anonymous' THEN '' ELSE u.alias END AS alias, l.time, l.created, l.track, l.car, l.cat
        FROM community_laps l JOIN community_users u ON u.id=l.user_id LEFT JOIN accounts ac ON ac.id=l.user_id
@@ -8021,7 +10189,7 @@ for (const pg of PAGES) for (const l of LANGS2) {
 var STATIC_ALTS = [LAND_ALTS, LANDL_ALTS, OVL_ALTS, OVLL_ALTS, ...TOPICS.map(topicAlts)];
 async function sitemap(env) {
   const [combos2, lmuCombos, D, DL] = await Promise.all([topCombos(env, 2e3), topCombos(env, 2e3, "lmu"), leaguesData(env), leaguesData(env, "lmu")]);
-  const u = /* @__PURE__ */ __name((p, f, pr, alts, mod) => `<url><loc>${SITE4}${p}</loc>${mod ? `<lastmod>${mod}</lastmod>` : ""}<changefreq>${f}</changefreq><priority>${pr}</priority>${alts ? LANGS2.map((k) => `<xhtml:link rel="alternate" hreflang="${HLANG[k]}" href="${SITE4}${alts[k]}"/>`).join("") + `<xhtml:link rel="alternate" hreflang="x-default" href="${SITE4}${alts.en}"/>` : ""}</url>`, "u");
+  const u = /* @__PURE__ */ __name((p, f, pr, alts, mod) => `<url><loc>${SITE5}${p}</loc>${mod ? `<lastmod>${mod}</lastmod>` : ""}<changefreq>${f}</changefreq><priority>${pr}</priority>${alts ? LANGS2.map((k) => `<xhtml:link rel="alternate" hreflang="${HLANG[k]}" href="${SITE5}${alts[k]}"/>`).join("") + `<xhtml:link rel="alternate" hreflang="x-default" href="${SITE5}${alts.en}"/>` : ""}</url>`, "u");
   const later2 = /* @__PURE__ */ __name((...d) => d.filter(Boolean).sort().pop() || SEO_DATE, "later");
   const newest = /* @__PURE__ */ __name((cs) => later2(SEO_DATE, day(Math.max(0, ...cs.map((x) => x.upd || 0)))), "newest");
   const s = [u("/", "weekly", "1.0", null, newest(combos2))];
@@ -8089,7 +10257,7 @@ async function indexNow(env) {
     const r2 = await fetch("https://api.indexnow.org/indexnow", {
       method: "POST",
       headers: { "content-type": "application/json; charset=utf-8" },
-      body: JSON.stringify({ host: "pitlanehq.app", key: INDEXNOW_KEY, keyLocation: `${SITE4}/${INDEXNOW_KEY}.txt`, urlList: [...new Set(urls)].slice(0, 1e4).map((u) => SITE4 + u) })
+      body: JSON.stringify({ host: "pitlanehq.app", key: INDEXNOW_KEY, keyLocation: `${SITE5}/${INDEXNOW_KEY}.txt`, urlList: [...new Set(urls)].slice(0, 1e4).map((u) => SITE5 + u) })
     }).catch(() => null);
     const said = r2 ? r2.status + " " + (await r2.text().catch(() => "")).slice(0, 200) : "no answer";
     await env.DB.prepare("INSERT INTO app_state (k, v, at) VALUES ('indexnow_last', ?1, ?2) ON CONFLICT(k) DO UPDATE SET v=excluded.v, at=excluded.at").bind(JSON.stringify({ said, urls: urls.length }), Date.now()).run().catch(() => {
@@ -8116,7 +10284,7 @@ var isPublic = /* @__PURE__ */ __name((p) => p === "/sitemap.xml" || AT.has(p) |
 async function draw(req, env, url, p) {
   if (p === "/sitemap.xml") return sitemap(env);
   await readHas(env);
-  const at2 = /* @__PURE__ */ __name((canon, show) => url.pathname === canon ? show() : Response.redirect(SITE4 + canon + url.search, 301), "at");
+  const at2 = /* @__PURE__ */ __name((canon, show) => url.pathname === canon ? show() : Response.redirect(SITE5 + canon + url.search, 301), "at");
   const hit = AT.get(p);
   if (hit) {
     const [pg, l, canon] = hit, dsc = url.searchParams.get("d");
@@ -8141,13 +10309,13 @@ async function seoPage(req, env, url, ctx) {
   await noteBot(req, env, p);
   if (p === "/" + INDEXNOW_KEY + ".txt") return new Response(INDEXNOW_KEY, { headers: { "content-type": "text/plain; charset=utf-8" } });
   if (!isPublic(p)) return null;
-  const cache2 = env.LOCAL !== "1" && typeof caches !== "undefined" && caches.default ? caches.default : null;
-  const key = new Request(SITE4 + url.pathname + url.search, { method: "GET" });
-  let res = cache2 ? await cache2.match(key).catch(() => null) : null;
+  const cache3 = env.LOCAL !== "1" && typeof caches !== "undefined" && caches.default ? caches.default : null;
+  const key = new Request(SITE5 + url.pathname + url.search, { method: "GET" });
+  let res = cache3 ? await cache3.match(key).catch(() => null) : null;
   if (!res) {
     res = await draw(req, env, url, p);
-    if (cache2 && res.status === 200) {
-      const put = cache2.put(key, res.clone()).catch(() => {
+    if (cache3 && res.status === 200) {
+      const put = cache3.put(key, res.clone()).catch(() => {
       });
       if (ctx && ctx.waitUntil) ctx.waitUntil(put);
       else await put;
@@ -8351,8 +10519,8 @@ async function usageRoute(req, env, url) {
       // and it is a message of the driver's support chat (support.js), so they see it there
       ...driverMessage(env, acc.id, id2, now, { ...f, lang: cleanLang(b && b.lang) })
     ]);
-    const esc5 = await openEscrow(env, acc.escrow).catch(() => null);
-    const mailed = await sendFeedback(env, { ...f, nick: acc.display || "", accountId: acc.id, email: esc5 && esc5.email || "" }).catch(() => false);
+    const esc6 = await openEscrow(env, acc.escrow).catch(() => null);
+    const mailed = await sendFeedback(env, { ...f, nick: acc.display || "", accountId: acc.id, email: esc6 && esc6.email || "" }).catch(() => false);
     return json11({ ok: true, id: id2, mailed });
   }
   if (!isAdmin(env, acc.id)) return err7("only the admins of this server can do this", 403);
@@ -8388,6 +10556,195 @@ __name(pruneUsage, "pruneUsage");
 
 // src/support.js
 var supportRoute = /* @__PURE__ */ __name((req, env, url) => handleSupport(req, env, url, { sessionAccount, isAdmin, openEscrow, sendSupportChat, sendSupportReply }), "supportRoute");
+
+// src/legal.js
+var esc5 = /* @__PURE__ */ __name((s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]), "esc");
+var MAIL = "support@pitlanehq.app";
+var UPDATED = "2026-10-31";
+var PRIVACY = {
+  en: {
+    title: "Privacy policy",
+    up: "Last updated",
+    intro: "Pitlane HQ is a free app for sim racing drivers. This page says what it keeps about you, why and for how long.",
+    s: [
+      ["What we keep", [
+        "Your account. Your email address, your nickname and the language you chose.",
+        "Your laps and sessions. The Pitlane HQ Agent on your PC uploads the laps you drive in iRacing and Le Mans Ultimate, with their times and telemetry, so you can see them on the web and the phone apps.",
+        "What you share. Laps on the leaderboards, track notes, league posts and support messages, under your nickname or as an anonymous driver if you choose so.",
+        "Linked accounts. When you sign in with Steam or Discord or link them, their account id and name, to sign you in and show them where you choose.",
+        "The apps' use. Which screens are opened each day, error reports when an app fails and the logs you send from the support chat, to fix problems.",
+        "Notifications. With notifications turned on in a phone, a token from Google Firebase (Android) or Apple (iPhone) so the server can wake that phone when there is something new. The message only says there is something new and the phone reads it from Pitlane HQ."
+      ]],
+      ["What we do not do", ["We do not sell your data, show ads or share your data with advertisers.", "We never send reminders or summaries by email. Emails are only for your account (confirming the address, signing in, a new password)."]],
+      ["Who helps us run it", ["Cloudflare hosts the server, the database and the downloads.", "Resend sends the account emails.", "Google Firebase and Apple deliver the phone notifications when you turn them on.", "Steam and Discord, only when you sign in with them or link them."]],
+      ["How long we keep it", ["Your account and its data stay until you delete the account.", "Notifications are kept 30 days, phone tokens until notifications are turned off or 270 days without use, error reports 30 days."]],
+      ["Deleting your account", ['You can delete your account at any time in the app (Account \u2192 Delete account) or as explained at <a href="/delete-account">pitlanehq.app/delete-account</a>. Deleting it removes the account, your synced data, your devices and your race analyses. Your laps on the leaderboard and the laps the coach model learns from stay, as an anonymous driver without your name.']],
+      ["Children", ["Pitlane HQ is not meant for children under 13 and does not knowingly keep data about them."]],
+      ["Contact", [`Questions about your data go to <a href="mailto:${MAIL}">${MAIL}</a>. We may update this page and the date at the top says when it last changed.`]]
+    ]
+  },
+  es: {
+    title: "Pol\xEDtica de privacidad",
+    up: "\xDAltima actualizaci\xF3n",
+    intro: "Pitlane HQ es una app gratuita para pilotos de sim racing. Esta p\xE1gina dice qu\xE9 guarda sobre ti, para qu\xE9 y durante cu\xE1nto tiempo.",
+    s: [
+      ["Qu\xE9 guardamos", [
+        "Tu cuenta. Tu email, tu apodo y el idioma que elegiste.",
+        "Tus vueltas y sesiones. Pitlane HQ Agent en tu PC sube las vueltas que das en iRacing y Le Mans Ultimate, con sus tiempos y su telemetr\xEDa, para que las veas en la web y en las apps del m\xF3vil.",
+        "Lo que compartes. Vueltas en las leaderboards, notas de circuito, publicaciones de ligas y mensajes de soporte, con tu apodo o como piloto an\xF3nimo si lo eliges.",
+        "Cuentas vinculadas. Si inicias sesi\xF3n con Steam o Discord o los vinculas, su id y su nombre, para iniciar sesi\xF3n y mostrarlos donde elijas.",
+        "El uso de las apps. Qu\xE9 pantallas se abren cada d\xEDa, informes de error cuando una app falla y los logs que env\xEDas desde el chat de soporte, para arreglar problemas.",
+        "Notificaciones. Con las notificaciones activadas en un m\xF3vil, un token de Google Firebase (Android) o de Apple (iPhone) para que el servidor pueda avisar a ese m\xF3vil cuando hay algo nuevo. El mensaje solo dice que hay algo nuevo y el m\xF3vil lo lee de Pitlane HQ."
+      ]],
+      ["Qu\xE9 no hacemos", ["No vendemos tus datos, no mostramos anuncios ni compartimos tus datos con anunciantes.", "Nunca enviamos recordatorios ni res\xFAmenes por email. Los emails son solo para tu cuenta (confirmar la direcci\xF3n, iniciar sesi\xF3n, una contrase\xF1a nueva)."]],
+      ["Qui\xE9n nos ayuda", ["Cloudflare aloja el servidor, la base de datos y las descargas.", "Resend env\xEDa los emails de la cuenta.", "Google Firebase y Apple entregan las notificaciones del m\xF3vil cuando las activas.", "Steam y Discord, solo cuando inicias sesi\xF3n con ellos o los vinculas."]],
+      ["Cu\xE1nto tiempo lo guardamos", ["Tu cuenta y sus datos se quedan hasta que borras la cuenta.", "Los avisos se guardan 30 d\xEDas, los tokens del m\xF3vil hasta que desactivas las notificaciones o 270 d\xEDas sin uso, los informes de error 30 d\xEDas."]],
+      ["Borrar tu cuenta", ['Puedes borrar tu cuenta cuando quieras en la app (Cuenta \u2192 Borrar cuenta) o como se explica en <a href="/delete-account?lang=es">pitlanehq.app/delete-account</a>. Al borrarla se van la cuenta, tus datos sincronizados, tus dispositivos y tus an\xE1lisis de carrera. Tus vueltas en la leaderboard y las vueltas de las que aprende el modelo del coach se quedan, como un piloto an\xF3nimo sin tu nombre.']],
+      ["Menores", ["Pitlane HQ no est\xE1 pensada para menores de 13 a\xF1os y no guarda a sabiendas datos sobre ellos."]],
+      ["Contacto", [`Las preguntas sobre tus datos van a <a href="mailto:${MAIL}">${MAIL}</a>. Podemos actualizar esta p\xE1gina y la fecha de arriba dice cu\xE1ndo cambi\xF3 por \xFAltima vez.`]]
+    ]
+  },
+  pt: {
+    title: "Pol\xEDtica de privacidade",
+    up: "\xDAltima atualiza\xE7\xE3o",
+    intro: "O Pitlane HQ \xE9 um app gratuito para pilotos de sim racing. Esta p\xE1gina diz o que ele guarda sobre voc\xEA, para qu\xEA e por quanto tempo.",
+    s: [
+      ["O que guardamos", [
+        "Sua conta. Seu email, seu apelido e o idioma que voc\xEA escolheu.",
+        "Suas voltas e sess\xF5es. O Pitlane HQ Agent no seu PC envia as voltas que voc\xEA d\xE1 no iRacing e no Le Mans Ultimate, com os tempos e a telemetria, para voc\xEA v\xEA-las na web e nos apps do celular.",
+        "O que voc\xEA compartilha. Voltas nas classifica\xE7\xF5es, notas de pista, publica\xE7\xF5es de ligas e mensagens de suporte, com seu apelido ou como piloto an\xF4nimo se voc\xEA escolher.",
+        "Contas vinculadas. Se voc\xEA entrar com Steam ou Discord ou vincul\xE1-los, o id e o nome delas, para entrar e mostr\xE1-las onde voc\xEA escolher.",
+        "O uso dos apps. Quais telas s\xE3o abertas por dia, relat\xF3rios de erro quando um app falha e os logs que voc\xEA envia pelo chat de suporte, para corrigir problemas.",
+        "Notifica\xE7\xF5es. Com as notifica\xE7\xF5es ativadas em um celular, um token do Google Firebase (Android) ou da Apple (iPhone) para o servidor poder avisar esse celular quando houver algo novo. A mensagem s\xF3 diz que h\xE1 algo novo e o celular l\xEA do Pitlane HQ."
+      ]],
+      ["O que n\xE3o fazemos", ["N\xE3o vendemos seus dados, n\xE3o mostramos an\xFAncios nem compartilhamos seus dados com anunciantes.", "Nunca enviamos lembretes nem resumos por email. Os emails s\xE3o s\xF3 para sua conta (confirmar o endere\xE7o, entrar, uma nova senha)."]],
+      ["Quem nos ajuda", ["A Cloudflare hospeda o servidor, o banco de dados e os downloads.", "A Resend envia os emails da conta.", "O Google Firebase e a Apple entregam as notifica\xE7\xF5es do celular quando voc\xEA as ativa.", "Steam e Discord, s\xF3 quando voc\xEA entra com eles ou os vincula."]],
+      ["Por quanto tempo guardamos", ["Sua conta e seus dados ficam at\xE9 voc\xEA apagar a conta.", "Os avisos ficam 30 dias, os tokens do celular at\xE9 voc\xEA desativar as notifica\xE7\xF5es ou 270 dias sem uso, os relat\xF3rios de erro 30 dias."]],
+      ["Apagar sua conta", ['Voc\xEA pode apagar sua conta quando quiser no app (Conta \u2192 Apagar conta) ou como explicado em <a href="/delete-account?lang=pt">pitlanehq.app/delete-account</a>. Ao apag\xE1-la v\xE3o a conta, seus dados sincronizados, seus dispositivos e suas an\xE1lises de corrida. Suas voltas na classifica\xE7\xE3o e as voltas com que o modelo do coach aprende ficam, como um piloto an\xF4nimo sem seu nome.']],
+      ["Crian\xE7as", ["O Pitlane HQ n\xE3o \xE9 feito para menores de 13 anos e n\xE3o guarda conscientemente dados sobre eles."]],
+      ["Contato", [`Perguntas sobre seus dados v\xE3o para <a href="mailto:${MAIL}">${MAIL}</a>. Podemos atualizar esta p\xE1gina e a data no topo diz quando ela mudou pela \xFAltima vez.`]]
+    ]
+  }
+};
+var TERMS = {
+  en: {
+    title: "Terms of service",
+    intro: "These terms apply when you use Pitlane HQ, the web at pitlanehq.app, the phone apps and Pitlane HQ Agent. By using it you agree to them.",
+    s: [
+      ["The service", ["Pitlane HQ is free during the beta. It records your sim racing laps, analyses them and shows them on your devices. Features can change, arrive or go away while it is in beta."]],
+      ["Your account", ["You can sign up with an email or with Steam or Discord. Keep your sign-in to yourself. You are responsible for what is done with your account.", "You must be at least 13 years old to use Pitlane HQ."]],
+      ["What you share", ["Laps, notes, league posts and messages you share stay yours. You let Pitlane HQ show them where you chose to share them.", "Do not post anything illegal, hateful, abusive or that is not yours to share, and do not cheat on the leaderboards. We can remove such content and close accounts that break these terms."]],
+      ["Fair use", ["Do not try to break, overload or reverse engineer the service, read other people's data or use it to send spam."]],
+      ["Games and other companies", ["Pitlane HQ is not made by or linked to iRacing, Motorsport Games, Studio 397, Valve, Discord or Google. Their names and games belong to their owners."]],
+      ["No warranty", ["Pitlane HQ is given as it is, without any warranty. It can have bugs or be down at times. As far as the law allows, we are not liable for any loss that comes from using it."]],
+      ["Ending", [`You can delete your account at any time, as explained at <a href="/delete-account">pitlanehq.app/delete-account</a>. How we handle your data is in the <a href="/privacy">privacy policy</a>.`]],
+      ["Changes and contact", [`We can update these terms and the date at the top says when they last changed. Questions go to <a href="mailto:${MAIL}">${MAIL}</a>.`]]
+    ]
+  },
+  es: {
+    title: "T\xE9rminos del servicio",
+    intro: "Estos t\xE9rminos se aplican cuando usas Pitlane HQ, la web en pitlanehq.app, las apps del m\xF3vil y Pitlane HQ Agent. Al usarlo los aceptas.",
+    s: [
+      ["El servicio", ["Pitlane HQ es gratis durante la beta. Guarda tus vueltas de sim racing, las analiza y te las muestra en tus dispositivos. Las funciones pueden cambiar, llegar o irse mientras est\xE1 en beta."]],
+      ["Tu cuenta", ["Puedes registrarte con un email o con Steam o Discord. No compartas tu acceso. Eres responsable de lo que se haga con tu cuenta.", "Tienes que tener al menos 13 a\xF1os para usar Pitlane HQ."]],
+      ["Lo que compartes", ["Las vueltas, notas, publicaciones de ligas y mensajes que compartes siguen siendo tuyos. Permites que Pitlane HQ los muestre donde elegiste compartirlos.", "No publiques nada ilegal, de odio, abusivo o que no sea tuyo, y no hagas trampas en las leaderboards. Podemos quitar ese contenido y cerrar las cuentas que incumplan estos t\xE9rminos."]],
+      ["Uso justo", ["No intentes romper, saturar o hacer ingenier\xEDa inversa del servicio, leer datos de otras personas ni usarlo para enviar spam."]],
+      ["Juegos y otras empresas", ["Pitlane HQ no est\xE1 hecho por iRacing, Motorsport Games, Studio 397, Valve, Discord ni Google, ni vinculado a ellos. Sus nombres y juegos son de sus due\xF1os."]],
+      ["Sin garant\xEDa", ["Pitlane HQ se ofrece tal cual, sin ninguna garant\xEDa. Puede tener errores o no estar disponible a veces. En lo que permita la ley, no respondemos de p\xE9rdidas que vengan de usarlo."]],
+      ["Baja", [`Puedes borrar tu cuenta cuando quieras, como se explica en <a href="/delete-account?lang=es">pitlanehq.app/delete-account</a>. C\xF3mo tratamos tus datos est\xE1 en la <a href="/privacy?lang=es">pol\xEDtica de privacidad</a>.`]],
+      ["Cambios y contacto", [`Podemos actualizar estos t\xE9rminos y la fecha de arriba dice cu\xE1ndo cambiaron por \xFAltima vez. Las preguntas van a <a href="mailto:${MAIL}">${MAIL}</a>.`]]
+    ]
+  },
+  pt: {
+    title: "Termos de servi\xE7o",
+    intro: "Estes termos valem quando voc\xEA usa o Pitlane HQ, a web em pitlanehq.app, os apps de celular e o Pitlane HQ Agent. Ao us\xE1-lo voc\xEA os aceita.",
+    s: [
+      ["O servi\xE7o", ["O Pitlane HQ \xE9 gr\xE1tis durante o beta. Ele guarda suas voltas de sim racing, analisa e mostra nos seus dispositivos. Os recursos podem mudar, chegar ou sair enquanto ele est\xE1 em beta."]],
+      ["Sua conta", ["Voc\xEA pode se cadastrar com um email ou com Steam ou Discord. N\xE3o compartilhe seu acesso. Voc\xEA \xE9 respons\xE1vel pelo que \xE9 feito com sua conta.", "Voc\xEA precisa ter pelo menos 13 anos para usar o Pitlane HQ."]],
+      ["O que voc\xEA compartilha", ["Voltas, notas, posts de ligas e mensagens que voc\xEA compartilha continuam sendo seus. Voc\xEA permite que o Pitlane HQ os mostre onde escolheu compartilh\xE1-los.", "N\xE3o publique nada ilegal, de \xF3dio, abusivo ou que n\xE3o seja seu, e n\xE3o trapaceie nas classifica\xE7\xF5es. Podemos remover esse conte\xFAdo e encerrar contas que descumpram estes termos."]],
+      ["Uso justo", ["N\xE3o tente quebrar, sobrecarregar ou fazer engenharia reversa do servi\xE7o, ler dados de outras pessoas nem us\xE1-lo para enviar spam."]],
+      ["Jogos e outras empresas", ["O Pitlane HQ n\xE3o \xE9 feito pela iRacing, Motorsport Games, Studio 397, Valve, Discord ou Google, nem ligado a elas. Seus nomes e jogos pertencem aos donos."]],
+      ["Sem garantia", ["O Pitlane HQ \xE9 oferecido como est\xE1, sem nenhuma garantia. Ele pode ter erros ou ficar fora do ar \xE0s vezes. At\xE9 onde a lei permite, n\xE3o respondemos por perdas que venham do seu uso."]],
+      ["Encerramento", [`Voc\xEA pode apagar sua conta quando quiser, como explicado em <a href="/delete-account?lang=pt">pitlanehq.app/delete-account</a>. Como tratamos seus dados est\xE1 na <a href="/privacy?lang=pt">pol\xEDtica de privacidade</a>.`]],
+      ["Mudan\xE7as e contato", [`Podemos atualizar estes termos e a data no topo diz quando mudaram pela \xFAltima vez. Perguntas v\xE3o para <a href="mailto:${MAIL}">${MAIL}</a>.`]]
+    ]
+  }
+};
+var DELETE = {
+  en: {
+    title: "Delete your Pitlane HQ account",
+    steps: [
+      "In the phone app, open Account, write your password under Delete account and tap Delete.",
+      'Or on the web, open <a href="/">pitlanehq.app</a>, sign in, open Account and use Delete account at the bottom.',
+      `If you can no longer sign in, write to <a href="mailto:${MAIL}?subject=Delete%20my%20account">${MAIL}</a> from the email of your account and we delete it within 30 days.`
+    ],
+    h1: "How to delete it",
+    h2: "What is deleted and what stays",
+    what: ["The account, your email, your synced data, your devices, your race analyses, your notifications and linked Steam or Discord accounts are deleted at once.", "Your laps on the leaderboard and the laps the coach model learns from stay, as an anonymous driver without your name.", "The data on your PC stays until you uninstall Pitlane HQ Agent from it. Uninstalling removes all of it from the PC."],
+    more: 'More in the <a href="/privacy">privacy policy</a>.'
+  },
+  es: {
+    title: "Borrar tu cuenta de Pitlane HQ",
+    steps: [
+      "En la app del m\xF3vil, abre Cuenta, escribe tu contrase\xF1a en Borrar cuenta y toca Borrar.",
+      'O en la web, abre <a href="/">pitlanehq.app</a>, inicia sesi\xF3n, abre Cuenta y usa Borrar cuenta al final.',
+      `Si ya no puedes iniciar sesi\xF3n, escribe a <a href="mailto:${MAIL}?subject=Borrar%20mi%20cuenta">${MAIL}</a> desde el email de tu cuenta y la borramos en 30 d\xEDas como mucho.`
+    ],
+    h1: "C\xF3mo borrarla",
+    h2: "Qu\xE9 se borra y qu\xE9 se queda",
+    what: ["La cuenta, tu email, tus datos sincronizados, tus dispositivos, tus an\xE1lisis de carrera, tus avisos y las cuentas de Steam o Discord vinculadas se borran al momento.", "Tus vueltas en la leaderboard y las vueltas de las que aprende el modelo del coach se quedan, como un piloto an\xF3nimo sin tu nombre.", "Los datos de tu PC se quedan hasta que desinstales Pitlane HQ Agent de \xE9l. Al desinstalarlo se borra todo del PC."],
+    more: 'M\xE1s en la <a href="/privacy?lang=es">pol\xEDtica de privacidad</a>.'
+  },
+  pt: {
+    title: "Apagar sua conta do Pitlane HQ",
+    steps: [
+      "No app do celular, abra Conta, escreva sua senha em Apagar conta e toque em Apagar.",
+      'Ou na web, abra <a href="/">pitlanehq.app</a>, entre, abra Conta e use Apagar conta no final.',
+      `Se voc\xEA n\xE3o consegue mais entrar, escreva para <a href="mailto:${MAIL}?subject=Apagar%20minha%20conta">${MAIL}</a> do email da sua conta e n\xF3s a apagamos em at\xE9 30 dias.`
+    ],
+    h1: "Como apag\xE1-la",
+    h2: "O que \xE9 apagado e o que fica",
+    what: ["A conta, seu email, seus dados sincronizados, seus dispositivos, suas an\xE1lises de corrida, seus avisos e as contas de Steam ou Discord vinculadas s\xE3o apagados na hora.", "Suas voltas na classifica\xE7\xE3o e as voltas com que o modelo do coach aprende ficam, como um piloto an\xF4nimo sem seu nome.", "Os dados do seu PC ficam at\xE9 voc\xEA desinstalar o Pitlane HQ Agent dele. A desinstala\xE7\xE3o apaga tudo do PC."],
+    more: 'Mais na <a href="/privacy?lang=pt">pol\xEDtica de privacidade</a>.'
+  }
+};
+function legalLang(req, url) {
+  const q2 = (url.searchParams.get("lang") || "").slice(0, 2).toLowerCase();
+  if (PRIVACY[q2]) return q2;
+  for (const part of (req.headers.get("accept-language") || "").toLowerCase().split(",")) {
+    const l = part.trim().slice(0, 2);
+    if (PRIVACY[l]) return l;
+  }
+  return "en";
+}
+__name(legalLang, "legalLang");
+var LN = { en: "English", es: "Espa\xF1ol", pt: "Portugu\xEAs" };
+var shell = /* @__PURE__ */ __name((l, path, title, body) => `<!doctype html><html lang="${l === "pt" ? "pt-BR" : l}"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc5(title)} \xB7 Pitlane HQ</title><link rel="canonical" href="https://pitlanehq.app${path}${l === "en" ? "" : "?lang=" + l}"><link rel="icon" href="/favicon.ico" sizes="any">
+<style>body{margin:0;background:#11151b;color:#e7ebf1;font:16px/1.6 system-ui,sans-serif}main{max-width:760px;margin:0 auto;padding:28px 16px 48px}h1{font-size:26px;margin:0 0 6px}h2{font-size:17px;margin:26px 0 8px;color:#ffb02e}p{color:#a9b4c3;margin:6px 0}ul,ol{padding-left:20px;color:#c9d2de}li{margin:6px 0}a{color:#ffb02e}.m{color:#8a97a9;font-size:13px}.top{display:flex;align-items:center;gap:10px;margin-bottom:18px}.top b{font-size:15px;letter-spacing:.06em}.top img{width:28px;height:28px;border-radius:7px}</style>
+<main><div class="top"><img src="/icon-192.png" alt=""><b>PITLANE HQ</b></div>${body}<p class="m" style="margin-top:28px">${Object.keys(LN).map((k) => `<a href="${path}?lang=${k}" hreflang="${k}">${LN[k]}</a>`).join(" \xB7 ")}</p></main></html>`, "shell");
+function privacyPage(l) {
+  const p = PRIVACY[l] || PRIVACY.en;
+  return shell(l, "/privacy", p.title, `<h1>${esc5(p.title)}</h1><p class="m">${esc5(p.up)} ${UPDATED}</p><p>${esc5(p.intro)}</p>` + p.s.map(([h, items]) => `<h2>${esc5(h)}</h2>` + (items.length > 1 ? `<ul>${items.map((x) => `<li>${x}</li>`).join("")}</ul>` : `<p>${items[0]}</p>`)).join(""));
+}
+__name(privacyPage, "privacyPage");
+function termsPage(l) {
+  const p = TERMS[l] || TERMS.en, up = (PRIVACY[l] || PRIVACY.en).up;
+  return shell(l, "/terms", p.title, `<h1>${esc5(p.title)}</h1><p class="m">${esc5(up)} ${UPDATED}</p><p>${esc5(p.intro)}</p>` + p.s.map(([h, items]) => `<h2>${esc5(h)}</h2>` + items.map((x) => `<p>${x}</p>`).join("")).join(""));
+}
+__name(termsPage, "termsPage");
+function deletePage(l) {
+  const d = DELETE[l] || DELETE.en;
+  return shell(l, "/delete-account", d.title, `<h1>${esc5(d.title)}</h1><h2>${esc5(d.h1)}</h2><ol>${d.steps.map((x) => `<li>${x}</li>`).join("")}</ol><h2>${esc5(d.h2)}</h2><ul>${d.what.map((x) => `<li>${esc5(x)}</li>`).join("")}</ul><p>${d.more}</p>`);
+}
+__name(deletePage, "deletePage");
+function legal(req, url) {
+  const p = url.pathname.replace(/\/+$/, "");
+  const page4 = { "/privacy": privacyPage, "/terms": termsPage, "/delete-account": deletePage }[p];
+  if (!page4) return null;
+  const l = legalLang(req, url);
+  return new Response(page4(l), { headers: { "content-type": "text/html; charset=utf-8", "cache-control": "public, max-age=3600", vary: "Accept-Language" } });
+}
+__name(legal, "legal");
 
 // src/reportslib.js
 var APPS = ["pc", "web", "android", "ios"];
@@ -8658,6 +11015,22 @@ async function addLap(env, sessionId, l) {
   const plain2 = l.trace ? JSON.stringify(l.trace) : null;
   if (plain2 && plain2.length > 9e5) return "lap trace too large";
   const trace = await sealData(env, plain2);
+  if (l.repair === true) {
+    const old = await env.DB.prepare("SELECT id, trace FROM laps WHERE session_id=?1 AND n=?2 AND abs(time-?3)<0.0006 AND valid=0 LIMIT 1").bind(sessionId, Math.round(l.n), l.time).first() || await env.DB.prepare("SELECT l.id, l.trace FROM laps l JOIN sessions s ON s.id=l.session_id JOIN sessions t ON t.id=?1 WHERE s.uploader=t.uploader AND s.track=t.track AND s.car=t.car AND abs(l.time-?2)<0.0006 AND l.valid=0 AND abs(s.started-t.started)<43200000 LIMIT 1").bind(sessionId, l.time).first();
+    if (!old) return null;
+    let tr2 = null;
+    try {
+      tr2 = old.trace ? JSON.parse(await openData(env, old.trace)) : null;
+    } catch (e) {
+      tr2 = null;
+    }
+    if (!traceHole(tr2) || l.valid === false || !plain2) return null;
+    const sectors2 = Array.isArray(l.sectors) ? JSON.stringify(l.sectors.filter((x) => typeof x === "number").slice(0, 40)) : null;
+    await env.DB.prepare("UPDATE laps SET trace=?2, valid=1, sectors=COALESCE(?3, sectors), inc=?4 WHERE id=?1").bind(old.id, trace, sectors2, Math.max(0, Math.round(num3(l.inc) || 0))).run();
+    await env.DB.prepare(SESSION_SUMS).bind(sessionId).run().catch(() => {
+    });
+    return null;
+  }
   const sectors = Array.isArray(l.sectors) ? JSON.stringify(l.sectors.filter((x) => typeof x === "number").slice(0, 40)) : null;
   await env.DB.batch([
     env.DB.prepare(
@@ -8691,7 +11064,7 @@ async function api(req, env, url, ctx) {
         `SELECT l.time FROM laps l JOIN sessions s ON s.id=l.session_id WHERE s.uploader=?1 AND s.track=?2 AND s.car=?3 AND s.started BETWEEN ?4 AND ?5`
       ).bind(me2.name, str4(body.session.track), str4(body.session.car), st - 12 * 36e5, st + 12 * 36e5).all().catch(() => ({ results: [] }));
       const times = (have.results || []).map((x) => x.time);
-      body.laps = body.laps.filter((l) => !(l && num3(l.time) && times.some((t) => Math.abs(t - l.time) < 6e-4)));
+      body.laps = body.laps.filter((l) => l && (l.repair === true || !(num3(l.time) && times.some((t) => Math.abs(t - l.time) < 6e-4))));
       if (!body.laps.length) return json13({ ok: true, shared: false, duplicate: true });
     }
     let e = await upsertSession(env, body.session, me2.name);
@@ -9034,6 +11407,8 @@ var worker_default = {
     }));
     if (hourly) ctx.waitUntil(pruneAlerts({ DB: raw }).catch(() => {
     }));
+    if (daily) ctx.waitUntil(prunePushTokens({ DB: raw }).catch(() => {
+    }));
     if (hourly && at2.getUTCDay() === 1 && at2.getUTCHours() >= 7) ctx.waitUntil(weeklyAlerts2(env, at2.getTime()).catch(() => {
     }));
     if (hourly && at2.getUTCDay() === 1 && at2.getUTCHours() >= 9) ctx.waitUntil(discordWeekly(env, at2.getTime()).catch(() => {
@@ -9048,6 +11423,8 @@ var worker_default = {
     ctx.waitUntil(indexNow(env).catch(() => {
     }));
     if (hourly) {
+      ctx.waitUntil(fillSectors(env).catch(() => {
+      }));
       ctx.waitUntil(pruneUsage(env).catch(() => {
       }));
       ctx.waitUntil(pruneSeen(env).catch(() => {
@@ -9065,6 +11442,8 @@ var worker_default = {
     }));
     ctx.waitUntil(rebuildTrackMaps(env).catch(() => {
     }));
+    ctx.waitUntil(rebuildEdges(env).catch(() => {
+    }));
     ctx.waitUntil(scanLeagues(env).catch(() => {
     }));
     ctx.waitUntil(prunePresence(env).catch(() => {
@@ -9072,15 +11451,20 @@ var worker_default = {
     wait(Promise.allSettled(all).then(() => flushUsage(raw, true)));
   },
   async fetch(req, env, ctx) {
-    if (!env.DB) return harden(await handle(req, env, ctx));
+    if (!env.DB) return harden(await handle(req, env, ctx).catch(gatedAnswer));
     const raw = env.DB, url = new URL(req.url);
     try {
-      return harden(await handle(req, { ...env, DB: countingDB(raw, routeKey(req.method, url.pathname)) }, ctx));
+      return harden(await handle(req, { ...env, DB: countingDB(raw, routeKey(req.method, url.pathname)) }, ctx).catch(gatedAnswer));
     } finally {
       ctx.waitUntil(flushUsage(raw));
     }
   }
 };
+function gatedAnswer(e) {
+  if (e && e.gated) return new Response(JSON.stringify({ error: e.message, code: "verify_first" }), { status: 403, headers: { "content-type": "application/json; charset=utf-8", "cache-control": "no-store", "access-control-allow-origin": "*" } });
+  throw e;
+}
+__name(gatedAnswer, "gatedAnswer");
 async function handle(req, env, ctx) {
   const url = new URL(req.url);
   if (url.protocol === "http:" && env.LOCAL !== "1" && !/^(localhost|127\.|\[::1\])/.test(url.hostname) && (req.method === "GET" || req.method === "HEAD")) {
@@ -9096,6 +11480,10 @@ async function handle(req, env, ctx) {
   {
     const sp = await seoPage(req, env, url, ctx).catch(() => null);
     if (sp) return sp;
+  }
+  {
+    const lp = legal(req, url);
+    if (lp) return lp;
   }
   if (url.pathname.startsWith("/dl/") || url.pathname.startsWith("/downloads") || url.pathname.startsWith("/changelog")) return downloads(req, env, url);
   if (url.pathname === "/community/admin/online" && req.method === "GET") return onlineRoute(req, env).catch((e) => new Response(JSON.stringify({ error: "server error: " + (e && e.message) }), { status: 500, headers: { "content-type": "application/json" } }));
@@ -9150,7 +11538,7 @@ async function handle(req, env, ctx) {
     to.pathname = "/";
     return Response.redirect(to.href, 301);
   }
-  const isAppFile = /^\/(fonts\.css|pitwall-[a-z0-9-]+\.js|app-news\.json|whats-new\.json|server\.json|manifest\.webmanifest|favicon\.ico|favicon-32\.png|icon-\d+\.png|logo\.svg|bimi\.svg|og(?:-es|-pt)?\.png|robots\.txt|landing\/(?:en\/|es\/|pt\/)?[a-z0-9-]+\.(?:jpg|png))$/.test(url.pathname);
+  const isAppFile = /^\/(fonts\.css|pitwall-[a-z0-9-]+\.js|app-news\.json|whats-new\.json|server\.json|manifest\.webmanifest|favicon\.ico|favicon-32\.png|icon-\d+\.png|logo\.svg|bimi\.svg|og(?:-es|-pt)?\.png|robots\.txt|landing\/(?:en\/|es\/|pt\/)?[a-z0-9-]+\.(?:jpg|png)|landing\/live-lap\.json)$/.test(url.pathname);
   if (url.pathname === "/" && url.searchParams.get("embed") !== "1" || isAppFile) {
     if (!env.ASSETS) return err9("the app is not published on this server", 404);
     if (url.pathname === "/server.json" && env.LOCAL === "1") return new Response(JSON.stringify({ url: url.origin }), { headers: { "content-type": "application/json", "cache-control": "no-cache" } });
@@ -9172,6 +11560,7 @@ async function handle(req, env, ctx) {
   }
   if (url.pathname === "/discord/oauth" && req.method === "GET") return discordOAuth(req, env, url).catch(() => Response.redirect("https://pitlanehq.app/?discordLogin=0", 302));
   if (url.pathname === "/steam/return" && req.method === "GET") return steamReturn(req, env, url).catch(() => Response.redirect("https://pitlanehq.app/?steamLogin=0", 302));
+  if (url.pathname === "/google/oauth" && req.method === "GET") return googleOAuth(req, env, url).catch(() => Response.redirect("https://pitlanehq.app/?googleLogin=0", 302));
   if (url.pathname === "/patreon/webhook" && req.method === "POST") return patreonWebhook(req, env);
   if (url.pathname === "/lemonsqueezy/webhook" && req.method === "POST") return lemonWebhook(req, env);
   if (url.pathname === "/voice/ice" && req.method === "GET") return voiceIce(env);

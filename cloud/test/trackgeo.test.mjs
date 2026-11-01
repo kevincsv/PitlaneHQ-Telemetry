@@ -66,4 +66,26 @@ const near = (got, want, n, tol = 12) => want.every((w) => got.some((g) => Math.
   assert.equal(fit.length, 6);
   assert.ok(near(fit, cornersOf(t.x, t.y).map((c) => c.i), t.n), "the real corners keep their apex");
 }
+// where the drivers slow down: a fast sweeper (radius 450) they brake for is a turn, a left-right kink they take flat is not
+{
+  const t = track([[300, 0], [60, 250], [40, 0], [60, -250], [300, 0], Q(50), [400, 0], [160, 450], [400, 0], Q(50), "W", Q(50), "S", Q(50)]);
+  const sweep = cornersOf(t.x, t.y, 5, 0).length;
+  // six official turns (the closing of the drawn lap makes a bend at the line too)
+  const shape = cornersOf(t.x, t.y, 5, 6);
+  assert.equal(shape.length, 6);
+  assert.ok(shape.some((c) => c.r > 200 && c.r < 300), "the shape alone keeps a bend of the kink");
+  // the sweeper's middle and the four corners' apexes, as fractions of the lap
+  const apexes = cornersOf(t.x, t.y, 5, 0).filter((c) => c.r < 100).map((c) => c.i / t.n);
+  let mid = 0;
+  const sw = cornersOf(t.x, t.y, 5, 9).find((c) => c.r > 400);
+  assert.ok(sw, "the widest limit sees the sweeper");
+  mid = sw.i / t.n;
+  const driven = cornersOf(t.x, t.y, 5, 6, [...apexes, mid]);
+  assert.equal(driven.length, 6);
+  assert.ok(driven.some((c) => c.r > 400) && !driven.some((c) => c.r > 200 && c.r < 300), "the sweeper in, the kink out");
+  // no official count: the sweeper they brake for joins the shape's corners
+  const free = cornersOf(t.x, t.y, 5, 0, [...apexes, mid]);
+  assert.equal(free.length, sweep + 1);
+  assert.equal(turnsFromPath(t.x, t.y, 6, [...apexes, mid]).length, 6);
+}
 console.log("trackgeo ok");

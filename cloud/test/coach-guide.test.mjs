@@ -146,6 +146,19 @@ assert.ok(PW.estOf({ field: true }) && PW.estOf(null, { estB: true }) && !PW.est
   for (const l of p.lines) assert.ok(!/[;:]/.test(l.t));
   assert.equal(PW.racePace({ laps: [], results: [] }), null);
 }
+// the track left unused: a circle 4 m of road to the left of the layout and 6 m to the right; a lap 2 m to the left
+// leaves 8 m on the outside of the exit, a lap 5.5 m to the right none
+{
+  const N = 1257, R = 200, circ = (off) => { const x = [], y = []; for (let i = 0; i < N; i++) { const a = (i * 5) / R; x.push((R - off) * Math.cos(a)); y.push((R - off) * Math.sin(a)); } return { x, y }; };
+  const lay = { ...circ(0), g: [45, 7], edges: { l: new Array(N).fill(4), r: new Array(N).fill(-6) } };
+  const A = (off) => ({ xy: { ...circ(off), g: [45, 7] }, bins: [] });
+  const u = PW.edgeUse(A(2), lay, { lang: "es", turns: [0.25] });
+  assert.equal(u.length, 1);
+  assert.equal(u[0].m, 8);
+  assert.equal(u[0].text, "Dejas 8,0 m de pista sin usar a la salida de T1");
+  assert.equal(PW.edgeUse(A(-5.5), lay, { turns: [0.25] }).length, 0);
+  assert.equal(PW.edgeUse({ xy: { ...circ(2), g: null } }, lay, { turns: [0.25] }).length, 0, "no game position: nothing");
+}
 console.log("coach guide: ok");
 
 // the admin's check of the coach on real laps: the share of laps each tip and step appears in

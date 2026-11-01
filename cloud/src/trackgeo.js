@@ -31,12 +31,36 @@ export function curvature(x, y, step = 5) {
 // the corners of a closed path: [{i (apex point), from, to, dir (1 left, -1 right), r (radius at the apex, m)}] in lap order.
 // want: the official number of turns when the game says it (iRacing's WeekendInfo.TrackNumTurns): the geometry is then
 // fitted to it (fitCount); without it, the corners as the geometry finds them.
-export function cornersOf(x, y, step = 5, want = 0) {
+// slows: fractions of the lap where the fast drivers slow down for a corner (their braking zones, from the models of
+// the cars on this track, slowsOf): what the shape cannot tell. A bend nobody slows for is the first one dropped when there
+// are too many (a kink taken flat), and a corner wider than the radius limit that drivers brake for is a corner.
+export function cornersOf(x, y, step = 5, want = 0, slows = []) {
   const n = Math.min(x.length, y.length);
   if (n < 20) return [];
-  const k = curvature(x, y, step);
-  const cs = want > 0 && want <= 60 ? fitCount(k, n, step, want) : cornersAt(k, n, step, TURN_RADIUS);
+  const k = curvature(x, y, step), slow = slowTest(slows, n, step);
+  let cs = want > 0 && want <= 60 ? fitCount(k, n, step, want, slows) : cornersAt(k, n, step, TURN_RADIUS);
+  if (!(want > 0) && slow) cs = addDriven(cs, k, n, step, slows);
   return cs.map(({ pts, ...c }) => c);
+}
+
+const SLOW_NEAR_M = 60; // m: a braking zone's slowest point this close to a bend's apex is that bend
+const slowAt = (slows, n) => slows.filter((f) => isFinite(f) && f >= 0 && f < 1).map((f) => Math.round(f * n) % n);
+const ringD = (a, b, n) => { const d = Math.abs(a - b) % n; return Math.min(d, n - d); };
+function slowTest(slows, n, step) {
+  const s = Array.isArray(slows) ? slowAt(slows, n) : [];
+  if (!s.length) return null;
+  const near = Math.round(SLOW_NEAR_M / step);
+  return (c) => s.some((i) => ringD(i, c.i, n) <= near || (c.from <= i && i <= c.to));
+}
+// the braking zones no bend of the geometry is near: the widest limit's bend there, when it has one (never a straight)
+function addDriven(cs, k, n, step, slows) {
+  const wide = cornersAt(k, n, step, RELAX[RELAX.length - 1]), near = Math.round(SLOW_NEAR_M / step), out = cs.slice();
+  for (const i of slowAt(slows, n)) {
+    if (out.some((c) => ringD(c.i, i, n) <= near || (c.from <= i && i <= c.to))) continue;
+    const w = wide.filter((c) => ringD(c.i, i, n) <= near).sort((a, b) => ringD(a.i, i, n) - ringD(b.i, i, n))[0];
+    if (w && !out.includes(w)) out.push(w);
+  }
+  return order(out);
 }
 
 // the corners with a radius limit: the stretches over it, each one way, with their points (pts, in lap order)
@@ -86,11 +110,13 @@ const SPLIT_MIN_M = 30;
 const SPLIT_DIP = 0.6;
 const RELAX = [TURN_RADIUS, 400, 550, 750, 1000];
 
-export function fitCount(k, n, step, want) {
+export function fitCount(k, n, step, want, slows = []) {
   let best = [];
+  const slow = slowTest(slows, n, step);
   for (const radius of RELAX) {
     let cs = splitTo(cornersAt(k, n, step, radius), k, want, step);
-    if (cs.length >= want) return reduceTo(cs, want, n, step, k);
+    if (slow) cs = addDriven(cs, k, n, step, slows);
+    if (cs.length >= want) return reduceTo(cs, want, n, step, k, slow);
     if (cs.length > best.length) best = cs;
   }
   return best;
@@ -130,7 +156,7 @@ function splitTo(cs, k, want, step) {
 }
 
 // join or drop bends until there are want
-function reduceTo(cs, want, n, step, k) {
+function reduceTo(cs, want, n, step, k, slow = null) {
   cs = order(cs.slice());
   const gapMax = Math.round(MERGE_GAP_M / step);
   while (cs.length > want && cs.length > 1) {
@@ -147,8 +173,10 @@ function reduceTo(cs, want, n, step, k) {
       cs = cs.filter((c, j) => j !== pick && j !== j2);
       cs.push(joined);
     } else {
-      let g = 0;
-      cs.forEach((c, j) => { if (c.r > cs[g].r) g = j; });
+      // the gentlest bend goes, one nobody slows for first (a kink taken flat)
+      let g = -1;
+      const pool = slow && cs.some((c) => !slow(c)) ? (c) => !slow(c) : () => true;
+      cs.forEach((c, j) => { if (pool(c) && (g < 0 || c.r > cs[g].r)) g = j; });
       cs.splice(g, 1);
     }
     order(cs);
@@ -158,9 +186,9 @@ function reduceTo(cs, want, n, step, k) {
 
 // the corners as the turns API gives them: fractions of the lap (0 ≤ f < 1) of each apex, T1 … Tn (want: the official
 // number of turns when known)
-export function turnsFromPath(x, y, want = 0) {
+export function turnsFromPath(x, y, want = 0, slows = []) {
   const n = Math.min(x.length, y.length);
-  return cornersOf(x, y, 5, want).map((c) => Math.round((c.i / n) * 1e5) / 1e5);
+  return cornersOf(x, y, 5, want, slows).map((c) => Math.round((c.i / n) * 1e5) / 1e5);
 }
 
 // ---------- the racing line between two paths ----------

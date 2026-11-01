@@ -674,6 +674,45 @@
     return (Array.isArray(byCls) ? byCls : []).filter((x) => N[x.cls] && x.n >= 5).sort((a, b) => b.avg - a.avg).map((x) => ({ cls: x.cls, avg: x.avg, n: x.n, t: Tx(...N[x.cls]), text: Tx(`${Math.round(x.avg * 100) / 100} s lost on average (${x.n} corners)`, `${Math.round(x.avg * 100) / 100} s perdidos de media (${x.n} curvas)`, `${Math.round(x.avg * 100) / 100} s perdidos em média (${x.n} curvas)`) }));
   }
 
+  /* ---------- the track left unused ---------- */
+  /* where lap A stays away from the edge of the road on a corner's exit (from 30 to 150 m after the apex), against the
+     edges the drivers' laps give (/community/trackmap edges: metres to the left, l, and to the right, r, of the layout at
+     each of its points). Both paths must come from the game's position. [{n, apex, m, text}] the corners with 1.5 m or more
+     left unused, the most first (three at most) */
+  function edgeUse(A, map, ctx) {
+    ctx = ctx || {};
+    const e = map && map.edges, a = lapShape(A);
+    if (!e || !Array.isArray(e.l) || !Array.isArray(e.r) || !a || !a.g || !map.g || !Array.isArray(map.x) || e.l.length !== map.x.length) return [];
+    const nb = map.x.length, b = { x: map.x, y: map.y, g: map.g }, p = sameFrame(b, { x: a.x, y: a.y, g: a.g }), na = p.x.length;
+    if (na < 60 || nb < 60) return [];
+    const off = new Array(nb).fill(NaN);
+    for (let i = 0; i < nb; i++) {
+      const i0 = (i - 2 + nb) % nb, i1 = (i + 2) % nb; let tx = b.x[i1] - b.x[i0], ty = b.y[i1] - b.y[i0]; const tm = Math.hypot(tx, ty) || 1; tx /= tm; ty /= tm;
+      const j0 = Math.round((i * na) / nb); let bj = -1, bd = 1e18;
+      for (let k = -30; k <= 30; k++) { const j = (((j0 + k) % na) + na) % na, dx = p.x[j] - b.x[i], dy = p.y[j] - b.y[i], d2 = dx * dx + dy * dy; if (d2 < bd) { bd = d2; bj = j; } }
+      if (bj < 0 || bd > 1600) continue;
+      const dx = p.x[bj] - b.x[i], dy = p.y[bj] - b.y[i]; if (Math.abs(tx * dx + ty * dy) > 6) continue; off[i] = -ty * dx + tx * dy;
+    }
+    const Tx = txOf(ctx), turns = Array.isArray(ctx.turns) && ctx.turns.length ? ctx.turns : null, at = (i) => ((i % nb) + nb) % nb;
+    let apexes = turns ? turns.map((f) => Math.round(f * nb)) : [];
+    if (!apexes.length) { const s = serOf(A); apexes = brakeZones(s).map((z) => Math.round((z.imin / s.length) * nb)); }
+    const out = [];
+    apexes.forEach((i, k) => {
+      const P = (q) => [b.x[at(q)], b.y[at(q)]], p0 = P(i - 8), p1 = P(i), p2 = P(i + 8), cr = (p1[0] - p0[0]) * (p2[1] - p1[1]) - (p1[1] - p0[1]) * (p2[0] - p1[0]);
+      if (Math.abs(cr) < 1) return; // no bend to speak of
+      const left = cr > 0; let mn = Infinity, seen = 0;
+      for (let j = i + 6; j <= i + 30; j++) {
+        const q = at(j), o = off[q], l = e.l[q], r = e.r[q];
+        if (!isFinite(o) || !(l - r >= 6)) continue;
+        seen++; mn = Math.min(mn, left ? o - r : l - o);
+      }
+      if (seen < 10 || !(mn >= 1.5)) return;
+      const n = turns ? k + 1 : turnNo(ctx.turns, i * BIN, nb * BIN, k + 1), m = Math.round(mn * 2) / 2, ms = m.toFixed(1), msEs = ms.replace(".", ",");
+      out.push({ n, apex: i * BIN, m, text: Tx(`You leave ${ms} m of track unused on the exit of T${n}`, `Dejas ${msEs} m de pista sin usar a la salida de T${n}`, `Você deixa ${msEs} m de pista sem usar na saída da T${n}`) });
+    });
+    return out.sort((x, y) => y.m - x.m).slice(0, 3);
+  }
+
   /* ---------- race pace against the cars around you ---------- */
   /* a race report's laps against the cars that finished around you (results[].pace, every lap the PC saw them time): each
      one's pace on clean laps (the first lap, the pits, the laps off the track and the slow ones in traffic or under yellow
@@ -727,12 +766,13 @@
     if (Array.isArray(ctx.prev)) out.followup = followUp(ctx.prev, plan.cs, ctx); // how this lap does where the last session's plan asked for something
     if (ctx.model) { const g = trackGuide(ctx.model, ctx), rk = cornerRanks(A, ctx.model, ctx); if (g) out.guide = g; if (rk.length) out.ranks = rk; } // the track guide and where lap A stands in every corner
     if (Array.isArray(ctx.byCls)) out.cls = clsLines(ctx.byCls, ctx); // the corner types across the driver's tracks
+    if (ctx.map && ctx.map.edges) { const eu = edgeUse(A, ctx.map, ctx); if (eu.length) out.edges = eu; } // the track left unused on the exits
     return opts && opts.json ? JSON.stringify(out) : out;
   }
 
   const api = { VERSION, BIN, lapSeries, serOf, lapShape, sameFrame, lineOffsets, cornerLine, lineTip, brakeZones, PHASES, phaseName, turnNo, COACH_GEN, cornerClass, cornerZones,
     OVAL_KINDS, ovalOf, liftZones, ovalZones, dirtLineTip, coachCompare, cornerConsistency, pairSecs, lapDriving, kindName, stepName, tipMain, tipShort, tipTodo, coachPlan, stepText, analyzerFacts, analyse,
-    estOf, followUp, trackGuide, cornerRanks, clsLines, racePace };
+    estOf, followUp, trackGuide, cornerRanks, clsLines, racePace, edgeUse };
   root.PW_ANALYSIS = api;
   if (typeof module !== "undefined" && module.exports) module.exports = api;
 })(typeof window !== "undefined" ? window : typeof globalThis !== "undefined" ? globalThis : this);

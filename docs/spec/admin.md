@@ -85,7 +85,9 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   returning (2 days or more), multiDevice}, prev {active, newAccounts, sessions, drove, secs}, funnel of the period's new
   accounts {accounts, opened, drove, laps (Laps, Telemetry, My sessions, a race summary or compare), coach (the coach
   screen, a report, a lap sent to it, its plan)}, comeback {d1, d23, d4}, driven [{game, drivers, sessions, races, laps,
-  secs}], sources {visits, prevVisits, signups, prevSignups, bySource [{src, kind, name, kindName, visits, prevVisits,
+  secs, prevDrivers, prevSessions, prevSecs, newDrivers (their first session of that game in these days), prevNew, appDrivers
+  (accounts whose app counted `game:<g>`), perDay [{day, users}], tracks and cars [{name, sessions, drivers}] (6 most
+  driven)}] for every game Pitlane HQ reads (iRacing, Le Mans Ultimate, ACC, Assetto Corsa), one nobody drove too (`gamesOf`), sources {visits, prevVisits, signups, prevSignups, bySource [{src, kind, name, kindName, visits, prevVisits,
   signups, prevSignups}], byCountry, byPage}, highlights [{k, tone, a, text [en, es, pt]}], areas [{k, name, rows [{key,
   name, what, users, n}]}]} (`analyticsOf`, `analyticsMore`, `sourcesOf`, `highlightsOf` in usagelib.js; the names and
   sentences in the three languages in `usagenames.js`, so the phones show the same).
@@ -99,8 +101,10 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   the table of sources with kind, visits, change and sign-ups, countries, pages they landed on), Installs and uninstalls (installer
   downloads, uninstalls with their change in red when it grows, said why, the reasons, the version uninstalled and what
   they wrote), Supporters (Stripe donations and what they raised, supporters from Stripe and by hand, the latest
-  donations, Patreon apart as legacy with its badges and active patrons), Games (drivers,
-  sessions, races, laps, hours, sessions a driver), What drivers use (by area, the share of the active drivers and the
+  donations, Patreon apart as legacy with its badges and active patrons), Games (every game, one
+  nobody drove greyed: drivers and sessions with their change, new to the game, races, laps, hours, sessions a driver;
+  then a chooser of the game (`admGameHTML`, `ADM.game`, no new request) with its tiles (drivers and new to it, sessions
+  and races, time driven and laps, counted by the apps), its drivers per day and the tracks and cars driven most), What drivers use (by area, the share of the active drivers and the
   uses, what each counts on hover), Devices (drivers) and Up to date (devices on each app's newest version, the older ones
   on hover). Users merges the answer into every account.
 - The admin page's look (Nov 2026): the sections as a dark well with the chosen one raised, every part a card with its

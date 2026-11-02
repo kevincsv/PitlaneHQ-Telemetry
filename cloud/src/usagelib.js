@@ -197,6 +197,37 @@ export function highlightsOf(a) {
   if (Su.donations) out.push({ k: "donations", tone: "good", a: [Su.donations, a.days] });
   return out;
 }
+/** Each game Pitlane HQ reads, every one of them even when nobody drove it (pure, so the test can run it): its drivers,
+ *  sessions, races, laps and time against the days before, the drivers new to it (their first session of the game),
+ *  those whose app counted it (`game:` keys), its drivers per day and its most driven tracks and cars.
+ *  sessions: SQL_SESSIONS_DAYS rows; prev [{game, drivers, sessions, secs}]; firsts [{game, n, prevN}];
+ *  tracks / cars [{game, name, sessions, drivers}]; appGames: analyticsOf's games [{game, users, n}]. */
+export function gamesOf({ from, sessions = [], prev = [], firsts = [], tracks = [], cars = [], appGames = [] }) {
+  const G = new Map(USAGE_GAMES.map((g) => [g, { game: g, drivers: new Set(), sessions: 0, races: 0, laps: 0, secs: 0, days: new Map() }]));
+  for (const s of sessions) {
+    const id = String(s.uploader || "").slice(5), d = s.day || sesDay(s.started || 0), g = G.get(s.game);
+    if (!id || !g || d < from) continue;
+    g.drivers.add(id); g.sessions += s.n || 0; g.races += s.races || 0; g.laps += s.laps || 0; g.secs += s.secs || 0;
+    let x = g.days.get(d); if (!x) g.days.set(d, (x = new Set())); x.add(id);
+  }
+  const by = (rows, g) => rows.filter((x) => x.game === g);
+  const top = (rows, g) => by(rows, g).filter((x) => x.name).sort((a, b) => b.sessions - a.sessions || b.drivers - a.drivers).slice(0, 6).map((x) => ({ name: String(x.name), sessions: x.sessions || 0, drivers: x.drivers || 0 }));
+  return [...G.values()].map((g) => {
+    const p = by(prev, g.game)[0] || {}, f = by(firsts, g.game)[0] || {}, a = by(appGames, g.game)[0] || {};
+    return {
+      game: g.game, drivers: g.drivers.size, sessions: g.sessions, races: g.races, laps: g.laps, secs: Math.round(g.secs),
+      prevDrivers: p.drivers || 0, prevSessions: p.sessions || 0, prevSecs: Math.round(p.secs || 0),
+      newDrivers: f.n || 0, prevNew: f.prevN || 0, appDrivers: a.users || 0,
+      perDay: [...g.days].sort((x, y) => (x[0] < y[0] ? -1 : 1)).map(([day, u]) => ({ day, users: u.size })),
+      tracks: top(tracks, g.game), cars: top(cars, g.game),
+    };
+  }).sort((a, b) => b.sessions - a.sessions || b.appDrivers - a.appDrivers || USAGE_GAMES.indexOf(a.game) - USAGE_GAMES.indexOf(b.game));
+}
+// the period before, each game's first session of every driver, and the tracks and cars of each game (GET /community/admin/analytics)
+export const SQL_GAMES_PREV = "SELECT game, COUNT(*) AS sessions, COUNT(DISTINCT uploader) AS drivers, SUM(COALESCE(secs,0)) AS secs FROM sessions WHERE started>=?1 AND started<?2 AND uploader LIKE 'acct:%' GROUP BY game";
+export const SQL_GAMES_FIRSTS = "SELECT game, SUM(CASE WHEN f>=?2 THEN 1 ELSE 0 END) AS n, SUM(CASE WHEN f>=?1 AND f<?2 THEN 1 ELSE 0 END) AS prevN FROM (SELECT game, uploader, MIN(started) AS f FROM sessions WHERE uploader LIKE 'acct:%' GROUP BY game, uploader) GROUP BY game";
+export const SQL_GAMES_TRACKS = "SELECT game, track AS name, COUNT(*) AS sessions, COUNT(DISTINCT uploader) AS drivers FROM sessions WHERE started>=?1 AND uploader LIKE 'acct:%' GROUP BY game, track ORDER BY sessions DESC LIMIT 400";
+export const SQL_GAMES_CARS = "SELECT game, car AS name, COUNT(*) AS sessions, COUNT(DISTINCT uploader) AS drivers FROM sessions WHERE started>=?1 AND uploader LIKE 'acct:%' GROUP BY game, car ORDER BY sessions DESC LIMIT 400";
 export const SQL_SESSIONS_DAYS = "SELECT date(started/1000,'unixepoch') AS day, game, uploader, COUNT(*) AS n, SUM(COALESCE(laps,0)) AS laps, SUM(COALESCE(secs,0)) AS secs, SUM(CASE WHEN lower(COALESCE(kind,'')) LIKE '%race%' THEN 1 ELSE 0 END) AS races FROM sessions WHERE started>=?1 AND uploader LIKE 'acct:%' GROUP BY 1, game, uploader LIMIT 20000";
 
 // the statements of usage.js the test runs on SQLite too

@@ -5,6 +5,7 @@ import assert from "node:assert/strict";
 import { cleanUsage, cleanFeedback, cleanOvRace, cleanStyle, shouldAsk, shouldAskOv, analyticsOf, MAX_KEYS, MAX_N, MAX_MS, ASK_USED } from "../src/usagelib.js";
 import { feedbackMail } from "../src/email.js";
 import { SQL_USAGE_ADD, SQL_ASK_USED, SQL_ASK_SEEN, SQL_RACES_SINCE, SQL_OV_RACE, SQL_OV_SEEN, SQL_OV_ANSWERED } from "../src/usagelib.js";
+import { SQL_SESSIONS_DAYS, gamesOf, SQL_GAMES_PREV, SQL_GAMES_FIRSTS, SQL_GAMES_TRACKS, SQL_GAMES_CARS } from "../src/usagelib.js";
 import { readFileSync } from "node:fs";
 import { DatabaseSync } from "node:sqlite";
 
@@ -138,4 +139,30 @@ db.prepare(SQL_OV_RACE).run("b", 1000, "classic", "x1");
 assert.deepEqual({ ...db.prepare("SELECT shown, used, ov_races AS n FROM feedback_ask WHERE account_id='b'").get() }, { shown: 1000, used: 0, n: 1 }, "a first race with overlays starts the account's row");
 db.prepare(SQL_OV_ANSWERED).run("c", 1100);
 assert.deepEqual({ ...db.prepare("SELECT ov_races AS n, ov_answered AS a FROM feedback_ask WHERE account_id='c'").get() }, { n: 0, a: 1 });
+
+// each game apart: all four even when nobody drove one, against the days before, drivers new to the game, tracks and cars
+{
+  const g = new DatabaseSync(":memory:");
+  g.exec("CREATE TABLE sessions (id TEXT, started INTEGER, game TEXT, uploader TEXT, track TEXT, car TEXT, secs REAL, laps INTEGER, kind TEXT)");
+  const D = 86400e3, t0 = 10 * D, p0 = 5 * D, add = (id, t, game, up, track, car) => g.prepare("INSERT INTO sessions VALUES (?,?,?,?,?,?,600,5,'Practice')").run(id, t, game, up, track, car);
+  add("1", 2 * D, "lmu", "acct:a", "Monza", "Ferrari 499P"); // before both periods
+  add("2", 6 * D, "lmu", "acct:b", "Spa", "Porsche 963");     // the period before: b is new to LMU then
+  add("3", 11 * D, "lmu", "acct:a", "Monza", "Ferrari 499P");
+  add("4", 11 * D, "lmu", "acct:c", "Monza", "Porsche 963");  // c new to LMU now
+  add("5", 12 * D, "acc", "acct:a", "Monza", "Ferrari 296 GT3"); // a new to ACC now
+  add("6", 12 * D, "iracing", "acct:a", "Okayama", "Mazda MX-5");
+  add("7", 6 * D, "acct-less", "pc:x", "Spa", "x");
+  const all = (sql, ...a) => g.prepare(sql).all(...a).map((x) => ({ ...x }));
+  const ses = all(SQL_SESSIONS_DAYS, t0);
+  const out = gamesOf({ from: "1970-01-11", sessions: ses, prev: all(SQL_GAMES_PREV, p0, t0), firsts: all(SQL_GAMES_FIRSTS, p0, t0), tracks: all(SQL_GAMES_TRACKS, t0), cars: all(SQL_GAMES_CARS, t0), appGames: [{ game: "acc", users: 2, n: 3 }] });
+  assert.deepEqual(out.map((x) => x.game), ["lmu", "acc", "iracing", "ac"], "every game, the most driven first (then the most counted by the apps) and one nobody drove last");
+  const lmu = out[0], acc = out.find((x) => x.game === "acc"), ac = out[3];
+  assert.equal(lmu.drivers, 2); assert.equal(lmu.sessions, 2); assert.equal(lmu.prevDrivers, 1); assert.equal(lmu.prevSessions, 1);
+  assert.equal(lmu.newDrivers, 1, "c drove LMU for the first time in these days"); assert.equal(lmu.prevNew, 1);
+  assert.deepEqual(lmu.tracks, [{ name: "Monza", sessions: 2, drivers: 2 }]);
+  assert.deepEqual(lmu.cars.map((x) => x.name).sort(), ["Ferrari 499P", "Porsche 963"]);
+  assert.deepEqual(lmu.perDay, [{ day: "1970-01-12", users: 2 }]);
+  assert.equal(acc.newDrivers, 1); assert.equal(acc.appDrivers, 2); assert.equal(acc.laps, 5);
+  assert.deepEqual({ d: ac.drivers, s: ac.sessions, t: ac.tracks, p: ac.perDay }, { d: 0, s: 0, t: [], p: [] });
+}
 console.log("ok");

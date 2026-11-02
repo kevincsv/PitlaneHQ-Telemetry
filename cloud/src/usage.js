@@ -29,7 +29,7 @@ import { openEscrow } from "./escrow.js";
 import { sendFeedback } from "./email.js";
 import { discordFeedback } from "./discord.js";
 import { driverMessage, cleanLang } from "./supportlib.js";
-import { SQL_USAGE_ADD, SQL_ASK_USED, SQL_ASK_SEEN, SQL_RACES_SINCE, SQL_OV_RACE, SQL_OV_SEEN, SQL_OV_ANSWERED, day, cleanUsage, cleanFeedback, analyticsMore, highlightsOf, SQL_SESSIONS_DAYS, cleanOvRace, shouldAsk, shouldAskOv, analyticsOf, ASK_USED, FEEDBACK_PER_DAY, MAX_DAYS } from "./usagelib.js";
+import { SQL_USAGE_ADD, SQL_ASK_USED, SQL_ASK_SEEN, SQL_RACES_SINCE, SQL_OV_RACE, SQL_OV_SEEN, SQL_OV_ANSWERED, day, cleanUsage, cleanFeedback, analyticsMore, highlightsOf, SQL_SESSIONS_DAYS, gamesOf, SQL_GAMES_PREV, SQL_GAMES_FIRSTS, SQL_GAMES_TRACKS, SQL_GAMES_CARS, cleanOvRace, shouldAsk, shouldAskOv, analyticsOf, ASK_USED, FEEDBACK_PER_DAY, MAX_DAYS } from "./usagelib.js";
 
 const json = (o, s = 200) => new Response(JSON.stringify(o), { status: s, headers: { "content-type": "application/json", "cache-control": "no-store" } });
 const err = (m, s) => json({ error: m }, s);
@@ -156,6 +156,10 @@ export async function usageRoute(req, env, url) {
       q("SELECT COUNT(*) AS n FROM accounts"),
       q("SELECT day, src, country, page, n FROM visits_days WHERE day>=?1 LIMIT 20000", pFrom).catch(() => []),
     ]);
+    // each game apart: the days before, the drivers new to it, its tracks and cars (gamesOf)
+    const [gPrev, gFirsts, gTracks, gCars] = await Promise.all([
+      q(SQL_GAMES_PREV, p0, t0), q(SQL_GAMES_FIRSTS, p0, t0), q(SQL_GAMES_TRACKS, t0), q(SQL_GAMES_CARS, t0),
+    ]);
     // installs and uninstalls, and the supporters and their donations (pcstats.js)
     const [pcRows, unAns, badges, patrons, orders] = await Promise.all([
       q("SELECT day, kind, v, n FROM pc_days WHERE day>=?1 LIMIT 20000", pFrom).catch(() => []),
@@ -176,6 +180,7 @@ export async function usageRoute(req, env, url) {
     const vNow = vis.filter((x) => x.day >= from), vPrev = vis.filter((x) => x.day < from);
     const installs = installsOf({ from, pcRows, answers: unAns.map((x) => ({ ...x, day: day(x.created) })) });
     const supporters = supportersOf({ t0, badges, patrons: (patrons[0] || {}).n || 0, orders });
+    more.driven = gamesOf({ from, sessions: ses, prev: gPrev, firsts: gFirsts, tracks: gTracks, cars: gCars, appGames: out.games || [] });
     const all = { ...out, ...more, installs, supporters, sources: sourcesOf(vNow, vPrev, accs.filter((a) => a.created >= t0), accs.filter((a) => a.created < t0)) };
     // the names and sentences in the three languages, so the phones show what the web shows (usagenames.js)
     all.sources.bySource = all.sources.bySource.map((x) => ({ ...x, name: srcName(x.src), kindName: KIND_NAMES[x.kind] || KIND_NAMES.other }));

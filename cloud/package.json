@@ -8,6 +8,7 @@
     "db:local": "wrangler d1 migrations apply DB --local"
   },
   "devDependencies": {
+    "terser": "^5.51.2",
     "wrangler": "^4.0.0"
   }
 }

@@ -1,22 +1,38 @@
-PITLANE HQ — LICENCIA DE USO / END USER LICENCE AGREEMENT
-(BORRADOR — revisar con un abogado antes de vender / DRAFT — have a lawyer review before selling)
-
-ESPAÑOL
-
-1. Licencia. Se te concede una licencia personal, no exclusiva e intransferible para instalar y usar Pitlane HQ en tus propios ordenadores y dispositivos, según el plan que tengas (Gratis, Pro mensual, Pro anual o De por vida).
-2. Suscripciones. Las suscripciones se renuevan solas hasta que las canceles en la tienda. "De por vida" significa durante la vida comercial del producto, con sus actualizaciones.
-3. Restricciones. No puedes revender, compartir claves de licencia, ni eludir la comprobación de licencia.
-4. Software de terceros. Pitlane HQ puede abrir o usar software de terceros con su propia licencia. Esas licencias se aplican a esos programas.
-5. iRacing. Pitlane HQ no está afiliado ni respaldado por iRacing.com Motorsport Simulations. iRacing es una marca de su titular. El uso de tu cuenta de iRacing está sujeto a sus condiciones.
-6. Sin garantía. El software se entrega "tal cual". No nos hacemos responsables de daños derivados de su uso, en la medida que permita la ley.
-7. Privacidad. Ver PRIVACY.md.
+PITLANE HQ — END USER LICENCE AGREEMENT / LICENCIA DE USO / CONTRATO DE LICENÇA
+Copyright (c) 2026 Pitlane HQ. All rights reserved.
 
 ENGLISH
 
-1. Licence. You get a personal, non-exclusive, non-transferable licence to install and use Pitlane HQ on your own computers and devices, according to your plan (Free, Pro monthly, Pro yearly or Lifetime).
-2. Subscriptions renew automatically until you cancel them in the store. "Lifetime" means for the commercial life of the product, including its updates.
-3. Restrictions. You may not resell, share licence keys or bypass the licence check.
-4. Third-party software. Pitlane HQ can open or work with third-party software under its own licence. Those licences apply to those programs.
-5. iRacing. Pitlane HQ is not affiliated with or endorsed by iRacing.com Motorsport Simulations. iRacing is a trademark of its owner. Use of your iRacing account is subject to its terms.
-6. No warranty. The software is provided "as is". To the extent the law allows, we are not liable for damages from its use.
-7. Privacy: see PRIVACY.md.
+1. Licence. You get a personal, non-exclusive, non-transferable licence to install and use Pitlane HQ on your own computers and devices, according to your plan.
+2. Ownership. Pitlane HQ, its programs, code, coach, designs, texts, name and logo belong to Pitlane HQ and are protected by copyright and trademark law. This licence does not sell you the software or give you any right to them beyond using it.
+3. Restrictions. You may not copy (except to install it on your own devices), modify, translate, decompile, disassemble or reverse engineer Pitlane HQ or any part of it, extract its code, make programs or services based on it, resell, rent or share it, share licence keys or bypass the licence check, or use the Pitlane HQ name or logo, unless we allow it in writing or the law allows it despite this restriction.
+4. Subscriptions. Paid plans, when offered, renew automatically until you cancel them. "Lifetime" means for the commercial life of the product, including its updates.
+5. Third-party software. Pitlane HQ includes or works with third-party software under its own licence (THIRD_PARTY_NOTICES). Those licences apply to those parts.
+6. Games. Pitlane HQ is not made by or linked to iRacing, Motorsport Games, Studio 397, Kunos Simulazioni or Valve. Their names and games belong to their owners, and the use of your accounts with them is subject to their terms.
+7. Ending. This licence ends if you break it. You must then stop using Pitlane HQ and remove it.
+8. No warranty. The software is provided "as is". To the extent the law allows, we are not liable for damages from its use.
+9. Terms and privacy. The terms of service (https://pitlanehq.app/terms) and the privacy policy (https://pitlanehq.app/privacy) also apply.
+
+ESPAÑOL
+
+1. Licencia. Se te concede una licencia personal, no exclusiva e intransferible para instalar y usar Pitlane HQ en tus propios ordenadores y dispositivos, según tu plan.
+2. Propiedad. Pitlane HQ, sus programas, código, coach, diseños, textos, nombre y logo pertenecen a Pitlane HQ y están protegidos por las leyes de propiedad intelectual y de marcas. Esta licencia no te vende el software ni te da ningún derecho sobre ellos más allá de usarlo.
+3. Restricciones. No puedes copiar (salvo para instalarlo en tus propios dispositivos), modificar, traducir, descompilar, desensamblar ni hacer ingeniería inversa de Pitlane HQ o de cualquier parte, extraer su código, crear programas o servicios basados en él, revenderlo, alquilarlo o compartirlo, compartir claves de licencia ni eludir la comprobación de licencia, ni usar el nombre o el logo de Pitlane HQ, salvo que lo permitamos por escrito o que la ley lo permita pese a esta restricción.
+4. Suscripciones. Los planes de pago, cuando existan, se renuevan solos hasta que los canceles. "De por vida" significa durante la vida comercial del producto, con sus actualizaciones.
+5. Software de terceros. Pitlane HQ incluye o usa software de terceros con su propia licencia (THIRD_PARTY_NOTICES). Esas licencias se aplican a esas partes.
+6. Juegos. Pitlane HQ no está hecho por iRacing, Motorsport Games, Studio 397, Kunos Simulazioni ni Valve ni vinculado a ellos. Sus nombres y juegos pertenecen a sus titulares, y el uso de tus cuentas con ellos está sujeto a sus condiciones.
+7. Fin. Esta licencia termina si la incumples. Entonces debes dejar de usar Pitlane HQ y desinstalarlo.
+8. Sin garantía. El software se entrega "tal cual". No nos hacemos responsables de daños derivados de su uso, en la medida que permita la ley.
+9. Términos y privacidad. También se aplican los términos del servicio (https://pitlanehq.app/terms) y la política de privacidad (https://pitlanehq.app/privacy).
+
+PORTUGUÊS (BRASIL)
+
+1. Licença. Você recebe uma licença pessoal, não exclusiva e intransferível para instalar e usar o Pitlane HQ nos seus próprios computadores e dispositivos, de acordo com o seu plano.
+2. Propriedade. O Pitlane HQ, seus programas, código, coach, designs, textos, nome e logo pertencem ao Pitlane HQ e são protegidos pelas leis de direitos autorais e de marcas. Esta licença não lhe vende o software nem lhe dá nenhum direito sobre eles além de usá-lo.
+3. Restrições. Você não pode copiar (exceto para instalá-lo nos seus próprios dispositivos), modificar, traduzir, descompilar, desmontar nem fazer engenharia reversa do Pitlane HQ ou de qualquer parte dele, extrair seu código, criar programas ou serviços baseados nele, revendê-lo, alugá-lo ou compartilhá-lo, compartilhar chaves de licença nem burlar a verificação de licença, nem usar o nome ou o logo do Pitlane HQ, salvo com nossa permissão por escrito ou quando a lei o permitir apesar desta restrição.
+4. Assinaturas. Os planos pagos, quando existirem, são renovados automaticamente até que você os cancele. "Vitalício" significa durante a vida comercial do produto, com suas atualizações.
+5. Software de terceiros. O Pitlane HQ inclui ou usa software de terceiros com sua própria licença (THIRD_PARTY_NOTICES). Essas licenças se aplicam a essas partes.
+6. Jogos. O Pitlane HQ não é feito pela iRacing, Motorsport Games, Studio 397, Kunos Simulazioni ou Valve nem ligado a elas. Seus nomes e jogos pertencem aos seus donos, e o uso das suas contas com eles está sujeito aos termos deles.
+7. Término. Esta licença termina se você a descumprir. Você deve então parar de usar o Pitlane HQ e removê-lo.
+8. Sem garantia. O software é fornecido "como está". Na medida permitida pela lei, não nos responsabilizamos por danos decorrentes do seu uso.
+9. Termos e privacidade. Os termos de serviço (https://pitlanehq.app/terms) e a política de privacidade (https://pitlanehq.app/privacy) também se aplicam.

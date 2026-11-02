@@ -44,6 +44,17 @@ jobs:
         with:
           go-version-file: go.mod
 
+      # the app's scripts the agent carries inside are minified, without comments, with a copyright line
+      # (tools/protect-web.mjs); its index.html stays as it is, the agent reads it as text (TELN, LIVE_VARS)
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Protect the app's code
+        shell: pwsh
+        run: |
+          npm ci --prefix cloud
+          node tools/protect-web.mjs --no-html web/dist
+
       - name: Build PitlaneHQ.exe
         shell: pwsh
         env:

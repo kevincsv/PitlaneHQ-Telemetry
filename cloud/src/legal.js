@@ -4,7 +4,7 @@
 // is stored or protected (the product rules).
 const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
 const MAIL = "support@pitlanehq.app";
-const UPDATED = "2026-10-31";
+const UPDATED = "2026-11-02";
 
 const PRIVACY = {
   en: { title: "Privacy policy", up: "Last updated", intro: "Pitlane HQ is a free app for sim racing drivers. This page says what it keeps about you, why and for how long.",
@@ -66,6 +66,7 @@ const TERMS = {
       ["The service", ["Pitlane HQ is free during the beta. It records your sim racing laps, analyses them and shows them on your devices. Features can change, arrive or go away while it is in beta."]],
       ["Your account", ["You can sign up with an email or with Steam or Discord. Keep your sign-in to yourself. You are responsible for what is done with your account.", "You must be at least 13 years old to use Pitlane HQ."]],
       ["What you share", ["Laps, notes, league posts and messages you share stay yours. You let Pitlane HQ show them where you chose to share them.", "Do not post anything illegal, hateful, abusive or that is not yours to share, and do not cheat on the leaderboards. We can remove such content and close accounts that break these terms."]],
+      ["Our work", ["Pitlane HQ, its apps, code, coach, designs, texts, name and logo belong to Pitlane HQ and are protected by copyright and trademark law. Using the apps does not give you any right to them.", "Do not copy, modify, decompile, disassemble or reverse engineer the apps or their code, make apps or services based on them, or use the Pitlane HQ name or logo, without our written permission. Copies we find are taken down."]],
       ["Fair use", ["Do not try to break, overload or reverse engineer the service, read other people's data or use it to send spam."]],
       ["Games and other companies", ["Pitlane HQ is not made by or linked to iRacing, Motorsport Games, Studio 397, Valve, Discord or Google. Their names and games belong to their owners."]],
       ["No warranty", ["Pitlane HQ is given as it is, without any warranty. It can have bugs or be down at times. As far as the law allows, we are not liable for any loss that comes from using it."]],
@@ -77,6 +78,7 @@ const TERMS = {
       ["El servicio", ["Pitlane HQ es gratis durante la beta. Guarda tus vueltas de sim racing, las analiza y te las muestra en tus dispositivos. Las funciones pueden cambiar, llegar o irse mientras está en beta."]],
       ["Tu cuenta", ["Puedes registrarte con un email o con Steam o Discord. No compartas tu acceso. Eres responsable de lo que se haga con tu cuenta.", "Tienes que tener al menos 13 años para usar Pitlane HQ."]],
       ["Lo que compartes", ["Las vueltas, notas, publicaciones de ligas y mensajes que compartes siguen siendo tuyos. Permites que Pitlane HQ los muestre donde elegiste compartirlos.", "No publiques nada ilegal, de odio, abusivo o que no sea tuyo, y no hagas trampas en las leaderboards. Podemos quitar ese contenido y cerrar las cuentas que incumplan estos términos."]],
+      ["Nuestro trabajo", ["Pitlane HQ, sus apps, código, coach, diseños, textos, nombre y logo pertenecen a Pitlane HQ y están protegidos por las leyes de propiedad intelectual y de marcas. Usar las apps no te da ningún derecho sobre ellos.", "No copies, modifiques, descompiles, desensambles ni hagas ingeniería inversa de las apps o de su código, no hagas apps o servicios basados en ellos y no uses el nombre o el logo de Pitlane HQ sin nuestro permiso por escrito. Las copias que encontremos se retiran."]],
       ["Uso justo", ["No intentes romper, saturar o hacer ingeniería inversa del servicio, leer datos de otras personas ni usarlo para enviar spam."]],
       ["Juegos y otras empresas", ["Pitlane HQ no está hecho por iRacing, Motorsport Games, Studio 397, Valve, Discord ni Google, ni vinculado a ellos. Sus nombres y juegos son de sus dueños."]],
       ["Sin garantía", ["Pitlane HQ se ofrece tal cual, sin ninguna garantía. Puede tener errores o no estar disponible a veces. En lo que permita la ley, no respondemos de pérdidas que vengan de usarlo."]],
@@ -88,6 +90,7 @@ const TERMS = {
       ["O serviço", ["O Pitlane HQ é grátis durante o beta. Ele guarda suas voltas de sim racing, analisa e mostra nos seus dispositivos. Os recursos podem mudar, chegar ou sair enquanto ele está em beta."]],
       ["Sua conta", ["Você pode se cadastrar com um email ou com Steam ou Discord. Não compartilhe seu acesso. Você é responsável pelo que é feito com sua conta.", "Você precisa ter pelo menos 13 anos para usar o Pitlane HQ."]],
       ["O que você compartilha", ["Voltas, notas, posts de ligas e mensagens que você compartilha continuam sendo seus. Você permite que o Pitlane HQ os mostre onde escolheu compartilhá-los.", "Não publique nada ilegal, de ódio, abusivo ou que não seja seu, e não trapaceie nas classificações. Podemos remover esse conteúdo e encerrar contas que descumpram estes termos."]],
+      ["Nosso trabalho", ["O Pitlane HQ, seus apps, código, coach, designs, textos, nome e logo pertencem ao Pitlane HQ e são protegidos pelas leis de direitos autorais e de marcas. Usar os apps não lhe dá nenhum direito sobre eles.", "Não copie, modifique, descompile, desmonte nem faça engenharia reversa dos apps ou do seu código, não crie apps ou serviços baseados neles e não use o nome ou o logo do Pitlane HQ sem nossa permissão por escrito. As cópias que encontrarmos são retiradas."]],
       ["Uso justo", ["Não tente quebrar, sobrecarregar ou fazer engenharia reversa do serviço, ler dados de outras pessoas nem usá-lo para enviar spam."]],
       ["Jogos e outras empresas", ["O Pitlane HQ não é feito pela iRacing, Motorsport Games, Studio 397, Valve, Discord ou Google, nem ligado a elas. Seus nomes e jogos pertencem aos donos."]],
       ["Sem garantia", ["O Pitlane HQ é oferecido como está, sem nenhuma garantia. Ele pode ter erros ou ficar fora do ar às vezes. Até onde a lei permite, não respondemos por perdas que venham do seu uso."]],

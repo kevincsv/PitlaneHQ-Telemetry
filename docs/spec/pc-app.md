@@ -131,3 +131,19 @@ Testers are the Tester level (`isTester`, given in Admin → Users or in `TESTER
   root, `isAppFile` in worker.js). It keeps the app's own files (the page, `pitwall-*.js`, fonts, icons, the two news
   files) and asks the server first every time; when the answer takes over 3 s or the network is gone, the kept copy
   answers. Account, sync, community and live answers are never kept by it. A new `CACHE` name drops the old copies.
+
+## The code that leaves for people's devices
+
+- The repositories are private and keep the readable source. What the builds ship is minified, with the names inside
+  the scripts renamed, no comments and a copyright line on top (`tools/protect-web.mjs`, terser in `cloud/`):
+  `cloud.yml` protects every script of `web/dist` and the scripts inside `index.html` before the deploy (the web and
+  the `pitwall-analysis.js` the phones download); `windows.yml` protects the scripts the agent embeds with
+  `--no-html` (the agent reads `index.html` as text, TELN and LIVE_VARS). `pitwall-games.js` stays plain JSON (the agent
+  reads it as data) and pdf.js (`pitwall-pdf*.js`) keeps its own licence. The protected `pitwall-analysis.js` still
+  says `PW_ANALYSIS VERSION = n` on its first line, which the phones check before they keep a downloaded copy.
+- The agent is built with `-s -w` (no symbols). garble was tried and dropped: its renaming breaks the JSON the agent
+  reads and sends.
+- The phones: R8 shrinks and renames the Android release (`proguard-rules.pro`), and both builds protect the scripts
+  they carry (`tools/protect-js.sh` in PitlaneHQ-Mobile).
+- The legal side: the EULA (`installer/EULA.txt`, EN/ES/PT) and the Terms' "Our work" (`cloud/src/legal.js`) forbid
+  copying, decompiling and reverse engineering, and the public pages' footers carry "© year Pitlane HQ".

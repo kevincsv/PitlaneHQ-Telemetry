@@ -42,7 +42,7 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   `admUserDetail`; member since set by hand, the supporter badge, its profile, delete; per account: confirm its email,
   turn off its two-step sign-in, sign it out everywhere, rename it, join a DRINKS driver to it or undo it, unlink its
   game drivers; `/admin/guests` lists every DRINKS driver on the platform for the chooser; and Online now), Feedback
-  (every answer of "Share your feedback", the newest first), Content (the shared items, the leagues and the newest
+  (every answer of "Share your feedback", the newest first), Content (the reports of posts and names, the shared items, the leagues and the newest
   records, a record's lap deleted by hand), Sessions (the latest sessions of any driver, a private one too: an admin
   opens every account's profile from the leaderboards, and the profile lists its sessions for admins; "See the laps"
   opens its laps one by one with their top speed and sectors, and an admin marks a lap not valid or valid again:

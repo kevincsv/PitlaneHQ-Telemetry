@@ -127,3 +127,17 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   too) carries `ver`, the version the admins' PCs had first seen last before the lap was set (`lmuVersions`/`verAt` in
   lmuclass.js, from `lmu_api`; "1.2-fc78d7e6" reads "1.2"), shown as "v1.2" beside the lap on every device, since BoP
   and physics change with the version.
+
+## Report and Block
+
+- What one driver posts that others see (a league post, a driver's public name and their Discord name on the profile) has
+  Report and Block on every device (the App Store asks for both). They show on someone else's league post and profile,
+  for a signed-in driver.
+- Report asks for a reason (Spam, Offensive, Harassment, Other) and an optional note, once per driver and post or
+  driver. It is emailed to support@ and waits on the admin page (Content → Reports), where an admin deletes the post,
+  resets the driver's name to "Driver" (and takes their Discord name off the profile) or dismisses it, within 24 hours.
+- Block hides the driver's league posts and profile from the one who blocked them, and their name reads "Blocked
+  driver" on the leaderboards, the records, the track pages and the race analyses they read (`maskBlocked`). Their
+  profile then only offers Unblock. Account (Settings) lists the blocked drivers with Unblock, shown when there is one.
+- Server: `cloud/src/moderation.js`, migration 0097, `cloud/test/moderation.test.mjs`. The agent lets the page reach
+  `/community/report` and `/community/blocks` (`placcount.go`).

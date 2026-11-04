@@ -189,3 +189,19 @@ export async function sendSupportReply(env, to, reply, l) {
   return send(env, to, m.subject, m.text, m.link, m.button, m.lang);
 }
 
+
+// A driver reported a league post or another driver's name (moderation.js): to support@, in English, with what was
+// reported as it was then and a button to the admin page, where it waits until an admin deals with it.
+export function contentReportMail(r) {
+  const s = r.snapshot || {};
+  const what = r.kind === "league" ? "league post \"" + (s.name || r.target) + "\"" + (s.by ? " by " + s.by : "") : "driver \"" + (s.name || r.target) + "\"";
+  const lines = r.kind === "league" ? [s.about ? "About " + s.about : "", s.cars ? "Cars " + s.cars : "", s.discord ? "Discord " + s.discord : "", s.web ? "Website " + s.web : ""].filter(Boolean) : [];
+  return {
+    subject: "Pitlane HQ report · " + r.reason + " · " + what,
+    text: ["Reported " + what + " as " + r.reason + ".", r.note ? "Note from the driver " + r.note : "", ...lines, "", "Reported by " + (r.reporterName || "–") + " (" + r.reporter + ")", "Owner account " + (r.owner || "–"), "Deal with it within 24 hours on the admin page, Reports."].filter((x) => x !== "").join("\n"),
+  };
+}
+export async function sendContentReport(env, r) {
+  const { subject, text } = contentReportMail(r);
+  return send(env, SUPPORT, subject, text, SITE + "/admin", "Open the admin page", "en");
+}

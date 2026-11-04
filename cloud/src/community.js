@@ -67,6 +67,8 @@ import { estimateTrace } from "./pedals.js";
 import { discordLapAlert } from "./discord.js";
 import { recordBeaten, testerAlert, testAskAlert } from "./alerts.js";
 import { testAskRoutes } from "./testask.js";
+import { moderationRoutes, blockedIds, maskBlocked, BLOCKED_NAME } from "./moderation.js";
+import { sendContentReport } from "./email.js";
 import { addFound, editFound, foundLeagues, leagueGame, lmuClasses, scanLeagues } from "./leaguescan.js";
 import { catMap, catOf, licOf, CATS, groupFor } from "./categories.js";
 import { lmuClass, wetOf, clsParam, classLaps, lmuVersions, verAt } from "./lmuclass.js";
@@ -299,6 +301,7 @@ export async function community(req, env, url, ctx) {
   }
   { const pr = await proRoutes(req, env, p, m, body); if (pr) return pr; } // Pitlane HQ Pro: the offer, the beta switch
   { const ta = await testAskRoutes(req, env, p, m, body, { sessionAccount, isAdmin, isTester, testerAlert, testAskAlert }); if (ta) return ta; } // asking to test what is in development: testask.js
+  { const mo = await moderationRoutes(req, env, p, m, body, { sessionAccount, isAdmin, mail: sendContentReport }); if (mo) return mo; } // reporting and blocking what drivers post: moderation.js
   // every list is for one game: laps and analyses of different games are never mixed
   const game = gameOf(url.searchParams.get("game") || body.game);
   { const ct = await coachTipRoutes(req, env, p, m, body, game); if (ct) return ct; } // the coach learns from its tips: coachtips.js
@@ -366,7 +369,8 @@ export async function community(req, env, url, ctx) {
     ).bind(game, lim).all());
     const cm = all || game === "iracing" ? await catMap(env) : null;
     const lv = all || game === "lmu" ? await lmuVers(env) : null;
-    return json({ records: (r.results || []).map(({ uid, hint, prevTime, prevAlias, ...x }) => ({ ...x, ver: lv && gameOf(x.game) === "lmu" ? verAt(lv, x.created) || undefined : undefined, game: gameOf(x.game), car: famName(gameOf(x.game), x.carId, x.car), cat: cm && gameOf(x.game) === "iracing" ? catOf(cm, x.trackId, x.carId, hint, x.track, x.car) : "sports_car", prof: !!x.prof, sup: !!x.sup, hasTrace: !!x.hasTrace, mine: !!who && uid === who.id, field: String(uid).startsWith("o:"), prev: prevTime ? { time: prevTime, alias: prevAlias } : null })) });
+    const bl = await blockedIds(env, who && who.id);
+    return json({ records: maskBlocked(r.results || [], bl).map(({ uid, hint, prevTime, prevAlias, ...x }) => ({ ...x, ver: lv && gameOf(x.game) === "lmu" ? verAt(lv, x.created) || undefined : undefined, game: gameOf(x.game), car: famName(gameOf(x.game), x.carId, x.car), cat: cm && gameOf(x.game) === "iracing" ? catOf(cm, x.trackId, x.carId, hint, x.track, x.car) : "sports_car", prof: !!x.prof, sup: !!x.sup, hasTrace: !!x.hasTrace, mine: !!who && uid === who.id, field: String(uid).startsWith("o:"), prev: prevTime ? { time: prevTime, alias: prevAlias } : null })) });
   }
   // one track: its layout and official turns, how many drivers and laps it has, and the record of every car on it
   // (the track page, in development)
@@ -396,7 +400,7 @@ export async function community(req, env, url, ctx) {
       trackId: t, game, track: name, drivers: (tot && tot.drivers) || 0, laps: (tot && tot.laps) || 0,
       layout: pts && pts.x && pts.x.length > 10 ? { n: lay.n, len: lay.len, x: pts.x, y: pts.y } : null,
       turns: tu && tu.turns ? JSON.parse(tu.turns) : [],
-      cars: (r.results || []).map(({ uid, hint, ...x }) => ({ ...x, car: famName(game, x.carId, x.car), track: x.track || name, trackId: t, cat: cm ? catOf(cm, t, x.carId, hint, x.track || name, x.car) : "sports_car", prof: !!x.prof, sup: !!x.sup, hasTrace: !!x.hasTrace, mine: !!who && uid === who.id, field: String(uid).startsWith("o:") })),
+      cars: maskBlocked(r.results || [], await blockedIds(env, who && who.id)).map(({ uid, hint, ...x }) => ({ ...x, car: famName(game, x.carId, x.car), track: x.track || name, trackId: t, cat: cm ? catOf(cm, t, x.carId, hint, x.track || name, x.car) : "sports_car", prof: !!x.prof, sup: !!x.sup, hasTrace: !!x.hasTrace, mine: !!who && uid === who.id, field: String(uid).startsWith("o:") })),
     });
   }
   if (p === "/laps" && m === "GET") {
@@ -406,7 +410,7 @@ export async function community(req, env, url, ctx) {
       const who = await me(req, env).catch(() => null);
       const rows = await classLaps(env, +url.searchParams.get("trackId"), cq, { admin: !!who && isAdmin(env, who.id), rivals: seesRivals(req, env, who), acctTrace: ACCT_TRACE });
       const lv = await lmuVers(env);
-      return json({ cat: "sports_car", cls: cq, laps: rows.map(({ uid, ...x }) => ({ ...x, ver: verAt(lv, x.created) || undefined, car: famName(game, x.carId, x.car), lic: licOf(x.lic), prof: !!x.prof, sup: !!x.sup, mine: !!who && uid === who.id, field: String(uid).startsWith("o:"), hasTrace: !!x.hasTrace, sectors: x.sectors ? JSON.parse(x.sectors) : null })) });
+      return json({ cat: "sports_car", cls: cq, laps: maskBlocked(rows, await blockedIds(env, who && who.id)).map(({ uid, ...x }) => ({ ...x, ver: verAt(lv, x.created) || undefined, car: famName(game, x.carId, x.car), lic: licOf(x.lic), prof: !!x.prof, sup: !!x.sup, mine: !!who && uid === who.id, field: String(uid).startsWith("o:"), hasTrace: !!x.hasTrace, sectors: x.sectors ? JSON.parse(x.sectors) : null })) });
     }
     const t = +url.searchParams.get("trackId"), c = await famId(env, game, url.searchParams.get("carId"));
     if (!t || !c) return err("trackId and carId", 400);
@@ -424,10 +428,10 @@ export async function community(req, env, url, ctx) {
     // field: another driver of a race someone drove, anonymous (their speed trace with estimated pedals)
     // cls: the board's Le Mans Ultimate class (its class board, ?cls=), null in iRacing
     const lv = game === "lmu" ? await lmuVers(env) : null;
-    return json({ cat, cls: game === "lmu" ? (h && h.cls) || lmuClass(null, h && h.car) : null, laps: (r.results || []).map(({ uid, ...x }) => ({ ...x, ver: lv ? verAt(lv, x.created) || undefined : undefined, lic: licOf(x.lic), prof: !!x.prof, sup: !!x.sup, mine: !!who && uid === who.id, field: String(uid).startsWith("o:"), hasTrace: !!x.hasTrace, sectors: x.sectors ? JSON.parse(x.sectors) : null })) });
+    return json({ cat, cls: game === "lmu" ? (h && h.cls) || lmuClass(null, h && h.car) : null, laps: maskBlocked(r.results || [], await blockedIds(env, who && who.id)).map(({ uid, ...x }) => ({ ...x, ver: lv ? verAt(lv, x.created) || undefined : undefined, lic: licOf(x.lic), prof: !!x.prof, sup: !!x.sup, mine: !!who && uid === who.id, field: String(uid).startsWith("o:"), hasTrace: !!x.hasTrace, sectors: x.sectors ? JSON.parse(x.sectors) : null })) });
   }
   if (p.startsWith("/laps/") && m === "GET") {
-    const rivals = seesRivals(req, env, await me(req, env).catch(() => null));
+    const lw = await me(req, env).catch(() => null), rivals = seesRivals(req, env, lw);
     const l = await env.DB.prepare(`SELECT l.*, ${shownName("l", "u", rivals)} AS alias FROM community_laps l JOIN community_users u ON u.id=l.user_id WHERE l.id=?1`).bind(p.slice(6)).first();
     if (!l) return err("not found", 404);
     let trace = l.trace;
@@ -441,6 +445,7 @@ export async function community(req, env, url, ctx) {
       const card = await getCarCard(env, l.game, l.car_id).catch(() => null);
       tr = estimateTrace(tr, card && card.pedals, card && card.shifts);
     }
+    if ((await blockedIds(env, lw && lw.id)).has(l.user_id)) l.alias = BLOCKED_NAME;
     return json({ id: l.id, alias: l.alias, game: l.game, time: l.time, car: famName(l.game, l.car_id, l.car), track: l.track, carId: l.car_id, trackId: l.track_id, sectors: l.sectors ? JSON.parse(l.sectors) : null, trace: tr });
   }
   if (p === "/reports" && m === "GET") {
@@ -453,7 +458,7 @@ export async function community(req, env, url, ctx) {
        FROM community_reports r JOIN community_users u ON u.id=r.user_id WHERE (?1=0 OR r.track_id=?1) AND (?2=0 OR r.car_id IN (${fam.map((n) => +n || 0).join(",")})) AND r.game=?3 ORDER BY r.created DESC LIMIT 100`
     ).bind(t || 0, c || 0, game).all();
     const who = await me(req, env).catch(() => null);
-    return json({ reports: (r.results || []).map(({ uid, ...x }) => ({ ...x, car: famName(game, c, x.car), mine: !!who && uid === who.id })) });
+    return json({ reports: maskBlocked(r.results || [], await blockedIds(env, who && who.id)).map(({ uid, ...x }) => ({ ...x, car: famName(game, c, x.car), mine: !!who && uid === who.id })) });
   }
   // track outlines (from clean best laps): anyone can read them
   if (p === "/trackmaps" && m === "GET") {
@@ -837,7 +842,8 @@ export async function community(req, env, url, ctx) {
       const cats = lst(x.cats).filter((c) => CATS.includes(c));
       const o = { id: x.id, name: x.name, about: x.about || "", cat: cats.length === 1 ? cats[0] : null, cats, days: lst(x.days).map(Number).filter((d) => d >= 0 && d <= 6),
         time: x.time || "", tz: x.tz || "", open: !!x.open, discord: x.discord || "", web: x.web || "", schedule: x.schedule || "", cars: x.cars || "", lang: x.lang || "",
-        created: x.created, updated: x.updated, game: x.game || "iracing", cls: x.game === "lmu" ? lmuClasses([x.name, x.cars, x.about].join(" ")) : undefined, mine: !!who && x.owner === who.id, by: x.alias || "Driver", bot: !!x.bot };
+        created: x.created, updated: x.updated, game: x.game || "iracing", cls: x.game === "lmu" ? lmuClasses([x.name, x.cars, x.about].join(" ")) : undefined, mine: !!who && x.owner === who.id, by: x.alias || "Driver", bot: !!x.bot,
+        canReport: !!who && x.owner !== who.id };
       if (o.mine || admin) { o.views = x.views || 0; o.clicks = x.clicks || 0; }
       return o;
     };
@@ -852,11 +858,14 @@ export async function community(req, env, url, ctx) {
       const limit = await leagueLimit();
       // the limit counts the driver's leagues of every game together
       const mineN = who ? ((await env.DB.prepare("SELECT COUNT(*) AS n FROM leagues WHERE owner=?1").bind(who.id).first().catch(() => null)) || {}).n || 0 : 0;
-      return json({ game: lgGame, posted: mineN, leagues: (r.results || []).map(row), admin, open: env.LEAGUES_OPEN === "1", limit, supporter: limit === LEAGUES_SUPPORTER, limits: { free: LEAGUES_FREE, supporter: LEAGUES_SUPPORTER } });
+      // a driver you blocked: their posts are hidden from you (moderation.js)
+      const bl = await blockedIds(env, who && who.id);
+      return json({ game: lgGame, posted: mineN, leagues: (r.results || []).filter((x) => !bl.has(x.owner)).map(row), admin, open: env.LEAGUES_OPEN === "1", limit, supporter: limit === LEAGUES_SUPPORTER, limits: { free: LEAGUES_FREE, supporter: LEAGUES_SUPPORTER } });
     }
     const cur = lid ? await env.DB.prepare("SELECT l.*, u.alias FROM leagues l LEFT JOIN community_users u ON u.id=l.owner WHERE l.id=?1").bind(lid).first() : null;
     if (lid && !cur) return err("league not found", 404);
     if (m === "GET") {
+      if (who && cur.owner !== who.id && (await blockedIds(env, who.id)).has(cur.owner)) return err("league not found", 404);
       // one post, with its last 14 days of views and clicks for its creator (and the admins)
       const o = row(cur);
       let days = [];
@@ -941,6 +950,8 @@ export async function community(req, env, url, ctx) {
     const a = uid ? await env.DB.prepare("SELECT a.id, a.anon, a.name_kind, a.created, a.member_since, a.supporter, a.supporter_hidden, u.alias, u.lics FROM accounts a JOIN community_users u ON u.id=a.id WHERE a.id=?1").bind(uid).first() : null;
     const mine = !!a && !!viewer && viewer.id === a.id;
     if (!a || ((fromAnon || a.anon) && !admin && !mine)) return err("this driver is anonymous", 404);
+    // a driver you blocked: only their name, to unblock them (moderation.js)
+    if (viewer && !mine && (await blockedIds(env, viewer.id)).has(a.id)) return json({ id: a.id, name: a.alias || "Driver", blocked: true, canReport: true, laps: [], races: [], lics: {}, days: {} });
     const laps = (await env.DB.prepare(
       `SELECT id, track, car, track_id AS trackId, car_id AS carId, time, created, anon, game, cat, lic,
          (SELECT COUNT(*) FROM community_laps o WHERE o.track_id=l.track_id AND o.car_id=l.car_id AND o.game=l.game AND COALESCE(o.shown,'')<>'model' AND o.time<l.time)+1 AS pos,
@@ -985,7 +996,9 @@ export async function community(req, env, url, ctx) {
       }
     }
     return json({
-      name: a.alias || "Driver", since: a.member_since || a.created, mine, admin, anonymous: !!a.anon,
+      id: a.id, name: a.alias || "Driver", since: a.member_since || a.created, mine, admin, anonymous: !!a.anon,
+      // Report and Block on someone else's profile (moderation.js)
+      canReport: !!viewer && !mine, blocked: false,
       // Follow on the profile: a signed-in driver on someone else's public profile (friends.js)
       canFollow: !!viewer && !mine && !a.anon, following: !!viewer && !mine && await follows(env, viewer.id, a.id),
       shownAs: admin || mine ? (a.anon ? "anonymous" : a.name_kind === "iracing" ? "iracing" : "nick") : undefined, // how the account shows itself

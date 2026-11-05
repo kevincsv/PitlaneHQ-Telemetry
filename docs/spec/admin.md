@@ -135,7 +135,9 @@ races the PCs report (`seasonseen.js`). The PC app passes that post through `/ap
 - Installs and uninstalls (`cloud/src/pcstats.js`, migration 0095 `pc_days`): the server counts per day, with no address
   or account, every download of PitlaneHQ-Setup.exe (`downloads.js`, not a resumed piece, not robots, v "beta" for the
   test builds; the updater takes the zip, so updates are not counted) and every time the page the uninstaller opens is
-  shown (`uninstall.js`, by the version removed; a silent uninstall opens nothing). An uninstall is a page shown, or on a
+  shown (`uninstall.js`, by the version removed; a silent uninstall opens nothing). The page counts itself from its
+  own script (POST `/community/feedback/uninstall/shown`, once per browser tab), so reloading it or a link checker
+  fetching it is not another uninstall (until 5 Nov 2026 every fetch of the page counted). An uninstall is a page shown, or on a
   day with more answers than pages (before they were counted) the answers. The reasons and what drivers wrote come from
   the uninstall answers (feedback of kind "uninstall"). What stands out says how many uninstalls and the main reason, and
   how many donations came in.

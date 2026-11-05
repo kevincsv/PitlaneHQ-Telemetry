@@ -596,7 +596,7 @@ async function handle(req, env, ctx) {
     // the privacy policy and how to delete an account, the addresses the app stores ask for (legal.js)
     { const lp = legal(req, url); if (lp) return lp; }
     // what a driver says when they uninstall the agent: the page the uninstaller opens and its answer (uninstall.js)
-    if (url.pathname.startsWith("/uninstalled") || url.pathname === "/community/feedback/uninstall") {
+    if (url.pathname.startsWith("/uninstalled") || url.pathname === "/community/feedback/uninstall" || url.pathname === "/community/feedback/uninstall/shown") {
       const r = await uninstallRoute(req, env, url, { send: sendFeedback, discord: discordFeedback }).catch((e) => new Response(JSON.stringify({ error: "server error: " + (e && e.message) }), { status: 500, headers: { "content-type": "application/json" } }));
       if (r) return r;
     }

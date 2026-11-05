@@ -1,8 +1,9 @@
 // What a driver says when they uninstall Pitlane HQ from their PC: the uninstaller (installer/PitlaneHQ.iss) opens
 // /uninstalled?v=<version>&lang=<es|en|pt> in the browser once the files are gone, never in a silent uninstall.
 //
-// GET  /uninstalled            the page: why they uninstalled (any of the reasons), an optional text box and Send;
-//   every time it is shown is one uninstall in the admin Analytics (pc_days, pcstats.js)
+// GET  /uninstalled            the page: why they uninstalled (any of the reasons), an optional text box and Send
+// POST /community/feedback/uninstall/shown {v}  sent once by the page's own script (not again when it is reloaded,
+//   never by a link checker that does not run it): one uninstall in the admin Analytics (pc_days, pcstats.js)
 // POST /community/feedback/uninstall (anyone, no sign-in)  {reasons: ["bugs", …], text, v}
 //   kept as a feedback answer of kind "uninstall" (`feedback`, the reason codes in `style`), emailed to support@ and
 //   posted in the Discord feedback forum like the others. With no account, it is counted per network and day (a hash
@@ -71,6 +72,7 @@ button{margin-top:14px;padding:11px 22px;border:0;border-radius:10px;background:
 <form id="f"><h1>${esc(t.title)}</h1><div class="cs">${chips}</div><textarea id="t" maxlength="${FEEDBACK_MAX}" placeholder="${esc(t.more)}"></textarea><button id="s" type="submit">${esc(t.send)}</button><p id="e" role="alert"></p></form>
 <div id="done" hidden><p id="ok">${esc(t.thanks)}</p><p class="m"><a href="/downloads">${esc(t.again)}</a></p></div></main>
 <script>(()=>{const f=document.getElementById("f"),e=document.getElementById("e"),s=document.getElementById("s"),V=${JSON.stringify(cleanV(v))};
+try{if(!sessionStorage.getItem("pwUn")){sessionStorage.setItem("pwUn","1");fetch("/community/feedback/uninstall/shown",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({v:V}),keepalive:true}).catch(()=>{})}}catch(x){}
 f.onsubmit=async(ev)=>{ev.preventDefault();const reasons=[...f.querySelectorAll("input:checked")].map(x=>x.value),text=document.getElementById("t").value.trim();
 if(!reasons.length&&!text){e.textContent=${JSON.stringify(t.pick)};return}e.textContent="";s.disabled=true;
 try{const r=await fetch("/community/feedback/uninstall",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({reasons,text,v:V})});if(!r.ok)throw 0;f.hidden=true;document.getElementById("done").hidden=false}
@@ -83,14 +85,19 @@ async function netKey(req, now) {
   return "uninstall:" + [...h.slice(0, 8)].map((b) => b.toString(16).padStart(2, "0")).join("");
 }
 
-/** GET /uninstalled and POST /community/feedback/uninstall, or null for any other address. `send` emails the answer
+/** GET /uninstalled, POST /community/feedback/uninstall and …/shown, or null for any other address. `send` emails the answer
  *  (email.js sendFeedback) and `discord` posts it (discord.js discordFeedback): the worker passes them, the test its own. */
 export async function uninstallRoute(req, env, url, { send = async () => false, discord = async () => 0 } = {}) {
   const p = url.pathname.replace(/\/+$/, "");
   if (p === "/uninstalled" && req.method === "GET") {
-    // counted for the admin Analytics (pcstats.js): one uninstall, by the version removed
-    if (!isBot(req.headers.get("user-agent"))) await pcCount(env, "uninstall", cleanV(url.searchParams.get("v")));
     return new Response(uninstallPage(uninstallLang(req, url), url.searchParams.get("v")), { headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-store", vary: "Accept-Language" } });
+  }
+  if (p === "/community/feedback/uninstall/shown" && req.method === "POST") {
+    // counted for the admin Analytics (pcstats.js): one uninstall, by the version removed
+    let b = null;
+    try { b = JSON.parse((await req.text()).slice(0, 500)); } catch { b = null; }
+    if (!isBot(req.headers.get("user-agent"))) await pcCount(env, "uninstall", cleanV(b && b.v));
+    return new Response(null, { status: 204, headers: { "cache-control": "no-store" } });
   }
   if (p !== "/community/feedback/uninstall" || req.method !== "POST") return null;
   if (isBot(req.headers.get("user-agent"))) return json({ ok: true });

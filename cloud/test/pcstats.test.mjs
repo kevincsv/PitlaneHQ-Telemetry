@@ -24,9 +24,12 @@ const stmt = (sql) => {
 const env = { DB: { prepare: stmt }, DL: { get: async () => ({ body: "x", size: 1, text: async () => "{}" }) } };
 const req = (path, h = {}) => { const r = new Request("https://pitlanehq.app" + path, { headers: { "user-agent": "Mozilla/5.0", ...h } }); return [r, env, new URL(r.url)]; };
 
+// the page is counted by its own script (POST …/shown), not by being fetched: a link checker that never runs it is not
+const shown = (h = {}) => { const r = new Request("https://pitlanehq.app/community/feedback/uninstall/shown", { method: "POST", headers: { "user-agent": "Mozilla/5.0", ...h }, body: JSON.stringify({ v: "0.9.11" }) }); return [r, env, new URL(r.url)]; };
 await uninstallRoute(...req("/uninstalled?v=0.9.11&lang=es"));
-await uninstallRoute(...req("/uninstalled?v=0.9.11"));
-await uninstallRoute(...req("/uninstalled?v=0.9.11", { "user-agent": "Googlebot/2.1" }));
+await uninstallRoute(...shown());
+await uninstallRoute(...shown());
+await uninstallRoute(...shown({ "user-agent": "Googlebot/2.1" }));
 await downloads(...req("/dl/PitlaneHQ-Setup.exe"));
 await downloads(...req("/dl/PitlaneHQ-Setup.exe", { range: "bytes=1000-" }));
 await downloads(...req("/dl/beta/PitlaneHQ-Setup.exe"));

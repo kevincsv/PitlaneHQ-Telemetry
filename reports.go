@@ -148,6 +148,7 @@ func logTail(max int) string {
 var (
 	healthMu     sync.Mutex
 	lmuUnreadAt  time.Time // Le Mans Ultimate running while the agent does not read it, since
+	fullAt       time.Time // overlays open over a game in exclusive full screen (they cannot show), since
 	waitingSince time.Time // laps waiting to upload, since
 )
 
@@ -157,6 +158,7 @@ func healthWatcher() {
 		time.Sleep(10 * time.Second)
 		st := currentStatus()
 		lmu := lmuRunning() && st.Source != "lmu"
+		full := st.connected() && !tel.isDemo() && len(listOverlays()) > 0 && gameFullscreen()
 		cloudMu.Lock()
 		n := len(cloudQueue)
 		cloudMu.Unlock()
@@ -165,6 +167,11 @@ func healthWatcher() {
 			lmuUnreadAt = time.Time{}
 		} else if lmuUnreadAt.IsZero() {
 			lmuUnreadAt = time.Now()
+		}
+		if !full {
+			fullAt = time.Time{}
+		} else if fullAt.IsZero() {
+			fullAt = time.Now()
 		}
 		if n == 0 {
 			waitingSince = time.Time{}
@@ -175,11 +182,12 @@ func healthWatcher() {
 	}
 }
 
-// healthNow: the laps waiting more than two minutes and whether the account can take them; LMU not readable for a
+// healthNow: the laps waiting more than two minutes and whether the account can take them; the game being read when
+// the overlays are open over it in exclusive full screen; LMU not readable for a
 // minute while the game is set to it or to Automatic
 func healthNow() map[string]any {
 	healthMu.Lock()
-	lmuAt, wAt := lmuUnreadAt, waitingSince
+	lmuAt, wAt, fAt := lmuUnreadAt, waitingSince, fullAt
 	healthMu.Unlock()
 	out := map[string]any{"waiting": 0}
 	if !wAt.IsZero() && time.Since(wAt) > 2*time.Minute {
@@ -196,6 +204,10 @@ func healthNow() map[string]any {
 		out["since"] = wAt.UnixMilli()
 	}
 	g := gamePref()
+	// the overlays are open but the game is in exclusive full screen for 20 s: they cannot show over it
+	if !fAt.IsZero() && time.Since(fAt) > 20*time.Second {
+		out["fullscreen"] = currentStatus().Source
+	}
 	out["lmuPlugins"] = !lmuAt.IsZero() && time.Since(lmuAt) > time.Minute && (g == "auto" || g == "lmu") && !tel.isDemo()
 	return out
 }

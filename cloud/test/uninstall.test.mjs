@@ -40,6 +40,7 @@ assert.match(uninstallPage("es", '0.9.9"</script>'), /V="0\.9\.9script"/, "the v
 // the routes
 const db = new DatabaseSync(":memory:");
 for (const n of ["0070_usage_feedback.sql", "0073_overlay_feedback.sql", "0093_feedback_discord.sql"]) db.exec(readFileSync(new URL("../migrations/" + n, import.meta.url), "utf8"));
+db.exec(readFileSync(new URL("../migrations/0095_installs_donations.sql", import.meta.url), "utf8").split("-- a Stripe")[0]);
 const stmt = (sql) => {
   const s = { args: [], bind(...x) { s.args = x; return s; },
     first: async () => { const r = db.prepare(sql).get(...s.args); return r ? { ...r } : null; },
@@ -56,6 +57,8 @@ assert.equal(await call("/privacy"), null);
 const page = await call("/uninstalled?v=0.9.9&lang=es");
 assert.equal(page.status, 200);
 assert.match(await page.text(), /¿Por qué has desinstalado Pitlane HQ\?/);
+assert.equal((await call("/community/feedback/uninstall/shown", "POST", { v: "0.9.9" })).status, 204, "the page counts itself once it runs");
+assert.deepEqual(db.prepare("SELECT kind, v, n FROM pc_days").all().map((r) => ({ ...r })), [{ kind: "uninstall", v: "0.9.9", n: 1 }], "the page itself is not counted, its script is");
 assert.equal((await call("/community/feedback/uninstall", "POST", { reasons: [] })).status, 400);
 for (let i = 0; i < UNINSTALL_PER_DAY; i++) assert.equal((await call("/community/feedback/uninstall", "POST", { reasons: ["hard"], text: "t" + i, v: "0.9.9" })).status, 200);
 assert.equal((await call("/community/feedback/uninstall", "POST", { reasons: ["hard"] })).status, 429, "3 a day per network");

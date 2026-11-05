@@ -91,8 +91,10 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   start. The page's own errors are reported the same way (`pwCrash` in index.html, the web's too).
 - Home on the PC app shows what the driver should act on (GET `/api/health`, `healthWatcher`): laps waiting more than
   two minutes to upload with Retry (POST `/api/health/retry`), or a line asking to sign in when no account takes them,
-  and Le Mans Ultimate running for a minute while the agent cannot read it (its plugins off) with where to turn them
-  on (`homeHealth`).
+  Le Mans Ultimate running for a minute while the agent cannot read it (its plugins off) with where to turn them
+  on (`homeHealth`), and the overlays open for 20 s over a game in exclusive full screen, where no window can show
+  (`gameFullscreen`: Windows' QUNS_RUNNING_D3D_FULL_SCREEN; borderless is not it), asking for Borderless or Windowed
+  (`fullCallout`, on Home and at the top of the Overlays tab).
 
 ## Test builds (every device)
 

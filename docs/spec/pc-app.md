@@ -95,13 +95,12 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   on (`homeHealth`), and the overlays open for 20 s over a game in exclusive full screen, where no window can show
   (`gameFullscreen`: Windows' QUNS_RUNNING_D3D_FULL_SCREEN; borderless is not it), asking for Borderless or Windowed
   (`fullCallout`, on Home and at the top of the Overlays tab).
-- Get started (`homeGuide`, PC app Home, 5 Nov 2026): until the first lap is in the track book or the driver presses
-  Hide (`pw.guide.off`, this PC only), a card "Get started with <game>" for the game chosen (Le Mans Ultimate when it
-  is chosen, or on Automatic while it runs; else iRacing) with four steps ticked live every 5 s from `/api/health`
-  (`pref`, `reading`, `lmuOn`, `fullNow`, `overlays`): Enable Plugins in Le Mans Ultimate (or start iRacing and get in
-  the car), the display mode Borderless or Windowed, open an overlay (an Overlays button), drive one full lap. It is
-  PC-only: every step is about the PC the agent runs on. The welcome window on the PC says to start your game (any
-  game) and that Home shows the first steps.
+- Le Mans Ultimate's telemetry (PC app, 5 Nov 2026, the owner's choice): a window "Turn on telemetry in Le Mans
+  Ultimate" (in the game Settings → Gameplay, turn on Enable Plugins, close the game and start it again) when the
+  driver has chosen Le Mans Ultimate and this PC has never read it (`pw.lmu.read`), or when the game runs and the agent
+  cannot read it (`/api/health` "lmuPlugins"); once per start of the app, checked every 5 s, and it closes by itself
+  with "Pitlane HQ is reading Le Mans Ultimate" once the game is read (`LMUG` in index.html). `/api/health` also says
+  `pref`, `reading`, `lmuOn`, `fullNow` and `overlays`. The welcome window on the PC says to start your game (any game).
 
 ## Test builds (every device)
 

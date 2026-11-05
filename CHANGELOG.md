@@ -6,6 +6,7 @@ improvements". 1.0.0 comes when the beta ends. Newest first.
 
 ## 0.9.15 beta
 
+- Home on the PC shows the first steps for Le Mans Ultimate or iRacing and ticks each one as you do it.
 - Home and the Overlays tab tell you when the game is in full screen, where the overlays cannot show.
 - Fixes and improvements.
 

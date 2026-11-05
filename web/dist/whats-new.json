@@ -2,9 +2,9 @@
   "versions": [
     {
       "v": "0.9.15",
-      "en": ["Home and the Overlays tab tell you when the game is in full screen, where the overlays cannot show.", "Fixes and improvements."],
-      "es": ["Inicio y la pestaña Overlays te avisan cuando el juego está en pantalla completa, donde los overlays no se pueden ver.", "Arreglos y mejoras."],
-      "pt": ["O Início e a aba Overlays avisam quando o jogo está em tela cheia, onde os overlays não aparecem.", "Correções e melhorias."]
+      "en": ["Home on the PC shows the first steps for Le Mans Ultimate or iRacing and ticks each one as you do it.", "Home and the Overlays tab tell you when the game is in full screen, where the overlays cannot show.", "Fixes and improvements."],
+      "es": ["Inicio en el PC muestra los primeros pasos para Le Mans Ultimate o iRacing y marca cada uno al hacerlo.", "Inicio y la pestaña Overlays te avisan cuando el juego está en pantalla completa, donde los overlays no se pueden ver.", "Arreglos y mejoras."],
+      "pt": ["O Início no PC mostra os primeiros passos para o Le Mans Ultimate ou o iRacing e marca cada um quando você o faz.", "O Início e a aba Overlays avisam quando o jogo está em tela cheia, onde os overlays não aparecem.", "Correções e melhorias."]
     },
     {
       "v": "0.9.14",

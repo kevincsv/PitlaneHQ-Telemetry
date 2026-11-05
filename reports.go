@@ -209,6 +209,17 @@ func healthNow() map[string]any {
 		out["fullscreen"] = currentStatus().Source
 	}
 	out["lmuPlugins"] = !lmuAt.IsZero() && time.Since(lmuAt) > time.Minute && (g == "auto" || g == "lmu") && !tel.isDemo()
+	// for Home's Get started guide (homeGuide in index.html): the game chosen, the game being read, whether Le Mans
+	// Ultimate is running, the game in exclusive full screen now, and how many overlays are open
+	st := currentStatus()
+	out["pref"] = g
+	out["reading"] = ""
+	if st.connected() && !tel.isDemo() {
+		out["reading"] = st.Source
+	}
+	out["lmuOn"] = lmuRunning()
+	out["fullNow"] = st.connected() && gameFullscreen()
+	out["overlays"] = len(listOverlays())
 	return out
 }
 

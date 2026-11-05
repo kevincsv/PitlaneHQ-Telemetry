@@ -29,7 +29,7 @@ const appVersion = "0.9.15"
 // appMinVersion: the oldest PitlaneHQ.exe that still works with today's server and files. Raise it
 // only when an older one really breaks (a changed API, a new data format): those PCs are then
 // made to update (the notice has no "later"). Published in version.json as "min".
-const appMinVersion = "0.9.0"
+const appMinVersion = "0.9.15"
 
 // appStage is shown next to the version everywhere until 1.0.0.
 const appStage = "beta"

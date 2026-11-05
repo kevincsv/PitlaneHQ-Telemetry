@@ -112,7 +112,7 @@ h3{font-size:14px;color:#ffb02e;margin:18px 0 4px}p{color:#a9b4c3;margin:6px 0}u
 // PC_MIN: the oldest PitlaneHQ.exe the server still lets run, whatever version.json says. A PC older than the "min" it
 // reads updates as soon as the car is not on the track and its update notice has no "later" (update.go), so raising
 // this makes every older PC update without a new Windows build. Kept equal to appMinVersion in main.go.
-export const PC_MIN = "0.9.0";
+export const PC_MIN = "0.9.15";
 const vparts = (v) => String(v || "0").replace(/^v/, "").split("+")[0].split(".").map((x) => parseInt(x, 10) || 0);
 export function versionLess(a, b) {
   const x = vparts(a), y = vparts(b);

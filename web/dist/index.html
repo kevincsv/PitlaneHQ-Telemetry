@@ -9904,4 +9904,20 @@ html:not(.ov) :is(.hl-tag,.kind,.hm-tag,.hl .pill.aib,.hl .pill.gm){font:500 11.
 html:not(.ov) :is(.hl-tag.k-race,.kind.k-race){color:var(--accent)!important}
 html:not(.ov) :is(.hl-tag.k-qual,.kind.k-qual){color:var(--pb)!important}
 html:not(.ov) .hm-tag.good{color:var(--good)!important}
+
+/* lists, notes and the search: no coloured stripes at the left */
+html:not(.ov) :is(.lap-insight,.insights li){border-left:1px solid var(--line)!important;border:1px solid var(--line)!important}
+html:not(.ov) .insights li.good{color:var(--fg)}html:not(.ov) .insights li.bad{color:var(--fg)}
+html:not(.ov) .inbox-it,html:not(.ov) .inbox-it.new{border-left-color:var(--line)!important}
+html:not(.ov) .inbox-it.new{background:var(--surface2)!important}
+html:not(.ov) :is(.qs-it[aria-selected="true"],.qs-it:hover,.cl-table tr.on,.cl-table tr.on td:first-child){box-shadow:none!important;background:var(--surface2)!important}
+html:not(.ov) .mo .it{border-left-width:2px}
+html:not(.ov) .hm-av{background:var(--surface2)!important;color:var(--fg)!important;border:1px solid var(--line2);box-shadow:none!important;font-family:var(--f-body)!important;font-weight:600!important;border-radius:50%!important}
+html:not(.ov) .wel-n{background:var(--surface2)!important;color:var(--fg)!important;border:1px solid var(--line2)}
+/* no glows or gradients */
+html:not(.ov) .lchero{background:var(--surface2)!important;border-bottom-color:var(--line)!important}
+html:not(.ov) .carill{background:var(--surface2)!important}
+html:not(.ov) .sa-av{background:var(--surface2)!important;color:var(--fg)!important}
+html:not(.ov) .wip-bar s{background:var(--accent)!important}
+html:not(.ov) .vcdot.on{box-shadow:none}
 </style>

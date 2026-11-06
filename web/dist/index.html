@@ -1963,7 +1963,7 @@ html .hl-sec{padding:0 0 12px;border-radius:var(--radius);display:flex;flex-dire
 <p>The app needs JavaScript.</p></main></noscript>
 <!-- where the visit came from, once per browser session (the admin page's Analytics; cloud/src/sourceslib.js VISIT_JS, the same lines) -->
 <script>(function(){try{var q=new URLSearchParams(location.search),v={ref:document.referrer,page:location.pathname,us:q.get("utm_source")||q.get("ref")||"",um:q.get("utm_medium")||"",uc:q.get("utm_campaign")||""};if(!/(^|\.)pitlanehq\.app$/.test(location.hostname))return;try{if(!localStorage.getItem("pw.src0"))localStorage.setItem("pw.src0",JSON.stringify(v))}catch(e){}if(sessionStorage.getItem("pw.v"))return;sessionStorage.setItem("pw.v","1");var b=JSON.stringify(v);if(navigator.sendBeacon)navigator.sendBeacon("/community/visit",new Blob([b],{type:"text/plain"}));else fetch("/community/visit",{method:"POST",body:b,keepalive:true})}catch(e){}})()</script>
-<div id="splash" role="status" aria-label="Pitlane HQ"><div class="sp-logo"><span class="sp-flag" aria-hidden="true"></span>PITLANE HQ</div><div class="sp-bar"><i></i></div></div>
+<div id="splash" role="status" aria-label="Pitlane HQ"><div class="sp-logo"><span class="sp-flag" aria-hidden="true"></span>Pitlane HQ</div><div class="sp-bar"><i></i></div></div>
 <script>/* overlay windows never show the splash; a slow start never hides the app for long */
 (function(){const sp=document.getElementById("splash");if(/[?&]overlay=/.test(location.search)||/^#overlay-/.test(location.hash)){sp.remove();return}setTimeout(()=>{if(sp.isConnected){sp.classList.add("out");setTimeout(()=>sp.remove(),300)}},8000)})()</script>
 <div class="wrap">
@@ -9509,7 +9509,7 @@ async function renderMe(){const box=$("#meBody");if(!box)return;const a=await lo
       <div><span class="label">${esc(Tx("Name others see","Nombre que ven los demás"))}</span>${nameChoice("mr","nick",STEAM_NEW?STEAM_NEW.persona:"")}</div>
       <button class="btn primary" type="submit">${esc(Tx("Create account","Crear cuenta"))}</button><p class="note" style="margin:0">${esc(Tx("Everything is free while Pitlane HQ is in beta.","Todo es gratis mientras Pitlane HQ está en beta.","Everything is free while Pitlane HQ is in beta.","Tudo é grátis enquanto o Pitlane HQ está em beta."))}</p><p class="note err" id="mrErr" style="margin:0"></p></form>
       <div class="me-switch"><span>${esc(Tx("Already have an account?","¿Ya tienes cuenta?","Schon ein Konto?","Já tem conta?"))}</span><button type="button" class="btn" id="meToLog">${esc(Tx("Sign in","Entrar","Anmelden","Entrar"))}</button></div></div>`;
-    box.innerHTML=`${a.demo?`<div class="callout">${esc(Tx("Demo: nothing is sent.","Demo: no se envía nada."))}</div>`:""}<div class="me-welcome"><div class="me-brand">PITLANE HQ</div><p class="me-slogan">${esc(Tx("iRacing telemetry and a lap coach.","Telemetría y coach de vueltas para iRacing.","iRacing-Telemetrie und Runden-Coach.","Telemetria e coach de voltas para iRacing."))}</p><p class="note" style="margin:0">${esc(Tx("The PC app records every lap you drive. Here you see where you lose time and how you compare with faster drivers in the same car.","La app del PC graba cada vuelta que das. Aquí ves dónde pierdes tiempo y cómo vas frente a pilotos más rápidos con el mismo coche.","Die PC-App zeichnet jede Runde auf. Hier siehst du, wo du Zeit verlierst und wie du gegen schnellere Fahrer im selben Auto liegst.","O app do PC grava cada volta. Aqui você vê onde perde tempo e como está contra pilotos mais rápidos no mesmo carro."))}</p>${WEBAPP?`<p class="note me-pub" style="margin:6px 0 0"><a href="${/^es/.test(LANG)?"/es/telemetria-iracing":"/iracing-telemetry"}">${esc(Tx("How it works","Cómo funciona","So funktioniert es","Como funciona"))}</a> · <a href="${/^es/.test(LANG)?"/es/records":"/records"}">${esc(Tx("iRacing records","Récords de iRacing","iRacing-Rekorde","Recordes do iRacing"))}</a></p>`:""}</div>${reg?register:login}${WEBAPP?`<details class="me-dl"><summary>${esc(Tx("Download the apps","Descargar las apps","Apps herunterladen","Baixar os apps"))}</summary>${dlHTML()}</details>`:""}`;
+    box.innerHTML=`${a.demo?`<div class="callout">${esc(Tx("Demo: nothing is sent.","Demo: no se envía nada."))}</div>`:""}<div class="me-welcome"><div class="me-brand">Pitlane HQ</div><p class="me-slogan">${esc(Tx("iRacing telemetry and a lap coach.","Telemetría y coach de vueltas para iRacing.","iRacing-Telemetrie und Runden-Coach.","Telemetria e coach de voltas para iRacing."))}</p><p class="note" style="margin:0">${esc(Tx("The PC app records every lap you drive. Here you see where you lose time and how you compare with faster drivers in the same car.","La app del PC graba cada vuelta que das. Aquí ves dónde pierdes tiempo y cómo vas frente a pilotos más rápidos con el mismo coche.","Die PC-App zeichnet jede Runde auf. Hier siehst du, wo du Zeit verlierst und wie du gegen schnellere Fahrer im selben Auto liegst.","O app do PC grava cada volta. Aqui você vê onde perde tempo e como está contra pilotos mais rápidos no mesmo carro."))}</p>${WEBAPP?`<p class="note me-pub" style="margin:6px 0 0"><a href="${/^es/.test(LANG)?"/es/telemetria-iracing":"/iracing-telemetry"}">${esc(Tx("How it works","Cómo funciona","So funktioniert es","Como funciona"))}</a> · <a href="${/^es/.test(LANG)?"/es/records":"/records"}">${esc(Tx("iRacing records","Récords de iRacing","iRacing-Rekorde","Recordes do iRacing"))}</a></p>`:""}</div>${reg?register:login}${WEBAPP?`<details class="me-dl"><summary>${esc(Tx("Download the apps","Descargar las apps","Apps herunterladen","Baixar os apps"))}</summary>${dlHTML()}</details>`:""}`;
     const sw=(t)=>e=>{e.preventDefault();ME_TAB=t;renderMe()};{const x=$("#meToReg");if(x)x.onclick=sw("register");const y=$("#meToLog");if(y)y.onclick=sw("login")}}
   const f2=$("#meSrv2");if(f2)f2.onsubmit=e=>{e.preventDefault();const u=$("#meSrvU2").value.trim().replace(/\/+$/,"");if(u&&!/^https:\/\//.test(u)){toast(Tx("Use an https:// address","Usa una dirección https://"));return}try{u?localStorage.setItem("pw.server",u):localStorage.removeItem("pw.server")}catch(x){}location.reload()};
   if(!a.signedIn){const busy=(f,on)=>f.querySelectorAll("button,input").forEach(x=>x.disabled=on);
@@ -9752,8 +9752,8 @@ html:not(.ov) .pnl-h,html:not(.ov) .pnl-h h2,html:not(.ov) .hl-sec>.cl-h h2{font
 /* controls */
 html:not(.ov) .btn{font:500 14px/1 var(--f-body)!important;border-radius:8px;background:var(--surface2);border:1px solid var(--line2);padding:10px 14px}
 html:not(.ov) .btn:hover{border-color:var(--faint);background:var(--surface2)}
-html:not(.ov) .btn.primary{background:var(--fg);color:var(--bg);border-color:var(--fg)}
-html:not(.ov) .btn.primary:hover{background:color-mix(in srgb,var(--fg) 88%,var(--bg))}
+html:not(.ov) .btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:600!important}
+html:not(.ov) .btn.primary:hover{background:color-mix(in srgb,var(--accent) 88%,var(--fg));border-color:var(--accent)}
 html:not(.ov) .btn.small{padding:7px 10px;font-size:13px!important}
 html:not(.ov) :is(select,input[type=text],input[type=email],input[type=password],input[type=search],input[type=url],input[type=date],input[type=time],input.num,textarea){font-family:var(--f-body);background:var(--bg);border:1px solid var(--line2);border-radius:8px}
 html:not(.ov) :is(select,input,textarea):focus{border-color:var(--muted);outline:none}
@@ -9775,8 +9775,8 @@ html:not(.ov) .gseg .pill{background:none!important;padding:0 0 0 4px;font-size:
 html:not(.ov) .lic{font-family:var(--f-body)!important;font-weight:600;border-radius:4px}
 
 /* tables: quiet heads, hairlines only */
-html:not(.ov) th{border-bottom:1px solid var(--line);padding:8px 8px}
-html:not(.ov) td{border-bottom:1px solid var(--row);padding:9px 8px}
+html:not(.ov) th{border-bottom:1px solid var(--line)}
+html:not(.ov) td{border-bottom:1px solid var(--row)}
 html:not(.ov) tr.me td{background:color-mix(in srgb,var(--accent) 8%,transparent)}
 html:not(.ov) tr.me td:first-child{box-shadow:inset 2px 0 0 var(--accent)}
 
@@ -9843,7 +9843,7 @@ html:not(.ov) :is(.cl-tabs,.seg3,#liveMode,.an-seg,.adm-view){gap:2px}
 html:not(.ov) :is(.cl-tabs button,.seg3 button,#liveMode button,.an-seg button,.adm-view button):not([aria-pressed="true"]){background:transparent!important;border-color:transparent!important;color:var(--muted)!important}
 html:not(.ov) :is(#liveCmp .panel>.label:first-child,#v-field #stdPos>.label:first-child,#v-tyres .panel>.label:first-child,.lap-more .lm-p>.label:first-child,#v-live .pw-cmd-track,.drawer.float .drawer-panel:has(.cfgsplit) #dTitle)::before{content:none!important;display:none!important}
 html:not(.ov) #viewTg.adm-on{background:var(--surface2)!important;color:var(--accent)!important;border:0!important}
-html:not(.ov) .hl-links .cl-link:first-child{background:var(--fg)!important;color:var(--bg)!important}
+
 
 /* the old accent bars in front of every title, gone */
 .cl-two > section > .cl-h::before,
@@ -9878,4 +9878,30 @@ html:not(.ov) .hl-kpis{gap:0!important;background:var(--surface);border:1px soli
 html:not(.ov) .hl-kpis>*{background:none!important;border:0!important;border-radius:0!important;padding:18px 20px!important}
 html:not(.ov) .hl-kpis>*+*{border-left:1px solid var(--line)!important}
 @media (max-width:820px){html:not(.ov) .hl-kpis>*:nth-child(3){border-left:0!important}html:not(.ov) .hl-kpis>*:nth-child(n+3){border-top:1px solid var(--line)!important}}
+
+/* chosen cards and list rows: a lighter surface and a hairline, the accent left for the one thing to do */
+html:not(.ov) :is(.cl-discs .lb-cat,#leagBody .lb-cats .lb-cat,.lb-cat)[aria-pressed="true"],html:not(.ov) :is(.la-c.on,.la-cpnl .la-c.on,.pkt.on,.dtag-o.on,.rb-mode.sel,.hapmode[aria-pressed="true"],.shas:has(input:checked),.sp-row.cur,.lp-list button[aria-pressed=true],.ovt-chip.on,.ovt-gp.on){border-color:var(--faint)!important;background:var(--surface2)!important;box-shadow:none!important;color:var(--fg)!important}
+html:not(.ov) .ovt-ni.sel{background:var(--surface2)!important;color:var(--fg)!important}
+html:not(.ov) :is(.chs .pin,.bell,.rb-b,.lg-week i)[aria-pressed="true"],html:not(.ov) :is(.rb-b.on,.lg-week i.on){background:var(--surface2)!important;color:var(--fg)!important;border-color:var(--faint)!important}
+html:not(.ov) :is(.hm-coin,.pc-ic,.eg-ic,.up-ic,.wip-ic){background:var(--surface2)!important;color:var(--fg)!important;border-color:var(--line2)!important}
+html:not(.ov) .an-hi{border-color:var(--line2)!important;background:var(--surface)!important}
+html:not(.ov) .inbox-it.new{background:var(--surface2)!important}
+html:not(.ov) .hm-tag.acc,html:not(.ov) .pill.drk{background:var(--surface2)!important;border-color:transparent!important;box-shadow:none!important;color:var(--accent)!important}
+html:not(.ov) .kind.k-race{background:var(--surface2)!important;color:var(--fg)!important}
+html:not(.ov) .pill.pro-b{background:none!important;color:var(--accent)!important;border:1px solid color-mix(in srgb,var(--accent) 50%,transparent)!important;font-size:10px!important}
+html:not(.ov) :is(.tabp.on,.tabp[aria-selected="true"],.tabp[aria-pressed="true"]){border-color:var(--line2)!important}
+
+/* narrow screens: the header fits on one line (the version is in Settings → About) */
+@media (max-width:820px){html:not(.ov) header.top .version-badge{display:none}html:not(.ov) header.top{gap:2px;flex-wrap:nowrap}html:not(.ov) header.top .brand{margin-right:auto}}
+
+/* the account page's welcome and the splash */
+html:not(.ov) .me-brand{font:600 24px/1 var(--f-body)!important;letter-spacing:-.01em!important}
+html:not(.ov) .me-slogan{color:var(--fg)!important;font:500 15px/1.4 var(--f-body)!important}
+#splash .sp-logo{font-family:var(--f-body)!important;font-weight:600!important;letter-spacing:-.01em!important;text-transform:none!important}
+
+/* session kinds and small tags: the same quiet word as the pills */
+html:not(.ov) :is(.hl-tag,.kind,.hm-tag,.hl .pill.aib,.hl .pill.gm){font:500 11.5px/1.5 var(--f-body)!important;padding:1px 7px!important;border:0!important;border-radius:5px!important;box-shadow:none!important;background:var(--surface2)!important;color:var(--muted)}
+html:not(.ov) :is(.hl-tag.k-race,.kind.k-race){color:var(--accent)!important}
+html:not(.ov) :is(.hl-tag.k-qual,.kind.k-qual){color:var(--pb)!important}
+html:not(.ov) .hm-tag.good{color:var(--good)!important}
 </style>

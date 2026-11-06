@@ -2,6 +2,17 @@
 
 How this part of Pitlane HQ behaves. Read it before changing this area; keep it up to date when the behaviour changes.
 
+- The look (the Nov 2026 redesign, PC, web and Pitlane HQ Desktop; the phones later): one layer at the end of
+  index.html (`<style id="look">`) over every older rule. Neutral graphite (`--bg #0f1012`, `--surface #16171a`,
+  hairlines `--line #232529`), and a light theme of the same shape. One family, IBM Plex Sans, in sentence case with
+  no letter spacing everywhere (titles, labels, tabs, buttons, tags), numbers in its tabular figures; JetBrains Mono
+  only for code. Panels are flat with one hairline and 10 px corners, with no accent bar before their titles, no glows
+  and no gradients. A chosen tab, segment, chip or card is a raised neutral surface; the sub-tabs are words with a thin
+  underline; pills and session tags are small grey words (Race in amber, Qualifying in purple). Amber is kept for the
+  primary button, your own row and the data that is yours. On computers the main tabs are a 208 px sidebar with the logo,
+  the name and each tab's icon and word; on phones and narrow windows the bottom bar, and the header on one line
+  (the version moves to Settings → About). The demo banner is one quiet line. The overlay windows (`html.ov`) keep
+  their own designs.
 - Your iRating and licence of every discipline (`ratings.go`, `ratings.json` in the account, `/api/ratings`; iRacing's
   sessions say "Formula" for the formula cars, `discipline`/`raceDisc`/`catOf` read it as Formula Car): the game
   only says the one of the session you are in, so the PC keeps the last seen of each (every session, and from the

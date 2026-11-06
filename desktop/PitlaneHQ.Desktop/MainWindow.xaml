@@ -63,7 +63,7 @@
                 <!-- the screens not native yet: the app inside a WebView -->
                 <!-- the app itself (web/dist, served by the engine): every screen, exactly as on the web; the 6 px margin
                      leaves the window's resize borders to the window (a child window would take the mouse there) -->
-                <wv2:WebView2 x:Name="Web" DefaultBackgroundColor="#11151B" Margin="6"/>
+                <wv2:WebView2 x:Name="Web" DefaultBackgroundColor="#0F1012" Margin="6"/>
 
                 <!-- HOME (native) -->
                 <ScrollViewer x:Name="HomeView" VerticalScrollBarVisibility="Auto" Padding="28,20,18,24" Background="{StaticResource Bg}">

@@ -9920,4 +9920,8 @@ html:not(.ov) .carill{background:var(--surface2)!important}
 html:not(.ov) .sa-av{background:var(--surface2)!important;color:var(--fg)!important}
 html:not(.ov) .wip-bar s{background:var(--accent)!important}
 html:not(.ov) .vcdot.on{box-shadow:none}
+
+/* Analysis: the lap and braking tables keep fitting beside the map with the sidebar */
+html:not(.ov) #lapsBody :is(#lapTable,#brakeTable) :is(th,td){padding-left:9px;padding-right:9px}
+html:not(.ov) #brakeTable .bt-tip{min-width:160px}
 </style>

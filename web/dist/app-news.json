@@ -1,21 +1,6 @@
 {
   "items": [
     {
-      "id": "2026-11-discord-server",
-      "date": "2026-11-01",
-      "title": {
-        "en": "Join the Pitlane HQ Discord",
-        "es": "Únete al Discord de Pitlane HQ",
-        "pt": "Entre no Discord do Pitlane HQ"
-      },
-      "text": {
-        "en": "We started a Discord to build the Pitlane HQ community. Come say hi, ask for help, report bugs and share ideas.",
-        "es": "Abrimos un Discord para construir la comunidad de Pitlane HQ. Pasa a saludar, pide ayuda, avisa de errores y comparte ideas.",
-        "pt": "Abrimos um Discord para construir a comunidade do Pitlane HQ. Venha dizer oi, pedir ajuda, avisar de erros e compartilhar ideias."
-      },
-      "url": "https://discord.gg/BaMF3gaSg7"
-    },
-    {
       "id": "2026-10-discord-bot-live",
       "date": "2026-10-16",
       "title": {

@@ -121,12 +121,7 @@ const phones = (l, list) => `<div class="phs">${list.map((f) => `<figure>${img(l
 // request, kept a few minutes per server
 let HAS = { lmuLeagues: false, lmuRecords: false };
 const HAS_MEMO = new WeakMap();
-// the invite of the Pitlane HQ community server on Discord (DISCORD_INVITE in wrangler.toml, an invite that never
-// expires): named on every page, in the FAQ, the JSON-LD and llms.txt only while it is set
-let DC = "";
-const invite = (v) => (/^https:\/\/(discord\.gg|discord\.com\/invite)\/[A-Za-z0-9-]+$/.test(String(v || "").trim()) ? String(v).trim() : "");
 async function readHas(env) {
-  DC = invite(env.DISCORD_INVITE);
   const m = HAS_MEMO.get(env);
   if (m && Date.now() - m.at < 5 * 60e3) return (HAS = m.has);
   const [lg, rc] = await Promise.all([leaguesData(env, "lmu").then((D) => D.posted.length + D.found.length).catch(() => 0), topCombos(env, 1, "lmu").then((x) => x.length).catch(() => 0)]);
@@ -166,7 +161,7 @@ ${hl}
 ${ld ? `<script type="application/ld+json">${JSON.stringify(ld).replace(/</g, "\\u003c")}</script>` : ""}</head><body>
 <header><div class="w"><a class="b" href="/">${LOGO}Pitlane HQ</a><nav><a href="${(game === "lmu" ? LANDL : LAND)[l].path}">${esc(t.tel[game])}</a><a href="${(game === "lmu" ? OVLL : OVL)[l].path}">${esc(t.ov)}</a><a href="${lg}">${esc(t.lgs)}</a><a href="${rc}">${esc(t.rec)}</a><a href="${(other === "lmu" ? LANDL : LAND)[l].path}">${esc(GNAME[other])}</a><a href="/downloads">${esc(t.dl)}</a><a href="/">${esc(t.app)}</a>${others}</nav></div></header>
 <main class="w">${body}${path && !noindex ? whatIs(l) : ""}</main>
-<footer><div class="w"><p class="m">${esc(GUIDES[l])} · iRacing · ${iracingLinks(l).map(([p, h]) => `<a href="${p}">${esc(h)}</a>`).join(" · ")}</p><p class="m">${esc(t.lmuH)} · ${lmuLinks(l).map(([p, h]) => `<a href="${p}">${esc(h)}</a>`).join(" · ")}</p>© ${new Date().getUTCFullYear()} Pitlane HQ · ${esc(t.free)} · <a href="/downloads">${esc(t.dl)}</a> · <a href="${MS_STORE}" rel="noopener">Microsoft Store</a> · <a href="${PRICE[l].path}">${esc(PRICE[l].h1)}</a> · <a href="mailto:support@pitlanehq.app">support@pitlanehq.app</a> · ${DC ? `<a href="${esc(DC)}" rel="noopener">Discord</a> · ` : ""}${LANGS.map((k) => `<a href="${LAND[k].path}" hreflang="${HLANG[k]}">${NAME[k]}</a>`).join(" · ")}</div></footer>${VISIT_JS}</body></html>`;
+<footer><div class="w"><p class="m">${esc(GUIDES[l])} · iRacing · ${iracingLinks(l).map(([p, h]) => `<a href="${p}">${esc(h)}</a>`).join(" · ")}</p><p class="m">${esc(t.lmuH)} · ${lmuLinks(l).map(([p, h]) => `<a href="${p}">${esc(h)}</a>`).join(" · ")}</p>© ${new Date().getUTCFullYear()} Pitlane HQ · ${esc(t.free)} · <a href="/downloads">${esc(t.dl)}</a> · <a href="${MS_STORE}" rel="noopener">Microsoft Store</a> · <a href="${PRICE[l].path}">${esc(PRICE[l].h1)}</a> · <a href="mailto:support@pitlanehq.app">support@pitlanehq.app</a> · ${LANGS.map((k) => `<a href="${LAND[k].path}" hreflang="${HLANG[k]}">${NAME[k]}</a>`).join(" · ")}</div></footer>${VISIT_JS}</body></html>`;
 }
 // what Pitlane HQ is, in a few plain sentences at the end of every indexed page, so whoever lands on any one of them
 // (a person, a search engine or an AI assistant) reads the whole of it. Only what exists today, and free only "during
@@ -182,17 +177,7 @@ const WHAT = {
     "O Pitlane HQ Agent roda no PC com Windows onde você corre, e também está na Microsoft Store. Ele grava cada volta sozinho e desenha overlays sobre o jogo, também em VR. O app web e o app de Android mostram suas voltas com um analisador de voltas, comparação de voltas, setores e pontos de frenagem, e um coach que aprende com voltas reais, mostra curva a curva onde você perde tempo e dá um plano marcado no mapa da pista.",
     "Cada volta sincroniza com a sua conta, com todo o seu histórico. O Pitlane HQ também tem telemetria ao vivo no celular, resumos de corrida com o combustível de cada stint, classificações por carro e pista, amigos, ligas e um bot de Discord."] },
 };
-const DCW = {
-  en: { p: "Drivers meet on the Pitlane HQ Discord server, open to everyone, to ask for help, share ideas and see new records as they happen.", a: "Join the Pitlane HQ Discord",
-    q: "Is there a Pitlane HQ community on Discord?", ans: "Yes. The Pitlane HQ Discord server is open to everyone. Come to ask for help, report bugs, share ideas and see every driver's new records as they happen." },
-  es: { p: "Los pilotos se juntan en el servidor de Discord de Pitlane HQ, abierto a todos, para pedir ayuda, compartir ideas y ver los nuevos récords al momento.", a: "Únete al Discord de Pitlane HQ",
-    q: "¿Hay una comunidad de Pitlane HQ en Discord?", ans: "Sí. El servidor de Discord de Pitlane HQ está abierto a todos. Entra para pedir ayuda, avisar de fallos, compartir ideas y ver los nuevos récords de todos los pilotos al momento." },
-  pt: { p: "Os pilotos se encontram no servidor de Discord do Pitlane HQ, aberto a todos, para pedir ajuda, compartilhar ideias e ver os novos recordes na hora.", a: "Entre no Discord do Pitlane HQ",
-    q: "Existe uma comunidade do Pitlane HQ no Discord?", ans: "Sim. O servidor de Discord do Pitlane HQ é aberto a todos. Entre para pedir ajuda, avisar de bugs, compartilhar ideias e ver os novos recordes de todos os pilotos na hora." },
-};
-// the Discord question of the landings' FAQ, while the invite is set
-const dcFaq = (l) => (DC ? [[DCW[l].q, DCW[l].ans + " " + DC]] : []);
-const whatIs = (l) => `<section class="x" id="what"><h2>${esc(WHAT[l].t)}</h2>${WHAT[l].p.map((x) => `<p>${esc(x)}</p>`).join("")}${DC ? `<p>${esc(DCW[l].p)} <a href="${esc(DC)}" rel="noopener">${esc(DCW[l].a)} →</a></p>` : ""}</section>`;
+const whatIs = (l) => `<section class="x" id="what"><h2>${esc(WHAT[l].t)}</h2>${WHAT[l].p.map((x) => `<p>${esc(x)}</p>`).join("")}</section>`;
 // the page itself: its address, its name, its language, the site it belongs to and the day it last changed
 const webPageLd = (l, path, name, description, mod) => ({ "@context": "https://schema.org", "@type": "WebPage", "@id": SITE + path + "#page", url: SITE + path, name, description,
   inLanguage: HLANG[l], isPartOf: { "@id": SITE + "/#website" }, about: { "@id": SITE + "/#app" }, dateModified: mod || SEO_DATE });
@@ -219,7 +204,7 @@ const appLd = (l, desc, shots, features) => ({ "@context": "https://schema.org",
   offers: { "@type": "Offer", price: "0", priceCurrency: "USD" }, publisher: { "@id": SITE + "/#org" } });
 const siteLd = (l) => [
   { "@context": "https://schema.org", "@type": "WebSite", "@id": SITE + "/#website", name: "Pitlane HQ", alternateName: ["PitlaneHQ", "Pitlane"], url: SITE + "/", inLanguage: HLANG[l], publisher: { "@id": SITE + "/#org" } },
-  { "@context": "https://schema.org", "@type": "Organization", "@id": SITE + "/#org", name: "Pitlane HQ", alternateName: "PitlaneHQ", url: SITE + "/", logo: SITE + "/icon-512.png", email: "support@pitlanehq.app", ...(DC ? { sameAs: [DC] } : {}) },
+  { "@context": "https://schema.org", "@type": "Organization", "@id": SITE + "/#org", name: "Pitlane HQ", alternateName: "PitlaneHQ", url: SITE + "/", logo: SITE + "/icon-512.png", email: "support@pitlanehq.app" },
 ];
 // a weak validator of the page (FNV-1a), so a browser or a robot that has it gets 304
 const etagOf = (s) => { let h = 0x811c9dc5; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 0x01000193); } return `W/"${(h >>> 0).toString(36)}-${s.length.toString(36)}"`; };
@@ -626,7 +611,7 @@ const recAlts = (x, game) => ({ en: recPath("en", x, game), es: recPath("es", x,
 const catFor = (cm, game, x, hint, track, car) => (game === "lmu" ? "sports_car" : catOf(cm, x.t, x.c, hint, track, car));
 
 async function landing(env, l, game) {
-  const lmu = game === "lmu", L = (lmu ? LANDL : LAND)[l], combos = await topCombos(env, 8, game), faq = [...L.faq, ...dcFaq(l)];
+  const lmu = game === "lmu", L = (lmu ? LANDL : LAND)[l], combos = await topCombos(env, 8, game), faq = L.faq;
   const guides = lmu ? [...TOPICS.filter((x) => x.game === "lmu").map((x) => x[l]), OVLL[l], ...(HAS.lmuLeagues ? [LEAGL[l]] : []), ...lmuToo(l)]
     : [...TOPICS.filter((x) => x.game !== "lmu").map((x) => x[l]), OVL[l], LEAG[l]];
   const body = `<h1>${esc(L.h1)}</h1><p class="lead">${esc(L.lead)}</p>
@@ -865,7 +850,7 @@ export async function indexNow(env) {
 // site before they answer about it; /llms-full.txt: the English pages' own texts, whole. Made from the same texts as
 // the pages, so they never say anything the pages do not. Plain facts, never hype; noindex (they are no page for people).
 const mdLink = ([path, h, d]) => `- [${h}](${/^https:/.test(path) ? path : SITE + path})${d ? ": " + d : ""}`;
-const about = () => WHAT.en.p.join(" ") + (DC ? " " + DCW.en.p + " " + DC : "") + " ACC and Assetto Corsa are in development. The pages are in English, Spanish and Portuguese (Brazil).";
+const about = () => WHAT.en.p.join(" ") + " ACC and Assetto Corsa are in development. The pages are in English, Spanish and Portuguese (Brazil).";
 // the facts an assistant needs to describe Pitlane HQ whole, one line each (the pages say each of them too)
 const FACTS = [
   ["Price", "Free. Everything in Pitlane HQ is free while it is in beta, with no card asked for. Sync and the whole lap history are part of the free account. After the beta Pro will cost $6 a month or $59 a year, and drivers who support Pitlane HQ during the beta keep Pro at half price."],
@@ -880,7 +865,7 @@ const FACTS = [
   ["Community", "Leaderboards and records by car and track, friends to follow, a leagues hub with leagues to join, and a Discord bot that posts new best laps and records in a server and answers with leaderboards, records and lap comparisons."],
   ["Languages", "English, Spanish and Portuguese (Brazil)."],
 ];
-const factsMd = () => [...FACTS, ...(DC ? [["Discord community", `The Pitlane HQ Discord server is open to everyone, for help, bug reports, ideas and every driver's new records as they happen. ${DC}`]] : [])].map(([k, v]) => `- **${k}.** ${v}`).join("\n");
+const factsMd = () => FACTS.map(([k, v]) => `- **${k}.** ${v}`).join("\n");
 function llmsTxt() {
   const l = "en", g = (x) => [x.path, x.h1, x.desc];
   const ir = [g(LAND.en), g(OVL.en), ...TOPICS.filter((x) => x.game !== "lmu").map((x) => g(x.en)), g(LEAG.en), [REC_IDX.iracing.en, S.en.recH("iRacing"), S.en.recD("iRacing")]];
@@ -901,7 +886,7 @@ ${factsMd()}
 
 - Website and web app ${SITE}/
 - Download ${SITE}/downloads
-- Support support@pitlanehq.app${DC ? "\n- Discord community " + DC : ""}
+- Support support@pitlanehq.app
 
 ## iRacing
 
@@ -923,7 +908,7 @@ ${[["/llms-full.txt", "Full texts", "every English page above, whole"], ...other
 function llmsFull() {
   const l = "en", qa = (faq) => faq.map(([q, a]) => `### ${q}\n\n${a}`).join("\n\n");
   const sec = (path, h1, lead, parts, faq) => `# ${h1}\n\n${SITE}${path}\n\n${lead}\n\n${parts.map(([h, p]) => `## ${h}\n\n${p}`).join("\n\n")}${faq && faq.length ? "\n\n## " + LAND[l].faqT + "\n\n" + qa(faq) : ""}`;
-  const land = (L, gn) => sec(L.path, L.h1, L.lead, [...L.cards, [START[l].t, START[l].steps(gn).map((x, i) => `${i + 1}. ${x}`).join("\n")]], [...L.faq, ...dcFaq(l)]);
+  const land = (L, gn) => sec(L.path, L.h1, L.lead, [...L.cards, [START[l].t, START[l].steps(gn).map((x, i) => `${i + 1}. ${x}`).join("\n")]], L.faq);
   const W = OVW[l], ov = (O) => sec(O.path, O.h1, O.lead, [...O.items, [W.expT, W.exp], [W.vrT, W.vr], [W.howT, W.how.map((x) => "- " + x).join("\n")]], O.faq);
   return [`# Pitlane HQ\n\n${about()}\n\n## Key facts\n\n${factsMd()}`, land(LAND[l], "iRacing"), ov(OVL[l]), ...TOPICS.filter((x) => x.game !== "lmu").map((x) => sec(x[l].path, x[l].h1, x[l].lead, x[l].secs, x[l].faq)),
     land(LANDL[l], "Le Mans Ultimate"), ov(OVLL[l]), ...TOPICS.filter((x) => x.game === "lmu").map((x) => sec(x[l].path, x[l].h1, x[l].lead, x[l].secs, x[l].faq)),

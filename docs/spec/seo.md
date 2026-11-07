@@ -52,10 +52,7 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   "Key facts" (`FACTS`: price, games, devices, telemetry, overlays, coach, lap analyzer, races, history, community,
   languages), only what exists and is open to everyone (never anything scrapped, secret, in development or about the
   server), and free only as "free during the beta" beyond what is free now; both are made from the pages' texts, so they never
-  say anything the pages do not. The Pitlane HQ Discord community server (`DISCORD_INVITE` in wrangler.toml, an invite that never expires, `invite()` takes
-  only a discord.gg or discord.com/invite address) is named, only while it is set, in the footer, the "What is Pitlane HQ"
-  box, the landings' FAQ ("Is there a Pitlane HQ community on Discord?", also in their FAQPage), the Organization's
-  `sameAs` and llms.txt/llms-full.txt. Every indexed page ends with "What is Pitlane HQ" (`WHAT`, three short paragraphs in its language, the same text
+  say anything the pages do not. No page, JSON-LD or llms.txt names or links the Pitlane HQ Discord community server (the owner's choice, Nov 2026). Every indexed page ends with "What is Pitlane HQ" (`WHAT`, three short paragraphs in its language, the same text
   as the app's <noscript>), and every indexed page carries a WebPage node (its address, name, language and
   `dateModified`, `SEO_DATE` or a record's newest lap); the two landings show "How to start" (four steps, `START`) and carry
   them as HowTo, never on a page where the steps do not show; the SoftwareApplication says `downloadUrl`, the Microsoft Store listing as `installUrl` and `sameAs` (`MS_STORE`

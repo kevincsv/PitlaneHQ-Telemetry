@@ -3,6 +3,15 @@
 These rules apply to every task. How each feature behaves is in `docs/spec/` (index at the end): read the file for the
 area you are changing before you change it, and update it in the same commit when the behaviour changes.
 
+## Project status
+
+@PROJECT_STATUS.md
+
+`PROJECT_STATUS.md` (above) is the short index of where the work stands: the current goal, what is in progress, and
+one detail file per area in `docs/status/`. Start every task from the index alone. Open a `docs/status/` file only when
+the task touches that area, never all of them. When the status changes (something ships, is held, or waits on the
+owner), update that detail file and the index in the same commit, and keep the index under 50 lines.
+
 ## Talking to the owner
 
 - Reply to the owner in Spanish.

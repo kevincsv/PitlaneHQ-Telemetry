@@ -5154,6 +5154,14 @@ function raceSummaryHTML(r,opt){opt=opt||{};const S=raceSummary(r),d=r.start-r.f
     ${S.st.map(x=>`<tr><td class="mono">${x.i}</td><td class="mono">${x.from}–${x.to} <small>(${x.laps})</small></td><td class="mono">${fmtT(x.avg)}</td><td class="mono">${fmtT(x.best)}</td><td class="mono">${x.fuel!=null?vol(x.fuel).toFixed(1)+" "+volU():"–"}</td><td class="mono">${x.fpl!=null?vol(x.fpl).toFixed(2)+" "+volU():"–"}</td>${S.st.some(y=>y.stop)?`<td class="mono">${x.stop?"+"+x.stop.toFixed(1)+" s":"–"}</td>`:""}</tr>`).join("")}</tbody></table></div>`:"";
   return `<div class="panel rsum">${opt.title?`<div class="vhead" style="margin:0 0 8px;flex-wrap:wrap;gap:8px"><h2 style="margin:0">${esc(Tx("Race summary","Resumen de la carrera","Rennzusammenfassung","Resumo da corrida"))}</h2>${opt.title}</div>`:""}${head}
     <div class="rs-cols">${list(Tx("What went well","Lo que salió bien","Was gut lief","O que deu certo"),S.good,"good")}${list(Tx("Where you lost time","Dónde perdiste tiempo","Wo du Zeit verloren hast","Onde você perdeu tempo"),[...lost,...S.tips],"tip")}</div>${stints}</div>`}
+/* the lap times of a race the design's way (C.raceLaps): the line, a line at the race average, a dot per lap; the finger or the mouse reads a lap */
+function pw3RaceChart(r,laps){const ls=laps.filter(l=>l.n!==1&&l.t>0);if(ls.length<2)return"";const ts=ls.map(l=>l.t),avg=r.avg||ts.reduce((a,b)=>a+b,0)/ts.length,W=1000,H=150,
+  mn=Math.min(...ts)-.3,mx=Math.min(Math.max(...ts),avg+3)+.3,n0=ls[0].n,n1=ls[ls.length-1].n,X=n=>20+(n-n0)/Math.max(1,n1-n0)*(W-30),Y=t=>H-10-(Math.min(t,mx)-mn)/(mx-mn||1)*(H-20);
+  const drv=raceDrivers(r).length,tip=l=>`${Tx("Lap","Vuelta",null,"Volta")} ${l.n} · ${fmtT(l.t)}${drv?" · "+lapDrv(r,l):""}`;
+  return`<div class="pw3-rl" style="height:${H}px"><svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" aria-hidden="true"><line x1="0" x2="${W}" y1="${Y(avg).toFixed(1)}" y2="${Y(avg).toFixed(1)}" class="z"/><path class="ln" vector-effect="non-scaling-stroke" d="${ls.map((l,i)=>(i?"L":"M")+X(l.n).toFixed(1)+" "+Y(l.t).toFixed(1)).join("")}"/></svg>${ls.map(l=>`<span class="dt ${l.pit?"pit":l.cut?"cut":l.i?"inc":""}" style="left:${(X(l.n)/W*100).toFixed(2)}%;top:${(Y(l.t)/H*100).toFixed(2)}%" title="${esc(tip(l))}" data-tip="${esc(tip(l))}"></span>`).join("")}</div><div class="pw3-rlr mono" aria-live="polite"></div>`}
+function pw3RaceChartWire(box){const c=box.querySelector(".pw3-rl"),out=box.querySelector(".pw3-rlr");if(!c||!out)return;const ds=[...c.querySelectorAll(".dt")];
+  const at=x=>{const r=c.getBoundingClientRect();let b=null,bd=1e9;ds.forEach(d=>{const dx=Math.abs(d.getBoundingClientRect().left+d.offsetWidth/2-x);if(dx<bd){bd=dx;b=d}});ds.forEach(d=>d.classList.toggle("on",d===b));out.textContent=b?b.dataset.tip:""};
+  c.addEventListener("pointermove",e=>at(e.clientX));c.addEventListener("pointerdown",e=>at(e.clientX));c.addEventListener("pointerleave",()=>{ds.forEach(d=>d.classList.remove("on"));out.textContent=""})}
 function renderRaceRecap(){const box=$("#raceRecap");if(!box)return;const r=(RACES||[]).slice().sort((a,b)=>b.when-a.when)[0];if(!r){box.innerHTML="";return}
   box.innerHTML=raceSummaryHTML(r,{title:`<small class="muted">${esc((seriesName(r.seriesId)||r.car)+" · "+r.track+" · "+dshort(r.when))}</small><button type="button" class="btn small" id="rsOpen">${esc(Tx("Full report","Informe completo","Ganzer Bericht","Relatório completo"))} ›</button>`});
   $("#rsOpen").onclick=()=>openRace(r.id)}
@@ -7484,7 +7492,7 @@ function renderCoach(){coachWeights();coachMe();const LP=coachLaps(),best=markAn
       <button type="button" class="co-k${R===MR.rec?" on":""}"${MR.rec?' data-cref="m:ideal"':" disabled"}><small>${esc(Tx("Record · the fastest real lap here","Récord · la vuelta real más rápida aquí","Rekord · die schnellste echte Runde hier","Recorde · a volta real mais rápida aqui"))}</small><b class="pb-t">${m.idealTime?fmtT(m.idealTime):"–"}</b><small>${esc(MR.rec?vs(m.idealTime):m.idealTime?(isRec?Tx("this lap is the record: it is yours","esta vuelta es el récord: es tuya","diese Runde ist der Rekord: er gehört dir","esta volta é o recorde: é sua"):Tx("this lap is the record","esta vuelta es el récord","diese Runde ist der Rekord","esta volta é o recorde")):Tx("no lap with telemetry yet","aún sin vuelta con telemetría","noch keine Runde mit Telemetrie","ainda sem volta com telemetria"))}</small></button>
       <button type="button" class="co-k${R===MR.level?" on":""}"${MR.level?' data-cref="m:level"':" disabled"}><small>${esc(Tx("Next level · the driver just ahead","Siguiente nivel · el piloto justo por delante","Nächstes Level · der Fahrer knapp vor dir","Próximo nível · o piloto logo à frente"))}</small><b>${MR.level?fmtT(MR.level.time):"–"}</b><small>${esc(MR.level?vs(MR.level.time)+stepText(MR.level,A):top?Tx("you are the fastest: nobody known is ahead","eres el más rápido: nadie conocido va por delante","du bist der Schnellste: niemand Bekanntes liegt vorne","você é o mais rápido: ninguém conhecido está à frente"):Tx("nobody known is ahead of this lap","nadie conocido va por delante de esta vuelta","niemand Bekanntes liegt vor dieser Runde","ninguém conhecido está à frente desta volta"))}</small></button>
       <div class="co-k"><small>${esc(Tx("Your pace among the drivers known here","Tu ritmo entre los pilotos conocidos aquí","Dein Tempo unter den hier bekannten Fahrern","Seu ritmo entre os pilotos conhecidos aqui"))}</small><b>${rk?`${rk.pos}º / ${rk.of}`:"–"}</b><small>${esc(Tx(`by best lap · learnt from ${m.n} real ${m.n===1?"lap":"laps"} of ${m.drivers} ${m.drivers===1?"driver":"drivers"}`,`por mejor vuelta · aprendido de ${m.n} ${m.n===1?"vuelta real":"vueltas reales"} de ${m.drivers} ${m.drivers===1?"piloto":"pilotos"}`,`nach bester Runde · gelernt aus ${m.n} echten Runden von ${m.drivers} Fahrern`,`por melhor volta · aprendido de ${m.n} voltas reais de ${m.drivers} pilotos`))}</small></div></div>`
-    :`<p class="note co-commnote">${esc(PM&&A&&PM.error(A)?Tx("The community cannot be reached right now, so the coach compares your laps with each other.","Ahora mismo no hay conexión con la comunidad, así que el coach compara tus vueltas entre sí.","Die Community ist gerade nicht erreichbar, der Coach vergleicht deine Runden untereinander.","A comunidade não está acessível agora, então o coach compara suas voltas entre si."):PM&&A&&PM.loading(A)?Tx("Looking for the other drivers of this car and track…","Buscando a los demás pilotos de este coche y circuito…","Suche die anderen Fahrer dieses Autos und dieser Strecke…","Procurando os outros pilotos deste carro e pista…"):Tx("No other driver of this car and track is known yet: the coach compares your laps with each other and learns from the community as laps come in (yours, shared ones, your race rivals').","Aún no se conoce a otro piloto de este coche y circuito: el coach compara tus vueltas entre sí y aprende de la comunidad según llegan vueltas (tuyas, compartidas, de tus rivales de carrera).","Noch kein anderer Fahrer dieses Autos und dieser Strecke bekannt: der Coach vergleicht deine Runden untereinander und lernt aus der Community, sobald Runden eintreffen.","Ainda não se conhece outro piloto deste carro e pista: o coach compara suas voltas entre si e aprende com a comunidade conforme chegam voltas."))}</p>`;
+    :`<p class="note co-commnote">${esc(PM&&A&&PM.error(A)?Tx("The community cannot be reached right now, so the coach compares your laps with each other.","Ahora mismo no hay conexión con la comunidad, así que el coach compara tus vueltas entre sí.","Die Community ist gerade nicht erreichbar, der Coach vergleicht deine Runden untereinander.","A comunidade não está acessível agora, então o coach compara suas voltas entre si."):PM&&A&&PM.loading(A)?Tx("Looking for the other drivers of this car and track…","Buscando a los demás pilotos de este coche y circuito…","Suche die anderen Fahrer dieses Autos und dieser Strecke…","Procurando os outros pilotos deste carro e pista…"):Tx("No other driver of this car and track is known yet. Your laps are compared with each other until community laps come in.","Aún no se conoce a otro piloto de este coche y circuito. Tus vueltas se comparan entre sí hasta que lleguen vueltas de la comunidad.",null,"Ainda não se conhece outro piloto deste carro e pista. Suas voltas são comparadas entre si até chegarem voltas da comunidade."))}</p>`;
   // the car card: when nobody known is ahead of this lap here, what this car does on other tracks (its hardest
   // braking, where the fast drivers shift up, its top speed) against what this lap did
   const ccard=!MR.level&&PM&&PM.carCard?PM.carCard(A):null;
@@ -10637,84 +10645,209 @@ function pw3StickWire(){if(pw3StickWire.on)return;pw3StickWire.on=1;addEventList
   {const b=$("#lapB");if(b)b.addEventListener("change",()=>setTimeout(pw3LapsPanel,0))}}
 </script>
 <style id="pw3-analysis">
-/* Pit Wall Workspace: analysis (Coach, My sessions, My races) */
+/* Pit Wall Workspace: analysis (Coach, My sessions, My races), the design's own rules (base.css, .d3) on the app's markup */
 #v-coach .vhead .sub,#v-races .vhead .sub,#v-cloudlaps .vhead .sub,#v-races #drvSub{display:none}
-/* the coach: lap A vs B on top, the plan on the left, the verdict, the corners and the pace in the middle, the map on the right */
-#v-coach .lapcmpheads{display:grid!important;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr)!important;gap:12px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius,12px);padding:12px 16px;margin:0 0 12px}
+/* the design's panel: border #2a3140, radius 8, padding 10, the title in Barlow 14 caps muted, no rule under it */
+:is(#v-coach,#v-cloudlaps,#v-races) .pnl{border:1px solid var(--line2);border-radius:8px;padding:10px;background:var(--surface)}
+:is(#v-coach,#v-cloudlaps,#v-races) .pnl>.pnl-h{padding:0!important;border:0!important;margin:0 0 10px!important;min-height:0;font:700 14px/1.2 var(--f-display)!important;letter-spacing:.1em!important;text-transform:uppercase;color:var(--muted)!important;background:none!important}
+:is(#v-coach,#v-cloudlaps,#v-races) .pnl>.pnl-h::before{content:none!important;display:none!important}
+:is(#v-coach,#v-cloudlaps,#v-races) .pnl>.pnl-b{padding:0!important}
+:is(#v-coach,#v-cloudlaps,#v-races) .pnl .pnl-h .btn{font:400 12.5px/1.2 var(--f-body)!important;letter-spacing:0!important;text-transform:none!important;color:var(--fg)}
+/* the design's buttons and chips */
+#v-coach .pw3c .btn,#v-coach .pw3c .chip,#v-races .pw3r .btn{background:var(--surface2);border:1px solid var(--line);border-radius:5px;padding:7px 12px;min-height:36px;font:400 13px/1.2 var(--f-body);color:var(--fg);text-transform:none;letter-spacing:0;box-shadow:none}
+#v-coach .pw3c .btn.small,#v-coach .pw3c .chip{min-height:30px;padding:5px 10px;font-size:12.5px}
+#v-coach .pw3c .btn.primary{background:var(--surface2);color:var(--fg);border-color:var(--line);font-weight:400}
+/* ----- Coach ----- */
+@media (min-width:821px){#v-coach>.vhead h1{display:none}}
+#v-coach>.vhead{margin-bottom:10px}
+#v-coach #coachCtx{margin:0 0 10px;font-size:12px}
+/* lap A vs B (C.lapHead) */
+#v-coach .lapcmpheads{display:grid!important;grid-template-columns:1fr auto 1fr!important;gap:12px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:12px 16px;margin:0 0 10px}
 #v-coach .lapcmpheads:empty{display:none!important}
-#v-coach .lapcmp{background:none!important;border:0!important;padding:0!important;display:flex!important;flex-direction:column;align-items:flex-start;gap:2px;min-width:0;max-width:100%}
-#v-coach .lapcmp.b{align-items:flex-end;text-align:right}
-#v-coach .lapcmp .role{font:500 12px var(--f-body)!important;letter-spacing:0!important;text-transform:none!important;color:var(--muted)!important;background:none!important;padding:0!important;border:0!important}
-#v-coach .lapcmp .name{font-weight:700;font-size:15px;max-width:100%}
-#v-coach .lapcmp .time{font:600 22px var(--f-data)!important;margin:0}#v-coach .lapcmp.a .time{color:var(--accent)}#v-coach .lapcmp.b .time{color:var(--pb)}
-#v-coach .lapcmp .meta{display:none}
+#v-coach .lapcmp{background:none!important;border:0!important;padding:0!important;display:flex!important;flex-direction:column;align-items:flex-start;gap:0;min-width:0;max-width:100%;box-shadow:none!important}
 #v-coach .lapcmp>*{align-self:auto!important;margin:0!important}
-#v-coach .lapcmp .role{font-size:11px!important;letter-spacing:.06em!important}
-.pw3c .co-tips .rb-h{flex-wrap:wrap;row-gap:4px}.pw3c .co-tips .rb-h>small,.pw3c .co-tips .rb-h>.mono{white-space:nowrap}
-.pw3c-top .co-ai .pnl-h{flex-wrap:wrap;row-gap:4px}.pw3c-top .co-ai .pnl-h .pill.acc{font-size:10px;white-space:nowrap}
-#v-coach .lapcmp-vs{display:grid!important;color:var(--muted);font:700 13px var(--f-display)}
-.co-wrap.pw3c{display:grid;grid-template-columns:270px minmax(0,1fr) 300px;gap:12px;align-items:start}
-.pw3c-l,.pw3c-r{display:flex;flex-direction:column;gap:12px;min-width:0;position:sticky;top:12px;max-height:calc(100vh - 24px);overflow-y:auto;scrollbar-width:thin}
-.pw3c-m{display:flex;flex-direction:column;gap:12px;min-width:0}
-.pw3c .pnl{margin:0!important}
-.pw3c-top{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px;align-items:stretch}
-.pw3c-top>.pnl{padding:14px 16px;justify-content:flex-start}
-.pw3c-top>.co-ai{padding:0}
-.pw3c-top .big{font-size:34px;line-height:1.1}
-.pw3c-top .co-focus{background:none!important;border:0!important;padding:0!important;margin:0!important}
-.pw3c-top .co-focus b{display:block;font:700 26px/1.1 var(--f-display);text-transform:uppercase;margin-top:4px}
-.pw3c-top .co-focus small{display:block;font:500 13px var(--f-data);color:var(--good)!important}
-.pw3c .co-tips{display:grid!important;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:12px;padding:12px}
-.pw3c .co-tips>.co-tip{background:var(--surface2);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin:0;min-width:0}
-.pw3-mini{display:block;width:100%;height:60px;margin-top:8px}
-.pw3-mini .a{fill:none;stroke:var(--accent);stroke-width:2}.pw3-mini .b{fill:none;stroke:var(--pb);stroke-width:2;stroke-dasharray:6 4}
-.pw3c-l .co-plan{margin:0}
-.pw3c-r .co-secs{grid-template-columns:minmax(0,1fr)!important;gap:6px!important}.pw3c-r .co-s{display:grid!important;grid-template-columns:28px auto minmax(0,1fr);gap:10px;align-items:baseline}.pw3c-r .co-s small{text-align:right}
-.pw3c-offs .offs{margin:0}.pw3c-offs .offs>.label{display:none}.pw3c-offs .rb-sum{margin:0 0 6px}
-@media (max-width:1180px){.co-wrap.pw3c{grid-template-columns:minmax(0,1fr)}.pw3c-l,.pw3c-r{position:static;max-height:none;overflow:visible}}
-@media (max-width:700px){#v-coach .lapcmpheads{grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important}#v-coach .lapcmp-vs{display:none!important}}
-/* My sessions: the best per car and track on the left, the sessions and the race summaries side by side */
-.pw3s{display:grid;grid-template-columns:260px minmax(0,1fr);gap:12px;align-items:start}
-.pw3s-l{position:sticky;top:12px;min-width:0}.pw3s-m{min-width:0}
-.pw3s-2{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:12px;align-items:start}
-.pw3s .mr-pnl{margin:0!important}
-.pw3-bests{display:grid;gap:8px;padding:10px}
-.pw3-bst{all:unset;box-sizing:border-box;cursor:pointer;display:flex;flex-direction:column;gap:1px;background:var(--surface2);border:1px solid transparent;border-radius:10px;padding:10px 12px;min-width:0}
-.pw3-bst:hover,.pw3-bst:focus-visible{border-color:var(--accent)}
-.pw3-bst b{font-size:13.5px;overflow-wrap:anywhere}.pw3-bst small{color:var(--muted);font-size:12px;overflow-wrap:anywhere}
-.pw3-bst .mono{font:600 21px var(--f-data);color:var(--accent);margin-top:4px}
-#v-cloudlaps .mr-kind .kind{display:inline-block!important;box-sizing:border-box;width:88px!important;text-align:center!important;padding:4px 6px!important;border:1px solid var(--line)!important;border-radius:999px!important;background:transparent!important;color:var(--muted)!important;margin:0 4px 0 0!important;box-shadow:none!important}
-.pw3s .mr-t{min-width:0!important;width:100%}.pw3s .mr-main b,.pw3s .mr-main small{white-space:normal!important;overflow-wrap:break-word}.pw3s .mr-t td.mr-when small{white-space:nowrap}.pw3s .mr-t th,.pw3s .mr-t td{padding-left:8px!important;padding-right:8px!important}
-.pw3s .mr-pnl:not(.mr-rs) .mr-t th:last-child,.pw3s .mr-pnl:not(.mr-rs) .mr-t td:last-child{display:none}.pw3s .mr-t td.mr-when{white-space:normal}.pw3s .mr-t td.r{white-space:nowrap}
-#v-cloudlaps .mr-kind .kind.k-race{border-color:var(--accent)!important;color:var(--accent)!important}
+#v-coach .lapcmp.b{align-items:flex-end;text-align:right}
+#v-coach .lapcmp .role{font:400 12px/1.5 var(--f-body)!important;letter-spacing:0!important;text-transform:none!important;color:var(--muted)!important;background:none!important;padding:0!important;border:0!important}
+#v-coach .lapcmp .name{font:700 15px/1.5 var(--f-body);max-width:100%;color:var(--fg)}
+#v-coach .lapcmp .time{font:400 20px/1.5 var(--f-data)!important}#v-coach .lapcmp.a .time{color:var(--accent)}#v-coach .lapcmp.b .time{color:var(--pb)}
+#v-coach .lapcmp .meta{display:none}
+#v-coach .lapcmp-vs{display:block!important;color:var(--muted);font:700 14px var(--f-display)}
+/* the workspace: 270 · main · 300 (.ws) */
+#v-coach .co-wrap.pw3c{display:grid;grid-template-columns:270px minmax(0,1fr) 300px;gap:10px;align-items:start}
+#v-coach .pw3c-l,#v-coach .pw3c-r{display:flex;flex-direction:column;gap:10px;min-width:0;position:sticky;top:70px}
+#v-coach .pw3c-m{display:flex;flex-direction:column;gap:10px;min-width:0}
+#v-coach .pw3c .pnl{margin:0!important}
+/* the three cards on top (.g3): this lap vs the reference, work on this first, ask the coach */
+#v-coach .pw3c-top{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;align-items:stretch}
+#v-coach .pw3c-top>.pnl{justify-content:flex-start}
+#v-coach .pw3c-top .pw3c-card>div:not(.co-focus)>.label{display:none}
+#v-coach .pw3c-top .big{display:block;font:400 28px/1.5 var(--f-data)!important}
+#v-coach .pw3c-top .sub{color:var(--muted);font-size:13px;line-height:1.5}
+#v-coach .pw3c-top .co-focus{display:flex;flex-direction:column;background:none!important;border:0!important;padding:0!important;margin:0!important;min-width:0}
+#v-coach .pw3c-top .co-focus>.label{font:400 12px/1.5 var(--f-body)!important;letter-spacing:0!important;text-transform:none!important;color:var(--muted)!important}
+#v-coach .pw3c-top .co-focus>.label::before{content:none!important}
+#v-coach .pw3c-top .co-focus b{display:block;font:700 26px/1.5 var(--f-display)!important;text-transform:uppercase!important;margin:0;letter-spacing:0!important;color:var(--fg)}
+#v-coach .pw3c-top .co-focus small{display:block;font:400 13px/1.5 var(--f-data);color:var(--good)!important}
+#v-coach .pw3c-top .co-ai{margin:0}
+#v-coach .pw3c-top .co-ai>.pnl-h{flex-wrap:wrap;row-gap:4px}
+#v-coach .pw3c-top .co-ai .pill.acc{display:inline-block;font:600 11px/1.5 var(--f-body)!important;text-transform:uppercase!important;letter-spacing:.05em!important;padding:2px 8px!important;border-radius:999px;background:var(--surface2)!important;color:var(--muted)!important;border:1px solid var(--line)!important}
+#v-coach .pw3c-top .co-ai>.pnl-h>.pill.acc{display:none}
+#v-coach .pw3c-top .co-ai .pw3-aip{margin:0 0 6px}
+#v-coach .pw3c-top .co-ai .ai-p{margin:6px 0;color:var(--muted);font-size:13px;line-height:1.5}
+#v-coach .pw3c-top .co-ai .ai-none{display:block}
+/* the plan (.plan) */
+#v-coach .co-plan.nums{list-style:none;margin:0;padding:0;display:grid;gap:10px;font-size:13px;line-height:1.5}
+#v-coach .co-plan.nums>li{position:relative;padding:10px 12px 10px 44px;background:var(--surface2);border:1px solid var(--line);border-radius:5.6px;cursor:pointer}
+#v-coach .co-plan.nums>li.sel{border-color:color-mix(in srgb,var(--accent) 45%,var(--line))}
+#v-coach .co-pt{display:flex;gap:10px;align-items:baseline;justify-content:flex-start}
+#v-coach .co-pt b{flex:1;font-weight:700;font-size:13px}
+#v-coach .co-pt .mono{color:var(--good)}#v-coach .co-pt .mono.warn{color:var(--warn)}
+#v-coach .co-pn{position:absolute;left:12px;top:10px;width:22px;height:22px;border-radius:50%;background:var(--accent);color:var(--accent-ink);border:0;font:700 13px var(--f-data);display:grid;place-items:center}
+#v-coach .co-pn.off{background:var(--accent);color:var(--accent-ink);border:0}
+#v-coach .co-what{margin:4px 0 0;font-size:13.5px;color:var(--muted)}
+#v-coach .co-plan .co-why{display:none}
+#v-coach .co-how{margin:4px 0 0;font-size:13.5px;color:var(--fg)}
+#v-coach .co-pf{display:flex;align-items:center;gap:6px;margin-top:8px}
+#v-coach .co-pvote{margin-top:10px;font-size:12px}
+#v-coach .co-planb{margin-top:10px}
+#v-coach .tiprate{display:inline-flex;gap:4px}
+#v-coach .tiprate button{min-width:30px;min-height:30px;border-radius:5px;border:1px solid var(--line);background:var(--surface2);font-size:12px;padding:0}
+#v-coach .tiprate button.on{border-color:var(--good)}
+/* the corner cards (.ccards/.ccard) */
+#v-coach .pw3c .co-tips{display:grid!important;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px;padding:0;margin:0}
+#v-coach .pw3c .co-tips>.co-tip{display:block;background:var(--surface2);border:1px solid var(--line);border-radius:8px;padding:12px 14px;margin:0;min-width:0}
+#v-coach .pw3c .co-tip .rb-h{display:flex;gap:8px;align-items:center;flex-wrap:nowrap;font-size:13px}
+#v-coach .pw3c .co-tip .rb-h>.sp{display:none}
+#v-coach .pw3c .co-tip .co-tn{font:700 20px/1.5 var(--f-data);min-width:0}
+#v-coach .pw3c .co-tip .rb-h>.pill{font:400 11px/1.5 var(--f-body)!important;text-transform:uppercase!important;letter-spacing:.06em!important;color:var(--muted)!important;border:1px solid var(--line)!important;border-radius:999px;padding:1px 8px!important;background:none!important}
+#v-coach .pw3c .co-tip .rb-h>.pw3-loss{margin-left:auto;font:400 16px/1.5 var(--f-data);white-space:nowrap}
+#v-coach .pw3c .co-tip .pw3-t{font-weight:600;margin:6px 0 2px;font-size:13px;line-height:1.5}
+#v-coach .pw3c .co-tip .pw3-w{color:var(--muted);font-size:13px;margin:0 0 8px;line-height:1.5}
+#v-coach .pw3c .co-tip .pw3-dl{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin:0}
+#v-coach .pw3c .co-tip .pw3-dl dt{font-size:11px;color:var(--muted);line-height:1.5}
+#v-coach .pw3c .co-tip .pw3-dl dd{margin:0;font:400 13px/1.5 var(--f-data);overflow-wrap:anywhere}
+#v-coach .pw3c .co-tip .pw3-dl dd small{font-size:12px;color:var(--muted)}
+#v-coach .pw3-mini{display:block;width:100%;height:60px;margin-top:8px}
+#v-coach .pw3-mini .a{fill:none;stroke:var(--accent);stroke-width:2}#v-coach .pw3-mini .b{fill:none;stroke:var(--pb);stroke-width:2;stroke-dasharray:6 4}
+#v-coach .pw3c .co-tip .pw3-tc{margin:6px 0 0;font-size:12px;color:var(--muted)}#v-coach .pw3c .co-tip .pw3-tc b{font:400 12px var(--f-data);color:var(--fg)}
+#v-coach .pw3c .co-tip .rb-hint{margin:8px 0 0;font-size:12px;color:var(--muted)}
+#v-coach .pw3c .co-tip .co-act{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:8px}
+/* corner by corner (.crank) */
+#v-coach .pw3c .co-bars .co-bl{display:grid;gap:8px;padding:0}
+#v-coach .pw3c .co-br{display:grid;grid-template-columns:36px minmax(0,1fr) 70px;gap:4px 10px;align-items:center;padding:0;font-size:13px}
+#v-coach .pw3c .co-br>span:first-child{font:700 15px var(--f-data);min-width:0}
+#v-coach .pw3c .co-br>span:last-child{text-align:right;min-width:0;color:var(--fg)}
+#v-coach .pw3c .co-bt{height:12px;background:var(--surface2);border-radius:6px;overflow:hidden}
+#v-coach .pw3c .co-bt i{height:100%;border-radius:6px}
+/* sectors (.tb.sectors, aside size) */
+#v-coach .pw3-tb{width:100%;border-collapse:collapse;font-size:12px}
+#v-coach .pw3-tb th{text-align:left;font:600 11.5px var(--f-body);text-transform:uppercase;letter-spacing:.05em;color:var(--muted);padding:5px 4px;border-bottom:1px solid var(--line);white-space:nowrap}
+#v-coach .pw3-tb td{padding:5px 4px;border-bottom:1px solid var(--line);vertical-align:top}
+#v-coach .pw3-tb tr.tot td{font-weight:700}
+/* the map: the map first, its buttons under it */
+#v-coach #coachMap{display:flex;flex-direction:column}
+#v-coach #coachMap>svg{order:0;width:100%;height:auto}
+#v-coach #coachMap>*:not(svg){order:2}
+#v-coach #coachMap>.rb-bar{order:3;display:flex;flex-wrap:wrap;gap:6px;margin:8px 0 0}
+#v-coach #coachMap .rb-bar .chip{min-height:28px;padding:3px 9px;font-size:12px;border-radius:5px;background:var(--surface2);border:1px solid var(--line)}
+#v-coach #coachMap .rb-bar .lgd{font-size:12px;color:var(--muted)}
+/* offs explained (.offs) */
+#v-coach .pw3c-offs .offs{margin:0;display:grid;gap:6px}#v-coach .pw3c-offs .offs>.label{display:none}#v-coach .pw3c-offs .rb-sum{margin:0 0 6px;font-size:13.5px}
+/* the pace among the drivers known here */
+#v-coach .co-pace .co-commnote{margin:0;color:var(--muted);font-size:13px;line-height:1.5}
+@media (max-width:1100px){#v-coach .co-wrap.pw3c{grid-template-columns:minmax(0,1fr)}#v-coach .pw3c-l,#v-coach .pw3c-r{position:static}#v-coach .pw3c-r{order:3}}
+@media (max-width:760px){#v-coach .lapcmpheads{grid-template-columns:minmax(0,1fr)!important}#v-coach .lapcmp.b{align-items:flex-start;text-align:left}#v-coach .pw3c-top{grid-template-columns:minmax(0,1fr)}}
+/* ----- My sessions (.ws without a right column: best per car and track · the sessions and the race summaries, .g2.g2s) ----- */
+#v-cloudlaps>.vhead{margin-bottom:10px}
+#v-cloudlaps .mr-filt{margin:0 0 10px;gap:8px}
+#v-cloudlaps .mr-filt :is(input,select){background:var(--surface);border:1px solid var(--line);border-radius:5px;min-height:36px;padding:7px 9px;font:400 13px var(--f-body);color:var(--fg)}
+#v-cloudlaps .mr-filt .chip{min-height:36px;border-radius:5px;background:var(--surface2);border:1px solid var(--line);padding:7px 12px;font:400 13px var(--f-body)}
+#v-cloudlaps .pw3s{display:grid;grid-template-columns:260px minmax(0,1fr);gap:10px;align-items:start}
+#v-cloudlaps .pw3s-l{position:sticky;top:70px;min-width:0}#v-cloudlaps .pw3s-m{min-width:0}
+#v-cloudlaps .pw3s-2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;align-items:start}
+#v-cloudlaps .pw3s .mr-pnl{margin:0!important}
+#v-cloudlaps .pw3-bests{display:grid;grid-template-columns:minmax(0,1fr);gap:10px;padding:0}
+#v-cloudlaps .pw3-bst{all:unset;box-sizing:border-box;cursor:pointer;display:flex;flex-direction:column;background:var(--surface2);border:1px solid transparent;border-radius:5.6px;padding:10px 12px;min-width:0;line-height:1.5}
+#v-cloudlaps .pw3-bst:hover,#v-cloudlaps .pw3-bst:focus-visible{border-color:var(--accent)}
+#v-cloudlaps .pw3-bst b{font-weight:700;font-size:13px;overflow-wrap:anywhere}#v-cloudlaps .pw3-bst small{color:var(--muted);font-size:12px;overflow-wrap:anywhere}
+#v-cloudlaps .pw3-bst .mono{font:400 20px/1.5 var(--f-data);color:var(--accent)}
+/* the tables (.tb) */
+#v-cloudlaps .pw3s .tscroll{overflow-x:auto;max-width:100%;border:0;margin:0}
+#v-cloudlaps .pw3s .mr-t{width:100%;min-width:0!important;border-collapse:collapse;font-size:13px}
+#v-cloudlaps .pw3s .mr-t th{text-align:left!important;font:600 11.5px/1.5 var(--f-body)!important;text-transform:uppercase;letter-spacing:.05em!important;color:var(--muted);padding:6px 8px!important;border-bottom:1px solid var(--line);white-space:nowrap;background:var(--surface)}
+#v-cloudlaps .pw3s .mr-t td{text-align:left!important;padding:7px 8px!important;border-bottom:1px solid var(--line)!important;vertical-align:top;font-size:13px;line-height:1.5;background:none}
+#v-cloudlaps .pw3s .mr-t tbody tr:hover td{background:var(--surface2)}
+#v-cloudlaps .pw3s .mr-t td.mr-when{font:400 13px/1.5 var(--f-body)!important;white-space:normal}
+#v-cloudlaps .pw3s .mr-t td.mr-when small{display:block;color:var(--muted);font-size:12px;white-space:nowrap}
+#v-cloudlaps .pw3s .mr-main b{font-weight:700;white-space:normal!important;overflow-wrap:break-word}
+#v-cloudlaps .pw3s .mr-main b small{display:inline!important;font-weight:400;font-size:12px}
+#v-cloudlaps .pw3s .mr-main>small{display:block;font-size:12px;color:var(--muted);white-space:normal!important}
+#v-cloudlaps .pw3s .mr-t td.mono:not(.mr-when){font-family:var(--f-data);white-space:nowrap}
+#v-cloudlaps .pw3s .mr-pnl:not(.mr-rs) .mr-t th:last-child,#v-cloudlaps .pw3s .mr-pnl:not(.mr-rs) .mr-t td:last-child{display:none}
 #v-cloudlaps table.pw3-nores th:nth-child(4),#v-cloudlaps table.pw3-nores td:nth-child(4){display:none}
-.pw3-star{color:var(--accent);margin-left:6px}
+#v-cloudlaps .mr-kind .kind{display:inline-block!important;box-sizing:border-box;min-width:78px;width:auto!important;text-align:center!important;font:600 11px/1.5 var(--f-body)!important;text-transform:uppercase!important;letter-spacing:.05em!important;padding:2px 8px!important;border:1px solid var(--line)!important;border-radius:999px!important;background:var(--surface2)!important;color:var(--muted)!important;margin:0!important;box-shadow:none!important}
+#v-cloudlaps .mr-kind .kind.k-race{border-color:var(--accent)!important;color:var(--accent)!important}
+#v-cloudlaps .pw3-star{color:var(--accent);margin-left:6px}
+#v-cloudlaps .mr-rs .mr-t td:last-child{text-align:right!important}
 .rs-go{color:var(--accent);font-weight:600;white-space:nowrap;text-align:right}
-@media (max-width:1180px){.pw3s-2{grid-template-columns:minmax(0,1fr)}}
-@media (max-width:900px){.pw3s{grid-template-columns:minmax(0,1fr)}.pw3s-l{position:static}.pw3-bests{grid-template-columns:repeat(auto-fill,minmax(170px,1fr))}}
-/* My races: a strip of races, the chosen race's summary, the driver notes and the table */
-.pw3r{display:flex;flex-direction:column;gap:12px;margin-bottom:12px;min-width:0}
-.pw3r .pnl{margin:0}
-.pw3r-strip{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;min-width:0;scrollbar-width:thin}
-.pw3r-c{all:unset;box-sizing:border-box;cursor:pointer;flex:0 0 172px;display:flex;flex-direction:column;gap:2px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:9px 12px;min-width:0}
-.pw3r-c[aria-pressed="true"]{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
-.pw3r-c small{color:var(--muted);font-size:12px}.pw3r-c b{font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.pw3r-c span,.pw3r-c em{font:500 12.5px var(--f-data);font-style:normal}
-.pw3r-head{display:flex;flex-wrap:wrap;gap:12px 24px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius,12px);padding:14px 16px}
-.pw3r-head>div:first-child{flex:1 1 260px;min-width:0}
-#raceRecap .pw3r-head small{color:var(--muted)}#raceRecap .pw3r-t{margin:2px 0;font:700 24px/1.1 var(--f-display)!important;text-transform:uppercase;overflow-wrap:anywhere}
-.pw3r-head .pw3-rk{display:flex;flex-direction:column;gap:2px}.pw3r-head .pw3-rk span{font-size:12px;color:var(--muted)}.pw3r-head .pw3-rk b{font:600 22px var(--f-data)}
-.pw3r-2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;align-items:stretch}
-.pw3r-stats{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px}
-.pw3r-stats>div{display:flex;flex-direction:column;background:var(--surface2);border-radius:8px;padding:8px 10px}
-.pw3r-stats span{font-size:12px;color:var(--muted)}.pw3r-stats b{font:600 16px var(--f-data)}
-.pw3r-well{margin:0;padding-left:18px;display:grid;gap:4px}.pw3r .pnl-b>.label{margin:10px 0 4px}.pw3r .pnl-b>.label:first-child{margin-top:0}
-.pw3r .rchart{width:100%;height:160px;display:block}
-#v-races #drvPanel{margin:0 0 12px!important}#v-races #drvH{font:600 14px/1.2 var(--f-display);letter-spacing:.12em;text-transform:uppercase}
+@media (max-width:1180px){#v-cloudlaps .pw3s-2{grid-template-columns:minmax(0,1fr)}}
+@media (max-width:1100px){#v-cloudlaps .pw3s{grid-template-columns:minmax(0,1fr)}#v-cloudlaps .pw3s-l{position:static}}
+@media (max-width:640px){#v-cloudlaps .mr-kind .kind{min-width:64px;padding:2px 5px!important}#v-cloudlaps .pw3s .mr-t th,#v-cloudlaps .pw3s .mr-t td{padding-left:5px!important;padding-right:5px!important}}
+/* ----- My races (.rstrip, .racehead, Lap times, Race summary · What went well, Driver notes, My races) ----- */
+#v-races>.vhead{margin-bottom:10px}
+#v-races #racesQ{background:var(--surface);border:1px solid var(--line);border-radius:5px;min-height:36px;padding:7px 9px;font:400 13px var(--f-body);color:var(--fg)}
+#v-races .pw3r{display:flex;flex-direction:column;gap:10px;margin-bottom:10px;min-width:0}
+#v-races .pw3r .pnl{margin:0}
+#v-races .pw3r-strip{display:flex;gap:8px;overflow-x:auto;padding-bottom:2px;min-width:0;scrollbar-width:thin}
+#v-races .pw3r-c{all:unset;box-sizing:border-box;cursor:pointer;flex:0 0 170px;display:flex;flex-direction:column;gap:1px;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:9px 12px;min-width:0;line-height:1.5}
+#v-races .pw3r-c[aria-pressed="true"]{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
+#v-races .pw3r-c small{color:var(--muted);font-size:12px}#v-races .pw3r-c b{font-size:14px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#v-races .pw3r-c span{font:400 13px/1.5 var(--f-data)}#v-races .pw3r-c em{font:400 12px/1.5 var(--f-data);font-style:normal}
+#v-races .pw3r-head{display:flex;flex-wrap:wrap;gap:12px 24px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:14px 16px}
+#v-races .pw3r-head>div:first-child{flex:1 1 240px;min-width:0;line-height:1.5}
+#v-races .pw3r-head small{color:var(--muted);font-size:12px}
+#v-races #raceRecap .pw3r-t{margin:2px 0;font:700 22px/1.1 var(--f-display)!important;letter-spacing:.03em;text-transform:uppercase!important;overflow-wrap:anywhere}
+#v-races .pw3r-head .pw3-rk{display:flex;flex-direction:column}#v-races .pw3r-head .pw3-rk span{font-size:12px;color:var(--muted)}#v-races .pw3r-head .pw3-rk b{font:400 22px/1.5 var(--f-data)}
+#v-races .pw3r-head .btn{min-height:30px;padding:5px 10px;font-size:12.5px}
+#v-races .pw3r-2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;align-items:stretch}
+#v-races .pw3r-stats{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px}
+#v-races .pw3r-stats>div{display:flex;flex-direction:column;background:var(--surface2);border-radius:5px;padding:8px 10px;line-height:1.5}
+#v-races .pw3r-stats span{font-size:12px;color:var(--muted)}#v-races .pw3r-stats b{font:400 16px/1.5 var(--f-data)}
+#v-races .pw3r-well{margin:0;padding-left:18px;display:grid;gap:4px;font-size:13px;line-height:1.5}
+#v-races .pw3r .pnl-b>.label{margin:10px 0 4px}#v-races .pw3r .pnl-b>.label:first-child{margin-top:0}
+#v-races .pw3r .pnl-h>small{margin-left:auto;font:400 12px var(--f-body)!important;letter-spacing:0!important;text-transform:none!important}
+#v-races .pw3r .pnl-h>small *{text-transform:none!important}
+/* the lap times (.ch-box.racelaps) */
+#v-races .pw3-rl{position:relative;width:100%;border-bottom:1px solid var(--line);cursor:crosshair;touch-action:pan-y}
+#v-races .pw3-rl svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+#v-races .pw3-rl .ln{fill:none;stroke:var(--accent);stroke-width:2}
+#v-races .pw3-rl .z{stroke:var(--muted);stroke-width:1;opacity:.5;vector-effect:non-scaling-stroke}
+#v-races .pw3-rl .dt{position:absolute;width:11px;height:11px;border-radius:50%;background:var(--fg);transform:translate(-50%,-50%);border:2px solid var(--surface);box-sizing:border-box}
+#v-races .pw3-rl .dt.inc{background:var(--bad)}#v-races .pw3-rl .dt.pit{background:var(--blue)}#v-races .pw3-rl .dt.cut{background:transparent;border:2px solid var(--muted)}
+#v-races .pw3-rl .dt.on{width:15px;height:15px;box-shadow:0 0 0 2px var(--accent)}
+#v-races .pw3-rlr{min-height:18px;margin-top:6px;font-size:12px;color:var(--fg)}
+/* driver notes: the design's panel */
+#v-races #drvPanel{margin:0 0 10px!important;padding:10px!important;border:1px solid var(--line2);border-radius:8px;background:var(--surface)}
+#v-races #drvPanel>.frow:first-child{margin:0 0 10px!important;padding:0!important;border:0!important;gap:8px;align-items:center}
+#v-races #drvPanel>:not(.frow:first-child){margin-left:0!important;margin-right:0!important}
+#v-races #drvH::before{content:none!important;display:none!important}
+#v-races #drvPanel #drvH{margin:0;font:700 14px/1.2 var(--f-display)!important;letter-spacing:.1em!important;text-transform:uppercase!important;color:var(--muted)!important}
+#v-races #drvQ{background:var(--surface2);border:1px solid var(--line);border-radius:5px;min-height:36px;padding:7px 9px;font:400 13px var(--f-body)}
+#v-races #drvList .note{margin:0;font-size:13px}
+/* the summary cards over the table are not in the design */
+#v-races #racesBody>.rc-kpis{display:none}
+/* My races (.tb) */
+#v-races .rc-pnl .tscroll{overflow-x:auto;border:0;margin:0}
+#v-races .rtable{width:100%;border-collapse:collapse;font-size:13px}
+#v-races .rtable th{text-align:left;font:600 11.5px/1.5 var(--f-body)!important;letter-spacing:.05em!important;color:var(--muted);padding:6px 8px!important;border-bottom:1px solid var(--line);white-space:nowrap;background:var(--surface)}
+#v-races .rtable td{padding:7px 8px!important;border-bottom:1px solid var(--line)!important;vertical-align:top;line-height:1.5}
+#v-races .rtable td:first-child{font-family:var(--f-body)!important}
+#v-races .rtable td b{font-weight:700}#v-races .rtable td small{display:block;font-size:12px;color:var(--muted)}
+#v-races .rtable td.mono small{display:inline;margin-left:4px}
 #v-races .rtable tr.pw3-on td:first-child{box-shadow:inset 3px 0 var(--accent)}
 #v-races .rtable tr[data-rid]{cursor:pointer}
-@media (max-width:640px){#v-cloudlaps .mr-kind .kind{width:auto!important;min-width:64px;padding:3px 5px!important}.pw3s .mr-t th,.pw3s .mr-t td{padding-left:5px!important;padding-right:5px!important}}
-@media (max-width:820px){.pw3r-head>div:first-child{flex-basis:100%}.pw3r-2{grid-template-columns:minmax(0,1fr)}.pw3r-head{gap:10px 18px}.pw3r-head .pw3-rk b{font-size:18px}}
+#v-races .rtable td.rs-go{text-align:right}
+@media (max-width:820px){#v-races .pw3r-head>div:first-child{flex-basis:100%}#v-races .pw3r-2{grid-template-columns:minmax(0,1fr)}#v-races .pw3r-head{gap:10px 18px}}
 </style>
 <script id="pw3-analysis-js">
 /* Pit Wall Workspace: analysis helpers (Coach, My sessions, My races). The render functions stay the app's own; these
@@ -10745,11 +10878,43 @@ function pw3CoachLayout(){const box=$("#coachBody"),w=box&&box.querySelector(".c
   cols.remove();w.classList.add("pw3c");w.append(L,M,R);
   // mini speed traces on the corner cards (A amber, B dashed)
   const A=window.COACH_A,Rf=window.COACH_R,cs=window.PW3_CS||[];
-  M.querySelectorAll(".co-tips>.co-tip").forEach(card=>{const t=card.querySelector(".co-tn"),n=t?parseInt(t.textContent.replace(/\D/g,""),10):0,c=cs.find(x=>x.n===n);if(!c)return;const svg=pw3Mini(c,A,Rf);if(!svg)return;const f=card.querySelector(".co-facts");(f||card.lastElementChild).insertAdjacentHTML("afterend",svg)});
+  M.querySelectorAll(".co-tips>.co-tip").forEach(card=>{const t=card.querySelector(".co-tn"),n=t?parseInt(t.textContent.replace(/\D/g,""),10):0,c=cs.find(x=>x.n===n);try{pw3Card(card,c)}catch(e){console.error(e)}if(!c)return;const svg=pw3Mini(c,A,Rf);if(!svg)return;const f=card.querySelector(".pw3-dl,.co-facts");(f||card.lastElementChild).insertAdjacentHTML("afterend",svg);const act=card.querySelector(":scope>.co-act");if(act)card.appendChild(act)});
+  try{pw3CoachLook(w,secs,ai)}catch(e){console.error(e)}
   // the incidents and the offs explained leave the map card for their own card (the map draws itself later, and again)
   const map=$("#coachMap");if(!map)return;const body=offs.querySelector(".pnl-b");
   const pull=fresh=>{if(fresh)body.innerHTML="";const s=map.querySelector(":scope>.rb-sum"),o=map.querySelector(":scope>.offs");if(s)body.appendChild(s);if(o){const lb=o.querySelector(":scope>.label .pill");if(lb&&!offs.querySelector(".pnl-h .pill"))offs.querySelector(".pnl-h").appendChild(lb);body.appendChild(o)}offs.hidden=!body.children.length};
   pull(true);const mo=new MutationObserver(rs=>{if(!map.isConnected){mo.disconnect();return}if(rs.some(r=>r.addedNodes.length))pull(true)});mo.observe(map,{childList:true})}
+/* the corner card the design's way: the turn, its phase and the loss on one row, the tip and why, then Braking · Slowest · Brakes at */
+function pw3Split(s){s=String(s||"").trim();const m=s.match(/^(.*\S)\s*\(([^()]+)\)\.?$/);if(m)return[m[1],m[2].charAt(0).toUpperCase()+m[2].slice(1)+"."];
+  const ps=s.split(/(?<=\.)\s+(?=\S)/);if(ps.length>1)return[ps[ps.length-1].replace(/\.$/,""),ps.slice(0,-1).join(" ")];return[s,""]}
+function pw3Card(card,c){if(card.dataset.pw3)return;card.dataset.pw3="1";const h=card.querySelector(":scope>.rb-h");if(!h)return;
+  let act=card.querySelector(":scope>.co-act");if(!act){act=mk("div","co-act");card.appendChild(act)}
+  const loss=h.querySelector(":scope>span.mono:last-child");if(loss)loss.classList.add("pw3-loss");
+  const dist=h.querySelector(":scope>small.mono");if(dist)dist.remove();
+  [...h.querySelectorAll(":scope>button")].reverse().forEach(b=>act.prepend(b));
+  const tx=card.querySelector(":scope>.rb-tipx");if(tx){const ct=tx.querySelector(".coachtip");if(ct){const[t,w]=pw3Split(ct.textContent);tx.outerHTML=`<p class="pw3-t">${esc(t)}</p>${w?`<p class="pw3-w">${esc(w)}</p>`:""}`}}
+  const f=card.querySelector(":scope>.co-facts");if(f){const it=[...f.querySelectorAll(".rb-k")].map(k=>{const dt=(k.querySelector("span")||{}).textContent||"",b=k.querySelector("b"),sm=k.querySelector("small");let v=b?esc(b.textContent):"";
+      if(sm){const u=" "+spdU();v=b&&b.textContent.endsWith(u)?`${esc(b.textContent.slice(0,-u.length))} <small>${esc(sm.textContent)}</small>${esc(u)}`:`${v} <small>${esc(sm.textContent)}</small>`}return`<div><dt>${esc(dt)}</dt><dd>${v}</dd></div>`});
+    const extra=it.length>2?it.splice(2):[];if(c&&c.d!=null)it.push(`<div><dt>${esc(Tx("Brakes at","Frena en",null,"Freia em"))}</dt><dd>${Math.round(c.d)} m</dd></div>`);
+    f.outerHTML=`<dl class="pw3-dl">${it.join("")}</dl>${extra.map(x=>`<p class="pw3-tc">${x.replace(/<\/?(div|dt|dd)>/g," ").replace(/<small>/g,"<small> · ").trim().replace(/^([^<]+)/,"$1 <b>").replace(/<small>/,"</b><small>")}</p>`).join("")}`}
+  if(!act.children.length)act.remove()}
+function pw3CoachLook(w,secs,ai){
+  // lap A vs B: "Lap A · comparing", "My best · Lap 3" as in the design
+  const hd=$("#coachCompareHeads");if(hd){const ro=hd.querySelectorAll(".role");if(ro[0])ro[0].textContent=Tx("Lap A · comparing","Vuelta A · comparando",null,"Volta A · comparando");if(ro[1])ro[1].textContent=Tx("Lap B · reference","Vuelta B · referencia",null,"Volta B · referência");
+    const MB=Tx("MY BEST","MI MEJOR",null,"MINHA MELHOR"),mb=Tx("My best","Mi mejor",null,"Minha melhor"),BE=Tx("BEST · Lap","MEJOR VUELTA · Vuelta",null,"MELHOR · Volta"),be=Tx("Best · Lap","Mejor vuelta · Vuelta",null,"Melhor · Volta");
+    hd.querySelectorAll(".name").forEach(n=>{n.textContent=n.textContent.replace(MB,mb).replace(BE,be)});const vs=hd.querySelector(".lapcmp-vs");if(vs)vs.textContent="vs"}
+  // the plan: the step's how in white, without the arrow
+  w.querySelectorAll(".co-plan .co-how").forEach(e=>{e.textContent=e.textContent.replace(/^\s*→\s*/,"")});
+  // ask the coach: its state as a pill in the body and one line on what to do
+  if(ai){const pl=ai.querySelector(".pnl-h>.pill.acc"),bd=ai.querySelector(".pnl-b");if(pl&&bd&&!bd.querySelector(".pw3-aip")){const d=mk("div","pw3-aip");d.appendChild(pl.cloneNode(true));bd.prepend(d)}
+    const no=ai.querySelector(".ai-none");if(no&&!no.querySelector(".ai-p"))no.insertAdjacentHTML("afterbegin",`<p class="ai-p">${esc(Tx("Ask the coach about this lap with your own API key.","Pregunta al coach sobre esta vuelta con tu propia clave de API.",null,"Pergunte ao coach sobre esta volta com sua própria chave de API."))}</p>`)}
+  // corner by corner: the loss in seconds
+  w.querySelectorAll(".co-br>span:last-child").forEach(e=>{if(!/ s$/.test(e.textContent))e.textContent+=" s"});
+  // the sectors as the design's table: A, B and the gap, then the lap
+  const sc=secs&&secs.querySelector(".co-secs"),A=window.COACH_A,R=window.COACH_R;if(sc){const rows=[...sc.querySelectorAll(".co-s")].map(x=>{const k=(x.querySelector(".k")||{}).textContent||"",g=x.querySelector("b"),m=((x.querySelector("small")||{}).textContent||"").match(/A\s*([\d.:]+)\s*·\s*B\s*([\d.:]+)/);
+      return`<tr><td>${esc(k)}</td><td class="mono">${m?m[1]:"–"}</td><td class="mono">${m?m[2]:"–"}</td><td class="mono ${g?g.className.replace("mono",""):""}">${g?esc(g.textContent):""}</td></tr>`}).join("");
+    const d=A&&R?A.time-R.time:null;
+    sc.outerHTML=`<div class="tw"><table class="pw3-tb"><thead><tr><th></th><th>A</th><th>B</th><th>${esc(Tx("Gap","Dif.",null,"Dif."))}</th></tr></thead><tbody>${rows}${A&&R?`<tr class="tot"><td>${esc(Tx("Lap","Vuelta",null,"Volta"))}</td><td class="mono">${fmtT(A.time)}</td><td class="mono">${fmtT(R.time)}</td><td class="mono ${d>0?"bad":"good"}">${sgn(d,3)}</td></tr>`:""}</tbody></table></div>`}}
 /* ---------- My sessions ---------- */
 const rcl=window.renderCloudLaps;if(typeof rcl==="function")window.renderCloudLaps=async function(){const out=await rcl.apply(this,arguments);try{pw3Sessions()}catch(e){console.error(e)}return out};
 function pw3Bests(){const by=new Map();(CLOUD.sessions||[]).forEach(x=>{if(!(x.best>0))return;const k=comboKey(x),b=by.get(k)||{best:null,laps:0,last:0};b.laps+=x.laps||0;if(!b.best||x.best<b.best.best)b.best=x;b.last=Math.max(b.last,x.started||0);by.set(k,b)});
@@ -10757,7 +10922,7 @@ function pw3Bests(){const by=new Map();(CLOUD.sessions||[]).forEach(x=>{if(!(x.b
 function pw3Sessions(){const box=$("#cloudLapsBox");if(!box||box.querySelector(".pw3s"))return;const sp=box.querySelector(".mr-pnl:not(.mr-rs)");if(!sp)return;const rs=box.querySelector(".mr-rs");
   const star=Tx("Your fastest lap with this car on this track","Tu vuelta más rápida con este coche en este circuito",null,"Sua volta mais rápida com este carro nesta pista");
   const rows=[...sp.querySelectorAll("tr[data-ses]")];rows.forEach(tr=>{const x=(CLOUD.sessions||[]).find(s=>s.id===tr.dataset.ses),td=tr.children[5];if(x&&td&&isBestSes(x))td.insertAdjacentHTML("beforeend",`<span class="pw3-star" title="${esc(star)}" aria-label="${esc(star)}">★</span>`)});
-  const tb=sp.querySelector("table");if(tb&&rows.every(tr=>tr.children[3]&&tr.children[3].classList.contains("muted")))tb.classList.add("pw3-nores");
+  box.querySelectorAll(".pw3s-x td.mr-when, td.mr-when").forEach(td=>{const t=td.firstChild;if(t&&t.nodeType===3)t.textContent=t.textContent.replace(/^\s*\S+\.?\s+(?=\d)/,"")});const tb=sp.querySelector("table");if(tb&&rows.every(tr=>tr.children[3]&&tr.children[3].classList.contains("muted")))tb.classList.add("pw3-nores");
   if(rs){rs.querySelectorAll("tr[data-rid]").forEach(tr=>{const g=tr.lastElementChild;if(g)g.innerHTML=`<span class="rs-go">${esc(Tx("Summary","Resumen",null,"Resumo"))} ›</span>`;const go=()=>pw3OpenRace(tr.dataset.rid);tr.onclick=go;tr.onkeydown=e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();go()}}})}
   const bs=pw3Bests(),lapsT=n=>Tx(`${n} laps`,`${n} vueltas`,null,`${n} voltas`);
   const L=mk("aside","pw3s-l",`<section class="pnl"><div class="pnl-h">${esc(Tx("Best per car and track","Lo mejor por coche y circuito",null,"Melhor por carro e pista"))}</div><div class="pw3-bests">${bs.map(b=>`<button type="button" class="pw3-bst" data-pw3ses="${esc(b.best.id)}"><b>${esc(b.best.track||"")}</b><small>${esc(b.best.car||"")}</small><span class="mono">${fmtT(b.best.best)}</span><small>${esc(lapsT(b.laps))}</small></button>`).join("")}</div></section>`);
@@ -10778,14 +10943,14 @@ function renderRaceRecap(){const box=$("#raceRecap");if(!box)return;const q=(typ
   const head=`<div class="pw3r-head"><div><small>${esc(T("Race summary","Resumen de la carrera",null,"Resumo da corrida"))} · ${esc(dshort(r.when))}</small><div class="pw3r-t">${esc(short(r.track))}</div><span>${esc(seriesName(r.seriesId)||r.car||"")}${r.sof?" · SOF "+r.sof:""}</span> ${drinksBadge(r)}${aiBadge(r)}${gameBadge(r)}</div>
     ${k(T("Start","Salida",null,"Largada"),r.partial?"–":"P"+r.start)}${k(T("Finish","Llegada",null,"Chegada"),finTxt(r))}${k(T("Incidents","Incidentes",null,"Incidentes"),r.inc+"x")}${k("iRating",ai||r.partial?"–":`<span class="${irc(r.irChange)}">${r.ir?r.ir+" ":""}(${irTxt(r.irChange)})</span>`)}
     <button type="button" class="btn small" id="rsOpen">${esc(T("Full report","Informe completo",null,"Relatório completo"))} ›</button></div>`;
-  const laps=r.laps||[];const chart=laps.length>1?`<section class="pnl"><div class="pnl-h">${esc(T("Lap times","Tiempos por vuelta",null,"Tempos por volta"))}<span class="sp"></span><small class="muted" style="font:500 12px var(--f-body);letter-spacing:0;text-transform:none"><i class="dot inc"></i>${esc(T("incident","incidente",null,"incidente"))} <i class="dot pit"></i>${esc(T("pit","box",null,"box"))} <i class="dot cut"></i>${esc(T("not valid (off track)","no válida (fuera de pista)",null,"inválida (fora da pista)"))}</small></div><div class="pnl-b">${lineChart(laps.map(l=>l.n===1||!(l.t>0)?null:l.t),{label:"lap times",fmt:v=>fmtT(v),tip:i=>`${T("Lap","Vuelta",null,"Volta")} ${laps[i].n}: ${fmtT(laps[i].t)}${raceDrivers(r).length?" · "+lapDrv(r,laps[i]):""}`,mark:laps.map(l=>l.pit?"pit":l.cut?"cut":l.i?"inc":""),h:170})}</div></section>`:"";
+  const laps=r.laps||[];const chart=laps.length>1?`<section class="pnl"><div class="pnl-h">${esc(T("Lap times","Tiempos por vuelta",null,"Tempos por volta"))}<span class="sp"></span><small class="muted" style="font:500 12px var(--f-body);letter-spacing:0;text-transform:none"><i class="dot inc"></i>${esc(T("incident","incidente",null,"incidente"))} <i class="dot pit"></i>${esc(T("pit","box",null,"box"))} <i class="dot cut"></i>${esc(T("not valid (off track)","no válida (fuera de pista)",null,"inválida (fora da pista)"))}</small></div><div class="pnl-b">${pw3RaceChart(r,laps)}</div></section>`:"";
   const st=[[T("Best lap","Mejor vuelta",null,"Melhor volta"),fmtT(r.best)],r.fieldBest?[T("Field best","Mejor del campo",null,"Melhor do grid"),fmtT(r.fieldBest)]:null,[T("Average","Media",null,"Média"),r.avg?fmtT(r.avg):"–"],[T("Consistency","Regularidad",null,"Regularidade"),r.consistency?"± "+r.consistency.toFixed(2)+" s":"–"],[T("Pit stops","Paradas",null,"Paradas"),r.pits||0],[T("Fuel used","Combustible usado",null,"Combustível usado"),r.fuelUsed?vol(r.fuelUsed).toFixed(1)+" "+volU():"–"]].filter(Boolean);
   let S={good:[],tips:[],sect:null};try{S=raceSummary(r)}catch(e){}
   const lost=S.sect?S.sect.filter(x=>x.loss>.05).slice(0,2).map(x=>T(`Sector ${x.k+1} lost ${x.loss.toFixed(2)} s per lap against your best sector.`,`El sector ${x.k+1} perdió ${x.loss.toFixed(2)} s por vuelta frente a tu mejor sector.`,null,`O setor ${x.k+1} perdeu ${x.loss.toFixed(2)} s por volta contra o seu melhor setor.`)):[],tips=[...lost,...S.tips].slice(0,4),good=S.good.slice(0,4);
   const ul=a=>`<ul class="pw3r-well">${a.map(x=>`<li>${esc(x)}</li>`).join("")}</ul>`;
   const well=good.length||tips.length?`<section class="pnl"><div class="pnl-h">${esc(good.length?T("What went well","Lo que salió bien",null,"O que deu certo"):T("Where you lost time","Dónde perdiste tiempo",null,"Onde você perdeu tempo"))}</div><div class="pnl-b">${good.length?ul(good):""}${good.length&&tips.length?`<div class="label">${esc(T("Where you lost time","Dónde perdiste tiempo",null,"Onde você perdeu tempo"))}</div>`:""}${tips.length?ul(tips):""}</div></section>`:"<div></div>";
   box.innerHTML=`<div class="pw3r">${strip}${head}${chart}<div class="pw3r-2"><section class="pnl"><div class="pnl-h">${esc(T("Race summary","Resumen de la carrera",null,"Resumo da corrida"))}</div><div class="pnl-b"><div class="pw3r-stats">${st.map(([a,b])=>`<div><span>${esc(a)}</span><b>${b}</b></div>`).join("")}</div></div></section>${well}</div></div>`;
-  $("#rsOpen").onclick=()=>openRace(r.id);
+  $("#rsOpen").onclick=()=>openRace(r.id);pw3RaceChartWire(box);
   box.querySelectorAll("[data-pw3r]").forEach(b=>b.onclick=()=>{PW3_RSEL=b.dataset.pw3r;renderRaceRecap()});
   const on=box.querySelector('.pw3r-c[aria-pressed="true"]');if(on&&on.scrollIntoView){const s=on.parentNode;if(s.scrollWidth>s.clientWidth)s.scrollLeft=Math.max(0,on.offsetLeft-s.offsetLeft-40)}
   // the table: each race is a row that shows its summary on top ("Summary ›")

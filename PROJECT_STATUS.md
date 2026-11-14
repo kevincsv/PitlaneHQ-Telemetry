@@ -20,6 +20,7 @@ the Google Play closed test.
 - Le Mans Ultimate without its "Beta" label (PC, web, landing, phones, App Store text): on master (2026-11-14), live after the next build.
 - Team mode (beta, every tester and admin): on branch claude/project-thread-nvk8rw (server, agent, PC, web, phones, migration 0101), going into the next beta build with the Workspace batch. Not run on real hardware yet.
 - Invite a friend (a month of Pro for both, saved until Pro launches): on master (2026-11-14), live after the next build.
+- Race fuel learns from everyone (community fuel per car and track, every device, migration 0102): in the Workspace beta batch, waiting for "sube". Its stop-count fix is on master as 0.9.19.
 
 ## Live now
 

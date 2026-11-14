@@ -1115,14 +1115,21 @@
 
   /* ---------- race fuel and stints ---------- */
   /* the fuel a lap takes from the session's laps (not through the pits, within 7 % of the best, so a lap behind the safety
-     car or in traffic is left out): {perLap, maxLap, lapTime, laps, tank} or null with fewer than two such laps */
+     car or in traffic is left out), and what it takes for everyone who drove this car and track (ctx.comm, GET
+     /community/fuel: {drivers, laps, perLap, lapTime, tank}, used with three drivers at least). With two such laps of
+     your own the figure is yours, mixed with everyone's as if it were three more laps (so a few laps of yours move it
+     less than many); with fewer it is everyone's, and the tank is everyone's when the session has none:
+     {perLap, maxLap, lapTime, laps, tank, own, comm} (own your laps used, comm the drivers behind everyone's figure, 0
+     when it is not used) or null with neither */
   function fuelUse(laps, ctx) {
     const ls = (laps || []).filter((l) => l && l.fuel > 0 && !l.pit && l.time > 0);
-    if (ls.length < 2) return null;
-    const best = Math.min(...ls.map((l) => l.time)), ok = ls.filter((l) => l.time <= best * 1.07);
-    if (ok.length < 2) return null;
-    const tank = ctx && ctx.tank > 0 ? ctx.tank : null;
-    return { perLap: r3(meanOf(ok.map((l) => l.fuel))), maxLap: r3(Math.max(...ok.map((l) => l.fuel))), lapTime: r3(meanOf(ok.map((l) => l.time))), laps: ok.length, tank };
+    const best = ls.length ? Math.min(...ls.map((l) => l.time)) : 0, ok = ls.filter((l) => l.time <= best * 1.07);
+    const c = ctx && ctx.comm && ctx.comm.drivers >= 3 && ctx.comm.perLap > 0 ? ctx.comm : null, K = 3;
+    if (ok.length < 2 && !c) return null;
+    const tank = ctx && ctx.tank > 0 ? ctx.tank : c && c.tank > 0 ? c.tank : null;
+    if (ok.length < 2) return { perLap: r3(c.perLap), maxLap: null, lapTime: ls.length ? r3(meanOf(ls.map((l) => l.time))) : c.lapTime > 0 ? r3(c.lapTime) : null, laps: 0, tank, own: 0, comm: c.drivers };
+    const mine = meanOf(ok.map((l) => l.fuel)), n = ok.length;
+    return { perLap: r3(c ? (mine * n + c.perLap * K) / (n + K) : mine), maxLap: r3(Math.max(...ok.map((l) => l.fuel))), lapTime: r3(meanOf(ok.map((l) => l.time))), laps: n, tank, own: n, comm: c ? c.drivers : 0 };
   }
   /* a race of race.laps laps, or of race.min minutes (counted at lapTime, plus the lap under way when the time runs out),
      with a tank of tank litres and one lap of fuel kept spare at the flag. A stop comes only between laps, so a tank

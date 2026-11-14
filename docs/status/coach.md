@@ -11,6 +11,9 @@ Status as of 2026-11-07. Behaviour is in `docs/spec/coach-and-model.md` and `doc
   what to improve").
 - Thresholds that are guesses, never checked on real laps: oval kinds (short < 1450 m, mile < 2100 m), plan step
   thresholds, plan vote weights.
+- Race fuel (2026-11-14): the stop count by whole laps is a fix on master (0.9.19, also on this branch); learning
+  from everyone (`/community/fuel`, migration 0101, every device) is on the working branch only, waiting for "sube".
+  Not built: needs a cloud deploy (the migration) and the phones' next release.
 - Telemetry is read at 60 Hz (iRacing's max); phones get 10 Hz.
 - Not built: the phones' Home brief, picking traffic laps as lap A on superspeedways.
 - Dropped by the owner: 3D track views, voice engineer and voice packs. Rev beep and braking markers stay.

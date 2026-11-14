@@ -75,6 +75,7 @@ import { catMap, catOf, licOf, CATS, groupFor } from "./categories.js";
 import { lmuClass, wetOf, clsParam, classLaps, lmuVersions, verAt } from "./lmuclass.js";
 import { sealedSectors } from "./lapsectors.js";
 import { friendRoutes, follows } from "./friends.js";
+import { communityFuel } from "./fuel.js";
 
 // one shared lap per driver, car and track: a faster lap replaces the slower one, and a slower lap
 // replaces a faster one only when it brings the telemetry the faster one lacks
@@ -307,6 +308,12 @@ export async function community(req, env, url, ctx) {
   // every list is for one game: laps and analyses of different games are never mixed
   const game = gameOf(url.searchParams.get("game") || body.game);
   { const ct = await coachTipRoutes(req, env, p, m, body, game); if (ct) return ct; } // the coach learns from its tips: coachtips.js
+  // Race fuel learns from everyone: what a lap of this car and track takes for the drivers who drove it (fuel.js)
+  if (p === "/fuel" && m === "GET") {
+    const trackId = +url.searchParams.get("trackId") || 0, carId = +url.searchParams.get("carId") || 0;
+    if (!trackId || !carId) return err("trackId and carId", 400);
+    return json(await communityFuel(env, game, trackId, carId));
+  }
   if (p.startsWith("/friends")) return friendRoutes(req, env, p, m, body, url, game, await sessionAccount(req, env).catch(() => null)); // the drivers you follow: friends.js
   if (p === "/combos" && m === "GET") {
     const r = await env.DB.prepare(

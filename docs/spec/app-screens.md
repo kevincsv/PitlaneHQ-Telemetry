@@ -193,7 +193,16 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   lap), and the stops are the fewest that cover the race that way. The stints are as even as they can be (longer
   first), a race with a stop starts full, and every stop adds the same fuel when that works (else "Add at the stops"
   lists each one). The tank comes from the session (`tank`, the agent's DriverCarFuelMaxLtr
-  times DriverCarMaxFuelPct, `sessions.tank`), else what the driver typed for that car (`pw.tank.<car>`).
+  times DriverCarMaxFuelPct, `sessions.tank`), else what the driver typed for that car (`pw.tank.<car>`), else the one
+  most drivers of that car and track had.
+- Race fuel learns from everyone (GET /community/fuel?game&trackId&carId, `cloud/src/fuel.js`): each session keeps the
+  fuel its laps took (`sessions.fuel`, `fuel_n`, `fuel_t`, the same laps as `fuelUse`; migration 0101 filled the old
+  ones, the daily pass at 03:00 keeps the last two days), and the answer is the median driver of that car and track over
+  the last year (each driver once, their sessions' laps together), with three drivers at least, kept an hour in the
+  server's cache. `fuelUse` (ctx.comm) uses it alone before the driver has two laps here, and mixes it with theirs as if
+  it were three more laps after that, so a few laps of the driver's move it less than many. Per lap says where the figure
+  comes from under it ("12 laps · 14 drivers", or "14 drivers"), and Most in a lap is "–" with no laps of their own.
+  Every device does the same (`fuelComm` in index.html and on the phones). Never in demo data.
 - "More charts" (a switch, off by default, `LAPV.more`; the phones the same): a G-G chart (`ggOf`: g along the car from
   how the speed changes over time, across it from the speed and how much the path bends; only laps with a path), the
   steering against the speed in the corners (`steerOf`) with one line on understeer (`understeer`: the wheel A needs per

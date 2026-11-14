@@ -10074,6 +10074,9 @@ html:not([data-theme="light"]) #v-coach .pw3c .co-bt{background:var(--bg)}
 #v-cloudlaps .pw3s .mr-t td.mr-kind{width:1%;white-space:nowrap}
 #v-cloudlaps .pw3s .mr-kind .kind{min-width:92px!important;white-space:nowrap}
 @media (max-width:1360px){#v-cloudlaps .pw3s-2{grid-template-columns:minmax(0,1fr)}}
+/* the owner (2026-11-14): the connection status and the version in the header as chips with an edge */
+html:not(.ov,.ovwin) header.top>.conn,html:not(.ov,.ovwin) header.top>#appVersion{border:1px solid var(--line2)!important;background:var(--surface)!important;border-radius:999px!important;padding:5px 11px!important;line-height:1.2!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.04)}
+html:not(.ov,.ovwin) header.top>#appVersion{color:var(--muted)!important;font-size:12px!important}
 </style>
 <script id="pw3-frame-js">
 /* Pit Wall Workspace frame: on computers the page tabs and the game switch sit in the header row */

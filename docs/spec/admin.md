@@ -156,7 +156,7 @@ races the PCs report (`seasonseen.js`). The PC app passes that post through `/ap
   (days used in the last 30, then hours on track, then laps), with when it last used Pitlane HQ (the latest of its
   sign-ins, its devices seen, its usage counts and its sessions; an account never used counts from its creation), its
   devices, its email when the server keeps one (the escrow), Online (seen in 3 minutes) and On track (a lap came up in
-  the last 10 minutes: `sessions.up_at`, migration 0098, set by every upload with laps). Filters Everyone, Online or on
+  the last 10 minutes: `sessions.up_at`, migration 0099, set by every upload with laps). Filters Everyone, Online or on
   track, Used it this week and Away N+ days (7, 14 by default, 30, 60, 90); sorts Most active, Least active, Away
   longest, Newest accounts. Under Away, the "We miss you" email (English, Spanish or Portuguese from the driver's
   support chat language, else English) with a button to `/app?feedback=1`, which opens the feedback window once signed

@@ -33,7 +33,9 @@ const altsOf = (o) => ({ en: o.en.path, es: o.es.path, pt: o.pt.path });
 const GNAME = { iracing: "iRacing", lmu: "Le Mans Ultimate" }, GSHORT = { iracing: "iRacing", lmu: "LMU" };
 // a record page's title: the whole game's name while it fits about 60 characters, else the short one, else none
 // (the car and the description say the game)
-const recTitle = (W, car, track, game) => [W.cT(car, track, GNAME[game]), W.cT(car, track, GSHORT[game]), W.cT(car, track, GSHORT[game], true)].find((x) => x.length <= 60) || [W.cTs(car, track), `${car} · ${track}`].find((x) => x.length <= 70) || `${car} · ${track}`;
+const recTitle = (W, car, track, game) => [W.cT(car, track, GNAME[game]), W.cT(car, track, GSHORT[game]), W.cT(car, track, GSHORT[game], true)].find((x) => x.length <= 60) || [W.cTs(car, track), `${car} · ${track}`, `${car} · ${shortTrack(track)}`].find((x) => x.length <= 70) || `${car} · ${shortTrack(track)}`;
+// a track's name without its common words (its layout after " · " stays, so two layouts never share a title)
+const shortTrack = (track) => { const [n, ...lay] = String(track).split(" · "); const s = n.replace(/\b(International|Internacional|Raceway|Circuit|Circuito|Motorsport|Speedway|Park|Autodromo|Autódromo|Racing|Ring)\b/g, "").replace(/\s+/g, " ").trim() || n; return [s, ...lay].join(" · "); };
 const CAT = {
   en: { oval: "Oval", sports_car: "Sports Car", formula_car: "Formula Car", dirt_oval: "Dirt Oval", dirt_road: "Dirt Road" },
   es: { oval: "Óvalo", sports_car: "Sports Car", formula_car: "Fórmula", dirt_oval: "Óvalo de tierra", dirt_road: "Tierra" },

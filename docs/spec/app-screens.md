@@ -36,6 +36,12 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   page with its sections listed on the left (General, Game, PC and programs, VR, Ask the coach, About; a section shows
   only when it has something on that device, so the web keeps only General, Game and About). The Overlays editor keeps
   its list, screen and inspector, with the presets and actions in one card and the whole list of overlays shown.
+  The pieces are the design's own (round 2): the page's tabs a dark well with the chosen one raised and underlined in
+  amber, panels with Barlow capital titles, amber chips and segmented controls, switches for every on/off (checkboxes
+  included), Community's "My leaderboards" a table (track and car, your best, place, record, gap, last sessions), a
+  league a card with its initial, the week as seven letters, Start, Your time and Next race, Cars, the text, Join the
+  Discord and when it was posted. On phones the overlays' screen and inspector come before their list, and My account
+  shows the work first, then Pro and Admin, then the account card.
 - Your iRating and licence of every discipline (`ratings.go`, `ratings.json` in the account, `/api/ratings`; iRacing's
   sessions say "Formula" for the formula cars, `discipline`/`raceDisc`/`catOf` read it as Formula Car): the game
   only says the one of the session you are in, so the PC keeps the last seen of each (every session, and from the

@@ -11059,6 +11059,307 @@ html:not(.ov) #ovTab#ovTab .ovt-presets{flex:none;padding:0;background:none;bord
 html:not(.ov) #ovTab#ovTab .ovt-stage{padding:12px;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius)}
 html:not(.ov) #ovTab#ovTab .ovt-stage>.ovt-foot{padding-top:4px;border-top:0}
 @media (min-width:761px){html:not(.ov) #ovTab#ovTab .ovt-nav{flex:0 0 260px;max-height:none}}
+
+/* ==== round 2: the design's own pieces (ws-more.css, base.css), on the app's elements of these five views ==== */
+html:not(.ov) :is(#v-overlays,#v-community,#v-leagues,#v-me,#v-settings){font-size:13px}
+/* buttons, chips, segmented controls, fields */
+html:not(.ov) :is(#v-overlays,#v-community,#v-leagues,#v-me,#v-settings) .btn{font:400 13px/1.25 var(--f-body)!important;background:var(--surface2);border:1px solid var(--line);border-radius:5px;padding:7px 12px;min-height:36px;color:var(--fg);box-shadow:none}
+html:not(.ov) :is(#v-overlays,#v-community,#v-leagues,#v-me,#v-settings) .btn:hover{border-color:var(--line2);background:var(--surface2)}
+html:not(.ov) :is(#v-overlays,#v-community,#v-leagues,#v-me,#v-settings) .btn.small{padding:6px 12px;min-height:32px}
+html:not(.ov) :is(#v-overlays,#v-community,#v-leagues,#v-me,#v-settings) .btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:700!important}
+html:not(.ov) :is(#v-overlays,#v-community,#v-leagues,#v-me,#v-settings) .btn.primary:hover{background:color-mix(in srgb,var(--accent) 90%,var(--fg))}
+html:not(.ov) :is(#v-overlays,#v-community,#v-leagues,#v-me,#v-settings) .btn.danger{color:var(--bad);border-color:color-mix(in srgb,var(--bad) 45%,transparent)}
+html:not(.ov) :is(#v-overlays,#v-community,#v-leagues,#v-me,#v-settings) .btn[disabled]{opacity:.5}
+html:not(.ov) :is(#v-overlays,#v-community,#v-leagues,#v-me,#v-settings) .chip{border:1px solid var(--line)!important;background:transparent!important;color:var(--muted)!important;border-radius:999px!important;padding:5px 12px!important;font:500 12px/1.2 var(--f-body)!important;min-height:30px;box-shadow:none!important}
+html:not(.ov) :is(#v-overlays,#v-community,#v-leagues,#v-me,#v-settings) .chip:hover:not([aria-pressed="true"]){color:var(--fg)!important}
+html:not(.ov) :is(#v-overlays,#v-community,#v-leagues,#v-me,#v-settings) .chip[aria-pressed="true"]{background:var(--accent)!important;border-color:var(--accent)!important;color:var(--accent-ink)!important}
+html:not(.ov) :is(#v-overlays,#v-community,#v-leagues,#v-me,#v-settings) :is(.seg,.seg3,.adm-view){display:inline-flex;flex-wrap:wrap;gap:2px!important;background:var(--bg)!important;border:1px solid var(--line)!important;border-radius:9px!important;padding:3px!important;width:auto;max-width:100%}
+html:not(.ov) :is(#v-overlays,#v-community,#v-leagues,#v-me,#v-settings) :is(.seg,.seg3,.adm-view) button{flex:none;border:0!important;background:none!important;color:var(--muted)!important;padding:6px 11px!important;border-radius:6px!important;font:500 13px/1.2 var(--f-body)!important;min-height:32px;box-shadow:none!important}
+html:not(.ov) :is(#v-overlays,#v-community,#v-leagues,#v-me,#v-settings) :is(.seg,.seg3,.adm-view) button[aria-pressed="true"]{background:var(--accent)!important;color:var(--accent-ink)!important;font-weight:700!important}
+html:not(.ov) :is(#v-overlays,#v-community,#v-leagues,#v-me,#v-settings) :is(input[type=text],input[type=email],input[type=password],input[type=search],input[type=url],input:not([type]),textarea){background:var(--bg);color:var(--fg);border:1px solid var(--line)!important;border-radius:8px!important;padding:8px 10px;min-height:38px;font:14px var(--f-body)}
+html:not(.ov) :is(#v-overlays,#v-community,#v-leagues,#v-me,#v-settings) select{background-color:var(--bg);color:var(--fg);border:1px solid var(--line)!important;border-radius:8px!important;padding:7px 10px;min-height:36px;font:14px var(--f-body);max-width:100%}
+html:not(.ov) :is(#v-overlays,#v-community,#v-leagues,#v-me,#v-settings) input[type=radio]{accent-color:var(--accent)}
+html:not(.ov) :is(#v-overlays,#v-community,#v-leagues,#v-me,#v-settings) input[type=range]{accent-color:var(--accent)}
+/* a checkbox is the design's switch (wm-sw) */
+html:not(.ov) :is(#v-overlays,#v-community,#v-leagues,#v-me,#v-settings) input[type=checkbox]{-webkit-appearance:none;appearance:none;flex:none;width:34px;height:20px;margin:0 10px 0 0;border:0;border-radius:999px;vertical-align:middle;cursor:pointer;background:radial-gradient(circle at 10px 50%,var(--muted) 6.5px,transparent 7px),var(--line);transition:background .15s}
+html:not(.ov) :is(#v-overlays,#v-community,#v-leagues,#v-me,#v-settings) input[type=checkbox]:checked{background:radial-gradient(circle at 24px 50%,var(--accent) 6.5px,transparent 7px),color-mix(in srgb,var(--accent) 45%,var(--line))}
+/* the pills and tags */
+html:not(.ov) :is(#v-overlays,#v-community,#v-leagues,#v-me,#v-settings) .pill{display:inline-block;font:600 11px/1.35 var(--f-body)!important;text-transform:uppercase!important;letter-spacing:.05em!important;padding:2px 8px;border-radius:999px;background:var(--surface2);color:var(--muted);border:1px solid var(--line);vertical-align:middle;white-space:nowrap}
+html:not(.ov) :is(#v-overlays,#v-community,#v-leagues,#v-me,#v-settings) .pill.good{color:var(--good);border-color:color-mix(in srgb,var(--good) 50%,transparent);background:transparent}
+html:not(.ov) :is(#v-overlays,#v-community,#v-leagues,#v-me,#v-settings) .pill.acc{color:var(--accent);border-color:color-mix(in srgb,var(--accent) 45%,transparent);background:transparent}
+/* panels: 10px inside, the title in Barlow capitals, no bar under it */
+html:not(.ov) :is(#v-overlays,#v-community,#v-leagues,#v-me,#v-settings) .panel{padding:10px;background:var(--surface);border:1px solid var(--line2);border-radius:8px}
+html:not(.ov) :is(#v-overlays,#v-community,#v-leagues,#v-me,#v-settings) :is(.panel>h2:first-child,.panel>.label:first-child,.panel>.frow:first-child>h2,.cl-h>h2,.cl-you>h2,.lgf-h h2){display:flex;align-items:center;gap:8px;margin:0 0 10px!important;padding:0!important;border:0!important;background:none!important;font:700 14px/1.2 var(--f-display)!important;letter-spacing:.1em!important;text-transform:uppercase!important;color:var(--muted)!important;min-height:0}
+html:not(.ov) :is(#v-overlays,#v-community,#v-leagues,#v-me,#v-settings) :is(.panel>h2:first-child,.panel>.label:first-child,.cl-h>h2)::before{content:none!important;display:none!important}
+html:not(.ov) :is(#v-overlays,#v-community,#v-leagues,#v-me,#v-settings) .cl-h{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:0 0 10px!important;padding:0!important;border:0!important;background:none!important}
+html:not(.ov) :is(#v-overlays,#v-community,#v-leagues,#v-me,#v-settings) .cl-h>h2{margin:0!important}
+/* a label inside a panel: wm-lbl */
+html:not(.ov) :is(#v-overlays,#v-community,#v-leagues,#v-me,#v-settings) .panel .label:not(:first-child),html:not(.ov) #v-community .cl-you span.label{display:block;font:600 11.5px/1.3 var(--f-body)!important;text-transform:uppercase;letter-spacing:.06em!important;color:var(--muted)!important;margin:0 0 6px}
+html:not(.ov) :is(#v-overlays,#v-community,#v-leagues,#v-me,#v-settings) .note{font-size:12.5px;color:var(--muted)}
+/* the page's tabs beside the title: wm-ptabs */
+html:not(.ov) :is(#v-community#v-community .cl-tabs,#v-leagues#v-leagues>.vhead>.pw3-lgtabs){gap:4px!important;padding:4px!important;background:var(--surface)!important;border:1px solid var(--line)!important;border-radius:10px!important}
+html:not(.ov) :is(#v-community#v-community .cl-tabs button,#v-leagues#v-leagues>.vhead>.pw3-lgtabs .chip){padding:7px 12px!important;min-height:34px;border-radius:7px!important;font:600 13px/1.2 var(--f-body)!important;color:var(--muted)!important;background:none!important}
+html:not(.ov) :is(#v-community#v-community .cl-tabs button,#v-leagues#v-leagues>.vhead>.pw3-lgtabs .chip)[aria-pressed="true"]{background:var(--surface2)!important;color:var(--fg)!important;box-shadow:inset 0 -2px var(--accent)!important;font-weight:600!important}
+html:not(.ov) :is(#v-overlays,#v-community,#v-leagues,#v-me,#v-settings)>.vhead{margin-bottom:10px}
+html:not(.ov) :is(#v-overlays,#v-community,#v-leagues,#v-me,#v-settings)>.vhead h1{font:700 30px/1.1 var(--f-display);letter-spacing:.03em;text-transform:uppercase;margin:4px 0 0}
+
+/* ---------------- Overlays ---------------- */
+html:not(.ov) #v-overlays#v-overlays #ovSub{font:400 13px var(--f-data);color:var(--muted)}
+html:not(.ov) #ovTab#ovTab .ovt-bar{gap:10px;padding:10px;border:1px solid var(--line2);border-radius:8px;margin-bottom:10px}
+html:not(.ov) #ovTab#ovTab .ovt-presets{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+html:not(.ov) #ovTab#ovTab .ovt-lab{display:inline-block;font:600 11.5px/1.3 var(--f-body)!important;text-transform:uppercase!important;letter-spacing:.06em!important;color:var(--muted)!important}
+html:not(.ov) #ovTab#ovTab .ovt-presets>.ovt-lab{margin:0 6px 0 0}
+html:not(.ov) #ovTab#ovTab .ovt-chip,html:not(.ov) #ovTab#ovTab .ovt-chip.mine>button{border:1px solid var(--line)!important;background:transparent!important;color:var(--muted)!important;border-radius:999px!important;padding:5px 12px!important;font:500 12px/1.2 var(--f-body)!important;min-height:30px;box-shadow:none!important}
+html:not(.ov) #ovTab#ovTab .ovt-chip.mine{display:inline-flex;align-items:center;border:1px solid var(--line);border-radius:999px;padding:0 6px 0 0;background:none}
+html:not(.ov) #ovTab#ovTab .ovt-chip.mine>button:first-child{border:0!important}
+html:not(.ov) #ovTab#ovTab .ovt-chip.mine>.x{border:0!important;background:none!important;color:var(--muted);padding:0 4px!important;min-height:0;opacity:.7}
+html:not(.ov) #ovTab#ovTab :is(.ovt-chip.on,.ovt-chip[aria-pressed="true"]),html:not(.ov) #ovTab#ovTab .ovt-chip.mine.on{background:var(--accent)!important;border-color:var(--accent)!important;color:var(--accent-ink)!important}
+html:not(.ov) #ovTab#ovTab .ovt-chip.mine.on>button{color:var(--accent-ink)!important}
+html:not(.ov) #ovTab#ovTab .ovt-chip.add{border-style:dashed!important}
+html:not(.ov) #ovTab#ovTab .ovt-acts{display:flex;flex-wrap:wrap;gap:8px}
+html:not(.ov) #ovTab#ovTab .ovt-b{gap:10px}
+@media (min-width:761px){html:not(.ov) #ovTab#ovTab .ovt-nav{flex:0 0 270px}html:not(.ov) #ovTab#ovTab .ovt-insp{flex:0 0 300px;width:300px}}
+html:not(.ov) #ovTab#ovTab :is(.ovt-nav,.ovt-stage,.ovt-insp){background:var(--surface);border:1px solid var(--line2);border-radius:8px;padding:10px;box-shadow:none}
+html:not(.ov) #ovTab#ovTab .ovt-nav>.pw3-ovh{margin:0 0 10px;font:700 14px/1.2 var(--f-display);letter-spacing:.1em;text-transform:uppercase!important;color:var(--muted)}
+html:not(.ov) #ovTab#ovTab .ovt-ng{display:block;margin:0;padding:0;border:0}
+html:not(.ov) #ovTab#ovTab .ovt-gh{display:block;height:auto;padding:0;font:700 12px/1.2 var(--f-display)!important;letter-spacing:.12em!important;text-transform:uppercase!important;color:var(--muted)!important;margin:12px 0 4px}
+html:not(.ov) #ovTab#ovTab .ovt-ng:first-of-type .ovt-gh,html:not(.ov) #ovTab#ovTab .pw3-ovh+.ovt-ng .ovt-gh{margin-top:0}
+html:not(.ov) #ovTab#ovTab .ovt-ni{width:100%;display:flex;align-items:center;gap:10px;min-height:34px;padding:7px 8px;border-radius:7px;color:var(--fg)!important;font:400 13px/1.3 var(--f-body)!important;background:none}
+html:not(.ov) #ovTab#ovTab .ovt-ni:hover{background:var(--surface2)!important}
+html:not(.ov) #ovTab#ovTab .ovt-ni.sel{background:var(--surface2)!important;color:var(--fg)!important;box-shadow:inset 3px 0 var(--accent)}
+html:not(.ov) #ovTab#ovTab .ovt-ni .nm{flex:0 1 auto}
+html:not(.ov) #ovTab#ovTab .ovt-ni .ovt-x{order:1;font:600 9px/1.4 var(--f-body)!important;text-transform:uppercase;letter-spacing:.05em;padding:0 5px;border-radius:999px;background:var(--surface2);border:1px solid var(--line);color:var(--muted)}
+html:not(.ov) #ovTab#ovTab .ovt-ni .ovt-auto{order:2;margin-left:auto;font:600 10.5px var(--f-body)!important;letter-spacing:0;color:var(--accent);text-transform:uppercase;min-width:36px;text-align:right}
+html:not(.ov) #ovTab#ovTab .ovt-dot{width:8px;height:8px;border:1.5px solid var(--muted)}
+html:not(.ov) #ovTab#ovTab .ovt-ni.is-open .ovt-dot{background:var(--good);border-color:var(--good)}
+html:not(.ov) #ovTab#ovTab .ovt-stagebar{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin:0 0 10px}
+html:not(.ov) #ovTab#ovTab .ovt-designsel{display:flex;align-items:center;gap:8px}
+html:not(.ov) #ovTab#ovTab .ovt-designsel select{font:600 12px var(--f-body);min-height:36px;padding:7px 10px}
+html:not(.ov) #ovTab#ovTab .ovt-legend{display:inline-flex;align-items:center;gap:6px;font:400 12px var(--f-body);color:var(--muted)}
+html:not(.ov) #ovTab#ovTab .ovt-legend i{width:18px;height:10px;border-radius:3px;border:1.5px solid var(--muted);margin-left:6px;background:none}
+html:not(.ov) #ovTab#ovTab .ovt-legend i.open{background:rgba(10,13,18,.85);border-color:#c5ccd6}
+html:not(.ov) #ovTab#ovTab .ovt-legend i.closed{border-style:dashed}
+html:not(.ov) #ovTab#ovTab .ovt-stagebar>.btn{margin-left:auto;background:transparent}
+html:not(.ov) #ovTab#ovTab .ovt-screen{border:1px solid var(--line);border-radius:10px;overflow:hidden}
+html:not(.ov) #ovTab#ovTab .ovt-foot{display:flex;flex-wrap:wrap;gap:4px 24px;margin-top:8px;padding:0;border:0}
+/* the two switches under the screen: wm-sw */
+html:not(.ov) #ovTab#ovTab .ovt-foot .chip{display:inline-flex!important;align-items:center;gap:10px;border:0!important;background:none!important;color:var(--fg)!important;padding:6px 0!important;min-height:36px;font:400 13px/1.3 var(--f-body)!important;border-radius:0!important}
+html:not(.ov) #ovTab#ovTab .ovt-foot .chip::before{content:"";flex:none;width:34px;height:20px;border-radius:999px;background:radial-gradient(circle at 10px 50%,var(--muted) 6.5px,transparent 7px),var(--line)}
+html:not(.ov) #ovTab#ovTab .ovt-foot .chip[aria-pressed="true"]::before{background:radial-gradient(circle at 24px 50%,var(--accent) 6.5px,transparent 7px),color-mix(in srgb,var(--accent) 45%,var(--line))}
+/* the inspector */
+html:not(.ov) #ovTab#ovTab #ovtInspHead{margin:0;padding:0;border:0}
+html:not(.ov) #ovTab#ovTab .ovt-ih{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+html:not(.ov) #ovTab#ovTab .ovt-ih h2{flex:1 1 100%;margin:0;font:700 22px/1.1 var(--f-display)!important;letter-spacing:.03em!important;text-transform:uppercase!important;color:var(--fg)!important}
+html:not(.ov) #ovTab#ovTab .ovt-state{display:inline-flex;align-items:center;font:600 11px/1.3 var(--f-body)!important;text-transform:uppercase!important;letter-spacing:.05em!important;padding:3px 8px;border-radius:999px;border:1px dashed var(--line);color:var(--muted)}
+html:not(.ov) #ovTab#ovTab .ovt-state>.ovt-dot{display:none}
+html:not(.ov) #ovTab#ovTab .is-open .ovt-state{border-style:solid;border-color:color-mix(in srgb,var(--good) 55%,transparent);color:var(--good)}
+html:not(.ov) #ovTab#ovTab .ovt-state>*{color:inherit!important;font:inherit!important}
+html:not(.ov) #ovTab#ovTab .ovt-state>::before,html:not(.ov) #ovTab#ovTab .ovt-state::before{display:none}
+html:not(.ov) #ovTab#ovTab .ovt-compat{display:flex;flex-wrap:wrap;gap:5px;align-items:center;margin:10px 0}
+html:not(.ov) #ovTab#ovTab .ovt-compat>.ovt-lab{font:400 12px var(--f-body)!important;text-transform:none!important;letter-spacing:0!important;margin-right:2px}
+html:not(.ov) #ovTab#ovTab .ovt-games{display:inline-flex;flex-wrap:wrap;gap:5px}
+html:not(.ov) #ovTab#ovTab .ovt-gp{font:600 11px/1.3 var(--f-body)!important;padding:2px 7px;border-radius:5px;border:1px solid;background:none;min-height:0;color:var(--muted);border-style:dashed;text-decoration:line-through}
+html:not(.ov) #ovTab#ovTab .ovt-gp.on{color:var(--accent);border-color:color-mix(in srgb,var(--accent) 55%,transparent);border-style:solid;text-decoration:none}
+html:not(.ov) #ovTab#ovTab .ovt-prev{background:repeating-conic-gradient(#11151c 0 25%,#0d1016 0 50%) 0 0/16px 16px;border:1px solid var(--line);border-radius:8px;padding:12px;margin:0}
+html:not(.ov) #ovTab#ovTab .ovt-prev .ovt-pf{background:none;border:0}
+html:not(.ov) #ovTab#ovTab #ovtInsp{display:flex;flex-direction:column;gap:0}
+html:not(.ov) #ovTab#ovTab #ovtInsp .ovt-row2{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 0}
+html:not(.ov) #ovTab#ovTab #ovtInsp .ovt-cfg.wide{width:auto;flex:none}
+html:not(.ov) #ovTab#ovTab #ovtInsp .ovt-f{display:flex;flex-direction:column;gap:4px;margin:12px 0 0;padding:0;border:0;background:none}
+html:not(.ov) #ovTab#ovTab #ovtInsp .ovt-f>.ovt-lab{display:flex;justify-content:space-between;font:400 13px var(--f-body)!important;text-transform:none!important;letter-spacing:0!important}
+html:not(.ov) #ovTab#ovTab #ovtInsp .ovt-f>.ovt-lab b{font:600 13px var(--f-data);color:var(--fg)}
+html:not(.ov) #ovTab#ovTab #ovtInsp .ovt-f select{width:auto;align-self:flex-start;max-width:100%}
+html:not(.ov) #ovTab#ovTab #ovtInsp .ovt-seg3{align-self:flex-start}
+/* "Open by itself": the switch first, then the words */
+html:not(.ov) #ovTab#ovTab #ovtInsp .ovs-sw{display:flex;align-items:center;justify-content:flex-start;gap:10px;width:auto;min-height:36px;padding:6px 0;border:0!important;background:none!important;color:var(--fg);font:400 13px var(--f-body)}
+html:not(.ov) #ovTab#ovTab #ovtInsp .ovs-sw>.ovs-tg{order:-1}
+html:not(.ov) #ovTab#ovTab #ovtInsp .ovs-sw .ovt-autob{display:none}
+html:not(.ov) #ovTab#ovTab .ovs-tg{flex:none;width:34px;height:20px;border-radius:999px;background:var(--line)!important;border:0!important;position:relative}
+html:not(.ov) #ovTab#ovTab .ovs-tg>i{position:absolute;left:3px;top:3px;width:14px;height:14px;border-radius:50%;background:var(--muted)!important;transform:none;transition:transform .15s}
+html:not(.ov) #ovTab#ovTab .ovs-tg.on{background:color-mix(in srgb,var(--accent) 45%,var(--line))!important}
+html:not(.ov) #ovTab#ovTab .ovs-tg.on>i{transform:translateX(14px);background:var(--accent)!important}
+
+/* ---------------- Community ---------------- */
+@media (min-width:1180px){
+  html:not(.ov) #commBody#commBody .cl-pane[data-pane="sum"]:not([hidden]){grid-template-columns:270px minmax(0,1fr) 300px;gap:10px}
+}
+html:not(.ov) #commBody#commBody :is(.cl-you,#cmRec,.cl-two>section,.fnPanel){padding:10px;background:var(--surface);border:1px solid var(--line2);border-radius:8px}
+html:not(.ov) #commBody#commBody .cl-you>div{padding:0}
+html:not(.ov) #commBody#commBody .pw3-cyou{display:flex;gap:10px;align-items:center;margin:0 0 10px}
+html:not(.ov) #commBody#commBody .pw3-cyou>div{display:flex;flex-direction:column;min-width:0}
+html:not(.ov) #commBody#commBody .pw3-cyou b{font-size:13px}
+html:not(.ov) #commBody#commBody .pw3-cyou small{color:var(--muted);font-size:12px}
+html:not(.ov) :is(#v-community,#v-me,#v-leagues) .pw3-av{flex:none;width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:var(--surface2);border:1px solid var(--line);font:700 15px var(--f-display);color:var(--accent)}
+html:not(.ov) :is(#v-community,#v-me,#v-leagues) .pw3-av.big{width:52px;height:52px;font-size:22px}
+html:not(.ov) #commBody#commBody .namech{display:grid;gap:8px;margin:8px 0;font-size:13px}
+html:not(.ov) #commBody#commBody .namech>label{display:flex;gap:8px;align-items:flex-start;cursor:pointer;line-height:1.45}
+html:not(.ov) #commBody#commBody .namech>label input{margin-top:3px}
+/* the four numbers: kpi */
+html:not(.ov) #commBody#commBody .cl-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+html:not(.ov) #commBody#commBody .cl-kpis>div{background:var(--surface);border:1px solid var(--line2);border-radius:8px;padding:12px 14px;display:flex;flex-direction:column;gap:2px;min-width:0}
+html:not(.ov) #commBody#commBody .cl-kpis>div>span{text-transform:uppercase!important;letter-spacing:.06em!important;font:400 11.5px/1.3 var(--f-body)!important;color:var(--muted)!important}
+html:not(.ov) #commBody#commBody .cl-kpis>div>b{font:400 24px/1.15 var(--f-data);color:var(--fg)!important}
+html:not(.ov) #commBody#commBody .cl-kpis>div>small{color:var(--muted);font-size:12.5px}
+@media (max-width:820px){html:not(.ov) #commBody#commBody .cl-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
+/* My leaderboards: the design's table */
+html:not(.ov) #commBody .pw3-tb{width:100%;border-collapse:collapse;font-size:13px}
+html:not(.ov) #commBody .pw3-tb th{text-align:left;font:600 11.5px var(--f-body);text-transform:uppercase;letter-spacing:.05em;color:var(--muted);padding:6px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
+html:not(.ov) #commBody .pw3-tb td{padding:7px 8px;border-bottom:1px solid var(--line);vertical-align:top;white-space:nowrap}
+html:not(.ov) #commBody .pw3-tb tbody tr{cursor:pointer}
+html:not(.ov) #commBody .pw3-tb tbody tr:hover td{background:var(--surface2)}
+html:not(.ov) #commBody .pw3-tb td:first-child{white-space:normal;min-width:150px}
+html:not(.ov) #commBody .pw3-tb td:first-child b{display:block;font-weight:600}
+html:not(.ov) #commBody .pw3-tb .pw3-by{display:block;font:400 11.5px var(--f-body);color:var(--muted)}
+html:not(.ov) #commBody .pw3-tb .mono{font-family:var(--f-data);font-variant-numeric:tabular-nums}
+html:not(.ov) #commBody .pw3-tb .mu{color:var(--muted)}
+html:not(.ov) #commBody .pw3-tb .bad{color:var(--bad)}
+html:not(.ov) #commBody .pw3-tb .pb{color:var(--good)}
+html:not(.ov) #commBody .pw3-tb .r{text-align:left}
+html:not(.ov) #commBody .pw3-sp{width:90px;height:24px;display:block}
+html:not(.ov) #commBody .pw3-sp polyline{fill:none;stroke:var(--good);stroke-width:1.6}
+html:not(.ov) #commBody .pw3-sp circle{fill:var(--good)}
+html:not(.ov) #commBody .pw3-tsc{overflow-x:auto;max-width:100%}
+html:not(.ov) #commBody .cl-link{font:400 13px var(--f-body);color:var(--fg);background:var(--surface2);border:1px solid var(--line);border-radius:5px;padding:6px 12px;min-height:32px;cursor:pointer}
+/* Recent records, the short list: wm-rec */
+html:not(.ov) #commBody#commBody #cmRecMini .cl-list{display:block}
+html:not(.ov) #commBody#commBody #cmRecMini .cl-rmini{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 10px;width:100%;padding:9px 0;border:0;border-bottom:1px solid var(--line);border-radius:0;background:none;text-align:left;align-items:start}
+html:not(.ov) #commBody#commBody #cmRecMini .cl-rmini:last-child{border-bottom:0}
+html:not(.ov) #commBody#commBody #cmRecMini .cl-rmini b{font-weight:600}
+html:not(.ov) #commBody#commBody #cmRecMini .cl-rmini .mono:last-child,html:not(.ov) #commBody#commBody #cmRecMini .cl-rmini>.mono{font:400 15px var(--f-data);color:var(--fg)!important;text-align:right}
+
+/* ---------------- Leagues ---------------- */
+html:not(.ov) #leagBody#leagBody>.panel{padding:0!important;background:none!important;border:0!important;box-shadow:none!important;gap:10px}
+html:not(.ov) #leagBody#leagBody .lb-cats.mini{grid-template-columns:repeat(6,minmax(0,1fr));gap:8px}
+html:not(.ov) #leagBody#leagBody .lb-cats.mini .lb-cat{min-height:46px;padding:9px 12px;background:var(--surface);border:1px solid var(--line2);border-radius:8px}
+html:not(.ov) #leagBody#leagBody .lb-cats.mini .lb-cat[aria-pressed="true"]{background:var(--surface2)!important;border-color:color-mix(in srgb,var(--accent) 45%,transparent)!important}
+html:not(.ov) #leagBody#leagBody .lb-cats.mini .lb-t b{font-weight:700}
+html:not(.ov) #leagBody#leagBody .lb-cats.mini .lb-ic{width:30px;height:30px;border-radius:8px}
+html:not(.ov) #leagBody#leagBody .pw3-lgbar{padding:10px;border:1px solid var(--line2);border-radius:8px;gap:10px 18px}
+html:not(.ov) #leagBody#leagBody .pw3-lgbar .lg-sort{gap:2px;padding:3px;background:var(--bg);border:1px solid var(--line);border-radius:9px;margin:0}
+html:not(.ov) #leagBody#leagBody .pw3-lgbar .lg-sort .chip{border:0!important;border-radius:6px!important;padding:6px 11px!important;font:500 13px/1.2 var(--f-body)!important;min-height:32px}
+html:not(.ov) #leagBody#leagBody .pw3-lgbar .lg-sort .chip[aria-pressed="true"]{font-weight:700!important}
+html:not(.ov) #leagBody#leagBody .pw3-lgbar #lgOpen{font:400 13px var(--f-body)!important;gap:10px}
+html:not(.ov) #leagBody#leagBody .pw3-lgbar #lgOpen::before{width:34px;height:20px;border-radius:999px;border:0;background:radial-gradient(circle at 10px 50%,var(--muted) 6.5px,transparent 7px),var(--line)}
+html:not(.ov) #leagBody#leagBody .pw3-lgbar #lgOpen[aria-pressed="true"]::before{background:radial-gradient(circle at 24px 50%,var(--accent) 6.5px,transparent 7px),color-mix(in srgb,var(--accent) 45%,var(--line))}
+html:not(.ov) #leagBody#leagBody .pw3-lgbar #lgQ{flex:1 1 200px}
+html:not(.ov) #leagBody#leagBody :is(.pw3-lgposted,#lgFound){padding:10px;border:1px solid var(--line2);border-radius:8px}
+html:not(.ov) #leagBody#leagBody :is(.pw3-lgposted,#lgFound)>.lgf-h{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:0 0 10px;padding:0;border:0}
+html:not(.ov) #leagBody#leagBody :is(.pw3-lgposted,#lgFound)>.lgf-h h2{margin:0!important}
+html:not(.ov) #leagBody#leagBody .lgf-h .lgf-up,html:not(.ov) #leagBody#leagBody .pw3-lgn{font-size:12px;color:var(--muted)}
+html:not(.ov) #leagBody#leagBody .lg-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:10px}
+/* a league: wm-lg */
+html:not(.ov) #leagBody#leagBody .lg-post.wm-lg,html:not(.ov) #leagBody#leagBody .lgf-card{background:var(--surface2);border:1px solid var(--line);border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:8px;min-width:0;box-shadow:none}
+html:not(.ov) #leagBody#leagBody .lg-post.wm-lg:hover{border-color:color-mix(in srgb,var(--accent) 45%,var(--line))}
+html:not(.ov) #leagBody .wm-lg-h{display:flex;gap:10px;align-items:center}
+html:not(.ov) #leagBody .wm-lg-h>div{flex:1;min-width:0;display:flex;flex-direction:column;align-items:flex-start}
+html:not(.ov) #leagBody .wm-lg-h b{font-size:15px;font-weight:600}
+html:not(.ov) #leagBody .wm-lg-h small{color:var(--muted);font-size:12px}
+html:not(.ov) #leagBody .wm-tag{font:600 11px/1.3 var(--f-body)!important;text-transform:uppercase!important;letter-spacing:.05em!important;padding:3px 8px;border-radius:999px;border:1px dashed var(--line);color:var(--muted);white-space:nowrap;margin-top:3px}
+html:not(.ov) #leagBody .wm-tag.on{border-style:solid;border-color:color-mix(in srgb,var(--good) 55%,transparent);color:var(--good)}
+html:not(.ov) #leagBody .wm-wk{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
+html:not(.ov) #leagBody .wm-wk span{font:600 11px var(--f-data);text-align:center;padding:4px 0;border-radius:4px;background:var(--bg);color:var(--muted)}
+html:not(.ov) #leagBody .wm-wk span.on{background:var(--accent);color:var(--accent-ink)}
+html:not(.ov) #leagBody .wm-lg-t{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin:0}
+html:not(.ov) #leagBody .wm-lg-t>div{display:flex;flex-direction:column;min-width:0}
+html:not(.ov) #leagBody .wm-lg-t dt{font:400 11px var(--f-body);color:var(--muted);text-transform:uppercase!important;letter-spacing:.05em!important}
+html:not(.ov) #leagBody .wm-lg-t dd{margin:0;font:400 13px var(--f-data)}
+html:not(.ov) #leagBody .wm-lg-t dd small{color:var(--muted);font-size:12px}
+html:not(.ov) #leagBody :is(.wm-lg-c,.wm-lg-a){margin:0;font-size:13px}
+html:not(.ov) #leagBody .wm-lg-c b{color:var(--muted);font-weight:600;margin-right:4px}
+html:not(.ov) #leagBody .wm-lg-a{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+html:not(.ov) #leagBody .wm-lg .lg-acts{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:0}
+html:not(.ov) #leagBody .wm-lg .lg-acts .btn svg{display:none}
+html:not(.ov) #leagBody .wm-lg .pw3-posted{font-size:12px;color:var(--muted)}
+html:not(.ov) #leagBody .lgf-card .lgf-ic{width:34px;height:34px;border-radius:50%;background:var(--surface2);border:1px solid var(--line);color:var(--accent);font:700 15px var(--f-display);display:grid;place-items:center}
+html:not(.ov) #leagBody .lgf-card .lgf-nm b{font-size:13px;font-weight:600}
+html:not(.ov) #leagBody .lgf-card .lgf-nm small{color:var(--muted);font-size:12px}
+html:not(.ov) #leagBody .lgf-card .lgf-nm small .cl-dot{display:none}
+html:not(.ov) #leagBody .lgf-card .lgf-act{margin-top:auto}
+@media (max-width:1100px){html:not(.ov) #leagBody#leagBody .lb-cats.mini{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media (max-width:640px){html:not(.ov) #leagBody#leagBody .lb-cats.mini{grid-template-columns:repeat(2,minmax(0,1fr))}html:not(.ov) #leagBody .wm-lg-t{grid-template-columns:1fr 1fr}html:not(.ov) #leagBody#leagBody .lg-grid{grid-template-columns:minmax(0,1fr)}}
+
+/* ---------------- My account ---------------- */
+html:not(.ov) #v-me#v-me:has(.pw3-me) #meSub{display:none}
+html:not(.ov) #meBody#meBody .pw3-me{gap:10px}
+@media (min-width:1181px){html:not(.ov) #meBody#meBody .pw3-me{grid-template-columns:270px minmax(0,1fr) 300px}
+html:not(.ov) #meBody#meBody .pw3-me:not(:has(>.pw3-me-r>:not([hidden]))){grid-template-columns:270px minmax(0,1fr)}}
+@media (max-width:1180px){html:not(.ov) #meBody#meBody .pw3-me>.pw3-me-m{order:1}html:not(.ov) #meBody#meBody .pw3-me>.pw3-me-r{order:2}html:not(.ov) #meBody#meBody .pw3-me>.pw3-me-l{order:3}}
+html:not(.ov) #meBody#meBody :is(.pw3-me-l,.pw3-me-m,.pw3-me-r){gap:10px}
+/* each group is one panel with its title; the boxes in it are the design's cards (wm-way) */
+html:not(.ov) #meBody#meBody .pw3-me-g{display:block;padding:10px;background:var(--surface);border:1px solid var(--line2);border-radius:8px}
+html:not(.ov) #meBody#meBody .pw3-me-g>.me-grp{margin:0 0 10px!important;font:700 14px/1.2 var(--f-display)!important;letter-spacing:.1em!important;color:var(--muted)!important}
+html:not(.ov) #meBody#meBody .pw3-me-gb{gap:10px}
+html:not(.ov) #meBody#meBody .pw3-me-g.two>.pw3-me-gb{grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr))}
+html:not(.ov) #meBody#meBody .pw3-me-gb>.panel{background:var(--surface2)!important;border:0!important;box-shadow:none!important;border-radius:10px;padding:12px;display:flex;flex-direction:column;align-items:flex-start;gap:6px}
+html:not(.ov) #meBody#meBody .pw3-me-gb>.panel>*{max-width:100%}
+html:not(.ov) #meBody#meBody .pw3-me-gb>.panel>h2:first-child,html:not(.ov) #meBody#meBody .pw3-me-gb>.panel>.frow:first-child>h2{margin:0!important;font:600 15px/1.3 var(--f-body)!important;letter-spacing:0!important;text-transform:none!important;color:var(--fg)!important}
+html:not(.ov) #meBody#meBody .pw3-me-gb>.panel>h2.bad{color:var(--bad)!important}
+html:not(.ov) #meBody#meBody .pw3-me-gb>.panel :is(p,.note){margin:0;font-size:13px}
+html:not(.ov) #meBody#meBody .pw3-me-gb>.panel>div:not(.callout),html:not(.ov) #meBody#meBody .pw3-me-gb>.panel>form{width:100%;padding:0}
+html:not(.ov) #meBody#meBody .pw3-me-gb>.panel .callout{background:none;border:0;padding:0;margin:0;color:var(--muted);font-size:13px}
+html:not(.ov) #meBody#meBody .pw3-me-gb>.panel .me-form{display:grid;gap:12px}
+html:not(.ov) #meBody#meBody .pw3-me-gb>.panel .me-form .btn{justify-self:start;width:auto}
+html:not(.ov) #meBody#meBody .pw3-me-gb>.panel .me-row{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:4px 0 0}
+html:not(.ov) #meBody#meBody #meSteamShow{display:inline-flex;align-items:center;gap:10px;border:0!important;background:none!important;color:var(--fg)!important;padding:6px 0!important;min-height:36px;font:400 13px var(--f-body)!important;border-radius:0!important}
+html:not(.ov) #meBody#meBody #meSteamShow::before{content:"";flex:none;width:34px;height:20px;border-radius:999px;background:radial-gradient(circle at 10px 50%,var(--muted) 6.5px,transparent 7px),var(--line)}
+html:not(.ov) #meBody#meBody #meSteamShow[aria-pressed="true"]::before{background:radial-gradient(circle at 24px 50%,var(--accent) 6.5px,transparent 7px),color-mix(in srgb,var(--accent) 45%,var(--line))}
+html:not(.ov) #meBody#meBody #meSteamB>p:first-child{display:flex;flex-direction:column;align-items:flex-start;gap:4px}
+html:not(.ov) #meBody#meBody #meSteamB>p:first-child>b{font-weight:400;color:var(--muted);font-size:13px;order:2}
+html:not(.ov) #meBody#meBody .devlist{display:block}
+html:not(.ov) #meBody#meBody .devrow{display:flex;align-items:center;gap:10px;padding:8px;border:0;border-bottom:1px solid var(--line);border-radius:0;background:none}
+html:not(.ov) #meBody#meBody .devrow>small{flex:1}
+/* the account on the left: the design's "My account" panel */
+html:not(.ov) #meBody#meBody .me-idc{padding:10px}
+html:not(.ov) #meBody#meBody .me-idc>.pw3-meh{margin:0 0 10px;font:700 14px/1.2 var(--f-display)!important;letter-spacing:.1em!important;text-transform:uppercase!important;color:var(--muted)}
+html:not(.ov) #meBody#meBody .me-idc .sa-id{display:grid;grid-template-columns:52px minmax(0,1fr);gap:10px;align-items:start}
+html:not(.ov) #meBody#meBody .me-idc .sa-av{width:52px;height:52px;border-radius:50%;display:grid;place-items:center;background:var(--surface2);border:1px solid var(--line);font:700 22px var(--f-display);color:var(--accent)}
+html:not(.ov) #meBody#meBody .me-idc .sa-name{font:700 20px/1.2 var(--f-display);letter-spacing:.03em;color:var(--accent);display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:4px}
+html:not(.ov) #meBody#meBody .me-idc .sa-name .pill{font-family:var(--f-body);letter-spacing:.05em}
+html:not(.ov) #meBody#meBody .me-idc .sa-who{display:contents}
+html:not(.ov) #meBody#meBody .me-idc .sa-who>.sa-name{grid-column:2}
+html:not(.ov) #meBody#meBody .me-idc .sa-who>:not(.sa-name){grid-column:1/-1}
+html:not(.ov) #meBody#meBody .me-idc .me-kv{display:grid;grid-template-columns:minmax(0,1fr);gap:0;margin:2px 0 0}
+html:not(.ov) #meBody#meBody .me-idc .me-kv dt{color:var(--muted);font-size:13px;padding:7px 0 0}
+html:not(.ov) #meBody#meBody .me-idc .me-kv dd{margin:0!important;padding:0 0 7px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:8px}
+html:not(.ov) #meBody#meBody .me-idc .frow{display:grid;gap:8px;margin-top:10px}
+html:not(.ov) #meBody#meBody .me-idc .frow .btn{width:100%;justify-content:center}
+/* delete the account: the design's red edge */
+html:not(.ov) #meBody#meBody .me-danger>.panel{border-color:color-mix(in srgb,var(--bad) 30%,var(--line2))!important}
+html:not(.ov) #meBody#meBody .me-danger>.panel>h2:first-child{color:var(--muted)!important}
+html:not(.ov) #meBody#meBody .me-danger>.panel .note{margin:0 0 10px}
+html:not(.ov) #meBody#meBody .me-danger .me-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+html:not(.ov) #meBody#meBody .me-danger .me-row input{flex:1 1 200px}
+html:not(.ov) #meBody#meBody .pw3-me-r .panel>.frow:first-child{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:0 0 10px}
+html:not(.ov) #meBody#meBody .pw3-me-r .panel>.frow:first-child>h2{margin:0!important;padding:0!important;font:700 14px/1.2 var(--f-display)!important;letter-spacing:.1em!important;text-transform:uppercase!important;color:var(--muted)!important}
+
+/* ---------------- Settings ---------------- */
+html:not(.ov) #v-settings#v-settings .sethead{margin:14px 0 8px!important;font:700 22px/1.1 var(--f-display)!important;letter-spacing:.03em!important}
+html:not(.ov) #v-settings#v-settings .grid{gap:10px}
+html:not(.ov) #v-settings#v-settings .grid>.pw3-sh{margin:6px 0 -2px!important}
+@media (min-width:821px){
+  html:not(.ov) #v-settings#v-settings:not([hidden]){grid-template-columns:260px minmax(0,1fr);column-gap:10px}
+  html:not(.ov) #v-settings#v-settings>#setNav:not([hidden]){padding:10px;gap:2px;border:1px solid var(--line2);border-radius:8px;top:76px}
+}
+html:not(.ov) #v-settings#v-settings #setNav::before{content:attr(data-t);display:block;margin:0 0 8px;font:700 14px/1.2 var(--f-display);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+html:not(.ov) #v-settings#v-settings #setNav:not([data-t])::before{display:none}
+html:not(.ov) #v-settings#v-settings #setNav a{padding:8px 10px;font:400 13px/1.3 var(--f-body)}
+html:not(.ov) #v-settings#v-settings #setNav a:hover{background:var(--surface2)}
+html:not(.ov) #v-settings#v-settings #setNav a[aria-current="true"]{background:var(--surface2)!important;box-shadow:none!important;font-weight:400}
+@media (max-width:820px){html:not(.ov) #v-settings#v-settings #setNav::before{display:none}}
+html:not(.ov) #v-settings#v-settings .panel .label:not(:first-child){font:400 13px/1.3 var(--f-body)!important;text-transform:none!important;letter-spacing:0!important;margin:12px 0 6px}
+html:not(.ov) #v-settings#v-settings .panel>.label:not(:first-child)+.seg{margin-top:0}
+html:not(.ov) #v-settings#v-settings .panel .label:first-child .pill{margin-left:4px}
+html:not(.ov) #v-settings#v-settings #aboutPanel .panel{background:var(--surface2);border:0;border-radius:10px;padding:12px}
+html:not(.ov) #v-settings#v-settings #aboutPanel .kv dt{color:var(--muted)}
+html:not(.ov) #v-settings#v-settings .chk,html:not(.ov) #v-settings#v-settings label:has(>input[type=checkbox]){display:flex;align-items:center;gap:0;min-height:36px;font-size:13px}
+html:not(.ov) #v-settings#v-settings .controls{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+html:not(.ov) #commBody#commBody #cmRecMini .cl-rmini .cl-nm{display:flex;flex-direction:column;gap:2px;min-width:0}
+html:not(.ov) #commBody#commBody #cmRecMini .cl-rmini .cl-nm>*{white-space:normal!important;overflow:visible!important;text-overflow:clip!important}
+html:not(.ov) #commBody#commBody #cmRecMini .cl-rmini .cl-nm small{color:var(--muted);font-size:12px}
+html:not(.ov) #meBody#meBody .pw3-me-r>.panel{margin:0!important}
+html:not(.ov) #ovTab#ovTab :is(.seg,.seg3) button[aria-pressed="true"],html:not(.ov) :is(#v-settings#v-settings,#v-me#v-me,#v-leagues#v-leagues,#v-community#v-community) :is(.seg,.seg3,.adm-view) button[aria-pressed="true"]{background:var(--accent)!important;color:var(--accent-ink)!important;font-weight:700!important;box-shadow:none!important}
+html:not(.ov) #ovTab#ovTab :is(.seg,.seg3) button:not([aria-pressed="true"]){background:none!important}
+@media (max-width:760px){html:not(.ov) #ovTab#ovTab .ovt-b{display:flex;flex-direction:column}html:not(.ov) #ovTab#ovTab .ovt-stage{order:1}html:not(.ov) #ovTab#ovTab .ovt-insp{order:2;width:auto}html:not(.ov) #ovTab#ovTab .ovt-nav{order:3;max-height:none!important;overflow:visible}}
 </style>
 <script id="pw3-more-js">
 /* Pit Wall Workspace: more helpers. Overlays, Community, Leagues, My account and Settings in the linear layout: the
@@ -11139,4 +11440,61 @@ after("renderSettings",setSync);after("applyI18n",setSync);setSync();
 function ovArrange(){const f=q("#ovtFoot"),st=q("#ovTab .ovt-stage");if(f&&st&&f.parentNode!==st)st.appendChild(f)}
 after("renderOverlaysTab",ovArrange);
 })();
+
+/* ---- round 2: the design's pieces on these views ---- */
+(function(){
+const q=(s,r)=>(r||document).querySelector(s);
+const after=(name,fn)=>{const f=window[name];if(typeof f!=="function")return;window[name]=function(){const r=f.apply(this,arguments);if(r&&typeof r.then==="function")return r.then(v=>{try{fn()}catch(e){}return v});try{fn()}catch(e){}return r}};
+const ini=s=>{s=String(s||"").trim();return s?s[0].toUpperCase():""};
+/* Overlays: the list's title, as the design's panel */
+function ovTitle(){const n=q("#ovtNav");if(!n)return;let h=q(":scope>.pw3-ovh",n);if(!h){h=document.createElement("h3");h.className="pw3-ovh";n.insertBefore(h,n.firstChild)}const t=Tx("Overlays","Overlays",null,"Overlays");if(h.textContent!==t)h.textContent=t}
+after("renderOverlaysTab",ovTitle);
+/* My account: the panel's title and the avatar */
+function meHead(){const c=q("#meBody .me-idc");if(!c||q(":scope>.pw3-meh",c))return;const h=document.createElement("h3");h.className="pw3-meh";h.textContent=Tx("My account","Mi cuenta",null,"Minha conta");c.insertBefore(h,c.firstChild)}
+after("renderMe",meHead);
+/* Community: you, with your initial, at the top of "You in the community" */
+function commYou(){const y=q("#cmYou");if(!y)return;const name=(typeof ME!=="undefined"&&ME&&ME.signedIn&&ME.display)||"";let b=q(":scope>.pw3-cyou",y);
+  if(!name){if(b)b.remove();return}
+  if(!b){b=document.createElement("div");b.className="pw3-cyou";const h=q(":scope>h2",y);if(h)h.after(b);else y.prepend(b)}
+  const html=`<span class="pw3-av">${esc(ini(name))}</span><div><b>${esc(name)}</b><small>${esc(Tx("Public name","Nombre público",null,"Nome público"))}</small></div>`;if(b.innerHTML!==html)b.innerHTML=html}
+after("renderCommunity",commYou);
+/* Settings: the list's title */
+function setTitle(){const n=q("#setNav");if(n)n.setAttribute("data-t",Tx("Settings","Ajustes",null,"Configurações"))}
+after("renderSettings",setTitle);after("applyI18n",setTitle);setTitle();
+})();
+
+/* Community → Summary → My leaderboards: the design's table (track and car, your best, place, record, gap and how your
+   best came down). A row opens that leaderboard, as before. */
+async function drawCommMine(){const kb=$("#cmKpis"),lb=$("#cmMyB");if(!kb||!lb)return;
+  if(!COMM_ME||Date.now()-COMM_ME_T>60e3){try{COMM_ME=await profGet({me:1});COMM_ME_T=Date.now()}catch(e){COMM_ME=null;kb.innerHTML="";lb.innerHTML=`<p class="note">${esc(Tx("Sign in with your Pitlane HQ account to see your leaderboards here.","Inicia sesión con tu cuenta de Pitlane HQ para ver aquí tus clasificaciones.","Melde dich mit deinem Pitlane-HQ-Konto an, um hier deine Ranglisten zu sehen.","Entre com sua conta Pitlane HQ para ver aqui suas classificações."))}</p>`;return}}
+  const um=v=>unMojibake(v||""),L=((COMM_ME&&COMM_ME.laps)||[]).filter(l=>(l.game||"iracing")===aGame()&&l.pos).map(l=>({...l,track:um(l.track),car:um(l.car),gap:l.rec?l.time-l.rec:0}));
+  if(!L.length){kb.innerHTML="";lb.innerHTML=`<p class="note">${esc(Tx("Your fastest lap of each car and track shows here once it is saved in your account.","Tu vuelta más rápida de cada coche y circuito aparece aquí en cuanto se guarda en tu cuenta.","Deine schnellste Runde jedes Autos und jeder Strecke erscheint hier, sobald sie in deinem Konto gespeichert ist.","Sua volta mais rápida de cada carro e pista aparece aqui assim que é salva na sua conta."))}</p>`;return}
+  const recs=L.filter(l=>l.pos===1),near=L.filter(l=>l.pos>1&&l.gap<0.5),avg=L.reduce((a,l)=>a+l.pos,0)/L.length;
+  kb.innerHTML=[[Tx("Leaderboards","Clasificaciones","Ranglisten","Classificações"),L.length,""],
+    [Tx("Records","Récords","Rekorde","Recordes"),recs.length,recs.length?recs[0].car+" · "+recs[0].track:""],
+    [Tx("Average place","Posición media","Durchschnittsplatz","Posição média"),"P"+avg.toFixed(1),""],
+    [Tx("Within 0.5 s of the record","A menos de 0.5 s del récord","Unter 0,5 s vom Rekord","A menos de 0,5 s do recorde"),near.length,""]].map(([l,v,n])=>`<div><span>${esc(l)}</span><b>${esc(String(v))}</b>${n?`<small>${esc(n)}</small>`:""}</div>`).join("");
+  L.sort((a,b)=>a.gap-b.gap);const show=COMM_MYALL?L:L.slice(0,8);
+  const sp=a=>{if(!a||a.length<2)return"";const mn=Math.min(...a),mx=Math.max(...a),r=mx-mn||1,pts=a.map((v,i)=>[i*86/(a.length-1)+2,2+(v-mn)/r*20]);return`<svg class="pw3-sp" viewBox="0 0 90 24" aria-hidden="true"><polyline points="${pts.map(p=>p[0].toFixed(1)+","+p[1].toFixed(1)).join(" ")}"/><circle cx="${pts[pts.length-1][0].toFixed(1)}" cy="${pts[pts.length-1][1].toFixed(1)}" r="2"/></svg>`};
+  const th=[Tx("Track and car","Circuito y coche",null,"Pista e carro"),Tx("Your best","Tu mejor",null,"Sua melhor"),Tx("Place","Puesto",null,"Posição"),Tx("Record","Récord",null,"Recorde"),Tx("Gap","Diferencia",null,"Diferença"),Tx("Last sessions","Últimas sesiones",null,"Últimas sessões")];
+  lb.innerHTML=`<div class="pw3-tsc"><table class="pw3-tb"><thead><tr>${th.map((t,i)=>`<th${i>0&&i<5?' class="r"':""}>${esc(t)}</th>`).join("")}</tr></thead><tbody>${show.map((l,i)=>`<tr data-myb="${i}" tabindex="0"><td><b>${esc(l.track)}</b><span class="pw3-by">${esc(l.car)}</span></td><td class="mono r">${fmtT(l.time)}</td><td class="mono r">P${l.pos} <span class="mu">${esc(Tx(`of ${l.of}`,`de ${l.of}`,null,`de ${l.of}`))}</span></td><td class="mono r">${l.rec?fmtT(l.rec):"–"}</td><td class="mono r ${l.pos===1?"pb":"bad"}">${l.pos===1?esc(Tx("record","récord","Rekord","recorde")):"+"+l.gap.toFixed(3)}</td><td>${sp(l.trend)}</td></tr>`).join("")}</tbody></table></div>
+    ${L.length>8?`<button type="button" class="cl-link" id="cmMyAll">${esc(COMM_MYALL?Tx("Fewer","Menos","Weniger","Menos"):Tx(`See all ${L.length}`,`Ver las ${L.length}`,`Alle ${L.length}`,`Ver as ${L.length}`))}</button>`:""}`;
+  lb.querySelectorAll("[data-myb]").forEach(b=>{const go=()=>{const l=show[+b.dataset.myb];commGoBoard(l.trackId,l.carId,lmuV()?"":l.cat)};b.onclick=go;b.onkeydown=e=>{if(e.key==="Enter")go()}});
+  const ma=$("#cmMyAll");if(ma)ma.onclick=()=>{COMM_MYALL=!COMM_MYALL;drawCommMine()}}
+
+/* Leagues: a posted league as the design's card. The same data, buttons and handlers (data-lgopen, data-lghit) as before. */
+function leagCard(x){const w=leagWhen(x),loc=locale(),tz=x.tz||"UTC",n=leagNext(x),hasT=/^\d\d:\d\d$/.test(x.time||"");
+  const cs=vGame()==="lmu"?[LMU_LEAG(x)]:leagDiscs(x).map(discName);const sub=[(cs.length>1?Tx("Mixed","Mixta","Gemischt","Mista")+" · ":"")+cs.join(" · "),x.lang,x.by?Tx("by","por","von","por")+" "+x.by:""].filter(Boolean).join(" · ");
+  const city=tz.split("/").pop().replace(/_/g," ");
+  let yours="";if(n){let other=false;try{const p=tzParts(n,tz);other=new Date(Date.UTC(p.y,p.m,p.d)).getUTCDay()!==new Date(n).getDay()}catch(e){}yours=new Date(n).toLocaleTimeString(loc,{hour:"2-digit",minute:"2-digit"})+(other?" "+new Date(n).toLocaleDateString(loc,{weekday:"short"}):"")}
+  const nx=w.next?w.next.replace(/^[^:]+:\s*/,""):"";
+  const dl=hasT?`<dl class="wm-lg-t"><div><dt>${esc(Tx("Start","Hora",null,"Início"))}</dt><dd>${esc(x.time)} <small>${esc(city)}</small></dd></div><div><dt>${esc(Tx("Your time","Tu hora",null,"Sua hora"))}</dt><dd>${esc(yours||"–")}</dd></div><div><dt>${esc(Tx("Next race","Próxima carrera",null,"Próxima corrida"))}</dt><dd>${esc(nx||"–")}</dd></div></dl>`:`<p class="wm-lg-c mu">${esc(Tx("Schedule not set","Sin horario","Kein Zeitplan","Sem horário"))}</p>`;
+  return`<div class="lg-post wm-lg${x.open?" open":""}" role="button" tabindex="0" data-lgopen="${esc(x.id)}">
+  <div class="wm-lg-h"><span class="pw3-av">${esc((String(x.name||"").trim()[0]||"").toUpperCase())}</span><div><b>${esc(x.name)}</b><small>${esc(sub)}</small>${x.open?`<span class="wm-tag on">${esc(Tx("Looking for drivers","Busca pilotos","Sucht Fahrer","Procura pilotos"))}</span>`:""}</div>${leagStats(x)}</div>
+  <div class="wm-wk" title="${esc(Tx("The days it races","Los días que corre","Die Renntage","Os dias em que corre"))}">${WD.map((d,i)=>`<span class="${(x.days||[]).includes(i)?"on":""}">${esc(Tx(...d).slice(0,1).toUpperCase())}</span>`).join("")}</div>
+  ${dl}
+  ${x.cars?`<p class="wm-lg-c"><b>${esc(Tx("Cars","Coches",null,"Carros"))}</b>${esc(x.cars)}</p>`:""}${x.schedule?`<p class="wm-lg-c"><b>${esc(Tx("Schedule","Calendario",null,"Calendário"))}</b>${esc(x.schedule)}</p>`:""}
+  ${x.about?`<p class="wm-lg-a">${esc(x.about)}</p>`:""}
+  <div class="lg-acts">${x.discord?`<a class="btn small primary lg-dc" href="${esc(x.discord)}" target="_blank" rel="noopener" data-lghit="discord" data-lg="${esc(x.id)}">${esc(Tx("Join the Discord","Únete al Discord",null,"Entre no Discord"))}</a>`:""}${x.web?`<a class="btn small" href="${esc(x.web)}" target="_blank" rel="noopener" data-lghit="web" data-lg="${esc(x.id)}">${esc(Tx("Website","Web","Website","Site"))}</a>`:""}</div>
+  ${x.created?`<small class="pw3-posted">${esc(Tx("Posted","Publicada",null,"Publicada"))} ${esc(agoTxt(x.created))}</small>`:""}</div>`}
 </script>

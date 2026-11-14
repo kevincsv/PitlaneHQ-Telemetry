@@ -39,13 +39,16 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   the community on the left, your numbers and leaderboards in the middle and the latest records on the right. Leagues
   has one filter bar (days, Looking for drivers as a switch, the order, the search), the leagues posted in Pitlane HQ
   and then the most active leagues. My account is the account card on the left, the ways to sign in, security, sync
-  and devices, blocked drivers and Delete account in the middle, Pitlane HQ Pro and Admin on the right. Settings is one
+  and devices, blocked drivers and Delete account in the middle, Pitlane HQ Pro and Admin on the right. Public name opens
+  the name choice right there in the account card (Save name, Cancel), with no trip to Community. Settings is one
   page with its sections listed on the left (General, Game, PC and programs, VR, Ask the coach, About; a section shows
   only when it has something on that device, so the web keeps only General, Game and About). The Overlays editor keeps
   its list, screen and inspector, with the presets and actions in one card and the whole list of overlays shown.
   The pieces are the design's own (round 2): the page's tabs a dark well with the chosen one raised and underlined in
   amber, panels with Barlow capital titles, amber chips and segmented controls, switches for every on/off (checkboxes
-  included), Community's "My leaderboards" a table (track and car, your best, place, record, gap, last sessions), a
+  included). Every control looks the same everywhere (the owner's choice B, `pw3-contrast` in index.html):
+  buttons and chips one step lighter than the card with a soft top light, boxes, fields and segmented wells sunk darker
+  than the card, Community's "My leaderboards" a table (track and car, your best, place, record, gap, last sessions), a
   league a card with its initial, the week as seven letters, Start, Your time and Next race, Cars, the text, Join the
   Discord and when it was posted. On phones the overlays' screen and inspector come before their list, and My account
   shows the work first, then Pro and Admin, then the account card.

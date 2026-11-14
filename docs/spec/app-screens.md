@@ -14,7 +14,9 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   The lap analyzer (Pit Wall Workspace, `pw3-laps` in index.html): Lap A vs lap B across the top, then four numbers
   (A vs B, Costs the most, Furthest behind, Corners vs straights, and Gains most when A gains somewhere), then three
   columns. Left: Laps (My laps and Community with its PRO badge) and Sectors (a table, A, B and the gap). Middle: the
-  chart stack on one distance axis with its Show chips (speed, delta, throttle, brake, gear, steering, line), Braking
+  charts in one panel, its Show chips (filled amber when on) and then one titled chart per channel on one distance axis
+  (Speed, Gap to lap B, Throttle, Brake, Gear, Steering, Line), each with its legend and, on the right, the values at
+  the point under the pointer or finger (the whole lap when nothing is touched), the turns as thin lines, Braking
   points, Corner consistency (with the race fuel and More charts), Recorded laps. Right: Track map, Corners, Offs
   explained and "Learn from this lap in the Coach". From 1101 px the side columns stay in view (their top under the
   demo banner, a taller column scrolls until its end shows); narrower it is one column in that order. My laps lists
@@ -23,7 +25,9 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   makes that session session A. Community lists the community laps loaded as references (B) and "Compare with the
   community". On the map lap A's dot keeps its size on screen and grows while the pointer is on the map (the map grows
   too, on computers), a ring shows lap B at the same moment of its lap, and a line under it gives the distance, the
-  corner, both speeds, the gap and how far B is ahead or behind; pressing a turn (on the map or in Corners) pins the
+  corner, both speeds, the gap and how far B is ahead or behind. The track is coloured where A loses a little, loses,
+  loses a lot or gains (with that legend), the turns are numbered dots on it, and the map's switches (Braking,
+  Incidents, Coach, A vs B time, Replay) are a row of chips under the map; pressing a turn (on the map or in Corners) pins the
   charts there and opens "T3 insight" under the map (the tip, the braking against B, the slowest speeds, the speed of
   both laps through it, "Work on T3 in the Coach"). The overlay windows (`html.ov`) keep their own designs.
 - Overlays, Community, Leagues, My account and Settings in the Pit Wall Workspace look (`pw3-more` in index.html,
@@ -63,8 +67,9 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   The phone apps filter their session list the same way. Laps A and B are one choice for the
   lap analyzer and the coach (`ANASEL`, a lap known by itself, not by its place in a list), with the same
   default and the model's references as B in both, each once ("▲ Next level", "★ Record"); the
-  lap analyzer's "Select sessions" ticks one or several sessions in the same window (once one is ticked, a session of
-  another car or track, layout or game cannot be ticked and says "other car", "other track" or "other car and track";
+  lap analyzer's "Select sessions" ticks one or several sessions in the same window (once one is ticked, the list shows
+  only the sessions of the same car, track, layout and game; the window fits the screen and only the list of sessions
+  scrolls, the filters, the calendar and the buttons stay;
   "Compare N sessions"): the newest (or the current session A) is session A and the others' laps are loaded with the
   same cloud loading as "+ Session" (`CLOUD.lapsB`), so lap B can be any lap of them all (the best of the other sessions
   by default) and the coach gets them too. A community lap is compared only with

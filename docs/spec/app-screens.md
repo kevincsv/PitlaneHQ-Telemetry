@@ -84,6 +84,22 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   race summaries with the driver notes); Home's "See all" opens My races. The phone apps have the same four (and
   Telemetry, Standings and Tyres under Telemetry). A finished race shows no notice on the PC
   (it appears in My races); only the phones tell you.
+- The Pit Wall Workspace layout of these three (Nov 2026, `pw3-analysis` at the end of index.html; it lays out what the
+  app's own render functions draw, so every button, vote and link stays). No subtitle under their titles. From 1180 px
+  wide they are workspaces; under that one column.
+  - Coach: lap A against lap B as one full-width strip on top, then three columns. Left and sticky, Your plan for the
+    next session. In the middle the gap to the reference, Work on this first and Ask the coach as three cards, the
+    corners that cost the most as cards with a mini speed trace of A and B through the corner, then your pace among the
+    drivers known here. Right and sticky, the track map, Corner by corner, Sectors and Offs explained (the incidents and
+    the offs leave the map's card for their own).
+  - My sessions: the filters, then Best per car and track on the left (your best lap and laps of each car and track,
+    newest first; a card opens that session) and My sessions and Race summaries side by side. The session pills
+    (Race, Practice…) are all one width with the word centred, a star sits beside the fastest lap of each car and track,
+    and every race summary row ends in an amber "Summary ›" and opens My races with that race.
+  - My races: a strip of race cards (date, track, start → finish, iRating change and incidents) chooses the race shown
+    under it, the newest by default. Then the race's header (start, finish, incidents, iRating, Full report › for the
+    whole report with the results, the story, the braking, Discord and delete), Lap times, Race summary beside What went
+    well (and Where you lost time), Driver notes, and the My races table (a row shows its summary on top).
 
 - Home shows the track guide's brief (the three corners that matter most) while the agent sees a session on a track and
   car the model knows (`homeBriefHTML`); pressed, it opens the whole guide.

@@ -10042,7 +10042,34 @@ html:not(.ov) nav.subtabs button{margin:0!important;padding:8px 13px!important;b
 html:not(.ov) nav.subtabs button[aria-selected="true"]{background:var(--accent)!important;color:var(--accent-ink)!important;font-weight:600!important}
 html:not(.ov) nav.subtabs button:hover:not([aria-selected="true"]){color:var(--fg)!important}
 html:not(.ov) .gseg button[aria-pressed="true"]{background:var(--accent)!important;color:var(--accent-ink)!important;box-shadow:none!important;font-weight:600!important}
+
+/* one row like the design: the pages and the game switch in the header row, the icons after them */
+@media (min-width:821px){
+  html.pw3row:not(.ov,.ovwin,.signwall,.phone) header.top{border-bottom:0!important;padding-block:14px 6px!important;gap:8px!important;flex-wrap:nowrap!important;align-items:center}
+  html.pw3row:not(.ov,.ovwin,.signwall,.phone) header.top>.brand,html.pw3row:not(.ov,.ovwin,.signwall,.phone) header.top>.conn,html.pw3row:not(.ov,.ovwin,.signwall,.phone) header.top>#appVersion{display:none!important}
+  html.pw3row:not(.ov,.ovwin,.signwall,.phone) header.top>.subbar{flex:1 1 auto!important;min-width:0;margin:0!important;order:0}
+  html.pw3row:not(.ov,.ovwin,.signwall,.phone) header.top>.subbar:has(>nav.subtabs[hidden]),html.pw3row:not(.ov,.ovwin,.signwall,.phone) header.top>.subbar:has(>nav.subtabs:not(:has(button+button))){justify-content:flex-end}
+  html.pw3row:not(.ov,.ovwin,.signwall,.phone) header.top>.subbar>nav.subtabs:not(:has(button+button)){display:none!important}
+  html.pw3row:not(.ov,.ovwin,.signwall,.phone) header.top .iconbtn{width:36px!important;height:36px!important;min-height:36px!important;padding:0!important;border-radius:8px!important;background:transparent!important;border:1px solid transparent!important;color:var(--muted)!important;display:inline-grid;place-items:center}
+  html.pw3row:not(.ov,.ovwin,.signwall,.phone) header.top .iconbtn:hover{color:var(--fg)!important;background:var(--surface)!important;border-color:var(--line)!important}
+  html.pw3row:not(.ov,.ovwin,.signwall,.phone) header.top .iconbtn svg{width:18px!important;height:18px!important}
+}
+/* the design's type and surfaces */
+html:not(.ov) .panel{border-color:var(--line2);border-radius:8px}
+html:not(.ov) .panel>.label:first-child,html:not(.ov) .panel>h2.label,html:not(.ov) .cl-h>h2,html:not(.ov) .hl-sec>h2,html:not(.ov) .panel>h3:first-child{font:700 14px/1.2 var(--f-display)!important;letter-spacing:.1em!important;text-transform:uppercase;color:var(--muted)!important}
+html:not(.ov) .pill{font:600 11px/1.3 var(--f-body);letter-spacing:.05em;text-transform:uppercase;padding:2px 8px;background:var(--surface2)}
 </style>
+<script id="pw3-frame-js">
+/* Pit Wall Workspace frame: on computers the page tabs and the game switch sit in the header row */
+(function(){const H=document.documentElement,mq=matchMedia("(min-width:821px)");
+ function place(){const hd=document.querySelector("header.top"),sb=document.getElementById("subbar"),tabs=hd&&hd.querySelector("nav.tabs");if(!hd||!sb)return;
+  const on=mq.matches&&!H.classList.contains("phone")&&!H.classList.contains("ov")&&!H.classList.contains("ovwin");H.classList.toggle("pw3row",on);
+  if(on&&sb.parentElement!==hd){const ref=document.getElementById("viewTg");hd.insertBefore(sb,ref||null)}
+  else if(!on&&sb.parentElement===hd){hd.after(sb)}
+}
+ if(mq.addEventListener)mq.addEventListener("change",place);place();setTimeout(place,1500);
+})();
+</script>
 <style id="pw3-home">
 /* Pit Wall Workspace: home. The greeting and the live bar, the month's numbers, then the recent sessions (left, sticky)
    beside three equal boxes (days, licences, feedback) with the leagues under them */

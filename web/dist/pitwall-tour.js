@@ -39,7 +39,10 @@
   const BAR = `<div class="tr-wbar"><img src="icon-192.png" alt="" width="16" height="16"><span>Pitlane HQ</span>${CAPS}</div>`;
   // the screenshots' sizes, so the page never jumps while they load
   const SHOT = { "board.jpg": [2880, 1040], "coach.jpg": [2880, 1040], "compare.jpg": [2880, 1000], "laps.jpg": [2880, 880], "race.jpg": [2220, 1520] };
-  const shot = (img, alt, first) => { const [w, h] = SHOT[img] || [2880, 1040]; return `<img class="tr-shot" src="${IMG()}${img}" alt="${esc(alt)}" width="${w}" height="${h}" ${first ? 'fetchpriority="high"' : 'loading="lazy"'} decoding="async">`; };
+  // WebP, 1440 px wide for most screens and the full size for wide high-density ones (landing/<lang>/<name>-1440.webp)
+  const shot = (img, alt, first) => { const [w, h] = SHOT[img] || [2880, 1040], n = IMG() + img.replace(/\.jpg$/, ""); return `<img class="tr-shot" src="${n}-1440.webp" srcset="${n}-1440.webp 1440w, ${n}.webp ${w}w" sizes="(max-width: 1200px) 100vw, 1200px" alt="${esc(alt)}" width="${w}" height="${h}" ${first ? 'fetchpriority="high"' : 'loading="lazy"'} decoding="async">`; };
+  // the overlays' pictures' sizes (landing/<lang>/ov-*.webp)
+  const OVSZ = { dash: [560, 218], deltabar: [520, 54], fuel: [420, 160], "g-inputs": [560, 262], "g-timing": [440, 154], "g-tyres": [420, 214], gaps: [560, 290], gg: [280, 324], "l-brakes": [480, 138], "l-coach": [520, 76], pit: [440, 180], relative: [600, 232], "s-sectors": [560, 146], standings: [720, 346], trackbar: [700, 62], weather: [360, 196] };
 
   // ---------- Live telemetry: two real laps (Super Formula SF23, Spa's Historic Grand Prix) played in a loop ----------
   // landing/live-lap.json: A (lap 5) and B (the lap before), one row every 10 m: [time s, km/h, throttle %, brake %, gear,
@@ -190,7 +193,7 @@ ${don ? `<a class="tr-b tr-p" href="${esc(don)}" target="_blank" rel="noopener">
   const S = { el: null, stop: null };
   function pageHTML() {
     const tabs = TABS().map(([k, h, p], i) => `<button type="button" role="tab" aria-selected="${i ? "false" : "true"}" data-show="${k}"><b>${esc(h)}</b><span>${esc(p)}</span></button>`).join("");
-    const ovs = OVS().map(([f, c]) => `<figure${f === "gg" ? ' class="tr-gg"' : ""}><img src="${IMG()}ov-${f}.png" alt="${esc("Overlay " + c)}" loading="lazy" decoding="async"><figcaption>${esc(c)}</figcaption></figure>`).join("");
+    const ovs = OVS().map(([f, c]) => `<figure${f === "gg" ? ' class="tr-gg"' : ""}><img src="${IMG()}ov-${f}.webp" alt="${esc("Overlay " + c)}"${OVSZ[f] ? ` width="${OVSZ[f][0]}" height="${OVSZ[f][1]}"` : ""} loading="lazy" decoding="async"><figcaption>${esc(c)}</figcaption></figure>`).join("");
     return `<section class="tr-hero"><div><div class="tr-eyb">iRacing <span>·</span> Le Mans Ultimate <span>(beta)</span></div>
 <h1>${t("Telemetry, coach and <em>overlays</em> for your laps", "Telemetría, coach y <em>overlays</em> para tus vueltas", "Telemetria, coach e <em>overlays</em> para suas voltas")}</h1>
 <p class="tr-lead">${esc(t("Pitlane HQ records every iRacing and Le Mans Ultimate lap while you drive, tells you which corner costs you time and puts the overlays over the game.", "Pitlane HQ guarda cada vuelta de iRacing y Le Mans Ultimate mientras conduces, te dice en qué curva pierdes tiempo y pone los overlays encima del juego.", "O Pitlane HQ grava cada volta do iRacing e do Le Mans Ultimate enquanto você pilota, diz em qual curva você perde tempo e coloca os overlays sobre o jogo."))}</p>

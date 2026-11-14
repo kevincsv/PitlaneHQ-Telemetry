@@ -22,6 +22,7 @@ function world({ lmu = true } = {}) {
       { t: 1, track: "Okayama International Circuit", c: 10, car: "Mazda MX-5 Cup", drivers: 12, best: 98.123, hint: "sports_car", upd: now },
       { t: 2, track: "Spa-Francorchamps", c: 20, car: "Porsche 911 GT3 R", drivers: 8, best: 137.5, hint: "sports_car", upd: now - 86400e3 },
       { t: 3, track: "Daytona International Speedway", c: 30, car: "NASCAR Cup Series Next Gen Chevrolet", drivers: 5, best: 47.9, hint: "oval", upd: now },
+      { t: 4, track: "Lime Rock Park", c: 40, car: "Skip Barber Formula 2000", drivers: 1, best: 60.1, hint: "formula_car", upd: now },
     ],
     lmu: lmu ? [{ t: 7001, track: "Circuit de la Sarthe", c: 9001, car: "Toyota GR010 Hybrid", drivers: 3, best: 205.4, hint: "", upd: now }] : [],
   };
@@ -29,13 +30,14 @@ function world({ lmu = true } = {}) {
   const leagues = { iracing: [lg("a1", "Sunday Sprint Series", ["sports_car"]), lg("a2", "Oval Nights", ["oval"])], lmu: lmu ? [lg("l1", "Endurance Club", ["sports_car"])] : [] };
   const fd = (guild, name, cats) => ({ guild, code: "c" + guild, name, icon: "", title: "Looking for drivers", url: "", sub: "iRacing", posted: now, posts: 1, members: 300, online: 40, cats: JSON.stringify(cats), dead: 0, hidden: 0 });
   const found = { iracing: [fd("g1", "GT League", ["sports_car"]), fd("g2", "Formula Friday", ["formula_car"]), fd("g3", "Sports Car Cup", ["sports_car"]), fd("g4", "Prototype Night", ["sports_car"])], lmu: lmu ? [fd("g9", "LMU Endurance", ["sports_car"])] : [] };
-  const laps = (game, t, c) => [{ uid: "u1", alias: "Speedy", time: (combos[game].find((x) => x.t === t && x.c === c) || {}).best, created: now, track: "", car: "", cat: "" }, { uid: "u2", alias: "", time: 999, created: now, track: "", car: "", cat: "" }];
+  const laps = (game, t, c) => [{ uid: "u1", alias: "Speedy", time: (combos[game].find((x) => x.t === t && x.c === c) || {}).best, created: now, track: "", car: "", cat: "" }, { uid: "u2", alias: "", time: 999, created: now, track: "", car: "", cat: "" }, { uid: "u3", alias: "Late", time: 1000, created: now, track: "", car: "", cat: "" }].slice(0, t === 4 ? 1 : 3);
   const all = (sql, a) => {
     if (/FROM community_laps WHERE game=\?2/.test(sql)) return combos[a[1]].slice(0, a[0]);
     if (/FROM leagues WHERE game=\?1/.test(sql)) return leagues[a[0]] || [];
     if (/FROM league_found/.test(sql)) return found[a[1]] || [];
     if (/FROM community_laps l JOIN/.test(sql)) return laps(a[2], a[0], a[1]);
     if (/GROUP BY game, track_id/.test(sql)) return [];
+    if (/GROUP BY car_id HAVING/.test(sql)) return combos[a[0]].filter((x) => x.t === a[1] && x.c !== a[2] && x.drivers >= a[3]).map((x) => ({ c: x.c, car: x.car, drivers: x.drivers, best: x.best }));
     return [];
   };
   const first = (sql, a) => {
@@ -130,6 +132,14 @@ for (const [game, pre, t, c] of [["iracing", "", 1, 10], ["lmu", "lmu/", 7001, 9
   assert.match(p.text, /Speedy/); assert.match(p.text, game === "lmu" ? /Le Mans Ultimate/ : /iRacing/);
   assert.ok(!/\S: /.test(p.title), p.title);
   assert.ok(p.title.length <= 62 || !/iRacing|LMU|Le Mans/.test(p.title), p.title); assert.ok(!/\b1 (fastest|vueltas|voltas)/.test(p.desc), p.desc);
+}
+// a car and track with fewer than 3 drivers is shown but kept out of search; a full one shows its numbers
+{
+  const loc = new URL((await get(env, "/records/4-40")).headers.get("location")).pathname, p = parse(await (await get(env, loc)).text());
+  assert.match(p.robots, /noindex/, "a thin record page"); assert.ok(!p.ld.some((x) => x["@type"] === "WebPage"));
+  const sm = await (await get(env, "/sitemap.xml")).text(); assert.ok(!sm.includes("/records/4-40/"), "a thin record page is not in the sitemap");
+  const full = parse(await (await get(env, new URL((await get(env, "/records/1-10")).headers.get("location")).pathname)).text());
+  assert.match(full.robots, /^index/); assert.match(full.text, /Drivers\s+3/); assert.match(full.text, /Gap to P3\s+\+/); assert.match(full.text, /Newest lap/);
 }
 assert.equal((await get(env, "/records/lmu/1-10")).status, 404, "an iRacing car is no Le Mans Ultimate record");
 assert.equal((await get(env, "/records/999-999/x")).status, 404);

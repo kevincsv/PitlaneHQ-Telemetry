@@ -65,6 +65,11 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   never stuffed, never claiming an iPhone app before it is on the App Store; competitors' names only in a question, never a
   claim about them.
   They show the accounts' nicknames (never their iRacing names), or Anonymous (race rivals always).
+  A car and track page with fewer than 3 drivers (`REC_MIN`) is shown but noindex and left out of the sitemap; every
+  record page shows its drivers, the gap from the record to P10 (or the last place) and its newest lap, and links the
+  other cars driven at that track (those with 3 drivers or more). The web's landing shows its screenshots as WebP
+  (`landing/<lang>/<name>-1440.webp` and the full size by srcset; the overlays' `ov-*.webp` with their sizes), and
+  "/" loads Google Fonts without holding up the first paint (`media="print"`, swapped on load).
   Every file in `web/dist` (the landing's screenshots and laps, the drivers' flags) is one the worker serves (`isAppFile`;
   `seo.test.mjs` checks it), and the landing's header links keep their names on a phone, where only their icons show.
 - `/privacy` (the privacy policy), `/terms` (the terms of service, linked from Google's sign-in screen) and `/delete-account` (how to delete an account, from the app, the web or by email),

@@ -57,7 +57,7 @@ const S = {
     all: "All", track: "Track", car: "Car", record: "Record", drivers: "Drivers", none: "No laps yet.",
     anon: "Anonymous", driver: "Driver", time: "Time", date: "Date", nf: "This page does not exist", nfT: "Not found",
     cT: (car, track, gn, short) => `${car} at ${track} · ${gn}${short ? "" : " lap"} records`, cTs: (car, track) => `${car} at ${track} lap records`, cD: (car, track, t, n, gn) => `The ${car} lap record at ${track} is ${t}. ${n === 1 ? `The only ${gn} lap from Pitlane HQ drivers so far.` : `The ${n} fastest ${gn} laps from Pitlane HQ drivers, one per driver.`}`,
-    cL: (t) => `The record is ${t}. One lap per driver, their fastest.`, cQ: "Where do you lose time in this car?", cA: (gn) => `Pitlane HQ records your ${gn} laps and compares them with these, corner by corner. It is free.` },
+    cL: (t) => `The record is ${t}. One lap per driver, their fastest.`, cQ: "Where do you lose time in this car?", sDrv: "Drivers", sGap: (n) => `Gap to P${n}`, sNew: "Newest lap", oth: (track) => `Other cars at ${track}`, cA: (gn) => `Pitlane HQ records your ${gn} laps and compares them with these, corner by corner. It is free.` },
   es: { recH: (gn) => `Récords de ${gn} por coche y circuito`, recD: (gn) => `Las vueltas más rápidas de ${gn} en cada coche y circuito, una por piloto, de pilotos que usan Pitlane HQ. Abre un récord para ver su clasificación.`,
     howT: "Cómo llega aquí una vuelta", how: (gn) => `Pitlane HQ Agent comparte sola la vuelta válida más rápida de cada piloto en cada coche y circuito de ${gn}, con su nombre público o como Anónimo. Una vuelta fuera de pista, con la conexión perdida o que no da la vuelta entera al circuito nunca cuenta.`,
     faq: (gn) => [[`¿Cómo entra mi vuelta de ${gn} en estos récords?`, `Instala Pitlane HQ Agent en el PC donde corres y conduce. Tu vuelta válida más rápida de cada coche y circuito sube sola.`],
@@ -66,7 +66,7 @@ const S = {
     all: "Todas", track: "Circuito", car: "Coche", record: "Récord", drivers: "Pilotos", none: "Aún no hay vueltas.",
     anon: "Anónimo", driver: "Piloto", time: "Tiempo", date: "Fecha", nf: "Esta página no existe", nfT: "No encontrado",
     cT: (car, track, gn) => `${car} en ${track} · récords de ${gn}`, cTs: (car, track) => `Récords de ${car} en ${track}`, cD: (car, track, t, n, gn) => `El récord de ${car} en ${track} es ${t}. ${n === 1 ? `La única vuelta de ${gn} de pilotos de Pitlane HQ por ahora.` : `Las ${n} vueltas más rápidas de ${gn} de pilotos de Pitlane HQ, una por piloto.`}`,
-    cL: (t) => `El récord es ${t}. Una vuelta por piloto, la más rápida.`, cQ: "¿Dónde pierdes tiempo con este coche?", cA: (gn) => `Pitlane HQ graba tus vueltas en ${gn} y las compara con estas, curva a curva. Es gratis.` },
+    cL: (t) => `El récord es ${t}. Una vuelta por piloto, la más rápida.`, cQ: "¿Dónde pierdes tiempo con este coche?", sDrv: "Pilotos", sGap: (n) => `Diferencia con P${n}`, sNew: "Última vuelta", oth: (track) => `Otros coches en ${track}`, cA: (gn) => `Pitlane HQ graba tus vueltas en ${gn} y las compara con estas, curva a curva. Es gratis.` },
   pt: { recH: (gn) => `Recordes do ${gn} por carro e pista`, recD: (gn) => `As voltas mais rápidas do ${gn} em cada carro e pista, uma por piloto, de pilotos que usam o Pitlane HQ. Abra um recorde para ver a classificação.`,
     howT: "Como uma volta chega aqui", how: (gn) => `O Pitlane HQ Agent compartilha sozinho a volta válida mais rápida de cada piloto em cada carro e pista do ${gn}, com o nome público ou como Anônimo. Uma volta fora da pista, com a conexão perdida ou que não dá a volta inteira no circuito nunca conta.`,
     faq: (gn) => [[`Como minha volta do ${gn} entra nestes recordes?`, `Instale o Pitlane HQ Agent no PC onde você corre e pilote. Sua volta válida mais rápida de cada carro e pista sobe sozinha.`],
@@ -75,7 +75,7 @@ const S = {
     all: "Todas", track: "Pista", car: "Carro", record: "Recorde", drivers: "Pilotos", none: "Ainda não há voltas.",
     anon: "Anônimo", driver: "Piloto", time: "Tempo", date: "Data", nf: "Esta página não existe", nfT: "Não encontrado",
     cT: (car, track, gn) => `${car} em ${track} · recordes do ${gn}`, cTs: (car, track) => `Recordes de ${car} em ${track}`, cD: (car, track, t, n, gn) => `O recorde de ${car} em ${track} é ${t}. ${n === 1 ? `A única volta do ${gn} de pilotos do Pitlane HQ por enquanto.` : `As ${n} voltas mais rápidas do ${gn} de pilotos do Pitlane HQ, uma por piloto.`}`,
-    cL: (t) => `O recorde é ${t}. Uma volta por piloto, a mais rápida.`, cQ: "Onde você perde tempo com este carro?", cA: (gn) => `O Pitlane HQ grava suas voltas no ${gn} e as compara com estas, curva a curva. É grátis.` },
+    cL: (t) => `O recorde é ${t}. Uma volta por piloto, a mais rápida.`, cQ: "Onde você perde tempo com este carro?", sDrv: "Pilotos", sGap: (n) => `Diferença para P${n}`, sNew: "Volta mais recente", oth: (track) => `Outros carros em ${track}`, cA: (gn) => `O Pitlane HQ grava suas voltas no ${gn} e as compara com estas, curva a curva. É grátis.` },
 };
 const LOGO = `<svg viewBox="0 0 512 512" width="30" height="30" aria-hidden="true"><defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1f2733"/><stop offset="1" stop-color="#0d1116"/></linearGradient></defs><rect x="16" y="16" width="480" height="480" rx="112" fill="url(#g)"/><path d="M149.9 382.1A150 150 0 1 1 362.1 382.1" fill="none" stroke="#ffb02e" stroke-width="48" stroke-dasharray="460 1000"/><path d="M149.9 382.1A150 150 0 1 1 362.1 382.1" fill="none" stroke="#f2f4f7" stroke-width="48" stroke-dasharray="0 460 247 1000"/><path d="M149.9 382.1A150 150 0 1 1 362.1 382.1" fill="none" stroke="#ffb02e" stroke-width="48" stroke-dasharray="0 460 31 31 31 31 31 31 31 31 1000"/><path d="M188.1 343.9A96 96 0 1 1 323.9 343.9" fill="none" stroke="#2f3a48" stroke-width="10" stroke-linecap="round"/><path d="M256 276L330 188" stroke="#f2f4f7" stroke-width="20" stroke-linecap="round"/><circle cx="256" cy="276" r="30" fill="#f2f4f7"/><circle cx="256" cy="276" r="12" fill="#ffb02e"/></svg>`;
 // the whole style inline (nothing to fetch before the first paint); the fonts arrive after it without blocking the page,
@@ -94,6 +94,7 @@ h1,h2,h3{font-family:var(--hd);font-weight:700;line-height:1.1;letter-spacing:.0
 #what h2{margin:0 0 8px}#what p{margin:0 0 8px;color:#c9d1dc}.x{margin:22px 0 0;padding:14px 16px;border:1px solid var(--line);border-radius:10px;background:var(--card)}
 table{width:100%;border-collapse:collapse;font-size:15px}th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line)}th{color:var(--mut);font-weight:400;font-size:13px;text-transform:uppercase;letter-spacing:.06em}
 td.t{font-family:'JetBrains Mono',ui-monospace,monospace;color:var(--acc)}.n{width:44px;color:var(--mut)}.tw{overflow-x:auto}
+.st{display:flex;gap:12px;flex-wrap:wrap;margin:0 0 18px}.st>div{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 16px;display:flex;flex-direction:column;gap:2px}.st span{font-size:13px}.st b{font-family:'JetBrains Mono',ui-monospace,monospace;color:var(--acc);font-weight:600}
 details{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px 16px;margin:8px 0}summary{cursor:pointer;font-weight:600}
 footer{border-top:1px solid var(--line);margin-top:50px;padding:22px 0;color:var(--mut);font-size:14px}.cats{display:flex;gap:8px;flex-wrap:wrap;margin:6px 0 4px}
 .cats a{padding:6px 12px;border:1px solid var(--line);border-radius:20px;color:var(--fg);text-decoration:none;font-size:14px}.cats a.on{border-color:var(--acc);color:var(--acc)}
@@ -605,6 +606,9 @@ async function topCombos(env, n, game = "iracing") {
   ).bind(n, game).all().catch(() => ({ results: [] }));
   return (r.results || []).map((x) => ({ ...x, car: famName(game, x.c, x.car) }));
 }
+// a car and track with fewer drivers than this is shown but kept out of search (noindex, not in the sitemap):
+// a page of one or two laps says too little to be worth finding
+const REC_MIN = 3;
 const recPath = (l, x, game = "iracing") => `${PRE[l]}/records/${game === "lmu" ? "lmu/" : ""}${x.t}-${x.c}/${slug(fix(x.track) + " " + fix(x.car))}`;
 const recAlts = (x, game) => ({ en: recPath("en", x, game), es: recPath("es", x, game), pt: recPath("pt", x, game) });
 // Le Mans Ultimate races sports cars only
@@ -667,13 +671,22 @@ async function recordsCombo(env, l, t, c, asked, game = "iracing") {
   const x = { t, c, track, car }, cat = catFor(cm, game, x, laps[0].cat, laps[0].track, laps[0].car);
   const W = S[l], rec = fmt(laps[0].time), idx = REC_IDX[game][l];
   const title = recTitle(W, car, track, game), desc = W.cD(car, track, rec, laps.length, gn), L = (game === "lmu" ? LANDL : LAND)[l];
+  const thin = laps.length < REC_MIN, newest = Math.max(0, ...laps.map((v) => +v.created || 0));
+  // the other cars driven at this track (the game, track and car index), the most driven first, those worth finding only
+  const oth = await env.DB.prepare(
+    "SELECT car_id AS c, MAX(car) AS car, COUNT(DISTINCT user_id) AS drivers, MIN(time) AS best FROM community_laps WHERE game=?1 AND track_id=?2 AND car_id>0 AND car_id<>?3 AND COALESCE(shown,'')<>'model' GROUP BY car_id HAVING COUNT(DISTINCT user_id)>=?4 ORDER BY drivers DESC, best LIMIT 12"
+  ).bind(game, t, c, REC_MIN).all().catch(() => ({ results: [] }));
+  const others = (oth.results || []).map((o) => ({ t, c: o.c, track: nm.track, car: famName(game, o.c, o.car), best: o.best }));
+  const gapN = Math.min(laps.length, 10), stats = laps.length > 1 ? [[W.sDrv, String(laps.length) + (laps.length >= 50 ? "+" : "")], [W.sGap(gapN), "+" + (laps[gapN - 1].time - laps[0].time).toFixed(3) + " s"], [W.sNew, day(newest)]] : [];
   const body = `<p class="m"><a href="${idx}">${esc(W.recH(gn))}</a>${game === "lmu" ? "" : ` · <a href="${idx}?d=${cat}">${esc(CAT[l][cat] || "")}</a>`}</p>
 <h1>${esc(car)}<br><span class="m" style="font-size:.7em">${esc(track)}</span></h1>
 <p class="lead">${esc(W.cL(rec))}</p>
+${stats.length ? `<div class="st">${stats.map(([k, v]) => `<div><span class="m">${esc(k)}</span><b class="t">${esc(v)}</b></div>`).join("")}</div>` : ""}
 <div class="tw"><table><thead><tr><th class="n">#</th><th>${esc(W.driver)}</th><th>${esc(W.time)}</th><th>${esc(W.date)}</th></tr></thead><tbody>${laps.map((v, i) => `<tr><td class="n">${i + 1}</td><td>${esc(v.alias || W.anon)}</td><td class="t">${fmt(v.time)}</td><td class="m">${day(v.created)}</td></tr>`).join("")}</tbody></table></div>
-<div class="c" style="margin-top:22px"><h2>${esc(W.cQ)}</h2><p>${esc(W.cA(gn))}</p><div class="cta" style="margin-bottom:0"><a class="btn p" href="/dl/PitlaneHQ-Setup.exe">${esc(L.dl)}</a><a class="btn" href="${L.path}">${esc(T[l].tel[game])}</a></div></div>`;
+<div class="c" style="margin-top:22px"><h2>${esc(W.cQ)}</h2><p>${esc(W.cA(gn))}</p><div class="cta" style="margin-bottom:0"><a class="btn p" href="/dl/PitlaneHQ-Setup.exe">${esc(L.dl)}</a><a class="btn" href="${L.path}">${esc(T[l].tel[game])}</a></div></div>
+${others.length ? `<h2>${esc(W.oth(track))}</h2><div class="tw"><table><tbody>${others.map((o) => `<tr><td><a href="${recPath(l, o, game)}">${esc(fix(o.car))}</a></td><td class="t">${fmt(o.best)}</td></tr>`).join("")}</tbody></table></div>` : ""}`;
   const ld = [crumbs([["Pitlane HQ", LAND[l].path], ...(game === "lmu" ? [["Le Mans Ultimate", LANDL[l].path]] : []), [T[l].rec, idx], [car + " · " + track, recPath(l, x, game)]])];
-  return html(page(l, { title, desc, path: recPath(l, x, game), alts: recAlts(x, game), body, ld, game, mod: later(SEO_DATE, day(Math.max(0, ...laps.map((v) => +v.created || 0)))) }));
+  return html(page(l, { title, desc, path: recPath(l, x, game), alts: recAlts(x, game), body, ld, game, noindex: thin, mod: later(SEO_DATE, day(newest)) }));
 }
 
 // an address of the public pages that does not exist: a real 404 (never the app), so it is not indexed
@@ -801,7 +814,7 @@ async function sitemap(env) {
   all(REC_IDX.iracing, "daily", 0.8, newest(combos));
   if (lmuCombos.length) all(REC_IDX.lmu, "daily", 0.8, newest(lmuCombos));
   s.push(u("/downloads", "weekly", "0.7", null, SEO_DATE), u("/changelog", "weekly", "0.4", null, SEO_DATE));
-  for (const [game, cs] of [["iracing", combos], ["lmu", lmuCombos]]) for (const x of cs) all(recAlts(x, game), "daily", 0.6, day(x.upd) || SEO_DATE);
+  for (const [game, cs] of [["iracing", combos], ["lmu", lmuCombos]]) for (const x of cs) if (x.drivers >= REC_MIN) all(recAlts(x, game), "daily", 0.6, day(x.upd) || SEO_DATE);
   return new Response(`<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">\n${s.join("\n")}\n</urlset>\n`, { headers: { "content-type": "application/xml; charset=utf-8", "cache-control": "public, max-age=3600" } });
 }
 

@@ -110,7 +110,9 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
 - The welcome window of a new account (the downloads) stays until the driver closes it (`uiPanel` sticky).
 - The tour (PC app and web, not the phones; `atourStart` in index.html): six short steps over the real pages, the lap
   analyzer (lap A and B, then its charts, left out when no laps are recorded), the coach and telemetry, each one dimming
-  the rest and outlining one part with a card (Skip, Back, Next; Esc and the arrows). It starts by itself once per device
+  the rest and outlining one part with a card (Skip, Back, Next; Esc and the arrows). Going to another page it first outlines the
+  tab that opens it ("Opening Coach…"), presses it, lets the page fade in and then outlines the part, so each change is
+  seen; while the page scrolls the outline and the card move with it at once and stay on their part. It starts by itself once per device
   the first time someone signed in opens the app with no window open (`pw.tourDone`), never in the overlay windows, keeps
   the analyzer's session picker closed while it runs and goes back to the page it started from. "Take the tour" in
   Settings → About and the quick search start it again. It is the one place where a text says what a page is for (the

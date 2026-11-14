@@ -10136,33 +10136,46 @@ function atourStart(){if(ATOUR.on||OV.on)return;closeOpenPanels();ATOUR.on=windo
   g.innerHTML=`<div class="gd-dim"></div><div class="gd-dim"></div><div class="gd-dim"></div><div class="gd-dim"></div><div class="gd-ring"></div><div class="gd-card" role="dialog" aria-modal="true" aria-labelledby="gdT"></div>`;
   g.hidden=false;g.onclick=e=>{const b=e.target.closest("[data-at]");if(b)atourGo(b.dataset.at)};atourShow(0)}
 function atourEnd(){if(!ATOUR.on)return;ATOUR.on=window.__atourOn=false;store.set("pw.tourDone",true);const g=$("#apptour");if(g){g.hidden=true;g.innerHTML=""}if(ATOUR.from&&ATOUR.from!==CUR_VIEW)show(ATOUR.from)}
-function atourGo(a){if(a==="skip"||a==="done")return atourEnd();let i=ATOUR.i+(a==="back"?-1:1);
+function atourGo(a){if(a==="skip"||a==="done")return atourEnd();if($("#apptour")?.classList.contains("gd-going"))return;let i=ATOUR.i+(a==="back"?-1:1);
   // a step whose part is not on the page yet (no laps recorded) is left out
   while(i>0&&i<ATOUR.steps.length-1&&ATOUR.steps[i].skip&&(ATOUR.steps[i].v&&CUR_VIEW!==ATOUR.steps[i].v&&show(ATOUR.steps[i].v),!atourTarget(ATOUR.steps[i])))i+=a==="back"?-1:1;
   atourShow(Math.max(0,Math.min(ATOUR.steps.length-1,i)))}
-function atourShow(i){ATOUR.i=i;const s=ATOUR.steps[i],n=ATOUR.steps.length,card=$("#apptour .gd-card");if(!card)return;
-  if(s.v&&CUR_VIEW!==s.v){show(s.v);scrollTo(0,0)}
-  // the session picker the analyzer asks with stays closed while the tour runs (it asks nothing)
-  document.querySelectorAll("#spDlg:not([hidden]) > .bg").forEach(b=>b.click());
+// the tab that opens a step's page: the main tab when the page is in another group, else its sub-tab
+function atourNavBtn(v){const g=groupOf(v);if(groupOf(CUR_VIEW)!==g){const b=[...document.querySelectorAll('nav.tabs button[data-g="'+g+'"]')].find(x=>x.getBoundingClientRect().width>0);if(b)return b}
+  const b=document.querySelector('#subtabs:not([hidden]) button[data-v="'+v+'"]');return b&&b.getBoundingClientRect().width>0?b:null}
+function atourShow(i){ATOUR.i=i;const s=ATOUR.steps[i],n=ATOUR.steps.length,g=$("#apptour"),card=$("#apptour .gd-card");if(!card)return;
+  const tok=ATOUR.tok=(ATOUR.tok||0)+1,live=()=>ATOUR.on&&ATOUR.tok===tok,slow=!matchMedia("(prefers-reduced-motion:reduce)").matches;
   const [h,p]=s.t(),first=i===0,last=i===n-1;
-  card.className="gd-card"+(s.tg?"":" gd-center");
-  card.innerHTML=`<div class="gd-top"><div class="gd-prog">${ATOUR.steps.map((_,k)=>`<i${k<=i?' class="on"':""}></i>`).join("")}</div><span>${i+1} / ${n}</span></div><h3 id="gdT">${esc(h)}</h3><p>${esc(p)}</p>
-   <div class="gd-act">${last?"":`<button type="button" class="gd-skip" data-at="skip">${esc(Tx("Skip","Saltar",null,"Pular"))}</button>`}${first||last?"":`<button type="button" class="btn small" data-at="back">${esc(Tx("Back","Atrás",null,"Voltar"))}</button>`}<button type="button" class="btn small primary" data-at="${last?"done":"next"}">${esc(last?Tx("Done","Listo",null,"Concluir"):first?Tx("Start","Empezar",null,"Começar"):Tx("Next","Siguiente",null,"Próximo"))}</button></div>`;
-  const go=()=>{const el=atourTarget(s);if(el){const r=el.getBoundingClientRect();if(r.top<70||r.bottom>innerHeight-20)el.scrollIntoView({block:r.height>innerHeight*.6?"start":"center"})}atourPlace();card.querySelector('[data-at="next"],[data-at="done"]')?.focus({preventScroll:true})};
-  setTimeout(go,60);setTimeout(atourPlace,400)}
+  const fill=()=>{card.className="gd-card"+(s.tg?"":" gd-center");
+   card.innerHTML=`<div class="gd-top"><div class="gd-prog">${ATOUR.steps.map((_,k)=>`<i${k<=i?' class="on"':""}></i>`).join("")}</div><span>${i+1} / ${n}</span></div><h3 id="gdT">${esc(h)}</h3><p>${esc(p)}</p>
+   <div class="gd-act">${last?"":`<button type="button" class="gd-skip" data-at="skip">${esc(Tx("Skip","Saltar",null,"Pular"))}</button>`}${first||last?"":`<button type="button" class="btn small" data-at="back">${esc(Tx("Back","Atrás",null,"Voltar"))}</button>`}<button type="button" class="btn small primary" data-at="${last?"done":"next"}">${esc(last?Tx("Done","Listo",null,"Concluir"):first?Tx("Start","Empezar",null,"Começar"):Tx("Next","Siguiente",null,"Próximo"))}</button></div>`};
+  // the step's own part: brought into view, outlined, then its card fades in
+  const land=()=>{if(!live())return;document.querySelectorAll("#spDlg:not([hidden]) > .bg").forEach(b=>b.click());ATOUR.nav=null;fill();g.classList.remove("gd-going");
+   const el=atourTarget(s);if(el){const r=el.getBoundingClientRect();if(r.top<70||r.bottom>innerHeight-20)el.scrollIntoView({block:r.height>innerHeight*.6?"start":"center"})}
+   atourPlace();card.classList.add("gd-in");card.querySelector('[data-at="next"],[data-at="done"]')?.focus({preventScroll:true});setTimeout(atourPlace,350)};
+  if(!(s.v&&CUR_VIEW!==s.v)){land();return}
+  // another page: first the tab that opens it is outlined and pressed, then the page changes, then the part shows
+  scrollTo({top:0,behavior:slow?"smooth":"auto"}); // the sub-tabs sit at the top of the page
+  const btn=atourNavBtn(s.v),name=btn?btn.textContent.trim():"";
+  ATOUR.nav=btn;g.classList.add("gd-going");card.className="gd-card gd-mini";card.innerHTML=`<p>${esc(Tx("Opening","Abriendo",null,"Abrindo"))} <b>${esc(name)}</b>…</p>`;atourPlace();
+  const open=()=>{if(!live())return;if(btn)btn.classList.add("gd-press");show(s.v);scrollTo(0,0);if(btn)setTimeout(()=>btn.classList.remove("gd-press"),300);
+   document.querySelectorAll("#spDlg:not([hidden]) > .bg").forEach(b=>b.click());const sec=$("#v-"+s.v);if(sec&&slow){sec.classList.remove("gd-page");void sec.offsetWidth;sec.classList.add("gd-page")}
+   ATOUR.nav=null;atourPlace();setTimeout(land,slow?750:50)};
+  setTimeout(open,slow&&btn?1100:50)}
 function atourPlace(){if(!ATOUR.on)return;const g=$("#apptour");if(!g)return;const s=ATOUR.steps[ATOUR.i],card=g.querySelector(".gd-card"),ring=g.querySelector(".gd-ring"),dims=g.querySelectorAll(".gd-dim");
-  const W=innerWidth,H=innerHeight,el=atourTarget(s);let x=0,y=0,w=0,h=0;
+  const W=innerWidth,H=innerHeight,el=ATOUR.nav||(g.classList.contains("gd-going")?null:atourTarget(s));let x=0,y=0,w=0,h=0;
   if(el){const r=el.getBoundingClientRect(),pd=6;x=Math.max(4,r.left-pd);y=Math.max(4,r.top-pd);w=Math.min(W-4,r.right+pd)-x;h=Math.min(H-4,r.bottom+pd)-y;if(h<0)h=0}
   const box=(d,l,t,ww,hh)=>Object.assign(d.style,{left:l+"px",top:t+"px",width:Math.max(0,ww)+"px",height:Math.max(0,hh)+"px"});
   if(el){box(dims[0],0,0,W,y);box(dims[1],0,y+h,W,H-y-h);box(dims[2],0,y,x,h);box(dims[3],x+w,y,W-x-w,h);ring.hidden=false;box(ring,x,y,w,h)}
   else{box(dims[0],0,0,W,H);for(let k=1;k<4;k++)box(dims[k],0,0,0,0);ring.hidden=true}
   const cw=card.offsetWidth,ch=card.offsetHeight,gp=14;let cx,cy;card.classList.remove("gd-sheet");
-  if(!el){cx=(W-cw)/2;cy=(H-ch)/2}
+  if(!el){cx=(W-cw)/2;cy=card.classList.contains("gd-mini")?H/2-ch/2:(H-ch)/2}
   else if(W<700){card.classList.add("gd-sheet");cy=y+h/2>H/2?12:H-card.offsetHeight-12;cx=12}
   else if(x+w+gp+cw<W-12){cx=x+w+gp;cy=y+h/2-ch/2}else if(x-gp-cw>12){cx=x-gp-cw;cy=y+h/2-ch/2}
   else if(y+h+gp+ch<H-12){cy=y+h+gp;cx=x+w/2-cw/2}else if(y-gp-ch>12){cy=y-gp-ch;cx=x+w/2-cw/2}else{cx=W-cw-16;cy=H-ch-16}
   card.style.left=Math.max(12,Math.min(W-card.offsetWidth-12,cx))+"px";card.style.top=Math.max(12,Math.min(H-card.offsetHeight-12,cy))+"px"}
-{let raf=0;const re=()=>{if(!ATOUR.on)return;cancelAnimationFrame(raf);raf=requestAnimationFrame(atourPlace)};addEventListener("resize",re);addEventListener("scroll",re,true)}
+// scrolling or resizing: the outline and the card move at once with the page (no easing), so the outline stays on its part
+{let t=0;const re=()=>{if(!ATOUR.on)return;const g=$("#apptour");if(g)g.classList.add("gd-scroll");atourPlace();clearTimeout(t);t=setTimeout(()=>{const g=$("#apptour");if(g)g.classList.remove("gd-scroll")},200)};addEventListener("resize",re);addEventListener("scroll",re,{capture:true,passive:true})}
 addEventListener("keydown",e=>{if(!ATOUR.on)return;if(e.key==="Escape"){e.preventDefault();atourEnd()}else if(e.key==="ArrowRight"&&ATOUR.i<ATOUR.steps.length-1)atourGo("next");else if(e.key==="ArrowLeft"&&ATOUR.i>0)atourGo("back")},true);
 document.addEventListener("click",e=>{if(e.target.closest("[data-apptour]")){e.preventDefault();atourStart()}});
 // the first time someone signed in opens the app on this device (the overlay windows never)
@@ -13091,10 +13104,10 @@ html:not(.ov,.ovwin) .btn:disabled{opacity:.55}
 <style id="apptour-css">
 /* the tour (atourStart): dimmers around the part it shows, an amber outline and a card */
 #apptour[hidden]{display:none}
-#apptour .gd-dim{position:fixed;z-index:10000;background:rgba(3,5,9,.7)}
-#apptour .gd-ring{position:fixed;z-index:10001;border-radius:8px;box-shadow:0 0 0 2px var(--accent),0 0 0 6px color-mix(in srgb,var(--accent) 25%,transparent);pointer-events:none;transition:all .2s ease}
+#apptour .gd-dim{position:fixed;z-index:10000;background:rgba(3,5,9,.7);transition:left .4s ease,top .4s ease,width .4s ease,height .4s ease}
+#apptour .gd-ring{position:fixed;z-index:10001;border-radius:8px;box-shadow:0 0 0 2px var(--accent),0 0 0 6px color-mix(in srgb,var(--accent) 25%,transparent);pointer-events:none;transition:left .4s ease,top .4s ease,width .4s ease,height .4s ease}
 #apptour .gd-ring[hidden]{display:none}
-#apptour .gd-card{position:fixed;z-index:10002;width:320px;max-width:calc(100vw - 24px);background:var(--surface);color:var(--fg);border:1px solid var(--line2);border-radius:10px;box-shadow:0 18px 50px rgba(0,0,0,.55);padding:14px 16px 12px;display:grid;gap:8px;transition:left .2s ease,top .2s ease}
+#apptour .gd-card{position:fixed;z-index:10002;width:320px;max-width:calc(100vw - 24px);background:var(--surface);color:var(--fg);border:1px solid var(--line2);border-radius:10px;box-shadow:0 18px 50px rgba(0,0,0,.55);padding:14px 16px 12px;display:grid;gap:8px;transition:left .4s ease,top .4s ease}
 #apptour .gd-card.gd-center{width:380px}
 #apptour .gd-card.gd-sheet{left:12px!important;width:calc(100vw - 24px)}
 #apptour .gd-top{display:flex;align-items:center;gap:10px;font:500 11px var(--f-mono);color:var(--muted)}
@@ -13103,5 +13116,12 @@ html:not(.ov,.ovwin) .btn:disabled{opacity:.55}
 #apptour p{margin:0;font-size:14px;line-height:1.5;color:var(--fg)}
 #apptour .gd-act{display:flex;align-items:center;gap:8px;justify-content:flex-end;margin-top:2px}
 #apptour .gd-skip{margin-right:auto;background:none;border:0;color:var(--muted);font:inherit;font-size:13px;cursor:pointer;padding:6px 2px}#apptour .gd-skip:hover{color:var(--fg)}
-@media (prefers-reduced-motion:reduce){#apptour .gd-ring,#apptour .gd-card{transition:none}}
+@media (prefers-reduced-motion:reduce){#apptour .gd-ring,#apptour .gd-card,#apptour .gd-dim{transition:none}}
+#apptour .gd-card.gd-mini{width:auto;padding:10px 14px}#apptour .gd-card.gd-mini p{font-size:14px}
+#apptour .gd-card.gd-in{animation:gdIn .35s ease-out}@keyframes gdIn{from{opacity:0;transform:translateY(6px)}}
+#apptour.gd-scroll .gd-ring,#apptour.gd-scroll .gd-card,#apptour.gd-scroll .gd-dim{transition:none!important}
+#apptour.gd-going .gd-ring{animation:gdPulse 1s ease-in-out infinite}@keyframes gdPulse{50%{box-shadow:0 0 0 3px var(--accent),0 0 0 12px color-mix(in srgb,var(--accent) 18%,transparent)}}
+.gd-press{transform:scale(.94);transition:transform .15s}
+.view.gd-page{animation:gdPage .45s ease-out}@keyframes gdPage{from{opacity:0;transform:translateY(8px)}}
+@media (prefers-reduced-motion:reduce){#apptour .gd-card.gd-in,#apptour.gd-going .gd-ring,.view.gd-page{animation:none}}
 </style>

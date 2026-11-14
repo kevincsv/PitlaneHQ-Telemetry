@@ -10025,3 +10025,53 @@ html:not(.ov) #lapsBody>.la-charts .panel+.panel,html:not(.ov) #lapsBody>.la-cha
   html:not(.ov) #lapsBody>.la-split>.la-col:last-child{grid-column:2;grid-row:2}
 }
 </style>
+<style id="pw3">
+/* Pit Wall Workspace (2026-11-14): the frame. An icon rail, the pages as a dark well with the chosen one in amber,
+   the game switch on the same row. Each screen group adds its own block below (pw3-home, pw3-laps, ...). */
+@media (min-width:821px){
+  :root:not(.ov,.ovwin,.signwall,.phone){--rail:84px}
+  :root:not(.ov,.ovwin,.signwall,.phone) nav.tabs{padding:14px 6px!important;gap:4px!important;align-items:stretch}
+  :root:not(.ov,.ovwin,.signwall,.phone) nav.tabs::before{content:"PITLANE HQ"!important;height:auto!important;padding:30px 0 0!important;margin:0 0 12px!important;background:url(logo.svg) center top/22px no-repeat!important;font:700 13px/1.1 var(--f-display)!important;text-align:center;letter-spacing:.06em!important}
+  :root:not(.ov,.ovwin,.signwall,.phone) nav.tabs button{flex-direction:column!important;justify-content:center!important;align-items:center!important;gap:5px!important;padding:9px 2px!important;font:500 11.5px/1.15 var(--f-body)!important;text-align:center}
+  :root:not(.ov,.ovwin,.signwall,.phone) nav.tabs button>span{font-size:11.5px!important}
+  :root:not(.ov,.ovwin,.signwall,.phone) nav.tabs button svg{width:21px!important;height:21px!important}
+  :root:not(.ov,.ovwin,.signwall,.phone) nav.tabs button[aria-selected="true"]{color:var(--accent)!important}
+  :root:not(.ov,.ovwin,.signwall,.phone) .rail-live{flex-direction:column!important;justify-content:center;gap:4px!important;padding:8px 2px!important;font:500 11px/1.15 var(--f-body)!important;text-align:center}
+}
+html:not(.ov) .subbar{border-bottom:0!important;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+html:not(.ov) nav.subtabs{background:var(--surface)!important;border:1px solid var(--line);border-radius:10px;padding:3px;display:inline-flex!important;gap:2px!important;flex-wrap:wrap}
+html:not(.ov) nav.subtabs button{margin:0!important;padding:8px 13px!important;border:0!important;border-radius:7px!important;font:500 13.5px/1 var(--f-body)!important}
+html:not(.ov) nav.subtabs button[aria-selected="true"]{background:var(--accent)!important;color:var(--accent-ink)!important;font-weight:600!important}
+html:not(.ov) nav.subtabs button:hover:not([aria-selected="true"]){color:var(--fg)!important}
+html:not(.ov) .gseg button[aria-pressed="true"]{background:var(--accent)!important;color:var(--accent-ink)!important;box-shadow:none!important;font-weight:600!important}
+</style>
+<style id="pw3-home">
+/* Pit Wall Workspace: home */
+</style>
+<script id="pw3-home-js">
+/* Pit Wall Workspace: home helpers */
+</script>
+<style id="pw3-laps">
+/* Pit Wall Workspace: laps */
+</style>
+<script id="pw3-laps-js">
+/* Pit Wall Workspace: laps helpers */
+</script>
+<style id="pw3-analysis">
+/* Pit Wall Workspace: analysis */
+</style>
+<script id="pw3-analysis-js">
+/* Pit Wall Workspace: analysis helpers */
+</script>
+<style id="pw3-live">
+/* Pit Wall Workspace: live */
+</style>
+<script id="pw3-live-js">
+/* Pit Wall Workspace: live helpers */
+</script>
+<style id="pw3-more">
+/* Pit Wall Workspace: more */
+</style>
+<script id="pw3-more-js">
+/* Pit Wall Workspace: more helpers */
+</script>

@@ -15,6 +15,16 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   (speed, delta, throttle, brake, gear, steering, line) is one stack on the same distance axis. From 1180 px wide it is
   one workspace: the track map, sectors and corner consistency on the left, the chart stack on the right with the
   braking points and recorded laps under it. The overlay windows (`html.ov`) keep their own designs.
+- Overlays, Community, Leagues, My account and Settings in the Pit Wall Workspace look (`pw3-more` in index.html,
+  PC, web and Pitlane HQ Desktop): the title and the page's own tabs on one row (the chosen tab amber), the disciplines
+  as one row of cards under them where the page filters by discipline, then the content. Community's Summary is you in
+  the community on the left, your numbers and leaderboards in the middle and the latest records on the right. Leagues
+  has one filter bar (days, Looking for drivers as a switch, the order, the search), the leagues posted in Pitlane HQ
+  and then the most active leagues. My account is the account card on the left, the ways to sign in, security, sync
+  and devices, blocked drivers and Delete account in the middle, Pitlane HQ Pro and Admin on the right. Settings is one
+  page with its sections listed on the left (General, Game, PC and programs, VR, Ask the coach, About; a section shows
+  only when it has something on that device, so the web keeps only General, Game and About). The Overlays editor keeps
+  its list, screen and inspector, with the presets and actions in one card and the whole list of overlays shown.
 - Your iRating and licence of every discipline (`ratings.go`, `ratings.json` in the account, `/api/ratings`; iRacing's
   sessions say "Formula" for the formula cars, `discipline`/`raceDisc`/`catOf` read it as Formula Car): the game
   only says the one of the session you are in, so the PC keeps the last seen of each (every session, and from the

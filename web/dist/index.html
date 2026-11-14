@@ -2513,12 +2513,16 @@ html .hl-sec{padding:0 0 12px;border-radius:var(--radius);display:flex;flex-dire
       <p class="note" id="srcNote" style="margin-top:8px"></p>
       <div class="controls" style="margin-top:10px" id="demoCtl"><button class="btn" id="demoBtn" type="button"></button><button class="btn" id="changePC" type="button" hidden></button></div>
     </div>
+    <h2 class="sethead pw3-sh" id="set-game"></h2>
     <div class="panel s6" id="gamePanel"><div class="label" id="gameLbl"></div><div id="gameBox" hidden><div class="seg" id="gameSeg" style="margin-top:8px"></div><p class="note" id="gameNote"></p><div id="gameAsk"></div></div>
       <div class="label" style="margin-top:16px" id="gameOpenLbl"></div><div class="seg" id="gameOpenSeg" style="margin-top:8px"></div></div>
     <div class="panel s6" id="notifPanel"></div>
+    <h2 class="sethead pw3-sh" id="set-pc"></h2>
     <div class="panel s12" id="startPanel"></div>
-    <div class="panel s12" id="vrPanel" hidden></div>
     <div class="panel s12" id="appsPanel"></div>
+    <h2 class="sethead pw3-sh" id="set-vr"></h2>
+    <div class="panel s12" id="vrPanel" hidden></div>
+    <h2 class="sethead pw3-sh" id="set-ai"></h2>
     <div class="panel s12" id="aiPanel" hidden></div>
   </div>
   <h2 class="sethead" id="set-conn" data-i18n="set.conn"></h2>
@@ -8662,8 +8666,7 @@ async function renderCommunity(){const box=$("#commBody");if(!box)return;await P
     <div class="cl-pane" data-pane="board">
       ${dcards?`<div class="cl-discs">${dcards}</div>`:""}
       <div class="cmfilt"><input type="search" id="cmQ" value="${esc(CMF.q)}" placeholder="${esc(Tx("Search track or car","Buscar circuito o coche","Strecke oder Auto suchen","Buscar pista ou carro"))}" aria-label="${esc(Tx("Search","Buscar"))}">
-        <select id="cmTrk" aria-label="${esc(Tx("Track","Circuito"))}"></select><select id="cmCar" aria-label="${esc(Tx("Car","Coche"))}"></select>
-        <button type="button" class="chip" id="cmMine" aria-pressed="${CMF.mine}">${esc(Tx("Only mine","Solo los míos","Nur meine","Só os meus"))}</button></div>
+        <select id="cmTrk" aria-label="${esc(Tx("Track","Circuito"))}"></select><select id="cmCar" aria-label="${esc(Tx("Car","Coche"))}"></select></div>
       <div class="cl-title" id="cmTitle"></div><span id="cmCount" hidden></span>
       <div class="cl-board"><div id="cmLaps"><p class="note">${esc(Tx("Loading…","Cargando…"))}</p></div><aside class="cl-map" id="cmMap" aria-label="${esc(Tx("Track map by sector","Mapa del circuito por sectores","Streckenkarte nach Sektoren","Mapa da pista por setores"))}"></aside></div>
     </div>
@@ -8883,7 +8886,6 @@ function commFilters(all,again){const q=$("#cmQ"),ts=$("#cmTrk"),cs=$("#cmCar");
   let qt=0;q.oninput=()=>{clearTimeout(qt);qt=setTimeout(()=>{CMF.q=q.value;fill()},180)};
   ts.onchange=()=>{const t=+ts.value;COMMSEL={trackId:t,carId:-1};fill()};
   cs.onchange=()=>{const c=+cs.value;COMMSEL=all.find(x=>x.trackId===+ts.value&&x.carId===c);renderCommLaps()};
-  $("#cmMine").onclick=()=>{CMF.mine=!CMF.mine;$("#cmMine").setAttribute("aria-pressed",CMF.mine);fill()};
   fill(!again)}
 /* the admins of the server can remove anything shared in the community */
 const commAdmin=()=>MODE==="bridge"&&(COMPANION?!!(CP.acc&&CP.acc.admin)&&!asUser():isAdmin());
@@ -10070,8 +10072,189 @@ html:not(.ov) .gseg button[aria-pressed="true"]{background:var(--accent)!importa
 /* Pit Wall Workspace: live helpers */
 </script>
 <style id="pw3-more">
-/* Pit Wall Workspace: more */
+/* Pit Wall Workspace: more (Overlays, Community, Leagues, My account, Settings). The linear layout: the title and the
+   page's tabs on one row, the disciplines as a row of cards, then the content. The doubled ids (#v-x#v-x) outrank the
+   look layer's :is() rules without touching them. */
+
+/* ---- the header row: the title, and the page's tabs as a dark well with the chosen one amber ---- */
+html:not(.ov) :is(#v-community,#v-leagues,#v-overlays,#v-me,#v-settings)>.vhead{align-items:center;margin-bottom:16px}
+html:not(.ov) #v-community#v-community .cl-head{flex:1 1 100%;justify-content:space-between;align-items:center;gap:10px 16px}
+html:not(.ov) #v-community#v-community .vhead>.cl-head+.sub{flex-basis:100%}
+html:not(.ov) :is(#v-community#v-community .cl-tabs,#v-leagues#v-leagues>.vhead>.pw3-lgtabs){display:inline-flex;flex-wrap:wrap;gap:2px!important;margin:0!important;padding:3px;max-width:100%;background:var(--surface);border:1px solid var(--line);border-radius:10px}
+html:not(.ov) :is(#v-community#v-community .cl-tabs button,#v-leagues#v-leagues>.vhead>.pw3-lgtabs .chip){margin:0!important;padding:8px 13px!important;border:0!important;border-radius:7px!important;background:none!important;box-shadow:none!important;color:var(--muted)!important;font:500 13.5px/1 var(--f-body)!important;letter-spacing:0!important;text-transform:none!important;white-space:nowrap}
+html:not(.ov) :is(#v-community#v-community .cl-tabs button,#v-leagues#v-leagues>.vhead>.pw3-lgtabs .chip):hover:not([aria-pressed="true"]){color:var(--fg)!important}
+html:not(.ov) :is(#v-community#v-community .cl-tabs button,#v-leagues#v-leagues>.vhead>.pw3-lgtabs .chip)[aria-pressed="true"]{background:var(--accent)!important;color:var(--accent-ink)!important;font-weight:600!important}
+html:not(.ov) #v-overlays#v-overlays>.vhead>div{flex:1 1 100%;display:flex;align-items:baseline;justify-content:space-between;gap:6px 16px;flex-wrap:wrap}
+html:not(.ov) #v-overlays#v-overlays #ovSub{margin:0;font:500 13px var(--f-data);color:var(--muted)}
+
+/* ---- the disciplines: one row of cards with the app's symbols and colours ---- */
+html:not(.ov) #commBody#commBody .pw3-discs{margin:0 0 14px}
+html:not(.ov) #commBody#commBody .pw3-discs .lb-cats,html:not(.ov) #leagBody#leagBody .lb-cats.mini{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px}
+html:not(.ov) #commBody#commBody .pw3-discs .lb-cat{flex-direction:row;justify-content:flex-start;align-items:center;gap:10px;padding:10px 12px;text-align:left}
+html:not(.ov) #commBody#commBody .pw3-discs .lb-go{display:none}
+html:not(.ov) #commBody#commBody .pw3-discs .lb-t{min-width:0}
+html:not(.ov) #commBody#commBody .pw3-discs .lb-t small{display:block;font:500 11px/1.3 var(--f-data);color:var(--muted)}
+html:not(.ov) #leagBody#leagBody .lb-cats.mini .lb-cat{padding:9px 12px;gap:10px}
+html:not(.ov) #leagBody#leagBody .lb-cats.mini .lb-t{flex:1;min-width:0;display:flex;align-items:baseline;justify-content:space-between;gap:8px}
+html:not(.ov) #leagBody#leagBody .lb-cats.mini .lb-t b{font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+html:not(.ov) #leagBody#leagBody .lb-cats.mini .lb-t small{flex:none;font:500 11px var(--f-data);color:var(--muted)}
+@media (max-width:820px){html:not(.ov) #leagBody#leagBody .lb-cats.mini .lb-t{flex-direction:column;align-items:flex-start;gap:2px}html:not(.ov) #leagBody#leagBody .lb-cats.mini .lb-t b{max-width:100%}}
+/* the cards above say the discipline, so Recent records has no row of dots of its own */
+html:not(.ov) #commBody .cl:has(>.pw3-discs) #cmRecCats{display:none}
+
+/* ---- Community → Summary: you on the left, your numbers and leaderboards in the middle, the records on the right ---- */
+@media (min-width:1180px){
+  html:not(.ov) #commBody#commBody .cl-pane[data-pane="sum"]:not([hidden]){display:grid;grid-template-columns:300px minmax(0,1fr) 340px;grid-template-rows:auto auto 1fr;gap:14px;align-items:start}
+  html:not(.ov) #commBody#commBody .cl-pane[data-pane="sum"]>.cl-two{display:contents}
+  html:not(.ov) #commBody#commBody .cl-pane[data-pane="sum"]>.cl-you{grid-column:1;grid-row:1/span 3;margin:0!important}
+  html:not(.ov) #commBody#commBody .cl-pane[data-pane="sum"]>.cl-kpis{grid-column:2;grid-row:1;margin:0!important}
+  html:not(.ov) #commBody#commBody .cl-pane[data-pane="sum"]>.cl-kpis:empty{display:none}
+  html:not(.ov) #commBody#commBody .cl-pane[data-pane="sum"]>.cl-two>section:not(#cmRec){grid-column:2;grid-row:2}
+  html:not(.ov) #commBody#commBody .cl-pane[data-pane="sum"]>.cl-two>#cmRec{grid-column:3;grid-row:1/span 3}
+  html:not(.ov) #commBody#commBody .cl-pane[data-pane="sum"]>.fnPanel{grid-column:2;grid-row:3;margin:0!important}
+  html:not(.ov) #commBody#commBody .cl-pane[data-pane="sum"] .cl-you .nc-nick,html:not(.ov) #commBody#commBody .cl-pane[data-pane="sum"] .cl-you input[type=text]{max-width:100%}
+}
+
+/* ---- Leagues: one filter bar, the posted leagues, then the most active ---- */
+html:not(.ov) #leagBody#leagBody>.panel{display:flex;flex-direction:column;gap:12px}
+html:not(.ov) #leagBody#leagBody>.panel>#lgFound{order:9}
+html:not(.ov) #leagBody#leagBody>.panel>#lgFound:empty{display:none}
+html:not(.ov) #leagBody#leagBody :is(.pw3-lgposted,#lgFound){padding:12px 14px;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius)}
+html:not(.ov) #leagBody#leagBody :is(.pw3-lgposted,#lgFound)>.lgf-h{margin:0 0 12px}
+html:not(.ov) #leagBody#leagBody .pw3-lgbar{display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px;margin:0!important;padding:10px 12px;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius)}
+html:not(.ov) #leagBody#leagBody .pw3-lgbar .lg-days{display:inline-flex;flex-wrap:wrap;gap:4px}
+html:not(.ov) #leagBody#leagBody .pw3-lgbar .lg-sort{display:inline-flex;gap:2px;margin:0;padding:3px;background:var(--bg);border:1px solid var(--line);border-radius:9px}
+html:not(.ov) #leagBody#leagBody .pw3-lgbar .lg-sort .chip{border:0!important;padding:6px 11px!important}
+html:not(.ov) #leagBody#leagBody .pw3-lgbar .lg-days .chip{border-radius:999px!important}
+html:not(.ov) #leagBody#leagBody .pw3-lgbar .chip[aria-pressed="true"]{background:var(--accent)!important;border-color:var(--accent)!important;color:var(--accent-ink)!important;font-weight:600!important;box-shadow:none!important}
+html:not(.ov) #leagBody#leagBody .pw3-lgbar #lgQ{flex:1 1 220px;min-width:0;width:auto;margin:0}
+/* "Looking for drivers" reads as a switch */
+html:not(.ov) #leagBody#leagBody .pw3-lgbar #lgOpen{display:inline-flex;align-items:center;gap:9px;border:0!important;background:none!important;box-shadow:none!important;color:var(--fg)!important;font-weight:500!important;padding:6px 4px!important}
+html:not(.ov) #leagBody#leagBody .pw3-lgbar #lgOpen::before{content:"";flex:none;width:30px;height:18px;border-radius:9px;background:var(--surface2) radial-gradient(circle at 9px 50%,var(--muted) 5px,transparent 5.5px);border:1px solid var(--line2);box-sizing:border-box}
+html:not(.ov) #leagBody#leagBody .pw3-lgbar #lgOpen[aria-pressed="true"]::before{background:color-mix(in srgb,var(--accent) 35%,var(--surface2)) radial-gradient(circle at 20px 50%,var(--accent) 5px,transparent 5.5px);border-color:color-mix(in srgb,var(--accent) 60%,var(--line2))}
+
+/* ---- My account: the account on the left, the work in the middle, Pro and Admin on the right ---- */
+html:not(.ov) #v-me#v-me:has(.pw3-me)>.vhead,html:not(.ov) #meBody#meBody:has(>.pw3-me){max-width:none}
+html:not(.ov) #meBody#meBody .pw3-me{display:grid;grid-template-columns:300px minmax(0,1fr) 300px;gap:14px;align-items:start}
+html:not(.ov) #meBody#meBody .pw3-me:not(:has(>.pw3-me-r>:not([hidden]))){grid-template-columns:300px minmax(0,1fr)}
+html:not(.ov) #meBody#meBody .pw3-me:not(:has(>.pw3-me-r>:not([hidden])))>.pw3-me-r{display:none}
+html:not(.ov) #meBody#meBody :is(.pw3-me-l,.pw3-me-m,.pw3-me-r){display:grid;gap:14px;align-content:start;min-width:0}
+html:not(.ov) #meBody#meBody .pw3-me-g{display:grid;gap:8px;min-width:0}
+html:not(.ov) #meBody#meBody .pw3-me-g>.me-grp{margin:2px 0 0!important;font:600 12px/1.2 var(--f-display)!important;letter-spacing:.14em!important;text-transform:uppercase!important;color:var(--muted)!important}
+html:not(.ov) #meBody#meBody .pw3-me-gb{display:grid;gap:14px;align-items:start;min-width:0}
+html:not(.ov) #meBody#meBody .pw3-me-g.two>.pw3-me-gb{grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),1fr))}
+html:not(.ov) #meBody#meBody .pw3-me-gb>[hidden]{display:none}
+html:not(.ov) #meBody#meBody .pw3-me :is(.panel,.me-danger>.panel){margin:0}
+html:not(.ov) #meBody#meBody .pw3-me-l .me-kv{grid-template-columns:minmax(0,1fr);gap:2px 0}
+html:not(.ov) #meBody#meBody .pw3-me-l .me-kv dd{margin:0 0 8px}
+html:not(.ov) #meBody#meBody .pw3-me-l .me-kv dd{min-width:0;overflow-wrap:anywhere}
+@media (max-width:1180px){
+  html:not(.ov) #meBody#meBody .pw3-me,html:not(.ov) #meBody#meBody .pw3-me:not(:has(>.pw3-me-r>:not([hidden]))){grid-template-columns:minmax(0,1fr)}
+}
+
+/* ---- Settings: the sections on the left, every section on one page ---- */
+html:not(.ov) #v-settings .pw3-off{display:none!important}
+html:not(.ov) #v-settings#v-settings .sethead{margin:22px 0 10px!important;font:700 21px/1.1 var(--f-display)!important;letter-spacing:.04em!important;text-transform:uppercase!important;color:var(--fg)!important;scroll-margin-top:76px}
+html:not(.ov) #v-settings#v-settings #set-general{margin-top:0!important}
+html:not(.ov) #v-settings#v-settings .grid>.pw3-sh{grid-column:1/-1;margin:14px 0 0!important}
+html:not(.ov) #v-settings#v-settings #setNav a{display:block;padding:9px 12px;border:0;border-radius:7px;background:none;color:var(--muted);font:500 13.5px/1.2 var(--f-body);letter-spacing:0;text-transform:none;text-decoration:none;white-space:nowrap;box-shadow:none}
+html:not(.ov) #v-settings#v-settings #setNav a:hover{color:var(--fg)}
+html:not(.ov) #v-settings#v-settings #setNav a[aria-current="true"]{background:var(--surface2)!important;color:var(--fg)!important;box-shadow:inset 2px 0 0 var(--accent)!important;font-weight:600}
+@media (min-width:821px){
+  html:not(.ov) #v-settings#v-settings:not([hidden]){display:grid;grid-template-columns:210px minmax(0,1fr);column-gap:18px;align-items:start}
+  html:not(.ov) #v-settings#v-settings>*{grid-column:2;min-width:0}
+  html:not(.ov) #v-settings#v-settings>.vhead{grid-column:1/-1}
+  html:not(.ov) #v-settings#v-settings>#setNav:not([hidden]){grid-column:1;grid-row:2/span 40;position:sticky;top:76px;display:flex;flex-direction:column;gap:2px;margin:0;padding:8px;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius)}
+}
+@media (max-width:820px){
+  html:not(.ov) #v-settings#v-settings>#setNav:not([hidden]){display:flex;flex-wrap:nowrap;gap:4px;overflow-x:auto;margin:0 0 6px;padding:3px;background:var(--surface);border:1px solid var(--line);border-radius:10px;scrollbar-width:none}
+  html:not(.ov) #v-settings#v-settings #setNav a[aria-current="true"]{box-shadow:inset 0 -2px 0 var(--accent)!important}
+}
+
+/* ---- Overlays: presets and actions in one card, the full list, the screen and its switches in one card ---- */
+html:not(.ov) #ovTab#ovTab .ovt-bar{flex-direction:column;align-items:stretch;gap:12px;padding:12px 14px;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius)}
+html:not(.ov) #ovTab#ovTab .ovt-presets{flex:none;padding:0;background:none;border:0}
+html:not(.ov) #ovTab#ovTab .ovt-stage{padding:12px;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius)}
+html:not(.ov) #ovTab#ovTab .ovt-stage>.ovt-foot{padding-top:4px;border-top:0}
+@media (min-width:761px){html:not(.ov) #ovTab#ovTab .ovt-nav{flex:0 0 260px;max-height:none}}
 </style>
 <script id="pw3-more-js">
-/* Pit Wall Workspace: more helpers */
+/* Pit Wall Workspace: more helpers. Overlays, Community, Leagues, My account and Settings in the linear layout: the
+   title and the page's tabs on one row, the disciplines as a row of cards under them, then the content. Each render
+   function of these views runs as before; the pieces it draws are then placed (moved, never redrawn, so every button
+   keeps its handler). */
+(function(){
+const q=(s,r)=>(r||document).querySelector(s),qa=(s,r)=>[...(r||document).querySelectorAll(s)];
+const el=(tag,cls,html)=>{const e=document.createElement(tag);if(cls)e.className=cls;if(html!=null)e.innerHTML=html;return e};
+const after=(name,fn)=>{const f=window[name];if(typeof f!=="function")return;window[name]=function(){const r=f.apply(this,arguments);if(r&&typeof r.then==="function")return r.then(v=>{try{fn()}catch(e){}return v});try{fn()}catch(e){}return r}};
+
+/* ---------- Community: the disciplines above Leaderboards and Recent records (the same cards, the same filter) ---------- */
+function commArrange(){const cl=q("#commBody > .cl");if(!cl)return;
+  const d=q('.cl-pane[data-pane="board"] > .cl-discs',cl);if(d){d.classList.add("pw3-discs");cl.insertBefore(d,cl.firstChild)}
+  commDiscs()}
+function commDiscs(){const d=q("#commBody .pw3-discs");if(d)d.hidden=!(typeof CMV!=="undefined"&&(CMV==="board"||CMV==="rec"))}
+after("renderCommunity",commArrange);after("commPanes",commDiscs);
+
+/* ---------- Leagues: the tabs beside the title, one filter bar, the posted leagues then the most active ---------- */
+const postedT=()=>Tx("Posted in Pitlane HQ","Publicadas en Pitlane HQ",null,"Publicadas no Pitlane HQ");
+function leagArrange(){const sec=q("#v-leagues"),box=q("#leagBody");if(!sec||!box)return;const head=q(":scope > .vhead",sec);
+  if(head)qa(".pw3-lgtabs",head).forEach(x=>x.remove());
+  const tabs=q(".lg-tabs",box);if(tabs&&head){tabs.classList.add("pw3-lgtabs");head.appendChild(tabs)}
+  const bar=q(".lg-filters",box),s=q("#lgQ",box);if(bar){bar.classList.add("pw3-lgbar");if(s&&s.parentNode!==bar){s.removeAttribute("style");bar.appendChild(s)}}
+  const g=q(".panel > .lg-grid",box);if(g&&q(".lg-post",g)&&!q(".pw3-lgposted",box)){const w=el("section","pw3-lgposted");w.appendChild(el("div","lgf-h pw3-lgh",`<h2>${esc(postedT())}</h2>`));g.parentNode.insertBefore(w,g);w.appendChild(g)}
+  leagFound()}
+function leagFound(){const box=q("#leagBody"),f=box&&q("#lgFound",box);if(!f||!f.innerHTML.trim())return;
+  const cards=qa(".lg-grid .lgf-card",box).filter(c=>!f.contains(c));if(!cards.length)return;
+  let g=q(".pw3-lgfgrid",f);if(!g){g=el("div","lg-grid pw3-lgfgrid");f.appendChild(g)}cards.forEach(c=>g.appendChild(c));
+  qa(".lg-grid:not(.pw3-lgfgrid)",box).forEach(x=>{if(!x.children.length)x.hidden=true})}
+after("renderLeagues",leagArrange);after("drawLeagFound",leagFound);
+
+/* ---------- My account: the account on the left, the work in the middle, Pitlane HQ Pro and Admin on the right ---------- */
+const waysT=()=>Tx("Ways to sign in","Formas de iniciar sesión",null,"Formas de entrar");
+function meArrange(){const box=q("#meBody"),cols=box&&q(":scope > .me-cols.me-all",box);if(!cols)return;
+  const G=el("div","pw3-me"),L=el("aside","pw3-me-l"),M=el("div","pw3-me-m"),R=el("aside","pw3-me-r");
+  const grp=(t,cls,items)=>{items=items.filter(Boolean);if(!items.length)return null;const s=el("section","pw3-me-g "+(cls||""));if(t)s.appendChild(el("div","me-grp",esc(t)));const w=el("div","pw3-me-gb");w.append(...items);s.appendChild(w);return s};
+  const ways=grp(waysT(),"two",[q("#meSteam",cols),q("#meDisc",cols)]);
+  const sec2=q(".me-sec2",cols);let sec=null;if(sec2){const t=q(".me-grp",sec2);sec=grp(t?t.textContent:"","two",[...sec2.children].filter(x=>!x.classList.contains("me-grp")))}
+  const sync=q(".me-sync",cols);let syn=null;if(sync){const t=q(".me-grp",sync);syn=grp(t?t.textContent:"","two",[...sync.children].filter(x=>!x.classList.contains("me-grp")))}
+  const blocks=q("#meBlocks",cols),pro=q("#mePro",cols),adm=q("#meAdmin",box),admP=adm&&adm.closest(".panel"),del=q(":scope > .me-danger",box);
+  const c1=q(".me-c1",cols);if(c1)L.append(...[...c1.children].filter(x=>!x.classList.contains("me-sec2")));
+  [ways,sec,syn,blocks,del].forEach(x=>{if(x)M.appendChild(x)});
+  [pro,admP].forEach(x=>{if(x)R.appendChild(x)});
+  G.append(L,M,R);cols.replaceWith(G)}
+after("renderMe",meArrange);
+
+/* ---------- Settings: every section on one page, the section list on the left ---------- */
+const SET_T={"set-game":()=>Tx("Game","Juego",null,"Jogo"),"set-pc":()=>Tx("PC and programs","PC y programas",null,"PC e programas"),"set-vr":()=>"VR","set-ai":()=>Tx("Ask the coach","Pregunta al coach",null,"Pergunte ao coach")};
+const shown=e=>{if(!e)return false;for(let x=e;x&&x.id!=="v-settings";x=x.parentElement)if(x.hidden)return false;return true};
+let setBusy=false;
+function setSync(){const sec=q("#v-settings"),nav=q("#setNav");if(!sec||!nav||setBusy)return;setBusy=true;
+  try{
+    // the sub-sections of General: a title shows when one of its panels has something
+    qa(".pw3-sh",sec).forEach(h=>{const t=SET_T[h.id];if(t&&h.textContent!==t())h.textContent=t();let n=h.nextElementSibling,on=false;
+      while(n&&!n.classList.contains("sethead")){if(!n.hidden&&n.innerHTML.trim())on=true;n=n.nextElementSibling}
+      if(h.hidden===on)h.hidden=!on});
+    // Connections stays out while it is switched off (CONN_ON)
+    const off=typeof CONN_ON!=="undefined"&&!CONN_ON;let inConn=false;
+    [...sec.children].forEach(e=>{if(e.classList.contains("sethead"))inConn=e.id==="set-conn";e.classList.remove("sec-off");if(e.classList.contains("vhead")||e===nav)return;e.classList.toggle("pw3-off",off&&inConn)});
+    const hs=qa(".sethead",sec).filter(h=>shown(h)&&!h.classList.contains("pw3-off")),cur=(q('a[aria-current="true"]',nav)||{}).hash||"";
+    const html=hs.map(h=>`<a href="#${h.id}" aria-current="${"#"+h.id===cur||(!cur&&h===hs[0])}">${esc(h.textContent)}</a>`).join("");
+    if(nav.innerHTML!==html)nav.innerHTML=html;if(nav.hidden)nav.hidden=false;
+    qa("a",nav).forEach(a=>a.onclick=e=>{e.preventDefault();setGo(a.hash.slice(1))});
+  }finally{setBusy=false}}
+function setGo(id){const h=document.getElementById(id),nav=q("#setNav");if(nav)qa("a",nav).forEach(a=>a.setAttribute("aria-current",a.hash==="#"+id));if(h&&shown(h))Element.prototype.scrollIntoView.call(h,{behavior:"smooth",block:"start"})}
+// the old one-section-at-a-time: a link that opened a section now scrolls to it
+window.setSection=function(id){if(id==="set-phone"){show("share");return}if(id==="set-conn"&&typeof CONN_ON!=="undefined"&&!CONN_ON)id="set-general";setSync();setGo(id)};
+qa("#v-settings .sethead").forEach(h=>{delete h.scrollIntoView});
+// the section on the screen is the one lit in the list
+let spyT=0;addEventListener("scroll",()=>{if(spyT||typeof CUR_VIEW==="undefined"||CUR_VIEW!=="settings")return;spyT=setTimeout(()=>{spyT=0;const nav=q("#setNav");if(!nav)return;
+  const hs=qa("a",nav).map(a=>document.getElementById(a.hash.slice(1))).filter(Boolean);let cur=hs[0];hs.forEach(h=>{if(h.getBoundingClientRect().top<140)cur=h});
+  if(innerHeight+scrollY>=document.documentElement.scrollHeight-4)cur=hs[hs.length-1];if(cur)qa("a",nav).forEach(a=>a.setAttribute("aria-current",a.hash==="#"+cur.id))},80)},{passive:true});
+{const sec=q("#v-settings");if(sec){let t=0;new MutationObserver(()=>{if(setBusy)return;clearTimeout(t);t=setTimeout(setSync,30)}).observe(sec,{subtree:true,childList:true,attributes:true,attributeFilter:["hidden"]})}}
+after("renderSettings",setSync);after("applyI18n",setSync);setSync();
+
+/* ---------- Overlays: when they open and close by themselves sits under the screen ---------- */
+function ovArrange(){const f=q("#ovtFoot"),st=q("#ovTab .ovt-stage");if(f&&st&&f.parentNode!==st)st.appendChild(f)}
+after("renderOverlaysTab",ovArrange);
+})();
 </script>

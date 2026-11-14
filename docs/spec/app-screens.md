@@ -101,6 +101,13 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   the app, same account, Telemetry → Connect, accept on the PC; a QR to the web app and the Android download) and
   sharing with a code; no Wi-Fi addresses, PIN or local links (`renderPhoneHow`).
 - The welcome window of a new account (the downloads) stays until the driver closes it (`uiPanel` sticky).
+- The tour (PC app and web, not the phones; `atourStart` in index.html): six short steps over the real pages, the lap
+  analyzer (lap A and B, then its charts, left out when no laps are recorded), the coach and telemetry, each one dimming
+  the rest and outlining one part with a card (Skip, Back, Next; Esc and the arrows). It starts by itself once per device
+  the first time someone signed in opens the app with no window open (`pw.tourDone`), never in the overlay windows, keeps
+  the analyzer's session picker closed while it runs and goes back to the page it started from. "Take the tour" in
+  Settings → About and the quick search start it again. It is the one place where a text says what a page is for (the
+  owner's choice, 2026-11-14).
 - Home, clean data (`homeCleanHTML`, signed in, the Pit Wall Workspace layout, `pw3-home` in index.html): the greeting
   and, while a session runs, the live bar under it (the PC's state and Open live telemetry), four numbers (the laps and
   the hours on track this month, from the account's sessions, the races this month and the best result), then two

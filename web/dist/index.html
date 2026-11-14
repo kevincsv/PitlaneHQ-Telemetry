@@ -3705,7 +3705,7 @@ function lapCloudBar(px="lap"){cloudDemoSync();let sel=$("#"+px+"Sess"),selB=$("
   if(!coachCloudOn()){[selB,add].forEach(x=>{if(x)x.hidden=true});{const f=$("#"+px+"Filt");if(f)f.hidden=true}lapCtx(px);if(!sel)return;if(!pcPick()){sel.hidden=true;return}
     sel.hidden=false;if(CLOUD.sessions===null||CLOUD.game!==aGame()){sel.innerHTML=liveOpt();cloudLoadSessions(true);return}
     sel.innerHTML=liveOpt()+(CLOUD.sessions||[]).map(x=>"<option value=\""+esc(x.id)+"\">"+sessLabel(x)+"</option>").join("");sel.value="__live";return}
-  [sel,add].forEach(x=>{if(x)x.hidden=false});if(add)add.checked=!!LAPF.extra;if(!selB.dataset.bound){selB.dataset.bound="1";selB.onchange=()=>{if(selB.value&&selB.value!==CLOUD.bid)cloudLoadSession(selB.value,"B")}}if(!add.dataset.bound){add.dataset.bound="1";add.onchange=()=>{LAPF.extra=!!add.checked;lapCloudBar(px);rerender()}}if(CLOUD.sessions===null||CLOUD.game!==aGame()){cloudLoadSessions();return}const ss=CLOUD.sessions||[];if(!ss.length){sel.innerHTML=selB.innerHTML="<option value=\"\">"+esc(Tx("No sessions","Sin sesiones","Keine Sitzungen","Sem sessões"))+"</option>";sessFilter(px,[]);lapCtx(px);return}if(SESS_ASK===CUR_VIEW&&ss.length>1&&!OV.on){SESS_ASK="";setTimeout(()=>{if(groupOf(CUR_VIEW)==="analysis"&&!$("#spDlg:not([hidden])"))openSessPicker(px)},60)}const pool=sessFilter(px,ss),current=pool.some(x=>x.id===CLOUD.sid)?CLOUD.sid:pool[0].id;if(current!==CLOUD.sid){CLOUD.sid=current;cloudLoadSession(current);return}const Acur=ss.find(x=>x.id===current)||null;const compatible=(a,b)=>{if(!a||!b)return false;const n=v=>String(v||"").toLowerCase().normalize("NFD").replace(/[\\u0300-\\u036f]/g,"").replace(/[^a-z0-9]+/g,"");return n(a.track)===n(b.track)&&n(a.car)===n(b.car)&&n(a.track_config)===n(b.track_config)&&String(a.game||"")===String(b.game||"")};const bss=ss.filter(x=>x.id!==current&&compatible(Acur,x));const bcurrent=bss.some(x=>x.id===CLOUD.bid)?CLOUD.bid:(bss[0]||{}).id;const fmtSess=sessLabel;sel.innerHTML=liveOpt()+pool.map(x=>"<option value=\""+esc(x.id)+"\">"+fmtSess(x)+"</option>").join("");sel.value=current;lapCtx(px);selB.innerHTML=bss.map(x=>"<option value=\""+esc(x.id)+"\">"+fmtSess(x)+"</option>").join("")||"<option value=\"\">"+esc(Tx("No compatible session","No hay sesión compatible","Keine kompatible Sitzung","Sem sessão compatível"))+"</option>";selB.value=bcurrent;selB.hidden=!LAPF.extra;const bl=sel.parentElement&&sel.parentElement.querySelector(".lapblabel");if(bl)bl.hidden=!LAPF.extra;if(LAPF.extra&&bcurrent&&bcurrent!==CLOUD.bid)cloudLoadSession(bcurrent,"B")}function renderLaps(){lapsDirty=false;const LP=analysisLaps(),cloud=coachCloudOn();if(cloud)cloudFresh();
+  [sel,add].forEach(x=>{if(x)x.hidden=false});if(add)add.checked=!!LAPF.extra;if(!selB.dataset.bound){selB.dataset.bound="1";selB.onchange=()=>{if(selB.value&&selB.value!==CLOUD.bid)cloudLoadSession(selB.value,"B")}}if(!add.dataset.bound){add.dataset.bound="1";add.onchange=()=>{LAPF.extra=!!add.checked;lapCloudBar(px);rerender()}}if(CLOUD.sessions===null||CLOUD.game!==aGame()){cloudLoadSessions();return}const ss=CLOUD.sessions||[];if(!ss.length){sel.innerHTML=selB.innerHTML="<option value=\"\">"+esc(Tx("No sessions","Sin sesiones","Keine Sitzungen","Sem sessões"))+"</option>";sessFilter(px,[]);lapCtx(px);return}if(SESS_ASK===CUR_VIEW&&ss.length>1&&!OV.on&&!window.__atourOn){SESS_ASK="";setTimeout(()=>{if(groupOf(CUR_VIEW)==="analysis"&&!$("#spDlg:not([hidden])"))openSessPicker(px)},60)}const pool=sessFilter(px,ss),current=pool.some(x=>x.id===CLOUD.sid)?CLOUD.sid:pool[0].id;if(current!==CLOUD.sid){CLOUD.sid=current;cloudLoadSession(current);return}const Acur=ss.find(x=>x.id===current)||null;const compatible=(a,b)=>{if(!a||!b)return false;const n=v=>String(v||"").toLowerCase().normalize("NFD").replace(/[\\u0300-\\u036f]/g,"").replace(/[^a-z0-9]+/g,"");return n(a.track)===n(b.track)&&n(a.car)===n(b.car)&&n(a.track_config)===n(b.track_config)&&String(a.game||"")===String(b.game||"")};const bss=ss.filter(x=>x.id!==current&&compatible(Acur,x));const bcurrent=bss.some(x=>x.id===CLOUD.bid)?CLOUD.bid:(bss[0]||{}).id;const fmtSess=sessLabel;sel.innerHTML=liveOpt()+pool.map(x=>"<option value=\""+esc(x.id)+"\">"+fmtSess(x)+"</option>").join("");sel.value=current;lapCtx(px);selB.innerHTML=bss.map(x=>"<option value=\""+esc(x.id)+"\">"+fmtSess(x)+"</option>").join("")||"<option value=\"\">"+esc(Tx("No compatible session","No hay sesión compatible","Keine kompatible Sitzung","Sem sessão compatível"))+"</option>";selB.value=bcurrent;selB.hidden=!LAPF.extra;const bl=sel.parentElement&&sel.parentElement.querySelector(".lapblabel");if(bl)bl.hidden=!LAPF.extra;if(LAPF.extra&&bcurrent&&bcurrent!==CLOUD.bid)cloudLoadSession(bcurrent,"B")}function renderLaps(){lapsDirty=false;const LP=analysisLaps(),cloud=coachCloudOn();if(cloud)cloudFresh();
   {const lc=$("#lapComm");if(lc){lc.innerHTML=esc(Tx("Compare with the community","Comparar con la comunidad","Mit der Community vergleichen","Comparar com a comunidade"))+proB();lc.onclick=pickCommLap;lc.hidden=false}} /* also before the laps arrive */lapCloudBar();if(cloud&&CLOUD.sessions===null){$("#lapsEmpty").hidden=false;$("#lapsEmpty").textContent=CLOUD.failAt&&CLOUD.err?CLOUD.err:Tx("Loading your laps from your account…","Cargando tus vueltas de tu cuenta…","Lade deine Runden aus deinem Konto…","Carregando suas voltas da sua conta…");$("#lapsBody").hidden=true;$("#lapCompareHeads").innerHTML="";$("#lapAnalyzer").hidden=true;cloudLoadSessions();return}
   const has=LP.length>=2||(LP.length>=1&&CREF.length>0)||(cloud&&LAPF.extra&&LP.length>0&&CLOUD.lapsB.length>0);const lc=$("#lapComm");if(lc){lc.innerHTML=esc(Tx("Compare with the community","Comparar con la comunidad","Mit der Community vergleichen","Comparar com a comunidade"))+proB();lc.onclick=pickCommLap;lc.hidden=false} /* always there, like in the Coach */const tc=$("#lapToCoach");if(tc){tc.textContent=Tx("Plan in the Coach","Plan en el Coach","Plan im Coach","Plano no Coach");tc.onclick=openInCoach;tc.hidden=!has}
   // sharing the fastest lap lives in Community (Share from your account), so the analyzer and the Coach have the same bar
@@ -6945,7 +6945,8 @@ function qsItems(){const g=k=>L("g."+groupOf(k),true).replace(/<[^>]+>/g,"");
   const acts=[{k:"a:race",label:Tx("Add a race to the calendar","Añadir una carrera al calendario"),words:"add race calendar añadir carrera",run:()=>{show("calendar");openRacePicker()}},
     {k:"a:lang",label:"Language · Idioma · Sprache · Idioma",words:"language idioma sprache english español deutsch português",run:()=>chooseLanguage(false)},
     {k:"a:theme",label:Tx("Light / dark theme","Tema claro / oscuro"),words:"theme tema dark light claro oscuro",run:()=>{store.set("pw.theme",document.documentElement.getAttribute("data-theme")==="light"?"dark":"light");applyTheme();rerenderAll()}},
-    {k:"a:fs",label:Tx("Full screen","Pantalla completa"),words:"fullscreen pantalla completa",run:()=>$("#fsBtn").click()}];
+    {k:"a:fs",label:Tx("Full screen","Pantalla completa"),words:"fullscreen pantalla completa",run:()=>$("#fsBtn").click()},
+    {k:"a:tour",label:Tx("Take the tour","Ver el tour",null,"Fazer o tour"),words:"tour tutorial guide help guía ayuda ajuda",run:()=>setTimeout(atourStart,50)}];
   return[...pages,...acts,...sets]}
 const qsNorm=s=>String(s).toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"");
 let QS={items:[],sel:0};
@@ -7404,7 +7405,7 @@ function renderStartPanel(){const box=$("#startPanel");if(!box)return;if(MODE!==
   $("#sStart").onclick=()=>{CFG.startWithWindows=!CFG.startWithWindows;saveCfg();renderStartPanel()};
   if($("#sTray"))$("#sTray").onclick=()=>{CFG.trayOnClose=CFG.trayOnClose===false;saveCfg();renderStartPanel()}}
 function renderAbout(){const box=$("#aboutPanel");if(!box)return;if(!PRO.tried)loadPro().then(()=>{if(PRO.donate)renderAbout()});setTimeout(()=>box.querySelectorAll("[data-wn]").forEach(b=>b.onclick=openWhatsNew),0);const v=(INFO&&INFO.version&&INFO.version!=="companion"&&INFO.version)||WEB_VERSION;
-  const wnBtn=`<p style="margin:8px 0"><button type="button" class="btn small" data-wn>${esc(Tx("What's new","Novedades","Neuigkeiten","Novidades"))}</button></p>`;
+  const wnBtn=`<p style="margin:8px 0;display:flex;gap:8px;flex-wrap:wrap"><button type="button" class="btn small" data-wn>${esc(Tx("What's new","Novedades","Neuigkeiten","Novidades"))}</button><button type="button" class="btn small" data-apptour>${esc(Tx("Take the tour","Ver el tour",null,"Fazer o tour"))}</button></p>`;
   if(COMPANION){box.innerHTML=`<dl class="kv"><dt>${esc(Tx("Version","Versión","Version","Versão"))}</dt><dd class="mono">Pitlane HQ web ${esc(verText(WEB_VERSION))}</dd></dl>${wnBtn}${supportHTML()}${feedbackHTML()}${viewHTML()}${demoHTML()}${drinksHTML()}`;wireDemo(box);wireView(box);wireDrinks(box);return}
   box.innerHTML=`<dl class="kv"><dt>${esc(Tx("Version","Versión"))}</dt><dd class="mono">Pitlane HQ ${esc(verText(v||WEB_VERSION))}</dd></dl>${wnBtn}${supportHTML()}${feedbackHTML()}${viewHTML()}${demoHTML()}${drinksHTML()}
     <p class="note">${esc(Tx("Only what you choose leaves this PC: your account, your laps and what you share with the community. Icons: Lucide (ISC licence).","Solo sale de este PC lo que tú eliges: tu cuenta, tus vueltas y lo que compartes con la comunidad. Iconos: Lucide (licencia ISC).","Nur was du wählst, verlässt diesen PC: dein Konto, deine Runden und was du mit der Community teilst. Icons: Lucide (ISC-Lizenz).","Só sai deste PC o que você escolhe: sua conta, suas voltas e o que você compartilha com a comunidade. Ícones: Lucide (licença ISC)."))}</p>`;wireDemo(box);wireView(box);wireDrinks(box)}
@@ -10102,6 +10103,60 @@ async function askShare(){if(MODE!=="bridge"||REMOTE||COMPANION||OV.on||$("#shar
   
   $("#saOK").onclick=async()=>{const k=m.querySelector('input[name="saK"]:checked').value,on=k!=="no";
     try{COMM=await jpost("/api/community",{action:"save",nameKind:c.nameKind||"nick",alias:c.alias||"",url:"",shareTimes:on,shareTraces:on,shareReports:on,anonymous:k==="anon",deleteAfter:on?$("#saDA").value:""})}catch(e){toast(e.message)}m.remove()}}
+/* ---------- the tour: a short first look at the analyzer, the coach and telemetry ----------
+   Once per device after the first sign-in (pw.tourDone), again from Settings → About or the quick search. Each step
+   opens its page, dims the rest and outlines one part with a short card (Next, Back, Skip; Esc and the arrows). This
+   is the one place in the app where a text says what a screen is for (the owner's choice). */
+const ATOUR={on:false,i:0,from:null,steps:[]};
+function atourSteps(){
+  const live=["#v-live:not([hidden]) #pwCommandDash","#v-live:not([hidden]) .lhead","#v-pc:not([hidden]) .panel","#v-pc:not([hidden])"];
+  return[
+  {t:()=>[Tx("A quick look around","Un vistazo rápido",null,"Uma olhada rápida"),Tx("The three things that matter most in Pitlane HQ. It takes under a minute.","Las tres cosas más importantes de Pitlane HQ. Tarda menos de un minuto.",null,"As três coisas mais importantes do Pitlane HQ. Leva menos de um minuto.")]},
+  {v:"laps",tg:["#v-laps .lapcontrols","#lapsEmpty:not([hidden])","#v-laps .vhead"],t:()=>[Tx("Lap analyzer","Analizador de vueltas",null,"Analisador de voltas"),Tx("Choose a session and lap A, then the lap to beat as B. Your best lap starts as B.","Elige una sesión y la vuelta A, y luego la vuelta a batir como B. Tu mejor vuelta empieza como B.",null,"Escolha uma sessão e a volta A, depois a volta a bater como B. Sua melhor volta começa como B.")]},
+  {v:"laps",tg:["#lapsBody:not([hidden]) .la-charts","#lapsBody:not([hidden])","#lapAnalyzer:not([hidden])"],skip:1,t:()=>[Tx("Where the time goes","Dónde se va el tiempo",null,"Onde o tempo vai embora"),Tx("Move along any chart and the others and the map follow the same point. The corners that cost the most come first.","Recorre cualquier gráfica y las demás y el mapa siguen el mismo punto. Primero las curvas que más cuestan.",null,"Percorra qualquer gráfico e os outros e o mapa seguem o mesmo ponto. Primeiro as curvas que mais custam.")]},
+  {v:"coach",tg:["#coachBody .co-planp","#coachBody .pnl","#v-coach .lapcontrols"],min:60,t:()=>[Tx("Coach","Coach",null,"Coach"),Tx("The coach turns lap A into a plan for your next session, the biggest gain first, corner by corner.","El coach convierte la vuelta A en un plan para tu próxima sesión, primero lo que más gana, curva a curva.",null,"O coach transforma a volta A num plano para a próxima sessão, primeiro o que mais ganha, curva a curva.")]},
+  {v:"live",tg:live,t:()=>[Tx("Telemetry","Telemetría",null,"Telemetria"),Tx("While you drive, your times, delta, fuel and the cars around you show here live. Your phone can show them too.","Mientras conduces, tus tiempos, el delta, el combustible y los coches de alrededor se ven aquí en directo. Tu móvil también puede mostrarlos.",null,"Enquanto você pilota, seus tempos, o delta, o combustível e os carros ao redor aparecem aqui ao vivo. Seu celular também pode mostrá-los.")]},
+  {end:1,t:()=>[Tx("You are ready","Ya está",null,"Tudo pronto"),Tx("Drive a lap with Pitlane HQ Agent running and it shows up in the analyzer. You can see this again in Settings → About.","Da una vuelta con Pitlane HQ Agent abierto y aparecerá en el analizador. Puedes volver a verlo en Ajustes → Acerca de.",null,"Dê uma volta com o Pitlane HQ Agent aberto e ela aparece no analisador. Dá para ver de novo em Configurações → Sobre.")]}]}
+// the first part on the page, one that fits the window when there is one (a page-tall panel leaves no room for the card)
+function atourTarget(s){if(!s.tg)return null;let big=null;for(const q of s.tg)for(const el of document.querySelectorAll(q)){const r=el.getBoundingClientRect();if(r.width>0&&r.height>(s.min||0)){if(r.height<=innerHeight*.75)return el;big=big||el}}return big}
+function atourStart(){if(ATOUR.on||OV.on)return;closeOpenPanels();ATOUR.on=window.__atourOn=true;ATOUR.i=0;ATOUR.from=CUR_VIEW;ATOUR.steps=atourSteps();
+  let g=$("#apptour");if(!g){g=document.createElement("div");g.id="apptour";document.body.appendChild(g)}
+  g.innerHTML=`<div class="gd-dim"></div><div class="gd-dim"></div><div class="gd-dim"></div><div class="gd-dim"></div><div class="gd-ring"></div><div class="gd-card" role="dialog" aria-modal="true" aria-labelledby="gdT"></div>`;
+  g.hidden=false;g.onclick=e=>{const b=e.target.closest("[data-at]");if(b)atourGo(b.dataset.at)};atourShow(0)}
+function atourEnd(){if(!ATOUR.on)return;ATOUR.on=window.__atourOn=false;store.set("pw.tourDone",true);const g=$("#apptour");if(g){g.hidden=true;g.innerHTML=""}if(ATOUR.from&&ATOUR.from!==CUR_VIEW)show(ATOUR.from)}
+function atourGo(a){if(a==="skip"||a==="done")return atourEnd();let i=ATOUR.i+(a==="back"?-1:1);
+  // a step whose part is not on the page yet (no laps recorded) is left out
+  while(i>0&&i<ATOUR.steps.length-1&&ATOUR.steps[i].skip&&(ATOUR.steps[i].v&&CUR_VIEW!==ATOUR.steps[i].v&&show(ATOUR.steps[i].v),!atourTarget(ATOUR.steps[i])))i+=a==="back"?-1:1;
+  atourShow(Math.max(0,Math.min(ATOUR.steps.length-1,i)))}
+function atourShow(i){ATOUR.i=i;const s=ATOUR.steps[i],n=ATOUR.steps.length,card=$("#apptour .gd-card");if(!card)return;
+  if(s.v&&CUR_VIEW!==s.v){show(s.v);scrollTo(0,0)}
+  // the session picker the analyzer asks with stays closed while the tour runs (it asks nothing)
+  document.querySelectorAll("#spDlg:not([hidden]) > .bg").forEach(b=>b.click());
+  const [h,p]=s.t(),first=i===0,last=i===n-1;
+  card.className="gd-card"+(s.tg?"":" gd-center");
+  card.innerHTML=`<div class="gd-top"><div class="gd-prog">${ATOUR.steps.map((_,k)=>`<i${k<=i?' class="on"':""}></i>`).join("")}</div><span>${i+1} / ${n}</span></div><h3 id="gdT">${esc(h)}</h3><p>${esc(p)}</p>
+   <div class="gd-act">${last?"":`<button type="button" class="gd-skip" data-at="skip">${esc(Tx("Skip","Saltar",null,"Pular"))}</button>`}${first||last?"":`<button type="button" class="btn small" data-at="back">${esc(Tx("Back","Atrás",null,"Voltar"))}</button>`}<button type="button" class="btn small primary" data-at="${last?"done":"next"}">${esc(last?Tx("Done","Listo",null,"Concluir"):first?Tx("Start","Empezar",null,"Começar"):Tx("Next","Siguiente",null,"Próximo"))}</button></div>`;
+  const go=()=>{const el=atourTarget(s);if(el){const r=el.getBoundingClientRect();if(r.top<70||r.bottom>innerHeight-20)el.scrollIntoView({block:r.height>innerHeight*.6?"start":"center"})}atourPlace();card.querySelector('[data-at="next"],[data-at="done"]')?.focus({preventScroll:true})};
+  setTimeout(go,60);setTimeout(atourPlace,400)}
+function atourPlace(){if(!ATOUR.on)return;const g=$("#apptour");if(!g)return;const s=ATOUR.steps[ATOUR.i],card=g.querySelector(".gd-card"),ring=g.querySelector(".gd-ring"),dims=g.querySelectorAll(".gd-dim");
+  const W=innerWidth,H=innerHeight,el=atourTarget(s);let x=0,y=0,w=0,h=0;
+  if(el){const r=el.getBoundingClientRect(),pd=6;x=Math.max(4,r.left-pd);y=Math.max(4,r.top-pd);w=Math.min(W-4,r.right+pd)-x;h=Math.min(H-4,r.bottom+pd)-y;if(h<0)h=0}
+  const box=(d,l,t,ww,hh)=>Object.assign(d.style,{left:l+"px",top:t+"px",width:Math.max(0,ww)+"px",height:Math.max(0,hh)+"px"});
+  if(el){box(dims[0],0,0,W,y);box(dims[1],0,y+h,W,H-y-h);box(dims[2],0,y,x,h);box(dims[3],x+w,y,W-x-w,h);ring.hidden=false;box(ring,x,y,w,h)}
+  else{box(dims[0],0,0,W,H);for(let k=1;k<4;k++)box(dims[k],0,0,0,0);ring.hidden=true}
+  const cw=card.offsetWidth,ch=card.offsetHeight,gp=14;let cx,cy;card.classList.remove("gd-sheet");
+  if(!el){cx=(W-cw)/2;cy=(H-ch)/2}
+  else if(W<700){card.classList.add("gd-sheet");cy=y+h/2>H/2?12:H-card.offsetHeight-12;cx=12}
+  else if(x+w+gp+cw<W-12){cx=x+w+gp;cy=y+h/2-ch/2}else if(x-gp-cw>12){cx=x-gp-cw;cy=y+h/2-ch/2}
+  else if(y+h+gp+ch<H-12){cy=y+h+gp;cx=x+w/2-cw/2}else if(y-gp-ch>12){cy=y-gp-ch;cx=x+w/2-cw/2}else{cx=W-cw-16;cy=H-ch-16}
+  card.style.left=Math.max(12,Math.min(W-card.offsetWidth-12,cx))+"px";card.style.top=Math.max(12,Math.min(H-card.offsetHeight-12,cy))+"px"}
+{let raf=0;const re=()=>{if(!ATOUR.on)return;cancelAnimationFrame(raf);raf=requestAnimationFrame(atourPlace)};addEventListener("resize",re);addEventListener("scroll",re,true)}
+addEventListener("keydown",e=>{if(!ATOUR.on)return;if(e.key==="Escape"){e.preventDefault();atourEnd()}else if(e.key==="ArrowRight"&&ATOUR.i<ATOUR.steps.length-1)atourGo("next");else if(e.key==="ArrowLeft"&&ATOUR.i>0)atourGo("back")},true);
+document.addEventListener("click",e=>{if(e.target.closest("[data-apptour]")){e.preventDefault();atourStart()}});
+// the first time someone signed in opens the app on this device (the overlay windows never)
+(()=>{if(document.documentElement.classList.contains("ov"))return;let n=0;const t=setInterval(()=>{n++;if(n>200||store.get("pw.tourDone",false)){clearInterval(t);return}
+  if(OV.on||ATOUR.on||document.querySelector(".uidlg")||document.hidden)return;if(typeof ME==="undefined"||!ME||!ME.signedIn||(typeof signWallOn==="function"&&signWallOn()))return;
+  clearInterval(t);atourStart()},3000)})();
 </script>
 
 <script src="pitwall-overlays.js"></script><script src="pitwall-overlays-settings.js"></script>
@@ -12983,4 +13038,20 @@ html:not(.ov,.ovwin) body:not(#_):not(#__) :is(.btn:not(.primary,.on,.active,.dc
 html:not(.ov,.ovwin) .btn:disabled{opacity:.55}
 /* the laps column of Laps: its top always in view, the lap list scrolls inside */
 @media (min-width:1101px){html:not(.ov) #v-laps .lws-l.pw3-fit{min-height:0;overflow-y:auto;scrollbar-width:thin}html:not(.ov) #v-laps .lws-l.pw3-fit>*{flex:none}html:not(.ov) #v-laps .lws-l.pw3-fit>.lws-laps{flex:1 1 auto;min-height:280px;display:flex;flex-direction:column;overflow:hidden}html:not(.ov) #v-laps .lws-l.pw3-fit>.lws-laps>:last-child{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;overflow:hidden}html:not(.ov) #v-laps .lws-l.pw3-fit>.lws-laps>:last-child>*{flex:none}html:not(.ov) #v-laps .lws-l.pw3-fit>.lws-laps>:last-child>.lapsel{flex:1 1 auto;min-height:0;overflow-y:auto;scrollbar-width:thin}}}
+<style id="apptour-css">
+/* the tour (atourStart): dimmers around the part it shows, an amber outline and a card */
+#apptour[hidden]{display:none}
+#apptour .gd-dim{position:fixed;z-index:10000;background:rgba(3,5,9,.7)}
+#apptour .gd-ring{position:fixed;z-index:10001;border-radius:8px;box-shadow:0 0 0 2px var(--accent),0 0 0 6px color-mix(in srgb,var(--accent) 25%,transparent);pointer-events:none;transition:all .2s ease}
+#apptour .gd-ring[hidden]{display:none}
+#apptour .gd-card{position:fixed;z-index:10002;width:320px;max-width:calc(100vw - 24px);background:var(--surface);color:var(--fg);border:1px solid var(--line2);border-radius:10px;box-shadow:0 18px 50px rgba(0,0,0,.55);padding:14px 16px 12px;display:grid;gap:8px;transition:left .2s ease,top .2s ease}
+#apptour .gd-card.gd-center{width:380px}
+#apptour .gd-card.gd-sheet{left:12px!important;width:calc(100vw - 24px)}
+#apptour .gd-top{display:flex;align-items:center;gap:10px;font:500 11px var(--f-mono);color:var(--muted)}
+#apptour .gd-prog{display:flex;gap:3px;flex:1}#apptour .gd-prog i{flex:1;height:3px;border-radius:2px;background:var(--line2)}#apptour .gd-prog i.on{background:var(--accent)}
+#apptour h3{margin:0;font:600 18px/1.25 var(--f-body)}
+#apptour p{margin:0;font-size:14px;line-height:1.5;color:var(--fg)}
+#apptour .gd-act{display:flex;align-items:center;gap:8px;justify-content:flex-end;margin-top:2px}
+#apptour .gd-skip{margin-right:auto;background:none;border:0;color:var(--muted);font:inherit;font-size:13px;cursor:pointer;padding:6px 2px}#apptour .gd-skip:hover{color:var(--fg)}
+@media (prefers-reduced-motion:reduce){#apptour .gd-ring,#apptour .gd-card{transition:none}}
 </style>

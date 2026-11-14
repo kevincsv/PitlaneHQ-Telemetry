@@ -27,3 +27,5 @@ Status as of 2026-11-07. The look is described in `docs/spec/app-screens.md` ("T
   with the artifact's own CSS rules, the page tabs and game switch in the header row, card contour B (the owner's
   pick from https://claude.ai/artifact/6EeQx4An9ZRcxZag8JsurS), and the Select sessions window only lists the
   ticked session's car and track, fits the window and has bigger controls. Beta only.
+- 2026-11-14: the first-run tour (analyzer, coach, telemetry; `docs/spec/app-screens.md`) is on the working branch for
+  the next PC and web beta build. Not on the phones (the owner's choice).

@@ -19,7 +19,7 @@ Status as of 2026-11-07. Behaviour is in `docs/spec/sync-and-accounts.md`, `admi
   within 2 months of stopping), plus a $29.99 lifetime offer in the first 2 months after release. The discount is not
   built yet. RevenueCat for the phones later.
 - The phones show no donation link (store rules).
-- Invite a friend (2026-11-14, on the working branch, waiting for "sube"): a friend's week of use gives both a month of
+- Invite a friend (2026-11-14, on master, live after the next cloud and Windows build): a friend's week of use gives both a month of
   Pro, counted from now and saved until Pro is switched on. Needs migration 0100 and a Windows build for the agent to
   pass the code box through (older agents show the card without it).
 - Owner's to-do: upload the square icon in Stripe Branding.

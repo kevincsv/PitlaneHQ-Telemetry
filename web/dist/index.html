@@ -12972,3 +12972,11 @@ function leagCard(x){const w=leagWhen(x),loc=locale(),tz=x.tz||"UTC",n=leagNext(
   <div class="lg-acts">${x.discord?`<a class="btn small primary lg-dc" href="${esc(x.discord)}" target="_blank" rel="noopener" data-lghit="discord" data-lg="${esc(x.id)}">${esc(Tx("Join the Discord","Únete al Discord",null,"Entre no Discord"))}</a>`:""}${x.web?`<a class="btn small" href="${esc(x.web)}" target="_blank" rel="noopener" data-lghit="web" data-lg="${esc(x.id)}">${esc(Tx("Website","Web","Website","Site"))}</a>`:""}</div>
   ${x.created?`<small class="pw3-posted">${esc(Tx("Posted","Publicada",null,"Publicada"))} ${esc(agoTxt(x.created))}</small>`:""}</div>`}
 </script>
+<style id="pw3-contrast">
+/* secondary buttons and chips inside cards: a lighter fill and a brighter edge than the card (dark look) */
+@media (prefers-color-scheme:dark){html:not(.ov,.ovwin):not([data-theme="light"]){--btn2:#273145;--btn2h:#313c53;--edge2:#56637d}}
+html[data-theme="dark"]:not(.ov,.ovwin){--btn2:#273145;--btn2h:#313c53;--edge2:#56637d}
+html:not(.ov,.ovwin) body:not(#_):not(#__) :is(.btn:not(.primary,.on,.active,.dc,.gg,.danger,[aria-pressed="true"],[aria-selected="true"]),.chip:not(.on,.active,[id],[aria-pressed="true"],[aria-pressed=true],[aria-selected="true"]),#commBody .cl-link,.hl-links .cl-link,.inv-code .mono){background:var(--btn2,var(--surface2))!important;border:1px solid var(--edge2,var(--line2))!important;color:var(--fg)}
+html:not(.ov,.ovwin) body:not(#_):not(#__) :is(.btn:not(.primary,.on,.active,.dc,.gg,.danger,[aria-pressed="true"],[aria-selected="true"]),.chip:not(.on,.active,[id],[aria-pressed="true"],[aria-pressed=true],[aria-selected="true"]),#commBody .cl-link,.hl-links .cl-link):hover{background:var(--btn2h,var(--surface2))!important;border-color:var(--faint)!important}
+html:not(.ov,.ovwin) .btn:disabled{opacity:.55}
+</style>

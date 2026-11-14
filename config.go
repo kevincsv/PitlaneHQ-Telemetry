@@ -160,12 +160,12 @@ func autoOverlays() {
 		st := currentStatus()
 		c, _ := settingsSnapshot()
 		inCar, _ := telBool("IsOnTrack")
-		if st.connected() && inCar && !opened && c.AutoStart && (len(c.AutoWidgets) > 0 || c.UI["autoKind"] != nil) && !st.Demo {
+		if st.connected() && inCar && !opened && c.AutoStart && len(c.AutoWidgets) > 0 && !st.Demo {
 			open := map[string]bool{}
 			for _, n := range listOverlays() {
 				open[n] = true
 			}
-			for _, wdg := range proAutoList(autoKindFor(c, currentGame(), yamlField(sessionYAML(), "Category"))) { // only what works in this game (gamesupport.go)
+			for _, wdg := range proAutoList(autoFor(c, currentGame())) { // only what works in this game (gamesupport.go)
 				if !open[wdg] && widgetRe.MatchString(wdg) && wdg != "*" {
 					go openNamedOverlay(wdg)
 				}

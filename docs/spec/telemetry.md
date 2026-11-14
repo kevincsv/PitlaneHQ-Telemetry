@@ -40,16 +40,31 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   LapDistPct goes back to 0 and times it from SessionTime from there, like the agent's (`cloud.go`): iRacing counts the
   lap and restarts its lap clock a second or more after the line, so the first metres were missing and carried the lap
   before's clock (the delta jumped at the start). On the web, a hidden tab closes the live link (nobody watching), except
-  with Telemetry open: the link stays so the laps driven meanwhile are recorded, and only the drawing waits for the tab. Standings: gap to the leader or interval, the class filter only when several classes race, your
-  position lap by lap (`renderStandings`, `drawPosHistory`); Tyres show their wear. The rev beep page is a list of cars
+  with Telemetry open: the link stays so the laps driven meanwhile are recorded, and only the drawing waits for the tab. Standings: one panel titled Standings with the driver count, the class filter (only when several classes
+  race) and gap to the leader or interval at its right, the session as cards over the table, and your position lap by
+  lap under it (`renderStandings`, `drawPosHistory`); Tyres: one Tyres panel with the working window, the pit note and
+  the four tyres side by side, Setup hints beside it, Balance as cards, Brake pressure · live and Pit readings, and they
+  show their wear. The rev beep page is a list of cars
   and the chosen car's mode as three cards (iRacing lights, My laps, My RPM with one number or one per gear) and its
   sound (early, pitch, volume, test). Overlays is one list (`renderOverlaysTab`, `.ov-row`): every overlay always (no switch for the
   experimental ones, which keep their "Experimental" pill and ask for Pro on a PC without it), each with its games and its
   "when I get in the car" switch for each game, Open/Closed and Configure, the presets and the buttons on top, "Place on the screen" shows
   the screen editor. The PC app never zooms (Ctrl+wheel and Ctrl +/− blocked, `IsZoomControlEnabled` off).
-- In Basic, the Telemetry screen shows only the essentials (`LIVE_ESSENTIAL`: flags, the top card with position, delta, last
-  lap and fuel beside the cars ahead and behind, incidents and what is left, the delta bar, the map, the relative,
-  fuel and incidents); every other widget is one click away in Layout ("Essentials" puts them back). The live map is
+- The Telemetry screen (Pit Wall Workspace, `pw3-live` in index.html) opens with the track's name big, the session
+  under it, the modes and Layout at its right, then a status strip (`pw3Strip`: position, lap, delta, last lap, fuel,
+  the cars ahead and behind, incidents and what is left). Its default arrangement is the Workspace desk on screens wider
+  than 1100 px (`pw3Mason`): the Relative with the session as cards and the incident log at the left; the car strip
+  (gear, speed, RPM and the car's controls), the four lap times, the delta bar, mini-sectors, Inputs, Fuel and Engine &
+  track side by side, Tyres, the gap graph beside the pit calculator and the driving stats beside the braking markers in
+  the middle; the map, the track position bar, the radar beside the g-force and the weather at the right. Panels keep
+  their drag handles, height resize and Layout. Dragging a panel onto another column moves it there
+  (`pw.liveWsCol`). A driver with a layout of their own from before (`pw.order`, `pw.sizes`, `pw.heights`) keeps the
+  classic 12-column grid (`pw.liveWs` 0) until Layout's reset, which brings the desk back. Narrower screens stack the
+  panels in the desk's order.
+- In Basic, the Telemetry screen shows only the essentials (`LIVE_ESSENTIAL`: flags, the car strip, the lap times, the
+  delta bar, the relative, inputs, fuel, engine & track, tyres, the map and the track position bar); every other widget
+  is one click away in Layout ("Essentials" puts them back). A Basic still on the old essentials moves to these once
+  (`pw.liveV` 3); one the driver changed stays as it is. The live map is
   the coach maps' road with depth, its start/finish line, the direction arrow and the official turns; it has no
   "ideal" line.
 - Live in the web and phone apps: Connect/Disconnect for your own PC (presence only until Connect),

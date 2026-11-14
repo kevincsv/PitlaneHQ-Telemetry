@@ -9184,7 +9184,7 @@ function homeCleanHTML(){loadRatingsSoon();homeRacesHTML();homeActivityHTML();
   // Pit Wall Workspace: the recent sessions on the left (sticky); on the right the days, the licences and your feedback
   // side by side, and the most active leagues under them
   return h+`<div class="hs3"><aside class="hs3-l">${sesH}</aside><div class="hs3-r"><div class="hs3-g3">${daysH}${right}${homeFb3()}</div>${homeLeag3()}</div></div>`}
-function renderHome(fromLoad){const box=$("#homeBox");if(!box)return;if(!fromLoad&&!HOME.busy&&(!SER||(!ACCSUM&&!(MODE==="bridge"&&ACC.loggedIn&&ACCDATA))||(MODE==="bridge"&&ACC.loggedIn&&!HOME.acct)))homeLoad();
+function renderHome(fromLoad){const box=$("#homeBox");if(!box)return;if(typeof homeWire3!=="function"){if(!renderHome.wait){renderHome.wait=1;document.addEventListener("DOMContentLoaded",()=>{renderHome.wait=0;renderHome(fromLoad)},{once:true})}return}if(!fromLoad&&!HOME.busy&&(!SER||(!ACCSUM&&!(MODE==="bridge"&&ACC.loggedIn&&ACCDATA))||(MODE==="bridge"&&ACC.loggedIn&&!HOME.acct)))homeLoad();
   if(!SER&&HOME.tries++<25)setTimeout(()=>{if(CUR_VIEW==="home")renderHome()},700);
   const me=homeMember(),now=Date.now(),loc=locale(),ini=(me.name||"?").split(/\s+/).map(w=>w[0]).join("").slice(0,2).toUpperCase();
   const dt=t=>t?new Date(t).toLocaleDateString(loc,{month:"short",year:"numeric"}):"–";

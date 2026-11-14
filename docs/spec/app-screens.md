@@ -119,11 +119,13 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   account's sessions (index `sessions_uploader_started`) and never their laps: each session keeps its lap count, best,
   time on track and friends' names (`SESSION_SUMS` on every change, all of them again once a day, migration 0078),
   because every open app asks about once a minute and D1 limits the rows read per day.
-- Analysis's sub-tabs: Laps, Coach, My sessions (`cloudlaps`, every session in the account) and My races (`races`, the
-  race summaries with the driver notes); Home's "See all" opens My races. The phone apps have the same four (and
-  Telemetry, Standings and Tyres under Telemetry). A finished race shows no notice on the PC
-  (it appears in My races); only the phones tell you.
-- The Pit Wall Workspace layout of these three (Nov 2026, `pw3-analysis` at the end of index.html; it lays out what the
+- Analysis's sub-tabs: Laps, Coach, My sessions (`cloudlaps`, every session in the account, the race summaries and the
+  driver notes) and Statistics (`stats`). My races has no tab since Nov 2026 (the owner's choice): every link, hash or
+  search that opened it (`races`, Home's "See all") opens My sessions, and a race summary's "Summary ›" opens the race's
+  whole report in its window (`openRace`). The phone apps have the same four (and Telemetry, Standings and Tyres under
+  Telemetry). A finished race shows no notice on the PC (it appears in My sessions' race summaries); only the phones tell
+  you.
+- The Pit Wall Workspace layout of these screens (Nov 2026, `pw3-analysis` at the end of index.html; it lays out what the
   app's own render functions draw, so every button, vote and link stays). No subtitle under their titles. They use the
   design's own components (panels with a #2a3140 edge, radius 8 and padding 10, titles in Barlow capitals, its pills,
   buttons, tables and corner cards). From 1100 px wide they are workspaces; under that one column (the right column
@@ -138,17 +140,25 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
     line under them) with Practise and the votes at its foot. The sectors are a table (A, B, gap and the lap). With no
     other driver known, the pace card says "No other driver of this car and track is known yet. Your laps are compared
     with each other until community laps come in.".
+  - Coach's left column starts with the Laps panel of the Lap analyzer (in place of the picker bar and the "Looking at"
+    line). My laps lists the laps of the chosen sessions under a header per session (Select sessions picks them), A and B
+    on each lap set the Coach's lap A and its reference, and a star marks the fastest valid lap. Community lists the
+    community and model laps the Coach can compare with, under "Compare with the community". Lap A against lap B stays on
+    top.
   - My sessions: the filters, then Best per car and track on the left (your best lap and laps of each car and track,
     newest first; a card opens that session) and My sessions and Race summaries side by side. The session pills
     (Race, Practice…) are all one width with the word centred, a star sits beside the fastest lap of each car and track,
-    and every race summary row ends in an amber "Summary ›" and opens My races with that race.
-  - My races: a strip of race cards (date, track, start → finish, iRating change and incidents) chooses the race shown
-    under it, the newest by default. Then the race's header (start, finish, incidents, iRating, Full report › for the
-    whole report with the results, the story, the braking, Discord and delete), Lap times, Race summary beside What went
-    well (and Where you lost time), Driver notes, and the My races table (a row shows its summary on top). Lap times is
-    the design's chart (a line, a line at the race average, a dot per lap, red for an incident, blue for a pit stop,
-    hollow for a lap not valid); the finger or the mouse reads a lap under it. The four summary cards over the table are
-    gone.
+    and every race summary row ends in an amber "Summary ›" and opens that race's report.
+  - My sessions ends with Driver notes (your marks on other drivers, with its search), in the design's panel.
+  - Statistics: the period (4 weeks, 3 months, 12 months, All) at the top right, then Laps, Time on track, Sessions and
+    Races of the period with the change on the period before. Best lap over time (a car and track chosen from the
+    period's, the most driven first, the personal best in amber) beside Consistency over time (the spread of each
+    session's lap times, the server's `cons` or worked out from its valid laps within 3 % of its best). iRating after each
+    race by discipline (Community's colours) beside Races (the finish, P1 on top, and the incidents as bars). Time on
+    track per week (the server's `secs`, or laps × best lap) beside Most driven (the period's cars and tracks with
+    sessions, laps, best lap and last driven; a row opens its best session). Every chart reads the point under the
+    pointer or the finger in the line under it. With no sessions it says one sentence. The demo's races come from
+    `pitwall-demo.js`.
 
 - Home shows the track guide's brief (the three corners that matter most) while the agent sees a session on a track and
   car the model knows (`homeBriefHTML`); pressed, it opens the whole guide.

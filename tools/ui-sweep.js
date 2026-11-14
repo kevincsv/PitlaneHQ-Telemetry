@@ -5,7 +5,7 @@
 const { chromium } = require('playwright');
 const OUT = process.argv[2] || require('path').join(require('os').tmpdir(), 'pitlanehq-ui-sweep'); // never a folder named "undefined" in the repository
 require('fs').mkdirSync(OUT + '/ui', { recursive: true });
-const views=["home","laps","coach","cloudlaps","races","live","overlays","community","leagues","me","settings","admin"];
+const views=["home","laps","coach","cloudlaps","stats","live","overlays","community","leagues","me","settings","admin"];
 const ADMIN_SECS=["summary","users","feedback","content","sessions","coach","health","server"]; // the admin page's sections, each checked too
 (async () => {
   const b = await chromium.launch();

@@ -2,8 +2,8 @@
 
 How this part of Pitlane HQ behaves. Read it before changing this area; keep it up to date when the behaviour changes.
 
-- Le Mans Ultimate is supported like iRacing (PC, web and phones), labelled "Beta" wherever it is offered (drivers report
-  problems to support@pitlanehq.app): read from the game's own `LMU_Data` shared memory
+- Le Mans Ultimate is supported like iRacing (PC, web and phones), with no "Beta" label since 2026-11-14 (the owner's
+  choice): read from the game's own `LMU_Data` shared memory
   (Settings → Gameplay → Enable Plugins, nothing to install), turned into an iRacing-shaped image (`lmu.go`,
   `irimage.go`) so every overlay, the recorder, the journal and the coach work unchanged. Its official sectors are
   learnt from the game's sector changes (`lmuSectors`, kept per track in `lmu-sectors.json`) and written as

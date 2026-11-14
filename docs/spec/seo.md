@@ -8,7 +8,7 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   which the landing shows). Descriptions are short and plain, never hype. The public pages (`cloud/src/seo.js`, plain HTML,
   English, Spanish and Portuguese, each naming the other two with hreflang (`pt-BR`) and x-default): for iRacing
   /iracing-telemetry, /es/telemetria-iracing and /pt/telemetria-iracing and the overlays (/iracing-overlays,
-  /es/overlays-iracing, /pt/overlays-iracing); for Le Mans Ultimate (beta) /le-mans-ultimate-telemetry,
+  /es/overlays-iracing, /pt/overlays-iracing); for Le Mans Ultimate /le-mans-ultimate-telemetry,
   /es/telemetria-le-mans-ultimate, /pt/telemetria-le-mans-ultimate and /le-mans-ultimate-overlays,
   /es/overlays-le-mans-ultimate, /pt/overlays-le-mans-ultimate (short addresses such as /lmu, /lmu-telemetry,
   /lmu-overlays, /lmu-coach go there with 301); the guides (`seo-topics.js`, one page per thing people search for, each in

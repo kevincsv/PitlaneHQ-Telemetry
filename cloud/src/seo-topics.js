@@ -26,7 +26,7 @@ export const TOPICS = [
         ["Is the iRacing coach free?", "Yes. The coach and the telemetry of Pitlane HQ are free."],
         ["Where does the faster lap come from?", "From the laps of Pitlane HQ drivers on the same car and track, the fastest lap and the next level above your pace."],
         ["Do I need to set anything up?", "No. Install Pitlane HQ Agent on the PC where you race, drive, and open Analysis → Coach."],
-        ["Does the coach work in Le Mans Ultimate?", "Yes. It works the same in Le Mans Ultimate, whose support is in beta."],
+        ["Does the coach work in Le Mans Ultimate?", "Yes. It works the same in Le Mans Ultimate."],
       ],
     },
     es: {
@@ -45,7 +45,7 @@ export const TOPICS = [
         ["¿El coach de iRacing es gratis?", "Sí. El coach y la telemetría de Pitlane HQ son gratis."],
         ["¿De dónde sale la vuelta más rápida?", "De las vueltas de los pilotos de Pitlane HQ en el mismo coche y circuito, la más rápida y el siguiente nivel por encima de tu ritmo."],
         ["¿Hay que configurar algo?", "No. Instala Pitlane HQ Agent en el PC donde corres, conduce y abre Análisis → Coach."],
-        ["¿El coach funciona en Le Mans Ultimate?", "Sí. Funciona igual en Le Mans Ultimate, cuyo soporte está en beta."],
+        ["¿El coach funciona en Le Mans Ultimate?", "Sí. Funciona igual en Le Mans Ultimate."],
       ],
     },
     pt: {
@@ -64,7 +64,7 @@ export const TOPICS = [
         ["O coach de iRacing é grátis?", "Sim. O coach e a telemetria do Pitlane HQ são grátis."],
         ["De onde vem a volta mais rápida?", "Das voltas dos pilotos do Pitlane HQ no mesmo carro e pista, a mais rápida e o próximo nível acima do seu ritmo."],
         ["Preciso configurar algo?", "Não. Instale o Pitlane HQ Agent no PC onde você corre, pilote e abra Análise → Coach."],
-        ["O coach funciona no Le Mans Ultimate?", "Sim. Funciona igual no Le Mans Ultimate, cujo suporte está em beta."],
+        ["O coach funciona no Le Mans Ultimate?", "Sim. Funciona igual no Le Mans Ultimate."],
       ],
     },
   },
@@ -85,7 +85,7 @@ export const TOPICS = [
       faq: [
         ["Can I compare my lap with someone else's?", "Yes, with any lap on the Pitlane HQ leaderboards for the same car and track."],
         ["Can I see it without the PC?", "Yes. Your laps are in your account, so open them at pitlanehq.app or in the Android app."],
-        ["Can I compare Le Mans Ultimate laps?", "Yes. Lap comparison works the same in Le Mans Ultimate, in beta."],
+        ["Can I compare Le Mans Ultimate laps?", "Yes. Lap comparison works the same in Le Mans Ultimate."],
         ["Is it free?", "Yes."],
       ],
     },
@@ -104,7 +104,7 @@ export const TOPICS = [
       faq: [
         ["¿Puedo comparar mi vuelta con la de otro?", "Sí, con cualquier vuelta de las clasificaciones de Pitlane HQ del mismo coche y circuito."],
         ["¿Puedo verlo sin el PC?", "Sí. Tus vueltas están en tu cuenta, así que ábrelas en pitlanehq.app o en la app de Android."],
-        ["¿Puedo comparar vueltas de Le Mans Ultimate?", "Sí. La comparación funciona igual en Le Mans Ultimate, en beta."],
+        ["¿Puedo comparar vueltas de Le Mans Ultimate?", "Sí. La comparación funciona igual en Le Mans Ultimate."],
         ["¿Es gratis?", "Sí."],
       ],
     },
@@ -123,7 +123,7 @@ export const TOPICS = [
       faq: [
         ["Posso comparar minha volta com a de outro?", "Sim, com qualquer volta das classificações do Pitlane HQ no mesmo carro e pista."],
         ["Posso ver sem o PC?", "Sim. Suas voltas estão na sua conta, então abra em pitlanehq.app ou no app Android."],
-        ["Posso comparar voltas do Le Mans Ultimate?", "Sim. A comparação funciona igual no Le Mans Ultimate, em beta."],
+        ["Posso comparar voltas do Le Mans Ultimate?", "Sim. A comparação funciona igual no Le Mans Ultimate."],
         ["É grátis?", "Sim."],
       ],
     },
@@ -145,7 +145,7 @@ export const TOPICS = [
       faq: [
         ["Where do the braking points come from?", "From real laps of the same car and track, the next level above your pace, or your own best lap while there is none."],
         ["Do the markers work in VR?", "Yes. The overlays also show in the headset through SteamVR."],
-        ["Do they work in Le Mans Ultimate?", "Yes. The braking markers and the coach work in Le Mans Ultimate too, in beta."],
+        ["Do they work in Le Mans Ultimate?", "Yes. The braking markers and the coach work in Le Mans Ultimate too."],
         ["Is it free?", "Yes."],
       ],
     },
@@ -164,7 +164,7 @@ export const TOPICS = [
       faq: [
         ["¿De dónde salen los puntos de frenada?", "De vueltas reales del mismo coche y circuito, el siguiente nivel por encima de tu ritmo, o tu propia mejor vuelta mientras no lo haya."],
         ["¿Las marcas funcionan en VR?", "Sí. Los overlays también se ven en las gafas a través de SteamVR."],
-        ["¿Funcionan en Le Mans Ultimate?", "Sí. Las marcas de frenada y el coach también funcionan en Le Mans Ultimate, en beta."],
+        ["¿Funcionan en Le Mans Ultimate?", "Sí. Las marcas de frenada y el coach también funcionan en Le Mans Ultimate."],
         ["¿Es gratis?", "Sí."],
       ],
     },
@@ -183,7 +183,7 @@ export const TOPICS = [
       faq: [
         ["De onde vêm os pontos de frenagem?", "De voltas reais do mesmo carro e pista, o próximo nível acima do seu ritmo, ou a sua melhor volta enquanto não houver."],
         ["As marcas funcionam em VR?", "Sim. Os overlays também aparecem nos óculos pelo SteamVR."],
-        ["Funcionam no Le Mans Ultimate?", "Sim. As marcas de frenagem e o coach também funcionam no Le Mans Ultimate, em beta."],
+        ["Funcionam no Le Mans Ultimate?", "Sim. As marcas de frenagem e o coach também funcionam no Le Mans Ultimate."],
         ["É grátis?", "Sim."],
       ],
     },
@@ -362,7 +362,7 @@ export const TOPICS = [
         ["A friend can watch", "Make a share code on the PC and a friend watches your telemetry from anywhere. They only watch."],
         ["Your laps afterwards", "Every lap goes to your account. Analyse it on the phone, compare it and read your race summaries."],
         ["On Android and in any browser", "The Android app, or pitlanehq.app in any browser. The iPhone app is coming to the App Store, and until then the web works on the iPhone."],
-        ["Le Mans Ultimate too", "The live view works the same with Le Mans Ultimate, in beta."],
+        ["Le Mans Ultimate too", "The live view works the same with Le Mans Ultimate."],
       ],
       faq: [
         ["Does the phone need to be on the same Wi-Fi?", "No. It works from anywhere, over Wi-Fi or mobile data."],
@@ -380,7 +380,7 @@ export const TOPICS = [
         ["Un amigo puede verla", "Crea un código en el PC y un amigo ve tu telemetría desde cualquier sitio. Solo mira."],
         ["Tus vueltas, después", "Cada vuelta va a tu cuenta. Analízala en el móvil, compárala y lee tus resúmenes de carrera."],
         ["En Android y en cualquier navegador", "La app de Android, o pitlanehq.app en cualquier navegador. La app de iPhone llegará a la App Store, y mientras tanto la web funciona en el iPhone."],
-        ["También en Le Mans Ultimate", "La vista en vivo funciona igual con Le Mans Ultimate, en beta."],
+        ["También en Le Mans Ultimate", "La vista en vivo funciona igual con Le Mans Ultimate."],
       ],
       faq: [
         ["¿El móvil tiene que estar en el mismo Wi-Fi?", "No. Funciona desde cualquier sitio, con Wi-Fi o datos."],
@@ -398,7 +398,7 @@ export const TOPICS = [
         ["Um amigo pode assistir", "Crie um código no PC e um amigo vê sua telemetria de qualquer lugar. Só assiste."],
         ["Suas voltas, depois", "Cada volta vai para a sua conta. Analise no celular, compare e leia seus resumos de corrida."],
         ["No Android e em qualquer navegador", "O app Android, ou pitlanehq.app em qualquer navegador. O app de iPhone vai chegar à App Store, e até lá a web funciona no iPhone."],
-        ["Também no Le Mans Ultimate", "A visão ao vivo funciona igual com o Le Mans Ultimate, em beta."],
+        ["Também no Le Mans Ultimate", "A visão ao vivo funciona igual com o Le Mans Ultimate."],
       ],
       faq: [
         ["O celular precisa estar no mesmo Wi-Fi?", "Não. Funciona de qualquer lugar, com Wi-Fi ou dados."],
@@ -420,12 +420,12 @@ export const TOPICS = [
         ["Overlays", "Relative, standings, radar, delta bar, fuel, tyres, track map, braking markers and more, also in VR."],
         ["Everywhere", "Windows for driving, and the web and Android to look at your laps and follow your race live."],
         ["What is free", "During the beta everything is free. The telemetry, the coach, the leaderboards, the basic overlays and the phone app stay free after it."],
-        ["Free Le Mans Ultimate telemetry", "The same app records Le Mans Ultimate, in beta, with nothing to install in the game."],
+        ["Free Le Mans Ultimate telemetry", "The same app records Le Mans Ultimate, with nothing to install in the game."],
       ],
       faq: [
         ["Is it really free?", "Yes. The PC app, the web and the Android app are free."],
         ["Looking for a free alternative to RaceLab, Garage 61, Track Titan or VRS?", "Pitlane HQ brings overlays, lap telemetry with comparisons and a coach with reference laps from its own leaderboards together in one free app."],
-        ["Which sims?", "iRacing and Le Mans Ultimate (in beta). ACC and Assetto Corsa are in development."],
+        ["Which sims?", "iRacing and Le Mans Ultimate. ACC and Assetto Corsa are in development."],
       ],
     },
     es: {
@@ -439,12 +439,12 @@ export const TOPICS = [
         ["Overlays", "Relative, clasificación, radar, barra de delta, combustible, neumáticos, mapa, marcas de frenada y más, también en VR."],
         ["En todas partes", "Windows para conducir, y la web y Android para ver tus vueltas y seguir tu carrera en vivo."],
         ["Qué es gratis", "Durante la beta todo es gratis. La telemetría, el coach, las clasificaciones, los overlays básicos y la app del móvil siguen gratis después."],
-        ["Telemetría gratis para Le Mans Ultimate", "La misma app graba Le Mans Ultimate, en beta, sin instalar nada en el juego."],
+        ["Telemetría gratis para Le Mans Ultimate", "La misma app graba Le Mans Ultimate, sin instalar nada en el juego."],
       ],
       faq: [
         ["¿De verdad es gratis?", "Sí. La app del PC, la web y la app de Android son gratis."],
         ["¿Buscas una alternativa gratis a RaceLab, Garage 61, Track Titan o VRS?", "Pitlane HQ junta overlays, telemetría de vueltas con comparaciones y un coach con vueltas de referencia de sus propias clasificaciones en una sola app gratis."],
-        ["¿Qué simuladores?", "iRacing y Le Mans Ultimate (en beta). ACC y Assetto Corsa están en desarrollo."],
+        ["¿Qué simuladores?", "iRacing y Le Mans Ultimate. ACC y Assetto Corsa están en desarrollo."],
       ],
     },
     pt: {
@@ -458,12 +458,12 @@ export const TOPICS = [
         ["Overlays", "Relative, classificação, radar, barra de delta, combustível, pneus, mapa, marcas de frenagem e mais, também em VR."],
         ["Em todo lugar", "Windows para pilotar, e a web e o Android para ver suas voltas e acompanhar sua corrida ao vivo."],
         ["O que é grátis", "Durante a beta tudo é grátis. A telemetria, o coach, as classificações, os overlays básicos e o app de celular continuam grátis depois."],
-        ["Telemetria grátis para Le Mans Ultimate", "O mesmo app grava o Le Mans Ultimate, em beta, sem instalar nada no jogo."],
+        ["Telemetria grátis para Le Mans Ultimate", "O mesmo app grava o Le Mans Ultimate, sem instalar nada no jogo."],
       ],
       faq: [
         ["É grátis mesmo?", "Sim. O app do PC, a web e o app Android são grátis."],
         ["Procurando uma alternativa grátis ao RaceLab, Garage 61, Track Titan ou VRS?", "O Pitlane HQ junta overlays, telemetria de voltas com comparações e um coach com voltas de referência das suas próprias classificações num só app grátis."],
-        ["Quais simuladores?", "iRacing e Le Mans Ultimate (em beta). ACC e Assetto Corsa estão em desenvolvimento."],
+        ["Quais simuladores?", "iRacing e Le Mans Ultimate. ACC e Assetto Corsa estão em desenvolvimento."],
       ],
     },
   },
@@ -484,7 +484,7 @@ export const TOPICS = [
       faq: [
         ["Do I need to type the race length or the tank size?", "No. The overlay reads the session, the tank and every lap from iRacing by itself."],
         ["How much margin does it keep?", "0.3 laps by default. You choose the spare laps in the overlay's settings."],
-        ["Does it work in Le Mans Ultimate?", "Yes, in beta. The fuel overlay works the same, and the dash shows the virtual energy left."],
+        ["Does it work in Le Mans Ultimate?", "Yes. The fuel overlay works the same, and the dash shows the virtual energy left."],
         ["Is it free?", "Yes. The fuel overlay is one of the free overlays."],
       ],
     },
@@ -503,7 +503,7 @@ export const TOPICS = [
       faq: [
         ["¿Tengo que escribir la duración de la carrera o el depósito?", "No. El overlay lee la sesión, el depósito y cada vuelta de iRacing él solo."],
         ["¿Cuánto margen deja?", "0,3 vueltas por defecto. Las vueltas de margen se eligen en los ajustes del overlay."],
-        ["¿Funciona en Le Mans Ultimate?", "Sí, en beta. El overlay de combustible funciona igual, y el dash muestra la energía virtual que queda."],
+        ["¿Funciona en Le Mans Ultimate?", "Sí. El overlay de combustible funciona igual, y el dash muestra la energía virtual que queda."],
         ["¿Es gratis?", "Sí. El overlay de combustible es uno de los overlays gratis."],
       ],
     },
@@ -522,7 +522,7 @@ export const TOPICS = [
       faq: [
         ["Preciso digitar a duração da corrida ou o tanque?", "Não. O overlay lê a sessão, o tanque e cada volta do iRacing sozinho."],
         ["Quanta margem ele deixa?", "0,3 voltas por padrão. As voltas de margem são escolhidas nos ajustes do overlay."],
-        ["Funciona no Le Mans Ultimate?", "Sim, em beta. O overlay de combustível funciona igual, e o dash mostra a energia virtual que resta."],
+        ["Funciona no Le Mans Ultimate?", "Sim. O overlay de combustível funciona igual, e o dash mostra a energia virtual que resta."],
         ["É grátis?", "Sim. O overlay de combustível é um dos overlays grátis."],
       ],
     },
@@ -546,7 +546,7 @@ export const TOPICS = [
         ["Do I need to export anything from the game?", "No. Turn on Settings → Gameplay → Enable Plugins in Le Mans Ultimate and Pitlane HQ Agent records the laps by itself."],
         ["Can I compare with a faster driver?", "Yes. Lap B can be the record of the car and track or the next level above your pace, both laps someone really drove."],
         ["Does it count laps off the track?", "A lap off the track or not round the whole circuit is never valid, and never a reference."],
-        ["Is it free?", "Yes. Le Mans Ultimate support is in beta and free."],
+        ["Is it free?", "Yes. Le Mans Ultimate support is free."],
       ],
     },
     es: {
@@ -566,7 +566,7 @@ export const TOPICS = [
         ["¿Tengo que exportar algo del juego?", "No. Activa Settings → Gameplay → Enable Plugins en Le Mans Ultimate y Pitlane HQ Agent graba las vueltas él solo."],
         ["¿Puedo compararme con un piloto más rápido?", "Sí. La vuelta B puede ser el récord del coche y circuito o el siguiente nivel por encima de tu ritmo, las dos vueltas que alguien condujo de verdad."],
         ["¿Cuenta las vueltas fuera de pista?", "Una vuelta fuera de pista o que no recorre todo el circuito nunca es válida, ni sirve de referencia."],
-        ["¿Es gratis?", "Sí. El soporte de Le Mans Ultimate está en beta y es gratis."],
+        ["¿Es gratis?", "Sí. El soporte de Le Mans Ultimate es gratis."],
       ],
     },
     pt: {
@@ -586,7 +586,7 @@ export const TOPICS = [
         ["Preciso exportar algo do jogo?", "Não. Ative Settings → Gameplay → Enable Plugins no Le Mans Ultimate e o Pitlane HQ Agent grava as voltas sozinho."],
         ["Posso comparar com um piloto mais rápido?", "Sim. A volta B pode ser o recorde do carro e pista ou o próximo nível acima do seu ritmo, as duas voltas que alguém realmente pilotou."],
         ["Conta voltas fora da pista?", "Uma volta fora da pista ou que não percorre a pista inteira nunca é válida, nem serve de referência."],
-        ["É grátis?", "Sim. O suporte ao Le Mans Ultimate está em beta e é grátis."],
+        ["É grátis?", "Sim. O suporte ao Le Mans Ultimate é grátis."],
       ],
     },
   },
@@ -594,7 +594,7 @@ export const TOPICS = [
     id: "lmu-braking", game: "lmu", lmu: "braking",
     en: {
       path: "/le-mans-ultimate-braking-points", title: "Le Mans Ultimate braking points and markers · Pitlane HQ",
-      desc: "Find your braking points in Le Mans Ultimate. Pitlane HQ shows where you brake against a faster lap of the same car, on the map and live on track. In beta.",
+      desc: "Find your braking points in Le Mans Ultimate. Pitlane HQ shows where you brake against a faster lap of the same car, on the map and live on track.",
       h1: "Braking points for Le Mans Ultimate",
       lead: "At Le Mans, Spa or Bahrain most of the time is won or lost under braking. Pitlane HQ shows where you brake, how hard and how long, next to a faster lap of the same car, and marks the next point on track while you drive.",
       secs: [
@@ -608,7 +608,7 @@ export const TOPICS = [
         ["Where do the braking points come from?", "From real laps of the same car and track, the next level above your pace, or your own best lap while there is none."],
         ["Do the markers work in VR?", "Yes. The overlays also show in the headset through SteamVR."],
         ["What do I need?", "Pitlane HQ Agent on Windows and, in the game, Settings → Gameplay → Enable Plugins turned on."],
-        ["Is it free?", "Yes. Le Mans Ultimate support is in beta and free."],
+        ["Is it free?", "Yes. Le Mans Ultimate support is free."],
       ],
     },
     es: {
@@ -627,7 +627,7 @@ export const TOPICS = [
         ["¿De dónde salen los puntos de frenada?", "De vueltas reales del mismo coche y circuito, del siguiente nivel por encima de tu ritmo, o de tu mejor vuelta mientras no haya otra."],
         ["¿Las marcas funcionan en VR?", "Sí. Los overlays también se ven en las gafas a través de SteamVR."],
         ["¿Qué necesito?", "Pitlane HQ Agent en Windows y, en el juego, Settings → Gameplay → Enable Plugins activado."],
-        ["¿Es gratis?", "Sí. El soporte de Le Mans Ultimate está en beta y es gratis."],
+        ["¿Es gratis?", "Sí. El soporte de Le Mans Ultimate es gratis."],
       ],
     },
     pt: {
@@ -646,7 +646,7 @@ export const TOPICS = [
         ["De onde vêm os pontos de frenagem?", "De voltas reais do mesmo carro e pista, do próximo nível acima do seu ritmo, ou da sua melhor volta enquanto não houver outra."],
         ["As marcas funcionam em VR?", "Sim. Os overlays também aparecem nos óculos pelo SteamVR."],
         ["Do que preciso?", "Do Pitlane HQ Agent no Windows e, no jogo, de Settings → Gameplay → Enable Plugins ativado."],
-        ["É grátis?", "Sim. O suporte ao Le Mans Ultimate está em beta e é grátis."],
+        ["É grátis?", "Sim. O suporte ao Le Mans Ultimate é grátis."],
       ],
     },
   },
@@ -654,7 +654,7 @@ export const TOPICS = [
     id: "lmu-coach", game: "lmu", img: "coach.jpg",
     en: {
       path: "/le-mans-ultimate-coach", title: "Le Mans Ultimate coach, braking points and line · Pitlane HQ",
-      desc: "A free coach for Le Mans Ultimate, in beta. Compare your lap with real reference laps and see your braking points and racing line, corner by corner.",
+      desc: "A free coach for Le Mans Ultimate. Compare your lap with real reference laps and see your braking points and racing line, corner by corner.",
       h1: "A Le Mans Ultimate coach with real reference laps",
       lead: "Pitlane HQ compares your Le Mans Ultimate lap with a faster lap driven by a real person on the same car and track. It shows where you brake, how fast you reach the apex and which line you take, and says what to change first.",
       secs: [
@@ -666,7 +666,7 @@ export const TOPICS = [
         ["Live on track", "The coach overlay shows the next corner's tip and braking point while you drive, and after the corner what it gave or took."],
       ],
       faq: [
-        ["Does the coach work in Le Mans Ultimate?", "Yes. Le Mans Ultimate support is in beta, and the coach, lap comparison and braking markers work as they do in iRacing."],
+        ["Does the coach work in Le Mans Ultimate?", "Yes. The coach, lap comparison and braking markers work as they do in iRacing."],
         ["Where do the reference laps come from?", "From the laps of Pitlane HQ drivers and their rivals on the same car and track. The more people drive a combination, the closer the next level is to your pace."],
         ["Does it work with Hypercar, LMP2 and LMGT3?", "Yes. Every car is compared with laps of the same car on the same track."],
         ["Is it free?", "Yes."],
@@ -674,7 +674,7 @@ export const TOPICS = [
     },
     es: {
       path: "/es/coach-le-mans-ultimate", title: "Coach de Le Mans Ultimate, frenadas y trazada · Pitlane HQ",
-      desc: "Un coach gratis para Le Mans Ultimate, en beta. Compara tu vuelta con vueltas de referencia reales y mira tus puntos de frenada y tu trazada, curva a curva.",
+      desc: "Un coach gratis para Le Mans Ultimate. Compara tu vuelta con vueltas de referencia reales y mira tus puntos de frenada y tu trazada, curva a curva.",
       h1: "Un coach de Le Mans Ultimate con vueltas de referencia reales",
       lead: "Pitlane HQ compara tu vuelta de Le Mans Ultimate con una vuelta más rápida de una persona real en el mismo coche y circuito. Te enseña dónde frenas, a qué velocidad llegas al vértice y qué trazada llevas, y te dice qué cambiar primero.",
       secs: [
@@ -686,7 +686,7 @@ export const TOPICS = [
         ["En vivo en pista", "El overlay del coach muestra el consejo y el punto de frenada de la siguiente curva mientras conduces, y al salir lo que ganaste o perdiste."],
       ],
       faq: [
-        ["¿El coach funciona en Le Mans Ultimate?", "Sí. El soporte de Le Mans Ultimate está en beta, y el coach, la comparación de vueltas y las marcas de frenada funcionan como en iRacing."],
+        ["¿El coach funciona en Le Mans Ultimate?", "Sí. El coach, la comparación de vueltas y las marcas de frenada funcionan como en iRacing."],
         ["¿De dónde salen las vueltas de referencia?", "De las vueltas de los pilotos de Pitlane HQ y de sus rivales en el mismo coche y circuito. Cuanta más gente corre una combinación, más cerca de tu ritmo está el siguiente nivel."],
         ["¿Funciona con Hypercar, LMP2 y LMGT3?", "Sí. Cada coche se compara con vueltas del mismo coche en el mismo circuito."],
         ["¿Es gratis?", "Sí."],
@@ -694,7 +694,7 @@ export const TOPICS = [
     },
     pt: {
       path: "/pt/coach-le-mans-ultimate", title: "Coach de Le Mans Ultimate, frenagens e traçado · Pitlane HQ",
-      desc: "Um coach grátis para Le Mans Ultimate, em beta. Compare sua volta com voltas de referência reais e veja seus pontos de frenagem e seu traçado, curva a curva.",
+      desc: "Um coach grátis para Le Mans Ultimate. Compare sua volta com voltas de referência reais e veja seus pontos de frenagem e seu traçado, curva a curva.",
       h1: "Um coach de Le Mans Ultimate com voltas de referência reais",
       lead: "O Pitlane HQ compara sua volta do Le Mans Ultimate com uma volta mais rápida de uma pessoa real no mesmo carro e pista. Mostra onde você freia, com que velocidade chega ao ápice e qual traçado faz, e diz o que mudar primeiro.",
       secs: [
@@ -706,7 +706,7 @@ export const TOPICS = [
         ["Ao vivo na pista", "O overlay do coach mostra a dica e o ponto de frenagem da próxima curva enquanto você pilota, e na saída o que você ganhou ou perdeu."],
       ],
       faq: [
-        ["O coach funciona no Le Mans Ultimate?", "Sim. O suporte ao Le Mans Ultimate está em beta, e o coach, a comparação de voltas e as marcas de frenagem funcionam como no iRacing."],
+        ["O coach funciona no Le Mans Ultimate?", "Sim. O coach, a comparação de voltas e as marcas de frenagem funcionam como no iRacing."],
         ["De onde vêm as voltas de referência?", "Das voltas dos pilotos do Pitlane HQ e dos seus rivais no mesmo carro e pista. Quanto mais gente corre uma combinação, mais perto do seu ritmo fica o próximo nível."],
         ["Funciona com Hypercar, LMP2 e LMGT3?", "Sim. Cada carro é comparado com voltas do mesmo carro na mesma pista."],
         ["É grátis?", "Sim."],
@@ -717,7 +717,7 @@ export const TOPICS = [
     id: "lmu-energy", game: "lmu", lmu: "tel",
     en: {
       path: "/le-mans-ultimate-virtual-energy", title: "Le Mans Ultimate virtual energy per lap · Pitlane HQ",
-      desc: "See the virtual energy and fuel your Le Mans Ultimate car uses each lap, how many laps they last and which one runs out first. Free, in beta.",
+      desc: "See the virtual energy and fuel your Le Mans Ultimate car uses each lap, how many laps they last and which one runs out first. Free.",
       h1: "Virtual energy and fuel per lap in Le Mans Ultimate",
       lead: "Hypercars and LMGT3 cars race on an energy allowance as well as a tank, and the energy often runs out first. Pitlane HQ measures both on every green lap and tells you how long each lasts.",
       secs: [
@@ -731,12 +731,12 @@ export const TOPICS = [
         ["Do I have to type anything in?", "No. Everything is measured from your own laps while you drive."],
         ["Which cars have virtual energy?", "The cars the game gives an energy allowance to. For the others only the fuel line shows."],
         ["What do I need?", "Pitlane HQ Agent on Windows and, in the game, Settings → Gameplay → Enable Plugins turned on."],
-        ["Is it free?", "Yes. Le Mans Ultimate support is in beta and free."],
+        ["Is it free?", "Yes. Le Mans Ultimate support is free."],
       ],
     },
     es: {
       path: "/es/energia-virtual-le-mans-ultimate", title: "Energía virtual por vuelta en Le Mans Ultimate · Pitlane HQ",
-      desc: "Mira la energía virtual y el combustible que gasta tu coche de Le Mans Ultimate en cada vuelta, cuántas vueltas duran y cuál se acaba antes. Gratis, en beta.",
+      desc: "Mira la energía virtual y el combustible que gasta tu coche de Le Mans Ultimate en cada vuelta, cuántas vueltas duran y cuál se acaba antes. Gratis.",
       h1: "Energía virtual y combustible por vuelta en Le Mans Ultimate",
       lead: "Los Hypercar y los LMGT3 corren con un límite de energía además del depósito, y muchas veces se acaba antes la energía. Pitlane HQ mide las dos en cada vuelta en verde y te dice cuánto dura cada una.",
       secs: [
@@ -750,12 +750,12 @@ export const TOPICS = [
         ["¿Tengo que escribir algo?", "No. Todo se mide con tus propias vueltas mientras conduces."],
         ["¿Qué coches tienen energía virtual?", "Los coches a los que el juego da un límite de energía. En los demás solo se ve la línea del combustible."],
         ["¿Qué necesito?", "Pitlane HQ Agent en Windows y, en el juego, Settings → Gameplay → Enable Plugins activado."],
-        ["¿Es gratis?", "Sí. El soporte de Le Mans Ultimate está en beta y es gratis."],
+        ["¿Es gratis?", "Sí. El soporte de Le Mans Ultimate es gratis."],
       ],
     },
     pt: {
       path: "/pt/energia-virtual-le-mans-ultimate", title: "Energia virtual por volta no Le Mans Ultimate · Pitlane HQ",
-      desc: "Veja a energia virtual e o combustível que seu carro do Le Mans Ultimate gasta em cada volta, quantas voltas duram e qual acaba antes. Grátis, em beta.",
+      desc: "Veja a energia virtual e o combustível que seu carro do Le Mans Ultimate gasta em cada volta, quantas voltas duram e qual acaba antes. Grátis.",
       h1: "Energia virtual e combustível por volta no Le Mans Ultimate",
       lead: "Os Hypercars e os LMGT3 correm com um limite de energia além do tanque, e muitas vezes a energia acaba primeiro. O Pitlane HQ mede os dois em cada volta em bandeira verde e diz quanto dura cada um.",
       secs: [
@@ -769,7 +769,7 @@ export const TOPICS = [
         ["Preciso digitar alguma coisa?", "Não. Tudo é medido com as suas próprias voltas enquanto você pilota."],
         ["Quais carros têm energia virtual?", "Os carros a que o jogo dá um limite de energia. Nos outros só aparece a linha do combustível."],
         ["Do que preciso?", "Do Pitlane HQ Agent no Windows e, no jogo, de Settings → Gameplay → Enable Plugins ativado."],
-        ["É grátis?", "Sim. O suporte ao Le Mans Ultimate está em beta e é grátis."],
+        ["É grátis?", "Sim. O suporte ao Le Mans Ultimate é grátis."],
       ],
     },
   },

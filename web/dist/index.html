@@ -10077,6 +10077,7 @@ html:not([data-theme="light"]) #v-coach .pw3c .co-bt{background:var(--bg)}
 /* the owner (2026-11-14): the connection status and the version in the header as chips with an edge */
 html:not(.ov,.ovwin) header.top>.conn,html:not(.ov,.ovwin) header.top>#appVersion{border:1px solid var(--line2)!important;background:var(--surface)!important;border-radius:999px!important;padding:5px 11px!important;line-height:1.2!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.04)}
 html:not(.ov,.ovwin) header.top>#appVersion{color:var(--muted)!important;font-size:12px!important}
+html:not(.ov) nav.subtabs.pw3-lone{display:none!important}
 </style>
 <script id="pw3-frame-js">
 /* Pit Wall Workspace frame: on computers the page tabs and the game switch sit in the header row */
@@ -10087,6 +10088,9 @@ html:not(.ov,.ovwin) header.top>#appVersion{color:var(--muted)!important;font-si
   else if(!on&&sb.parentElement===hd){hd.after(sb)}
 }
  if(mq.addEventListener)mq.addEventListener("change",place);place();setTimeout(place,1500);
+ /* a group with a single page shows no page tabs (Home, for one) */
+ const st=document.getElementById("subtabs");function lone(){if(!st)return;const n=[...st.querySelectorAll("button")].filter(b=>!b.hidden&&getComputedStyle(b).display!=="none").length;st.classList.toggle("pw3-lone",n<=1)}
+ if(st&&window.MutationObserver)new MutationObserver(lone).observe(st,{childList:true,subtree:true,attributes:true,attributeFilter:["hidden","style","class"]});lone();
 })();
 </script>
 <style id="pw3-home">

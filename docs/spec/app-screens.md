@@ -154,15 +154,30 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
     (Race, Practice…) are all one width with the word centred, a star sits beside the fastest lap of each car and track,
     and every race summary row ends in an amber "Summary ›" and opens that race's report.
   - My sessions ends with Driver notes (your marks on other drivers, with its search), in the design's panel.
-  - Statistics: the period (4 weeks, 3 months, 12 months, All) at the top right, then Laps, Time on track, Sessions and
-    Races of the period with the change on the period before. Best lap over time (a car and track chosen from the
-    period's, the most driven first, the personal best in amber) beside Consistency over time (the spread of each
-    session's lap times, the server's `cons` or worked out from its valid laps within 3 % of its best). iRating after each
-    race by discipline (Community's colours) beside Races (the finish, P1 on top, and the incidents as bars). Time on
-    track per week (the server's `secs`, or laps × best lap) beside Most driven (the period's cars and tracks with
-    sessions, laps, best lap and last driven; a row opens its best session). Every chart reads the point under the
-    pointer or the finger in the line under it. With no sessions it says one sentence. The demo's races come from
-    `pitwall-demo.js`.
+  - Statistics (`renderStatsView`; `renderStats` is the live Stats widget's): the period (4 weeks, 3 months, 12 months,
+    All) at the top right, then six numbers of the period with the change on the period before: Laps, Time on track,
+    Sessions, Races, Personal bests (a session that beat every earlier best of its car and track) and Incidents per race
+    (fewer is green). Three columns below (one under the other on a phone). Left, Personal bests: each new best of the
+    period, newest first, with its date, track, car, time and the time it took off (a row opens that session). Middle,
+    Best lap per week: chips of the period's cars and tracks (the most driven first), the best lap of each week, a
+    bigger amber dot where it beat every earlier best; Consistency per session (the server's `cons`, or worked out from
+    the valid laps within 3 % of the best) beside Laps and hours per week (laps as bars, hours as a line); Time per
+    corner: the best lap of the first and the latest week (the last 12 weeks at most) against your best lap of that car
+    and track, corner by corner with the coach's comparison (`coachCompare`, braking zone to exit), the change in green
+    (time gained) or red, a line of the last 8 weeks, and the whole lap last. Right, iRating after each race by
+    discipline (Community's colours; not for Le Mans Ultimate), Safety rating (the licence the PC last saw for each
+    discipline, or LMU's safety and driver rating: the game gives no history, so there is no chart), Incidents per race
+    (bars) and Finishing positions (how many in P1, P2–3, P4–5, P6–10, P11–15, P16+, then the last six results with the
+    incidents and the iRating change; a row opens the race). On the web, where races are only rebuilt from the
+    sessions, the places come from your race sessions. Statistics reads up to 200 sessions of the game itself
+    (`/api/sessions?limit=200`), more than My sessions keeps. Every chart reads the point under the pointer or the
+    finger in the line under it. With no sessions it says one sentence. The demo (`pitwall-demo.js`) has four months
+    of practice for four of its cars and tracks, 22 races and four Le Mans Ultimate sessions.
+  - Which game?: entering Analysis from another tab, and every "choose a session" (`openSessPicker`), first asks the
+    game when the account has sessions of more than one: a big card for each (its badge, its name, how many sessions),
+    the last one chosen marked "Last time" (`pw.anGame`). The session window then opens on that game, its name in an
+    amber pill beside the title. With sessions of one game only there is no question (Analysis switches to that game).
+    On My sessions and Statistics, entering Analysis asks only the game.
 
 - Home shows the track guide's brief (the three corners that matter most) while the agent sees a session on a track and
   car the model knows (`homeBriefHTML`); pressed, it opens the whole guide.

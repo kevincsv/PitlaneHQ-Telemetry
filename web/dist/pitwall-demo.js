@@ -10,6 +10,14 @@
     { track: "Laguna Seca", cfg: "Full Course", trackId: 47, car: "Mazda MX-5 Cup", carId: 67, len: 3602, lap: 95.3 },
     { track: "Lime Rock Park", cfg: "Full Course", trackId: 54, car: "Ray Formula 1600", carId: 74, len: 2459, lap: 63.2, cat: "formula_car" },
   ];
+  // Le Mans Ultimate: four sessions of its own (the game question before the session window, its own screens)
+  const LMU = [
+    { track: "Circuit de la Sarthe", cfg: "Circuit des 24 Heures du Mans", trackId: 9001, car: "Porsche 963", carId: 9101, len: 13626, lap: 219.4, kind: "Practice" },
+    { track: "Spa-Francorchamps", cfg: "Endurance", trackId: 9002, car: "Ferrari 296 LMGT3", carId: 9102, len: 7004, lap: 141.9, kind: "Race" },
+    { track: "Autodromo Nazionale Monza", cfg: "Grand Prix", trackId: 9003, car: "BMW M4 LMGT3", carId: 9103, len: 5793, lap: 108.2, kind: "Practice" },
+    { track: "Bahrain International Circuit", cfg: "WEC", trackId: 9004, car: "Toyota GR010", carId: 9104, len: 5412, lap: 112.6, kind: "Qualifying" },
+  ];
+  const ALL = COMBOS.concat(LMU);
   const NAMES = "ABCDEFGHIJ".split("").map((c) => "Demo Driver " + c);
   const DAY = 86400000, NOW = Date.now();
 
@@ -66,9 +74,19 @@
       out.push({ id: `demo:${i}:p`, started: NOW - (i * 2 + 1) * DAY, track: c.track, track_config: c.cfg, car: c.car, kind: "Practice", laps: 9, cat: c.cat || "sports_car", best: c.lap + 0.4 + i * 0.05, game: "iracing", driver: "You" });
       out.push({ id: `demo:${i}:r`, started: NOW - i * 2 * DAY - 3600000, track: c.track, track_config: c.cfg, car: c.car, kind: "Race", laps: 14, cat: c.cat || "sports_car", best: c.lap + 0.2, game: "iracing", driver: "You" });
     });
+    // the weeks before (Statistics): practice of the first four cars and tracks most weeks for four months, the best
+    // coming down as the weeks go
+    COMBOS.slice(0, 4).forEach((c, i) => {
+      const r = rng(i * 977 + 13);
+      for (let w = 2; w <= 17; w++) {
+        if (r.f(0, 1) < 0.25) continue;
+        out.push({ id: `demo:${i}:h${w}`, started: NOW - w * 7 * DAY - i * DAY - 5 * 3600000, track: c.track, track_config: c.cfg, car: c.car, kind: "Practice", laps: r.i(6, 17), cat: c.cat || "sports_car", best: c.lap + 0.45 + 1.7 * (w / 17) + r.f(-0.12, 0.25), game: "iracing", driver: "You" });
+      }
+    });
+    LMU.forEach((c, i) => out.push({ id: `demo:${COMBOS.length + i}:l`, started: NOW - (i * 3 + 2) * DAY, track: c.track, track_config: c.cfg, car: c.car, kind: c.kind, laps: 6 + i * 3, cat: "sports_car", best: c.lap, game: "lmu", driver: "You" }));
     return out.sort((a, b) => b.started - a.started);
   }
-  const comboOf = (id) => COMBOS[+String(id).split(":")[1] || 0];
+  const comboOf = (id) => ALL[+String(id).split(":")[1] || 0];
   function laps(sid) {
     const s = sessions().find((x) => x.id === sid);
     if (!s) return [];
@@ -91,7 +109,7 @@
   function races() {
     let ir = 2150;
     const out = [];
-    for (let k = 0; k < 8; k++) {
+    for (let k = 0; k < 22; k++) { // eight in the last eight days, then one every four days (Statistics)
       const c = COMBOS[k % COMBOS.length], r = rng(k * 101 + 1);
       const field = 16 + r.i(0, 8), start = 1 + r.i(0, field), finish = Math.max(1, Math.min(field, start + r.i(-5, 5)));
       const change = Math.trunc((Math.trunc(field / 2) - finish) * 6.5) + r.i(-8, 8), inc = r.i(0, 9), best = c.lap + 0.3 + r.f(0, 0.8);
@@ -103,7 +121,7 @@
         const p = j + 1;
         return p === finish ? { pos: p, cpos: p, name: "You", ir, best, inc, laps: 15 } : { pos: p, cpos: p, name: NAMES[(p + k) % NAMES.length], ir: 1500 + r.i(0, 1600), best: best + r.f(-0.8, 1.2), inc: r.i(0, 10), laps: 15 };
       });
-      out.push({ id: "demo-race-" + k, when: NOW - k * DAY - 7200000, track: c.track, trackId: c.trackId, car: c.car, carId: c.carId, official: true, start, finish, field, inc, best, fieldBest: best - 0.4, avg: best + 0.7, consistency: 0.42, pits: 1, fuelUsed: 38.5, ir, irChange: change, sof: 1800 + r.i(0, 900), laps: lapsArr, results });
+      out.push({ id: "demo-race-" + k, when: NOW - (k < 8 ? k : 8 + (k - 8) * 4) * DAY - 7200000, track: c.track, trackId: c.trackId, car: c.car, carId: c.carId, official: true, start, finish, field, inc, best, fieldBest: best - 0.4, avg: best + 0.7, consistency: 0.42, pits: 1, fuelUsed: 38.5, ir, irChange: change, sof: 1800 + r.i(0, 900), laps: lapsArr, results });
       ir -= change;
     }
     return out;

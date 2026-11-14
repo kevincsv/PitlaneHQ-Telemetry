@@ -6807,7 +6807,7 @@ var VIEW_HIST=[];
     const n=list[i+(dx<0?1:-1)];if(n){show(n);scrollTo(0,0)}},{passive:true})})();
 function show(v){if(v==="races")v="cloudlaps";document.querySelectorAll("nav.tabs button").forEach(b=>{const t=b.querySelector("span");if(t&&t.textContent)b.title=t.textContent});if(v==="rig")v="settings";if(v==="admin"&&!isAdmin()){ADMIN_WANT=true;v="me"}if(typeof CUR_VIEW==="undefined"||v!==CUR_VIEW)usageCount("view:"+v);if(typeof CUR_VIEW!=="undefined"&&CUR_VIEW&&v!==CUR_VIEW&&!OV.on)closeOpenPanels();if(v==="fulltelemetry")v="laps";if(typeof signWallOn==="function"&&signWallOn()&&v!=="me")v="me";if(v==="strategy"&&!FEATURES.strategy)v="live";if(PCAPP&&PC_OFF.includes(v))v="live";if(v==="haptics"&&!PHONE){SET_SEC="set-general";rawSet("pw.setSec","set-general");v="settings"}if(PHONE&&["haptics","rig","cars"].includes(v))v="settings";if(v==="goals"&&!FEATURES.goals)v="calendar";if(!show.back&&VIEW_HIST&&CUR_VIEW&&CUR_VIEW!==v){VIEW_HIST.push(CUR_VIEW);if(VIEW_HIST.length>30)VIEW_HIST.shift()}show.back=false;CUR_VIEW=v;try{donBar()}catch(e){}const g=groupOf(v);tabs.forEach(b=>b.setAttribute("aria-selected",b.dataset.g===g||(b.dataset.g==="more"&&MORE_G.includes(g))));renderSubtabs(v);renderGameBar(v);$("#setBtn").setAttribute("aria-pressed",v==="settings");
   document.querySelectorAll("section.view").forEach(s=>s.hidden=s.id!=="v-"+v);if(COMPANION&&(g==="race"&&v!=="team"&&!CPLIVE.on&&!DEMOLIVE||["haptics","rig","cars"].includes(v))){document.querySelectorAll("section.view").forEach(s=>s.hidden=s.id!=="v-pc");$("#subtabs").hidden=true;renderPC();return}if(!OV.on)store.set("pw.tab",v);setWantAll(true);
-  if(!FEATURES.planner&&(v==="calendar"||v==="series"))plannerWip(v);if(v==="laps"){const sec=$("#v-"+v);if(sec&&sec.querySelector(".wip-card")){sec.classList.remove("wip");sec.querySelector(".wip-card").remove()}}if(v==="home")renderHome();if(v==="me")renderMe();if(v==="settings"&&!COMPANION)setTimeout(()=>setSection(SET_SEC),0);if(COMPANION&&v==="settings"){cpTrimSettings();setTimeout(cpTrimSettings,0);setTimeout(cpTrimSettings,400)}if(v==="laps")renderLaps();if(v==="account")renderAccount();if(v==="settings"){renderCodeShare();renderShare();renderNotifPanel()}if(v==="overlays")renderOverlaysTab();if(v==="settings"&&!COMPANION)renderRig();if(v==="calendar")renderCalendar();if(v==="haptics")renderHaptics();if(v==="coach")renderCoach();if(v==="admin")renderAdminPage();if(v==="revbeep")renderShiftPanel();if(v==="strategy")renderStrategy();if(v==="goals")renderGoals();if(v==="cars"){renderShiftPanel();renderCars()}if(v==="races")renderRaces();if(v==="community")renderCommunity();if(v==="leagues")renderLeagues();if(v==="plan")renderPlan();if(typeof applyProGate==="function")applyProGate(v);if(v==="news")renderNews();if(v==="tracks")renderTracks();if(v==="setups")renderSetups();if(v==="tyres")renderTyres();if(v==="series")renderSeries();if(v==="field")renderStandings();if(v==="data")renderVarTable();if(v==="share"){renderSettings();renderCodeShare()}if(v==="cloudlaps")renderCloudLaps();if(v==="stats")renderStats();if(v==="races"||v==="share")renderWip();if(v==="settings"){renderSettings();renderAccount();renderG61Panel();renderCloudPanel();renderStartPanel();renderAbout();renderDiscordPanel();renderUpdatePanel();renderPairPanel()}if(v==="live"){liveSlow();renderRelative()}if(v==="team")renderTeam()}
+  if(!FEATURES.planner&&(v==="calendar"||v==="series"))plannerWip(v);if(v==="laps"){const sec=$("#v-"+v);if(sec&&sec.querySelector(".wip-card")){sec.classList.remove("wip");sec.querySelector(".wip-card").remove()}}if(v==="home")renderHome();if(v==="me")renderMe();if(v==="settings"&&!COMPANION)setTimeout(()=>setSection(SET_SEC),0);if(COMPANION&&v==="settings"){cpTrimSettings();setTimeout(cpTrimSettings,0);setTimeout(cpTrimSettings,400)}if(v==="laps")renderLaps();if(v==="account")renderAccount();if(v==="settings"){renderCodeShare();renderShare();renderNotifPanel()}if(v==="overlays")renderOverlaysTab();if(v==="settings"&&!COMPANION)renderRig();if(v==="calendar")renderCalendar();if(v==="haptics")renderHaptics();if(v==="coach")renderCoach();if(v==="admin")renderAdminPage();if(v==="revbeep")renderShiftPanel();if(v==="strategy")renderStrategy();if(v==="goals")renderGoals();if(v==="cars"){renderShiftPanel();renderCars()}if(v==="races")renderRaces();if(v==="community")renderCommunity();if(v==="leagues")renderLeagues();if(v==="plan")renderPlan();if(typeof applyProGate==="function")applyProGate(v);if(v==="news")renderNews();if(v==="tracks")renderTracks();if(v==="setups")renderSetups();if(v==="tyres")renderTyres();if(v==="series")renderSeries();if(v==="field")renderStandings();if(v==="data")renderVarTable();if(v==="share"){renderSettings();renderCodeShare()}if(v==="cloudlaps")renderCloudLaps();if(v==="stats")renderStatsView();if(v==="races"||v==="share")renderWip();if(v==="settings"){renderSettings();renderAccount();renderG61Panel();renderCloudPanel();renderStartPanel();renderAbout();renderDiscordPanel();renderUpdatePanel();renderPairPanel()}if(v==="live"){liveSlow();renderRelative()}if(v==="team")renderTeam()}
 /* a main tab always opens on its first sub-tab (where you were last time is not kept) */
 function openGroup(g){show(GROUPS[g][0])}
 tabs.forEach(b=>b.onclick=()=>b.dataset.g==="more"?openMore():openGroup(b.dataset.g));$("#setBtn").onclick=()=>show(CUR_VIEW==="settings"?(VIEW_HIST&&VIEW_HIST.length?VIEW_HIST[VIEW_HIST.length-1]:PHONE?"home":"live"):"settings");
@@ -6847,7 +6847,7 @@ document.addEventListener("keydown",e=>{if(OV.on)return;const typing=/^(INPUT|TE
   if(e.altKey&&/^[1-5]$/.test(e.key)){const g=Object.keys(GROUPS)[+e.key-1];if(g){e.preventDefault();openGroup(g)}}});
 $("#qsBtn").onclick=openQuick;
 $("#racesQ").oninput=e=>{RQ=e.target.value;renderRaces()};$("#racesQ").placeholder=Tx("Search track, car or series","Buscar circuito, coche o serie");
-function rerenderAll(){renderConn();$("#spdU").textContent=spdU();if(CUR_VIEW==="stats"&&typeof renderStats==="function")renderStats();if(CUR_VIEW==="live"){liveSlow();renderRelative()}if(CUR_VIEW==="field")renderStandings();if(CUR_VIEW==="laps")renderLaps();if(CUR_VIEW==="data"){renderVarTable();if(DATA_TAB==="data:session")renderSession();if(DATA_TAB==="data:dev")renderDev()}if(CUR_VIEW==="account")renderAccount();if(CUR_VIEW==="tyres")renderTyres();if(CUR_VIEW==="overlays")renderOverlaysTab();if(CUR_VIEW==="settings"&&!COMPANION)renderRig();if(CUR_VIEW==="series")renderSeries();if(["home","me","calendar","races","tracks","coach","community","setups","haptics","cars","news","strategy","settings"].includes(CUR_VIEW))show(CUR_VIEW);renderProfBtn();sessionChanged()}
+function rerenderAll(){renderConn();$("#spdU").textContent=spdU();if(CUR_VIEW==="stats"&&typeof renderStatsView==="function")renderStatsView();if(CUR_VIEW==="live"){liveSlow();renderRelative()}if(CUR_VIEW==="field")renderStandings();if(CUR_VIEW==="laps")renderLaps();if(CUR_VIEW==="data"){renderVarTable();if(DATA_TAB==="data:session")renderSession();if(DATA_TAB==="data:dev")renderDev()}if(CUR_VIEW==="account")renderAccount();if(CUR_VIEW==="tyres")renderTyres();if(CUR_VIEW==="overlays")renderOverlaysTab();if(CUR_VIEW==="settings"&&!COMPANION)renderRig();if(CUR_VIEW==="series")renderSeries();if(["home","me","calendar","races","tracks","coach","community","setups","haptics","cars","news","strategy","settings"].includes(CUR_VIEW))show(CUR_VIEW);renderProfBtn();sessionChanged()}
 // phones fire "resize" while scrolling (the address bar comes and goes): redraw only when the width changes
 {let lastW=innerWidth,tm=0;window.addEventListener("resize",()=>{if(innerWidth===lastW)return;lastW=innerWidth;clearTimeout(tm);tm=setTimeout(()=>{if(CUR_VIEW==="laps")drawCmp();if(CUR_VIEW==="account")rerenderAll()},150)})}
 
@@ -11321,7 +11321,7 @@ document.addEventListener("pointerover",e=>{if(e.pointerType!=="mouse"||!e.targe
 #v-stats .pw5{display:flex;flex-direction:column;gap:10px;min-width:0}
 #v-stats .pw5-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
 #v-stats .pw5-k{background:var(--surface);border:1px solid var(--line2);border-radius:8px;padding:12px 14px;display:flex;flex-direction:column;gap:2px;min-width:0}
-#v-stats .pw5-k small{text-transform:uppercase;letter-spacing:.06em;font-size:11.5px;color:var(--muted)}
+#v-stats .pw5-k small{text-transform:uppercase!important;letter-spacing:.06em!important;font-size:11.5px;color:var(--muted)}
 #v-stats .pw5-k b{font:400 24px/1.15 var(--f-data);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #v-stats .pw5-k span{color:var(--muted);font-size:12.5px}#v-stats .pw5-k span.good{color:var(--good)}#v-stats .pw5-k span.bad{color:var(--bad)}
 #v-stats .pw5-2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;align-items:start}
@@ -11350,6 +11350,45 @@ document.addEventListener("pointerover",e=>{if(e.pointerType!=="mouse"||!e.targe
 #v-stats .pw5-tb tbody tr{cursor:pointer}#v-stats .pw5-tb tbody tr:hover td{background:var(--surface2)}
 @media (max-width:1100px){#v-stats .pw5-2{grid-template-columns:minmax(0,1fr)}}
 @media (max-width:760px){#v-stats .pw5-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}#v-stats .pw5-k b{font-size:20px}#v-stats .pw5-tb th,#v-stats .pw5-tb td{padding-left:5px;padding-right:5px}}
+/* Statistics, Nov 2026: six numbers, then the personal bests | the best lap, the spread, the weeks, the corners | the races */
+#v-stats .pw5-kpis.pw7-k6{grid-template-columns:repeat(6,minmax(0,1fr))}
+#v-stats .pw7-ws{display:grid;grid-template-columns:minmax(220px,270px) minmax(0,1fr) minmax(240px,300px);gap:10px;align-items:start}
+#v-stats .pw7-ws>*{display:flex;flex-direction:column;gap:10px;min-width:0}
+#v-stats .pw7-chips{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 10px}
+#v-stats .pw7-chip{all:unset;box-sizing:border-box;cursor:pointer;background:var(--surface2);border:1px solid var(--line);border-radius:999px;padding:4px 11px;font:400 12.5px var(--f-body);color:var(--fg);max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#v-stats .pw7-chip b{font-weight:600}#v-stats .pw7-chip small{color:var(--muted);font-size:11.5px}
+#v-stats .pw7-chip[aria-pressed="true"]{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}#v-stats .pw7-chip:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+#v-stats .pw7-pbs{list-style:none;margin:0;padding:0;max-height:760px;overflow:auto}
+#v-stats .pw7-pbs li{display:grid;grid-template-columns:46px minmax(0,1fr) auto;gap:8px;align-items:start;padding:7px 0;border-bottom:1px solid var(--line);cursor:pointer}
+#v-stats .pw7-pbs li:last-child{border-bottom:0}#v-stats .pw7-pbs li:hover{background:var(--surface2)}
+#v-stats .pw7-pbs time{color:var(--muted);font-size:12px;padding-top:1px}
+#v-stats .pw7-pbs b{display:block;font-size:13px;font-weight:600;line-height:1.35}#v-stats .pw7-pbs small{display:block;font-size:11.5px;color:var(--muted)}
+#v-stats .pw7-pbs .mono{text-align:right;font-family:var(--f-data);font-size:13px}#v-stats .pw7-pbs em{display:block;font-style:normal;font-size:11.5px}
+#v-stats .good{color:var(--good)}#v-stats .bad{color:var(--bad)}
+#v-stats .pw7-ct td{vertical-align:middle}#v-stats .pw7-rr{font-size:12.5px}#v-stats .pw7-rr th,#v-stats .pw7-rr td{padding:6px 5px}#v-stats .pw7-rr td{white-space:nowrap}#v-stats .pw7-rr td.trk{max-width:110px;overflow:hidden;text-overflow:ellipsis}#v-stats .pw7-ct tr.tot td{border-top:1px solid var(--line2);font-weight:600}
+#v-stats .pw7-sp{width:70px;height:22px;display:block}#v-stats .pw7-sp path{fill:none;stroke:currentColor;stroke-width:1.6;vector-effect:non-scaling-stroke}
+#v-stats .pw7-lic{display:flex;justify-content:space-between;gap:10px;padding:6px 0;border-bottom:1px solid var(--line);font-size:13px}#v-stats .pw7-lic:last-child{border-bottom:0}
+#v-stats .pw7-lic span{color:var(--muted)}#v-stats .pw7-lic i{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:7px}
+#v-stats .pw7-dist{display:grid;gap:5px}#v-stats .pw7-dist>div{display:grid;grid-template-columns:52px minmax(0,1fr) 24px;gap:8px;align-items:center;font-size:12px}
+#v-stats .pw7-dist span{color:var(--muted)}#v-stats .pw7-dist i{height:10px;border-radius:5px;background:var(--accent);display:block;min-width:2px}#v-stats .pw7-dist b{text-align:right;font-weight:400}
+#v-stats h3.pw7-h4{font:700 12px var(--f-display)!important;letter-spacing:.1em!important;text-transform:uppercase;color:var(--muted)!important;margin:14px 0 4px!important}
+@media (max-width:1300px){#v-stats .pw5-kpis.pw7-k6{grid-template-columns:repeat(3,minmax(0,1fr))}#v-stats .pw7-ws{grid-template-columns:minmax(0,1fr) minmax(240px,300px)}#v-stats .pw7-l{grid-column:1/-1;order:3}#v-stats .pw7-pbs{max-height:420px}}
+@media (max-width:900px){#v-stats .pw7-ws{grid-template-columns:minmax(0,1fr)}#v-stats .pw7-l{order:0}}
+@media (max-width:760px){#v-stats .pw5-kpis.pw7-k6{grid-template-columns:repeat(2,minmax(0,1fr))}}
+/* Which game? before the session window */
+#pw7Gq .pn.pw7-gq{width:min(560px,calc(100% - 32px));padding:0!important;overflow:hidden}
+#pw7Gq .pw7-gq-h{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px 16px;border-bottom:1px solid var(--line)}
+#pw7Gq .pw7-gq-h h2{margin:0;font:700 18px/1.2 var(--f-display);letter-spacing:0;text-transform:none}
+#pw7Gq .pw7-x{all:unset;cursor:pointer;width:32px;height:32px;display:grid;place-items:center;border-radius:6px;color:var(--muted);font-size:16px}#pw7Gq .pw7-x:hover{background:var(--surface2);color:var(--fg)}
+#pw7Gq .pw7-gq-b{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;padding:16px}
+#pw7Gq .pw7-gc{all:unset;box-sizing:border-box;cursor:pointer;display:flex;flex-direction:column;align-items:flex-start;gap:4px;background:var(--surface2);border:1px solid var(--line);border-radius:10px;padding:18px 16px;min-height:150px;position:relative;min-width:0}
+#pw7Gq .pw7-gc:hover{border-color:var(--muted)}#pw7Gq .pw7-gc.on{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}#pw7Gq .pw7-gc:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+#pw7Gq .pw7-gc b{font:700 22px/1.1 var(--f-display);text-transform:uppercase;letter-spacing:.03em;margin-top:auto;color:var(--fg)}#pw7Gq .pw7-gc small{font-size:13px;color:var(--muted)}
+#pw7Gq .pw7-gc em{position:absolute;top:12px;right:12px;font:600 10.5px var(--f-body);font-style:normal;text-transform:uppercase;letter-spacing:.05em;color:var(--accent)}
+#pw7Gq .pw7-logo{display:grid;place-items:center;width:52px;height:52px;border-radius:10px;font:800 17px var(--f-display);letter-spacing:.02em;color:#fff;background:#222}
+#pw7Gq .pw7-iracing{background:#0b2a6b;box-shadow:inset 0 -4px 0 #e2231a}#pw7Gq .pw7-lmu{background:#111;box-shadow:inset 0 0 0 2px #c8a24a}
+@media (max-width:480px){#pw7Gq .pw7-gq-b{grid-template-columns:minmax(0,1fr)}#pw7Gq .pw7-gc{min-height:110px}}
+#spDlg .pw7-gp{display:inline-block;vertical-align:middle;margin-left:8px;font:600 11px var(--f-body);text-transform:uppercase;letter-spacing:.05em;color:var(--accent);border:1px solid var(--accent);border-radius:999px;padding:1px 8px}
 /* driver notes at the foot of My sessions */
 #v-cloudlaps #drvPanel{margin:10px 0 0!important;padding:10px!important;border:1px solid var(--line2);border-radius:8px;background:var(--surface)}
 #v-cloudlaps #drvPanel>.frow:first-child{margin:0 0 10px!important;padding:0!important;border:0!important;gap:8px;align-items:center}
@@ -11502,10 +11541,12 @@ function renderRaceRecap(){const box=$("#raceRecap");if(!box)return;const q=(typ
     tb.querySelectorAll("tbody tr[data-rid]").forEach(tr=>{if(!tr.querySelector(".rs-go"))tr.insertAdjacentHTML("beforeend",`<td class="rs-go">${esc(T("Summary","Resumen",null,"Resumo"))} ›</td>`);tr.classList.toggle("pw3-on",tr.dataset.rid===r.id);
       const go=()=>{PW3_RSEL=tr.dataset.rid;renderRaceRecap();box.scrollIntoView({behavior:"smooth",block:"start"})};tr.onclick=go;tr.onkeydown=e=>{if(e.key==="Enter"){e.preventDefault();go()}}})}}}
 /* ---------- Statistics (Analysis → Statistics, Nov 2026): your progress over time from what the account already has.
-   The sessions (laps, time on track, best lap, the spread of the lap times), the races (finish, incidents, iRating by
-   discipline). A period switch on top; every chart reads the point under the pointer or the finger. ---------- */
+   The sessions (laps, time on track, best lap, the spread of the lap times, the personal bests), the best lap of each
+   week against your best (time per corner, the coach's own comparison), the races (finish, incidents, iRating by
+   discipline) and the licences the PC saw. A period switch on top; every chart reads the point under the pointer or the finger.
+   (renderStatsView: renderStats is the live Stats widget's.) ---------- */
 let STATS_P=(()=>{try{return localStorage.getItem("pw.statsP")||"3m"}catch(e){return"3m"}})(),STATS_K="",STATS_CONS=new Map(),STATS_BUSY=false,STATS_DEMO=null;
-const STATS_DAY=864e5,STATS_PER={"4w":28,"3m":91,"12m":365,all:0};
+const STATS_DAY=864e5,STATS_WK=7*864e5,STATS_PER={"4w":28,"3m":91,"12m":365,all:0};
 const STATS_DISC={oval:"var(--accent)",sports_car:"#5aa9ff",formula_car:"#b98cff",dirt_oval:"#c99a5b",dirt_road:"#8fbf6a"};
 function statsDiscName(k){const d=(typeof LB_DISC!=="undefined"?LB_DISC:[]).find(x=>x[0]===k);return d?Tx(d[1][0],d[1][1],null,d[1][3]):k}
 function statsRaces(){let rs=(RACES||[]).filter(r=>r&&gameMatch(r));
@@ -11513,20 +11554,38 @@ function statsRaces(){let rs=(RACES||[]).filter(r=>r&&gameMatch(r));
   return rs.filter(r=>r.when>0).sort((a,b)=>a.when-b.when)}
 const statsSecs=s=>s.secs>0?s.secs:(s.laps||0)*(s.best||0);
 const statsHM=x=>{const h=Math.floor(x/3600),m=Math.round(x%3600/60);return h?`${h} h ${m} min`:`${m} min`};
+const statsWeek=t=>{const d=new Date(t);d.setHours(0,0,0,0);d.setDate(d.getDate()-((d.getDay()+6)%7));return d.getTime()};
+/* the longer history: My sessions keeps the newest 100, Statistics reads up to 200 of the game once in a while */
+let STATS_SS={g:"",d:false,at:0,list:null,busy:false};
+async function statsLoadList(){const g=aGame(),dm=demoOn();if(STATS_SS.busy||(STATS_SS.g===g&&STATS_SS.d===dm&&Date.now()-STATS_SS.at<300e3))return;STATS_SS.busy=true;
+  try{const ss=await cloudGet("/api/sessions?limit=200&game="+g);STATS_SS.list=(Array.isArray(ss)?ss:[]).filter(x=>x.laps>0&&(x.game||"iracing")===g).map(x=>({...x,track:unMojibake(x.track),track_config:unMojibake(x.track_config),car:unMojibake(x.car)}))}catch(e){STATS_SS.list=null}
+  STATS_SS.g=g;STATS_SS.d=dm;STATS_SS.at=Date.now();STATS_SS.busy=false;if(CUR_VIEW==="stats")renderStatsView()}
+function statsSessions(){const by=new Map();if(STATS_SS.g===aGame()&&STATS_SS.d===demoOn()&&STATS_SS.list)STATS_SS.list.forEach(s=>by.set(s.id,s));(CLOUD.sessions||[]).forEach(s=>by.set(s.id,s));
+  return[...by.values()].filter(s=>s.started>0&&s.laps>0).sort((a,b)=>a.started-b.started)}
 /* the spread of a session's lap times (±s): the server's (sessions.cons), or from its laps (valid, within 3 % of its best) */
 function statsCons(s){if(s.cons>0)return s.cons;const c=STATS_CONS.get(s.id);return c&&c.sd>0?c.sd:null}
 async function statsLoadCons(list){if(STATS_BUSY)return;const need=list.filter(s=>!(s.cons>0)&&!STATS_CONS.has(s.id)&&s.laps>=3).slice(-30);if(!need.length)return;STATS_BUSY=true;
   for(let k=0;k<need.length;k+=4)await Promise.all(need.slice(k,k+4).map(async s=>{try{const j=await cloudGet("/api/sessions/"+encodeURIComponent(s.id).replace(/%3A/gi,":")),b=s.best||0;
     const ts=(j.laps||[]).filter(l=>l&&l.time>0&&l.n>1&&l.valid!==false&&(!b||l.time<=b*1.03)).map(l=>l.time);
     if(ts.length<3){STATS_CONS.set(s.id,{sd:0});return}const m=ts.reduce((a,b)=>a+b,0)/ts.length;STATS_CONS.set(s.id,{sd:Math.sqrt(ts.reduce((a,b)=>a+(b-m)*(b-m),0)/ts.length),n:ts.length})}catch(e){STATS_CONS.set(s.id,{sd:0})}}));
-  STATS_BUSY=false;if(CUR_VIEW==="stats")renderStats()}
+  STATS_BUSY=false;if(CUR_VIEW==="stats")renderStatsView()}
+/* time per corner over the weeks: the best lap of each week against your best lap of that car and track, corner by
+   corner (the coach's comparison, coachCompare: the time each corner took from its braking zone to its exit) */
+const STATS_LAP=new Map(),STATS_CORN=new Map();let STATS_CBUSY=false;
+async function statsBestLap(id){if(STATS_LAP.has(id))return STATS_LAP.get(id);let l=null;try{const r=await cloudSessionLaps(id);l=(r.laps||[]).filter(x=>x.valid!==false&&x.time>0&&x.bins&&x.bins.length).sort((a,b)=>a.time-b.time)[0]||null}catch(e){}STATS_LAP.set(id,l);return l}
+async function statsLoadCorners(key,ref,wk){if(STATS_CBUSY||STATS_CORN.has(key))return;STATS_CBUSY=true;let out=null;
+  try{const R=await statsBestLap(ref.id);if(R){const rows=[];for(let k=0;k<wk.length;k+=3)rows.push(...await Promise.all(wk.slice(k,k+3).map(async w=>{const A=w.s.id===ref.id?R:await statsBestLap(w.s.id);if(!A)return null;
+      let cs=[];try{cs=A===R?[]:coachCompare(A,R)||[]}catch(e){cs=[]}const m=new Map();cs.forEach(c=>{if(c&&c.n!=null&&isFinite(c.lost))m.set(c.n,(m.get(c.n)||0)+c.lost)});return{w:w.w,lap:A.time-R.time,m,same:A===R}})));
+    const ok=rows.filter(Boolean),ns=new Set();ok.forEach(r=>r.m.forEach((v,n)=>ns.add(n)));if(ok.some(r=>r.same))ok.forEach(r=>{if(r.same)ns.forEach(n=>r.m.set(n,0))});
+    out={ref:R.time,weeks:ok,ns:[...ns].sort((a,b)=>a-b)}}}catch(e){out=null}
+  STATS_CORN.set(key,out);STATS_CBUSY=false;if(CUR_VIEW==="stats")renderStatsView()}
 /* a chart the design's way: lines (non-scaling), dots, bars; the readout under it says the point under the pointer */
 function statsChart(o){const H=o.h||160,W=1000,pts=[].concat(...(o.series||[]).map(s=>s.pts)),bars=o.bars||[],all=pts.concat(bars);if(!all.length)return"";
   const xs=all.map(p=>p.x),x0=o.x0!=null?o.x0:Math.min(...xs),x1=o.x1!=null?o.x1:Math.max(...xs),ys=pts.map(p=>p.y);
-  let y0=ys.length?Math.min(...ys):0,y1=ys.length?Math.max(...ys):1;if(y1-y0<1e-6){y0-=1;y1+=1}const pad=(y1-y0)*.12;y0-=pad;y1+=pad;if(o.floor!=null)y0=Math.max(o.floor,y0);
+  let y0=ys.length?Math.min(...ys):0,y1=ys.length?Math.max(...ys):1,pad=0;if(o.y0!=null&&o.y1!=null){y0=o.y0;y1=o.y1>o.y0?o.y1:o.y0+1}else{if(y1-y0<1e-6){y0-=1;y1+=1}pad=(y1-y0)*.12;y0-=pad;y1+=pad;if(o.floor!=null)y0=Math.max(o.floor,y0)}
   const xl0=14,X=x=>x1>x0?xl0+(x-x0)/(x1-x0)*(W-xl0-24):W/2,Y=y=>{const f=(y-y0)/(y1-y0);return o.invert?10+f*(H-30):H-20-f*(H-30)};
-  const bmax=Math.max(1,...bars.map(b=>b.y)),bw=bars.length?Math.max(.6,Math.min(6,70/bars.length)):0;
-  const barH=bars.map(b=>{const h=b.y/bmax*(o.series&&o.series.length?(H-20)*.35:(H-24));return`<i class="bar${b.cls?" "+b.cls:""}" style="left:${(X(b.x)/W*100).toFixed(2)}%;width:${bw}%;height:${h.toFixed(1)}px" data-tip="${esc(b.tip)}"></i>`}).join("");
+  const bmax=o.bmax||Math.max(1,...bars.map(b=>b.y)),bw=bars.length?Math.max(.6,Math.min(6,70/bars.length)):0,full=o.barsFull||!(o.series&&o.series.length);
+  const barH=bars.map(b=>{const h=b.y/bmax*(full?(H-24):(H-20)*.35);return`<i class="bar${b.cls?" "+b.cls:""}" style="left:${(X(b.x)/W*100).toFixed(2)}%;width:${bw}%;height:${h.toFixed(1)}px" data-tip="${esc(b.tip)}"></i>`}).join("");
   const lines=(o.series||[]).map(s=>s.pts.length>1?`<path class="ln" style="stroke:${s.color||"var(--accent)"}" vector-effect="non-scaling-stroke" d="${s.pts.map((p,i)=>(i?"L":"M")+X(p.x).toFixed(1)+" "+Y(p.y).toFixed(1)).join("")}"/>`:"").join("");
   const dots=(o.series||[]).map(s=>s.pts.map(p=>`<span class="dt${p.cls?" "+p.cls:""}" style="left:${(X(p.x)/W*100).toFixed(2)}%;top:${(Y(p.y)/H*100).toFixed(2)}%;${p.cls?"":`background:${s.color||"var(--fg)"}`}" data-tip="${esc(p.tip)}"></span>`).join("")).join("");
   const yl=o.fmtY&&ys.length?`<span class="yl" style="top:${(Y(o.invert?y0+pad:y1-pad)/H*100).toFixed(1)}%">${esc(o.fmtY(o.invert?y0+pad:y1-pad))}</span><span class="yl" style="top:${(Y(o.invert?y1-pad:y0+pad)/H*100).toFixed(1)}%">${esc(o.fmtY(o.invert?y1-pad:y0+pad))}</span>`:"";
@@ -11535,53 +11594,109 @@ function statsChart(o){const H=o.h||160,W=1000,pts=[].concat(...(o.series||[]).m
 function statsWire(box){box.querySelectorAll(".pw5-ch").forEach(c=>{const out=c.parentNode.querySelector(".pw5-rd"),idle=out?out.textContent:"",ms=[...c.querySelectorAll("[data-tip]")];if(!out||!ms.length)return;
   const at=x=>{let b=null,bd=1e9;ms.forEach(d=>{const r=d.getBoundingClientRect(),dx=Math.abs(r.left+r.width/2-x);if(dx<bd){bd=dx;b=d}});ms.forEach(d=>d.classList.toggle("on",d===b));out.textContent=b?b.dataset.tip:idle};
   c.addEventListener("pointermove",e=>at(e.clientX));c.addEventListener("pointerdown",e=>at(e.clientX));c.addEventListener("pointerleave",()=>{ms.forEach(d=>d.classList.remove("on"));out.textContent=idle})})}
-function renderStats(){const box=$("#statsBody");if(!box)return;const T=Tx;
+/* a small line of the last weeks (the line going down is time gained) */
+function statsSpark(v){const a=v.filter(x=>x!=null);if(a.length<2)return"";const lo=Math.min(...a),hi=Math.max(...a),r=hi-lo||1,W=70,H=22;
+  return`<svg class="pw7-sp" viewBox="0 0 ${W} ${H}" aria-hidden="true"><path d="${a.map((x,i)=>(i?"L":"M")+(i/(a.length-1)*W).toFixed(1)+" "+(2+(hi-x)/r*(H-4)).toFixed(1)).join("")}"/></svg>`}
+function renderStatsView(){const box=$("#statsBody");if(!box)return;const T=Tx;
   // the period switch, in the head
   const per=[["4w",T("4 weeks","4 semanas",null,"4 semanas")],["3m",T("3 months","3 meses",null,"3 meses")],["12m",T("12 months","12 meses",null,"12 meses")],["all",T("All","Todo",null,"Tudo")]];
-  const ctl=$("#statsPer");if(ctl){ctl.innerHTML=per.map(([k,l])=>`<button type="button" data-sp="${k}" aria-pressed="${k===STATS_P}">${esc(l)}</button>`).join("");ctl.querySelectorAll("[data-sp]").forEach(b=>b.onclick=()=>{STATS_P=b.dataset.sp;try{localStorage.setItem("pw.statsP",STATS_P)}catch(e){}renderStats()})}
-  if(CLOUD.sessions===null||CLOUD.game!==aGame()){box.innerHTML=`<div class="pnl"><p class="muted" style="margin:0">${esc(CLOUD.err||T("Loading…","Cargando…",null,"Carregando…"))}</p></div>`;if(!CLOUD.busy)cloudLoadSessions(true,true).then(()=>{if(CUR_VIEW==="stats")renderStats()});return}
-  if(RACES===null&&typeof loadRaces==="function"){loadRaces().then(()=>{if(CUR_VIEW==="stats")renderStats()}).catch(()=>{});}
-  const ss=(CLOUD.sessions||[]).filter(s=>s.started>0&&s.laps>0).slice().sort((a,b)=>a.started-b.started);
+  const ctl=$("#statsPer");if(ctl){ctl.innerHTML=per.map(([k,l])=>`<button type="button" data-sp="${k}" aria-pressed="${k===STATS_P}">${esc(l)}</button>`).join("");ctl.querySelectorAll("[data-sp]").forEach(b=>b.onclick=()=>{STATS_P=b.dataset.sp;try{localStorage.setItem("pw.statsP",STATS_P)}catch(e){}renderStatsView()})}
+  if(CLOUD.sessions===null||CLOUD.game!==aGame()){box.innerHTML=`<div class="pnl"><p class="muted" style="margin:0">${esc(CLOUD.err||T("Loading…","Cargando…",null,"Carregando…"))}</p></div>`;if(!CLOUD.busy)cloudLoadSessions(true,true).then(()=>{if(CUR_VIEW==="stats")renderStatsView()});return}
+  if(RACES===null&&typeof loadRaces==="function"){loadRaces().then(()=>{if(CUR_VIEW==="stats")renderStatsView()}).catch(()=>{});}
+  statsLoadList();
+  const ss=statsSessions(),G=aGame();
   if(!ss.length){box.innerHTML=`<div class="pnl"><p class="muted" style="margin:0">${esc(T("Drive a few sessions and your progress shows here.","Corre unas sesiones y aquí verás tu progreso.",null,"Corra algumas sessões e seu progresso aparece aqui."))}</p></div>`;return}
   const now=Date.now(),days=STATS_PER[STATS_P]||0,t0=days?now-days*STATS_DAY:Math.min(ss[0].started,now),tp=days?t0-days*STATS_DAY:null,inP=t=>t>=t0&&t<=now,inPrev=t=>tp!=null&&t>=tp&&t<t0;
   const cur=ss.filter(s=>inP(s.started)),prev=ss.filter(s=>inPrev(s.started)),RS=statsRaces(),rc=RS.filter(r=>inP(r.when)),rp=RS.filter(r=>inPrev(r.when));
-  const dd=t=>dshort(t),sum=(a,f)=>a.reduce((x,y)=>x+f(y),0);
-  // the four numbers and their change on the period before
-  const kc=(l,v,a,b,f)=>{const d=a-b,ch=tp==null?"":d===0?T("same as the period before","igual que el periodo anterior",null,"igual ao período anterior"):T(`${d>0?"+":"−"}${f?f(Math.abs(d)):Math.abs(d)} on the period before`,`${d>0?"+":"−"}${f?f(Math.abs(d)):Math.abs(d)} frente al periodo anterior`,null,`${d>0?"+":"−"}${f?f(Math.abs(d)):Math.abs(d)} em relação ao período anterior`);
-    return`<div class="pw5-k"><small>${esc(l)}</small><b class="mono">${esc(v)}</b><span class="${tp==null||d===0?"":d>0?"good":"bad"}">${esc(ch)}</span></div>`};
-  const lapsN=sum(cur,s=>s.laps||0),secs=sum(cur,statsSecs);
-  const kpis=`<div class="pw5-kpis">${kc(T("Laps","Vueltas",null,"Voltas"),String(lapsN),lapsN,sum(prev,s=>s.laps||0))}${kc(T("Time on track","Tiempo en pista",null,"Tempo na pista"),statsHM(secs),Math.round(secs/60)*60,Math.round(sum(prev,statsSecs)/60)*60,statsHM)}${kc(T("Sessions","Sesiones",null,"Sessões"),String(cur.length),cur.length,prev.length)}${kc(T("Races","Carreras",null,"Corridas"),String(rc.length),rc.length,rp.length)}</div>`;
+  const dd=t=>dshort(t),sum=(a,f)=>a.reduce((x,y)=>x+f(y),0),short=t=>String(t||"").split(" · ")[0];
   const pn=(t,b,cls)=>`<section class="pnl${cls?" "+cls:""}"><div class="pnl-h">${esc(t)}</div><div class="pnl-b">${b}</div></section>`,none=t=>`<p class="muted pw5-none">${esc(t)}</p>`;
-  const noP=T("Nothing in this period.","Nada en este periodo.",null,"Nada neste período.");
-  // the cars and tracks of the period, the most driven first; one is chosen for the best lap and the spread
-  const by=new Map();cur.forEach(s=>{const k=comboKey(s),b=by.get(k)||{k,track:s.track,cfg:s.track_config,car:s.car,list:[],laps:0,last:0,best:null};b.list.push(s);b.laps+=s.laps||0;b.last=Math.max(b.last,s.started);if(s.best>0&&(!b.best||s.best<b.best.best))b.best=s;by.set(k,b)});
+  const noP=T("Nothing in this period.","Nada en este periodo.",null,"Nada neste período."),wkT=T("Week of","Semana del",null,"Semana de"),loadT=T("Loading…","Cargando…",null,"Carregando…");
+  // the personal bests: each session that beat every earlier best of its car and track, and by how much
+  const run=new Map(),PBS=[];ss.forEach(s=>{if(!(s.best>0))return;const k=comboKey(s),b=run.get(k);if(b!=null&&s.best<b-.0005)PBS.push({s,gain:b-s.best});if(b==null||s.best<b)run.set(k,s.best)});
+  const pbC=PBS.filter(p=>inP(p.s.started)),pbP=PBS.filter(p=>inPrev(p.s.started));
+  // the six numbers and their change on the period before (fewer incidents is better)
+  const kc=(l,v,a,b,f,low)=>{const d=+(a-b).toFixed(2),ch=tp==null||isNaN(d)?"":d===0?T("same as the period before","igual que el periodo anterior",null,"igual ao período anterior"):T(`${d>0?"+":"−"}${f?f(Math.abs(d)):Math.abs(d)} on the period before`,`${d>0?"+":"−"}${f?f(Math.abs(d)):Math.abs(d)} frente al periodo anterior`,null,`${d>0?"+":"−"}${f?f(Math.abs(d)):Math.abs(d)} em relação ao período anterior`);
+    return`<div class="pw5-k"><small>${esc(l)}</small><b class="mono">${esc(v)}</b><span class="${tp==null||isNaN(d)||d===0?"":(d>0)!==!!low?"good":"bad"}">${esc(ch)}</span></div>`};
+  const lapsN=sum(cur,s=>s.laps||0),secs=sum(cur,statsSecs),rcI=rc.filter(r=>!r.partial&&r.inc!=null),rpI=rp.filter(r=>!r.partial&&r.inc!=null),ipr=a=>a.length?sum(a,r=>r.inc||0)/a.length:0;
+  const kpis=`<div class="pw5-kpis pw7-k6">${kc(T("Laps","Vueltas",null,"Voltas"),String(lapsN),lapsN,sum(prev,s=>s.laps||0))}${kc(T("Time on track","Tiempo en pista",null,"Tempo na pista"),statsHM(secs),Math.round(secs/60)*60,Math.round(sum(prev,statsSecs)/60)*60,statsHM)}${kc(T("Sessions","Sesiones",null,"Sessões"),String(cur.length),cur.length,prev.length)}${kc(T("Races","Carreras",null,"Corridas"),String(rc.length),rc.length,rp.length)}${kc(T("Personal bests","Récords personales",null,"Recordes pessoais"),String(pbC.length),pbC.length,pbP.length)}${rcI.length?kc(T("Incidents per race","Incidentes por carrera",null,"Incidentes por corrida"),ipr(rcI).toFixed(1),+ipr(rcI).toFixed(1),rpI.length?+ipr(rpI).toFixed(1):NaN,x=>x.toFixed(1),true):`<div class="pw5-k"><small>${esc(T("Incidents per race","Incidentes por carrera",null,"Incidentes por corrida"))}</small><b class="mono">–</b><span></span></div>`}</div>`;
+  const pbl=pbC.length?`<ol class="pw7-pbs">${pbC.slice().reverse().slice(0,24).map(p=>`<li tabindex="0" data-pw5ses="${esc(p.s.id)}"><time>${esc(dd(p.s.started))}</time><div><b>${esc(p.s.track)}</b><small>${esc(p.s.car)}</small></div><span class="mono">${esc(fmtT(p.s.best))}<em class="good">${esc(sgn(-p.gain))}</em></span></li>`).join("")}</ol>`:none(T("No new personal bests in this period.","No hay récords personales nuevos en este periodo.",null,"Não há recordes pessoais novos neste período."));
+  // the cars and tracks of the period, the most driven first; one is chosen for the best lap, the spread and the corners
+  const by=new Map();cur.forEach(s=>{const k=comboKey(s),b=by.get(k)||{k,track:s.track,cfg:s.track_config,car:s.car,list:[],laps:0,last:0};b.list.push(s);b.laps+=s.laps||0;b.last=Math.max(b.last,s.started);by.set(k,b)});
   const combos=[...by.values()].sort((a,b)=>(b.laps-a.laps)||(b.last-a.last));if(!combos.some(c=>c.k===STATS_K))STATS_K=combos.length?combos[0].k:"";const C=combos.find(c=>c.k===STATS_K);
-  const pick=combos.length?`<select id="statsCombo" class="pw5-sel" aria-label="${esc(T("Car and track","Coche y circuito",null,"Carro e pista"))}">${combos.map(c=>`<option value="${esc(c.k)}"${c.k===STATS_K?" selected":""}>${esc(c.track+(c.cfg?" · "+c.cfg:"")+" · "+c.car)}</option>`).join("")}</select>`:"";
-  let bestCh=none(noP),consCh=none(noP);
+  const chips=combos.length>1?`<div class="pw7-chips" role="group" aria-label="${esc(T("Car and track","Coche y circuito",null,"Carro e pista"))}">${combos.slice(0,10).map(c=>`<button type="button" class="pw7-chip" data-sk="${esc(c.k)}" aria-pressed="${c.k===STATS_K}"><b>${esc(c.track)}</b> <small>${esc(c.car)}</small></button>`).join("")}</div>`:"";
+  let bestCh=none(noP),consCh=none(noP),cornT=none(noP),cornH=T("Time per corner","Tiempo por curva",null,"Tempo por curva");
   if(C){const all=ss.filter(s=>comboKey(s)===C.k&&s.best>0),pb=Math.min(...all.map(s=>s.best)),list=C.list.filter(s=>s.best>0);
-    const kindT=s=>s.kind?" · "+s.kind:"";
-    bestCh=list.length?statsChart({series:[{color:"var(--accent)",pts:list.map(s=>({x:s.started,y:s.best,cls:s.best===pb?"pb":"",tip:`${dd(s.started)}${kindT(s)} · ${fmtT(s.best)}${s.best===pb?" · "+T("Personal best","Récord personal",null,"Recorde pessoal"):""}`}))}],fmtY:fmtT,fmtX:dd,idle:`${T("Personal best","Récord personal",null,"Recorde pessoal")} ${fmtT(pb)}`}):none(noP);
-    const cl=list.map(s=>({s,c:statsCons(s)})).filter(x=>x.c>0);statsLoadCons(list);
-    consCh=cl.length?statsChart({series:[{color:"var(--pb)",pts:cl.map(({s,c})=>({x:s.started,y:c,tip:`${dd(s.started)}${kindT(s)} · ± ${c.toFixed(3)} s`}))}],fmtY:v=>"± "+v.toFixed(2)+" s",fmtX:dd,floor:0}):none(STATS_BUSY?T("Loading…","Cargando…",null,"Carregando…"):T("Not enough clean laps in this period.","No hay suficientes vueltas limpias en este periodo.",null,"Não há voltas limpas suficientes neste período."))}
+    // the best of each week, a bigger dot where it beat every earlier best
+    const wm=new Map();list.forEach(s=>{const w=statsWeek(s.started),e=wm.get(w)||{w,s,laps:0};if(s.best<e.s.best)e.s=s;e.laps+=s.laps||0;wm.set(w,e)});const wk=[...wm.values()].sort((a,b)=>a.w-b.w);
+    const before=all.filter(s=>s.started<t0).reduce((m,s)=>Math.min(m,s.best),Infinity);let rb=before;
+    const pts=wk.map(e=>{const isPb=e.s.best<rb-.0005;rb=Math.min(rb,e.s.best);return{x:e.w,y:e.s.best,cls:isPb?"pb":"",tip:`${wkT} ${dd(e.w)} · ${fmtT(e.s.best)}${e.s.best===pb?" · "+T("Personal best","Récord personal",null,"Recorde pessoal"):""} · ${T(`${e.laps} laps`,`${e.laps} vueltas`,null,`${e.laps} voltas`)}`}});
+    const since=wk.length>1?` · ${sgn(wk[wk.length-1].s.best-wk[0].s.best)} s ${T("since","desde el",null,"desde")} ${dd(wk[0].w)}`:"";
+    bestCh=pts.length?statsChart({h:170,series:[{color:"var(--accent)",pts}],fmtY:fmtT,fmtX:dd,idle:`${T("Personal best","Récord personal",null,"Recorde pessoal")} ${fmtT(pb)}${since}`}):none(noP);
+    const kindT=s=>s.kind?" · "+sessKind(s.kind):"",cl=list.map(s=>({s,c:statsCons(s)})).filter(x=>x.c>0);statsLoadCons(list);
+    consCh=cl.length?statsChart({h:130,series:[{color:"var(--pb)",pts:cl.map(({s,c})=>({x:s.started,y:c,tip:`${dd(s.started)}${kindT(s)} · ± ${c.toFixed(3)} s`}))}],fmtY:v=>"± "+v.toFixed(2)+" s",fmtX:dd,floor:0,idle:cl.length>1?`${T("Latest","Última",null,"Última")} ± ${cl[cl.length-1].c.toFixed(2)} s · ${T("first","primera",null,"primeira")} ± ${cl[0].c.toFixed(2)} s`:`± ${cl[0].c.toFixed(2)} s`}):none(STATS_BUSY?loadT:T("Not enough clean laps in this period.","No hay suficientes vueltas limpias en este periodo.",null,"Não há voltas limpas suficientes neste período."));
+    // each corner, the best lap of the first and the latest week against your best lap (the last 12 weeks at most)
+    cornH=T(`Time per corner · ${C.track}`,`Tiempo por curva · ${C.track}`,null,`Tempo por curva · ${C.track}`);
+    const ref=all.reduce((a,s)=>!a||s.best<a.best?s:a,null),use=wk.slice(-12),key=C.k+"|"+ref.id+"|"+use.map(e=>e.s.id).join(",");
+    if(use.length<2)cornT=none(T("Drive this car and track in two different weeks to see each corner change.","Conduce este coche y circuito en dos semanas distintas para ver cómo cambia cada curva.",null,"Pilote este carro e pista em duas semanas diferentes para ver cada curva mudar."));
+    else if(!STATS_CORN.has(key)){statsLoadCorners(key,ref,use);cornT=none(loadT)}
+    else{const R=STATS_CORN.get(key);if(!R||!R.weeks.length||!R.ns.length)cornT=none(T("These laps have no telemetry to compare corners.","Estas vueltas no tienen telemetría para comparar las curvas.",null,"Estas voltas não têm telemetria para comparar as curvas."));
+      else{const W=R.weeks,f=W[0],l=W[W.length-1],cls=d=>d<-.005?"good":d>.005?"bad":"";
+        const row=(lab,a,b,tr,tot)=>{const d=a!=null&&b!=null?b-a:null;return`<tr${tot?' class="tot"':""}><td><b>${esc(lab)}</b></td><td class="mono">${esc(a==null?"–":sgn(a,2))}</td><td class="mono">${esc(b==null?"–":sgn(b,2))}</td><td class="mono ${d==null?"":cls(d)}">${esc(d==null?"–":sgn(d,2)+" s")}</td><td class="${d==null?"":cls(d)}">${statsSpark(tr)}</td></tr>`};
+        cornT=`<div class="tscroll"><table class="pw5-tb pw7-ct"><thead><tr><th>${esc(T("Turn","Curva",null,"Curva"))}</th><th>${esc(dd(f.w))}</th><th>${esc(dd(l.w))}</th><th>${esc(T("Change","Cambio",null,"Mudança"))}</th><th>${esc(T(`${Math.min(8,W.length)} weeks`,`${Math.min(8,W.length)} semanas`,null,`${Math.min(8,W.length)} semanas`))}</th></tr></thead><tbody>${R.ns.map(n=>row("T"+n,f.m.get(n),l.m.get(n),W.slice(-8).map(w=>w.m.get(n)))).join("")}${row(T("Lap","Vuelta",null,"Volta"),f.lap,l.lap,W.slice(-8).map(w=>w.lap),true)}</tbody></table></div><p class="pw5-rd mono">${esc(T(`Against your best ${fmtT(R.ref)}`,`Frente a tu mejor ${fmtT(R.ref)}`,null,`Contra sua melhor ${fmtT(R.ref)}`))}</p>`}}}
+  // laps (bars) and hours (line) per week, Monday to Sunday
+  const w0=statsWeek(t0),wn=statsWeek(now),weeks=[];for(let w=w0;w<=wn;w+=STATS_WK){weeks.push({w,s:0,l:0,n:0});if(weeks.length>60)break}
+  cur.forEach(s=>{const e=weeks.find(x=>s.started>=x.w&&s.started<x.w+STATS_WK);if(e){e.s+=statsSecs(s);e.l+=s.laps||0;e.n++}});
+  const lm=Math.max(1,...weeks.map(x=>x.l)),hm=Math.max(1,...weeks.map(x=>x.s)),nW=weeks.length||1;
+  const volCh=weeks.some(x=>x.l>0)?`<div class="pw5-leg"><span><i style="background:var(--accent)"></i>${esc(T("Laps","Vueltas",null,"Voltas"))}</span><span><i style="background:var(--pb)"></i>${esc(T("Hours","Horas",null,"Horas"))}</span></div>`+statsChart({h:150,barsFull:true,bmax:lm,y0:0,y1:hm*1.05,x0:weeks[0].w,x1:weeks[weeks.length-1].w,bars:weeks.map(x=>({x:x.w,y:x.l,tip:`${wkT} ${dd(x.w)} · ${T(`${x.l} laps`,`${x.l} vueltas`,null,`${x.l} voltas`)} · ${statsHM(x.s)} · ${T(`${x.n} sessions`,`${x.n} sesiones`,null,`${x.n} sessões`)}`})),series:[{color:"var(--pb)",pts:weeks.map(x=>({x:x.w,y:x.s,tip:`${wkT} ${dd(x.w)} · ${statsHM(x.s)}`}))}],fmtX:dd,idle:T(`${statsHM(secs/nW)} and ${Math.round(lapsN/nW)} laps a week on average`,`${statsHM(secs/nW)} y ${Math.round(lapsN/nW)} vueltas por semana de media`,null,`${statsHM(secs/nW)} e ${Math.round(lapsN/nW)} voltas por semana em média`)}):none(noP);
   // iRating by discipline, after each race
   const irR=rc.filter(r=>!r.partial&&!isAIRace(r)&&(r.game||"iracing")==="iracing"&&r.ir>1),disc=new Map();irR.forEach(r=>{const k=raceDisc(r.cat,r.car)||"sports_car";if(!disc.has(k))disc.set(k,[]);disc.get(k).push(r)});
-  const irCh=disc.size?`<div class="pw5-leg">${[...disc.keys()].map(k=>`<span><i style="background:${STATS_DISC[k]||"var(--fg)"}"></i>${esc(statsDiscName(k))}</span>`).join("")}</div>`+statsChart({series:[...disc.entries()].map(([k,a])=>({color:STATS_DISC[k]||"var(--fg)",pts:a.map(r=>{const v=r.ir+(r.irChange||0);return{x:r.when,y:v,tip:`${dd(r.when)} · ${statsDiscName(k)} · ${v} (${r.irChange>=0?"+":""}${r.irChange||0})`}})})),fmtY:v=>String(Math.round(v)),fmtX:dd}):none(T("No iRacing races with iRating in this period.","No hay carreras de iRacing con iRating en este periodo.",null,"Não há corridas do iRacing com iRating neste período."));
-  // the races: the finish (P1 on top) and the incidents as bars
-  const fin=rc.filter(r=>!r.partial&&r.finish>0);
-  const raceCh=fin.length?`<div class="pw5-leg"><span><i style="background:var(--accent)"></i>${esc(T("Finish","Llegada",null,"Chegada"))}</span><span><i style="background:var(--bad)"></i>${esc(T("Incidents","Incidentes",null,"Incidentes"))}</span></div>`+statsChart({invert:true,floor:1,series:[{color:"var(--accent)",pts:fin.map(r=>({x:r.when,y:r.finish,tip:`${dd(r.when)} · ${String(r.track||"").split(" · ")[0]} · P${r.finish}${r.field?" "+T("of","de",null,"de")+" "+r.field:""} · ${r.inc}x`}))}],bars:fin.map(r=>({x:r.when,y:r.inc||0,cls:"inc",tip:`${dd(r.when)} · ${String(r.track||"").split(" · ")[0]} · ${r.inc||0}x`})),fmtY:v=>"P"+Math.max(1,Math.round(v)),fmtX:dd}):none(T("No races in this period.","No hay carreras en este periodo.",null,"Não há corridas neste período."));
-  // time on track per week (Monday to Sunday)
-  const wk=t=>{const d=new Date(t);d.setHours(0,0,0,0);d.setDate(d.getDate()-((d.getDay()+6)%7));return d.getTime()},w0=wk(t0),wn=wk(now),weeks=[];for(let w=w0;w<=wn;w+=7*STATS_DAY){weeks.push({w,s:0});if(weeks.length>60)break}
-  cur.forEach(s=>{const e=weeks.find(x=>s.started>=x.w&&s.started<x.w+7*STATS_DAY);if(e)e.s+=statsSecs(s)});
-  const wkT=T("Week of","Semana del",null,"Semana de");
-  const timeCh=weeks.some(x=>x.s>0)?statsChart({h:130,bars:weeks.map(x=>({x:x.w,y:x.s,tip:`${wkT} ${dd(x.w)} · ${statsHM(x.s)}`})),x0:weeks[0].w,x1:weeks[weeks.length-1].w,fmtX:dd}):none(noP);
-  // the most driven cars and tracks
-  const tb=combos.length?`<div class="tscroll"><table class="pw5-tb"><thead><tr><th>${esc(T("Track · Car","Circuito · Coche",null,"Pista · Carro"))}</th><th>${esc(T("Sessions","Sesiones",null,"Sessões"))}</th><th>${esc(T("Laps","Vueltas",null,"Voltas"))}</th><th>${esc(T("Best lap","Mejor vuelta",null,"Melhor volta"))}</th><th>${esc(T("Last driven","Última vez",null,"Última vez"))}</th></tr></thead><tbody>${combos.slice(0,10).map(c=>`<tr tabindex="0" data-pw5ses="${esc(c.best?c.best.id:c.list[c.list.length-1].id)}"><td><b>${esc(c.track)}</b>${c.cfg?` <small class="muted">${esc(c.cfg)}</small>`:""}<small>${esc(c.car)}</small></td><td class="mono">${c.list.length}</td><td class="mono">${c.laps}</td><td class="mono">${c.best?fmtT(c.best.best):"–"}</td><td>${esc(dd(c.last))}</td></tr>`).join("")}</tbody></table></div>`:none(noP);
-  box.innerHTML=`<div class="pw5">${kpis}<div class="pw5-2">${pn(T("Best lap over time","Mejor vuelta en el tiempo",null,"Melhor volta ao longo do tempo"),pick+bestCh)}${pn(T("Consistency over time","Regularidad en el tiempo",null,"Regularidade ao longo do tempo"),consCh)}</div>
-    <div class="pw5-2">${pn("iRating",irCh)}${pn(T("Races","Carreras",null,"Corridas"),raceCh)}</div>
-    <div class="pw5-2">${pn(T("Time on track per week","Tiempo en pista por semana",null,"Tempo na pista por semana"),timeCh)}${pn(T("Most driven","Lo más conducido",null,"Mais pilotados"),tb)}</div></div>`;
-  const sel=$("#statsCombo");if(sel)sel.onchange=()=>{STATS_K=sel.value;renderStats()};
+  const mainD=[...disc.entries()].sort((a,b)=>b[1].length-a[1].length)[0];let irIdle="";if(mainD){const a=mainD[1],z=a[a.length-1],last=z.ir+(z.irChange||0),d=last-a[0].ir;irIdle=`${statsDiscName(mainD[0])} ${last} iR · ${d>=0?"+":"−"}${Math.abs(d)} ${T("in this period","en este periodo",null,"neste período")}`}
+  const irCh=disc.size?(disc.size>1?`<div class="pw5-leg">${[...disc.keys()].map(k=>`<span><i style="background:${STATS_DISC[k]||"var(--fg)"}"></i>${esc(statsDiscName(k))}</span>`).join("")}</div>`:"")+statsChart({h:130,series:[...disc.entries()].map(([k,a])=>({color:STATS_DISC[k]||"var(--fg)",pts:a.map(r=>{const v=r.ir+(r.irChange||0);return{x:r.when,y:v,tip:`${dd(r.when)} · ${statsDiscName(k)} · ${v} (${r.irChange>=0?"+":""}${r.irChange||0})`}})})),fmtY:v=>String(Math.round(v)),fmtX:dd,idle:irIdle}):none(T("No iRacing races with iRating in this period.","No hay carreras de iRacing con iRating en este periodo.",null,"Não há corridas do iRacing com iRating neste período."));
+  // the licences and safety ratings the PC saw (the game says only the current one)
+  let lic="";if(G==="lmu"){const r=(RATINGS||{}).lmu||{};lic=[[T("Safety rating","Safety rating",null,"Safety rating"),r.sr],[T("Driver rating","Driver rating",null,"Driver rating"),r.dr]].filter(x=>x[1]).map(([l,v])=>`<div class="pw7-lic"><span>${esc(l)}</span><b class="mono">${esc(v)}</b></div>`).join("")}
+  else{const dr=discRatings();lic=Object.entries(dr).filter(([k,r])=>r.lic).sort((a,b)=>b[1].at-a[1].at).map(([k,r])=>`<div class="pw7-lic"><span><i style="background:${STATS_DISC[k]||"var(--fg)"}"></i>${esc(statsDiscName(k))}</span><b class="mono">${esc(r.lic)}</b></div>`).join("")}
+  if(!lic)lic=none(T("Start a session in the game with the agent running to see it here.","Empieza una sesión en el juego con el agente abierto para verlo aquí.",null,"Comece uma sessão no jogo com o agente aberto para ver aqui."));
+  // the incidents of each race
+  const ir2=rc.filter(r=>!r.partial&&r.inc!=null);
+  const incCh=ir2.length?statsChart({h:90,bars:ir2.map(r=>({x:r.when,y:r.inc||0,cls:"inc",tip:`${dd(r.when)} · ${short(r.track)} · ${r.inc||0}x`})),fmtX:dd,idle:T(`${ipr(ir2).toFixed(1)} incidents per race`,`${ipr(ir2).toFixed(1)} incidentes por carrera`,null,`${ipr(ir2).toFixed(1)} incidentes por corrida`)}):none(T("No races in this period.","No hay carreras en este periodo.",null,"Não há corridas neste período."));
+  // the finishing positions: the races (else your race sessions with a place)
+  let fin=rc.filter(r=>!r.partial&&r.finish>0).map(r=>({id:r.id,race:true,when:r.when,track:short(r.track),p:r.finish,field:r.field,inc:r.inc,ir:r.irChange,isIr:(r.game||"iracing")==="iracing"&&r.ir>1}));
+  if(!fin.length)fin=cur.filter(s=>sessKindOf(s)==="race"&&s.pos>0).map(s=>({id:s.id,race:false,when:s.started,track:s.track,p:s.pos,field:s.field,inc:null,ir:null}));
+  let finB=none(T("No races in this period.","No hay carreras en este periodo.",null,"Não há corridas neste período."));
+  if(fin.length){const dist=[[1,1],[2,3],[4,5],[6,10],[11,15],[16,99]].map(([a,b])=>({l:a===b?"P"+a:b>90?`P${a}+`:`P${a}–${b}`,n:fin.filter(r=>r.p>=a&&r.p<=b).length})),dm=Math.max(1,...dist.map(d=>d.n)),hasI=fin.some(r=>r.inc!=null),hasR=fin.some(r=>r.isIr);
+    finB=`<div class="pw7-dist">${dist.map(d=>`<div><span>${esc(d.l)}</span><i style="width:${(d.n/dm*100).toFixed(0)}%"></i><b class="mono">${d.n}</b></div>`).join("")}</div><h3 class="pw7-h4">${esc(T("Recent results","Últimos resultados",null,"Resultados recentes"))}</h3><div class="tscroll"><table class="pw5-tb pw7-rr"><thead><tr><th>${esc(T("Date","Fecha",null,"Data"))}</th><th>${esc(T("Track","Circuito",null,"Pista"))}</th><th>${esc(T("Result","Resultado",null,"Resultado"))}</th>${hasI?"<th>Inc</th>":""}${hasR?"<th>iR</th>":""}</tr></thead><tbody>${fin.slice(-6).reverse().map(r=>`<tr tabindex="0" ${r.race?`data-pw7race="${esc(r.id)}"`:`data-pw5ses="${esc(r.id)}"`}><td>${esc(dd(r.when))}</td><td class="trk">${esc(r.track)}</td><td class="mono">P${r.p}${r.field?`<span class="muted">/${r.field}</span>`:""}</td>${hasI?`<td class="mono">${r.inc!=null?r.inc+"x":"–"}</td>`:""}${hasR?`<td class="mono ${r.ir>0?"good":r.ir<0?"bad":""}">${r.isIr&&r.ir!=null?(r.ir>=0?"+":"−")+Math.abs(r.ir):"–"}</td>`:""}</tr>`).join("")}</tbody></table></div>`}
+  const right=(G==="lmu"?"":pn("iRating",irCh))+pn(T("Safety rating","Safety rating",null,"Safety rating"),lic)+pn(T("Incidents per race","Incidentes por carrera",null,"Incidentes por corrida"),incCh)+pn(T("Finishing positions","Posiciones de llegada",null,"Posições de chegada"),finB);
+  box.innerHTML=`<div class="pw5">${kpis}<div class="pw7-ws"><aside class="pw7-l">${pn(T("Personal bests","Récords personales",null,"Recordes pessoais"),pbl)}</aside><div class="pw7-m">${pn(T("Best lap per week","Mejor vuelta por semana",null,"Melhor volta por semana"),chips+bestCh)}<div class="pw5-2">${pn(T("Consistency per session","Regularidad por sesión",null,"Regularidade por sessão"),consCh)}${pn(T("Laps and hours per week","Vueltas y horas por semana",null,"Voltas e horas por semana"),volCh)}</div>${pn(cornH,cornT)}</div><aside class="pw7-r">${right}</aside></div></div>`;
+  box.querySelectorAll("[data-sk]").forEach(b=>b.onclick=()=>{STATS_K=b.dataset.sk;renderStatsView()});
   box.querySelectorAll("[data-pw5ses]").forEach(tr=>{const go=()=>openAccountSession(tr.dataset.pw5ses);tr.onclick=go;tr.onkeydown=e=>{if(e.key==="Enter"){e.preventDefault();go()}}});
+  box.querySelectorAll("[data-pw7race]").forEach(tr=>{const go=()=>openRace(tr.dataset.pw7race);tr.onclick=go;tr.onkeydown=e=>{if(e.key==="Enter"){e.preventDefault();go()}}});
   statsWire(box)}
+/* ---------- Which game? (Nov 2026): Analysis, and every "choose a session", first asks the game when you have sessions
+   of more than one (iRacing, Le Mans Ultimate), with how many each has and the last one you chose marked; the session
+   window then opens on that game. One game only, no question. ---------- */
+const PW7_GC={at:0,d:false,n:{},busy:null};let PW7_ASK=false,PW7_PILL="";
+function pw7Counts(){const dm=demoOn();if(PW7_GC.d===dm&&Date.now()-PW7_GC.at<300e3)return Promise.resolve(PW7_GC.n);if(PW7_GC.busy)return PW7_GC.busy;
+  PW7_GC.busy=Promise.all(VIEW_GAMES.filter(g=>!(typeof gameLocked==="function"&&gameLocked(g))).map(async g=>{try{const ss=await cloudGet("/api/sessions?limit=200&game="+g);return[g,(Array.isArray(ss)?ss:[]).filter(x=>x.laps>0&&(x.game||"iracing")===g).length]}catch(e){return[g,-1]}}))
+    .then(a=>{PW7_GC.n=Object.fromEntries(a);PW7_GC.at=Date.now();PW7_GC.d=dm;PW7_GC.busy=null;return PW7_GC.n}).catch(()=>{PW7_GC.busy=null;return{}});return PW7_GC.busy}
+async function pw7Ready(){for(let i=0;i<50&&(CLOUD.sessions===null||CLOUD.game!==aGame()||CLOUD.busy);i++){if(!CLOUD.busy)await cloudLoadSessions(true,true);if(CLOUD.sessions===null||CLOUD.busy)await new Promise(r=>setTimeout(r,150))}}
+async function pw7GameAsk(then){if(PW7_ASK)return;PW7_ASK=true;let n={};try{n=await pw7Counts()}catch(e){}PW7_ASK=false;
+  const gs=Object.keys(n).filter(g=>n[g]>0),go=async g=>{store.set("pw.anGame",g);PW7_PILL=GAME_NAMES[g]||"";if(vGame()!==g)toGame(g);await pw7Ready();then()};
+  if(gs.length<2){PW7_PILL="";if(gs.length===1&&vGame()!==gs[0])toGame(gs[0]);await pw7Ready();return then()}
+  const last=store.get("pw.anGame","")||vGame(),T=Tx,logo={iracing:"iR",lmu:"LMU",acc:"ACC",ac:"AC"};
+  let m=$("#pw7Gq");if(!m){m=document.createElement("div");m.id="pw7Gq";m.className="uidlg";document.body.appendChild(m)}
+  const key=e=>{if(e.key==="Escape"){e.preventDefault();close()}},close=()=>{document.removeEventListener("keydown",key,true);m.hidden=true;m.innerHTML=""};document.addEventListener("keydown",key,true);
+  const nS=k=>k>=200?T("200+ sessions","200+ sesiones",null,"200+ sessões"):T(`${k} ${k===1?"session":"sessions"}`,`${k} ${k===1?"sesión":"sesiones"}`,null,`${k} ${k===1?"sessão":"sessões"}`);
+  m.innerHTML=`<div class="bg"></div><div class="pn pw7-gq" role="dialog" aria-modal="true" aria-labelledby="pw7GqH"><div class="pw7-gq-h"><h2 id="pw7GqH">${esc(T("Which game?","¿Qué juego?",null,"Qual jogo?"))}</h2><button type="button" class="pw7-x" aria-label="${esc(T("Close","Cerrar",null,"Fechar"))}">✕</button></div>
+    <div class="pw7-gq-b">${gs.map(g=>`<button type="button" class="pw7-gc${g===last?" on":""}" data-g="${g}">${g===last?`<em>${esc(T("Last time","La última vez",null,"Última vez"))}</em>`:""}<span class="pw7-logo pw7-${g}">${esc(logo[g]||g)}</span><b>${esc(GAME_NAMES[g]||g)}</b><small>${esc(nS(n[g]))}</small></button>`).join("")}</div></div>`;
+  m.hidden=false;m.querySelector(".bg").onclick=close;m.querySelector(".pw7-x").onclick=close;
+  m.querySelectorAll("[data-g]").forEach(b=>b.onclick=()=>{close();go(b.dataset.g)});const f=m.querySelector(".pw7-gc.on")||m.querySelector(".pw7-gc");if(f)f.focus()}
+/* the session window says the game it shows */
+function pw7Pill(){const d=$("#spDlg");if(!d||d.hidden||!PW7_PILL)return;const h=d.querySelector("h2");if(h&&!h.querySelector(".pw7-gp"))h.insertAdjacentHTML("beforeend",` <span class="pw7-gp">${esc(PW7_PILL)}</span>`)}
+{const _pw7SP=window.openSessPicker;window.openSessPicker=function(){const a=arguments,self=this;pw7GameAsk(()=>{_pw7SP.apply(self,a);pw7Pill();const d=$("#spDlg");if(d&&!d._pw7){d._pw7=new MutationObserver(()=>pw7Pill());d._pw7.observe(d,{childList:true,subtree:true})}})};
+  window.pw7SessPicker=_pw7SP}
+/* clicking Analysis from another part of the app: the question, then the session window of the Lap analyzer */
+document.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest('[data-g="analysis"]');if(!b||typeof groupOf!=="function"||groupOf(CUR_VIEW)==="analysis")return;
+  setTimeout(()=>{if(groupOf(CUR_VIEW)!=="analysis")return;if(CUR_VIEW==="laps"||CUR_VIEW==="coach")window.openSessPicker(CUR_VIEW==="coach"?"coach":"lap");else pw7GameAsk(()=>{})},0)},true);
 /* the driver notes live at the foot of My sessions */
 function pw5DriverNotes(){const p=$("#drvPanel"),v=$("#v-cloudlaps");if(!p||!v)return;if(p.parentNode!==v)v.appendChild(p);const h=$("#drvH"),q=$("#drvQ");
   if(h){h.textContent=Tx("Driver notes","Notas de pilotos",null,"Notas de pilotos");q.placeholder=Tx("Search a driver","Buscar un piloto",null,"Buscar piloto");q.oninput=()=>renderDriverList()}

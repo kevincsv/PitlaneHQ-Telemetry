@@ -22,14 +22,17 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   demo banner, a taller column scrolls until its end shows); narrower it is one column in that order. My laps lists
   every session in the list, each under a raised header (its kind, date and track, its laps), newest lap first, the
   fastest valid lap with a star and the others with their gap to it, each with A and B; A on a lap of another session
-  makes that session session A. Community lists the community laps loaded as references (B) and "Compare with the
-  community". On the map lap A's dot keeps its size on screen and grows while the pointer is on the map (the map grows
-  too, on computers), a ring shows lap B at the same moment of its lap, and a line under it gives the distance, the
-  corner, both speeds, the gap and how far B is ahead or behind. The track is coloured where A loses a little, loses,
-  loses a lot or gains (with that legend), the turns are numbered dots on it, and the map's switches (Braking,
-  Incidents, Coach, A vs B time, Replay) are a row of chips under the map; pressing a turn (on the map or in Corners) pins the
-  charts there and opens "T3 insight" under the map (the tip, the braking against B, the slowest speeds, the speed of
-  both laps through it, "Work on T3 in the Coach"). The overlay windows (`html.ov`) keep their own designs.
+  makes that session session A. Community shows the community laps loaded as references and then the leaderboard of
+  the car and track (loaded when the tab opens, the same laps as "Compare with the community"), each lap with its place,
+  time, driver and gap to the record and a B button that loads it as lap B, and "Compare with the community". Recorded
+  laps: pressing a row (or Enter on it) makes it lap A, the rows of A and B are marked, and each row ends with A and B.
+  The Track map is the Coach's map (`renderCmpMap`, its colours, turn labels, legend and chips), plus a line under it
+  with the distance, the corner, both speeds, the gap and how far B is ahead or behind, and a ring for lap B at the same
+  moment of its lap. On computers (a fine pointer, from 1101 px) the whole Track map panel of Laps and of the Coach
+  grows from its top right corner while the pointer is on it, above the page and as large as the window allows, without
+  moving anything else; on phones and touch screens it does not grow. Pressing a turn (on the map or in Corners) pins
+  the charts there and opens "T3 insight" under the map (the tip, the braking against B, the slowest speeds, the speed
+  of both laps through it, "Work on T3 in the Coach"). The overlay windows (`html.ov`) keep their own designs.
 - Overlays, Community, Leagues, My account and Settings in the Pit Wall Workspace look (`pw3-more` in index.html,
   PC, web and Pitlane HQ Desktop): the title and the page's own tabs on one row (the chosen tab amber), the disciplines
   as one row of cards under them where the page filters by discipline, then the content. Community's Summary is you in
@@ -171,7 +174,7 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
 - Under the lap comparison (Analysis → Laps on the PC and the web, `renderLapMore`; the phones' Laps) every device runs
   the same functions of `pitwall-analysis.js` over lap A's session: "Corner consistency" (`cornerSpread`: each corner's
   time from just before its braking point to 150 m after its slowest point on every clean lap, how much it changes lap to
-  lap, the time lost a lap on average against your best there, best, worst and how much the slowest speed changes; the
+  lap, the time lost a lap on average against your best there (on the PC and the web a loss reads negative in red, "−1.22 s", a gain positive in green), best, worst and how much the slowest speed changes; the
   corners that cost most first, the top three in red), with the laps' spread over the session (`lapSpread`: valid laps of
   your own within 3 % of the best, five at least) and the "Most consistent session" of that car and track. The server
   keeps each session's spread (`sessions.cons`, the variance, from SESSION_SUMS; migration 0090 filled the old ones; the

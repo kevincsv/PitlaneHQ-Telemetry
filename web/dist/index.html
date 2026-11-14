@@ -2433,7 +2433,7 @@ html .hl-sec{padding:0 0 12px;border-radius:var(--radius);display:flex;flex-dire
     <div class="lap-more" id="lapMore2" hidden></div>
     </main>
     <aside class="lws-r">
-      <section class="panel lws-p lws-map"><div class="label lws-h" data-i18n="trackMap"></div><div id="lapMap"></div><div class="lws-read mono" id="lapRead"></div><div class="lws-mfoot" id="lapMapFoot"></div></section>
+      <section class="panel lws-p lws-map"><div class="label lws-h" data-i18n="trackMap"></div><div id="lapMap"></div><div class="lws-read mono" id="lapRead"></div></section>
       <section class="panel lws-p lws-ins" id="lapIns" hidden></section>
       <section class="panel lws-p lws-cor" id="lapCorP" hidden><div class="label lws-h" id="lwsCorT"></div><div id="lapCorners"></div></section>
       <section class="panel lws-p lws-offs" id="lapOffs" hidden></section>
@@ -3809,7 +3809,7 @@ function renderLapMore(A,B){const box=$("#lapMore");if(!box)return;{const r2=$("
     const head=ls?`<p class="lm-sum"><b class="mono">±${ls.sd.toFixed(3)} s</b> ${esc(Tx(`over ${ls.n} laps`,`en ${ls.n} vueltas`,null,`em ${ls.n} voltas`))}${mine?" "+consPill():rec&&rec.cons>0?` <span class="muted">· ${esc(Tx("Most consistent here","La más regular aquí",null,"A mais regular aqui"))} <span class="mono">±${rec.cons.toFixed(3)} s</span> · ${esc(day(rec.started))}</span>`:""}</p>`:"";
     parts.push(`<div class="panel lm-p"><div class="label">${esc(Tx("Corner consistency","Regularidad por curva",null,"Regularidade por curva"))}${proB()}</div>${head}
       <div class="tscroll"><table class="lm-t"><thead><tr><th>${esc(Tx("Turn","Curva",null,"Curva"))}</th><th class="r">${esc(Tx("Lap to lap","De vuelta a vuelta",null,"De volta a volta"))}</th><th>${esc(Tx("Lost a lap on average","Perdido por vuelta de media",null,"Perdido por volta em média"))}</th><th class="r">${esc(Tx("Best","Mejor",null,"Melhor"))}</th><th class="r">${esc(Tx("Worst","Peor",null,"Pior"))}</th><th class="r">${esc(Tx("Slowest speed","Velocidad mínima",null,"Velocidade mínima"))}</th></tr></thead><tbody>
-      ${cs.rows.map((r,i)=>`<tr${i<3&&r.cost>=.05?' class="lm-hot"':""}><td><b>T${r.n}</b></td><td class="r mono">±${r.sd.toFixed(2)} s</td><td><span class="lm-bar"><i style="width:${Math.round(r.cost/top*100)}%"></i></span> <span class="mono">${r.cost.toFixed(2)} s</span></td><td class="r mono">${r.best.toFixed(2)} s</td><td class="r mono">${r.worst.toFixed(2)} s</td><td class="r mono">${r.vsd!=null?"±"+r.vsd.toFixed(1)+" "+esc(cs.unit):"–"}</td></tr>`).join("")}</tbody></table></div></div>`)}
+      ${cs.rows.map((r,i)=>`<tr${i<3&&r.cost>=.05?' class="lm-hot"':""}><td><b>T${r.n}</b></td><td class="r mono">±${r.sd.toFixed(2)} s</td><td><span class="lm-bar"><i style="width:${Math.round(r.cost/top*100)}%"></i></span> <span class="mono ${r.cost>.005?"bad":r.cost<-.005?"good":"muted"}">${sgn(-r.cost,2)} s</span></td><td class="r mono">${r.best.toFixed(2)} s</td><td class="r mono">${r.worst.toFixed(2)} s</td><td class="r mono">${r.vsd!=null?"±"+r.vsd.toFixed(1)+" "+esc(cs.unit):"–"}</td></tr>`).join("")}</tbody></table></div></div>`)}
   // the race fuel: what a lap takes here, a tank's laps and the stops a race of this length needs
   if(fu){const toL=v=>UNITS==="imperial"?v/0.264172:v,V=v=>v==null?"–":vol(v).toFixed(v>=100?0:1)+" "+volU(),len=+LM_RACE.len||0,plan=len?PWA.fuelPlan(fu,LM_RACE.unit==="min"?{min:len}:{laps:len}):null;
     parts.push(`<div class="panel lm-p"><div class="label">${esc(Tx("Race fuel","Combustible de carrera",null,"Combustível de corrida"))}${proB()}</div>
@@ -10403,13 +10403,6 @@ html:not(.ov) #v-laps .chshow .chip[aria-pressed="true"],html:not(.ov) #v-laps .
 #v-laps .ch-box{position:relative;width:100%;border-bottom:1px solid var(--line);cursor:crosshair;touch-action:pan-y}
 #v-laps .ch-box canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
 /* the map, its read-out, its legend and switches, the insight, the corners, the offs */
-#v-laps #lapMap .rb-tip,#v-laps #lapMap .hdot,#v-laps #lapMap svg text.sec{display:none!important}
-#v-laps #lapMap svg.rbmap{--k:2;width:100%;display:block;max-height:260px;cursor:crosshair}
-#v-laps #lapMap svg .trkS{stroke:var(--line)!important}#v-laps #lapMap svg .trk{stroke:var(--line2)!important}#v-laps #lapMap svg .trkI{stroke:var(--muted)!important;opacity:.5}
-#v-laps #lapMap .pw3-mp{fill:none;stroke-width:5.4;stroke-linecap:round;stroke-linejoin:round}
-#v-laps #lapMap .pw3-mp.m1{stroke:var(--m1)}#v-laps #lapMap .pw3-mp.m2{stroke:var(--m2)}#v-laps #lapMap .pw3-mp.m3{stroke:var(--m3)}#v-laps #lapMap .pw3-mp.mg{stroke:var(--mg)}
-#v-laps #lapMap g.mc{cursor:pointer}#v-laps #lapMap g.mc circle{fill:var(--surface);stroke:var(--fg);stroke-width:1.5}#v-laps #lapMap g.mc text{fill:var(--fg);font:700 8px var(--f-data);text-anchor:middle}
-#v-laps #lapMap g.mc.sel circle,#v-laps #lapMap g.mc:hover circle,#v-laps #lapMap g.mc:focus-visible circle{fill:var(--accent);stroke:var(--accent)}#v-laps #lapMap g.mc.sel text,#v-laps #lapMap g.mc:hover text{fill:var(--accent-ink)}#v-laps #lapMap g.mc:focus{outline:none}
 #v-laps #lapMap .pw3-cs{transform:scale(var(--k));transition:transform .15s ease-out}
 #v-laps #lapMap.hot .pw3-cur .pw3-cs{transform:scale(calc(var(--k) * 1.7))}
 #v-laps #lapMap .pw3-a{fill:var(--accent);stroke:#fff;stroke-width:2;vector-effect:non-scaling-stroke}
@@ -10418,9 +10411,7 @@ html:not(.ov) #v-laps .chshow .chip[aria-pressed="true"],html:not(.ov) #v-laps .
 #v-laps #lapsBody.bmine #lapMap .pw3-gh circle{fill:var(--pb);stroke:var(--pb)}
 #v-laps #lapMap .pw3-cur,#v-laps #lapMap .pw3-gh{pointer-events:none}
 #v-laps #lapMap .rp-bar{margin-top:6px}
-@media (hover:hover) and (min-width:1101px){#v-laps .lws-r #lapMap svg.rbmap{transform-origin:top right;transition:transform .2s ease-out,box-shadow .2s;border-radius:12px}
-  #v-laps .lws-r #lapMap.hot svg.rbmap{transform:scale(1.9);position:relative;z-index:15;background:var(--surface);box-shadow:0 18px 48px rgba(0,0,0,.55),0 0 0 1px var(--line)}}
-@media (prefers-reduced-motion:reduce){#v-laps #lapMap .pw3-cs,#v-laps #lapMap svg.rbmap{transition:none!important}}
+@media (prefers-reduced-motion:reduce){#v-laps #lapMap .pw3-cs{transition:none!important}}
 #v-laps .lws-read{display:flex;flex-wrap:wrap;gap:4px 10px;align-items:baseline;font:12px var(--f-data);margin-top:6px;min-height:18px}
 #v-laps .lws-read .ra{color:var(--accent)}#v-laps .lws-read .rb{color:var(--blue)}#v-laps #lapsBody.bmine .lws-read .rb{color:var(--pb)}#v-laps .lws-read small{color:var(--muted);font-size:12px}
 #v-laps .lws-mfoot:empty{display:none}
@@ -10524,8 +10515,28 @@ html:not(.ov) #v-laps #cmpChips.chshow .chip[aria-pressed="true"]{background:var
   html:not(.ov) #spDlg.pw3-sp .sp-two{gap:10px}html:not(.ov) #spDlg.pw3-sp .sp-two>.sp-sec+.sp-sec{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:auto auto;grid-auto-flow:column;column-gap:8px}
   html:not(.ov) #spDlg.pw3-sp .sp-two>.sp-sec+.sp-sec>h3{margin:0 0 6px!important}html:not(.ov) #spDlg.pw3-sp select{min-height:38px;font-size:13.5px}
   html:not(.ov) #spDlg.pw3-sp .sp-row{grid-template-columns:auto 50px minmax(0,1fr) 72px;gap:8px;padding:8px}html:not(.ov) #spDlg.pw3-sp .sp-when b{white-space:nowrap}}
-#v-laps #lapMap svg .trkS{stroke-width:10px!important;stroke:var(--line)!important;filter:none!important;opacity:1!important}#v-laps #lapMap svg .trk{stroke-width:7px!important;stroke:var(--line2)!important}#v-laps #lapMap svg .trkI{display:none}
-#v-laps #lapMap .pw3-mp{stroke-width:3.6px}
+/* the map: the Coach's map (the same drawing), the map first, the read-out under it, then its legend and switches */
+#v-laps .lws-map{display:flex;flex-direction:column}
+#v-laps #lapMap{display:contents}
+#v-laps .lws-map>.lws-h{order:0}#v-laps #lapMap>svg{order:1;width:100%;height:auto;display:block;--k:2}#v-laps #lapMap>.rp-bar{order:2}#v-laps .lws-map>#lapRead{order:3}
+#v-laps #lapMap>*:not(svg):not(.rp-bar):not(.rb-bar){order:4}
+#v-laps #lapMap>.rb-bar{order:5;display:flex;flex-wrap:wrap;gap:6px;margin:8px 0 0}
+#v-laps #lapMap .rb-tip,#v-laps #lapMap .hdot{display:none!important}
+#v-laps #lapMap svg text.cn{cursor:pointer}#v-laps #lapMap svg text.cn:hover,#v-laps #lapMap svg text.cn.sel{fill:var(--accent)}#v-laps #lapMap svg text.cn:focus-visible{outline:none;fill:var(--accent);text-decoration:underline}
+/* the whole Track map panel grows while the pointer is on it (computers), on the Laps and the Coach screens */
+@media (hover:hover) and (pointer:fine) and (min-width:1101px){
+  #v-laps .lws-r>.lws-map,#v-coach section.pnl:has(#coachMap){position:relative;transform-origin:top right;transition:transform .2s ease-out,box-shadow .2s;will-change:transform}
+  #v-laps .lws-r>.lws-map:hover,#v-coach section.pnl:has(#coachMap):hover{transform:scale(var(--pz,1.6));z-index:30;background:var(--surface)!important;box-shadow:0 18px 48px rgba(0,0,0,.55),0 0 0 1px var(--line2)}}
+@media (prefers-reduced-motion:reduce){#v-laps .lws-r>.lws-map,#v-coach section.pnl:has(#coachMap){transition:none!important}}
+#v-laps #lapMap .rb-bar .chip{min-height:28px;padding:3px 9px;font-size:12px;border-radius:5px;background:var(--surface2);border:1px solid var(--line2)}
+#v-laps #lapMap .rb-bar .lgd{font-size:12px;color:var(--muted)}
+/* Recorded laps: each row picks lap A, with A and B at its end */
+#v-laps #lapTable tr.lt-row{cursor:pointer}#v-laps #lapTable tr.lt-row:hover td{background:var(--surface2)}
+#v-laps #lapTable tr.lt-row:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+#v-laps #lapTable tr.isa td{background:color-mix(in srgb,var(--accent) 14%,transparent)}#v-laps #lapTable tr.isa td:first-child{box-shadow:inset 3px 0 var(--accent)}
+#v-laps #lapTable tr.isb td:first-child{box-shadow:inset 3px 0 var(--blue)}#v-laps #lapsBody.bmine #lapTable tr.isb td:first-child{box-shadow:inset 3px 0 var(--pb)}
+html:not(.ov) #v-laps #lapTable td.lt-ab{white-space:nowrap;padding-top:3px!important;padding-bottom:3px!important;width:72px}#v-laps #lapTable td.lt-ab .ls-ab{width:30px;margin-left:4px}
+#v-laps .ls.cm .ls-cm{grid-template-rows:auto auto;row-gap:0;padding:5px 8px;cursor:default}#v-laps .ls.cm .ls-cm em{line-height:1.35}
 </style>
 <script id="pw3-laps-js">
 /* Pit Wall Workspace: laps helpers. The lap analyzer as a workspace (docs/spec/app-screens.md, "Lap analyzer"): the header
@@ -10640,17 +10651,59 @@ function pw3LapsPanel(){const host=$("#lapPick");if(!host)return;const As=$("#la
         return`<div class="ls-h" style="--gc:${g.c}"><b>${esc(nm)}</b><span>${esc([x?pw3Day(x.started):"",trk].filter(Boolean).join(" · "))}</span><small class="mono">${esc(pw3Laps(g.laps.length))}</small></div>`+
           g.laps.slice().reverse().map(l=>row(l,String(l.n??""),fast&&l.time>0?sgn(l.time-fast,2):"",fast&&l.valid!==false&&l.time===fast,true,nm+" · "+Tx("Lap","Vuelta",null,"Volta")+" "+(l.n??""))).join("")}).join("")}</div>`}
   else{const cr=CREF.filter(l=>l&&!l.stale&&refFits(l)).slice().sort((a,b)=>a.time-b.time),f=cr.length?cr[0].time:0;
-    body=`<div class="lws-spbar"><button type="button" class="btn small" data-lcomm>${esc(Tx("Compare with the community","Comparar con la comunidad",null,"Comparar com a comunidade"))}</button></div><div class="lapsel" role="list">${cr.map((l,i)=>row(l,String(i+1),sgn(l.time-f,2),i===0,false,l.model?String(l.n||""):(l.alias||lapName(l)))).join("")}</div>`}
+    const mr=cr.filter(l=>l.model),bd=pw3Board();
+    body=`<div class="lws-spbar"><button type="button" class="btn small" data-lcomm>${esc(Tx("Compare with the community","Comparar con la comunidad",null,"Comparar com a comunidade"))}</button></div><div class="lapsel" role="list">${mr.map(l=>row(l,"",sgn(l.time-f,2),false,false,String(l.n||""))).join("")}${pw3BoardHTML(bd)}</div>`}
   host.innerHTML=tabs+body;
   host.querySelectorAll("[data-lsrc]").forEach(b=>b.onclick=()=>{PW3L.src=b.dataset.lsrc;pw3LapsPanel();pw3Stick()});
   {const b=host.querySelector("[data-lsp]");if(b)b.onclick=()=>openSessPicker("lap")}
   {const b=host.querySelector("[data-lcomm]");if(b)b.onclick=pickCommLap}
+  host.querySelectorAll("[data-cb]").forEach(b=>b.onclick=()=>pw3BoardPick(+b.dataset.cb,b));
   const fire=s=>s.dispatchEvent(new Event("change",{bubbles:true}));
-  host.querySelectorAll("[data-lr]").forEach(b=>b.onclick=()=>{const l=rows[+b.dataset.lr];if(!l)return;
-    if(b.dataset.set==="A"){const v=optOf(As,l);if(v!==""){if(v===As.value)return;As.value=v;fire(As)}else if(l.sessionId&&cloud)pw3Primary(l);return}
-    const v=optOf(Bs,l);if(v===""||v===Bs.value)return;
-    if(l===A){const ob=Bs.value,va=optOf(As,lapOf(ob));if(va==="")return;As.value=va;ANASEL.a=selKey(va,lapOf(va));Bs.value=v;ANASEL.b=selKey(v,l);ANASEL.bu=true;renderLaps();return}
-    Bs.value=v;fire(Bs);pw3LapsPanel()})}
+  host.querySelectorAll("[data-lr]").forEach(b=>b.onclick=()=>pw3SetLap(rows[+b.dataset.lr],b.dataset.set))}
+/* a lap as lap A or lap B, from the lap list or the Recorded laps table */
+function pw3SetLap(l,set){const As=$("#lapA"),Bs=$("#lapB");if(!l||!As||!Bs)return;const A=lapOf(As.value),cloud=coachCloudOn();
+  const optOf=(s,x)=>{for(const o of s.options)if(lapOf(o.value)===x)return o.value;return""},fire=s=>s.dispatchEvent(new Event("change",{bubbles:true}));
+  if(set==="A"){const v=optOf(As,l);if(v!==""){if(v===As.value)return;As.value=v;fire(As)}else if(l.sessionId&&cloud)pw3Primary(l);return}
+  const v=optOf(Bs,l);if(v===""||v===Bs.value)return;
+  if(l===A){const ob=Bs.value,va=optOf(As,lapOf(ob));if(va==="")return;As.value=va;ANASEL.a=selKey(va,lapOf(va));Bs.value=v;ANASEL.b=selKey(v,l);ANASEL.bu=true;renderLaps();return}
+  Bs.value=v;fire(Bs);pw3LapsPanel();pw3LapRows()}
+/* Recorded laps: a row makes that lap lap A, its A and B buttons as in the lap list */
+function pw3LapRows(){const tb=$("#lapTable tbody"),th=$("#lapTable thead tr");if(!tb||!th)return;const LP=analysisLaps()||[],A=lapOf(($("#lapA")||{}).value),B=lapOf(($("#lapB")||{}).value),rows=[...tb.rows];
+  if(!rows.length||rows.length!==LP.length)return;
+  if(!th.querySelector(".lt-ab"))th.insertAdjacentHTML("beforeend",`<th class="lt-ab" aria-label="A / B"></th>`);
+  rows.forEach((tr,k)=>{const l=LP[LP.length-1-k];if(!l)return;tr.classList.add("lt-row");tr.classList.toggle("isa",l===A);tr.classList.toggle("isb",l===B);tr.tabIndex=0;
+    const nm=Tx("Lap","Vuelta",null,"Volta")+" "+(l.n??"");tr.setAttribute("aria-label",nm+" · "+Tx("lap A","vuelta A",null,"volta A"));
+    let c=tr.querySelector(".lt-ab");if(!c){c=document.createElement("td");c.className="lt-ab";tr.appendChild(c)}
+    c.innerHTML=`<button type="button" class="ls-ab" data-set="A" aria-pressed="${l===A}" aria-label="${esc(nm+" · "+Tx("lap A","vuelta A",null,"volta A"))}">A</button><button type="button" class="ls-ab" data-set="B" aria-pressed="${l===B}" aria-label="${esc(nm+" · "+Tx("lap B","vuelta B",null,"volta B"))}">B</button>`;
+    c.querySelectorAll(".ls-ab").forEach(b=>b.onclick=e=>{e.stopPropagation();pw3SetLap(l,b.dataset.set)});
+    tr.onclick=e=>{if(e.target.closest("button,a,input"))return;pw3SetLap(l,"A")};
+    tr.onkeydown=e=>{if(e.target===tr&&(e.key==="Enter"||e.key===" ")){e.preventDefault();pw3SetLap(l,"A")}}})}
+
+/* ---------- Community: the whole community leaderboard of this car and track (place, driver, time, gap to the record),
+   each lap with B to compare with it, loaded when the tab opens (the same laps as Compare with the community) ---------- */
+const pw3CGet=async p=>{if(demoOn()&&window.PITLANE_DEMO){const d=window.PITLANE_DEMO.get(withGame(p,aGame()));if(d!==undefined)return famCars(JSON.parse(JSON.stringify(d)))}return cget(p)};
+function pw3BoardKey(){if(!coachCloudOn())return"";const ses=(CLOUD.sessions||[]).find(x=>x.id===CLOUD.sid);return ses?aGame()+"|"+ses.id:""}
+function pw3Board(){const k=pw3BoardKey(),B=PW3L.board;if(!k)return null;if(B&&B.k===k)return B;PW3L.board={k,busy:true,laps:[],hit:null,err:""};pw3BoardLoad(PW3L.board);return PW3L.board}
+async function pw3BoardLoad(bd){try{const ses=(CLOUD.sessions||[]).find(x=>x.id===CLOUD.sid),g=aGame();
+    const combos=(await pw3CGet(withGame("/api/community/combos",g))).combos||[],hit=ses?commComboForSession(combos,ses):null;
+    if(hit){bd.hit=hit;const all=(await pw3CGet(withGame(`/api/community/laps?trackId=${hit.trackId}&carId=${hit.carId}`,g))).laps||[],fr=(await friendLaps(hit.trackId,hit.carId,g)).map(l=>l.id);
+      bd.laps=all.slice().sort((a,b)=>a.time-b.time).map(l=>({...l,friend:fr.includes(l.id)}))}}catch(e){bd.err=e.message||""}
+  bd.busy=false;if(PW3L.board===bd&&PW3L.src==="comm"&&CUR_VIEW==="laps")pw3LapsPanel()}
+function pw3BoardHTML(bd){if(!bd)return"";const B=lapOf(($("#lapB")||{}).value);
+  const h=`<div class="ls-h" style="--gc:var(--pb)"><b>${esc(Tx("Leaderboard","Clasificación",null,"Classificação"))}</b><span></span><small class="mono">${bd.busy?"…":esc(pw3Laps(bd.laps.length))}</small></div>`;
+  if(bd.busy)return h;if(!bd.laps.length)return h+`<p class="foot">${esc(bd.err||Tx("No community laps for this track and car yet","Aún no hay vueltas de la comunidad para este circuito y coche",null,"Ainda não há voltas da comunidade para esta pista e carro"))}</p>`;
+  const f=bd.laps[0].time;
+  return h+bd.laps.map((l,i)=>{const on=!!(B&&B.cid===l.id),nt=l.hasTrace===false;return`<div class="ls cm${on?" b":""}" role="listitem"><div class="ls-main ls-cm"><span>${i+1}</span><b class="mono">${fmtT(l.time)}</b><small class="mono">${i===0?pw3Star(Tx("Fastest in the community","La más rápida de la comunidad",null,"A mais rápida da comunidade")):sgn(l.time-f,2)}</small><em>${l.friend?"★ ":""}${esc(l.alias||"–")}${nt?" · "+esc(Tx("time only","solo el tiempo",null,"só o tempo")):""}</em></div><span></span><button type="button" class="ls-ab" data-set="B" data-cb="${i}" aria-pressed="${on}" aria-label="${esc((l.alias||"")+" · "+Tx("lap B","vuelta B",null,"volta B"))}"${nt?` disabled title="${esc(NO_TRACE())}"`:""}>B</button></div>`}).join("")}
+async function pw3BoardPick(i,btn){const bd=PW3L.board,l=bd&&bd.laps[i];if(!l)return;const sel=$("#lapB");if(!sel)return;
+  const show=k=>{sel.value="c"+k;ANASEL.b=selKey(sel.value,lapOf(sel.value));ANASEL.bu=true;drawCmp();pw3LapsPanel()};
+  const has=k=>k>=0&&[...sel.options].some(o=>o.value==="c"+k);
+  {const k=CREF.findIndex(x=>x&&x.cid===l.id&&!x.stale);if(has(k))return show(k)}
+  if(btn)btn.disabled=true;
+  try{const full=await pw3CGet(`/api/community/laps?id=${encodeURIComponent(l.id)}`),tr=full&&full.trace;if(!tr||!tr.d||!tr.d.length)throw new Error(NO_TRACE());
+    const ref={n:"⟡ "+(full.alias||l.alias||""),time:full.time||l.time,bins:tr.d.map(x=>[x[0],x[5],x[1],x[2],x[3],x[4],null]),maxBin:tr.d.length-1,xy:traceXY(tr),comm:true,cid:l.id,sectors:full.sectors||l.sectors||null,track:full.track||l.track,car:full.car||l.car,tid:+full.trackId||+(bd.hit&&bd.hit.trackId)||0,tn:((curCmpTrack()||{}).n)||normTrk(full.track||l.track)};
+    CREF.push(ref);COMM_LOADED=COMM_LOADED.filter(x=>x.cid!==l.id);COMM_LOADED.push(ref);if(COMM_LOADED.length>6)COMM_LOADED.shift();
+    renderLaps();const j=CREF.indexOf(ref);if(has(j))show(j);else pw3LapsPanel()}
+  catch(e){toast(e.message);if(btn)btn.disabled=false}}
 
 /* ---------- lap A against lap B (the design's lap header), then the numbers across the top and the corners on the right ---------- */
 const pw3Mine=l=>!!(l&&!(l.comm||l.cid)&&!l.drv&&l.who==null);
@@ -10682,7 +10735,7 @@ function renderLapAnalyzer(A,B){const box=$("#lapAnalyzer"),cp=$("#lapCorP"),cb=
 
 /* "<turn> insight": the corner under the map, from the comparison of A and B */
 function pw3Ins(n,quiet){const box=$("#lapIns");if(!box)return;PW3L.ins=n||0;
-  document.querySelectorAll("#lapMap g.mc").forEach(t=>t.classList.toggle("sel",!!n&&t.dataset.cn===String(n)));
+  document.querySelectorAll("#lapMap text.cn").forEach(t=>t.classList.toggle("sel",!!n&&t.textContent==="T"+n));
   if(!n){box.hidden=true;box.innerHTML="";return}
   const A=lapOf($("#lapA").value),B=lapOf($("#lapB").value);let c=null;try{c=A&&B?coachCompare(A,B).find(x=>x.n===n):null}catch(e){}
   if(!c){box.hidden=true;box.innerHTML="";PW3L.ins=0;return}
@@ -10711,40 +10764,17 @@ const _pw3RCM=window.renderCmpMap;
 window.renderCmpMap=async function(A,B,box){const r=await _pw3RCM.apply(this,arguments);if(box&&box.id==="lapMap")try{pw3MapPost(box)}catch(e){}return r};
 function pw3MapPost(box){const offs=$("#lapOffs"),svg=box.querySelector("svg.rbmap");
   if(offs){const o=box.querySelector(".offs"),sum=box.querySelector(":scope>.rb-sum");offs.innerHTML="";offs.hidden=!o;if(o){const lb=o.querySelector(".label");if(lb)lb.classList.add("lws-h");offs.appendChild(o);if(sum)lb?lb.after(sum):o.prepend(sum)}else if(sum)sum.remove()}
-  box.querySelectorAll(":scope>p.note").forEach(p=>p.remove());
-  const foot=$("#lapMapFoot");if(foot)foot.innerHTML="";
   if(!svg){const rd=$("#lapRead");if(rd)rd.innerHTML="";pw3Stick();return}
-  pw3MapLook(box,svg,foot);
   svg.insertAdjacentHTML("beforeend",`<g class="pw3-gh" transform="translate(-99 -99)"><g class="pw3-cs"><circle r="6"/></g></g><g class="pw3-cur" transform="translate(-99 -99)"><g class="pw3-cs"><circle class="pw3-halo" r="11"/><circle class="pw3-a" r="6"/></g></g>`);
-  const pickT=t=>{const n=+t.dataset.cn;if(!n)return;const b=$(`#lapCorners .la-c[data-cn="${n}"]`);if(b&&!b.classList.contains("on"))b.click();else if(!b)pw3Ins(n)};
-  svg.addEventListener("click",e=>{const t=e.target.closest&&e.target.closest("g.mc");if(t)pickT(t)});
-  svg.addEventListener("keydown",e=>{const t=e.target.closest&&e.target.closest("g.mc");if(t&&(e.key==="Enter"||e.key===" ")){e.preventDefault();pickT(t)}});
+  svg.querySelectorAll("text.cn").forEach(t=>{t.setAttribute("role","button");t.setAttribute("tabindex","0")});
+  const pickT=t=>{const n=parseInt(String(t.textContent||"").replace(/^T/,""),10);if(!n)return;const b=$(`#lapCorners .la-c[data-cn="${n}"]`);if(b&&!b.classList.contains("on"))b.click();else if(!b)pw3Ins(n)};
+  svg.addEventListener("click",e=>{const t=e.target.closest&&e.target.closest("text.cn");if(t)pickT(t)});
+  svg.addEventListener("keydown",e=>{const t=e.target.closest&&e.target.closest("text.cn");if(t&&(e.key==="Enter"||e.key===" ")){e.preventDefault();pickT(t)}});
   const hot=on=>{box.classList.toggle("hot",on);pw3MapCursor(PW3L.idx);clearTimeout(box._pw3t);box._pw3t=setTimeout(()=>pw3MapCursor(PW3L.idx),260)};
-  svg.addEventListener("transitionend",e=>{if(e.target===svg)pw3MapCursor(PW3L.idx)});
+  {const pnl=box.closest(".lws-map");if(pnl&&!pnl._pw3te){pnl._pw3te=1;pnl.addEventListener("transitionend",e=>{if(e.target===pnl)pw3MapCursor(PW3L.idx)})}}
   svg.addEventListener("pointerenter",e=>{if(e.pointerType==="mouse")hot(true)});svg.addEventListener("pointerleave",e=>{if(e.pointerType==="mouse")hot(false)});
   if(PW3L.ins)pw3Ins(PW3L.ins,true);
   pw3MapCursor(CMP_HOVER?CMP_HOVER.i:PW3L.idx);pw3Stick()}
-/* the design's map: where A loses or gains as four colours along the track (with their legend), the turns as numbered
-   dots on the track, and the map's switches as a row of small chips under it */
-function pw3MapLook(box,svg,foot){const g=box._pw3;if(!g||!box._at)return;const at=box._at,L=g.L,n=g.n,sa=g.sa,sb=g.sb;
-  svg.querySelectorAll("text.sec").forEach(e=>e.remove());
-  // the track fills the panel: the drawing cropped to the circuit
-  try{const t=svg.querySelector("polyline.trkS")||svg.querySelector("polyline.trk");if(t){const bb=t.getBBox(),p=16;if(bb.width>20&&bb.height>20)svg.setAttribute("viewBox",`${(bb.x-p).toFixed(1)} ${(bb.y-p).toFixed(1)} ${(bb.width+2*p).toFixed(1)} ${(bb.height+2*p).toFixed(1)}`)}}catch(e){}
-  if(LAPV.delta){svg.querySelectorAll("polyline.seg").forEach(e=>e.remove());const SEG=Math.min(160,Math.max(24,Math.round(L/40)));let segs="";
-    const tAt=(s,i)=>{const r=s.arr[i];return r&&r[1]!=null?r[1]:null};
-    for(let j=0;j<SEG;j++){const i0=Math.floor(j/SEG*(n-1)),i1=Math.floor((j+1)/SEG*(n-1));if(i1<=i0)continue;const a0=tAt(sa,i0),a1=tAt(sa,i1),b0=tAt(sb,i0),b1=tAt(sb,i1);if(a0==null||a1==null||b0==null||b1==null)continue;
-      const rate=((a1-b1)-(a0-b0))/((i1-i0)*BIN)*100,cls=rate>.08?"m3":rate>.03?"m2":rate>0?"m1":"mg",pts=[];for(let d=i0*BIN;d<=i1*BIN;d+=Math.max(2,BIN)){const q=at(Math.min(d,L-1));pts.push(q[0].toFixed(1)+","+q[1].toFixed(1))}
-      segs+=`<polyline class="pw3-mp ${cls}" points="${pts.join(" ")}"/>`}
-    const ref=svg.querySelector("text.cn")||svg.querySelector(".pw3-gh");if(ref)ref.insertAdjacentHTML("beforebegin",segs);else svg.insertAdjacentHTML("beforeend",segs)}
-  // the turns: a numbered dot on the track at each turn
-  svg.querySelectorAll("text.cn").forEach(t=>t.remove());
-  const cur=svg.querySelector(".pw3-gh");let mk="";(g.cs||[]).forEach(c=>{const q=at(c.d);mk+=`<g class="mc${PW3L.ins===c.n?" sel":""}" data-cn="${c.n}" role="button" tabindex="0" aria-label="T${c.n}"><circle cx="${q[0].toFixed(1)}" cy="${q[1].toFixed(1)}" r="6.5"/><text x="${q[0].toFixed(1)}" y="${(q[1]+2.9).toFixed(1)}">${c.n}</text></g>`});
-  if(cur)cur.insertAdjacentHTML("beforebegin",mk);else svg.insertAdjacentHTML("beforeend",mk);
-  if(!foot)return;const bar=box.querySelector(".rb-bar");
-  const leg=LAPV.delta?`<div class="map-leg"><span><i class="m1"></i>${esc(Tx("losing a little","pierde un poco",null,"perde um pouco"))}</span><span><i class="m2"></i>${esc(Tx("losing","pierde",null,"perde"))}</span><span><i class="m3"></i>${esc(Tx("losing a lot","pierde mucho",null,"perde muito"))}</span><span><i class="mg"></i>${esc(Tx("gaining","gana",null,"ganha"))}</span></div>`:"";
-  foot.insertAdjacentHTML("beforeend",leg);
-  if(bar){const lg=[...bar.querySelectorAll(".lgd")];if(LAPV.brk&&lg.length){const d=document.createElement("div");d.className="map-leg";lg.forEach(x=>d.appendChild(x));foot.appendChild(d)}else lg.forEach(x=>x.remove());
-    bar.classList.add("pw3-mchips");foot.appendChild(bar)}}
 function pw3MapCursor(i){const b=$("#lapMap"),g=b&&b._pw3,svg=b&&b.querySelector("svg.rbmap");if(!g||!svg||!b._at||g.n<2)return;
   i=Math.max(0,Math.min(g.n-1,Math.round(i)||0));PW3L.idx=i;const d=i*BIN,q=b._at(d),a=g.sa.arr[i],bb=g.sb.arr[i];
   // lap B where it was at the same moment of its lap
@@ -10819,7 +10849,7 @@ function drawCmp(hover){const A=lapOf($("#lapA").value),B=lapOf($("#lapB").value
   if(!hover){renderLapCompareHeads(A,B);renderLapAnalyzer(A,B);try{renderLapMore(A,B)}catch(e){}}
   const sa=lapSeries(A),sb=lapSeries(B),n=Math.min(sa.end,sb.end);CMP_SECN=Math.max(A.sectors?.length||0,B.sectors?.length||0,3);
   pw3Charts(A,B,sa,sb,n,hover);{const t=$("#cmpTip");if(t)t.hidden=true}
-  if(!hover){renderBrakeTable(A,B);renderCmpMap(A,B,$("#lapMap"));
+  if(!hover){renderBrakeTable(A,B);renderCmpMap(A,B,$("#lapMap"));try{pw3LapRows()}catch(e){}
     const box=$("#secStrip");if(box){const secs=pairSecs(A,B,sa,sb,n),row=(nm,ta,tb,tot)=>`<tr${tot?' class="tot"':""}><td>${esc(nm)}</td><td class="mono">${tot?fmtT(ta):ta.toFixed(3)}</td><td class="mono">${tot?fmtT(tb):tb.toFixed(3)}</td><td class="mono ${ta-tb>0?"bad":"good"}">${sgn(ta-tb)}</td></tr>`;
       box.innerHTML=`<table class="tb sectors"><thead><tr><th></th><th>A</th><th>B</th><th>${esc(Tx("Gap","Dif.",null,"Dif."))}</th></tr></thead><tbody>${secs.map(([a,b],k)=>row("S"+(k+1),a,b)).join("")}${row(Tx("Lap","Vuelta",null,"Volta"),A.time,B.time,true)}</tbody></table>${secs.length?"":`<p class="foot">${esc(Tx("No sector times for these laps.","Estas vueltas no tienen tiempos por sector.",null,"Estas voltas não têm tempos por setor."))}</p>`}`}}
   cmpMapHover(CMP_HOVER?Math.min(n-1,CMP_HOVER.i):null)}
@@ -10835,7 +10865,7 @@ function pw3After(){const v=$("#v-laps");if(!v)return;const body=$("#lapsBody"),
   v.classList.add("lws-on");v.classList.toggle("lws-has",has);v.classList.toggle("lws-cloud",cloud);v.classList.toggle("lws-live",!cloud&&pcPick());
   {const t=$("#lwsLapsT");if(t)t.textContent=Tx("Laps","Vueltas",null,"Voltas")}
   {const g=$("#lapGoCoach");if(g){g.textContent=Tx("Learn from this lap in the Coach","Aprende de esta vuelta en el Coach",null,"Aprenda com esta volta no Coach")+" →";g.onclick=openInCoach}}
-  if(has)pw3LapsPanel();pw3StickWire();pw3Stick()}
+  if(has){pw3LapsPanel();pw3LapRows()}pw3StickWire();pw3Stick()}
 /* the side columns stay in view: their top stops under what sticks at the top of the window, and a column taller
    than the window scrolls with the page until its end shows */
 function pw3Stick(){const v=$("#v-laps");if(!v||v.hidden)return;const cols=v.querySelectorAll(".lws-l,.lws-r");if(innerWidth<=1100){cols.forEach(a=>a.style.top="");return}
@@ -10843,7 +10873,11 @@ function pw3Stick(){const v=$("#v-laps");if(!v||v.hidden)return;const cols=v.que
   cols.forEach(a=>{a.style.top=Math.min(base,innerHeight-a.offsetHeight-12)+"px"})}
 function pw3StickWire(){if(pw3StickWire.on)return;pw3StickWire.on=1;addEventListener("resize",pw3Stick);
   if(window.ResizeObserver){const ro=new ResizeObserver(()=>pw3Stick());document.querySelectorAll("#v-laps .lws-l,#v-laps .lws-r").forEach(c=>ro.observe(c))}
-  {const b=$("#lapB");if(b)b.addEventListener("change",()=>setTimeout(pw3LapsPanel,0))}}
+  {const b=$("#lapB");if(b)b.addEventListener("change",()=>setTimeout(()=>{pw3LapsPanel();pw3LapRows()},0))}}
+/* the Track map panel (Laps and Coach) grows as one block while the pointer is on it, as much as fits in the window */
+document.addEventListener("pointerover",e=>{if(e.pointerType!=="mouse"||!e.target.closest)return;const pn=e.target.closest("#v-laps .lws-r>.lws-map,#v-coach section.pnl");if(!pn||pn.contains(e.relatedTarget)||(pn.closest("#v-coach")&&!pn.querySelector("#coachMap")))return;
+  const r=pn.getBoundingClientRect(),h=pn.offsetHeight||1,w=pn.offsetWidth||1,top=Math.max(r.top,0);
+  pn.style.setProperty("--pz",Math.max(1.1,Math.min(1.6,(innerHeight-12-top)/h,(r.right-96)/w)).toFixed(3))});
 </script>
 <style id="pw3-analysis">
 /* Pit Wall Workspace: analysis (Coach, My sessions, My races), the design's own rules (base.css, .d3) on the app's markup */

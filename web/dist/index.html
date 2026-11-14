@@ -8168,8 +8168,8 @@ async function renderPrep(p){const box=$("#prepBox");if(!box)return;box.innerHTM
 
 /* ---------- Discord ---------- */
 let DISC=null;
-async function loadDiscord(){if(MODE==="bridge"){try{DISC=await jget("/api/discord")}catch(e){DISC={}}}else DISC=DISC||{connected:false,results:true,irating:true,name:"",demo:true};return DISC}
-async function renderDiscordPanel(){const box=$("#discordPanel");if(!box)return;await loadDiscord();const d=DISC;
+async function loadDiscordHook(){if(MODE==="bridge"){try{DISC=await jget("/api/discord")}catch(e){DISC={}}}else DISC=DISC||{connected:false,results:true,irating:true,name:"",demo:true};return DISC}
+async function renderDiscordPanel(){const box=$("#discordPanel");if(!box)return;await loadDiscordHook();const d=DISC;
   box.innerHTML=`<div class="vhead" style="margin:0 0 6px"><h2 style="margin:0">Discord</h2>${d.connected?`<span class="pill good">${esc(Tx("Connected","Conectado"))}</span>`:""}</div>
     <p class="note" style="margin-top:0">${Lp("Post your race results (automatically) and your next races to a channel of your team or friends.","Publica tus resultados (automáticamente) y tus próximas carreras en un canal de tu equipo o amigos.")}</p>
     <ol class="steps"><li>${esc(Tx("In Discord: channel settings → Integrations → Webhooks → New webhook → Copy webhook URL.","En Discord: ajustes del canal → Integraciones → Webhooks → Nuevo webhook → Copiar URL del webhook."))}</li><li>${esc(Tx("Paste it here and save. It is stored encrypted on this PC.","Pégala aquí y guarda. Se guarda cifrada en este PC."))}</li></ol>
@@ -8185,7 +8185,7 @@ async function renderDiscordPanel(){const box=$("#discordPanel");if(!box)return;
 async function shareCalDiscord(){const now=Date.now(),its=calItems(now,now+7*DAYMS).filter(i=>i.k!=="busy");if(!its.length){toast(Tx("Nothing planned in the next 7 days","Nada planificado en los próximos 7 días"));return}
   const name=(ACC&&ACC.name)||PROFILE.name||"";const txt=`🗓 ${Tx(`Next races${name?" of "+name:""}`,`Próximas carreras${name?" de "+name:""}`,`Nächste Rennen${name?" of "+name:""}`,`Próximas corridas${name?" of "+name:""}`)}:\n`+its.map(i=>`• ${new Date(i.t).toLocaleDateString(locale(),{weekday:"short",day:"numeric",month:"short"})} ${hm(i.t)} · ${i.title}${i.sub?" · "+i.sub:""}`).join("\n");
   if(MODE!=="bridge"){$("#dTitle").textContent="Discord";$("#dSub").textContent=Tx("Demo: this is what would be posted","Demo: esto es lo que se publicaría");$("#dBody").innerHTML=`<pre class="discpre">${esc(txt)}</pre>`;$("#drawer").hidden=false;return}
-  await loadDiscord();if(!DISC.connected){toast(Tx("Connect Discord first: Settings → Connections","Conecta Discord primero: Ajustes → Conexiones"));show("settings");setTimeout(()=>{const t=$("#discordPanel");if(t)t.scrollIntoView({behavior:"smooth"})},100);return}
+  await loadDiscordHook();if(!DISC.connected){toast(Tx("Connect Discord first: Settings → Connections","Conecta Discord primero: Ajustes → Conexiones"));show("settings");setTimeout(()=>{const t=$("#discordPanel");if(t)t.scrollIntoView({behavior:"smooth"})},100);return}
   try{await jpost("/api/discord",{action:"post",content:txt});toast(Tx("Posted on Discord","Publicado en Discord"))}catch(e){toast(e.message)}}
 
 /* ---------- updates ---------- */
@@ -9595,8 +9595,9 @@ async function loadDiscord(){const b=$("#meDiscB");if(!b)return;let d;try{d=awai
     ${note(Tx("Other drivers see it on your profile and can find you on Discord.","Los demás pilotos lo ven en tu perfil y pueden encontrarte en Discord.","Other drivers see it on your profile and can find you on Discord.","Os outros pilotos veem no seu perfil e podem encontrar você no Discord."))}
     <div class="me-row" style="margin-top:8px"><button type="button" class="btn small" id="meDiscOff">${esc(Tx("Unlink","Desvincular","Unlink","Desvincular"))}</button></div>`;
   discWireGo();
-  $("#meDiscShow").onclick=async()=>{try{await jpost("/api/sync",{action:"discordShow",on:!d.shown})}catch(e){toast(e.message)}loadDiscord()};
-  $("#meDiscOff").onclick=async()=>{const pw=await steamPassAsk(Tx("Unlink your Discord account?","¿Desvincular tu cuenta de Discord?","Unlink your Discord account?","Desvincular a sua conta do Discord?"));if(!pw)return;try{await jpost("/api/sync",{action:"discordUnlink",password:pw})}catch(e){toast(e.message)}loadDiscord()}}
+  const sh=b.querySelector("#meDiscShow"),off=b.querySelector("#meDiscOff");if(!sh||!off)return;
+  sh.onclick=async()=>{try{await jpost("/api/sync",{action:"discordShow",on:!d.shown})}catch(e){toast(e.message)}loadDiscord()};
+  off.onclick=async()=>{const pw=await steamPassAsk(Tx("Unlink your Discord account?","¿Desvincular tu cuenta de Discord?","Unlink your Discord account?","Desvincular a sua conta do Discord?"));if(!pw)return;try{await jpost("/api/sync",{action:"discordUnlink",password:pw})}catch(e){toast(e.message)}loadDiscord()}}
 // linking takes the password first; the web goes to Discord and comes back (?discordLink=<grant>), the PC's agent opened it in the browser
 function discWireGo(){const go=$("#meDiscGo");if(!go)return;go.onclick=async()=>{const pw=await steamPassAsk(Tx("Link Discord","Vincular Discord","Link Discord","Vincular Discord"));if(!pw)return;go.disabled=true;
   try{const r=await jpost("/api/sync",{action:"discordStart",password:pw});if(!r||!r.url)throw new Error("?");
@@ -9643,8 +9644,9 @@ async function loadSteam(){const b=$("#meSteamB");if(!b)return;let d;try{d=await
     <div class="me-row">${chk("meSteamShow",d.shown,esc(Tx("Show my Steam on my profile","Mostrar mi Steam en mi perfil","Show my Steam on my profile","Mostrar minha Steam no meu perfil")))}</div>
     <p class="note" style="margin:6px 0 0">${esc(Tx("Other drivers see it on your profile.","Los demás pilotos lo ven en tu perfil.","Other drivers see it on your profile.","Os outros pilotos veem no seu perfil."))}</p>
     <div class="me-row" style="margin-top:8px"><button type="button" class="btn small" id="meSteamOff">${esc(Tx("Unlink","Desvincular","Unlink","Desvincular"))}</button></div>`;
-  $("#meSteamShow").onclick=async()=>{try{await jpost("/api/sync",{action:"steamShow",on:!d.shown})}catch(e){toast(e.message)}loadSteam()};
-  $("#meSteamOff").onclick=async()=>{const pw=await steamPassAsk(Tx("Unlink your Steam account?","¿Desvincular tu cuenta de Steam?","Unlink your Steam account?","Desvincular a sua conta da Steam?"));if(!pw)return;try{await jpost("/api/sync",{action:"steamUnlink",password:pw})}catch(e){toast(e.message)}loadSteam()}}
+  const sh=b.querySelector("#meSteamShow"),off=b.querySelector("#meSteamOff");if(!sh||!off)return;
+  sh.onclick=async()=>{try{await jpost("/api/sync",{action:"steamShow",on:!d.shown})}catch(e){toast(e.message)}loadSteam()};
+  off.onclick=async()=>{const pw=await steamPassAsk(Tx("Unlink your Steam account?","¿Desvincular tu cuenta de Steam?","Unlink your Steam account?","Desvincular a sua conta da Steam?"));if(!pw)return;try{await jpost("/api/sync",{action:"steamUnlink",password:pw})}catch(e){toast(e.message)}loadSteam()}}
 document.addEventListener("visibilitychange",()=>{if(!document.hidden&&$("#meSteamB"))loadSteam()});
 // back from Steam on the web (pitlanehq.app/?steamLogin=<grant>, or ?steamLogin=0&new=1&persona=&sid= when that Steam has no account yet,
 // ?steamLink=<grant> from Account → Steam on the web, ?steamLogin=pc or ?steamLinked=1|0|taken when the PC started it and its agent has

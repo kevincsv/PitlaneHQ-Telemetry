@@ -18,8 +18,9 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   (Speed, Gap to lap B, Throttle, Brake, Gear, Steering, Line), each with its legend and, on the right, the values at
   the point under the pointer or finger (the whole lap when nothing is touched), the turns as thin lines, Braking
   points, Corner consistency (with the race fuel and More charts), Recorded laps. Right: Track map, Corners, Offs
-  explained and "Learn from this lap in the Coach". From 1101 px the side columns stay in view (their top under the
-  demo banner, a taller column scrolls until its end shows); narrower it is one column in that order. My laps lists
+  explained and "Learn from this lap in the Coach". From 1101 px the side columns stay in view (their top just under the
+  header and the demo banner; when a column is taller than the window, Laps keeps its top and its lap list scrolls inside,
+  and the right column keeps the Track map whole while the panels under it scroll inside); narrower it is one column in that order. My laps lists
   every session in the list, each under a raised header (its kind, date and track, its laps), newest lap first, the
   fastest valid lap with a star and the others with their gap to it, each with A and B; A on a lap of another session
   makes that session session A. Community shows the community laps loaded as references and then the leaderboard of

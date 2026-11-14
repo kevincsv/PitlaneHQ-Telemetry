@@ -25,9 +25,12 @@ Status as of 2026-11-07. Rules for releasing are in CLAUDE.md and `docs/spec/pc-
   account takes it, Store installs show as Microsoft Store. Server part works after a cloud deploy (migration 0098);
   the Store part needs a Windows build. See `docs/spec/admin.md`.
 
+- 0.9.17 (2026-11-14): the engine rework the owner approved (off-track time in seconds, laps up to 30 km, close
+  corners split, no crash on odd laps). PC and web bumped; the phones' analysis copy is on mobile master for the next
+  phone release. Not built yet.
+
 ## Held until the owner says
 
-- Telemetry and coach engine rework on branch `claude/project-thread-x6ayp1` (both repos). See `coach.md`.
 - Watch in replay and the pedal and wheel check stay testers-only, also in production.
 - Version 1.0 waits for the Steam version to be approved by Valve. Stay on 0.9.x.
 

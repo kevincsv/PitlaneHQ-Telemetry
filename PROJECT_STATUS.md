@@ -16,7 +16,7 @@ the Google Play closed test.
 - Microsoft Store 0.9.15 submission: prepared, the owner submits.
 - Phone repo: merge the App Store and Report/Block work with master's Google Play commits before the next release.
 - Agent sign-up sources: on master (2026-11-14), live after the next cloud deploy and Windows build.
-- Held until the owner says: the telemetry and coach engine rework (its own branch).
+- 0.9.17 on master (2026-11-14): the engine rework (lap recorder and coach fixes), waiting for its beta build and promotion.
 
 ## Live now
 

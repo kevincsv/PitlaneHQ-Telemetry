@@ -23,3 +23,7 @@ Status as of 2026-11-07. The look is described in `docs/spec/app-screens.md` ("T
   My races, Telemetry, Standings, Tyres, Overlays, Community, Leagues, My account, Settings.
 - Beta only. Production waits for the owner's OK. The phones are not changed (their own Track First design), so
   "Only mine" in Community and the old layouts stay there until a follow-up in the phone repository.
+- 2026-11-14 evening, round 2 (the owner said beta did not look exactly like the artifact): every screen rebuilt
+  with the artifact's own CSS rules, the page tabs and game switch in the header row, card contour B (the owner's
+  pick from https://claude.ai/artifact/6EeQx4An9ZRcxZag8JsurS), and the Select sessions window only lists the
+  ticked session's car and track, fits the window and has bigger controls. Beta only.

@@ -15,6 +15,7 @@ the Google Play closed test.
 - Google Play: closed test needs 12 testers for 14 days. Waiting on the owner's tester list.
 - Microsoft Store 0.9.15 submission: prepared, the owner submits.
 - Phone repo: merge the App Store and Report/Block work with master's Google Play commits before the next release.
+- Agent sign-up sources: on master (2026-11-14), live after the next cloud deploy and Windows build.
 - Held until the owner says: the telemetry and coach engine rework (its own branch).
 
 ## Live now

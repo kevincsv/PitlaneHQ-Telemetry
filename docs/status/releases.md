@@ -19,6 +19,12 @@ Status as of 2026-11-07. Rules for releasing are in CLAUDE.md and `docs/spec/pc-
 - PitlaneHQ-Mobile: the working branch has 10 commits master lacks (App Store page workflow, Report/Block 86b1836);
   master has the Google Play commits (play.yml) the working branch lacks. Merge them before the next phone release.
 
+## On master, not deployed or built yet
+
+- Where agent sign-ups come from (2026-11-14): the installer download keeps the visitor's source and the agent's
+  account takes it, Store installs show as Microsoft Store. Server part works after a cloud deploy (migration 0098);
+  the Store part needs a Windows build. See `docs/spec/admin.md`.
+
 ## Held until the owner says
 
 - Telemetry and coach engine rework on branch `claude/project-thread-x6ayp1` (both repos). See `coach.md`.

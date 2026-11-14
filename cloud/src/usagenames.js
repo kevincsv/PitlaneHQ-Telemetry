@@ -77,6 +77,7 @@ export function areasOf(top) {
 
 export const SRC_NAMES = {
   direct: N("Direct", "Directo", "Direto"), unknown: N("Not known", "Sin saber", "Desconhecido"), "pc-app": N("The PC agent", "El agente del PC", "O agente do PC"),
+  msstore: N("Microsoft Store"),
   "android-app": N("The Android app", "La app de Android", "O app Android"), "ios-app": N("The iPhone app", "La app de iPhone", "O app iPhone"),
   iracing: N("iRacing forums", "Foros de iRacing", "Fóruns do iRacing"), google: N("Google"), bing: N("Bing"), duckduckgo: N("DuckDuckGo"), yahoo: N("Yahoo"),
   yandex: N("Yandex"), baidu: N("Baidu"), ecosia: N("Ecosia"), brave: N("Brave Search"), qwant: N("Qwant"), chatgpt: N("ChatGPT"), perplexity: N("Perplexity"),
@@ -87,7 +88,7 @@ export const SRC_NAMES = {
 export const KIND_NAMES = {
   search: N("Search", "Buscador", "Busca"), ai: N("AI assistant", "Asistente de IA", "Assistente de IA"), community: N("Community", "Comunidad", "Comunidade"),
   social: N("Social", "Redes sociales", "Redes sociais"), direct: N("Direct", "Directo", "Direto"), app: N("App"), other: N("Other site", "Otra web", "Outro site"),
-  unknown: N("Not known", "Sin saber", "Desconhecido"),
+  unknown: N("Not known", "Sin saber", "Desconhecido"), store: N("App store", "Tienda de apps", "Loja de apps"),
 };
 export const srcName = (s) => SRC_NAMES[s] || N(s);
 export const GAME_NAMES = { iracing: "iRacing", lmu: "Le Mans Ultimate", acc: "ACC", ac: "Assetto Corsa" };

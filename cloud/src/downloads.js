@@ -7,7 +7,7 @@
 //   /dl/beta/<file>       the same files of the test builds (testers and admins), promoted to /dl/ once they pass
 //   /downloads            the downloads page
 //   /changelog[/phones]   the release notes, one anchor per version (#062-beta)
-import { VISIT_JS, isBot } from "./sourceslib.js";
+import { VISIT_JS, isBot, downloadVisit, dlKey, SQL_DL_ADD } from "./sourceslib.js";
 import { pcCount } from "./pcstats.js";
 const H = { "content-type": "text/html; charset=utf-8", "cache-control": "no-cache", "referrer-policy": "no-referrer", vary: "Accept-Language" }; // English or Spanish by the browser's language
 const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
@@ -30,7 +30,12 @@ export async function downloads(req, env, url) {
     if (!o) return new Response("not found", { status: 404 });
     if (name === "version.json") return pcVersion(await o.text());
     // the installer downloaded (not a resumed piece of it): one install for the admin Analytics (pcstats.js)
-    if (name === "PitlaneHQ-Setup.exe" && req.method === "GET" && !isBot(req.headers.get("user-agent")) && !/^bytes=[1-9]/.test(req.headers.get("range") || "")) await pcCount(env, "download", beta ? "beta" : "");
+    // and where it came from, for an account the agent makes from the same connection (sourceslib.js appSignupSrc)
+    if (name === "PitlaneHQ-Setup.exe" && req.method === "GET" && !isBot(req.headers.get("user-agent")) && !/^bytes=[1-9]/.test(req.headers.get("range") || "")) {
+      await pcCount(env, "download", beta ? "beta" : "");
+      const v = downloadVisit(url.searchParams, req.headers.get("referer"));
+      await env.DB.prepare(SQL_DL_ADD).bind(await dlKey(env.DATA_KEY, req.headers.get("cf-connecting-ip")), Date.now(), v.src, v.page, v.campaign).run().catch(() => {});
+    }
     const ext = name.split(".").pop().toLowerCase();
     const h = new Headers({ "content-type": TYPES[ext] || "application/octet-stream", "cache-control": ext === "json" || ext === "md" ? "no-cache" : "public, max-age=300", "x-content-type-options": "nosniff", "access-control-allow-origin": "*" });
     if (o.httpEtag) h.set("etag", o.httpEtag);

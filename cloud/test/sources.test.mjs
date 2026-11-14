@@ -135,3 +135,37 @@ console.log("sources ok");
   assert.equal(visitOf({ ref: "", page: "/", us: "reddit" }).inviter, undefined);
   console.log("invite source ok");
 }
+
+// sign-ups in the PC agent: the installer's download keeps where it came from, and the agent's account takes it
+{
+  const { downloadVisit, appSignupSrc, dlKey, DL_DAYS, SQL_DL_ADD, SQL_DL_FIND } = await import("../src/sourceslib.js");
+  const q = (s) => new URLSearchParams(s);
+  // from the site's own button: the browser's first visit, added to the link
+  assert.deepEqual(downloadVisit(q("fr=https%3A%2F%2Fold.reddit.com%2Fr%2Fsimracing&fu=&fc=&fp=%2Firacing-telemetry"), "https://pitlanehq.app/"), { src: "reddit", page: "iracing-telemetry", campaign: "" });
+  assert.deepEqual(downloadVisit(q("fr=&fu=youtube&fc=launch&fp=%2F"), ""), { src: "youtube", page: "landing", campaign: "launch" });
+  assert.equal(downloadVisit(q("fr=https%3A%2F%2Fpitlanehq.app%2F&fu=&fc=&fp=%2F"), "").src, "direct", "from Pitlane HQ itself with nothing more");
+  // a link to the installer posted elsewhere: its tag, else the site it was clicked on
+  assert.deepEqual(downloadVisit(q(""), "https://discord.com/channels/1/2"), { src: "discord", page: "dl", campaign: "" });
+  assert.equal(downloadVisit(q("utm_source=reddit"), "").src, "reddit");
+  assert.equal(downloadVisit(q(""), null).src, "direct");
+  // the agent's account
+  assert.deepEqual(appSignupSrc("pc/0.9.15+abc1234", "", { src: "reddit", page: "landing" }), { src: "reddit", page: "landing" });
+  assert.deepEqual(appSignupSrc("desktop/0.9.15", "store", { src: "google", page: "landing" }), { src: "google", page: "landing" }, "a download wins over the Store");
+  assert.deepEqual(appSignupSrc("pc/0.9.15", "store", null), { src: "msstore", page: null });
+  assert.deepEqual(appSignupSrc("pc/0.9.15", "", null), { src: "pc-app", page: null });
+  assert.deepEqual(appSignupSrc("android/0.9.15", "store", { src: "reddit" }), { src: "android-app", page: null }, "only the agent");
+  assert.equal(kindOf("msstore"), "store");
+  // the key: the same for the same address, never the address
+  const k1 = await dlKey("secret", "203.0.113.7"), k2 = await dlKey("secret", "203.0.113.7"), k3 = await dlKey("secret", "203.0.113.8");
+  assert.equal(k1, k2);
+  assert.notEqual(k1, k3);
+  assert.ok(/^[0-9a-f]{32}$/.test(k1) && !k1.includes("203"));
+  // on the real schema: the newest download of the connection inside DL_DAYS
+  const now = Date.parse("2026-11-14T12:00:00Z"), D = 86400e3;
+  db.prepare(SQL_DL_ADD).run(k1, now - 20 * D, "youtube", "landing", "");
+  db.prepare(SQL_DL_ADD).run(k1, now - 3 * D, "reddit", "landing", "");
+  db.prepare(SQL_DL_ADD).run(k3, now - 1 * D, "google", "landing", "");
+  assert.deepEqual({ ...db.prepare(SQL_DL_FIND).get(k1, now - DL_DAYS * D) }, { src: "reddit", page: "landing" });
+  assert.equal(db.prepare(SQL_DL_FIND).get(await dlKey("secret", "198.51.100.1"), now - DL_DAYS * D), undefined);
+  console.log("agent sign-up source ok");
+}

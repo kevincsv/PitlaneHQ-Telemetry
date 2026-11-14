@@ -13,7 +13,7 @@ import { discordAccount, discordStart, useDiscordGrant, discordAccountId, discor
 import { steamAccount, steamStart, useSteamGrant, steamAccountId, linkSteam } from "./steam.js";
 import { notePresence } from "./presence.js";
 import { sealEscrow, escrowLogin, escrowReady } from "./escrow.js";
-import { visitOf, appSrc, countryOf, SQL_ACCOUNT_SRC } from "./sourceslib.js";
+import { visitOf, appSignupSrc, countryOf, dlKey, DL_DAYS, SQL_ACCOUNT_SRC, SQL_DL_FIND } from "./sourceslib.js";
 import { googleStart, googleReady, useGoogleGrant, googleAccountId, linkGoogle } from "./google.js";
 // the phone app calls the server directly (bearer tokens, no cookies), so any origin may ask
 const JSONH = { "content-type": "application/json; charset=utf-8", "cache-control": "no-store", "access-control-allow-origin": "*" };
@@ -321,7 +321,7 @@ export async function accounts(req, env, url) {
       env.DB.prepare("INSERT INTO accounts (id, email_hash, auth_salt, auth_hash, wrapped_key, display, name_kind, created) VALUES (?1,?2,?3,?4,?5,?6,?7,?8)")
         .bind(id, eh, salt, await authHash(salt, body.auth), body.wrappedKey, display, body.nameKind === "iracing" ? "iracing" : "nick", Date.now()),
       env.DB.prepare("INSERT INTO community_users (id, token_hash, alias, created) VALUES (?1,?2,?3,?4)").bind(id, "acct:" + id, display, Date.now()),
-      signupSrc(env, req, id, body),
+      await signupSrc(env, req, id, body),
     ]);
     await inviteFollow(env, id, body).catch(() => {});
     if (steam) await linkSteam(env, steam.steamid, id, steam.persona);
@@ -719,7 +719,7 @@ async function quickRegister(env, body, ip, req) {
     env.DB.prepare("INSERT INTO accounts (id, email_hash, auth_salt, auth_hash, wrapped_key, display, name_kind, created, verified, escrow) VALUES (?1,?2,'','','',?3,'nick',?4,1,?5)")
       .bind(id, eh, display, Date.now(), sealed.value),
     env.DB.prepare("INSERT INTO community_users (id, token_hash, alias, created) VALUES (?1,?2,?3,?4)").bind(id, "acct:" + id, display, Date.now()),
-      signupSrc(env, req, id, body),
+      await signupSrc(env, req, id, body),
   ]);
   await inviteFollow(env, id, body).catch(() => {});
   if (prov === "steam") await linkSteam(env, g.steamid, id, g.persona);
@@ -746,9 +746,16 @@ export async function inviteFollow(env, id, body) {
 }
 
 // where a new account came from (the admin page's Analytics, sourceslib.js): the first visit of the browser it was made
-// in (body.src, kept by the page), else the app it was made in, and the country of the sign-up
-function signupSrc(env, req, id, body) {
+// in (body.src, kept by the page), else for the agent the installer downloaded from the same connection (or the
+// Microsoft Store), else the app it was made in (appSignupSrc), and the country of the sign-up
+async function signupSrc(env, req, id, body) {
   const v = body && body.src && typeof body.src === "object" ? visitOf(body.src) : null;
-  const src = v && v.src ? v.src : v && v.src === "" ? "direct" : appSrc(req.headers.get("x-pitlane-client"));
-  return env.DB.prepare(SQL_ACCOUNT_SRC).bind(id, src, v ? v.page : null, countryOf(req.cf));
+  if (v) return env.DB.prepare(SQL_ACCOUNT_SRC).bind(id, v.src || "direct", v.page, countryOf(req.cf));
+  const client = req.headers.get("x-pitlane-client");
+  let dl = null;
+  if (/^(pc|desktop)\//i.test(String(client || "").trim())) {
+    dl = await env.DB.prepare(SQL_DL_FIND).bind(await dlKey(env.DATA_KEY, req.headers.get("cf-connecting-ip")), Date.now() - DL_DAYS * 86400e3).first().catch(() => null);
+  }
+  const a = appSignupSrc(client, req.headers.get("x-pitlane-install"), dl);
+  return env.DB.prepare(SQL_ACCOUNT_SRC).bind(id, a.src, a.page, countryOf(req.cf));
 }

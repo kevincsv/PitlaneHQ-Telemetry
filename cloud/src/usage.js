@@ -24,7 +24,7 @@
 import { sessionAccount, isAdmin } from "./accounts.js";
 import { installsOf, supportersOf } from "./pcstats.js";
 import { srcName, KIND_NAMES, hiText, areasOf } from "./usagenames.js";
-import { visitOf, countryOf, isBot, sourcesOf, SQL_VISIT_ADD } from "./sourceslib.js";
+import { visitOf, countryOf, isBot, sourcesOf, SQL_VISIT_ADD, DL_DAYS } from "./sourceslib.js";
 import { openEscrow } from "./escrow.js";
 import { sendFeedback } from "./email.js";
 import { discordFeedback } from "./discord.js";
@@ -189,8 +189,9 @@ export async function usageRoute(req, env, url) {
   return err("not found", 404);
 }
 
-// the hourly job: a little over a year of usage and visits is enough
+// the hourly job: a little over a year of usage and visits is enough, and DL_DAYS of downloads
 export async function pruneUsage(env) {
   const old = day(Date.now() - 400 * 86400e3);
-  await env.DB.batch([env.DB.prepare("DELETE FROM usage_days WHERE day < ?1").bind(old), env.DB.prepare("DELETE FROM visits_days WHERE day < ?1").bind(old)]);
+  await env.DB.batch([env.DB.prepare("DELETE FROM usage_days WHERE day < ?1").bind(old), env.DB.prepare("DELETE FROM visits_days WHERE day < ?1").bind(old),
+    env.DB.prepare("DELETE FROM dl_src WHERE created < ?1").bind(Date.now() - DL_DAYS * 86400e3)]);
 }

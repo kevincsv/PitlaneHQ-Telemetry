@@ -72,8 +72,15 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   one; a campaign tag wins over the referrer, `visitOf`), takes the country from Cloudflare (`countryOf`, XX when
   unknown) and the page (`pageOf`: landing, app or the path), and adds one into the row of the day, source, country and
   page (no address, no account). Every sign-up (`/account/register`, the form and the quick Steam, Discord and Google one)
-  sends `src: pw.src0`, and the account keeps its source, page and country once (`signupSrc`); an account made without one
-  is pc-app, android-app, ios-app (from X-Pitlane-Client) or unknown. Rows over 400 days go with the usage.
+  sends `src: pw.src0`, and the account keeps its source, page and country once (`signupSrc`).
+- Sign-ups in the PC agent (it has no browser history): a click on a link to `PitlaneHQ-Setup.exe` on pitlanehq.app adds
+  the browser's first visit to the link (`VISIT_JS`: fr, fu, fc, fp), and each download of the installer keeps that source
+  (or, for a link from elsewhere, its utm_source / ?ref= and the Referer, page "dl"; `downloadVisit`) in `dl_src` (migration
+  0098) under `dlKey`, a hash of the address with the server's secret, for 14 days (`DL_DAYS`, the hourly job drops older
+  rows). An account the agent makes (X-Pitlane-Client pc/ or desktop/) from the same connection in that time takes the
+  newest download's source and page; else an agent the Microsoft Store installed (it sends X-Pitlane-Install: store) is
+  msstore ("Microsoft Store", kind store); else pc-app (`appSignupSrc`). An account made without a first visit in the
+  phones is android-app or ios-app, anything else unknown. Rows over 400 days go with the usage.
 - GET `/community/admin/analytics?days=N` (admins, 1 to 90 days, the same days before them for the changes) answers, from
   grouped reads of usage_days, sessions (accounts' uploads), accounts, visits_days and presence, never a query per
   account: {days, top [{key, n, users}], byDevice [{device, users, n}], games, versions [{device, v, devices}], users [{id,

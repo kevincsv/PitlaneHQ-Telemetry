@@ -201,6 +201,9 @@ func commRequestWith(client *http.Client, method, path string, body any, tok str
 	req, _ := http.NewRequest(method, base+path, rd)
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("X-Pitlane-Client", clientTag())
+	if storeApp() {
+		req.Header.Set("X-Pitlane-Install", "store") // from the Microsoft Store: the source of an account made here (sourceslib.js appSignupSrc)
+	}
 	if tok != "" {
 		req.Header.Set("Authorization", "Bearer "+tok)
 		if adminMode() {

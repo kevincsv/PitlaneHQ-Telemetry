@@ -30,7 +30,7 @@ export const SRC_KIND = {
   chatgpt: "ai", perplexity: "ai", claude: "ai", gemini: "ai", copilot: "ai",
   reddit: "community", discord: "community", iracing: "community", overtake: "community", steam: "community", simhub: "community", github: "community",
   youtube: "social", facebook: "social", instagram: "social", x: "social", tiktok: "social", twitch: "social", whatsapp: "social", telegram: "social", linkedin: "social",
-  direct: "direct", invite: "community",
+  direct: "direct", invite: "community", msstore: "store",
 };
 export const kindOf = (src) => SRC_KIND[src] || (/-app$/.test(src) ? "app" : src === "unknown" ? "unknown" : "other");
 
@@ -98,6 +98,38 @@ export function appSrc(client) {
   return k === "pc" || k === "desktop" ? "pc-app" : k === "android" || k === "ios" ? k + "-app" : "unknown";
 }
 
+/** Where a download of the installer came from (downloads.js): the first visit of the browser that downloaded it, which
+ *  the site's download buttons add to the link (fr, fu, fc, fp: VISIT_JS), else the link itself (its utm_source or ?ref=
+ *  and the site it was clicked on), as {src, page, campaign}. A download from Pitlane HQ's own pages with nothing more is
+ *  "direct". */
+export function downloadVisit(q, referer) {
+  const g = (k) => (q && q.get(k)) || "";
+  const v = q && (q.has("fr") || q.has("fu") || q.has("fp"))
+    ? visitOf({ ref: g("fr"), us: g("fu"), uc: g("fc"), page: g("fp") })
+    : visitOf({ ref: referer || "", us: g("utm_source") || g("ref"), uc: g("utm_campaign"), page: "dl" });
+  return { src: v.src || "direct", page: v.page, campaign: v.campaign };
+}
+
+/** The key of a connection's downloads: a hash of its address with the server's own secret, never the address. */
+export const dlKey = async (secret, ip) => {
+  const d = await crypto.subtle.digest("SHA-256", new TextEncoder().encode("dl-src|" + (secret || "") + "|" + (ip || "")));
+  return [...new Uint8Array(d)].slice(0, 16).map((b) => b.toString(16).padStart(2, "0")).join("");
+};
+// a download stays matchable for 14 days (the hourly job drops older ones)
+export const DL_DAYS = 14;
+export const SQL_DL_ADD = "INSERT INTO dl_src (ip, created, src, page, campaign) VALUES (?1,?2,?3,?4,?5)";
+export const SQL_DL_FIND = "SELECT src, page FROM dl_src WHERE ip=?1 AND created>?2 ORDER BY created DESC LIMIT 1";
+
+/** Where an account made in an app came from, when the browser's first visit is not there: the installer downloaded
+ *  from the same connection in the last DL_DAYS (dl, a row of SQL_DL_FIND), else the Microsoft Store for an agent the
+ *  Store installed (X-Pitlane-Install: store), else the app (appSrc). {src, page}. */
+export function appSignupSrc(client, install, dl) {
+  const app = appSrc(client);
+  if (app === "pc-app" && dl && dl.src) return { src: dl.src, page: dl.page || null };
+  if (app === "pc-app" && String(install || "").trim().toLowerCase() === "store") return { src: "msstore", page: null };
+  return { src: app, page: null };
+}
+
 /** A browser that says it is a robot: never counted. */
 export const isBot = (ua) => !ua || /bot|crawl|spider|slurp|preview|headless|lighthouse|facebookexternalhit|embedly|curl|wget|python|httpclient|go-http/i.test(ua);
 
@@ -136,4 +168,4 @@ export function sourcesOf(visits, prevVisits, signups, prevSignups) {
 
 /** The few lines every public page and the landing run: once per browser session, where the visit came from goes to
  *  POST /community/visit, and the browser's first visit is kept (pw.src0) for the sign-up. */
-export const VISIT_JS = `<script>(function(){try{var q=new URLSearchParams(location.search),v={ref:document.referrer,page:location.pathname,us:q.get("utm_source")||q.get("ref")||"",um:q.get("utm_medium")||"",uc:q.get("utm_campaign")||""};if(!/(^|\\.)pitlanehq\\.app$/.test(location.hostname))return;try{if(!localStorage.getItem("pw.src0"))localStorage.setItem("pw.src0",JSON.stringify(v))}catch(e){}if(sessionStorage.getItem("pw.v"))return;sessionStorage.setItem("pw.v","1");var b=JSON.stringify(v);if(navigator.sendBeacon)navigator.sendBeacon("/community/visit",new Blob([b],{type:"text/plain"}));else fetch("/community/visit",{method:"POST",body:b,keepalive:true})}catch(e){}})()</script>`;
+export const VISIT_JS = `<script>(function(){try{var q=new URLSearchParams(location.search),v={ref:document.referrer,page:location.pathname,us:q.get("utm_source")||q.get("ref")||"",um:q.get("utm_medium")||"",uc:q.get("utm_campaign")||""};if(!/(^|\\.)pitlanehq\\.app$/.test(location.hostname))return;try{if(!localStorage.getItem("pw.src0"))localStorage.setItem("pw.src0",JSON.stringify(v))}catch(e){}document.addEventListener("click",function(e){try{var a=e.target&&e.target.closest&&e.target.closest('a[href*="PitlaneHQ-Setup.exe"]');if(!a)return;var u=new URL(a.href,location.href);if(!/(^|\\.)pitlanehq\\.app$/.test(u.hostname))return;var f=v;try{f=JSON.parse(localStorage.getItem("pw.src0")||"null")||v}catch(x){}u.searchParams.set("fr",f.ref||"");u.searchParams.set("fu",f.us||"");u.searchParams.set("fc",f.uc||"");u.searchParams.set("fp",f.page||"");a.href=u.href}catch(x){}},true);if(sessionStorage.getItem("pw.v"))return;sessionStorage.setItem("pw.v","1");var b=JSON.stringify(v);if(navigator.sendBeacon)navigator.sendBeacon("/community/visit",new Blob([b],{type:"text/plain"}));else fetch("/community/visit",{method:"POST",body:b,keepalive:true})}catch(e){}})()</script>`;

@@ -54,6 +54,7 @@ type commConfig struct {
 	Guest     string   `json:"guest,omitempty"`     // who is driving now ("" = me)
 	GuestAuto bool     `json:"guestAuto,omitempty"` // take the name from iRacing (each friend in their own iRacing account)
 	Guests    []string `json:"guests,omitempty"`    // names used before, for a quick pick
+	Team      string   `json:"team,omitempty"`      // the team this PC streams to (team.go; "" the first)
 }
 
 var (

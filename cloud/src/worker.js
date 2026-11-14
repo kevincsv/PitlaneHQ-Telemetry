@@ -25,6 +25,7 @@ import { community } from "./community.js";
 import { fillSectors } from "./lapsectors.js";
 import { accounts, sessionAccount, emailHash } from "./accounts.js";
 import { live } from "./live.js";
+import { teamRoute } from "./team.js";
 import { seoPage, indexNow, notFound } from "./seo.js";
 import { discordInteraction, discordOAuth, discordWeekly, discordFeedback, discordChangelog } from "./discord.js";
 import { steamReturn } from "./steam.js";
@@ -674,6 +675,14 @@ async function handle(req, env, ctx) {
       // landing's screenshots and the sharing pictures change rarely, so they are kept a day and checked in the background
       h.set("cache-control", /^\/(landing\/|og)/.test(url.pathname) ? "public, max-age=86400, stale-while-revalidate=604800" : "no-cache");
       return new Response(r.body, { status: r.status, headers: h });
+    }
+    // team mode: the teams of an account, their members and their stints' log (team.js)
+    if (url.pathname === "/team" || url.pathname.startsWith("/team/")) {
+      try {
+        return await teamRoute(req, env, url);
+      } catch (e) {
+        return err("server error: " + (e && e.message), 500);
+      }
     }
     // live telemetry from your PC to your browser or phone, end-to-end encrypted
     if (url.pathname === "/live") return live(req, env);

@@ -18,6 +18,7 @@ the Google Play closed test.
 - Agent sign-up sources: on master (2026-11-14), live after the next cloud deploy and Windows build.
 - 0.9.17 on master (2026-11-14): the engine rework (lap recorder and coach fixes), waiting for its beta build and promotion.
 - Le Mans Ultimate without its "Beta" label (PC, web, landing, phones, App Store text): on master (2026-11-14), live after the next build.
+- Team mode (beta, every tester and admin): on branch claude/project-thread-nvk8rw (server, agent, PC, web, phones, migration 0101), going into the next beta build with the Workspace batch. Not run on real hardware yet.
 - Invite a friend (a month of Pro for both, saved until Pro launches): on master (2026-11-14), live after the next build.
 
 ## Live now

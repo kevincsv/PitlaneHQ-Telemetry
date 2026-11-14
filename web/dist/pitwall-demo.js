@@ -244,5 +244,46 @@
     return { yaml, frame, shape };
   })();
 
-  window.PITLANE_DEMO = { get, liveSession: LIVE.yaml, liveFrame: LIVE.frame, liveShape: LIVE.shape };
+
+  // Team mode (docs/spec/team.md): a team of four with a long race at Spa going on (driver C in the car) and a practice at
+  // Road Atlanta two days ago. Answers the Team screen's actions without the server; nothing is sent or kept.
+  const TEAMD = (() => {
+    const ids = ["demo-me", "demo-b", "demo-c", "demo-d"], names = NAMES.slice(0, 4), TID = "d3m0a1b2c3d4";
+    const spa = COMBOS[0], rat = COMBOS[3], pace = [0.3, 0.9, 0, 1.4], LAP = spa.lap + 0.4;
+    const raceStart = NOW - 2.4 * 3600e3, cStart = NOW - 41 * 60e3, cLap0 = 48;
+    const lapsOf = (k, c, from, to, seed) => { const r = rng(seed), out = []; for (let n = from; n <= to; n++) { const first = n === from && n > 1; out.push({ n, t: +(c.lap + pace[k] + r.f(-0.35, 0.95) + (n === 1 ? 6 : 0) + (first ? 21 : 0)).toFixed(3), valid: r.f(0, 1) > 0.06 }); } return out; };
+    const entry = (k, c, sid, kind, started, from, to, t0) => { const laps = lapsOf(k, c, from, to, hash(sid + k + from)), ok = laps.filter((l) => l.valid);
+      return { account: ids[k], name: names[k], key: sid + ":" + t0, at: t0 + laps.length * c.lap * 1000,
+        entry: { v: 1, driver: names[k], sid, game: "iracing", track: c.track, config: c.cfg, car: c.car, kind, started, stint: { from: t0, to: t0 + laps.length * c.lap * 1000, lapFrom: from, lapTo: to }, laps, best: ok.length ? Math.min(...ok.map((l) => l.t)) : 0, fuelPerLap: 2.9 } }; };
+    const cNow = () => Math.max(0, Math.floor((Date.now() - cStart) / 1000 / LAP));
+    const log = () => {
+      const L = [entry(0, spa, "demo-spa-race", "Race", raceStart, 1, 23, raceStart), entry(1, spa, "demo-spa-race", "Race", raceStart, 24, 47, raceStart + 23 * LAP * 1000)];
+      const n = cNow(); if (n > 0) L.push(entry(2, spa, "demo-spa-race", "Race", raceStart, cLap0, cLap0 + n - 1, cStart));
+      const p0 = NOW - 2 * DAY - 3 * 3600e3; L.push(entry(0, rat, "demo-rat-prac", "Practice", p0, 1, 9, p0), entry(3, rat, "demo-rat-prac", "Practice", p0, 10, 22, p0 + 9 * rat.lap * 1000), entry(1, rat, "demo-rat-prac", "Practice", p0, 23, 31, p0 + 22 * rat.lap * 1000));
+      return L.sort((a, b) => b.at - a.at);
+    };
+    const list = () => ({ teams: [{ id: TID, name: "Demo Endurance", role: "owner", owner: ids[0], invite: TID + ".DEMQ2W7RT8YK4HN6PXJ3", room: "0".repeat(32),
+      members: ids.map((id, k) => ({ id, name: names[k], role: k ? "member" : "owner", joined: NOW - (40 - k * 3) * DAY })) }], active: TID });
+    function team(op) {
+      if (op === "list") return list();
+      if (op === "log") return { log: log() };
+      if (op === "create") return { id: TID, invite: TID + ".DEMQ2W7RT8YK4HN6PXJ3" };
+      if (op === "join") return { id: TID, name: "Demo Endurance" };
+      return { ok: true };
+    }
+    // the live "team" event of each PC: C in the car, A and B online
+    function live() {
+      const n = cNow(), lap = cLap0 + n, fuel = Math.max(3, 104 - n * 2.9 - ((Date.now() - cStart) / 1000 % LAP) / LAP * 2.9), at = Date.now(), base = { sid: "demo-spa-race", game: "iracing", track: spa.track, config: spa.cfg, car: spa.car, kind: "Race" };
+      const ls = lapsOf(2, spa, cLap0, Math.max(cLap0, lap - 1), hash("demo-spa-race2" + cLap0)), ok = ls.filter((l) => l.valid);
+      const ev = {
+        [ids[2]]: { at, d: { ...base, driver: names[2], inCar: true, lap, stintStart: cStart, stintLaps: n, fuel, fuelPerLap: 2.9, lapsLeft: fuel / 2.9, pitLap: lap + Math.floor(fuel / 2.9), sessionLeft: Math.max(0, 6 * 3600 - (Date.now() - raceStart) / 1000), lastLap: n ? ls[ls.length - 1].t : -1, best: ok.length ? Math.min(...ok.map((l) => l.t)) : -1 } },
+        [ids[0]]: { at, d: { ...base, driver: names[0], inCar: false } },
+        [ids[1]]: { at, d: { ...base, driver: names[1], inCar: false } },
+      };
+      return { ev, pcs: [0, 1, 2].map((k) => ({ id: ids[k], name: names[k] })) };
+    }
+    return { team, live };
+  })();
+
+  window.PITLANE_DEMO = { get, liveSession: LIVE.yaml, liveFrame: LIVE.frame, liveShape: LIVE.shape, team: TEAMD.team, teamLive: TEAMD.live };
 })();

@@ -549,6 +549,8 @@ func main() {
 	go keepAlive("licenseWatcher", licenseWatcher)
 	go keepAlive("liveRelay", liveRelay)
 	go keepAlive("liveShareRelay", liveShareRelay)
+	go keepAlive("liveTeamRelay", liveTeamRelay)
+	go keepAlive("teamStintWatcher", teamStintWatcher)
 	go keepAlive("cloudUploader", cloudUploader)
 	go keepAlive("healthWatcher", healthWatcher)
 	// the laps already on the PC (iRacing's telemetry files) go to the account by themselves

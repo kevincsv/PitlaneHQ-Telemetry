@@ -1171,7 +1171,8 @@ func registerPLRoutes(mux *http.ServeMux) {
 				Anon                                                                 *bool  // share as "Anonymous" (kept with the account)
 				On                                                                   bool
 			}
-			json.NewDecoder(io.LimitReader(r.Body, 8192)).Decode(&in)
+			raw, _ := io.ReadAll(io.LimitReader(r.Body, 8192))
+			json.Unmarshal(raw, &in)
 			host, _ := os.Hostname()
 			var err error
 			switch in.Action {
@@ -1677,6 +1678,14 @@ func registerPLRoutes(mux *http.ServeMux) {
 					plMu.Unlock()
 					clearSyncBase()
 				}
+			case "team": // team mode (team.go)
+				res, e := teamAction(raw)
+				if e != nil {
+					fail(e)
+					return
+				}
+				writeJSON(w, res)
+				return
 			default:
 				err = errors.New("unknown action")
 			}

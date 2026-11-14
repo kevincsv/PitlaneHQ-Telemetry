@@ -18,7 +18,7 @@ export async function betaGate(req, env, url) {
   if (p === "/server.json") return new Response(JSON.stringify({ url: url.origin }), { headers: { "content-type": "application/json", "cache-control": "no-cache" } });
   if (p === "/" || APP_FILE.test(p) || p === "/live" || p === "/voice/ice" || p.startsWith("/dl/")) return null;
   // /api/ is the laps and sessions (My laps, Analysis, the coach): the same accounts' data as on pitlanehq.app
-  if (p.startsWith("/account/") || p.startsWith("/community/") || p.startsWith("/api/")) {
+  if (p.startsWith("/account/") || p.startsWith("/community/") || p.startsWith("/api/") || p === "/team" || p.startsWith("/team/")) {
     let a = null;
     try { a = await sessionAccount(req, env, true); } catch (e) { a = null; }
     // signing in and the public reads (no account yet) go through; the answer says tester/admin, and the app stops there

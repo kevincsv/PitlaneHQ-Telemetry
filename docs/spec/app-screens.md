@@ -11,10 +11,21 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   no glows and no gradients. A chosen tab, segment or card is a raised surface; a chosen chart channel or map layer has
   a thin amber outline. On computers the main tabs are a 208 px sidebar with the logo and each tab's icon and word; on
   phones and narrow windows the bottom bar, and the header on one line (the version moves to Settings → About).
-  The lap analyzer keeps its sections and their order; its summary is one strip with hairlines, and every chart
-  (speed, delta, throttle, brake, gear, steering, line) is one stack on the same distance axis. From 1180 px wide it is
-  one workspace: the track map, sectors and corner consistency on the left, the chart stack on the right with the
-  braking points and recorded laps under it. The overlay windows (`html.ov`) keep their own designs.
+  The lap analyzer (Pit Wall Workspace, `pw3-laps` in index.html): Lap A vs lap B across the top, then four numbers
+  (A vs B, Costs the most, Furthest behind, Corners vs straights, and Gains most when A gains somewhere), then three
+  columns. Left: Laps (My laps and Community with its PRO badge) and Sectors (a table, A, B and the gap). Middle: the
+  chart stack on one distance axis with its Show chips (speed, delta, throttle, brake, gear, steering, line), Braking
+  points, Corner consistency (with the race fuel and More charts), Recorded laps. Right: Track map, Corners, Offs
+  explained and "Learn from this lap in the Coach". From 1101 px the side columns stay in view (their top under the
+  demo banner, a taller column scrolls until its end shows); narrower it is one column in that order. My laps lists
+  every session in the list, each under a raised header (its kind, date and track, its laps), newest lap first, the
+  fastest valid lap with a star and the others with their gap to it, each with A and B; A on a lap of another session
+  makes that session session A. Community lists the community laps loaded as references (B) and "Compare with the
+  community". On the map lap A's dot keeps its size on screen and grows while the pointer is on the map (the map grows
+  too, on computers), a ring shows lap B at the same moment of its lap, and a line under it gives the distance, the
+  corner, both speeds, the gap and how far B is ahead or behind; pressing a turn (on the map or in Corners) pins the
+  charts there and opens "T3 insight" under the map (the tip, the braking against B, the slowest speeds, the speed of
+  both laps through it, "Work on T3 in the Coach"). The overlay windows (`html.ov`) keep their own designs.
 - Your iRating and licence of every discipline (`ratings.go`, `ratings.json` in the account, `/api/ratings`; iRacing's
   sessions say "Formula" for the formula cars, `discipline`/`raceDisc`/`catOf` read it as Formula Car): the game
   only says the one of the session you are in, so the PC keeps the last seen of each (every session, and from the
@@ -35,8 +46,12 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   or the laps were still going up), it is read again, never from the page's cache (an empty answer is never cached).
   The phone apps filter their session list the same way. Laps A and B are one choice for the
   lap analyzer and the coach (`ANASEL`, a lap known by itself, not by its place in a list), with the same
-  default and the model's references as B in both, each once ("▲ Next level", "★ Record"); with
-  "+ Session" lap B is only the laps of the other session (and the references). A community lap is compared only with
+  default and the model's references as B in both, each once ("▲ Next level", "★ Record"); the
+  lap analyzer's "Select sessions" ticks one or several sessions in the same window (once one is ticked, a session of
+  another car or track, layout or game cannot be ticked and says "other car", "other track" or "other car and track";
+  "Compare N sessions"): the newest (or the current session A) is session A and the others' laps are loaded with the
+  same cloud loading as "+ Session" (`CLOUD.lapsB`), so lap B can be any lap of them all (the best of the other sessions
+  by default) and the coach gets them too. A community lap is compared only with
   your own laps of the same track: Compare in Community needs a session of yours there with a valid lap (else it says
   you have none, `sesOnTrack`/`uiNotice`) and opens the comparator filtered to that track on your newest session there;
   a community reference of another track never shows as lap B (`refFits`). The window's title

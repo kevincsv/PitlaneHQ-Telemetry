@@ -194,8 +194,9 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
     of practice for four of its cars and tracks, 22 races, four Le Mans Ultimate sessions and 48 drivers on each
     community leaderboard.
   - Which game?: entering Analysis from another tab, and every "choose a session" (`openSessPicker`), first asks the
-    game, every time: a big card for iRacing and one for Le Mans Ultimate (its badge, its name, how many sessions when known),
-    the last one chosen marked "Last time" (`pw.anGame`). The session window then opens on that game, its name in an
+    game, every time: a card for iRacing and one for Le Mans Ultimate in the controls' look (its badge "iR" or "LMU", its
+    name, how many sessions when known), one close button, the last one chosen with an amber edge and badge and a "Last
+    time" pill (`pw.anGame`). The session window then opens on that game, its name in an
     amber pill beside the title.
     On My sessions and Statistics, entering Analysis asks only the game.
 

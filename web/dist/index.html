@@ -11582,18 +11582,22 @@ document.addEventListener("pointerover",e=>{if(e.pointerType!=="mouse"||!e.targe
 @media (max-width:900px){#v-stats .pw7-ws{grid-template-columns:minmax(0,1fr)}#v-stats .pw7-l{order:0}}
 @media (max-width:760px){#v-stats .pw5-kpis.pw7-k6{grid-template-columns:repeat(2,minmax(0,1fr))}}
 /* Which game? before the session window */
-#pw7Gq .pn.pw7-gq{width:min(560px,calc(100% - 32px));padding:0!important;overflow:hidden}
-#pw7Gq .pw7-gq-h{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px 16px;border-bottom:1px solid var(--line)}
-#pw7Gq .pw7-gq-h h2{margin:0;font:700 18px/1.2 var(--f-display);letter-spacing:0;text-transform:none}
-#pw7Gq .pw7-x{all:unset;cursor:pointer;width:32px;height:32px;display:grid;place-items:center;border-radius:6px;color:var(--muted);font-size:16px}#pw7Gq .pw7-x:hover{background:var(--surface2);color:var(--fg)}
-#pw7Gq .pw7-gq-b{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;padding:16px}
-#pw7Gq .pw7-gc{all:unset;box-sizing:border-box;cursor:pointer;display:flex;flex-direction:column;align-items:flex-start;gap:4px;background:var(--surface2);border:1px solid var(--line);border-radius:10px;padding:18px 16px;min-height:150px;position:relative;min-width:0}
-#pw7Gq .pw7-gc:hover{border-color:var(--muted)}#pw7Gq .pw7-gc.on{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}#pw7Gq .pw7-gc:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
-#pw7Gq .pw7-gc b{font:700 22px/1.1 var(--f-display);text-transform:uppercase;letter-spacing:.03em;margin-top:auto;color:var(--fg)}#pw7Gq .pw7-gc small{font-size:13px;color:var(--muted)}
-#pw7Gq .pw7-gc em{position:absolute;top:12px;right:12px;font:600 10.5px var(--f-body);font-style:normal;text-transform:uppercase;letter-spacing:.05em;color:var(--accent)}
-#pw7Gq .pw7-logo{display:grid;place-items:center;min-width:52px;width:max-content;padding:0 12px;height:52px;border-radius:10px;font:800 17px var(--f-display);letter-spacing:.02em;color:#fff;background:#222}
-#pw7Gq .pw7-iracing{background:#111;box-shadow:inset 0 0 0 2px #c8a24a}#pw7Gq .pw7-lmu{background:#111;box-shadow:inset 0 0 0 2px #c8a24a}
-@media (max-width:480px){#pw7Gq .pw7-gq-b{grid-template-columns:minmax(0,1fr)}#pw7Gq .pw7-gc{min-height:110px}}
+#pw7Gq .pn.pw7-gq{width:min(580px,calc(100% - 32px));padding:0!important;overflow:hidden;border-color:var(--line2)}
+#pw7Gq .pw7-gq-h{display:flex;align-items:center;gap:10px;padding:16px 56px 14px 20px;border-bottom:1px solid var(--line)}
+#pw7Gq .pn .pw7-gq-h h2{margin:0!important;font:700 20px/1.2 var(--f-display)!important;letter-spacing:.06em!important;text-transform:uppercase!important;color:var(--fg)}
+#pw7Gq .pn>.uidlg-x{top:12px;right:12px}
+#pw7Gq .pw7-gq-b{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;padding:18px 20px 20px}
+#pw7Gq .pw7-gc{all:unset;box-sizing:border-box;cursor:pointer;display:grid;grid-template-columns:auto minmax(0,1fr);grid-template-rows:auto auto;column-gap:14px;row-gap:2px;align-items:center;min-width:0;min-height:88px;padding:16px;position:relative;
+  background:var(--btn2,var(--surface2));border:1px solid var(--edge2,var(--line2));border-radius:10px;box-shadow:var(--lift,none);transition:background .15s,border-color .15s}
+#pw7Gq .pw7-gc:hover{background:var(--btn2h,var(--surface2));border-color:var(--edge2h,var(--muted))}
+#pw7Gq .pw7-gc.on{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 7%,var(--surface))}
+#pw7Gq .pw7-gc:focus-visible{outline:2px solid var(--accent);outline-offset:3px}#pw7Gq .pw7-gc.on:focus-visible{outline-color:color-mix(in srgb,var(--accent) 45%,transparent)}
+#pw7Gq .pw7-logo{grid-row:1/3;display:grid;place-items:center;width:52px;height:52px;border-radius:12px;font:700 18px/1 var(--f-display);letter-spacing:.02em;color:var(--fg);background:var(--surface2);border:1px solid var(--box-edge,var(--line2))}
+#pw7Gq .pw7-gc.on .pw7-logo{color:var(--accent);border-color:color-mix(in srgb,var(--accent) 55%,transparent)}
+#pw7Gq .pw7-gc b{align-self:end;font:700 21px/1.15 var(--f-display);letter-spacing:.02em;color:var(--fg);min-width:0;overflow-wrap:anywhere}
+#pw7Gq .pw7-gc small{align-self:start;font:400 13px/1.4 var(--f-data);color:var(--muted)}
+#pw7Gq .pw7-gc em{position:absolute;top:10px;right:10px;font:600 10.5px/1 var(--f-body);font-style:normal;text-transform:uppercase;letter-spacing:.06em;color:var(--accent-ink,#1a1206);background:var(--accent);border-radius:999px;padding:4px 8px}
+@media (max-width:520px){#pw7Gq .pw7-gq-b{grid-template-columns:minmax(0,1fr);padding:14px 16px 16px}#pw7Gq .pw7-gc{min-height:76px}}
 #spDlg .pw7-gp{display:inline-block;vertical-align:middle;margin-left:8px;font:600 11px var(--f-body);text-transform:uppercase;letter-spacing:.05em;color:var(--accent);border:1px solid var(--accent);border-radius:999px;padding:1px 8px}
 /* driver notes at the foot of My sessions */
 #v-cloudlaps #drvPanel{margin:10px 0 0!important;padding:10px!important;border:1px solid var(--line2);border-radius:8px;background:var(--surface)}
@@ -11932,14 +11936,14 @@ async function pw7Ready(){for(let i=0;i<50&&(CLOUD.sessions===null||CLOUD.game!=
 async function pw7GameAsk(then){if(PW7_ASK)return;PW7_ASK=true;let n={};try{n=await pw7Counts()}catch(e){}PW7_ASK=false;
   const gs=VIEW_GAMES.filter(g=>!(typeof gameLocked==="function"&&gameLocked(g))&&(g==="iracing"||g==="lmu"||n[g]>0)),go=async g=>{store.set("pw.anGame",g);PW7_PILL=GAME_NAMES[g]||"";if(vGame()!==g)toGame(g);await pw7Ready();then()};
   if(gs.length<2){PW7_PILL="";if(gs.length===1&&vGame()!==gs[0])toGame(gs[0]);await pw7Ready();return then()}
-  const last=store.get("pw.anGame","")||vGame(),T=Tx,logo={iracing:"iRacing",lmu:"LMU",acc:"ACC",ac:"AC"};
+  const last=store.get("pw.anGame","")||vGame(),T=Tx,logo={iracing:"iR",lmu:"LMU",acc:"ACC",ac:"AC"};
   let m=$("#pw7Gq");if(!m){m=document.createElement("div");m.id="pw7Gq";m.className="uidlg";document.body.appendChild(m)}
   const key=e=>{if(e.key==="Escape"){e.preventDefault();close()}},close=()=>{document.removeEventListener("keydown",key,true);m.hidden=true;m.innerHTML=""};document.addEventListener("keydown",key,true);
   const nS=k=>k>=200?T("200+ sessions","200+ sesiones",null,"200+ sessões"):T(`${k} ${k===1?"session":"sessions"}`,`${k} ${k===1?"sesión":"sesiones"}`,null,`${k} ${k===1?"sessão":"sessões"}`);
-  m.innerHTML=`<div class="bg"></div><div class="pn pw7-gq" role="dialog" aria-modal="true" aria-labelledby="pw7GqH"><div class="pw7-gq-h"><h2 id="pw7GqH">${esc(T("Which game?","¿Qué juego?",null,"Qual jogo?"))}</h2><button type="button" class="pw7-x" aria-label="${esc(T("Close","Cerrar",null,"Fechar"))}">✕</button></div>
+  m.innerHTML=`<div class="bg"></div><div class="pn pw7-gq" role="dialog" aria-modal="true" aria-labelledby="pw7GqH"><button type="button" class="uidlg-x pw7-x" aria-label="${esc(T("Close","Cerrar",null,"Fechar"))}">×</button><div class="pw7-gq-h"><h2 id="pw7GqH">${esc(T("Which game?","¿Qué juego?",null,"Qual jogo?"))}</h2></div>
     <div class="pw7-gq-b">${gs.map(g=>`<button type="button" class="pw7-gc${g===last?" on":""}" data-g="${g}">${g===last?`<em>${esc(T("Last time","La última vez",null,"Última vez"))}</em>`:""}<span class="pw7-logo pw7-${g}">${esc(logo[g]||g)}</span><b>${esc(GAME_NAMES[g]||g)}</b>${n[g]>=0?`<small>${esc(nS(n[g]))}</small>`:""}</button>`).join("")}</div></div>`;
   m.hidden=false;m.querySelector(".bg").onclick=close;m.querySelector(".pw7-x").onclick=close;
-  m.querySelectorAll("[data-g]").forEach(b=>b.onclick=()=>{close();go(b.dataset.g)});const f=m.querySelector(".pw7-gc.on")||m.querySelector(".pw7-gc");if(f)f.focus()}
+  m.querySelectorAll("[data-g]").forEach(b=>b.onclick=()=>{close();go(b.dataset.g)});const f=m.querySelector(".pn");if(f){f.tabIndex=-1;f.style.outline="none";f.focus()}}
 /* the session window says the game it shows */
 function pw7Pill(){const d=$("#spDlg");if(!d||d.hidden||!PW7_PILL)return;const h=d.querySelector("h2");if(h&&!h.querySelector(".pw7-gp"))h.insertAdjacentHTML("beforeend",` <span class="pw7-gp">${esc(PW7_PILL)}</span>`)}
 {const _pw7SP=window.openSessPicker;window.openSessPicker=function(){const a=arguments,self=this;pw7GameAsk(()=>{_pw7SP.apply(self,a);pw7Pill();const d=$("#spDlg");if(d&&!d._pw7){d._pw7=new MutationObserver(()=>pw7Pill());d._pw7.observe(d,{childList:true,subtree:true})}})};

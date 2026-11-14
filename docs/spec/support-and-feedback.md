@@ -48,6 +48,7 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   count and the average stars; the Feedback tab tags the overlay answers ("Overlays · Classic") and filters All, General
   and Overlays. Deleting an
   account deletes its usage and its feedback.
+- The donation bar (`donBar` in index.html, `#donBar` under the sub-tabs): one line on every screen of the PC app and the web, "Enjoying Pitlane HQ? If it helps you drive faster, consider a donation to keep it growing." with Donate (the `donateUrl()` link, counted as `act:donate_bar`) and Not now (`act:donate_bar_no`). It shows from the driver's third day with Pitlane HQ (`pw.donFirst`), never to supporters, in the Steam app, the overlays, the admin page or with demo data, and never on the phones. Not now hides it for 30 days and Donate for 90 (`pw.donHide`).
 - "Send the agent's logs" (the PC app only, under the chat's box, `supLogsOk`): the agent sends the end of its log
   (400 KB, the older file first when the current one is short, with a line naming the agent's version, the game and
   whether Le Mans Ultimate runs; `logTail` in reports.go, local POST `/api/support/logs`) to POST

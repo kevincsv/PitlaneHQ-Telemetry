@@ -178,9 +178,9 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
     of practice for four of its cars and tracks, 22 races, four Le Mans Ultimate sessions and 48 drivers on each
     community leaderboard.
   - Which game?: entering Analysis from another tab, and every "choose a session" (`openSessPicker`), first asks the
-    game when the account has sessions of more than one: a big card for each (its badge, its name, how many sessions),
+    game, every time: a big card for iRacing and one for Le Mans Ultimate (its badge, its name, how many sessions when known),
     the last one chosen marked "Last time" (`pw.anGame`). The session window then opens on that game, its name in an
-    amber pill beside the title. With sessions of one game only there is no question (Analysis switches to that game).
+    amber pill beside the title.
     On My sessions and Statistics, entering Analysis asks only the game.
 
 - Home shows the track guide's brief (the three corners that matter most) while the agent sees a session on a track and

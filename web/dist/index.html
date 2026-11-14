@@ -10536,7 +10536,7 @@ html:not(.ov) #v-laps #cmpChips.chshow .chip[aria-pressed="true"]{background:var
 #v-laps #lapTable tr.isa td{background:color-mix(in srgb,var(--accent) 14%,transparent)}#v-laps #lapTable tr.isa td:first-child{box-shadow:inset 3px 0 var(--accent)}
 #v-laps #lapTable tr.isb td:first-child{box-shadow:inset 3px 0 var(--blue)}#v-laps #lapsBody.bmine #lapTable tr.isb td:first-child{box-shadow:inset 3px 0 var(--pb)}
 html:not(.ov) #v-laps #lapTable td.lt-ab{white-space:nowrap;padding-top:3px!important;padding-bottom:3px!important;width:72px}#v-laps #lapTable td.lt-ab .ls-ab{width:30px;margin-left:4px}
-#v-laps .ls.cm .ls-cm{grid-template-rows:auto auto;row-gap:0;padding:5px 8px;cursor:default}#v-laps .ls.cm .ls-cm em{line-height:1.35}
+#v-laps .ls.cm .ls-cm,#v-coach .ls.cm .ls-cm{grid-template-rows:auto auto;row-gap:0;padding:5px 8px;cursor:default}#v-laps .ls.cm .ls-cm em,#v-coach .ls.cm .ls-cm em{line-height:1.35}
 </style>
 <script id="pw3-laps-js">
 /* Pit Wall Workspace: laps helpers. The lap analyzer as a workspace (docs/spec/app-screens.md, "Lap analyzer"): the header
@@ -10688,21 +10688,25 @@ async function pw3BoardLoad(bd){try{const ses=(CLOUD.sessions||[]).find(x=>x.id=
     const combos=(await pw3CGet(withGame("/api/community/combos",g))).combos||[],hit=ses?commComboForSession(combos,ses):null;
     if(hit){bd.hit=hit;const all=(await pw3CGet(withGame(`/api/community/laps?trackId=${hit.trackId}&carId=${hit.carId}`,g))).laps||[],fr=(await friendLaps(hit.trackId,hit.carId,g)).map(l=>l.id);
       bd.laps=all.slice().sort((a,b)=>a.time-b.time).map(l=>({...l,friend:fr.includes(l.id)}))}}catch(e){bd.err=e.message||""}
-  bd.busy=false;if(PW3L.board===bd&&PW3L.src==="comm"&&CUR_VIEW==="laps")pw3LapsPanel()}
-function pw3BoardHTML(bd){if(!bd)return"";const B=lapOf(($("#lapB")||{}).value);
+  bd.busy=false;if(PW3L.board!==bd)return;if(PW3L.src==="comm"&&CUR_VIEW==="laps")pw3LapsPanel();if(typeof PW5C_SRC!=="undefined"&&PW5C_SRC==="comm"&&CUR_VIEW==="coach"&&typeof pw5CoachLaps==="function")pw5CoachLaps()}
+/* the board is shared by Laps and the Coach's Laps panel; B is the lap B of the screen showing it */
+function pw3BoardHTML(bd,B){if(!bd)return"";if(B===undefined)B=lapOf(($("#lapB")||{}).value);
   const h=`<div class="ls-h" style="--gc:var(--pb)"><b>${esc(Tx("Leaderboard","Clasificación",null,"Classificação"))}</b><span></span><small class="mono">${bd.busy?"…":esc(pw3Laps(bd.laps.length))}</small></div>`;
   if(bd.busy)return h;if(!bd.laps.length)return h+`<p class="foot">${esc(bd.err||Tx("No community laps for this track and car yet","Aún no hay vueltas de la comunidad para este circuito y coche",null,"Ainda não há voltas da comunidade para esta pista e carro"))}</p>`;
   const f=bd.laps[0].time;
   return h+bd.laps.map((l,i)=>{const on=!!(B&&B.cid===l.id),nt=l.hasTrace===false;return`<div class="ls cm${on?" b":""}" role="listitem"><div class="ls-main ls-cm"><span>${i+1}</span><b class="mono">${fmtT(l.time)}</b><small class="mono">${i===0?pw3Star(Tx("Fastest in the community","La más rápida de la comunidad",null,"A mais rápida da comunidade")):sgn(l.time-f,2)}</small><em>${l.friend?"★ ":""}${esc(l.alias||"–")}${nt?" · "+esc(Tx("time only","solo el tiempo",null,"só o tempo")):""}</em></div><span></span><button type="button" class="ls-ab" data-set="B" data-cb="${i}" aria-pressed="${on}" aria-label="${esc((l.alias||"")+" · "+Tx("lap B","vuelta B",null,"volta B"))}"${nt?` disabled title="${esc(NO_TRACE())}"`:""}>B</button></div>`}).join("")}
+/* the community lap as a reference (the one already loaded when there is one), as Compare with the community makes it */
+async function pw3BoardRef(l,bd){{const r=CREF.find(x=>x&&x.cid===l.id&&!x.stale);if(r)return r}
+  const full=await pw3CGet(`/api/community/laps?id=${encodeURIComponent(l.id)}`),tr=full&&full.trace;if(!tr||!tr.d||!tr.d.length)throw new Error(NO_TRACE());
+  const ref={n:"⟡ "+(full.alias||l.alias||""),time:full.time||l.time,bins:tr.d.map(x=>[x[0],x[5],x[1],x[2],x[3],x[4],null]),maxBin:tr.d.length-1,xy:traceXY(tr),comm:true,cid:l.id,sectors:full.sectors||l.sectors||null,track:full.track||l.track,car:full.car||l.car,tid:+full.trackId||+(bd.hit&&bd.hit.trackId)||0,tn:((curCmpTrack()||{}).n)||normTrk(full.track||l.track)};
+  CREF.push(ref);return ref}
+const pw3BoardKeep=ref=>{if(COMM_LOADED.includes(ref))return;COMM_LOADED=COMM_LOADED.filter(x=>x.cid!==ref.cid);COMM_LOADED.push(ref);if(COMM_LOADED.length>6)COMM_LOADED.shift()};
 async function pw3BoardPick(i,btn){const bd=PW3L.board,l=bd&&bd.laps[i];if(!l)return;const sel=$("#lapB");if(!sel)return;
   const show=k=>{sel.value="c"+k;ANASEL.b=selKey(sel.value,lapOf(sel.value));ANASEL.bu=true;drawCmp();pw3LapsPanel()};
   const has=k=>k>=0&&[...sel.options].some(o=>o.value==="c"+k);
   {const k=CREF.findIndex(x=>x&&x.cid===l.id&&!x.stale);if(has(k))return show(k)}
   if(btn)btn.disabled=true;
-  try{const full=await pw3CGet(`/api/community/laps?id=${encodeURIComponent(l.id)}`),tr=full&&full.trace;if(!tr||!tr.d||!tr.d.length)throw new Error(NO_TRACE());
-    const ref={n:"⟡ "+(full.alias||l.alias||""),time:full.time||l.time,bins:tr.d.map(x=>[x[0],x[5],x[1],x[2],x[3],x[4],null]),maxBin:tr.d.length-1,xy:traceXY(tr),comm:true,cid:l.id,sectors:full.sectors||l.sectors||null,track:full.track||l.track,car:full.car||l.car,tid:+full.trackId||+(bd.hit&&bd.hit.trackId)||0,tn:((curCmpTrack()||{}).n)||normTrk(full.track||l.track)};
-    CREF.push(ref);COMM_LOADED=COMM_LOADED.filter(x=>x.cid!==l.id);COMM_LOADED.push(ref);if(COMM_LOADED.length>6)COMM_LOADED.shift();
-    renderLaps();const j=CREF.indexOf(ref);if(has(j))show(j);else pw3LapsPanel()}
+  try{const ref=await pw3BoardRef(l,bd);pw3BoardKeep(ref);renderLaps();const j=CREF.indexOf(ref);if(has(j))show(j);else pw3LapsPanel()}
   catch(e){toast(e.message);if(btn)btn.disabled=false}}
 
 /* ---------- lap A against lap B (the design's lap header), then the numbers across the top and the corners on the right ---------- */
@@ -11389,16 +11393,23 @@ function pw5CoachLaps(){const host=$("#coachPick");if(!host)return;const As=$("#
       (groups.length?`<div class="lapsel" role="list">${groups.map(g=>{const x=g.ses,nm=g.live?T("Live","En vivo",null,"Ao vivo"):x?(sessKind(x.kind)||T("Session","Sesión",null,"Sessão")):T("Session","Sesión",null,"Sessão");
         return`<div class="ls-h" style="--gc:${g.c}"><b>${esc(nm)}</b><span>${esc([x?day(x.started):"",x?x.track||"":""].filter(Boolean).join(" · "))}</span><small class="mono">${esc(nLaps(g.laps.length))}</small></div>`+
           g.laps.slice().reverse().map(l=>row(l,String(l.n??""),fast&&l.time>0?sgn(l.time-fast,2):"",fast&&l.valid!==false&&l.time===fast,nm+" · "+T("Lap","Vuelta",null,"Volta")+" "+(l.n??""))).join("")}).join("")}</div>`:`<p class="muted pw5-none">${esc(T("No laps yet.","Aún no hay vueltas.",null,"Ainda não há voltas."))}</p>`)}
-  else{const seen=new Set(),cr=[];[...As.options,...Bs.options].forEach(o=>{const l=pw5CoachLapOf(o.value);if(!l||seen.has(l)||LP.includes(l)||(CLOUD.lapsB||[]).includes(l))return;seen.add(l);cr.push(l)});cr.sort((a,b)=>a.time-b.time);const f=cr.length?cr[0].time:0;
-    body=`<div class="lws-spbar"><button type="button" class="btn small" data-ccomm>${esc(T("Compare with the community","Comparar con la comunidad",null,"Comparar com a comunidade"))}</button></div>`+(cr.length?`<div class="lapsel" role="list">${cr.map((l,i)=>row(l,String(i+1),sgn(l.time-f,2),i===0,l.alias||lapName(l))).join("")}</div>`:"")}
+  else{const bd=typeof pw3Board==="function"?pw3Board():null,seen=new Set(),cr=[];[...As.options,...Bs.options].forEach(o=>{const l=pw5CoachLapOf(o.value);if(!l||seen.has(l)||LP.includes(l)||(CLOUD.lapsB||[]).includes(l)||(bd&&l.cid))return;seen.add(l);cr.push(l)});cr.sort((a,b)=>a.time-b.time);const f=cr.length?cr[0].time:0;
+    body=`<div class="lws-spbar"><button type="button" class="btn small" data-ccomm>${esc(T("Compare with the community","Comparar con la comunidad",null,"Comparar com a comunidade"))}</button></div>`+(cr.length||bd?`<div class="lapsel" role="list">${cr.map((l,i)=>row(l,bd?"":String(i+1),sgn(l.time-f,2),!bd&&i===0,l.alias||lapName(l))).join("")}${bd?pw3BoardHTML(bd,B||null):""}</div>`:"")}
   host.innerHTML=tabs+body;
   host.querySelectorAll("[data-csrc]").forEach(b=>b.onclick=()=>{PW5C_SRC=b.dataset.csrc;pw5CoachLaps()});
   {const b=host.querySelector("[data-csp]");if(b)b.onclick=()=>openSessPicker("coach")}
   {const b=host.querySelector("[data-ccomm]");if(b)b.onclick=pickCommLap}
+  host.querySelectorAll("[data-cb]").forEach(b=>b.onclick=()=>pw5CoachBoardPick(+b.dataset.cb,b));
   const fire=s=>s.dispatchEvent(new Event("change",{bubbles:true}));
   host.querySelectorAll("[data-cr]").forEach(b=>b.onclick=async()=>{const l=rows[+b.dataset.cr];if(!l)return;
     if(b.dataset.set==="A"){if(l===A)return;const v=optOf(As,l);if(v!==""){As.value=v;fire(As)}else if(cloud&&l.sessionId&&typeof pw3Primary==="function"){await pw3Primary(l);renderCoach()}return}
     if(l===B||l===A)return;const v=optOf(Bs,l);if(v==="")return;Bs.value=v;fire(Bs)})}
+/* B on a lap of the community leaderboard: load it like Compare with the community and make it the Coach's reference */
+async function pw5CoachBoardPick(i,btn){const bd=PW3L.board,l=bd&&bd.laps[i];if(!l)return;if(btn)btn.disabled=true;
+  try{const ref=await pw3BoardRef(l,bd);pw3BoardKeep(ref);if(!refFits(ref))throw new Error(Tx("This lap is of another track","Esta vuelta es de otro circuito",null,"Esta volta é de outra pista"));
+    /* the Coach takes a community reference as its handed lap, as Open in the Coach does */
+    G61REF=ref;renderLaps();renderCoach()}
+  catch(e){toast(e.message);if(btn)btn.disabled=false}}
 /* the Coach's layout puts the Laps panel first in its left column; with nothing to compare yet it sits above the note */
 function pw5CoachPick(){const box=$("#coachBody");if(!box)return;let p=$("#pw5CoachLapsP");
   if(!p){p=document.createElement("section");p.className="pnl pw5-cl";p.id="pw5CoachLapsP";p.innerHTML=`<div class="pnl-h"></div><div id="coachPick"></div>`}

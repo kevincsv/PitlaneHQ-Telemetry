@@ -133,6 +133,7 @@ must keep this server's protocol.
 | `sync-and-accounts.md` | Sync, what is encrypted how, escrow, deleting an account |
 | `admin.md` | Admin mode, the admin page, usage analytics |
 | `support-and-feedback.md` | The support chat, the floating button, the feedback windows |
+| `team.md` | Team mode: teams, invites, the team's live room, the team log, the Team screen |
 | `drinks.md` | DRINKS mode |
 | `pro.md` | Pitlane HQ Pro and its limits |
 | `landing-and-demo.md` | Demo data and the visitor's landing page |

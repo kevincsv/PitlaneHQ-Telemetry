@@ -1195,8 +1195,12 @@ func (liveLapEnv) carsAhead(dist, pct, speed float64, me int) (bool, bool) {
 func (liveLapEnv) driver() string                              { return fridayDriver() }
 func (liveLapEnv) geo(key string, lat, lon float64) [2]float64 { return geoBase(key, lat, lon) }
 func (liveLapEnv) has(name string) bool                        { return telHas(name) }
-func (liveLapEnv) meta(y string, sn int) cloudSession          { return sessionMeta(y, sn, time.Now()) }
-func (liveLapEnv) now() time.Time                              { return time.Now() }
+func (liveLapEnv) meta(y string, sn int) cloudSession {
+	s := sessionMeta(y, sn, time.Now())
+	teamNoteSession(s) // the session a team's stints and live event name (team.go)
+	return s
+}
+func (liveLapEnv) now() time.Time { return time.Now() }
 func (liveLapEnv) livePlace() (int, int) {
 	v := telNums([]string{"PlayerCarPosition", "PlayerCarClassPosition"})
 	return int(v[0]), int(v[1])
@@ -1217,6 +1221,7 @@ func (liveLapEnv) lapEnded(sn int, done *lapRec, s cloudSession, fuelNow, prevLa
 			setLapCut(sn, done.n, true)
 			log.Printf("lap %d: iRacing did not count %.3f as its best (best before %.3f): not valid", done.n, lt, done.bestAt0)
 		}
+		teamLapEnded(s, done.n, lt, !done.invalid(), done.fuel0-fuelNow) // the team log, in the background (team.go)
 		finishLap(done, s, fuelNow, lt)
 	}()
 }

@@ -246,6 +246,8 @@ var liveState struct {
 	err     string
 	shareOn bool // connected to the room of the share code
 	shareN  int  // people watching with the code
+	teamOn  bool // connected to the active team's room (team.go)
+	teamN   int  // teammates watching
 }
 
 func liveStatus() map[string]any {
@@ -254,7 +256,7 @@ func liveStatus() map[string]any {
 	commMu.Lock()
 	code := commCfg.ShareCode
 	commMu.Unlock()
-	return map[string]any{"connected": liveState.on, "viewers": liveState.viewers, "error": liveState.err, "shareCode": shareShow(code), "shareOn": liveState.shareOn, "shareViewers": liveState.shareN}
+	return map[string]any{"connected": liveState.on, "viewers": liveState.viewers, "error": liveState.err, "shareCode": shareShow(code), "shareOn": liveState.shareOn, "shareViewers": liveState.shareN, "teamOn": liveState.teamOn, "teamViewers": liveState.teamN}
 }
 
 // ---------- sharing your live telemetry with a code ----------
@@ -524,11 +526,35 @@ func liveAskList() []liveAsk {
 	return out
 }
 
-func liveRun(c *wsConn, key []byte) { liveRunWith(c, key, nil) }
+func liveRun(c *wsConn, key []byte) { liveRunOpts(c, key, liveOpts{}) }
 
 // liveRunWith: share is the check of a share code's room (nil: your account's room). Viewers with a code
 // only watch: no DRINKS mode, no race summaries, no sharing control.
 func liveRunWith(c *wsConn, key []byte, share func() bool) {
+	o := liveOpts{keep: share}
+	if share != nil {
+		o.room = "share"
+	}
+	liveRunOpts(c, key, o)
+}
+
+// liveOpts: the room a connection is in. keep nil is your account's room; otherwise its viewers only watch (a share
+// code's room, a team's room) and the connection ends when keep turns false.
+type liveOpts struct {
+	keep  func() bool
+	room  string      // "own" (your account), "share" or "team"
+	inCar func() bool // nil: the telemetry always goes out; otherwise only while it is true (a team: the driver in the car)
+	// every: called on every look while somebody watches, before the telemetry (rs: everything is sent again); false
+	// ends the connection
+	every func(rs bool, out func(ev string, v any) bool) bool
+}
+
+func liveRunOpts(c *wsConn, key []byte, o liveOpts) {
+	share := o.keep
+	if o.room == "" {
+		o.room = "own"
+	}
+	voiceOK := o.room != "team" // the voice chat is the account's room's and the share code's
 	shareReply := make(chan string, 4)
 	type wantMsg struct {
 		Vars []string `json:"vars"`
@@ -564,7 +590,9 @@ func liveRunWith(c *wsConn, key []byte, share func() bool) {
 					viewers = ctl.N
 					mu.Unlock()
 					liveState.Lock()
-					if share != nil {
+					if o.room == "team" {
+						liveState.teamN = ctl.N
+					} else if share != nil {
 						liveState.shareN = ctl.N
 					} else {
 						liveState.viewers = ctl.N
@@ -578,11 +606,9 @@ func liveRunWith(c *wsConn, key []byte, share func() bool) {
 				continue
 			}
 			if ev == "voice" { // the engineer's voice chat (admins only, voice.go)
-				room := "own"
-				if share != nil {
-					room = "share"
+				if voiceOK {
+					voiceFromViewer(o.room, data)
 				}
-				voiceFromViewer(room, data)
 				continue
 			}
 			if share != nil && ev != "want" { // with a code you only watch
@@ -670,12 +696,10 @@ func liveRunWith(c *wsConn, key []byte, share func() bool) {
 	lastDrinks := ""
 	var idx []int
 	_, noticeSeen := noticesSince(-1)
-	voiceRoom := "own"
-	if share != nil {
-		voiceRoom = "share"
-	}
+	voiceRoom := o.room
 	_, voiceSeen := voiceSince(voiceRoom, -1)
 	voiceWas := false
+	wasIn := true
 	for {
 		select {
 		case <-done:
@@ -760,11 +784,11 @@ func liveRunWith(c *wsConn, key []byte, share func() bool) {
 			noticeSeen = seq
 		}
 		// the voice chat: whether it is there (an admin's account), and the page's answers for this room
-		if on := voiceOn(); on != voiceWas || rs {
+		if on := voiceOn() && voiceOK; on != voiceWas || rs {
 			out("voice", map[string]any{"t": "avail", "on": on})
 			voiceWas = on
 		}
-		if vs, seq := voiceSince(voiceRoom, voiceSeen); seq != voiceSeen {
+		if vs, seq := voiceSince(voiceRoom, voiceSeen); voiceOK && seq != voiceSeen {
 			for _, v := range vs {
 				out("voice", v)
 			}
@@ -776,6 +800,19 @@ func liveRunWith(c *wsConn, key []byte, share func() bool) {
 			sc := commCfg.ShareCode
 			commMu.Unlock()
 			out("share", map[string]any{"code": shareShow(sc)})
+		}
+		if o.every != nil && !o.every(rs, out) {
+			return
+		}
+		// a team's room: the telemetry only while this PC's driver is in the car, all of it again when they get in
+		if o.inCar != nil {
+			in := o.inCar()
+			if in && !wasIn {
+				schemaVer, sessionVer, lastTick = -1, -1, -1
+			}
+			if wasIn = in; !in {
+				continue
+			}
 		}
 		tel.mu.RLock()
 		if tel.schemaVer != schemaVer || rs {

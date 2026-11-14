@@ -110,6 +110,12 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   or more while braking, the brake reading 3 % or more on full throttle, the wheel 2.5° or more off centre on the
   straights. "Got it" hides those problems on that device (`pw.pedalSeen`).
 
+## Team (in development: testers, admins in admin mode)
+
+- A "Team" sub-tab in Telemetry after Strategy (`v-team`, `renderTeam` in index.html; on the phones after Tyres in
+  Live), with the "In development" pill. Everyone else sees the Team mode card there (`WIP.team`). What it shows and
+  how it works is in `team.md`.
+
 ## Goals for this session
 
 - Home (and the phones' Home) shows "Goals for this session" during a session and for four hours after it, when the

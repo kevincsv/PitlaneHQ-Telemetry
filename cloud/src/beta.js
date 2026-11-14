@@ -17,7 +17,7 @@ export async function betaGate(req, env, url) {
   // the app served here talks to this server, never to pitlanehq.app's
   if (p === "/server.json") return new Response(JSON.stringify({ url: url.origin }), { headers: { "content-type": "application/json", "cache-control": "no-cache" } });
   if (p === "/" || APP_FILE.test(p) || p === "/live" || p === "/voice/ice" || p.startsWith("/dl/")) return null;
-  if (p.startsWith("/account/") || p.startsWith("/community/")) {
+  if (p.startsWith("/account/") || p.startsWith("/community/") || p === "/team" || p.startsWith("/team/")) {
     let a = null;
     try { a = await sessionAccount(req, env, true); } catch (e) { a = null; }
     // signing in and the public reads (no account yet) go through; the answer says tester/admin, and the app stops there

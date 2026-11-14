@@ -145,6 +145,14 @@ const accountRows = (env, id) => [
   // its invites: the ones still waiting go; a given one stays (it counts for its inviter's yearly limit), under no name
   env.DB.prepare("DELETE FROM referrals WHERE (invitee=?1 OR inviter=?1) AND state<>'given'").bind(id),
   env.DB.prepare("DELETE FROM referral_marks WHERE account_id=?1").bind(id),
+  // its teams (team.js): its stints in their logs go; a team it owned passes to its oldest other member; a team it was
+  // the last member of goes with its log
+  env.DB.prepare("DELETE FROM team_log WHERE account=?1").bind(id),
+  env.DB.prepare("DELETE FROM team_log WHERE team IN (SELECT team FROM team_members WHERE team IN (SELECT team FROM team_members WHERE account=?1) GROUP BY team HAVING COUNT(*)=1)").bind(id),
+  env.DB.prepare("DELETE FROM teams WHERE id IN (SELECT team FROM team_members WHERE team IN (SELECT team FROM team_members WHERE account=?1) GROUP BY team HAVING COUNT(*)=1)").bind(id),
+  env.DB.prepare("UPDATE teams SET owner=(SELECT m.account FROM team_members m WHERE m.team=teams.id AND m.account<>?1 ORDER BY m.joined, m.account LIMIT 1) WHERE owner=?1").bind(id),
+  env.DB.prepare("UPDATE team_members SET role='owner' WHERE role<>'owner' AND team IN (SELECT team FROM team_members WHERE account=?1) AND account IN (SELECT owner FROM teams WHERE id=team_members.team)").bind(id),
+  env.DB.prepare("DELETE FROM team_members WHERE account=?1").bind(id),
   env.DB.prepare("DELETE FROM accounts WHERE id=?1").bind(id),
 ];
 

@@ -62,12 +62,16 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   the app, same account, Telemetry → Connect, accept on the PC; a QR to the web app and the Android download) and
   sharing with a code; no Wi-Fi addresses, PIN or local links (`renderPhoneHow`).
 - The welcome window of a new account (the downloads) stays until the driver closes it (`uiPanel` sticky).
-- Home, clean data (`homeCleanHTML`, signed in): the greeting and the PC's state, four numbers (the laps and the hours on track
-  this month, from the account's sessions, the races this month and the best result), your last race (its place against the
-  start, its position lap by lap, the iRating, incidents and best lap; Race summary and Analyse my laps), the recent
-  sessions (races and the other sessions together, tagged Race, Qualifying, Practice, Test drive, vs AI and DRINKS), the
-  licence summary (each discipline with "iRating" over its numbers; the chosen one draws its iRating over your races)
-  and the days you drove. Pressing the days you drove (anywhere on the squares) opens them as a calendar on every device
+- Home, clean data (`homeCleanHTML`, signed in, the Pit Wall Workspace layout, `pw3-home` in index.html): the greeting
+  and, while a session runs, the live bar under it (the PC's state and Open live telemetry), four numbers (the laps and
+  the hours on track this month, from the account's sessions, the races this month and the best result), then two
+  columns. On the left (sticky) the recent sessions as compact cards (the track's short name, best lap, car, laps, the
+  kind Race, Qualifying, Practice, Test drive, vs AI or DRINKS, a race's place and iRating change, how long ago); a race
+  opens its choice of summary or laps. On the right three equal boxes, the days you drove (the last 18 weeks with the
+  months and weekdays, "N days in 4 months"), the licence summary as a table (Category, Licence, SR, iRating; a rated row
+  draws its iRating over your races under it) and Your feedback (stars, a text box, Send to the feedback inbox, Chat
+  with support, then the small Invite a friend with the code, Share and your invites), and under them the leagues
+  (`leagues.md`). Pressing the days you drove (anywhere on the squares) opens them as a calendar on every device
   (`openDays`; the phones' Days you drove screen): one month in the same squares, bigger and numbered, brighter the more
   sessions that day, from six months back (or the first day driven) to this month with arrows or a swipe; the day pressed
   (else the last one driven) is outlined and its races and sessions are listed under the month, newest first, each

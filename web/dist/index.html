@@ -9141,8 +9141,10 @@ function homeCleanHTML(){loadRatingsSoon();homeRacesHTML();homeActivityHTML();
   const hi=hr<6||hr>=21?Tx("Good evening","Buenas noches","Guten Abend","Boa noite"):hr<13?Tx("Good morning","Buenos días","Guten Morgen","Bom dia"):Tx("Good afternoon","Buenas tardes","Guten Tag","Boa tarde");
   const pcOn=COMPANION?!!(typeof CPLIVE!=="undefined"&&CPLIVE.pcOnline):true,gn0=GAME_NAMES[liveNow()||(STATUS.connected?"iracing":vGame())],ses=STATUS.connected?Tx(`${gn0} in a session`,`${gn0} en sesión`,`${gn0} in einer Sitzung`,`${gn0} em sessão`):Tx(`${gn0} not in a session`,`${gn0} sin sesión`,`${gn0} ohne Sitzung`,`${gn0} sem sessão`);
   const st=COMPANION?(pcOn?`<span class="good">●</span> ${esc(Tx("Your PC online","Tu PC en línea","Dein PC online","Seu PC online"))}`:`<span class="muted">●</span> ${esc(Tx("Your PC offline","Tu PC sin conexión","Dein PC offline","Seu PC offline"))}`):`<span class="${STATUS.connected?"good":"muted"}">●</span> ${esc(ses)}`;
-  let h=`<div class="hl-hi"><h1>${esc(name?hi+", "+name:hi)}${name?homeBadges():""}</h1><span>${st}</span></div>`;
-  if(STATUS.connected||STATUS.demo)h+=`<button type="button" class="hm-card hm-live" id="hmLive" style="text-align:left;font:inherit;color:inherit;cursor:pointer"><i></i><div><b>${esc(STATUS.demo?Tx("Demo session running","Sesión demo en marcha","Demo-Sitzung läuft","Sessão demo em andamento"):Tx("You are on track","Estás en pista","Du bist auf der Strecke","Você está na pista"))}</b><span>${esc(Tx("Open live telemetry","Abrir la telemetría en vivo","Live-Telemetrie öffnen","Abrir a telemetria ao vivo"))}</span></div><span aria-hidden="true" style="font-size:20px;color:var(--muted)">›</span></button>`;
+  // the greeting, and under it the live bar while a session runs (it then carries the PC's state too)
+  const live=STATUS.connected||STATUS.demo,stT=COMPANION?(pcOn?Tx("Your PC online","Tu PC en línea","Dein PC online","Seu PC online"):Tx("Your PC offline","Tu PC sin conexión","Dein PC offline","Seu PC offline")):ses;
+  let h=`<div class="hl-hi"><h1>${esc(name?hi+", "+name:hi)}${name?homeBadges():""}</h1>${live?"":`<span>${st}</span>`}</div>`;
+  if(live)h+=`<button type="button" class="hm-live hs3-live" id="hmLive"><i></i><b>${esc(STATUS.demo?Tx("Demo session running","Sesión demo en marcha","Demo-Sitzung läuft","Sessão demo em andamento"):Tx("You are on track","Estás en pista","Du bist auf der Strecke","Você está na pista"))}</b><span>${esc(stT)} · ${esc(Tx("Open live telemetry","Abrir la telemetría en vivo","Live-Telemetrie öffnen","Abrir a telemetria ao vivo"))} ›</span></button>`;
   // the main discipline: the one you raced most of late (else the newest iRating seen)
   const real=races.filter(r=>!isAIRace(r)&&(!r.game||r.game==="iracing")),cnt={};real.slice(0,20).forEach(r=>{const k=hlRaceDisc(r);if(k)cnt[k]=(cnt[k]||0)+1});
   const main=Object.keys(cnt).sort((a,b)=>cnt[b]-cnt[a])[0]||Object.keys(R).sort((a,b)=>R[b].at-R[a].at)[0]||"";
@@ -9160,31 +9162,18 @@ function homeCleanHTML(){loadRatingsSoon();homeRacesHTML();homeActivityHTML();
   h+=`<div class="hl-kpis">${kp(Tx("Your laps this month","Tus vueltas este mes","Deine Runden diesen Monat","Suas voltas este mês"),nLaps.toLocaleString(loc),null,nSes?Tx(`in ${nSes} sessions`,`en ${nSes} sesiones`,`in ${nSes} Sitzungen`,`em ${nSes} sessões`):"")}${kp(Tx("Hours on track this month","Horas en pista este mes","Stunden auf der Strecke diesen Monat","Horas na pista este mês"),nSec?hTxt:"–",null,nDays?Tx(`${nDays} days driven`,`${nDays} días corriendo`,`${nDays} Tage gefahren`,`${nDays} dias correndo`):"")}
     ${kp(Tx("Races this month","Carreras este mes","Rennen diesen Monat","Corridas este mês"),nRaces,null,nRaces?Tx(`${nTop5} in the top 5`,`${nTop5} en el top 5`,`${nTop5} in den Top 5`,`${nTop5} no top 5`):"")}
     ${kp(Tx("Best result","Mejor resultado","Bestes Ergebnis","Melhor resultado"),bestR?"P"+bestR.finish:"–",null,bestR?(bestR.car||"")+" · "+(bestR.track||""):"","acc")}</div>`;
-  // the last race
-  const last=races[0];let left="";
-  if(last){const ai=isAIRace(last),ir=ai||!last.irChange?null:last.irChange,gain=(last.start||0)&&last.finish?last.start-last.finish:0,pos=(last.laps||[]).map(l=>l.p).filter(p=>p>0);
-    left+=`<section class="hl-sec hl-w2 hl-lastsec"><div class="cl-h"><h2>${esc(Tx("Your last race","Tu última carrera","Dein letztes Rennen","Sua última corrida"))}</h2><span>${esc(agoTxt(last.when))}</span></div>
-      <button type="button" class="hl-last" data-rid="${esc(last.id)}"><div class="hl-pos"><b>${last.dnf?`DNF<small>/${last.field||"–"}</small>`:`P${last.finish||"–"}<small>/${last.field||"–"}</small>`}</b>${gain&&!last.dnf?`<span class="${gain>0?"good":"bad"}">${gain>0?"▲":"▼"} ${Math.abs(gain)} ${esc(Tx("from","desde","von","desde"))} P${last.start}</span>`:""}</div>
-        <div class="hl-what"><div class="nm">${esc(last.track||"")}${hlKindTag("race")}${aiBadge(last)}${drinksBadge(last)}${aGame()==="iracing"?gameBadge(last):""}</div><div class="sub"><i style="background:${HL_DC[hlRaceDisc(last)]||"var(--muted)"}"></i>${esc(last.car||"")}</div>
-          ${pos.length>1?`<svg viewBox="0 0 200 34" preserveAspectRatio="none" aria-hidden="true"><polyline points="${hlLine(pos,200,34,true)}" fill="none" stroke="var(--accent)" stroke-width="1.6" vector-effect="non-scaling-stroke"/></svg>`:""}</div>
-        ${(last.game||"iracing")!=="iracing"?`<div class="hl-st" style="grid-template-columns:repeat(2,auto)"><span>${esc(Tx("Contacts","Contactos","Kontakte","Contatos"))}</span><span>${esc(Tx("Best","Mejor","Beste","Melhor"))}</span><b>${last.inc??"–"}`:`<div class="hl-st"><span>iRating</span><span>${esc(Tx("Inc.","Incid.","Vorf.","Incid."))}</span><span>${esc(Tx("Best","Mejor","Beste","Melhor"))}</span><b class="${ir==null?"":ir>=0?"good":"bad"}">${ir==null?"–":hlSg(ir)}</b><b>${last.inc??"–"}x`}</b><b>${fmtT(last.best)}</b></div></button>
-      <div class="hl-links"><button type="button" class="cl-link" data-rid="${esc(last.id)}">${esc(Tx("Race summary","Resumen de carrera","Rennzusammenfassung","Resumo da corrida"))}</button><button type="button" class="cl-link" id="hlLaps">${esc(Tx("Analyse my laps","Analizar mis vueltas","Meine Runden analysieren","Analisar minhas voltas"))}</button></div></section>`}
   // recent sessions: the races and the other sessions (practice, qualifying, test drives) together, newest first
-  const sx=homeSes().filter(x=>sessKindOf(x)!=="race"),rows=[...races.slice(last?1:0).map(r=>({t:r.when,r})),...sx.map(x=>({t:x.started,x}))].sort((a,b)=>b.t-a.t).slice(0,6);
-  let sesH=`<section class="hl-sec hl-w2 hl-sessec"><div class="cl-h"><h2>${esc(Tx("Recent sessions","Sesiones recientes","Letzte Sitzungen","Sessões recentes"))}</h2><button type="button" class="cl-link" data-go="cloudlaps">${esc(Tx("See all","Ver todas","Alle","Ver todas"))}</button></div>${rows.length?"":`<p class="note">${esc(aGame()==="lmu"?Tx("No sessions in Le Mans Ultimate yet.","Aún no hay sesiones en Le Mans Ultimate.","Noch keine Sitzungen in Le Mans Ultimate.","Ainda não há sessões no Le Mans Ultimate."):Tx("No sessions.","Sin sesiones.","Keine Sitzungen.","Sem sessões."))}</p>`}${rows.length?`<div class="hl-rowh" aria-hidden="true"><span></span><span></span><span class="inc">${esc(Tx("Laps","Vueltas","Runden","Voltas"))}</span><span>${esc(Tx("Best","Mejor","Beste","Melhor"))}</span></div>`:""}<div class="hl-rows">${rows.map(({r,x})=>{
-    if(r){const ir=isAIRace(r)||!r.irChange?null:r.irChange;return`<button type="button" class="hl-row" data-rid="${esc(r.id)}"><b${r.dnf?' class="bad"':""}>${r.dnf?"DNF":"P"+(r.finish||"–")}</b><span class="inf"><span class="nm"><span class="t">${esc(r.track||"")}</span>${hlKindTag("race")}${aiBadge(r)}${drinksBadge(r)}</span><span class="sub"><i style="background:${HL_DC[hlRaceDisc(r)]||"var(--muted)"}"></i>${esc(r.car||"")} · ${esc(agoTxt(r.when))}${ir==null?"":` · <b class="${ir>=0?"good":"bad"}">${hlSg(ir)} iR</b>`}</span></span><span class="inc">${hlLaps((r.laps||[]).length)}</span><span class="muted">${fmtT(r.best)}</span></button>`}
-    return`<button type="button" class="hl-row" data-ses="${esc(x.id)}"><b${x.pos>0?"":' class="muted"'}>${sesPos(x)}</b><span class="inf"><span class="nm"><span class="t">${esc(x.track||"")}</span>${hlKindTag(sessKindOf(x)||"prac")}${sessIsAI(x)?aiBadge({ai:1}):""}${sessDrkPill(x)}${aGame()==="iracing"?gameBadge(x):""}</span><span class="sub"><i style="background:${HL_DC[x.cat]||"var(--muted)"}"></i>${esc(x.car||"")} · ${esc(agoTxt(x.started))}</span></span><span class="inc">${hlLaps(x.laps||0)}</span><span class="muted">${fmtT(x.best)}</span></button>`}).join("")}</div></section>`;
+  const sx=homeSes().filter(x=>sessKindOf(x)!=="race"),rows=[...races.map(r=>({t:r.when,r})),...sx.map(x=>({t:x.started,x}))].sort((a,b)=>b.t-a.t).slice(0,8);
+  let sesH=`<section class="hl-sec hl-sessec hs3-ses"><div class="cl-h"><h2>${esc(Tx("Recent sessions","Sesiones recientes","Letzte Sitzungen","Sessões recentes"))}</h2><button type="button" class="cl-link" data-go="cloudlaps">${esc(Tx("See all","Ver todas","Alle","Ver todas"))}</button></div>${rows.length?homeRecent3(rows):`<p class="note">${esc(aGame()==="lmu"?Tx("No sessions in Le Mans Ultimate yet.","Aún no hay sesiones en Le Mans Ultimate.","Noch keine Sitzungen in Le Mans Ultimate.","Ainda não há sessões no Le Mans Ultimate."):Tx("No sessions.","Sin sesiones.","Keine Sitzungen.","Sem sessões."))}</p>`}</section>`;
   // each discipline's licence; the chosen one draws its iRating over your races
-  const lic=LB_DISC.map(([k])=>{const r=R[k],c=chgOf(k);return`<button type="button" class="hl-lic${HOME.dk===k?" on":""}${r?"":" none"}" data-dk="${k}"${r?"":" disabled"}><span><i style="background:${HL_DC[k]}"></i>${esc(discName(k))}</span><span>${r&&r.lic?licPill(r.lic):""}</span><b>${r?r.ir:"–"}</b><em class="${c>0?"good":c<0?"bad":"muted"}">${r&&c?hlSg(c):""}</em></button>`}).join("");
   const hist=HOME.dk?real.filter(x=>hlRaceDisc(x)===HOME.dk&&x.ir>1).slice(0,30).reverse().map(x=>x.ir+(x.irChange||0)):[];if(HOME.dk&&R[HOME.dk]&&(!hist.length||hist[hist.length-1]!==R[HOME.dk].ir))hist.push(R[HOME.dk].ir);
   const LR=aGame()==="lmu"&&RATINGS&&RATINGS.lmu&&(RATINGS.lmu.sr||RATINGS.lmu.dr)?RATINGS.lmu:null; // the game's own ratings, as the PC read them (lmurest.go)
   const noLic=aGame()!=="iracing"&&aGame()!=="lmu";
-  let right=noLic?`<section class="hl-sec hl-licsec hl-nolic" title="${esc(gameNoTx(aGame()))}"><div class="cl-h"><h2>${esc(Tx("Licence summary","Resumen de licencias","Lizenzübersicht","Resumo de licenças"))}</h2></div><p class="note">ⓘ ${esc(gameNoTx(aGame()))}</p></section>`:aGame()!=="iracing"?`<section class="hl-sec hl-licsec hl-lmurate"><div class="cl-h"><h2>Safety Rating · Driver Rank</h2></div>${LR?`<div class="hl-lmuv"><div><span>Safety Rating</span><b>${esc(LR.sr||"–")}</b></div><div><span>Driver Rank</span><b>${esc(LR.dr||"–")}</b></div></div>`:`<div class="hl-lmuwip">${wipPill()}</div>`}</section>`:`<section class="hl-sec hl-licsec"><div class="cl-h"><h2>${esc(Tx("Licence summary","Resumen de licencias","Lizenzübersicht","Resumo de licenças"))}</h2></div><div class="hl-lich"><span></span><span></span><span>iRating</span><span></span></div>${lic}${hist.length>1?`<svg class="hl-irl" viewBox="0 0 300 60" preserveAspectRatio="none" aria-hidden="true"><polyline points="${hlLine(hist,300,60)}" fill="none" stroke="${HL_DC[HOME.dk]}" stroke-width="1.8" vector-effect="non-scaling-stroke"/></svg>`:""}</section>`;
-  const by=homeActivity(),cal=calGrid(k=>{const v=by.get(k);return v?v.ses.length+v.races.length:0},true);
-  const leagH=homeLeagHTML(main);
-  const daysH=`<section class="hl-sec hl-days"><div class="cl-h"><h2>${esc(Tx("Days you drove","Días que has corrido","Gefahrene Tage","Dias em que correu"))}</h2><span>${cal.driven} ${esc(Tx("days in 6 months","días en 6 meses","Tage in 6 Monaten","dias em 6 meses"))}</span></div>${cal.html}</section>`;
-  // the design's grid: the last race and the recent sessions (2/3) beside the licences, the days and the leagues
-  return h+`<div class="hl-grid"><div class="hl-col hl-colL">${left}${sesH}</div><div class="hl-col hl-colR">${right}${daysH}${leagH}</div></div>`}
+  let right=noLic?`<section class="hl-sec hl-licsec hl-nolic" title="${esc(gameNoTx(aGame()))}"><div class="cl-h"><h2>${esc(Tx("Licence summary","Resumen de licencias","Lizenzübersicht","Resumo de licenças"))}</h2></div><p class="note">ⓘ ${esc(gameNoTx(aGame()))}</p></section>`:aGame()!=="iracing"?`<section class="hl-sec hl-licsec hl-lmurate"><div class="cl-h"><h2>Safety Rating · Driver Rank</h2></div>${LR?`<div class="hl-lmuv"><div><span>Safety Rating</span><b>${esc(LR.sr||"–")}</b></div><div><span>Driver Rank</span><b>${esc(LR.dr||"–")}</b></div></div>`:`<div class="hl-lmuwip">${wipPill()}</div>`}</section>`:`<section class="hl-sec hl-licsec"><div class="cl-h"><h2>${esc(Tx("Licence summary","Resumen de licencias","Lizenzübersicht","Resumo de licenças"))}</h2></div>${homeLic3(R,chgOf)}${hist.length>1?`<svg class="hl-irl" viewBox="0 0 300 60" preserveAspectRatio="none" aria-hidden="true"><polyline points="${hlLine(hist,300,60)}" fill="none" stroke="${HL_DC[HOME.dk]}" stroke-width="1.8" vector-effect="non-scaling-stroke"/></svg>`:""}</section>`;
+  const daysH=`<section class="hl-sec hl-days hs3-days"><div class="cl-h"><h2>${esc(Tx("Days you drove","Días que has corrido","Gefahrene Tage","Dias em que correu"))}</h2></div>${homeCal3(18)}</section>`;
+  // Pit Wall Workspace: the recent sessions on the left (sticky); on the right the days, the licences and your feedback
+  // side by side, and the most active leagues under them
+  return h+`<div class="hs3"><aside class="hs3-l">${sesH}</aside><div class="hs3-r"><div class="hs3-g3">${daysH}${right}${homeFb3()}</div>${homeLeag3()}</div></div>`}
 function renderHome(fromLoad){const box=$("#homeBox");if(!box)return;if(!fromLoad&&!HOME.busy&&(!SER||(!ACCSUM&&!(MODE==="bridge"&&ACC.loggedIn&&ACCDATA))||(MODE==="bridge"&&ACC.loggedIn&&!HOME.acct)))homeLoad();
   if(!SER&&HOME.tries++<25)setTimeout(()=>{if(CUR_VIEW==="home")renderHome()},700);
   const me=homeMember(),now=Date.now(),loc=locale(),ini=(me.name||"?").split(/\s+/).map(w=>w[0]).join("").slice(0,2).toUpperCase();
@@ -9240,7 +9229,7 @@ function renderHome(fromLoad){const box=$("#homeBox");if(!box)return;if(!fromLoa
   h+=homeActivityHTML();
   if(me.noData)h+=licSummaryHTML()+homeRacesHTML();}
   if(WEBAPP)h+=dlHTML();
-  box.innerHTML=h;homeHealth(box);homeAlerts(box);pedalCheckWire(box);homeWeekWire(box);
+  box.innerHTML=h;homeHealth(box);homeAlerts(box);pedalCheckWire(box);homeWeekWire(box);if(clean)homeWire3(box);
   // actions
   const go=v=>show(v);box.querySelectorAll("[data-go]").forEach(b=>b.onclick=()=>{if(b.dataset.stab)SER_TAB=b.dataset.stab;go(b.dataset.go)});
   const st=$("#hmSet");if(st)st.onclick=()=>go("settings");const lv=$("#hmLive");if(lv)lv.onclick=()=>go("live");
@@ -10046,10 +10035,147 @@ html:not(.ov) nav.subtabs button:hover:not([aria-selected="true"]){color:var(--f
 html:not(.ov) .gseg button[aria-pressed="true"]{background:var(--accent)!important;color:var(--accent-ink)!important;box-shadow:none!important;font-weight:600!important}
 </style>
 <style id="pw3-home">
-/* Pit Wall Workspace: home */
+/* Pit Wall Workspace: home. The greeting and the live bar, the month's numbers, then the recent sessions (left, sticky)
+   beside three equal boxes (days, licences, feedback) with the leagues under them */
+#homeBox.hl .hl-hi{min-height:0}
+#homeBox.hl .hs3-live{display:flex;align-items:center;gap:10px;flex-wrap:wrap;width:100%;text-align:left;font:inherit;color:inherit;cursor:pointer;padding:11px 16px;border:1px solid color-mix(in srgb,var(--good) 40%,var(--line));border-radius:var(--radius,10px);background:color-mix(in srgb,var(--good) 10%,var(--surface))}
+#homeBox.hl .hs3-live i{width:10px;height:10px;margin:0}#homeBox.hl .hs3-live b{display:inline;font-size:14px}#homeBox.hl .hs3-live span{color:var(--muted);font-size:13px}
+#homeBox.hl .hs3-live:hover span{color:var(--fg)}
+#homeBox .hs3{display:grid;grid-template-columns:minmax(250px,280px) minmax(0,1fr);gap:14px;align-items:start}
+#homeBox .hs3-l{position:sticky;top:12px;min-width:0}#homeBox .hs3-r{display:flex;flex-direction:column;gap:14px;min-width:0}
+#homeBox .hs3-g3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;align-items:stretch}
+#homeBox .hs3-g3>.hl-sec{margin:0;min-width:0}
+/* recent sessions */
+#homeBox .hs3-rl{display:grid}
+#homeBox .hs3-i{display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:10px;row-gap:2px;padding:9px 6px;border:0;border-bottom:1px solid var(--line);border-radius:6px;background:none;color:var(--fg);font:inherit;text-align:left;cursor:pointer;width:100%;min-width:0}
+#homeBox .hs3-i:last-child{border-bottom:0}#homeBox .hs3-i:hover,#homeBox .hs3-i:focus-visible{background:var(--surface2)}
+#homeBox .hs3-t,#homeBox .hs3-c{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}#homeBox .hs3-t{font-weight:600;font-size:13.5px}
+#homeBox .hs3-b{font:500 13.5px var(--f-data);text-align:right}#homeBox .hs3-c{color:var(--muted);font-size:12px}#homeBox .hs3-n{font:400 12px var(--f-data);color:var(--muted);text-align:right;white-space:nowrap}
+#homeBox .hs3-m{grid-column:1/3;display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px;color:var(--muted);font-size:12px;margin-top:2px}
+#homeBox .hs3-m .hl-tag,#homeBox .hs3-m .pill{margin-left:0;vertical-align:0}#homeBox .hs3-m b{font:600 12px var(--f-data)}
+/* days you drove */
+#homeBox .hs3-days .hs3-cal{display:grid;grid-template-columns:auto minmax(0,1fr);gap:6px;padding:0;overflow:visible;background:none;border:0}
+#homeBox .hs3-wd{display:grid;grid-template-rows:repeat(7,minmax(0,1fr));gap:3px;padding-top:18px;font-size:10.5px;color:var(--muted)}#homeBox .hs3-wd span{display:flex;align-items:center;line-height:1}
+#homeBox .hs3-cm{min-width:0}#homeBox .hs3-mo{display:grid;grid-template-columns:repeat(var(--w),minmax(0,1fr));height:16px;margin-bottom:2px;font:600 10px var(--f-data);color:var(--muted);text-transform:capitalize;white-space:nowrap}
+#homeBox .hs3-cg{display:grid;grid-auto-flow:column;grid-template-rows:repeat(7,auto);grid-template-columns:repeat(var(--w),minmax(0,1fr));gap:3px}
+#homeBox .hs3-cg .hm-d{width:100%;height:auto;aspect-ratio:1;min-width:0;border-radius:3px}
+#homeBox .hs3-cn{margin:10px 0 0;color:var(--muted);font-size:12px}
+/* licence summary */
+#homeBox .hs3-lic{width:calc(100% - 28px);border-collapse:collapse;font-size:13px}
+#homeBox .hs3-lic th{text-align:left;font:600 10.5px var(--f-body);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);padding:8px 6px;border-bottom:1px solid var(--line)}
+#homeBox .hs3-lic td{padding:9px 6px;border-bottom:1px solid var(--line);white-space:nowrap}#homeBox .hs3-lic tr:last-child td{border-bottom:0}
+#homeBox .hs3-lic td:first-child{font-weight:500;white-space:normal}#homeBox .hs3-lic td:first-child i{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:7px;vertical-align:1px}
+#homeBox .hs3-lic td:nth-child(n+3){font-family:var(--f-data)}#homeBox .hs3-lic em{font-style:normal;font-size:11.5px}
+#homeBox .hs3-lic tr[data-dk]{cursor:pointer}#homeBox .hs3-lic tr[data-dk]:hover td,#homeBox .hs3-lic tr.on td{background:var(--surface2)}#homeBox .hs3-lic tr.none td{color:var(--muted)}
+#homeBox .hs3-lic .lic{font-size:11px;padding:1px 7px}
+#homeBox .hl-licsec .hl-irl{margin-top:8px}
+/* your feedback and invite a friend */
+#homeBox .hs3-fbb{display:grid;gap:10px;margin-top:10px}
+#homeBox .hs3-st{display:flex;gap:4px}#homeBox .hs3-st button{background:none;border:0;padding:4px;cursor:pointer;min-width:36px;min-height:36px;display:grid;place-items:center;border-radius:6px}
+#homeBox .hs3-st svg{width:24px;height:24px;fill:none;stroke:var(--muted);stroke-width:1.6}#homeBox .hs3-st button.on svg{fill:var(--accent);stroke:var(--accent)}#homeBox .hs3-st button:hover svg{stroke:var(--accent)}
+#homeBox .hs3-fbb textarea{width:100%;box-sizing:border-box;min-height:70px;background:var(--bg);color:var(--fg);border:1px solid var(--line);border-radius:8px;padding:8px 10px;font:13px var(--f-body);resize:vertical}
+#homeBox .hs3-fbb .err{margin:0}#homeBox .hs3-a{display:flex;gap:6px;flex-wrap:wrap}
+#homeBox .hs3-inv{margin-top:14px;padding-top:12px;border-top:1px solid var(--line);display:grid;gap:8px}
+#homeBox .hs3-invh{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}#homeBox .hs3-invh .pill{font-size:10px}
+#homeBox .hs3-inv .note{margin:0;font-size:12px}
+#homeBox .hs3-code{display:flex;gap:6px}#homeBox .hs3-code .mono{flex:1;min-width:0;display:flex;align-items:center;justify-content:center;font:600 15px var(--f-data);letter-spacing:.16em;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:6px 10px;overflow:hidden;text-overflow:ellipsis}
+#homeBox .hs3-invn{background:none;border:1px solid var(--line);border-radius:8px;color:var(--fg);font:inherit;font-size:12.5px;padding:7px 10px;cursor:pointer}#homeBox .hs3-invn:hover{border-color:var(--accent)}
+/* leagues */
+#homeBox .hs3-lgtop{display:flex;flex-wrap:wrap;gap:8px;justify-content:space-between;align-items:center;margin-top:10px}
+#homeBox .hs3-chips,#homeBox .hs3-lgact{display:flex;flex-wrap:wrap;gap:6px}
+#homeBox .hs3-chips .chip{border:1px solid var(--line);background:transparent;color:var(--muted);border-radius:999px;padding:5px 12px;font:500 12px var(--f-body);cursor:pointer;min-height:30px}
+#homeBox .hs3-chips .chip[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+#homeBox .hs3-lgh{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-top:12px}#homeBox .hs3-lgh b{font:700 14px var(--f-display);text-transform:uppercase;letter-spacing:.06em}#homeBox .hs3-lgh small{color:var(--muted);font-size:12px}
+#homeBox .hs3-lgg{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px;margin-top:8px}
+#homeBox .hs3-lgc{display:flex;flex-direction:column;gap:8px;padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--surface2);min-width:0}
+#homeBox .hs3-lgt{display:flex;gap:10px;align-items:center;min-width:0}#homeBox .hs3-lgt img,#homeBox .hs3-lgt .lgf-ic{width:40px;height:40px;border-radius:12px;flex:none}
+#homeBox .hs3-lgt .lgf-ic{display:grid;place-items:center;background:var(--surface);border:1px solid var(--line);font-weight:700;color:var(--accent)}
+#homeBox .hs3-lgt .lgf-nm{flex:1}#homeBox .hs3-rk{font:500 13px var(--f-data);color:var(--muted);min-width:16px;text-align:center}
+#homeBox .hs3-mv{font:600 12px var(--f-data);padding:2px 6px;border-radius:6px;white-space:nowrap}#homeBox .hs3-mv.up{color:var(--good);background:color-mix(in srgb,var(--good) 14%,transparent)}#homeBox .hs3-mv.dn{color:var(--bad);background:color-mix(in srgb,var(--bad) 14%,transparent)}#homeBox .hs3-mv.eq{color:var(--muted)}#homeBox .hs3-mv.new{color:var(--accent);background:color-mix(in srgb,var(--accent) 16%,transparent);font-family:var(--f-body)}
+#homeBox .hs3-dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--good);margin-right:5px;box-shadow:0 0 0 3px color-mix(in srgb,var(--good) 25%,transparent)}
+#homeBox .hs3-lgc .lgf-post{margin:0}#homeBox .hs3-lgc small.muted{font-size:12px}
+@media (max-width:1100px){#homeBox .hs3{grid-template-columns:minmax(0,1fr)}#homeBox .hs3-l{position:static}#homeBox .hs3-g3{grid-template-columns:repeat(2,minmax(0,1fr))}#homeBox .hs3-g3>.hs3-fb{grid-column:1/-1}}
+@media (max-width:820px){#homeBox .hs3-g3{grid-template-columns:minmax(0,1fr)}#homeBox .hs3-lgg{grid-template-columns:minmax(0,1fr)}#homeBox .hs3-lgtop{flex-direction:column;align-items:stretch}#homeBox .hs3-chips{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}#homeBox .hs3-chips .chip{flex:none}}
 </style>
 <script id="pw3-home-js">
-/* Pit Wall Workspace: home helpers */
+/* Pit Wall Workspace: home helpers. Home (signed in, `homeCleanHTML`) is the greeting with the live bar, the month's
+   numbers, then two columns: the recent sessions as compact cards on the left (sticky), and on the right the days you
+   drove, the licence summary and your feedback (with Invite a friend) side by side, the most active leagues under them */
+var HOME3={lgCat:"",fbR:0,inv:0,lg:0};
+// "Watkins Glen International" → "Watkins Glen": the card's short name (the full one in its title)
+const hs3Short=t=>String(t||"").replace(/(\s+(International|Circuit|Raceway|Motorsport Park))+$/i,"")||String(t||"");
+function homeRecent3(rows){return`<div class="hs3-rl">${rows.map(({r,x})=>{
+  if(r){const ir=isAIRace(r)||!r.irChange?null:r.irChange;return`<button type="button" class="hs3-i" data-rc="${esc(r.id)}" title="${esc(r.track||"")}"><b class="hs3-t">${esc(hs3Short(r.track))}</b><span class="hs3-b">${fmtT(r.best)}</span><small class="hs3-c">${esc(r.car||"")}</small><span class="hs3-n">${hlLaps((r.laps||[]).length)}</span><small class="hs3-m">${hlKindTag("race")}<b${r.dnf?' class="bad"':""}>${r.dnf?"DNF":"P"+(r.finish||"–")}</b>${aiBadge(r)}${drinksBadge(r)}<span>${esc(agoTxt(r.when))}</span>${ir==null?"":`<b class="${ir>=0?"good":"bad"}">${hlSg(ir)} iR</b>`}</small></button>`}
+  return`<button type="button" class="hs3-i" data-ses="${esc(x.id)}" title="${esc(x.track||"")}"><b class="hs3-t">${esc(hs3Short(x.track))}</b><span class="hs3-b">${fmtT(x.best)}</span><small class="hs3-c">${esc(x.car||"")}</small><span class="hs3-n">${hlLaps(x.laps||0)}</span><small class="hs3-m">${hlKindTag(sessKindOf(x)||"prac")}${x.pos>0?`<b>${sesPos(x)}</b>`:""}${sessIsAI(x)?aiBadge({ai:1}):""}${sessDrkPill(x)}${aGame()==="iracing"?gameBadge(x):""}<span>${esc(agoTxt(x.started))}</span></small></button>`}).join("")}</div>`}
+// the licence summary as a table: each discipline's licence, safety rating and iRating (with what its last races gave);
+// a row with a rating is pressed to draw its iRating under the table
+function homeLic3(R,chgOf){const th=[Tx("Category","Categoría",null,"Categoria"),Tx("Licence","Licencia",null,"Licença"),"SR","iRating"];
+  return`<table class="hs3-lic"><thead><tr>${th.map(t=>`<th>${esc(t)}</th>`).join("")}</tr></thead><tbody>${LB_DISC.map(([k])=>{const r=R[k],c=r?chgOf(k):0,t=String(r&&r.lic||""),L=licLetter(t),sr=(t.match(/(\d+\.\d+)/)||[])[1];
+    return`<tr class="${HOME.dk===k?"on":""}${r?"":" none"}"${r?` data-dk="${k}" tabindex="0"`:""}><td><i style="background:${HL_DC[k]}"></i>${esc(discName(k))}</td><td>${L?`<span class="lic ${L}">${L==="P"?"Pro":L}</span>`:"–"}</td><td>${sr||"–"}</td><td>${r?r.ir:"–"}${c?` <em class="${c>0?"good":"bad"}">${hlSg(c)}</em>`:""}</td></tr>`}).join("")}</tbody></table>`}
+// the days you drove: the last W weeks as squares filling the box, with the months over them and the weekdays beside
+function homeCal3(W){const by=homeActivity(),n0=k=>{const v=by.get(k);return v?v.ses.length+v.races.length:0},loc=locale(),today=new Date();today.setHours(0,0,0,0);
+  const start=new Date(today);start.setDate(start.getDate()-((today.getDay()+6)%7)-(W-1)*7);
+  let max=1,driven=0,cells="",mon="",prev=-1;for(let i=0;i<W*7;i++){const d=new Date(start);d.setDate(start.getDate()+i);if(d<=today)max=Math.max(max,n0(dayKey(d.getTime())))}
+  for(let w=0;w<W;w++){const m=new Date(start);m.setDate(start.getDate()+w*7);if(m.getMonth()!==prev){if(w<W-1)mon+=`<span style="grid-column:${w+1}/span 3">${esc(m.toLocaleDateString(loc,{month:"short"}))}</span>`;prev=m.getMonth()}
+    for(let k=0;k<7;k++){const day=new Date(start);day.setDate(start.getDate()+w*7+k);if(day>today){cells+=`<i class="hm-d off"></i>`;continue}const n=n0(dayKey(day.getTime()));if(n)driven++;
+      const lv=n?Math.min(4,Math.ceil(n/max*4)):0,tl=day.toLocaleDateString(loc,{weekday:"short",day:"numeric",month:"short"})+(n?` · ${n} ${Tx(n>1?"sessions":"session",n>1?"sesiones":"sesión",null,n>1?"sessões":"sessão")}`:"");
+      cells+=n?`<button type="button" class="hm-d l${lv}" data-day="${day.getTime()}" title="${esc(tl)}" aria-label="${esc(tl)}"></button>`:`<i class="hm-d" title="${esc(tl)}"></i>`}}
+  const wd=[0,1,2,3,4,5,6].map(k=>{const d=new Date(2024,0,1+k);return k%2?"":d.toLocaleDateString(loc,{weekday:"short"})}),mo=Math.round(W/4.35);
+  return`<div class="hm-cal hs3-cal" style="--w:${W}"><div class="hs3-wd" aria-hidden="true">${wd.map(x=>`<span>${esc(x)}</span>`).join("")}</div><div class="hs3-cm"><div class="hs3-mo" aria-hidden="true">${mon}</div><div class="hs3-cg">${cells}</div></div></div><p class="hs3-cn">${esc(Tx(`${driven} days in ${mo} months`,`${driven} días en ${mo} meses`,null,`${driven} dias em ${mo} meses`))}</p>`}
+// your feedback: the stars, what you would change, Send (the feedback windows' path) and the support chat; Invite a friend under it
+function homeFb3(){const star='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z"/></svg>';
+  return`<section class="hl-sec hs3-fb"><div class="cl-h"><h2>${esc(Tx("Your feedback","Tu opinión",null,"Sua opinião"))}</h2></div><div class="hs3-fbb"><b>${esc(Tx("How is Pitlane HQ for you?","¿Qué tal Pitlane HQ para ti?",null,"Como está o Pitlane HQ para você?"))}</b>
+    <div class="hs3-st" role="radiogroup" aria-label="${esc(Tx("Your rating (optional)","Tu valoración (opcional)",null,"Sua avaliação (opcional)"))}">${[1,2,3,4,5].map(i=>`<button type="button" role="radio" aria-checked="${HOME3.fbR===i}" class="${i<=HOME3.fbR?"on":""}" data-hsr="${i}" aria-label="${i}/5">${star}</button>`).join("")}</div>
+    <textarea id="hs3T" rows="3" maxlength="4000" placeholder="${esc(Tx("What would you change?","¿Qué cambiarías?",null,"O que você mudaria?"))}" aria-label="${esc(Tx("Your feedback","Tu opinión",null,"Sua opinião"))}"></textarea><p class="note err" id="hs3E" hidden></p>
+    <div class="hs3-a"><button type="button" class="btn small primary" id="hs3Send">${esc(Tx("Send","Enviar",null,"Enviar"))}</button><button type="button" class="btn small" id="hs3Chat">${esc(Tx("Chat with support","Chat con soporte",null,"Chat com o suporte"))}</button></div></div>${homeInv3()}</section>`}
+// the small Invite a friend: your code and Share (inviteWire), and your invites, which open Community → Friends
+function homeInv3(){const I=INVITE;if(!I||!I.code)return`<div id="hs3Inv"></div>`;
+  const mo=n=>n===1?Tx("1 month","1 mes",null,"1 mês"):Tx(`${n} months`,`${n} meses`,null,`${n} meses`),earned=I.proUntil?Tx(`Pro until ${new Date(I.proUntil).toLocaleDateString(locale(),{day:"numeric",month:"long"})}`,`Pro hasta el ${new Date(I.proUntil).toLocaleDateString(locale(),{day:"numeric",month:"long"})}`,null,`Pro até ${new Date(I.proUntil).toLocaleDateString(locale(),{day:"numeric",month:"long"})}`):I.banked?Tx(`${mo(I.banked)} saved`,`${mo(I.banked)} guardado${I.banked>1?"s":""}`,null,`${mo(I.banked)} guardado${I.banked>1?"s":""}`):"",r=I.rule||{months:1};
+  return`<div class="hs3-inv" id="hs3Inv"><div class="hs3-invh"><b>${esc(Tx("Invite a friend","Invita a un amigo",null,"Convide um amigo"))}</b>${earned?`<span class="pill good">${esc(earned)}</span>`:""}</div>
+    <p class="note">${esc(Tx(`When a friend you invite uses Pitlane HQ for a week, you both get ${mo(r.months)} of Pro.`,`Cuando un amigo al que invitas usa Pitlane HQ durante una semana, los dos ganáis ${mo(r.months)} de Pro.`,null,`Quando um amigo que você convida usa o Pitlane HQ por uma semana, vocês dois ganham ${mo(r.months)} de Pro.`))}</p>
+    <div class="hs3-code"><span class="mono" id="invCode">${esc(I.code)}</span><button type="button" class="btn small primary" id="frInvite">${esc(Tx("Share","Compartir",null,"Compartilhar"))}</button></div>
+    <button type="button" class="hs3-invn" data-hsfr="1">${(I.friends||[]).length} ${esc(Tx("invited","invitados",null,"convidados"))} · ${I.waiting||0} ${esc(Tx("in their first week","en su primera semana",null,"na primeira semana"))}</button></div>`}
+// the leagues' places between the server's last two reads, kept on this device: ▲/▼ the places moved, New for one
+// that was not on the list before (nothing until two reads were seen)
+function hs3Moves(all,at){const k="pw.lgrank."+vGame(),cur={};all.forEach((x,i)=>cur[x.guild]=i+1);let st=null;try{st=JSON.parse(localStorage.getItem(k)||"null")}catch(e){}
+  if(!st||st.at!==at){st={at,prev:st?st.cur:null,cur};try{localStorage.setItem(k,JSON.stringify(st))}catch(e){}}
+  return g=>{const p=st.prev;if(!p||!Object.keys(p).length)return"";const was=p[g];if(!was)return`<span class="hs3-mv new">${esc(Tx("New","Nueva",null,"Nova"))}</span>`;const d=was-cur[g];
+    return d>0?`<span class="hs3-mv up" aria-label="▲ ${d}">▲ ${d}</span>`:d<0?`<span class="hs3-mv dn" aria-label="▼ ${-d}">▼ ${-d}</span>`:`<span class="hs3-mv eq">–</span>`}}
+// the most active leagues (the Leagues hub's list, `loadLeagFound`): the discipline chips, Explore and Post, six cards
+function homeLeag3(){const none=`<section class="hl-sec hs3-lg" id="hs3Leag" hidden></section>`;if(!leagGameOk())return none;
+  const F=LEAG_FOUND_G===vGame()?LEAG_FOUND:null;
+  if(!F){if(!HOME3.lg){HOME3.lg=1;loadLeagFound().then(()=>{HOME3.lg=0;const el=$("#hs3Leag");if(el&&LEAG_FOUND_G===vGame()&&LEAG_FOUND){el.outerHTML=homeLeag3();homeLeagWire3($("#homeBox"))}})}return none}
+  const all=(F.leagues||[]).filter(x=>!x.hidden);if(!all.length)return none;
+  const lmu=vGame()==="lmu",cat=lmu?"":HOME3.lgCat,mv=hs3Moves(all,F.updated||0),num=n=>Number(n||0).toLocaleString(locale());
+  const list=all.map((x,i)=>({x,r:i+1})).filter(({x})=>!cat||(x.cats||[]).includes(cat)).slice(0,6);
+  const chips=lmu?"":`<div class="hs3-chips">${[["",Tx("All","Todas",null,"Todas")],...LB_DISC.map(([k])=>[k,discName(k)])].map(([k,l])=>`<button type="button" class="chip" data-hslc="${k}" aria-pressed="${cat===k}">${esc(l)}</button>`).join("")}</div>`;
+  return`<section class="hl-sec hs3-lg" id="hs3Leag"><div class="cl-h"><h2>${esc(Tx("Leagues","Ligas",null,"Ligas"))}</h2></div>
+    <div class="hs3-lgtop">${chips}<div class="hs3-lgact"><button type="button" class="btn small" data-hslt="explore">${esc(Tx("Explore leagues","Explorar ligas",null,"Explorar ligas"))}</button><button type="button" class="btn small" data-hslt="post">${esc(Tx("Post your league","Publicar tu liga",null,"Publicar sua liga"))}</button></div></div>
+    <div class="hs3-lgh"><b>${esc(Tx("Most active leagues","Ligas más activas",null,"Ligas mais ativas"))}</b>${F.updated?`<small>${esc(Tx("Updated","Actualizado",null,"Atualizado"))} ${esc(agoTxt(F.updated))}</small>`:""}</div>
+    ${list.length?`<div class="hs3-lgg">${list.map(({x,r})=>`<article class="hs3-lgc"><div class="hs3-lgt"><span class="hs3-rk">${r}</span>${x.icon?`<img src="${esc(x.icon)}" alt="" width="40" height="40" loading="lazy">`:`<span class="lgf-ic" aria-hidden="true">${esc((x.name||"?").slice(0,1))}</span>`}<div class="lgf-nm"><b>${esc(x.name)}</b><small>${lmu?esc(LMU_LEAG(x)):(x.cats||[]).map(c=>esc(discName(c))).join(" · ")||esc(Tx("iRacing league","Liga de iRacing",null,"Liga de iRacing"))}</small></div>${mv(x.guild)}</div>
+      <div class="lgf-n"><span><i class="hs3-dot"></i><b class="good">${num(x.online)}</b> ${esc(Tx("online","conectados",null,"online"))}</span><span><b>${num(x.members)}</b> ${esc(Tx("members","miembros",null,"membros"))}</span></div>
+      ${x.url?`<a class="lgf-post" href="${esc(x.url)}" target="_blank" rel="noopener">${esc(unMojibake(x.title))}</a><small class="muted">r/${esc(x.sub)} · ${esc(agoTxt(x.posted))}${x.posts>1?" · "+esc(Tx(`${x.posts} posts`,`${x.posts} publicaciones`,null,`${x.posts} publicações`)):""}</small>`:x.title?`<p class="lgf-post">${esc(unMojibake(x.title))}</p>`:""}
+      <div class="lgf-act"><a class="btn small primary" href="${esc(x.invite)}" target="_blank" rel="noopener">${esc(Tx("Join the Discord","Unirse al Discord",null,"Entrar no Discord"))}</a></div></article>`).join("")}</div>`:`<p class="note">${esc(Tx(`No ${discName(cat)} league yet.`,`Aún no hay ligas de ${discName(cat)}.`,null,`Ainda não há ligas de ${discName(cat)}.`))}</p>`}</section>`}
+function homeLeagWire3(box){if(!box)return;
+  box.querySelectorAll("[data-hslc]").forEach(b=>b.onclick=()=>{HOME3.lgCat=b.dataset.hslc;const el=$("#hs3Leag");if(el){el.outerHTML=homeLeag3();homeLeagWire3(box)}});
+  box.querySelectorAll("[data-hslt]").forEach(b=>b.onclick=()=>{try{LEAG.tab=b.dataset.hslt;if(LEAG.tab!=="post")LEAG.edit=null}catch(e){}show("leagues")})}
+function homeInvWire3(box){const el=box.querySelector("#hs3Inv");if(!el)return;inviteWire(el);
+  const n=el.querySelector("[data-hsfr]");if(n)n.onclick=()=>{CMV="friends";try{localStorage.setItem("pw.cmv","friends")}catch(e){}show("community")}}
+function homeWire3(box){
+  box.querySelectorAll("[data-rc]").forEach(b=>b.onclick=()=>openRaceChoice(b.dataset.rc));
+  box.querySelectorAll("tr[data-dk]").forEach(b=>b.onkeydown=e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();b.click()}});
+  // your feedback
+  const st=[...box.querySelectorAll("[data-hsr]")],paint=()=>st.forEach(b=>{const i=+b.dataset.hsr;b.classList.toggle("on",i<=HOME3.fbR);b.setAttribute("aria-checked",String(i===HOME3.fbR))});
+  st.forEach(b=>b.onclick=()=>{const i=+b.dataset.hsr;HOME3.fbR=HOME3.fbR===i?0:i;paint()});
+  const t=box.querySelector("#hs3T"),er=box.querySelector("#hs3E"),sb=box.querySelector("#hs3Send"),say=m=>{er.textContent=m||"";er.hidden=!m};
+  if(sb)sb.onclick=async()=>{const text=(t.value||"").trim();if(!text){say(Tx("Write something first.","Escribe algo primero.",null,"Escreva algo primeiro."));t.focus();return}
+    if(!usageDev()&&!demoOn()){openOutside(FEEDBACK_URL);return}say("");sb.disabled=true;
+    try{if(!demoOn())await cloudPost("/community/feedback",{text,rating:HOME3.fbR||undefined,device:usageDev(),v:WEB_VERSION,view:"home",lang:LANG});usageCount("act:feedback_sent");t.value="";HOME3.fbR=0;paint();toast(Tx("Thank you. Your feedback was sent.","Gracias. Tu opinión se ha enviado.",null,"Obrigado. Sua opinião foi enviada."))}catch(x){say(x.message)}sb.disabled=false};
+  const ch=box.querySelector("#hs3Chat");if(ch)ch.onclick=()=>{try{supportOpen()}catch(e){}};
+  // Invite a friend: the invite is read once (Community → Friends reads it too), then this part is drawn again
+  homeInvWire3(box);
+  if(!INVITE&&!HOME3.inv){HOME3.inv=1;frGet("/community/invite").then(iv=>{INVITE=iv&&iv.code?iv:null;const el=$("#hs3Inv");if(el&&INVITE){el.outerHTML=homeInv3();homeInvWire3($("#homeBox"))}}).catch(()=>{})}
+  homeLeagWire3(box)}
 </script>
 <style id="pw3-laps">
 /* Pit Wall Workspace: laps */

@@ -7860,8 +7860,8 @@ function renderCoach(){coachWeights();coachMe();const LP=coachLaps(),best=markAn
   // a step of the plan pressed (or its number on the map) is the one the map shows: its stretch, its points A and B, the apex and the throttle
   const planSel=i=>{cmap._planSel=i;drawPlanLayer(cmap);box.querySelectorAll(".co-plan [data-ps]").forEach(li=>li.classList.toggle("sel",+li.dataset.ps===i))};cmap._onPlanSel=planSel;
   box.querySelectorAll(".co-plan [data-ps]").forEach(li=>li.onclick=e=>{if(e.target.closest(".tiprate"))return;planSel(+li.dataset.ps);if(e.target.closest("[data-psmap]")&&window.innerWidth<900)cmap.scrollIntoView({behavior:"smooth",block:"center"})});
-  box.querySelectorAll("[data-planrate] button").forEach(b=>b.onclick=()=>{const ix=b.parentNode.dataset.planrate,st=ix==="all"?null:c.plan[+ix];const on=planRate(A,st,+b.dataset.up);b.parentNode.querySelectorAll("button").forEach(x=>x.classList.toggle("on",+x.dataset.up===on))});
-  box.querySelectorAll("[data-tiprate] button").forEach(b=>b.onclick=()=>{const apex=+b.parentNode.dataset.tiprate,k=c.cs.find(x=>Math.round(x.apex)===apex);if(!k)return;coachRate(A,k,+b.dataset.up);const on=(TIPRATE[(coachWhere(A)||{}).sid+":"+apex]||0);b.parentNode.querySelectorAll("button").forEach(x=>x.classList.toggle("on",+x.dataset.up===on))});
+  box.querySelectorAll("[data-planrate] button").forEach(b=>b.onclick=()=>{const ix=b.parentNode.dataset.planrate,st=ix==="all"?null:c.plan[+ix];const on=planRate(A,st,+b.dataset.up);b.parentNode.querySelectorAll("button").forEach(x=>(x.classList.toggle("on",+x.dataset.up===on),x.setAttribute("aria-pressed",String(+x.dataset.up===on))))});
+  box.querySelectorAll("[data-tiprate] button").forEach(b=>b.onclick=()=>{const apex=+b.parentNode.dataset.tiprate,k=c.cs.find(x=>Math.round(x.apex)===apex);if(!k)return;coachRate(A,k,+b.dataset.up);const on=(TIPRATE[(coachWhere(A)||{}).sid+":"+apex]||0);b.parentNode.querySelectorAll("button").forEach(x=>(x.classList.toggle("on",+x.dataset.up===on),x.setAttribute("aria-pressed",String(+x.dataset.up===on))))});
   box.querySelectorAll("[data-cref]").forEach(b=>b.onclick=()=>{rsel.value=b.dataset.cref;rsel.dataset.user="1";renderCoach()});
   const ac=$("#coachAllC");if(ac)ac.onclick=()=>{COACH_ALLC=!COACH_ALLC;renderCoach()}
   replayWire(box,n=>sesLapsOf(A).find(l=>l.n===n)||(A.n===n?A:null));
@@ -10491,6 +10491,9 @@ html:not(.ov,.ovwin):not([data-theme="light"]) .panel>.label:first-child,html:no
 /* the owner (2026-11-14): more contrast for the boxes inside the Coach's panels, and a date on one line in My sessions */
 html:not([data-theme="light"]) #v-coach{--muted:#a3adbd}
 html:not([data-theme="light"]) #v-coach :is(.co-plan.nums>li,.pw3c .co-tips>.co-tip,.tiprate button,.pw3c .btn,.pw3c .chip,#coachMap .rb-bar .chip){border-color:var(--line2)!important}
+/* a vote you gave shows: green edge and tint on 👍 or 👎 (above the rule that gives every coach control the same edge) */
+html body:not(#_):not(#__) #v-coach .tiprate button.on{border-color:var(--good)!important;background:color-mix(in srgb,var(--good) 22%,var(--surface2))!important;box-shadow:inset 0 0 0 1px var(--good)!important}
+html body:not(#_):not(#__) #v-coach .tiprate button[data-up="-1"].on{border-color:var(--bad)!important;background:color-mix(in srgb,var(--bad) 20%,var(--surface2))!important;box-shadow:inset 0 0 0 1px var(--bad)!important}
 html:not([data-theme="light"]) #v-coach :is(.co-plan.nums>li,.pw3c .co-tips>.co-tip){background:var(--surface2)!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.04)}
 html:not([data-theme="light"]) #v-coach .pw3c .co-bt{background:var(--bg)}
 #v-cloudlaps .pw3s .mr-t td.mr-when{white-space:nowrap!important;width:1%}
@@ -11072,8 +11075,8 @@ function pw3LapsPanel(){const host=$("#lapPick");if(!host)return;const As=$("#la
           g.laps.slice().reverse().map(l=>row(l,String(l.n??""),fast&&l.time>0?sgn(l.time-fast,2):"",fast&&l.valid!==false&&l.time===fast,true,nm+" · "+Tx("Lap","Vuelta",null,"Volta")+" "+(l.n??""))).join("")}).join("")}</div>`}
   else{const cr=CREF.filter(l=>l&&!l.stale&&refFits(l)).slice().sort((a,b)=>a.time-b.time),f=cr.length?cr[0].time:0;
     const mr=cr.filter(l=>l.model),bd=pw3Board();
-    body=`<div class="lws-spbar"><button type="button" class="btn small" data-lcomm>${esc(Tx("Compare with the community","Comparar con la comunidad",null,"Comparar com a comunidade"))}</button></div><div class="lapsel" role="list">${mr.map(l=>row(l,"",sgn(l.time-f,2),false,false,String(l.n||""))).join("")}${pw3BoardHTML(bd)}</div>`}
-  host.innerHTML=tabs+body;
+    body=bd?`<div class="lapsel" role="list">${pw3BoardHTML(bd)}</div>`:`<div class="lws-spbar"><button type="button" class="btn small" data-lcomm>${esc(Tx("Compare with the community","Comparar con la comunidad",null,"Comparar com a comunidade"))}</button></div><div class="lapsel" role="list">${mr.map(l=>row(l,"",sgn(l.time-f,2),false,false,String(l.n||""))).join("")}</div>`}
+  host.innerHTML=tabs+body;pw3Board10(host);
   host.querySelectorAll("[data-lsrc]").forEach(b=>b.onclick=()=>{PW3L.src=b.dataset.lsrc;pw3LapsPanel();pw3Stick()});
   {const b=host.querySelector("[data-lsp]");if(b)b.onclick=()=>openSessPicker("lap")}
   {const b=host.querySelector("[data-lcomm]");if(b)b.onclick=pickCommLap}
@@ -11114,7 +11117,10 @@ function pw3BoardHTML(bd,B){if(!bd)return"";if(B===undefined)B=lapOf(($("#lapB")
   const h=`<div class="ls-h" style="--gc:var(--pb)"><b>${esc(Tx("Leaderboard","Clasificación",null,"Classificação"))}</b><span></span><small class="mono">${bd.busy?"…":esc(pw3Laps(bd.laps.length))}</small></div>`;
   if(bd.busy)return h;if(!bd.laps.length)return h+`<p class="foot">${esc(bd.err||Tx("No community laps for this track and car yet","Aún no hay vueltas de la comunidad para este circuito y coche",null,"Ainda não há voltas da comunidade para esta pista e carro"))}</p>`;
   const f=bd.laps[0].time;
-  return h+bd.laps.map((l,i)=>{const on=!!(B&&B.cid===l.id),nt=l.hasTrace===false;return`<div class="ls cm${on?" b":""}" role="listitem"><div class="ls-main ls-cm"><span>${i+1}</span><b class="mono">${fmtT(l.time)}</b><small class="mono">${i===0?pw3Star(Tx("Fastest in the community","La más rápida de la comunidad",null,"A mais rápida da comunidade")):sgn(l.time-f,2)}</small><em>${l.friend?"★ ":""}${esc(l.alias||"–")}${nt?" · "+esc(Tx("time only","solo el tiempo",null,"só o tempo")):""}</em></div><span></span><button type="button" class="ls-ab" data-set="B" data-cb="${i}" aria-pressed="${on}" aria-label="${esc((l.alias||"")+" · "+Tx("lap B","vuelta B",null,"volta B"))}"${nt?` disabled title="${esc(NO_TRACE())}"`:""}>B</button></div>`}).join("")}
+  return h+`<div class="ls-board">`+bd.laps.map((l,i)=>{const on=!!(B&&B.cid===l.id),nt=l.hasTrace===false;return`<div class="ls cm${on?" b":""}" role="listitem"><div class="ls-main ls-cm"><span>${i+1}</span><b class="mono">${fmtT(l.time)}</b><small class="mono">${i===0?pw3Star(Tx("Fastest in the community","La más rápida de la comunidad",null,"A mais rápida da comunidade")):sgn(l.time-f,2)}</small><em>${l.friend?"★ ":""}${esc(l.alias||"–")}${nt?" · "+esc(Tx("time only","solo el tiempo",null,"só o tempo")):""}</em></div><span></span><button type="button" class="ls-ab" data-set="B" data-cb="${i}" aria-pressed="${on}" aria-label="${esc((l.alias||"")+" · "+Tx("lap B","vuelta B",null,"volta B"))}"${nt?` disabled title="${esc(NO_TRACE())}"`:""}>B</button></div>`}).join("")+`</div>`}
+/* the leaderboard shows its first ten laps and scrolls inside for the rest */
+function pw3Board10(host){const bx=host&&host.querySelector(".ls-board");if(!bx)return;const it=bx.children;bx.style.maxHeight="";if(it.length<=10)return;
+  const t=bx.getBoundingClientRect().top,b=it[9].getBoundingClientRect().bottom;if(b>t)bx.style.maxHeight=Math.ceil(b-t+1)+"px"}
 /* the community lap as a reference (the one already loaded when there is one), as Compare with the community makes it */
 async function pw3BoardRef(l,bd){{const r=CREF.find(x=>x&&x.cid===l.id&&!x.stale);if(r)return r}
   const full=await pw3CGet(`/api/community/laps?id=${encodeURIComponent(l.id)}`),tr=full&&full.trace;if(!tr||!tr.d||!tr.d.length)throw new Error(NO_TRACE());
@@ -11987,8 +11993,8 @@ function pw5CoachLaps(){const host=$("#coachPick");if(!host)return;const As=$("#
         return`<div class="ls-h" style="--gc:${g.c}"><b>${esc(nm)}</b><span>${esc([x?day(x.started):"",x?x.track||"":""].filter(Boolean).join(" · "))}</span><small class="mono">${esc(nLaps(g.laps.length))}</small></div>`+
           g.laps.slice().reverse().map(l=>row(l,String(l.n??""),fast&&l.time>0?sgn(l.time-fast,2):"",fast&&l.valid!==false&&l.time===fast,nm+" · "+T("Lap","Vuelta",null,"Volta")+" "+(l.n??""))).join("")}).join("")}</div>`:`<p class="muted pw5-none">${esc(T("No laps yet.","Aún no hay vueltas.",null,"Ainda não há voltas."))}</p>`)}
   else{const bd=typeof pw3Board==="function"?pw3Board():null,seen=new Set(),cr=[];[...As.options,...Bs.options].forEach(o=>{const l=pw5CoachLapOf(o.value);if(!l||seen.has(l)||LP.includes(l)||(CLOUD.lapsB||[]).includes(l)||(bd&&l.cid))return;seen.add(l);cr.push(l)});cr.sort((a,b)=>a.time-b.time);const f=cr.length?cr[0].time:0;
-    body=`<div class="lws-spbar"><button type="button" class="btn small" data-ccomm>${esc(T("Compare with the community","Comparar con la comunidad",null,"Comparar com a comunidade"))}</button></div>`+(cr.length||bd?`<div class="lapsel" role="list">${cr.map((l,i)=>row(l,bd?"":String(i+1),sgn(l.time-f,2),!bd&&i===0,l.alias||lapName(l))).join("")}${bd?pw3BoardHTML(bd,B||null):""}</div>`:"")}
-  host.innerHTML=tabs+body;
+    body=bd?`<div class="lapsel" role="list">${pw3BoardHTML(bd,B||null)}</div>`:`<div class="lws-spbar"><button type="button" class="btn small" data-ccomm>${esc(T("Compare with the community","Comparar con la comunidad",null,"Comparar com a comunidade"))}</button></div>`+(cr.length?`<div class="lapsel" role="list">${cr.map((l,i)=>row(l,String(i+1),sgn(l.time-f,2),i===0,l.alias||lapName(l))).join("")}</div>`:"")}
+  host.innerHTML=tabs+body;if(typeof pw3Board10==="function")pw3Board10(host);
   host.querySelectorAll("[data-csrc]").forEach(b=>b.onclick=()=>{PW5C_SRC=b.dataset.csrc;pw5CoachLaps()});
   {const b=host.querySelector("[data-csp]");if(b)b.onclick=()=>openSessPicker("coach")}
   {const b=host.querySelector("[data-ccomm]");if(b)b.onclick=pickCommLap}
@@ -13107,6 +13113,8 @@ html:not(.ov,.ovwin) body:not(#_):not(#__) :is(.seg,.seg3):not(svg *){background
 html:not(.ov,.ovwin) .btn:disabled{opacity:.55}
 /* the map column of Laps (pw3-fitr): the Track map stays whole, the panels under it share the rest and scroll inside */
 @media (min-width:1101px){html:not(.ov) #v-laps .lws-r.pw3-fitr>*{flex:none}html:not(.ov) #v-laps .lws-r.pw3-fitr>.panel:not(:first-child){flex:0 1 auto;min-height:90px;overflow-y:auto;scrollbar-width:thin}}
+/* the community leaderboard in the Laps panel (Laps and Coach): ten laps, the rest scroll inside */
+html:not(.ov) .ls-board{max-height:400px;overflow-y:auto;scrollbar-width:thin;display:flex;flex-direction:column;gap:2px}
 /* the laps column of Laps: its top always in view, the lap list scrolls inside */
 @media (min-width:1101px){html:not(.ov) #v-laps .lws-l.pw3-fit{min-height:0;overflow-y:auto;scrollbar-width:thin}html:not(.ov) #v-laps .lws-l.pw3-fit>*{flex:none}html:not(.ov) #v-laps .lws-l.pw3-fit>.lws-laps{flex:1 1 auto;min-height:280px;display:flex;flex-direction:column;overflow:hidden}html:not(.ov) #v-laps .lws-l.pw3-fit>.lws-laps>:last-child{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;overflow:hidden}html:not(.ov) #v-laps .lws-l.pw3-fit>.lws-laps>:last-child>*{flex:none}html:not(.ov) #v-laps .lws-l.pw3-fit>.lws-laps>:last-child>.lapsel{flex:1 1 auto;min-height:0;overflow-y:auto;scrollbar-width:thin}}
 </style>

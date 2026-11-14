@@ -23,9 +23,10 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   and the right column keeps the Track map whole while the panels under it scroll inside); narrower it is one column in that order. My laps lists
   every session in the list, each under a raised header (its kind, date and track, its laps), newest lap first, the
   fastest valid lap with a star and the others with their gap to it, each with A and B; A on a lap of another session
-  makes that session session A. Community shows the community laps loaded as references and then the leaderboard of
-  the car and track (loaded when the tab opens, the same laps as "Compare with the community"), each lap with its place,
-  time, driver and gap to the record and a B button that loads it as lap B, and "Compare with the community". Recorded
+  makes that session session A. Community shows only the leaderboard of the car and track (loaded when the tab opens,
+  the same laps as "Compare with the community"), each lap with its place, time, driver and gap to the record and a B
+  button that loads it as lap B; it shows ten laps and scrolls inside for the rest (the Coach's Laps panel the same).
+  "Compare with the community" shows there only while no leaderboard can load. Recorded
   laps: pressing a row (or Enter on it) makes it lap A, the rows of A and B are marked, and each row ends with A and B.
   The Track map is the Coach's map (`renderCmpMap`, its colours, turn labels, legend and chips), plus a line under it
   with the distance, the corner, both speeds, the gap and how far B is ahead or behind, and a ring for lap B at the same

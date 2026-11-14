@@ -119,7 +119,7 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   reference's slowest point). When the coach shows a lap (web and PC, `coachReport`), its tips go to the account once per
   lap and reference (POST `/community/coach/tips`) with the time the session's best lap spent in every corner (`tbest`);
   the driver's next session on that car and track answers them (`outcome`, seconds gained in the same corner, matched by
-  its slowest point within 60 m). Every tip card has 👍/👎 (web, PC and phones, POST `/community/coach/rate`, `TIPRATE` on
+  its slowest point within 60 m). Every tip card has 👍/👎 (the vote you gave shows green, or red for 👎; web, PC and phones, POST `/community/coach/rate`, `TIPRATE` on
   the web, `tipRatings` on the phones). The drivers see none of the counts. The admin panel's Coach tab shows the buckets
   (kind × speed, cases, how many gained, the thumbs). From 30 answered cases a bucket's share of gains reorders the plan
   (`w` from GET `/community/coach/weights`, `coachOf` in pitwall-analysis.js, 0.7 to 1.3, and 15 % less for a kind the drivers

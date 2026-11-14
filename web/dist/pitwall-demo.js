@@ -162,6 +162,22 @@
     if (p === "/community/friends") return { friends: [6, 8].map((k, n) => ({ id: "demofriend" + n, name: NAMES[k], sup: n === 0, since: NOW - 30 * DAY,
       laps: COMBOS.slice(0, 3).map((c, i) => { const l = board(c.trackId, c.carId)[k]; return l && { id: l.id, track: c.track, car: c.car, trackId: c.trackId, carId: c.carId, time: l.time, game: "iracing", created: NOW - (i + n) * DAY }; }).filter(Boolean) })) };
     // "Invite a friend": a code, three friends invited (one in their first week, one month earned), saved for when Pro starts
+    // the most active leagues (Home and the Leagues hub): six invented Discord leagues, with last read's places in `prev`
+    if (p === "/community/leagues/found") {
+      const col = [["#ff8a00", "#d9480f"], ["#3b82f6", "#1e3a8a"], ["#a855f7", "#581c87"], ["#ef4444", "#7f1d1d"], ["#a16207", "#3f2a06"], ["#10b981", "#064e3b"]];
+      const art = ['<path d="M10 28h20l-4-8H14z" fill="#fff"/><circle cx="15" cy="29" r="3" fill="#fff"/><circle cx="26" cy="29" r="3" fill="#fff"/>', '<path d="M20 9l3 7 7 .6-5.4 4.6 1.7 7-6.3-3.8-6.3 3.8 1.7-7L10 16.6l7-.6z" fill="#fff"/>', '<path d="M8 22h24M12 16h16M14 28h12" stroke="#fff" stroke-width="3" stroke-linecap="round"/>', '<ellipse cx="20" cy="20" rx="11" ry="7" fill="none" stroke="#fff" stroke-width="3"/><circle cx="20" cy="20" r="2.5" fill="#fff"/>', '<path d="M9 27c4-10 18-10 22 0" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round"/><circle cx="20" cy="15" r="3" fill="#fff"/>', '<path d="M12 10h16v6l-8 14-8-14z" fill="#fff"/>'];
+      const icon = (k) => "data:image/svg+xml," + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${col[k][0]}"/><stop offset="1" stop-color="${col[k][1]}"/></linearGradient></defs><rect width="40" height="40" rx="12" fill="url(#g)"/>${art[k]}</svg>`);
+      const L = [["Endurance Hub Racing", ["sports_car"], 412, 3810, 3, "Weekly GT3 and GTP endurance, all splits, new drivers welcome", "iRacing", 3, 4],
+        ["Midweek Sprint League", ["sports_car", "formula_car"], 287, 2240, 2, "Wednesday sprints in the MX-5 and F4, two splits", "iRacingLeagues", 24, 2],
+        ["Open Wheel Collective", ["formula_car"], 236, 1975, 4, "Season 6 sign-ups open, Super Formula Lights and F3", "iRacing", 5, 1],
+        ["Short Track Thursday", ["oval"], 190, 2602, 2, "Late Models at short tracks, live broadcast every week", "iRacingLeagues", 48, 3],
+        ["Dirt Night Series", ["dirt_oval"], 121, 980, 0, "New league, sprint cars and late models on dirt", "iRacing", 8, 1],
+        ["Sunday Touring Cup", ["sports_car"], 96, 1430, 5, "TCR and GT4 on Sundays, clean racing first", "iRacingLeagues", 96, 2]];
+      const leagues = L.map(([name, cats, online, members, , title, sub, h, posts], k) => ({ guild: "demoguild" + k, name, cats, online, members, title, sub, posts, icon: icon(k),
+        posted: NOW - h * 3600e3, url: "https://www.reddit.com/r/" + sub + "/", invite: "https://discord.gg/" }));
+      const prev = {}; L.forEach((x, k) => { if (x[4]) prev["demoguild" + k] = x[4]; });
+      return { updated: NOW - 2 * 3600e3, leagues, prev };
+    }
     if (p === "/community/invite") return { gate: false, code: "K7PX4QMB", link: "https://pitlanehq.app/?ref=invite-k7px4qmb", rule: { days: 7, drives: 1, within: 60, months: 1, max: 12 },
       friends: [{ name: NAMES[2], state: "waiting", since: NOW - 4 * DAY, days: 4, drives: 1 }, { name: NAMES[6], state: "given", since: NOW - 20 * DAY }, { name: NAMES[8], state: "given", since: NOW - 30 * DAY }],
       given: 2, waiting: 1, banked: 2, proUntil: 0, canClaim: false };

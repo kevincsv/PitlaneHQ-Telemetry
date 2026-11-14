@@ -11298,7 +11298,9 @@ html:not(.ov) #ovTab#ovTab .ovt-stage>.ovt-foot{padding-top:4px;border-top:0}
 @media (min-width:761px){html:not(.ov) #ovTab#ovTab .ovt-nav{flex:0 0 260px;max-height:none}}
 
 /* ==== round 2: the design's own pieces (ws-more.css, base.css), on the app's elements of these five views ==== */
-html:not(.ov) :is(#v-overlays,#v-community,#v-leagues,#v-me,#v-settings){font-size:13px}
+html:not(.ov) :is(#v-overlays,#v-community,#v-leagues,#v-me,#v-settings){font-size:13px;--pw3-pt:var(--muted)}
+/* the panel titles of card contour B (the frame's #c3cad6 in the dark theme) */
+html:not(.ov,.ovwin):not([data-theme="light"]) :is(#v-overlays,#v-community,#v-leagues,#v-me,#v-settings){--pw3-pt:#c3cad6}
 /* buttons, chips, segmented controls, fields */
 html:not(.ov) :is(#v-overlays,#v-community,#v-leagues,#v-me,#v-settings) .btn{font:400 13px/1.25 var(--f-body)!important;background:var(--surface2);border:1px solid var(--line);border-radius:5px;padding:7px 12px;min-height:36px;color:var(--fg);box-shadow:none}
 html:not(.ov) :is(#v-overlays,#v-community,#v-leagues,#v-me,#v-settings) .btn:hover{border-color:var(--line2);background:var(--surface2)}
@@ -11326,7 +11328,7 @@ html:not(.ov) :is(#v-overlays,#v-community,#v-leagues,#v-me,#v-settings) .pill.g
 html:not(.ov) :is(#v-overlays,#v-community,#v-leagues,#v-me,#v-settings) .pill.acc{color:var(--accent);border-color:color-mix(in srgb,var(--accent) 45%,transparent);background:transparent}
 /* panels: 10px inside, the title in Barlow capitals, no bar under it */
 html:not(.ov) :is(#v-overlays,#v-community,#v-leagues,#v-me,#v-settings) .panel{padding:10px;background:var(--surface);border:1px solid var(--line2);border-radius:8px}
-html:not(.ov) :is(#v-overlays,#v-community,#v-leagues,#v-me,#v-settings) :is(.panel>h2:first-child,.panel>.label:first-child,.panel>.frow:first-child>h2,.cl-h>h2,.cl-you>h2,.lgf-h h2){display:flex;align-items:center;gap:8px;margin:0 0 10px!important;padding:0!important;border:0!important;background:none!important;font:700 14px/1.2 var(--f-display)!important;letter-spacing:.1em!important;text-transform:uppercase!important;color:var(--muted)!important;min-height:0}
+html:not(.ov) :is(#v-overlays,#v-community,#v-leagues,#v-me,#v-settings) :is(.panel>h2:first-child,.panel>.label:first-child,.panel>.frow:first-child>h2,.cl-h>h2,.cl-you>h2,.lgf-h h2){display:flex;align-items:center;gap:8px;margin:0 0 10px!important;padding:0!important;border:0!important;background:none!important;font:700 14px/1.2 var(--f-display)!important;letter-spacing:.1em!important;text-transform:uppercase!important;color:var(--pw3-pt)!important;min-height:0}
 html:not(.ov) :is(#v-overlays,#v-community,#v-leagues,#v-me,#v-settings) :is(.panel>h2:first-child,.panel>.label:first-child,.cl-h>h2)::before{content:none!important;display:none!important}
 html:not(.ov) :is(#v-overlays,#v-community,#v-leagues,#v-me,#v-settings) .cl-h{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:0 0 10px!important;padding:0!important;border:0!important;background:none!important}
 html:not(.ov) :is(#v-overlays,#v-community,#v-leagues,#v-me,#v-settings) .cl-h>h2{margin:0!important}
@@ -11357,7 +11359,7 @@ html:not(.ov) #ovTab#ovTab .ovt-acts{display:flex;flex-wrap:wrap;gap:8px}
 html:not(.ov) #ovTab#ovTab .ovt-b{gap:10px}
 @media (min-width:761px){html:not(.ov) #ovTab#ovTab .ovt-nav{flex:0 0 270px}html:not(.ov) #ovTab#ovTab .ovt-insp{flex:0 0 300px;width:300px}}
 html:not(.ov) #ovTab#ovTab :is(.ovt-nav,.ovt-stage,.ovt-insp){background:var(--surface);border:1px solid var(--line2);border-radius:8px;padding:10px;box-shadow:none}
-html:not(.ov) #ovTab#ovTab .ovt-nav>.pw3-ovh{margin:0 0 10px;font:700 14px/1.2 var(--f-display);letter-spacing:.1em;text-transform:uppercase!important;color:var(--muted)}
+html:not(.ov) #ovTab#ovTab .ovt-nav>.pw3-ovh{margin:0 0 10px;font:700 14px/1.2 var(--f-display);letter-spacing:.1em;text-transform:uppercase!important;color:var(--pw3-pt)}
 html:not(.ov) #ovTab#ovTab .ovt-ng{display:block;margin:0;padding:0;border:0}
 html:not(.ov) #ovTab#ovTab .ovt-gh{display:block;height:auto;padding:0;font:700 12px/1.2 var(--f-display)!important;letter-spacing:.12em!important;text-transform:uppercase!important;color:var(--muted)!important;margin:12px 0 4px}
 html:not(.ov) #ovTab#ovTab .ovt-ng:first-of-type .ovt-gh,html:not(.ov) #ovTab#ovTab .pw3-ovh+.ovt-ng .ovt-gh{margin-top:0}
@@ -11524,7 +11526,7 @@ html:not(.ov) #meBody#meBody .pw3-me:not(:has(>.pw3-me-r>:not([hidden]))){grid-t
 html:not(.ov) #meBody#meBody :is(.pw3-me-l,.pw3-me-m,.pw3-me-r){gap:10px}
 /* each group is one panel with its title; the boxes in it are the design's cards (wm-way) */
 html:not(.ov) #meBody#meBody .pw3-me-g{display:block;padding:10px;background:var(--surface);border:1px solid var(--line2);border-radius:8px}
-html:not(.ov) #meBody#meBody .pw3-me-g>.me-grp{margin:0 0 10px!important;font:700 14px/1.2 var(--f-display)!important;letter-spacing:.1em!important;color:var(--muted)!important}
+html:not(.ov) #meBody#meBody .pw3-me-g>.me-grp{margin:0 0 10px!important;font:700 14px/1.2 var(--f-display)!important;letter-spacing:.1em!important;color:var(--pw3-pt)!important}
 html:not(.ov) #meBody#meBody .pw3-me-gb{gap:10px}
 html:not(.ov) #meBody#meBody .pw3-me-g.two>.pw3-me-gb{grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr))}
 html:not(.ov) #meBody#meBody .pw3-me-gb>.panel{background:var(--surface2)!important;border:0!important;box-shadow:none!important;border-radius:10px;padding:12px;display:flex;flex-direction:column;align-items:flex-start;gap:6px}
@@ -11547,7 +11549,7 @@ html:not(.ov) #meBody#meBody .devrow{display:flex;align-items:center;gap:10px;pa
 html:not(.ov) #meBody#meBody .devrow>small{flex:1}
 /* the account on the left: the design's "My account" panel */
 html:not(.ov) #meBody#meBody .me-idc{padding:10px}
-html:not(.ov) #meBody#meBody .me-idc>.pw3-meh{margin:0 0 10px;font:700 14px/1.2 var(--f-display)!important;letter-spacing:.1em!important;text-transform:uppercase!important;color:var(--muted)}
+html:not(.ov) #meBody#meBody .me-idc>.pw3-meh{margin:0 0 10px;font:700 14px/1.2 var(--f-display)!important;letter-spacing:.1em!important;text-transform:uppercase!important;color:var(--pw3-pt)}
 html:not(.ov) #meBody#meBody .me-idc .sa-id{display:grid;grid-template-columns:52px minmax(0,1fr);gap:10px;align-items:start}
 html:not(.ov) #meBody#meBody .me-idc .sa-av{width:52px;height:52px;border-radius:50%;display:grid;place-items:center;background:var(--surface2);border:1px solid var(--line);font:700 22px var(--f-display);color:var(--accent)}
 html:not(.ov) #meBody#meBody .me-idc .sa-name{font:700 20px/1.2 var(--f-display);letter-spacing:.03em;color:var(--accent);display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:4px}
@@ -11562,12 +11564,12 @@ html:not(.ov) #meBody#meBody .me-idc .frow{display:grid;gap:8px;margin-top:10px}
 html:not(.ov) #meBody#meBody .me-idc .frow .btn{width:100%;justify-content:center}
 /* delete the account: the design's red edge */
 html:not(.ov) #meBody#meBody .me-danger>.panel{border-color:color-mix(in srgb,var(--bad) 30%,var(--line2))!important}
-html:not(.ov) #meBody#meBody .me-danger>.panel>h2:first-child{color:var(--muted)!important}
+html:not(.ov) #meBody#meBody .me-danger>.panel>h2:first-child{color:var(--pw3-pt)!important}
 html:not(.ov) #meBody#meBody .me-danger>.panel .note{margin:0 0 10px}
 html:not(.ov) #meBody#meBody .me-danger .me-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 html:not(.ov) #meBody#meBody .me-danger .me-row input{flex:1 1 200px}
 html:not(.ov) #meBody#meBody .pw3-me-r .panel>.frow:first-child{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:0 0 10px}
-html:not(.ov) #meBody#meBody .pw3-me-r .panel>.frow:first-child>h2{margin:0!important;padding:0!important;font:700 14px/1.2 var(--f-display)!important;letter-spacing:.1em!important;text-transform:uppercase!important;color:var(--muted)!important}
+html:not(.ov) #meBody#meBody .pw3-me-r .panel>.frow:first-child>h2{margin:0!important;padding:0!important;font:700 14px/1.2 var(--f-display)!important;letter-spacing:.1em!important;text-transform:uppercase!important;color:var(--pw3-pt)!important}
 
 /* ---------------- Settings ---------------- */
 html:not(.ov) #v-settings#v-settings .sethead{margin:14px 0 8px!important;font:700 22px/1.1 var(--f-display)!important;letter-spacing:.03em!important}
@@ -11577,7 +11579,7 @@ html:not(.ov) #v-settings#v-settings .grid>.pw3-sh{margin:6px 0 -2px!important}
   html:not(.ov) #v-settings#v-settings:not([hidden]){grid-template-columns:260px minmax(0,1fr);column-gap:10px}
   html:not(.ov) #v-settings#v-settings>#setNav:not([hidden]){padding:10px;gap:2px;border:1px solid var(--line2);border-radius:8px;top:76px}
 }
-html:not(.ov) #v-settings#v-settings #setNav::before{content:attr(data-t);display:block;margin:0 0 8px;font:700 14px/1.2 var(--f-display);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+html:not(.ov) #v-settings#v-settings #setNav::before{content:attr(data-t);display:block;margin:0 0 8px;font:700 14px/1.2 var(--f-display);letter-spacing:.1em;text-transform:uppercase;color:var(--pw3-pt)}
 html:not(.ov) #v-settings#v-settings #setNav:not([data-t])::before{display:none}
 html:not(.ov) #v-settings#v-settings #setNav a{padding:8px 10px;font:400 13px/1.3 var(--f-body)}
 html:not(.ov) #v-settings#v-settings #setNav a:hover{background:var(--surface2)}

@@ -205,3 +205,7 @@ export async function sendContentReport(env, r) {
   const { subject, text } = contentReportMail(r);
   return send(env, SUPPORT, subject, text, SITE + "/admin", "Open the admin page", "en");
 }
+
+// "We miss you" (winback.js): one email to a driver who stopped using Pitlane HQ, sent only when an admin presses it
+export const winbackHTML = (m) => mailHTML(m.subject, m.text, m.link, m.button, m.lang);
+export const sendWinback = (env, to, m) => send(env, to, m.subject, m.text, m.link, m.button, m.lang);

@@ -41,7 +41,7 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   account with what it uses in the last 30 days, its devices and when it was seen, a name opening its detail,
   `admUserDetail`; member since set by hand, the supporter badge, its profile, delete; per account: confirm its email,
   turn off its two-step sign-in, sign it out everywhere, rename it, join a DRINKS driver to it or undo it, unlink its
-  game drivers; `/admin/guests` lists every DRINKS driver on the platform for the chooser; and Online now), Feedback
+  game drivers; `/admin/guests` lists every DRINKS driver on the platform for the chooser; Activity; and Online now), Feedback
   (every answer of "Share your feedback", the newest first), Content (the reports of posts and names, the shared items, the leagues and the newest
   records, a record's lap deleted by hand), Sessions (the latest sessions of any driver, a private one too: an admin
   opens every account's profile from the leaderboards, and the profile lists its sessions for admins; "See the laps"
@@ -152,3 +152,14 @@ races the PCs report (`seasonseen.js`). The PC app passes that post through `/ap
   (`pro_orders` kind "supporter", with their amount, currency and payment since migration 0095; a refunded donation is
   marked "refunded" and no longer counts, the badge stays). Patreon is no longer offered (0.9.8), so the Summary and the
   Analytics show it as "Patreon (legacy)".
+- Users → Activity (`winback.js`, `winbacklib.js`, GET /community/admin/activity): every account, the most active first
+  (days used in the last 30, then hours on track, then laps), with when it last used Pitlane HQ (the latest of its
+  sign-ins, its devices seen, its usage counts and its sessions; an account never used counts from its creation), its
+  devices, its email when the server keeps one (the escrow), Online (seen in 3 minutes) and On track (a lap came up in
+  the last 10 minutes: `sessions.up_at`, migration 0098, set by every upload with laps). Filters Everyone, Online or on
+  track, Used it this week and Away N+ days (7, 14 by default, 30, 60, 90); sorts Most active, Least active, Away
+  longest, Newest accounts. Under Away, the "We miss you" email (English, Spanish or Portuguese from the driver's
+  support chat language, else English) with a button to `/app?feedback=1`, which opens the feedback window once signed
+  in: Preview, Send me a test, Copy their emails, and Send it to the checked drivers after a confirmation. It goes once
+  per account (`accounts.winback_at`), never to an admin or someone online, 20 a request (the page asks again), and
+  only when an admin presses it.

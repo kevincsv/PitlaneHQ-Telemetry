@@ -30,6 +30,7 @@ import { steamReturn } from "./steam.js";
 import { googleOAuth } from "./google.js";
 import { scanLeagues } from "./leaguescan.js";
 import { onlineRoute, prunePresence } from "./presence.js";
+import { winbackRoute } from "./winback.js";
 import { usageRoute, pruneUsage } from "./usage.js";
 import { supportRoute } from "./support.js";
 import { sessionSummary, SESSION_SUMS, ALL_SESSION_SUMS } from "./sessionsum.js";
@@ -199,6 +200,8 @@ async function api(req, env, url, ctx) {
       e = await addLap(env, body.session.id, l);
       if (e) return err(e, 400);
     }
+    // when the PC last sent a lap of this session: the admin page's Activity says who is on track now (winback.js)
+    if (!body.session.imported === true && (body.laps || []).length) await env.DB.prepare("UPDATE sessions SET up_at=?2 WHERE id=?1").bind(body.session.id, Date.now()).run().catch(() => {});
     // a lap that did not go round the whole circuit is no best; a share made from one before goes (unshareInvalid)
     const dropped = await dropImpossibleLaps(env, body.session.id).catch(() => 0);
     if (dropped && role === "account") await unshareInvalid(env, me.name.slice(5), body.session.id).catch(() => {});
@@ -604,6 +607,8 @@ async function handle(req, env, ctx) {
     // the admin page's Discord server tool: builds the community server with the bot (discordserver.js)
     if (url.pathname === "/community/admin/discord-server") return discordServerRoute(req, env, url);
     // the admin page's Online tab: who is on the web, the PC or the phones now (presence.js)
+    // the admin page's Activity part: when each account last used Pitlane HQ, and the "we miss you" email (winback.js)
+    if (url.pathname === "/community/admin/activity" || url.pathname.startsWith("/community/admin/winback")) return winbackRoute(req, env, url).catch((e) => new Response(JSON.stringify({ error: "server error: " + (e && e.message) }), { status: 500, headers: { "content-type": "application/json" } }));
     if (url.pathname === "/community/admin/online" && req.method === "GET") return onlineRoute(req, env).catch((e) => new Response(JSON.stringify({ error: "server error: " + (e && e.message) }), { status: 500, headers: { "content-type": "application/json" } }));
     // what the drivers use and what they tell us (usage.js): the usage batches, the feedback window, the visits, the admin's analytics
     if (url.pathname.startsWith("/community/usage") || url.pathname.startsWith("/community/feedback") || url.pathname === "/community/visit" || url.pathname === "/community/admin/analytics" || url.pathname.startsWith("/community/admin/feedback")) {

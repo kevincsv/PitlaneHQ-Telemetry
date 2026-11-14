@@ -6480,6 +6480,11 @@ setTimeout(()=>{if(OV.on)return;const q=new URLSearchParams(location.search),v=q
     q.delete("support");try{history.replaceState(null,"",location.pathname+(q.toString()?"?"+q:"")+location.hash)}catch(e){}
     if(v!=="1"&&realAdmin()&&/^[A-Za-z0-9_.:-]{1,80}$/.test(v)){if(!adminMode())try{localStorage.setItem("pw.adminMode","1")}catch(e){}supportOpen(v)}else supportOpen()};
   go()},1500);
+// ?feedback=1 (the "we miss you" email's button, winback.js) opens the feedback window once the account is ready
+setTimeout(()=>{if(OV.on)return;const q=new URLSearchParams(location.search);if(q.get("feedback")!=="1")return;let n=0;
+  const go=()=>{if(!usageDev()){if(++n<300)setTimeout(go,2000);return}
+    q.delete("feedback");try{history.replaceState(null,"",location.pathname+(q.toString()?"?"+q:"")+location.hash)}catch(e){}feedbackAsk(false)};
+  go()},1500);
 /* the permanent way to it, in Settings → About */
 function feedbackHTML(){return`<div class="panel" style="margin:12px 0;padding:12px 14px;display:flex;gap:12px;align-items:center;flex-wrap:wrap"><div style="flex:1;min-width:200px"><b>${esc(Tx("Send feedback","Enviar tu opinión","Send feedback","Enviar sua opinião"))}</b><p class="note" style="margin:2px 0 0">${esc(Tx("A bug, an idea or something confusing. Every message is read.","Un fallo, una idea o algo confuso. Leemos todos los mensajes.","A bug, an idea or something confusing. Every message is read.","Um erro, uma ideia ou algo confuso. Lemos todas as mensagens."))}</p></div><button type="button" class="btn" data-fbopen>${esc(Tx("Send feedback","Enviar tu opinión","Send feedback","Enviar sua opinião"))}</button></div>`}
 function closeAdmMenu(){const m=document.getElementById("admMenu");if(m)m.remove()}

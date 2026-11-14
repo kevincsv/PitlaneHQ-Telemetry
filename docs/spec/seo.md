@@ -42,7 +42,10 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   language set) and a <noscript> with crawlable links after an explicit `</head><body>` (never before the head's tags, never
   inside the head, where a browser reads it as text) (one canonical address, 301 for any other such as /index.html, a real
   404 page for any address that does not exist, never the app or the lap viewer with 200; the viewer is noindex), the
-  sitemap made by the server, IndexNow once a day. www.pitlanehq.app is a custom domain of the Worker
+  sitemap made by the server, IndexNow once a day. A database read that fails while a public page or the sitemap is
+  drawn is tried once more; if it fails again the answer is a 503 with Retry-After (never cached), never a 404 or a page
+  missing its data, so search engines keep the page and come back (`watchDb`, `busy` in seo.js). Record pages whose title
+  does not fit 60 characters fall back to one under 70 (`recTitle`), and a description over 160 keeps its first sentence. www.pitlanehq.app is a custom domain of the Worker
   (made by the deploy) that answers 301 to pitlanehq.app.
   AI assistants and AI search: robots.txt shuts no robot out of the public pages (AI crawlers such as GPTBot, ClaudeBot or
   PerplexityBot read them like search engines; the test checks there is never a `Disallow: /`). `/llms.txt` (llmstxt.org,
@@ -74,7 +77,7 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   `seo.test.mjs` checks it), and the landing's header links keep their names on a phone, where only their icons show.
 - `/privacy` (the privacy policy), `/terms` (the terms of service, linked from Google's sign-in screen) and `/delete-account` (how to delete an account, from the app, the web or by email),
   `cloud/src/legal.js`, the addresses Google Play and the App Store ask for: English, Spanish or Portuguese by `?lang=` or
-  the browser's language; what is kept, why and for how long, never how it is stored or protected
+  the browser's language, each with its meta description (its first lines); what is kept, why and for how long, never how it is stored or protected
   (`cloud/test/legal.test.mjs`).
 
 - `/downloads` and `/changelog` (`cloud/src/downloads.js`) carry a full head (canonical, Open Graph and Twitter cards);

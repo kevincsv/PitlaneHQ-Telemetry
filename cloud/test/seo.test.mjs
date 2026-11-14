@@ -143,6 +143,16 @@ for (const [game, pre, t, c] of [["iracing", "", 1, 10], ["lmu", "lmu/", 7001, 9
 }
 assert.equal((await get(env, "/records/lmu/1-10")).status, 404, "an iRacing car is no Le Mans Ultimate record");
 assert.equal((await get(env, "/records/999-999/x")).status, 404);
+// a database that refuses every read: a 503 to come back to (and nothing cached), never a 404 or a page without its data
+{
+  const bad = { DB: { prepare() { const o = { bind: () => o, all: async () => { throw new Error("D1 busy"); }, first: async () => { throw new Error("D1 busy"); }, run: async () => { throw new Error("D1 busy"); } }; return o; } } };
+  for (const path of ["/records/1-10", "/es/records/1-10/x", "/records", "/iracing-leagues/sports-car", "/sitemap.xml"]) {
+    const r = await get(bad, path); assert.equal(r.status, 503, path); assert.equal(r.headers.get("retry-after"), "60", path); assert.equal(r.headers.get("cache-control"), "no-store", path);
+  }
+  // one refused read is tried again
+  let n = 0; const flaky = { DB: { prepare(sql) { const o = env.DB.prepare(sql), w = { bind: (...a) => (o.bind(...a), w), all: async () => (n++ % 2 ? o.all() : Promise.reject(new Error("D1 busy"))), first: async () => (n++ % 2 ? o.first() : Promise.reject(new Error("D1 busy"))), run: () => o.run() }; return w; } } };
+  assert.equal((await get(flaky, "/records")).status, 200, "a read refused once is tried again");
+}
 assert.equal((await get(env, "/es/records/nothing")).status, 404);
 // an error page points nowhere else: no canonical, no og:url
 { const nf = parse(await (await get(env, "/es/records/nothing")).text()); assert.equal(nf.canon, undefined, "a 404 has no canonical"); }

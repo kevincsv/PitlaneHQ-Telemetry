@@ -33,7 +33,7 @@ const altsOf = (o) => ({ en: o.en.path, es: o.es.path, pt: o.pt.path });
 const GNAME = { iracing: "iRacing", lmu: "Le Mans Ultimate" }, GSHORT = { iracing: "iRacing", lmu: "LMU" };
 // a record page's title: the whole game's name while it fits about 60 characters, else the short one, else none
 // (the car and the description say the game)
-const recTitle = (W, car, track, game) => [W.cT(car, track, GNAME[game]), W.cT(car, track, GSHORT[game]), W.cT(car, track, GSHORT[game], true)].find((x) => x.length <= 60) || W.cTs(car, track);
+const recTitle = (W, car, track, game) => [W.cT(car, track, GNAME[game]), W.cT(car, track, GSHORT[game]), W.cT(car, track, GSHORT[game], true)].find((x) => x.length <= 60) || [W.cTs(car, track), `${car} · ${track}`].find((x) => x.length <= 70) || `${car} · ${track}`;
 const CAT = {
   en: { oval: "Oval", sports_car: "Sports Car", formula_car: "Formula Car", dirt_oval: "Dirt Oval", dirt_road: "Dirt Road" },
   es: { oval: "Óvalo", sports_car: "Sports Car", formula_car: "Fórmula", dirt_oval: "Óvalo de tierra", dirt_road: "Tierra" },
@@ -125,8 +125,10 @@ const HAS_MEMO = new WeakMap();
 async function readHas(env) {
   const m = HAS_MEMO.get(env);
   if (m && Date.now() - m.at < 5 * 60e3) return (HAS = m.has);
-  const [lg, rc] = await Promise.all([leaguesData(env, "lmu").then((D) => D.posted.length + D.found.length).catch(() => 0), topCombos(env, 1, "lmu").then((x) => x.length).catch(() => 0)]);
+  const [denv, db] = watchDb(env);
+  const [lg, rc] = await Promise.all([leaguesData(denv, "lmu").then((D) => D.posted.length + D.found.length).catch(() => 0), topCombos(denv, 1, "lmu").then((x) => x.length).catch(() => 0)]);
   const has = { lmuLeagues: lg > 0, lmuRecords: rc > 0 };
+  if (db.failed) return (HAS = m ? m.has : has); // a read that failed says nothing: keep what was known
   HAS_MEMO.set(env, { at: Date.now(), has });
   return (HAS = has);
 }
@@ -429,7 +431,7 @@ const OVL = {
     faq: [["¿Los overlays cuestan algo?", "Los overlays básicos son gratis. Durante la beta los experimentales también lo son."], ["¿Necesitan algo más?", "Solo Pitlane HQ Agent en el PC con Windows donde corres."], ["¿Funcionan en VR?", "Sí, a través de SteamVR, también con gafas Meta."], ["¿Funcionan en Le Mans Ultimate?", "Sí. Los mismos overlays funcionan en Le Mans Ultimate."]],
     items: [["Relative", "Los coches delante y detrás en pista, con las diferencias, su tendencia, los colores de clase, tus notas de pilotos y +1L / −1L."], ["Clasificación", "Las posiciones de la carrera, las diferencias, las últimas vueltas y el ritmo de cada piloto frente al tuyo."], ["Radar", "Los coches a tu lado y detrás, 60 veces por segundo, con una barra lateral roja y la distancia al más cercano."], ["Barra de delta", "Tu diferencia con tu mejor vuelta, metro a metro, y la vuelta que da este ritmo."], ["Combustible", "Lo que gasta cada vuelta y lo que puedes gastar por vuelta para terminar sin parar."], ["Neumáticos", "Temperaturas por dentro, centro y fuera, la presión y el desgaste."], ["Mapa del circuito", "Todos los coches en pista, los números oficiales de las curvas y los sectores."], ["Banderas", "El semáforo de salida, las banderas, restos en pista, vueltas restantes y una para la verde."], ["Dash", "Marcha, velocidad, revoluciones, los pedales, el ABS y una tira con la vuelta, la posición, el delta y los incidentes."], ["Tiempos", "Los sectores oficiales de la vuelta en morado, verde o amarillo."], ["Parada en boxes", "Tu velocidad frente al límite del pit lane y lo que está haciendo la parada."], ["Marcas de frenada", "Dónde frenar en cada curva, del siguiente nivel por encima de tu mejor vuelta."], ["Coach", "El consejo y el punto de frenada de la siguiente curva mientras conduces, y al salir lo que ganaste o perdiste."], ["Pedales", "Acelerador, freno, embrague y volante como trazas y barras."], ["Motor", "Los avisos del motor del juego, el limitador de boxes y el corte de revoluciones."], ["Incidentes", "Tus incidentes y lo que queda hasta el límite."], ["Clima", "Temperatura de pista y aire, el viento contra tu coche, la lluvia y lo mojada que está la pista."], ["Barra de posiciones", "Todos los coches a lo largo de la vuelta en una línea, con los colores de clase y tú marcado."]] },
   pt: { path: "/pt/overlays-iracing", title: "Overlays para iRacing, relative, radar e mais · Pitlane HQ",
-    desc: "Overlays grátis para iRacing do Pitlane HQ. Relative, classificação, radar, barra de delta, combustível, pneus, mapa, um coach ao vivo e mais, também em VR.",
+    desc: "Overlays grátis para iRacing do Pitlane HQ. Relative, classificação, radar, delta, combustível, pneus, mapa, um coach ao vivo e mais, também em VR.",
     h1: "Overlays para iRacing", lead: "O Pitlane HQ Agent desenha seus overlays sozinho, sobre o iRacing. São leves, nítidos e transparentes, e cada clique vai para o jogo. Posicione uma vez, salve como preset e eles abrem sozinhos quando você entra no carro.",
     faq: [["Os overlays custam algo?", "Os overlays básicos são grátis. Durante a beta os experimentais também são."], ["Precisam de mais alguma coisa?", "Só do Pitlane HQ Agent no PC com Windows onde você corre."], ["Funcionam em VR?", "Sim, pelo SteamVR, também com óculos Meta."], ["Funcionam no Le Mans Ultimate?", "Sim. Os mesmos overlays funcionam no Le Mans Ultimate."]],
     items: [["Relative", "Os carros à frente e atrás na pista, com as diferenças, a tendência, as cores de classe, suas notas de pilotos e +1L / −1L."], ["Classificação", "As posições da corrida, as diferenças, as últimas voltas e o ritmo de cada piloto contra o seu."], ["Radar", "Os carros ao seu lado e atrás, 60 vezes por segundo, com uma barra lateral vermelha e a distância do mais próximo."], ["Barra de delta", "A sua diferença para a sua melhor volta, metro a metro, e a volta que esse ritmo dá."], ["Combustível", "O que cada volta gasta e o que você pode gastar por volta para terminar sem parar."], ["Pneus", "Temperaturas por dentro, meio e fora, a pressão e o desgaste."], ["Mapa da pista", "Todos os carros na pista, os números oficiais das curvas e os setores."], ["Bandeiras", "As luzes de largada, as bandeiras, detritos, voltas restantes e uma para a verde."], ["Dash", "Marcha, velocidade, rotação, os pedais, o ABS e uma faixa com a volta, a posição, o delta e os incidentes."], ["Tempos", "Os setores oficiais da volta em roxo, verde ou amarelo."], ["Pit stop", "A sua velocidade contra o limite do pit lane e o que a parada está fazendo."], ["Marcas de frenagem", "Onde frear em cada curva, do próximo nível acima da sua melhor volta."], ["Coach", "A dica e o ponto de frenagem da próxima curva enquanto você pilota, e na saída o que você ganhou ou perdeu."], ["Pedais", "Acelerador, freio, embreagem e volante como traços e barras."], ["Motor", "Os avisos do motor do jogo, o limitador do pit e o corte de giro."], ["Incidentes", "Seus incidentes e o que falta até o limite."], ["Clima", "Temperatura da pista e do ar, o vento contra o seu carro, a chuva e o quanto a pista está molhada."], ["Barra de posições", "Todos os carros ao longo da volta numa linha, com as cores de classe e você marcado."]] },
@@ -638,7 +640,7 @@ async function recordsIndex(env, l, cat, game = "iracing") {
   const cats = Object.keys(CAT.en).filter((k) => rows.some((x) => x.cat === k));
   const list = cat ? rows.filter((x) => x.cat === cat) : rows;
   const W = S[l], A = REC_IDX[game], base = A[l], q = cat ? "?d=" + cat : "", path = base + q;
-  const title = `${W.recH(gn)}${cat ? " · " + CAT[l][cat] : ""} · Pitlane HQ`, desc = W.recD(gn);
+  const title = `${W.recH(gn)}${cat ? " · " + CAT[l][cat] : ""} · Pitlane HQ`, desc = (cat ? CAT[l][cat] + ". " : "") + W.recD(gn);
   const body = `<h1>${esc(W.recH(gn))}</h1><p class="lead">${esc(desc)}</p>
 ${cats.length > 1 ? `<div class="cats"><a href="${base}"${cat ? "" : ' class="on"'}>${esc(W.all)}</a>${cats.map((k) => `<a href="${base}?d=${k}"${k === cat ? ' class="on"' : ""}>${esc(CAT[l][k])}</a>`).join("")}</div>` : ""}
 ${list.length ? `<div class="tw"><table><thead><tr><th>${esc(W.track)}</th><th>${esc(W.car)}</th><th>${esc(W.record)}</th><th>${esc(W.drivers)}</th></tr></thead><tbody>${list.map((x) => `<tr><td><a href="${recPath(l, x, game)}">${esc(fix(x.track))}</a></td><td class="m">${esc(fix(x.car))}</td><td class="t">${fmt(x.best)}</td><td class="m">${x.drivers}</td></tr>`).join("")}</tbody></table></div>` : `<p class="m">${esc(W.none)}</p>`}
@@ -654,7 +656,7 @@ async function recordsCombo(env, l, t, c, asked, game = "iracing") {
   c = await famId(env, game, c); // the brands of one car have one page (an old address of another brand goes there)
   // the names as the sitemap and the index have them (one address per car and track); any other spelling of
   // the address goes there for good (301), so search engines see one page, not several
-  const nm = await env.DB.prepare("SELECT MAX(track) AS track, MAX(car) AS car FROM community_laps WHERE track_id=?1 AND car_id=?2 AND game=?3").bind(t, c, game).first().catch(() => null);
+  const nm = await env.DB.prepare("SELECT MAX(track) AS track, MAX(car) AS car FROM community_laps WHERE track_id=?1 AND car_id=?2 AND game=?3 AND COALESCE(shown,'')<>'model'").bind(t, c, game).first().catch(() => null);
   if (!nm || !nm.track) return null;
   nm.car = famName(game, c, nm.car);
   const canon = recPath(l, { t, c, track: nm.track, car: nm.car }, game);
@@ -670,7 +672,7 @@ async function recordsCombo(env, l, t, c, asked, game = "iracing") {
   const gn = GNAME[game], track = fix(nm.track), car = fix(nm.car), cm = game === "lmu" ? { tc: {}, c: {} } : await catMap(env).catch(() => ({ tc: {}, c: {} }));
   const x = { t, c, track, car }, cat = catFor(cm, game, x, laps[0].cat, laps[0].track, laps[0].car);
   const W = S[l], rec = fmt(laps[0].time), idx = REC_IDX[game][l];
-  const title = recTitle(W, car, track, game), desc = W.cD(car, track, rec, laps.length, gn), L = (game === "lmu" ? LANDL : LAND)[l];
+  const title = recTitle(W, car, track, game), cd = W.cD(car, track, rec, laps.length, gn), desc = cd.length <= 160 ? cd : cd.slice(0, cd.indexOf(". ") + 1), L = (game === "lmu" ? LANDL : LAND)[l];
   const thin = laps.length < REC_MIN, newest = Math.max(0, ...laps.map((v) => +v.created || 0));
   // the other cars driven at this track (the game, track and car index), the most driven first, those worth finding only
   const oth = await env.DB.prepare(
@@ -692,6 +694,19 @@ ${others.length ? `<h2>${esc(W.oth(track))}</h2><div class="tw"><table><tbody>${
 // an address of the public pages that does not exist: a real 404 (never the app), so it is not indexed
 export const notFound = (l) => noIndex(html(page(l, { title: S[l].nfT + " · Pitlane HQ", desc: S[l].nf, path: null, noindex: true,
   body: `<h1>${esc(S[l].nf)}</h1><p><a href="${LAND[l].path}">${esc(T[l].tel.iracing)}</a> · <a href="${LANDL[l].path}">${esc(T[l].tel.lmu)}</a> · <a href="${REC_IDX.iracing[l]}">${esc(T[l].rec)}</a> · <a href="/">${esc(T[l].app)}</a></p>` }), 600, 404));
+// the database could not be read: come back in a moment (search engines keep the page and try again)
+const BUSY = { en: "Pitlane HQ is busy. Try again in a moment.", es: "Pitlane HQ está ocupado. Vuelve a intentarlo en un momento.", pt: "O Pitlane HQ está ocupado. Tente de novo em um momento." };
+const busy = (l) => new Response(`<!doctype html><html lang="${HLANG[l]}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Pitlane HQ</title><meta name="robots" content="noindex"></head><body><h1>${esc(BUSY[l])}</h1></body></html>`,
+  { status: 503, headers: { "content-type": "text/html; charset=utf-8", "retry-after": "60", "cache-control": "no-store" } });
+// env with its database watched: every read that fails is tried again once, and the second failure is noted
+function watchDb(env) {
+  const db = { failed: false };
+  if (!env || !env.DB) return [env, db];
+  const twice = async (f) => { try { return await f(); } catch (e) { await new Promise((r) => setTimeout(r, 120)); try { return await f(); } catch (e2) { db.failed = true; throw e2; } } };
+  const wrap = (st) => ({ bind: (...a) => wrap(st.bind(...a)), first: (...a) => twice(() => st.first(...a)), all: () => twice(() => st.all()), run: () => twice(() => st.run()), raw: (...a) => twice(() => st.raw(...a)) });
+  const DB = new Proxy(env.DB, { get: (t, k) => (k === "prepare" ? (q) => wrap(t.prepare(q)) : typeof t[k] === "function" ? t[k].bind(t) : t[k]) });
+  return [new Proxy(env, { get: (t, k) => (k === "DB" ? DB : t[k]) }), db];
+}
 const noIndex = (r) => { r.headers.set("x-robots-tag", "noindex"); r.headers.set("cache-control", "public, max-age=60"); return r; };
 
 // ---------- the guides (seo-topics.js) ----------
@@ -720,7 +735,7 @@ ${to ? `<p class="x">${esc(T[l].other[game])} <a href="${to.path}">${esc(to.h1)}
 // while Pitlane HQ is in beta: the one button is the Stripe donation link (DONATE in this file)
 const DONATE = "https://buy.stripe.com/fZu00beDP64g0fK5LKcwg01";
 const PRICE = {
-  en: { path: "/pricing", title: "Pitlane HQ pricing · free during the beta", h1: "Pricing", desc: "Pitlane HQ is free while it is in beta, Pro included. After the beta Pro costs $6 a month or $59 a year, and whoever supports Pitlane HQ during the beta keeps Pro at half price.",
+  en: { path: "/pricing", title: "Pitlane HQ pricing · free during the beta", h1: "Pricing", desc: "Pitlane HQ is free during the beta, Pro included. After the beta Pro costs $6 a month or $59 a year, and beta supporters keep Pro at half price.",
     lead: "Every feature is free for everyone while Pitlane HQ is in beta. Pro arrives when the beta ends.",
     free: ["Free", "$0", "forever", ["Every lap recorded and your own lap analysis", "Every standard overlay, in VR too", "Sync with your whole history on PC, web and phone", "Live telemetry on your phone", "Leaderboards, records and leagues", "The Discord bot with every command"]],
     pro: ["Pro", "$0", "during the beta", ["Everything in Free", "The full coach with its plan on the track map", "Compare with friends, rivals and the fastest laps", "Race fuel, corner consistency and offs explained", "The experimental overlays"]],
@@ -732,7 +747,7 @@ const PRICE = {
       ["What do supporters get?", "Anyone who supports Pitlane HQ during the beta keeps Pro at half price for as long as they keep it, $3 a month or $29.50 a year, and can buy Pro for life for $29.99 within two months of the beta ending."],
       ["What if I stop paying?", "Come back within two months and you keep the half price."],
       ["Is sync free?", "Yes. Sync with your whole lap history on the PC, the web and the phone is always free."]] },
-  es: { path: "/es/precios", title: "Precios de Pitlane HQ · gratis durante la beta", h1: "Precios", desc: "Pitlane HQ es gratis mientras está en beta, Pro incluido. Después de la beta Pro cuesta $6 al mes o $59 al año, y quien apoye Pitlane HQ durante la beta mantiene Pro a mitad de precio.",
+  es: { path: "/es/precios", title: "Precios de Pitlane HQ · gratis durante la beta", h1: "Precios", desc: "Pitlane HQ es gratis durante la beta, Pro incluido. Después Pro cuesta $6 al mes o $59 al año, y quien apoye en la beta lo mantiene a mitad de precio.",
     lead: "Todas las funciones son gratis para todos mientras Pitlane HQ está en beta. Pro llega cuando termine la beta.",
     free: ["Free", "$0", "para siempre", ["Cada vuelta grabada y el análisis de tus vueltas", "Todos los overlays estándar, también en VR", "Sincronización con todo tu historial en PC, web y móvil", "Telemetría en vivo en el móvil", "Clasificaciones, récords y ligas", "El bot de Discord con todos los comandos"]],
     pro: ["Pro", "$0", "durante la beta", ["Todo lo de Free", "El coach completo con su plan en el mapa", "Compara con amigos, rivales y las vueltas más rápidas", "Combustible de carrera, constancia por curva y salidas explicadas", "Los overlays experimentales"]],
@@ -744,7 +759,7 @@ const PRICE = {
       ["¿Qué reciben los supporters?", "Quien apoye Pitlane HQ durante la beta mantiene Pro a mitad de precio mientras lo tenga, $3 al mes o $29,50 al año, y puede comprar Pro de por vida por $29,99 en los dos meses tras el final de la beta."],
       ["¿Y si dejo de pagar?", "Vuelve en menos de dos meses y conservas la mitad de precio."],
       ["¿La sincronización es gratis?", "Sí. La sincronización con todo tu historial de vueltas en el PC, la web y el móvil es siempre gratis."]] },
-  pt: { path: "/pt/precos", title: "Preços do Pitlane HQ · grátis durante o beta", h1: "Preços", desc: "O Pitlane HQ é grátis enquanto está em beta, Pro incluído. Depois do beta o Pro custa $6 por mês ou $59 por ano, e quem apoiar o Pitlane HQ durante o beta mantém o Pro pela metade do preço.",
+  pt: { path: "/pt/precos", title: "Preços do Pitlane HQ · grátis durante o beta", h1: "Preços", desc: "O Pitlane HQ é grátis durante o beta, Pro incluído. Depois o Pro custa $6 por mês ou $59 por ano, e quem apoiar no beta mantém o Pro pela metade do preço.",
     lead: "Todos os recursos são grátis para todos enquanto o Pitlane HQ está em beta. O Pro chega quando o beta terminar.",
     free: ["Free", "$0", "para sempre", ["Cada volta gravada e a análise das suas voltas", "Todos os overlays padrão, também em VR", "Sincronização com todo o seu histórico no PC, web e celular", "Telemetria ao vivo no celular", "Classificações, recordes e ligas", "O bot do Discord com todos os comandos"]],
     pro: ["Pro", "$0", "durante o beta", ["Tudo do Free", "O coach completo com o plano no mapa", "Compare com amigos, rivais e as voltas mais rápidas", "Combustível de corrida, consistência por curva e saídas explicadas", "Os overlays experimentais"]],
@@ -947,7 +962,6 @@ const isPublic = (p) => p === "/sitemap.xml" || AT.has(p) || RECORD_RE.test(p) |
 
 async function draw(req, env, url, p) {
   if (p === "/sitemap.xml") return sitemap(env);
-  await readHas(env);
   // one address per page: a short alias or a trailing slash goes to it for good (301), never a second copy with 200
   const at = (canon, show) => url.pathname === canon ? show() : Response.redirect(SITE + canon + url.search, 301);
   const hit = AT.get(p);
@@ -975,7 +989,12 @@ export async function seoPage(req, env, url, ctx) {
   const key = new Request(SITE + url.pathname + url.search, { method: "GET" });
   let res = cache ? await cache.match(key).catch(() => null) : null;
   if (!res) {
-    res = await draw(req, env, url, p);
+    await readHas(env);
+    // a read the database refused (it does so now and then under many visits at once) is tried once more; a page
+    // drawn without its data is a 503 to come back to, never a 404 or a page cached with half its data
+    const [denv, db] = watchDb(env);
+    res = await draw(req, denv, url, p);
+    if (db.failed) res = busy(p.startsWith("/es") ? "es" : p.startsWith("/pt") ? "pt" : "en");
     if (cache && res.status === 200) { const put = cache.put(key, res.clone()).catch(() => {}); if (ctx && ctx.waitUntil) ctx.waitUntil(put); else await put; }
   }
   // the browser or the robot already has this version

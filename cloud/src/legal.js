@@ -132,25 +132,27 @@ export function legalLang(req, url) {
 }
 
 const LN = { en: "English", es: "Español", pt: "Português" };
-const shell = (l, path, title, body) => `<!doctype html><html lang="${l === "pt" ? "pt-BR" : l}"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(title)} · Pitlane HQ</title><link rel="canonical" href="https://pitlanehq.app${path}${l === "en" ? "" : "?lang=" + l}"><link rel="icon" href="/favicon.ico" sizes="any">
-<style>body{margin:0;background:#11151b;color:#e7ebf1;font:16px/1.6 system-ui,sans-serif}main{max-width:760px;margin:0 auto;padding:28px 16px 48px}h1{font-size:26px;margin:0 0 6px}h2{font-size:17px;margin:26px 0 8px;color:#ffb02e}p{color:#a9b4c3;margin:6px 0}ul,ol{padding-left:20px;color:#c9d2de}li{margin:6px 0}a{color:#ffb02e}.m{color:#8a97a9;font-size:13px}.top{display:flex;align-items:center;gap:10px;margin-bottom:18px}.top b{font-size:15px;letter-spacing:.06em}.top img{width:28px;height:28px;border-radius:7px}</style>
-<main><div class="top"><img src="/icon-192.png" alt=""><b>PITLANE HQ</b></div>${body}<p class="m" style="margin-top:28px">${Object.keys(LN).map((k) => `<a href="${path}?lang=${k}" hreflang="${k}">${LN[k]}</a>`).join(" · ")}</p></main></html>`;
+// the page's description for search engines: its first lines, plain, cut at a word near 155 characters
+const descOf = (t) => { t = String(t || "").replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim(); return t.length <= 155 ? t : t.slice(0, t.lastIndexOf(" ", 152)) + "…"; };
+const shell = (l, path, title, body, desc) => `<!doctype html><html lang="${l === "pt" ? "pt-BR" : l}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(title)} · Pitlane HQ</title><meta name="description" content="${esc(descOf(desc))}"><link rel="canonical" href="https://pitlanehq.app${path}${l === "en" ? "" : "?lang=" + l}"><link rel="icon" href="/favicon.ico" sizes="any">
+<style>body{margin:0;background:#11151b;color:#e7ebf1;font:16px/1.6 system-ui,sans-serif}main{max-width:760px;margin:0 auto;padding:28px 16px 48px}h1{font-size:26px;margin:0 0 6px}h2{font-size:17px;margin:26px 0 8px;color:#ffb02e}p{color:#a9b4c3;margin:6px 0}ul,ol{padding-left:20px;color:#c9d2de}li{margin:6px 0}a{color:#ffb02e}.m{color:#8a97a9;font-size:13px}.top{display:flex;align-items:center;gap:10px;margin-bottom:18px}.top b{font-size:15px;letter-spacing:.06em}.top img{width:28px;height:28px;border-radius:7px}</style></head><body>
+<main><div class="top"><img src="/icon-192.png" alt=""><b>PITLANE HQ</b></div>${body}<p class="m" style="margin-top:28px">${Object.keys(LN).map((k) => `<a href="${path}?lang=${k}" hreflang="${k}">${LN[k]}</a>`).join(" · ")}</p></main></body></html>`;
 
 export function privacyPage(l) {
   const p = PRIVACY[l] || PRIVACY.en;
   return shell(l, "/privacy", p.title, `<h1>${esc(p.title)}</h1><p class="m">${esc(p.up)} ${UPDATED}</p><p>${esc(p.intro)}</p>` +
-    p.s.map(([h, items]) => `<h2>${esc(h)}</h2>` + (items.length > 1 ? `<ul>${items.map((x) => `<li>${x}</li>`).join("")}</ul>` : `<p>${items[0]}</p>`)).join(""));
+    p.s.map(([h, items]) => `<h2>${esc(h)}</h2>` + (items.length > 1 ? `<ul>${items.map((x) => `<li>${x}</li>`).join("")}</ul>` : `<p>${items[0]}</p>`)).join(""), p.intro);
 }
 
 export function termsPage(l) {
   const p = TERMS[l] || TERMS.en, up = (PRIVACY[l] || PRIVACY.en).up;
   return shell(l, "/terms", p.title, `<h1>${esc(p.title)}</h1><p class="m">${esc(up)} ${UPDATED}</p><p>${esc(p.intro)}</p>` +
-    p.s.map(([h, items]) => `<h2>${esc(h)}</h2>` + items.map((x) => `<p>${x}</p>`).join("")).join(""));
+    p.s.map(([h, items]) => `<h2>${esc(h)}</h2>` + items.map((x) => `<p>${x}</p>`).join("")).join(""), p.intro);
 }
 
 export function deletePage(l) {
   const d = DELETE[l] || DELETE.en;
-  return shell(l, "/delete-account", d.title, `<h1>${esc(d.title)}</h1><h2>${esc(d.h1)}</h2><ol>${d.steps.map((x) => `<li>${x}</li>`).join("")}</ol><h2>${esc(d.h2)}</h2><ul>${d.what.map((x) => `<li>${esc(x)}</li>`).join("")}</ul><p>${d.more}</p>`);
+  return shell(l, "/delete-account", d.title, `<h1>${esc(d.title)}</h1><h2>${esc(d.h1)}</h2><ol>${d.steps.map((x) => `<li>${x}</li>`).join("")}</ol><h2>${esc(d.h2)}</h2><ul>${d.what.map((x) => `<li>${esc(x)}</li>`).join("")}</ul><p>${d.more}</p>`, d.what[0]);
 }
 
 /** GET /privacy, /terms and /delete-account, or null for any other address. */

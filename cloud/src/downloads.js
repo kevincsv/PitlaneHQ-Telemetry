@@ -53,9 +53,9 @@ export async function downloads(req, env, url) {
     const row = (title, sub, file) => `<a class="c" href="/dl/${esc(file)}"><b>${esc(title)}</b><span>${esc(sub)}</span></a>`;
     const body = `<h1>${t("Download Pitlane HQ", "Descargar Pitlane HQ")}</h1><p>${t("Free. One account for the PC, the web and the phone apps.", "Gratis. Una cuenta para el PC, la web y las apps de móvil.")}</p>
 <h2>Windows ${pc.version ? `<small>v${esc(pc.version)} beta</small>` : ""}</h2><div class="g">
-${row(t("Pitlane HQ for Windows", "Pitlane HQ para Windows"), t("Records your laps and uploads them so you can analyse them", "Graba tus vueltas y las sube para que las analices"), "PitlaneHQ-Setup.exe")}${MS_STORE ? `<a class="c" href="${esc(MS_STORE)}" rel="noopener"><b>Microsoft Store</b><span>${t("The same app, updated by the Store", "La misma app, actualizada por la Store")}</span></a>` : `<div class="c" style="opacity:.7"><b>Microsoft Store</b><span>${t("Coming soon", "Próximamente")}</span></div>`}<div class="c" style="opacity:.7"><b>Steam</b><span>${t("Coming soon", "Próximamente")}</span></div></div>
+${row(t("Pitlane HQ for Windows", "Pitlane HQ para Windows"), t("Records your laps and uploads them so you can analyse them", "Graba tus vueltas y las sube para que las analices"), "PitlaneHQ-Setup.exe")}${MS_STORE ? `<a class="c" href="${esc(MS_STORE)}" rel="noopener"><b>Microsoft Store</b><span>${t("The same app, updated by the Store", "La misma app, actualizada por la Store")}</span></a>` : `<div class="c off"><b>Microsoft Store</b><span>${t("Coming soon", "Próximamente")}</span></div>`}<div class="c off"><b>Steam</b><span>${t("Coming soon", "Próximamente")}</span></div></div>
 <h2>${t("Phones", "Móviles")} ${ph.version ? `<small>v${esc(String(ph.version).replace(/^v/, "").replace(/-?beta$/i, ""))} beta</small>` : ""}</h2><div class="g">
-${ph.apk ? row("Android", t("App (APK). Google Play soon", "App (APK). Pronto en Google Play"), ph.apk) : ""}<div class="c" style="opacity:.7"><b>iPhone</b><span>${t("Coming to the App Store", "Pronto en la App Store")}</span></div></div>
+${ph.apk ? row("Android", t("App (APK). Google Play soon", "App (APK). Pronto en Google Play"), ph.apk) : ""}<div class="c off"><b>iPhone</b><span>${t("Coming to the App Store", "Pronto en la App Store")}</span></div></div>
 <p class="n"><a href="/changelog">${t("What changed in each version", "Qué cambió en cada versión")}</a> · <a href="${es ? "/es/precios" : "/pricing"}">${t("Pricing", "Precios")}</a> · <a href="/">${t("Open the web app", "Abrir la app web")}</a></p>`;
     return new Response(page(body, { lang: es ? "es" : "en", ld: dlLd(pc) }), { headers: H });
   }
@@ -107,12 +107,12 @@ export const dlLd = (pc) => ({ "@context": "https://schema.org", "@type": "Softw
   operatingSystem: "Windows, Android, Web", ...(pc && pc.version ? { softwareVersion: String(pc.version).replace(/^v/, "") } : {}),
   downloadUrl: "https://pitlanehq.app/downloads", installUrl: MS_STORE, sameAs: [MS_STORE], isAccessibleForFree: true,
   offers: { "@type": "Offer", price: "0", priceCurrency: "USD" }, image: "https://pitlanehq.app/og.png", publisher: { "@type": "Organization", name: "Pitlane HQ", url: "https://pitlanehq.app/" } });
-const page = (body, o = {}) => `<!doctype html><html lang="${o.lang || "en"}"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">${head(o)}<link rel="icon" href="/favicon.ico" sizes="any"><link rel="icon" href="/logo.svg" type="image/svg+xml">
+const page = (body, o = {}) => `<!doctype html><html lang="${o.lang || "en"}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">${head(o)}<link rel="icon" href="/favicon.ico" sizes="any"><link rel="icon" href="/logo.svg" type="image/svg+xml">
 <style>body{margin:0;background:#11151b;color:#e7ebf1;font:16px/1.55 system-ui,sans-serif}main{max-width:760px;margin:0 auto;padding:28px 16px 48px}h1{font-size:26px;letter-spacing:.04em;text-transform:uppercase;margin:0 0 6px}h2{font-size:18px;margin:26px 0 10px;letter-spacing:.03em}h2 small{color:#8a97a9;font-weight:600;font-size:12px;margin-left:8px}
 h3{font-size:14px;color:#ffb02e;margin:18px 0 4px}p{color:#a9b4c3;margin:6px 0}ul{padding-left:20px;color:#c9d2de}li{margin:4px 0}code{background:#19202a;padding:1px 5px;border-radius:4px;font-size:13px}a{color:#ffb02e}
 .g{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px}.c{display:grid;gap:3px;padding:14px;border:1px solid #2b3542;border-radius:12px;background:#19202a;text-decoration:none;color:#e7ebf1}.c:hover{border-color:#ffb02e}.c span{color:#8a97a9;font-size:13px}.n{margin-top:26px;font-size:14px}
-.top{display:flex;align-items:center;gap:10px;margin-bottom:18px}.top b{font-size:15px;letter-spacing:.06em}.top img{width:28px;height:28px;border-radius:7px}</style>
-<main><div class="top"><img src="/icon-192.png" alt=""><b>PITLANE HQ</b></div>${body}</main>${VISIT_JS}</html>`;
+.top{display:flex;align-items:center;gap:10px;margin-bottom:18px}.top b{font-size:15px;letter-spacing:.06em}.top img{width:28px;height:28px;border-radius:7px}.c.off{border-style:dashed;background:transparent}</style></head><body>
+<main><div class="top"><img src="/icon-192.png" alt=""><b>PITLANE HQ</b></div>${body}</main>${VISIT_JS}</body></html>`;
 
 // PC_MIN: the oldest PitlaneHQ.exe the server still lets run, whatever version.json says. A PC older than the "min" it
 // reads updates as soon as the car is not on the track and its update notice has no "later" (update.go), so raising

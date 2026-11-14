@@ -46,7 +46,8 @@ export async function usageRoute(req, env, url) {
     let b = null;
     try { b = JSON.parse((await req.text()).slice(0, 4000)); } catch { b = null; }
     const v = visitOf(b);
-    if (v.src) await env.DB.prepare(SQL_VISIT_ADD).bind(day(Date.now()), v.src, countryOf(req.cf), v.page).run();
+    // a visit is counted when it can be: a busy database never answers the page with an error
+    if (v.src) await env.DB.prepare(SQL_VISIT_ADD).bind(day(Date.now()), v.src, countryOf(req.cf), v.page).run().catch(() => {});
     return json({ ok: true });
   }
   if (!ours.includes(p) && !p.startsWith("/community/admin/feedback/")) return null;

@@ -1,6 +1,12 @@
 {
   "versions": [
     {
+      "v": "0.9.17",
+      "en": ["Fixes and improvements."],
+      "es": ["Arreglos y mejoras."],
+      "pt": ["Correções e melhorias."]
+    },
+    {
       "v": "0.9.16",
       "en": ["Fixes and improvements."],
       "es": ["Arreglos y mejoras."],

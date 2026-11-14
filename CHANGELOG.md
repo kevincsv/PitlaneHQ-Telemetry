@@ -4,6 +4,10 @@ Pitlane HQ is in **beta**. Pitlane HQ Agent (the PC app), the web app and the ph
 number, `0.MINOR.PATCH`. A MINOR version brings a set of new features, and fixes go in as "Fixes and
 improvements". 1.0.0 comes when the beta ends. Newest first.
 
+## 0.9.17 beta
+
+- Fixes and improvements.
+
 ## 0.9.16 beta
 
 - Fixes and improvements.

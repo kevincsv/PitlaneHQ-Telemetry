@@ -77,14 +77,33 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   (`pw.liveV` 3); one the driver changed stays as it is. The live map is
   the coach maps' road with depth, its start/finish line, the direction arrow and the official turns; it has no
   "ideal" line.
-- Telemetry's Layout window is always whole on the screen: a card in the middle on computers (760 px at most, 16 px from
-  every edge, under the DEMO or BETA banner), the whole screen on phones (820 px and narrower). Its title, close button,
-  presets and "Reset order and widths" stay in place and only the list of panels scrolls, keeping its place when a
-  panel is shown, hidden or resized. The presets are Essentials, Most used by the community, Hide all and Show all.
-  Most used by the community shows the panels at least half of the drivers who used Telemetry in the last 30 days
-  show (GET `/community/live/popular`, `cloud/src/livepopular.js`: distinct accounts from the `live:` usage keys,
-  admin.md; at least 20 accounts, cached six hours) plus the flags; until then it is off with one sentence saying not
-  enough drivers have used it yet.
+- Telemetry's Layout window is the "Desk map" (`openLayout`, the `lya*` functions in index.html). It is always whole
+  on the screen: a wide card in the middle on computers (1320 px at most, 16 px from every edge, under the DEMO or BETA
+  banner) where nothing scrolls, and the whole screen on phones (820 px and narrower), which scrolls as one page. The
+  title carries how many panels are shown ("11 / 27 shown"), with no line under it. On top are the presets: Essentials,
+  Most used by the community, Hide all and Show all. At the bottom are Overlay settings and "Reset order and widths".
+  - The desk is the Telemetry screen drawn small exactly as it lays out now. Each panel is a copy of the real panel
+    with what it shows at that moment (its canvases copied as they are), refreshed every second while the window is
+    open. In the Workspace desk the copy is the desk with Left, Middle and Right over its columns. In the 12-column
+    grid (a layout of the driver's own, or a screen 1100 px or narrower) it is that grid. Flags are a strip on top, an
+    empty frame while no flag is out. The copies use the panels' own rules (copied once, with `#v-live`, `#liveGrid`
+    and the panels' ids turned into classes and `data-pvid` with the same weight, `lyaCss`) and are scaled to fit.
+    Phones show it at half the screen's width or more, under the card. With no data the copies are the panels'
+    empty frames. Demo data shows only under Demo data, like the screen itself.
+  - Tapping a panel opens it in the card beside the desk (above it on phones, which scroll to it): a bigger copy that
+    keeps refreshing, the name and the Shown switch, the games it works in, then the one setting that applies where
+    it sits. In the Workspace desk that is Column (Left, Middle, Right, `pw.liveWsCol`). In the grid it is Width (S, M,
+    L, XL, Full, the width it has on the screen now marked). Configure is there for the panels that have it.
+  - Dragging a panel onto another column of the desk moves it there. On the grid, dropping it on another panel puts it
+    before or after it (`pw.order`). Dropping it on Hidden panels hides it. A hidden panel dragged onto the desk is
+    shown there.
+  - Hidden panels are chips under the card. Hovering (or focusing) one shows its copy beside it, and picking one shows
+    it in the card. To have something to copy, a hidden panel the window shows is laid out unseen outside the desk
+    while it is shown there (`lyaPeek`). The usage counter and the desk's own layout leave it out.
+  - Most used by the community shows the panels at least half of the drivers who used Telemetry in the last 30 days
+    show (GET `/community/live/popular`, `cloud/src/livepopular.js`: distinct accounts from the `live:` usage keys,
+    admin.md; at least 20 accounts, cached six hours) plus the flags. Until then it is off, and its tooltip says not
+    enough drivers have used it yet.
 - Live in the web and phone apps: Connect/Disconnect for your own PC (presence only until Connect),
   and watching someone else with a share code made on the PC (Settings → Phone) or from the phone.
   The room is one hash of the code and the key a PBKDF2 of it, so the server never reads the

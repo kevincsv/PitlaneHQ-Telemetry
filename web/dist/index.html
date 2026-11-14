@@ -5567,23 +5567,142 @@ function chk(id,on,label){return `<button type="button" class="chip" id="${id}" 
    flags, lap times and the delta, who is around and the gaps, fuel and tyres for the stint,
    incidents (safety rating) and the inputs to coach braking and throttle */
 const LIVE_REC=LIVE_ESSENTIAL;
-function openLayout(){floatDrawer(false);LAYOUT_VIEW=openLayout;CFG_BACK=null;
-  $("#dTitle").innerHTML=L("layout");$("#dSub").innerHTML=Lp("Choose what this screen shows. Overlay windows are set up in Rig → Overlays.","Elige qué muestra esta pantalla. Las ventanas overlay se configuran en Rig → Overlays.");
-  const rows=WIDGETS.map(w=>`<div class="lyrow"><span class="s">${L("w."+w,true)}${gameBadges("widgets",w)}</span>
-    <button type="button" class="pin" data-show="${w}" aria-pressed="${!HIDDEN.has(w)}">${esc(HIDDEN.has(w)?Tx("Hidden","Oculto"):Tx("Shown","Visible"))}</button>
-    ${w!=="flag"?`<button type="button" class="pin" data-size="${w}" title="${esc(Tx("Width","Ancho"))}">${esc(Tx("Width","Ancho"))}: ${sizeLabel(w)}</button>`:""}
-    ${CONFIGURABLE[w]?`<button type="button" class="pin" data-cfg="${w}">${L("configure",true)}</button>`:""}</div>`).join("");
-  $("#dBody").innerHTML=`<div class="ly-top"><button type="button" class="btn primary" id="toOverlays" style="margin-bottom:10px">${L("ovSettings",true)} →</button><div class="frow" style="margin:0 0 10px"><button type="button" class="btn small" id="lyRec">★ ${esc(Tx("Essentials","Lo esencial","Das Wichtigste","O essencial"))}</button><button type="button" class="btn small" id="lyPop" disabled>${esc(Tx("Most used by the community","Lo más usado por la comunidad",null,"O mais usado pela comunidade"))}</button><button type="button" class="btn small" id="lyNone">${esc(Tx("Hide all","Desactivar todos","Alle ausblenden","Desativar todos"))}</button><button type="button" class="btn small" id="lyAll">${esc(Tx("Show all","Mostrar todos","Alle anzeigen","Mostrar todos"))}</button></div><p class="note" id="lyPopNote" hidden></p><p class="note" style="margin:0 0 10px">${Lp("Tip: drag the ⠿ handle on any block to move it.","Consejo: arrastra el asa ⠿ de cualquier bloque para moverlo.")}</p></div><div class="panel" id="lyList">${rows}</div>
-   <div class="ly-foot"><button type="button" class="btn" id="resetOrder">${esc(Tx("Reset order and widths","Restablecer orden y anchos"))}</button></div>`;
-  document.querySelectorAll("#dBody [data-size]").forEach(b=>b.onclick=()=>{cycleSize(b.dataset.size);openLayout()});
+/* Telemetry's Layout window, the "Desk map": the Telemetry screen drawn small exactly as it lays out now (the Workspace
+   desk with its Left, Middle and Right columns, or the 12-column grid when the driver keeps a layout of their own or the
+   screen is 1100 px or narrower), made of copies of the real panels with what they show right now. Tap a panel to
+   change it in the card beside the desk (a bigger copy, Shown, the column on the desk or the width on the grid, where
+   that setting applies, and Configure); drag it to another column (or to another place on the grid) or to Hidden
+   panels; hidden panels show their copy on hover. */
+const LYA={sel:null,timer:0,tick:0,hitKey:"",drag:null,hover:null,geo:null};
+const lyaWs=()=>pw3WsOn();
+const lyaName=w=>{const d=document.createElement("textarea");d.innerHTML=L("w."+w,true);return d.value};
+/* the flags take no room while no flag is out: their copy is then an empty frame, so it can still be picked */
+const lyaFlagFrame=f=>{f.hidden=false;if(!f.classList.contains("on"))f.style.cssText+=";display:block;min-height:30px;padding:0;background:transparent;border:1px dashed var(--line2);border-radius:6px"};
+/* a hidden panel the window shows (picked or under the pointer) is laid out unseen and out of the desk so the app keeps
+   drawing it, and its copy shows what it would show */
+const LYA_PEEK=new Map();
+function lyaPeek(list){const want=new Set(list.filter(w=>w&&w!=="flag")),q=w=>$(`#liveGrid>.wpanel[data-w="${w}"]`);let back=false;
+  LYA_PEEK.forEach((css,w)=>{if(want.has(w))return;const p=q(w);if(p){p.style.cssText=css;delete p.dataset.lypeek;back=true}LYA_PEEK.delete(w)});
+  want.forEach(w=>{const p=q(w);if(!p)return;if(LYA_PEEK.has(w)){p.hidden=false;LIVE_SHOWN.add(w);return}if(!p.hidden)return;const wd=Math.round(lyaWidthOf(w));LYA_PEEK.set(w,p.style.cssText);p.dataset.lypeek="1";p.hidden=false;LIVE_SHOWN.add(w);
+    p.style.cssText+=`;position:absolute;left:0;top:0;width:${wd}px;visibility:hidden;pointer-events:none;z-index:-1`});
+  if(back)applyLayout()}
+/* the panels' own rules for #v-live and #liveGrid, copied once for the copies (ids become data-pvid, with the same weight) */
+function lyaCss(){if(document.getElementById("lyPvCss"))return;const vl=$("#v-live");if(!vl)return;
+  const ids=new Set(["v-live","liveGrid",...[...vl.querySelectorAll("[id]")].map(e=>e.id)]),re=/#(-?[A-Za-z_][\w-]*)/g,nil="#lypv-nil";
+  const hit=s=>{for(const m of s.matchAll(re))if(ids.has(m[1]))return true;return false};
+  const rw=s=>s.replace(re,(m,id)=>id==="v-live"?`:is(.lypv-live,${nil})`:id==="liveGrid"?`:is(.lypv-grid,${nil})`:`:is([data-pvid="${id}"],${nil})`);
+  const walk=rules=>{let o="";for(const r of rules){if(r.selectorText!=null){if(r.selectorText.includes("#")&&hit(r.selectorText))o+=rw(r.selectorText)+"{"+r.style.cssText+"}\n"}
+    else if(r.cssRules&&r.conditionText!=null){const i=walk(r.cssRules);if(i)o+=(r.constructor.name==="CSSSupportsRule"?"@supports ":"@media ")+r.conditionText+"{\n"+i+"}\n"}}return o};
+  let css="";for(const s of document.styleSheets){try{css+=walk(s.cssRules)}catch(e){}}
+  const st=document.createElement("style");st.id="lyPvCss";st.textContent=css;document.head.appendChild(st)}
+/* a copy of a real panel: no ids, no handles, the canvases drawn as they are now */
+function lyaClone(el){const c=el.cloneNode(true),fix=n=>{if(n.id){n.setAttribute("data-pvid",n.id);n.removeAttribute("id")}};fix(c);c.querySelectorAll("[id]").forEach(fix);
+  c.querySelectorAll(".grip,.resz").forEach(x=>x.remove());c.classList.remove("dragging","resizing");
+  const sc=el.querySelectorAll("canvas"),dc=c.querySelectorAll("canvas");sc.forEach((s,i)=>{const d=dc[i];if(d&&s.width&&s.height)try{d.getContext("2d").drawImage(s,0,0)}catch(e){}});return c}
+function lyaFrame(width,grid){const live=document.createElement("div");live.className="lypv-live";live.setAttribute("aria-hidden","true");live.inert=true;
+  [["display","block"],["position","absolute"],["left","0"],["top","0"],["margin","0"],["padding","0"],["width",width+"px"],["transform-origin","0 0"],["pointer-events","none"]].forEach(([k,v])=>live.style.setProperty(k,v,"important"));
+  const g=document.createElement("div");g.className="lypv-grid "+(grid?grid.className:"grid"+(lyaWs()?" pw3ws":""));if(grid)g.style.cssText=grid.style.cssText;live.appendChild(g);return{live,g}}
+const lyaGap=g=>parseFloat(getComputedStyle(g).columnGap)||10;
+/* the width a panel gets on the screen now (a hidden one: the width it would get) */
+function lyaWidthOf(w){const src=w==="flag"?$("#flag"):$(`#liveGrid>.wpanel[data-w="${w}"]`);if(src&&!src.hidden&&src.offsetWidth)return src.offsetWidth;
+  const grid=$("#liveGrid"),W=(grid&&grid.clientWidth)||(($("#v-live")||{}).clientWidth)||1000;if(w==="flag")return W;
+  if(lyaWs()&&grid){const t=getComputedStyle(grid).gridTemplateColumns.split(" ").map(parseFloat).filter(x=>x>0),gap=lyaGap(grid),c=pw3ColOf(w),[a,b]=c==="L"?[0,1]:c==="R"?[7,9]:[1,7];
+    if(t.length>=9)return t.slice(a,b).reduce((s,x)=>s+x,0)+gap*(b-a-1)}
+  const n=Math.min(12,WSIZE[w]||+((src&&src.dataset.def)||(src&&(src.className.match(/\bs(\d+)\b/)||[])[1])||12)),gap=grid?lyaGap(grid):10;
+  return innerWidth<=1020&&!WSIZE[w]?W:(W-11*gap)/12*n+(n-1)*gap}
+/* a bigger copy of one panel, whole inside box */
+function lyaPreview(w,box){if(!box)return;const src=w==="flag"?$("#flag"):$(`#liveGrid>.wpanel[data-w="${w}"]`);if(!src){box.replaceChildren();return}
+  const W=Math.max(120,Math.round(lyaWidthOf(w))),{live,g}=lyaFrame(W,null),c=lyaClone(src);c.hidden=false;if(LYA_PEEK.has(w))c.style.cssText=LYA_PEEK.get(w);delete c.dataset.lypeek;c.style.gridColumn="";c.style.gridRow="";
+  if(w==="flag"){g.remove();lyaFlagFrame(c);live.appendChild(c)}else{g.style.setProperty("display","block","important");g.appendChild(c)}
+  box.replaceChildren(live);const H=live.offsetHeight||1,bw=box.clientWidth,bh=box.clientHeight,s=Math.min(bw/W,bh/H);
+  live.style.setProperty("transform",`translate(${Math.max(0,(bw-W*s)/2)}px,${Math.max(0,(bh-H*s)/2)}px) scale(${s})`,"important")}
+/* the desk: a copy of the whole screen's panels at their real places, scaled to fit, with a tile over each panel */
+function lyaDesk(){const box=$("#lyDesk"),hitL=$("#lyHit");if(!box||!hitL)return;const grid=$("#liveGrid"),vl=$("#v-live");if(!grid||!vl)return;
+  const ws=lyaWs(),W=grid.clientWidth||vl.clientWidth-32||1000,{live,g}=lyaFrame(W,grid);g.hidden=false;
+  const fl=$("#flag");if(fl&&!HIDDEN.has("flag")){const f=lyaClone(fl);lyaFlagFrame(f);f.style.marginBottom="10px";live.insertBefore(f,g)}
+  [...grid.children].forEach(p=>{if(p.classList.contains("wpanel")&&!p.hidden&&!p.dataset.lypeek&&!p.classList.contains("dragging"))g.appendChild(lyaClone(p))});
+  const scr=$("#lyScr");scr.replaceChildren(live);const H=Math.max(live.offsetHeight,60),phone=innerWidth<=820;
+  const pd=8,bw=box.clientWidth,fw=(bw-2*pd)/W,s=phone?Math.min(fw,Math.max(fw*.5,(innerHeight*.9-2*pd)/H)):Math.min(fw,(box.clientHeight-2*pd)/H),bh=H*s+2*pd;
+  if(phone)box.style.height=Math.ceil(bh)+"px";else box.style.height="";
+  const ox=Math.max(pd,(bw-W*s)/2);live.style.setProperty("transform",`translate(${ox}px,${pd}px) scale(${s})`,"important");
+  /* the columns of the desk (Workspace) or the grid as one place */
+  const r0=box.getBoundingClientRect(),br={left:r0.left+box.clientLeft,top:r0.top+box.clientTop};let zones=[];
+  if(ws){const t=getComputedStyle(g).gridTemplateColumns.split(" ").map(parseFloat).filter(x=>x>0),gap=lyaGap(g);
+    if(t.length>=9){const x=[0];t.forEach((v,i)=>x.push(x[i]+v+gap));zones=[["L",0,1],["M",1,7],["R",7,9]].map(([c,a,b])=>({c,x0:ox+x[a]*s,x1:ox+(x[b]-gap)*s}))}}
+  const tiles=[...g.children,...(live.firstElementChild!==g?[live.firstElementChild]:[])].map(p=>{const r=p.getBoundingClientRect();return{w:p.dataset.w||"flag",x:r.left-br.left,y:r.top-br.top,wd:r.width,ht:r.height}});
+  LYA.geo={zones,tiles};
+  const key=JSON.stringify([zones.map(z=>[z.x0|0,z.x1|0]),tiles.map(t=>[t.w,t.x|0,t.y|0,t.wd|0,t.ht|0]),LYA.sel,LANG]);if(key===LYA.hitKey)return;LYA.hitKey=key;
+  const names={L:Tx("Left","Izquierda",null,"Esquerda"),M:Tx("Middle","Centro",null,"Centro"),R:Tx("Right","Derecha",null,"Direita")};
+  $("#lyCols").innerHTML=zones.map(z=>`<span style="left:${z.x0}px;width:${z.x1-z.x0}px">${esc(names[z.c])}</span>`).join("");$("#lyCols").hidden=!zones.length;
+  hitL.innerHTML=zones.map(z=>`<div class="lyA-zone" data-zone="${z.c}" style="left:${z.x0}px;width:${z.x1-z.x0}px"></div>`).join("")
+    +tiles.map(t=>`<button type="button" class="lyA-tile${t.w===LYA.sel?" sel":""}${t.ht<20?" thin":""}" data-tile="${t.w}" aria-pressed="${t.w===LYA.sel}" aria-label="${esc(lyaName(t.w))}" title="${esc(lyaName(t.w))}" style="left:${t.x}px;top:${t.y}px;width:${t.wd}px;height:${t.ht}px"><span>${esc(lyaName(t.w))}</span></button>`).join("")}
+function lyaPaint(){if(LYA.drag)return;try{lyaDesk()}catch(e){}try{lyaPreview(LYA.sel,$("#lyPrevBox"))}catch(e){}if(LYA.hover)try{lyaPreview(LYA.hover,$("#lyHoverBox"))}catch(e){}}
+function lyaLive(){clearInterval(LYA.timer);LYA.tick=0;LYA.timer=setInterval(()=>{if(!$("#lyDesk")||$("#drawer").hidden){clearInterval(LYA.timer);lyaHover(null);lyaPeek([]);return}
+  if(LYA.drag)return;LYA.tick++;lyaPeek([HIDDEN.has(LYA.sel)?LYA.sel:null,LYA.hover]);try{lyaPreview(LYA.sel,$("#lyPrevBox"))}catch(e){}if(LYA.hover)try{lyaPreview(LYA.hover,$("#lyHoverBox"))}catch(e){}if(LYA.tick%2===0)try{lyaDesk()}catch(e){}},500)}
+/* the copy of a hidden panel beside its chip */
+function lyaHover(w,chip){let pop=$("#lyHover");if(!w||innerWidth<=820){if(LYA.hover){LYA.hover=null;lyaPeek([HIDDEN.has(LYA.sel)?LYA.sel:null])}if(pop)pop.hidden=true;return}
+  if(!pop){pop=document.createElement("div");pop.id="lyHover";pop.className="lyA-hover";pop.setAttribute("aria-hidden","true");pop.innerHTML=`<b></b><div class="lyA-pv" id="lyHoverBox"></div>`;$("#drawer").appendChild(pop)}
+  LYA.hover=w;pop.querySelector("b").textContent=lyaName(w);pop.hidden=false;const pool=$("#lyPool"),pr=(pool||chip).getBoundingClientRect(),cr=chip.getBoundingClientRect(),pw=300,ph=200;
+  let x=pr.left-pw-12,y=cr.top+cr.height/2-ph/2;if(x<8){x=Math.min(innerWidth-pw-8,Math.max(8,cr.left));y=cr.top-ph-10;if(y<8)y=cr.bottom+10}
+  pop.style.left=Math.round(x)+"px";pop.style.top=Math.round(Math.max(8,Math.min(innerHeight-ph-8,y)))+"px";lyaPeek([HIDDEN.has(LYA.sel)?LYA.sel:null,w]);lyaPreview(w,$("#lyHoverBox"))}
+function lyaSave(){store.set("pw.hiddenW",[...HIDDEN]);applyLayout()}
+function lyaSetCol(w,c){if(c===PW3_SLOT[w])delete PW3_COL[w];else PW3_COL[w]=c;store.set("pw.liveWsCol",PW3_COL);packGrid()}
+function lyaMoveBefore(w,before,after){const grid=$("#liveGrid");const seq=[...grid.querySelectorAll(":scope>.wpanel")].map(p=>p.dataset.w).filter(x=>x!==w);let i=before?seq.indexOf(before):-1;if(i>=0&&after)i++;
+  seq.splice(i<0?seq.length:i,0,w);ORDER=seq;store.set("pw.order",ORDER);applyOrderAndSizes();packGrid();drawMapSoon()}
+function lyaSetWidth(w,n){WSIZE[w]=n;store.set("pw.sizes",WSIZE);applyOrderAndSizes();packGrid();drawMapSoon()}
+/* dragging a tile or a hidden panel: onto a column (desk) or a place (grid), or onto Hidden panels */
+function lyaDragWire(){const root=$("#lyList");root.onpointerdown=ev=>{const el=ev.target.closest("#lyHit [data-tile],#lyPool [data-tile]");if(!el||ev.button>0)return;
+  const w=el.dataset.tile,x0=ev.clientX,y0=ev.clientY,fromPool=!!el.closest("#lyPool");let moved=false,tgt=null;
+  const clear=()=>document.querySelectorAll("#dBody .over,#dBody .ins-b,#dBody .ins-a").forEach(o=>o.classList.remove("over","ins-b","ins-a"));
+  const mv=e=>{if(!moved&&Math.hypot(e.clientX-x0,e.clientY-y0)<6)return;if(!moved){moved=true;LYA.drag=w;el.classList.add("drag");lyaHover(null)}clear();tgt=null;
+    const box=$("#lyDesk"),r0=box.getBoundingClientRect(),br={left:r0.left+box.clientLeft,top:r0.top+box.clientTop,right:r0.right,bottom:r0.bottom},o=document.elementFromPoint(e.clientX,e.clientY);
+    if(o&&o.closest("#lyPool")){if(!fromPool){tgt={pool:1};$("#lyPool").classList.add("over")}return}
+    if(e.clientX<br.left||e.clientX>br.right||e.clientY<br.top||e.clientY>br.bottom)return;const x=e.clientX-br.left,y=e.clientY-br.top,geo=LYA.geo||{zones:[],tiles:[]};
+    if(lyaWs()&&w!=="flag"){const z=geo.zones.find(z=>x>=z.x0-4&&x<=z.x1+4);if(z){tgt={col:z.c};const zz=$(`#lyHit [data-zone="${z.c}"]`);if(zz)zz.classList.add("over")}return}
+    const t=geo.tiles.find(t=>t.w!=="flag"&&t.w!==w&&x>=t.x&&x<=t.x+t.wd&&y>=t.y&&y<=t.y+t.ht);
+    if(t&&w!=="flag"){const after=(x-t.x)/t.wd+(y-t.y)/t.ht>1;tgt={before:t.w,after};const te=$(`#lyHit [data-tile="${t.w}"]`);if(te)te.classList.add(after?"ins-a":"ins-b")}else tgt={show:1};$("#lyDesk").classList.add("over")};
+  const up=()=>{removeEventListener("pointermove",mv);removeEventListener("pointerup",up);removeEventListener("pointercancel",up);clear();el.classList.remove("drag");LYA.drag=null;if(!moved)return;
+    LYA.sel=w;if(!tgt){openLayout();return}
+    if(tgt.pool)HIDDEN.add(w);else{HIDDEN.delete(w);if(tgt.col)lyaSetCol(w,tgt.col);else if(tgt.before)lyaMoveBefore(w,tgt.before,tgt.after)}
+    lyaSave();openLayout()};
+  addEventListener("pointermove",mv);addEventListener("pointerup",up);addEventListener("pointercancel",up)}}
+function openLayout(){floatDrawer(false);LAYOUT_VIEW=openLayout;CFG_BACK=null;lyaCss();
+  const ws=lyaWs(),shownN=WIDGETS.filter(w=>!HIDDEN.has(w)).length;
+  if(!LYA.sel||!WIDGETS.includes(LYA.sel))LYA.sel=!HIDDEN.has("timing")?"timing":(WIDGETS.find(w=>!HIDDEN.has(w))||"timing");
+  const w=LYA.sel,on=!HIDDEN.has(w),src=$(`#liveGrid>.wpanel[data-w="${w}"]`),grid=$("#liveGrid");
+  /* the width it has on the screen now (a panel with no width of its own fills its row; phones widen the narrow ones) */
+  let cur=WSIZE[w]||+((src&&src.dataset.def)||(src&&(src.className.match(/\bs(\d+)\b/)||[])[1])||12);
+  if(!WSIZE[w]&&src&&!src.hidden&&!src.dataset.lypeek&&src.offsetWidth&&grid.clientWidth){const gp=lyaGap(grid);cur=Math.max(1,Math.min(12,Math.round((src.offsetWidth+gp)/(grid.clientWidth+gp)*12)))}
+  const seg=(items,attr,isOn)=>`<span class="lyA-seg" role="group">${items.map(([v,t])=>`<button type="button" ${attr}="${v}" aria-pressed="${isOn(v)}">${esc(t)}</button>`).join("")}</span>`;
+  $("#dTitle").innerHTML=L("layout");$("#dSub").innerHTML=`<span class="mono">${shownN} / ${WIDGETS.length}</span> ${esc(Tx("shown","visibles",null,"visíveis"))}`;
+  const set=w==="flag"?"":ws?`<div class="lyA-lbl">${esc(Tx("Column","Columna",null,"Coluna"))}</div>`+seg([["L",Tx("Left","Izquierda",null,"Esquerda")],["M",Tx("Middle","Centro",null,"Centro")],["R",Tx("Right","Derecha",null,"Direita")]],"data-col",c=>pw3ColOf(w)===c)
+    :`<div class="lyA-lbl">${esc(Tx("Width","Ancho",null,"Largura"))}${SIZES.includes(cur)?"":` <span class="mono">${cur}/12</span>`}</div>`+seg(SIZES.map(n=>[n,{3:"S",4:"M",6:"L",8:"XL",12:"Full"}[n]]),"data-wd",n=>+n===cur);
+  const pool=WIDGETS.filter(x=>HIDDEN.has(x));
+  $("#dBody").innerHTML=`<div class="ly-top"><div class="frow"><button type="button" class="btn small" id="lyRec">★ ${esc(Tx("Essentials","Lo esencial","Das Wichtigste","O essencial"))}</button><button type="button" class="btn small" id="lyPop" disabled>${esc(Tx("Most used by the community","Lo más usado por la comunidad",null,"O mais usado pela comunidade"))}</button><button type="button" class="btn small" id="lyNone">${esc(Tx("Hide all","Desactivar todos","Alle ausblenden","Desativar todos"))}</button><button type="button" class="btn small" id="lyAll">${esc(Tx("Show all","Mostrar todos","Alle anzeigen","Mostrar todos"))}</button></div></div>
+   <div class="lyA" id="lyList"><div class="lyA-main"><div class="lyA-cols" id="lyCols" hidden></div><div class="lyA-desk" id="lyDesk"><div class="lyA-scr" id="lyScr"></div><div class="lyA-hit" id="lyHit"></div></div></div>
+    <aside class="lyA-side"><div class="lyA-card"><div class="lyA-pv" id="lyPrevBox"></div>
+      <div class="lyA-nm"><h3>${esc(lyaName(w))}</h3><button type="button" class="lyA-sw" role="switch" id="lyShow" aria-checked="${on}" aria-label="${esc(lyaName(w))}"></button></div>
+      <div class="lyA-tags">${gameBadges("widgets",w)}<span class="lyA-st">${esc(on?Tx("Shown","Visible",null,"Visível"):Tx("Hidden","Oculto",null,"Oculto"))}</span></div>
+      ${set}${CONFIGURABLE[w]?`<button type="button" class="btn small lyA-cfg" id="lyCfg">${L("configure",true)}</button>`:""}</div>
+     <div class="lyA-lbl">${esc(Tx("Hidden panels","Paneles ocultos",null,"Painéis ocultos"))}</div>
+     <div class="lyA-pool${pool.length>16?" many":""}" id="lyPool">${pool.map(x=>`<button type="button" class="lyA-chip${x===w?" sel":""}" data-tile="${x}">${esc(lyaName(x))}</button>`).join("")||`<span class="lyA-none">${esc(Tx("None","Ninguno",null,"Nenhum"))}</span>`}</div></aside></div>
+   <div class="ly-foot"><button type="button" class="btn primary" id="toOverlays">${L("ovSettings",true)} →</button><button type="button" class="btn" id="resetOrder">${esc(Tx("Reset order and widths","Restablecer orden y anchos",null,"Redefinir ordem e larguras"))}</button></div>`;
   $("#resetOrder").onclick=()=>{ORDER=null;WSIZE={};WHGT={};store.set("pw.order",null);store.set("pw.sizes",{});store.set("pw.heights",{});location.reload()};
   $("#toOverlays").onclick=()=>{closeDrawer();show("overlays")};
-  const setShown=keep=>{const all=new Set([...WIDGETS,...[...document.querySelectorAll("#v-live .wpanel[data-w]")].map(p=>p.dataset.w)]);HIDDEN=new Set([...all].filter(w=>!keep.includes(w)));store.set("pw.hiddenW",[...HIDDEN]);applyLayout();openLayout()};
+  const setShown=keep=>{const all=new Set([...WIDGETS,...[...document.querySelectorAll("#v-live .wpanel[data-w]")].map(p=>p.dataset.w)]);HIDDEN=new Set([...all].filter(w=>!keep.includes(w)));lyaSave();openLayout()};
   $("#lyRec").onclick=()=>setShown(LIVE_REC);$("#lyNone").onclick=()=>setShown([]);if(typeof pw3LyPop==="function")pw3LyPop(setShown);$("#lyAll").onclick=()=>setShown(WIDGETS);
-  document.querySelectorAll("#dBody [data-show]").forEach(b=>b.onclick=()=>{const w=b.dataset.show;HIDDEN.has(w)?HIDDEN.delete(w):HIDDEN.add(w);store.set("pw.hiddenW",[...HIDDEN]);applyLayout();openLayout()});
-  document.querySelectorAll("#dBody [data-cfg]").forEach(b=>b.onclick=()=>openWidgetCfg(b.dataset.cfg));
-  const sc=$("#lyList"),st=openLayout.scroll;if(sc&&st!=null)sc.scrollTop=st;if(sc)sc.onscroll=()=>{openLayout.scroll=sc.scrollTop};
-  if($("#drawer").hidden){openLayout.scroll=0;if(sc)sc.scrollTop=0;$("#drawer").hidden=false;$("#dClose").focus()}if(typeof pw3LyTop==="function")pw3LyTop()}
+  $("#lyShow").onclick=()=>{HIDDEN.has(w)?HIDDEN.delete(w):HIDDEN.add(w);lyaSave();openLayout()};
+  document.querySelectorAll("#dBody [data-col]").forEach(b=>b.onclick=()=>{lyaSetCol(w,b.dataset.col);HIDDEN.delete(w);lyaSave();openLayout()});
+  document.querySelectorAll("#dBody [data-wd]").forEach(b=>b.onclick=()=>{lyaSetWidth(w,+b.dataset.wd);openLayout()});
+  const cf=$("#lyCfg");if(cf)cf.onclick=()=>{lyaHover(null);openWidgetCfg(w)};
+  $("#lyList").onclick=e=>{const t=e.target.closest("#lyHit [data-tile],#lyPool [data-tile]");if(t){LYA.sel=t.dataset.tile;openLayout();if(innerWidth<=820)$("#dBody").scrollTo({top:0,behavior:"smooth"})}};
+  const pl=$("#lyPool");pl.onpointerover=e=>{const c=e.target.closest("[data-tile]");if(c&&e.pointerType!=="touch"&&!LYA.drag&&LYA.hover!==c.dataset.tile)lyaHover(c.dataset.tile,c)};
+  pl.onpointerout=e=>{const c=e.target.closest("[data-tile]");if(c&&!c.contains(e.relatedTarget))lyaHover(null)};
+  pl.onfocusin=e=>{const c=e.target.closest("[data-tile]");if(c)lyaHover(c.dataset.tile,c)};pl.onfocusout=()=>lyaHover(null);
+  lyaDragWire();
+  if($("#drawer").hidden){$("#drawer").hidden=false;$("#dClose").focus()}if(typeof pw3LyTop==="function")pw3LyTop();
+  LYA.hitKey="";lyaHover(null);lyaPeek([HIDDEN.has(w)?w:null]);lyaPaint();setTimeout(()=>{LYA.hitKey="";lyaPaint()},90);lyaLive()}
+addEventListener("resize",()=>{if($("#lyDesk")&&!$("#drawer").hidden){LYA.hitKey="";lyaPaint()}});
 /* each overlay's own settings beyond its title and opacity (the agent's ovsettings.go and the native overlays read the
    same keys): a list of [field, kind, label, choices] under its ui key; b a switch, c one choice, m several */
 const T3=(en,es,pt)=>Tx(en,es,null,pt);
@@ -6074,7 +6193,7 @@ UI_DEFAULTS.cmp.ref=null;
 /* ---------- Live blocks fill every row ---------- */
 /* Blocks fill each row. A block you resized keeps exactly the width you gave it;
    only the other blocks of its row stretch to fill the gap. */
-function packGrid(){if(OV.on)return;const grid=$("#liveGrid");if(!grid)return;const panels=[...grid.children].filter(p=>p.classList.contains("wpanel")&&!p.hidden&&!p.classList.contains("dragging"));
+function packGrid(){if(OV.on)return;const grid=$("#liveGrid");if(!grid)return;const panels=[...grid.children].filter(p=>p.classList.contains("wpanel")&&!p.hidden&&!p.dataset.lypeek&&!p.classList.contains("dragging"));
   const user=p=>WSIZE[p.dataset.w];
   if(innerWidth<=1020){panels.forEach(p=>p.style.gridColumn=user(p)?"span "+Math.min(12,user(p)):"");return}
   let row=[],sum=0;const flush=()=>{if(!row.length)return;const sp=row.map(r=>r.n),auto=row.map((r,k)=>user(r.p)?-1:k).filter(k=>k>=0);let left=12-sum,i=0;while(left>0&&auto.length){sp[auto[i%auto.length]]++;left--;i++}row.forEach((r,k)=>r.p.style.gridColumn="span "+sp[k]);row=[];sum=0};
@@ -12096,39 +12215,83 @@ html[data-theme="dark"]:not(.ov,.ovwin){--pw3-title:#c3cad6}
   :root:not(.ov) #v-live [data-w=timing] .mid{font-size:22px!important}
   :root:not(.ov) #v-live [data-w=dash] .gearbox>div:not(.bars),:root:not(.ov) #v-live [data-w=dash]>.label,:root:not(.ov) #v-live [data-w=dash] .dcrow>span{flex:1 1 calc(25% - 6px)!important;max-width:calc(25% - 4.5px)}
 }
-/* Telemetry's Layout window: always whole on the screen. A card in the middle on computers, the whole screen on phones,
-   under the DEMO/BETA banner; the title, the presets and Reset stay put and the list of panels scrolls */
+/* Telemetry's Layout window, the Desk map: always whole on the screen. A wide card in the middle on computers (the
+   desk and the card beside it, nothing scrolls), the whole screen on phones (the desk, the card and Hidden panels one
+   under the other), under the DEMO/BETA banner */
 #drawer:has(#lyList){z-index:45}
-#drawer:has(#lyList) .drawer-panel{position:fixed;left:50%;top:calc(var(--ly-top,0px) + 16px);bottom:auto;right:auto;transform:translateX(-50%);width:min(760px,calc(100vw - 32px))!important;max-height:calc(100dvh - var(--ly-top,0px) - 32px);display:flex;flex-direction:column;overflow:hidden;padding:0;background:var(--surface);border:1px solid var(--line2);border-radius:10px;box-shadow:0 24px 60px rgba(0,0,0,.55)}
-html.ownframe #drawer:has(#lyList) .drawer-panel{top:calc(max(var(--ly-top,0px),53px) + 16px);max-height:calc(100dvh - max(var(--ly-top,0px),53px) - 32px)}
-#drawer:has(#lyList) .drawer-panel>.vhead{flex:none;display:flex;flex-wrap:nowrap!important;align-items:flex-start;justify-content:space-between;gap:12px;margin:0!important;padding:14px 16px 12px;border-bottom:1px solid var(--line)}
-#drawer:has(#lyList) .drawer-panel>.vhead>div:first-child{flex:1;min-width:0}
+#drawer:has(#lyList) .drawer-panel{position:fixed;left:50%;top:calc(var(--ly-top,0px) + 16px);bottom:auto;right:auto;transform:translateX(-50%);width:min(1320px,calc(100vw - 32px))!important;height:calc(100dvh - var(--ly-top,0px) - 32px);max-height:none;display:flex;flex-direction:column;overflow:hidden;padding:0;background:var(--surface);border:1px solid var(--line2);border-radius:10px;box-shadow:0 24px 60px rgba(0,0,0,.55)}
+html.ownframe #drawer:has(#lyList) .drawer-panel{top:calc(max(var(--ly-top,0px),53px) + 16px);height:calc(100dvh - max(var(--ly-top,0px),53px) - 32px)}
+#drawer:has(#lyList) .drawer-panel>.vhead{flex:none;display:flex;flex-wrap:nowrap!important;align-items:center;justify-content:space-between;gap:12px;margin:0!important;padding:12px 16px;border-bottom:1px solid var(--line)}
+#drawer:has(#lyList) .drawer-panel>.vhead>div:first-child{flex:1;min-width:0;display:flex;align-items:baseline;gap:14px;flex-wrap:wrap}
 #drawer:has(#lyList) #dTitle{margin:0;font:700 22px/1.1 var(--f-display)!important;letter-spacing:.06em;text-transform:uppercase}
-#drawer:has(#lyList) #dSub{margin:4px 0 0;font-size:12.5px;color:var(--muted)}
+#drawer:has(#lyList) #dSub{margin:0;font:500 12px/1.2 var(--f-data);color:var(--muted)}
 #drawer:has(#lyList) #dClose{flex:none;width:34px;height:34px}
 #drawer:has(#lyList) #dBody{flex:1 1 auto;min-height:0;display:flex;flex-direction:column}
 #drawer:has(#lyList) .ly-top{flex:none;padding:12px 16px 0}
-#drawer:has(#lyList) .ly-top .frow{gap:6px;flex-wrap:wrap}
-#drawer:has(#lyList) .ly-top .btn.small{min-height:32px;padding:6px 12px;font:600 12.5px/1 var(--f-body);background:var(--surface2);border:1px solid var(--line2);border-radius:6px;color:var(--fg)}
+#drawer:has(#lyList) .ly-top .frow{gap:6px;flex-wrap:wrap;margin:0}
+#drawer:has(#lyList) .lyA .btn.small,#drawer:has(#lyList) .ly-top .btn.small{min-height:32px;padding:6px 12px;font:600 12.5px/1 var(--f-body);background:var(--surface2);border:1px solid var(--line2);border-radius:6px;color:var(--fg)}
 #drawer:has(#lyList) .ly-top .btn.small:disabled{opacity:.45;cursor:default}
-#drawer:has(#lyList) #lyPopNote{margin:-4px 0 10px;font-size:12px}
-#drawer:has(#lyList) #lyList{flex:1 1 auto;min-height:80px;overflow-y:auto;overscroll-behavior:contain;margin:0 16px;padding:0 12px;background:var(--bg);border:1px solid var(--line2);border-radius:8px}
-#drawer:has(#lyList) #lyList .lyrow{display:flex;align-items:center;flex-wrap:wrap;gap:6px 8px;padding:8px 0;border-bottom:1px solid var(--line)}
-#drawer:has(#lyList) #lyList .lyrow:last-child{border-bottom:0}
-#drawer:has(#lyList) #lyList .lyrow>.s{flex:1 1 220px;min-width:0;display:flex;align-items:center;flex-wrap:wrap;gap:4px 6px;font-size:13.5px}
-#drawer:has(#lyList) #lyList .pin{min-height:30px;padding:5px 10px;border-radius:6px;font:500 12px/1 var(--f-data)}
-#drawer:has(#lyList) #lyList .pin[aria-pressed="true"]{background:color-mix(in srgb,var(--accent) 16%,transparent);border-color:var(--accent);color:var(--accent)}
-#drawer:has(#lyList) .ly-foot{flex:none;display:flex;justify-content:flex-end;gap:8px;padding:12px 16px;border-top:1px solid var(--line);margin-top:12px}
+#drawer:has(#lyList) .ly-foot{flex:none;display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;padding:12px 16px;border-top:1px solid var(--line);margin-top:12px}
+.lyA{flex:1 1 auto;min-height:0;display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:12px;padding:12px 16px 0}
+.lyA-main{display:flex;flex-direction:column;min-width:0;min-height:0}
+.lyA-cols{position:relative;flex:none;height:18px}
+.lyA-cols>span{position:absolute;top:0;padding:0 6px;font:700 11px/16px var(--f-display);letter-spacing:.12em;text-transform:uppercase;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lyA-desk{position:relative;flex:1 1 auto;min-height:0;background:var(--bg);border:1px solid var(--line2);border-radius:8px;overflow:hidden}
+.lyA-desk.over{border-color:var(--accent)}
+.lyA-scr,.lyA-hit{position:absolute;inset:0}
+.lyA-scr{overflow:hidden}
+.lyA-zone{position:absolute;top:4px;bottom:4px;border-radius:6px;pointer-events:none}
+.lyA-zone.over{background:color-mix(in srgb,var(--accent) 10%,transparent);outline:1px dashed var(--accent)}
+.lyA-tile{position:absolute;margin:0;padding:0;background:transparent;border:1px solid transparent;border-radius:7px;cursor:grab;touch-action:none;color:inherit;min-width:0}
+.lyA-tile:hover{border-color:var(--muted);background:rgba(255,255,255,.03)}
+.lyA-tile.sel{border:2px solid var(--accent);box-shadow:0 0 0 1px rgba(0,0,0,.6)}
+.lyA-tile.drag,.lyA-chip.drag{opacity:.45}
+.lyA-tile.ins-b{box-shadow:inset 4px 0 0 var(--accent)}.lyA-tile.ins-a{box-shadow:inset -4px 0 0 var(--accent)}
+.lyA-tile>span{position:absolute;left:2px;top:2px;max-width:calc(100% - 4px);padding:4px 7px 5px;border-radius:5px;background:rgba(8,10,15,.92);color:var(--fg);font:600 10px/1.2 var(--f-body);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;pointer-events:none}
+.lyA-tile.thin>span{display:none}
+.lyA-side{min-width:0;min-height:0;overflow-y:auto;overscroll-behavior:contain;display:flex;flex-direction:column;gap:8px}
+.lyA-card{display:flex;flex-direction:column;gap:7px;padding:10px;border:1px solid var(--line2);border-radius:8px;background:var(--surface2)}
+.lyA-pv{position:relative;flex:none;height:160px;border:1px solid var(--line2);border-radius:7px;background:var(--bg);overflow:hidden}
+.lyA-nm{display:flex;align-items:center;justify-content:space-between;gap:8px;min-width:0}
+.lyA-nm h3{margin:0;font:600 16px/1.25 var(--f-body);min-width:0;overflow-wrap:anywhere}
+.lyA-sw{position:relative;flex:none;width:38px;height:22px;padding:0;border-radius:999px;border:1px solid var(--line2);background:var(--bg);cursor:pointer}
+.lyA-sw::after{content:"";position:absolute;top:3px;left:3px;width:14px;height:14px;border-radius:50%;background:var(--muted);transition:transform .15s,background .15s}
+.lyA-sw[aria-checked="true"]{background:color-mix(in srgb,var(--accent) 30%,var(--bg));border-color:var(--accent)}
+.lyA-sw[aria-checked="true"]::after{transform:translateX(16px);background:var(--accent)}
+.lyA-tags{display:flex;flex-wrap:wrap;align-items:center;gap:4px}
+.lyA-st{margin-left:auto;font:500 11px/1 var(--f-data);color:var(--muted)}
+.lyA-lbl{font:700 12px/1.2 var(--f-display);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.lyA-lbl .mono{letter-spacing:0;text-transform:none;color:var(--fg)}
+.lyA-seg{display:flex;border:1px solid var(--line2);border-radius:6px;overflow:hidden}
+.lyA-seg>button{flex:1 1 0;min-width:0;border:0;background:none;color:var(--muted);font:500 11.5px/1 var(--f-data);padding:8px 4px;cursor:pointer;white-space:nowrap}
+.lyA-seg>button+button{border-left:1px solid var(--line2)}
+.lyA-seg>button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
+.lyA-cfg{align-self:flex-start}
+.lyA-pool{display:flex;flex-wrap:wrap;gap:5px;min-height:40px;padding:6px;border:1px dashed var(--line2);border-radius:8px}
+.lyA-pool.over{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 6%,transparent)}
+.lyA-chip{padding:4px 7px;border-radius:5px;border:1px solid var(--line2);background:var(--surface2);color:var(--muted);font:500 12px/1.2 var(--f-body);cursor:grab;touch-action:none;white-space:nowrap}
+.lyA-pool.many{gap:4px;padding:5px}.lyA-pool.many .lyA-chip{padding:3px 6px;font-size:11.5px}
+.lyA-chip:hover,.lyA-chip:focus-visible{color:var(--fg);border-color:var(--muted)}
+.lyA-chip.sel{color:var(--fg);border-color:var(--accent)}
+.lyA-none{font:500 12px/1.4 var(--f-data);color:var(--muted)}
+.lyA-hover{position:fixed;z-index:60;width:300px;height:200px;display:flex;flex-direction:column;gap:6px;padding:8px;background:var(--surface);border:1px solid var(--line2);border-radius:8px;box-shadow:0 16px 40px rgba(0,0,0,.6);pointer-events:none}
+.lyA-hover>b{font:700 12px/1.2 var(--f-display);letter-spacing:.08em;text-transform:uppercase;color:var(--fg)}
+.lyA-hover>.lyA-pv{flex:1 1 auto;height:auto}
+@media (max-height:860px) and (min-width:821px){.lyA-pv{height:124px}}
+@media (max-height:700px) and (min-width:821px){.lyA-pv{height:96px}}
 @media (max-width:820px){
-  #drawer:has(#lyList) .drawer-panel{left:0;right:0;top:var(--ly-top,0px);bottom:0;transform:none;width:100%!important;max-height:none;border-radius:0;border:0;box-shadow:none}
-  #drawer:has(#lyList) .drawer-panel>.vhead{padding:calc(12px + env(safe-area-inset-top,0px)) 16px 10px}
+  #drawer:has(#lyList) .drawer-panel{left:0;right:0;top:var(--ly-top,0px);bottom:0;transform:none;width:100%!important;height:auto;border-radius:0;border:0;box-shadow:none}
+  #drawer:has(#lyList) .drawer-panel>.vhead{padding:calc(10px + env(safe-area-inset-top,0px)) 12px 10px}
   #drawer:has(#lyList) #dTitle{font-size:20px!important}
-  #drawer:has(#lyList) #lyList{margin:0 12px;padding:0 10px}
+  #drawer:has(#lyList) #dBody{overflow-y:auto;overscroll-behavior:contain}
   #drawer:has(#lyList) .ly-top{padding:10px 12px 0}
-  #drawer:has(#lyList) .ly-foot{padding:10px 12px calc(10px + env(safe-area-inset-bottom,0px));margin-top:10px}
-  #drawer:has(#lyList) #lyList .lyrow>.s{flex-basis:100%}
+  #drawer:has(#lyList) .ly-foot{padding:10px 12px calc(10px + env(safe-area-inset-bottom,0px));margin-top:12px}
+  #drawer:has(#lyList) .ly-foot>.btn{flex:1 1 auto;justify-content:center}
+  .lyA{display:flex;flex-direction:column;flex:none;padding:10px 12px 0}
+  .lyA-desk{flex:none}
+  .lyA-side{overflow:visible;order:-1}
+  .lyA-pv{height:150px}
 }
-@media (max-height:560px) and (min-width:821px){#drawer:has(#lyList) .ly-top .note:not(#lyPopNote){display:none}#drawer:has(#lyList) #dSub{display:none}}
 </style>
 <script id="pw3-live-js">
 /* Pit Wall Workspace: live helpers. Telemetry's default arrangement is the Workspace desk: the Relative and the
@@ -12149,7 +12312,7 @@ const pw3ColOf=w=>PW3_COL[w]||PW3_SLOT[w]||"M";
 /* the desk: three columns (the middle one in six tracks, the right one in two), each panel spanning as many short rows
    as its height, the panels of a group side by side with one height */
 function pw3Mason(){const grid=$("#liveGrid");if(!grid||grid.hidden)return;
-  const panels=[...grid.children].filter(p=>p.classList.contains("wpanel")&&!p.hidden&&!p.classList.contains("dragging"));
+  const panels=[...grid.children].filter(p=>p.classList.contains("wpanel")&&!p.hidden&&!p.dataset.lypeek&&!p.classList.contains("dragging"));
   const vis=new Set(panels.map(p=>p.dataset.w)),place={},grp={};
   PW3_GROUPS.forEach((g,gi)=>{const m=g.filter(w=>vis.has(w)&&!PW3_COL[w]);if(m.length<2)return;const c=PW3_SLOT[m[0]],wd=(c==="R"?2:6)/m.length,s0=c==="R"?8:2;
     m.forEach((w,k)=>{place[w]=(s0+k*wd)+"/"+(s0+(k+1)*wd);grp[w]=gi})});
@@ -12161,7 +12324,7 @@ function pw3Mason(){const grid=$("#liveGrid");if(!grid||grid.hidden)return;
   const e=$("#liveEmpty");if(e){e.style.gridColumn="1/-1";e.style.gridRow=""}}
 /* the panels fill each row (the classic grid), or the desk */
 function packGrid(){if(OV.on)return;const grid=$("#liveGrid");if(!grid)return;const ws=pw3WsOn();grid.classList.toggle("pw3ws",ws);
-  const panels=[...grid.children].filter(p=>p.classList.contains("wpanel")&&!p.hidden&&!p.classList.contains("dragging"));
+  const panels=[...grid.children].filter(p=>p.classList.contains("wpanel")&&!p.hidden&&!p.dataset.lypeek&&!p.classList.contains("dragging"));
   if(ws){pw3Mason();return}
   [...grid.children].forEach(p=>{p.style.gridRow="";p.classList.remove("pw3g")});
   const user=p=>WSIZE[p.dataset.w];
@@ -12227,11 +12390,11 @@ function pw3TyreCards(){const box=$("#pw3Tyres");if(!box||OV.on)return;const ty=
 (function pw3LiveR2(){if(typeof OV==="undefined"||OV.on)return;const t=$("#tyres");if(t&&!$("#pw3Tyres")){const d=document.createElement("div");d.className="pw3-tyres";d.id="pw3Tyres";t.after(d)}
   setInterval(()=>{if(CUR_VIEW==="live")pw3TyreCards()},500)})();
 /* Layout's "Most used by the community": the panels at least half of the drivers show (GET /community/live/popular,
-   livepopular.js), off with one sentence until enough drivers have used Telemetry */
+   livepopular.js), off until enough drivers have used Telemetry, with one sentence saying so as the button's tooltip */
 const PW3_POP={at:0,v:null,busy:false};
 function pw3LyPop(setShown){const b=$("#lyPop"),note=$("#lyPopNote");if(!b)return;
   const paint=()=>{const v=PW3_POP.v,ok=!!(v&&v.ready&&v.top&&v.top.some(w=>WIDGETS.includes(w)));b.disabled=!ok;
-    if(note){note.hidden=ok||PW3_POP.busy;note.textContent=ok?"":Tx("Not enough drivers yet to know what is used most.","Aún no hay suficientes pilotos para saber qué se usa más.",null,"Ainda não há pilotos suficientes para saber o que é mais usado.")}};
+    const t=ok||PW3_POP.busy?"":Tx("Not enough drivers yet to know what is used most.","Aún no hay suficientes pilotos para saber qué se usa más.",null,"Ainda não há pilotos suficientes para saber o que é mais usado.");if(t)b.title=t;else b.removeAttribute("title");if(note)note.hidden=true};
   b.onclick=()=>{const v=PW3_POP.v;if(!v||!v.ready)return;setShown([...new Set(["flag",...v.top.filter(w=>WIDGETS.includes(w))])])};
   paint();if(PW3_POP.busy||Date.now()-PW3_POP.at<30*60e3)return;PW3_POP.busy=true;paint();
   cloudGet("/community/live/popular").then(v=>{PW3_POP.v=v&&typeof v==="object"?v:null}).catch(()=>{PW3_POP.v=null}).finally(()=>{PW3_POP.busy=false;PW3_POP.at=Date.now();if($("#lyPop")===b)paint()})}
@@ -12243,7 +12406,7 @@ addEventListener("resize",()=>{try{if(!$("#drawer").hidden)pw3LyTop()}catch(e){}
 const PW3_LU={t0:0};
 function pw3LiveUse(){let off=true;try{off=demoOn()||isAdmin()}catch(e){}if(off)return;
   const d=new Date().toISOString().slice(0,10);let st=store.get("pw.liveUse",null);if(!st||st.d!==d)st={d,k:[]};
-  const keys=["live:mode."+LIVE_MODE];const g=$("#liveGrid");if(g&&!g.hidden)g.querySelectorAll(":scope>.wpanel[data-w]").forEach(p=>{if(!p.hidden&&p.offsetParent!==null)keys.push("live:"+p.dataset.w.toLowerCase())});
+  const keys=["live:mode."+LIVE_MODE];const g=$("#liveGrid");if(g&&!g.hidden)g.querySelectorAll(":scope>.wpanel[data-w]").forEach(p=>{if(!p.hidden&&!p.dataset.lypeek&&p.offsetParent!==null)keys.push("live:"+p.dataset.w.toLowerCase())});
   let n=0;keys.forEach(k=>{if(!st.k.includes(k)){st.k.push(k);usageCount(k);n++}});if(n)store.set("pw.liveUse",st)}
 setInterval(()=>{try{if(OV.on||CUR_VIEW!=="live"||document.visibilityState!=="visible"){PW3_LU.t0=0;return}if(!PW3_LU.t0)PW3_LU.t0=Date.now();if(Date.now()-PW3_LU.t0>=20e3)pw3LiveUse()}catch(e){}},5000);
 </script>

@@ -196,7 +196,7 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   times DriverCarMaxFuelPct, `sessions.tank`), else what the driver typed for that car (`pw.tank.<car>`), else the one
   most drivers of that car and track had.
 - Race fuel learns from everyone (GET /community/fuel?game&trackId&carId, `cloud/src/fuel.js`): each session keeps the
-  fuel its laps took (`sessions.fuel`, `fuel_n`, `fuel_t`, the same laps as `fuelUse`; migration 0101 filled the old
+  fuel its laps took (`sessions.fuel`, `fuel_n`, `fuel_t`, the same laps as `fuelUse`; migration 0102 filled the old
   ones, the daily pass at 03:00 keeps the last two days), and the answer is the median driver of that car and track over
   the last year (each driver once, their sessions' laps together), with three drivers at least, kept an hour in the
   server's cache. `fuelUse` (ctx.comm) uses it alone before the driver has two laps here, and mixes it with theirs as if

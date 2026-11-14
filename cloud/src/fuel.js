@@ -1,7 +1,7 @@
 // Race fuel learns from everyone (GET /community/fuel?game&trackId&carId): what a lap of this car and track takes for
 // the drivers who drove it, so the Race fuel panel of every device has a figure before the driver's own laps and a
 // steadier one with few of them (the analysis module's fuelUse mixes it in, ctx.comm).
-//   Each session keeps its own figure (sessions.fuel, fuel_n, fuel_t: FUEL_SUMS below, migration 0101), so this reads
+//   Each session keeps its own figure (sessions.fuel, fuel_n, fuel_t: FUEL_SUMS below, migration 0102), so this reads
 //   one row per session of the combination, never a lap. Each driver counts once (their sessions' laps together), the
 //   answer is the median driver, and it shows only with three drivers at least (fewer: {drivers} alone).
 // → { drivers, laps, perLap, lapTime, tank } (litres, seconds; tank the one most sessions had, else null)

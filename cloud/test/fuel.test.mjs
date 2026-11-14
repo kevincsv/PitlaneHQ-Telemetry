@@ -1,4 +1,4 @@
-// node cloud/test/fuel.test.mjs: Race fuel learns from everyone. Each session keeps its fuel a lap (migration 0101, the
+// node cloud/test/fuel.test.mjs: Race fuel learns from everyone. Each session keeps its fuel a lap (migration 0102, the
 // daily FUEL_SUMS), GET /community/fuel gives the median driver of a car and track with three drivers at least, and the
 // analysis module mixes it with the driver's own laps (fuelUse, ctx.comm)
 import assert from "node:assert/strict";
@@ -25,7 +25,7 @@ const ses = (id, up, started, laps, tank = 60, track = 1, car = 2, game = "iraci
 // an old session: the migration fills it. The slow lap (pit stop, safety car) and the refuelled one (no fuel) are left out
 ses("old", "acct:a", now - 864e5 * 30, [[100, 2.5], [101, 2.6], [130, 1.2], [100.5, 0]]);
 ses("one", "acct:b", now - 864e5 * 30, [[100, 2.4]]);
-db.exec(readFileSync(new URL("../migrations/0101_community_fuel.sql", import.meta.url), "utf8"));
+db.exec(readFileSync(new URL("../migrations/0102_community_fuel.sql", import.meta.url), "utf8"));
 const row = (id) => ({ ...db.prepare("SELECT fuel, fuel_n, fuel_t FROM sessions WHERE id=?").get(id) });
 assert.deepEqual(row("old"), { fuel: 2.55, fuel_n: 2, fuel_t: 100.5 });
 assert.deepEqual(row("one"), { fuel: null, fuel_n: null, fuel_t: null }, "one lap is not enough");

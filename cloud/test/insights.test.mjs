@@ -66,7 +66,18 @@ assert.deepEqual(PW.tyreLaps([lap(1, { tt }), lap(2)]), [{ n: 1, tt, avg: [82, 8
 // race fuel: 2.5 l a lap, a 60 l tank (24 laps), a 50-lap race needs 127.5 l with one lap spare: two stops of 33.8 l
 const u = PW.fuelUse([lap(1), lap(2, { fuel: 2.4 }), lap(3, { fuel: 2.6 }), lap(4, { fuel: 9, slow: 30 })], { tank: 60 });
 assert.deepEqual([u.perLap, u.maxLap, u.laps, u.tank], [2.5, 2.6, 3, 60], "a slow lap behind the safety car is left out");
-assert.deepEqual(PW.fuelPlan(u, { laps: 50 }), { laps: 50, need: 127.5, perTank: 24, stops: 2, add: 33.8, start: 60, stint: 17, tank: 60 });
+assert.deepEqual(PW.fuelPlan(u, { laps: 50 }), { laps: 50, need: 127.5, perTank: 24, stops: 2, add: 33.8, adds: [33.8, 33.8], start: 60, stint: 17, stints: [17, 17, 16], tank: 60 });
+// a stop comes only between laps: a tank of 10.9 laps lasts 10 (9 with the spare), so 31 laps take three stops, not two
+const whole = PW.fuelPlan({ perLap: 1, tank: 10.9, lapTime: 90 }, { laps: 31 });
+assert.deepEqual([whole.stops, whole.perTank, whole.stints], [3, 10, [8, 8, 8, 7]]);
+// every plan, followed lap by lap, never runs dry, never overfills the tank, keeps a lap at the flag and has no stop to spare
+for (let t = 2.5; t < 40; t += 0.37) for (let n = 1; n < 200; n += 3) {
+  const p = 2.37, tank = t * p, r = PW.fuelPlan({ perLap: p, tank, lapTime: 90 }, { laps: n }), adds = r.add != null ? Array(r.stops).fill(r.add) : r.adds, tol = 0.05 * (r.stops + 2);
+  let f = r.start;
+  r.stints.forEach((k, i) => { if (i) { f += adds[i - 1]; assert.ok(f <= tank + tol, `overfilled ${t} ${n}`); } f -= k * p; assert.ok(f >= -tol, `ran dry ${t} ${n}`); });
+  assert.ok(f >= p - tol && r.stints.reduce((a, b) => a + b, 0) === n, `spare ${t} ${n}`);
+  if (r.stops) assert.ok((r.stops - 1) * r.perTank + Math.floor(tank / p - 1 + 1e-9) < n, `a stop too many ${t} ${n}`);
+}
 const shortRace = PW.fuelPlan(u, { laps: 10 });
 assert.equal(shortRace.stops, 0); assert.equal(shortRace.start, 27.5);
 assert.equal(PW.fuelPlan(u, { min: 30 }).laps, Math.floor(1800 / u.lapTime) + 1, "a timed race counts its laps at your pace");

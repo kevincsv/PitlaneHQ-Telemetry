@@ -11385,8 +11385,8 @@ document.addEventListener("pointerover",e=>{if(e.pointerType!=="mouse"||!e.targe
 #pw7Gq .pw7-gc:hover{border-color:var(--muted)}#pw7Gq .pw7-gc.on{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}#pw7Gq .pw7-gc:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 #pw7Gq .pw7-gc b{font:700 22px/1.1 var(--f-display);text-transform:uppercase;letter-spacing:.03em;margin-top:auto;color:var(--fg)}#pw7Gq .pw7-gc small{font-size:13px;color:var(--muted)}
 #pw7Gq .pw7-gc em{position:absolute;top:12px;right:12px;font:600 10.5px var(--f-body);font-style:normal;text-transform:uppercase;letter-spacing:.05em;color:var(--accent)}
-#pw7Gq .pw7-logo{display:grid;place-items:center;width:52px;height:52px;border-radius:10px;font:800 17px var(--f-display);letter-spacing:.02em;color:#fff;background:#222}
-#pw7Gq .pw7-iracing{background:#0b2a6b;box-shadow:inset 0 -4px 0 #e2231a}#pw7Gq .pw7-lmu{background:#111;box-shadow:inset 0 0 0 2px #c8a24a}
+#pw7Gq .pw7-logo{display:grid;place-items:center;min-width:52px;width:max-content;padding:0 12px;height:52px;border-radius:10px;font:800 17px var(--f-display);letter-spacing:.02em;color:#fff;background:#222}
+#pw7Gq .pw7-iracing{background:#111;box-shadow:inset 0 0 0 2px #c8a24a}#pw7Gq .pw7-lmu{background:#111;box-shadow:inset 0 0 0 2px #c8a24a}
 @media (max-width:480px){#pw7Gq .pw7-gq-b{grid-template-columns:minmax(0,1fr)}#pw7Gq .pw7-gc{min-height:110px}}
 #spDlg .pw7-gp{display:inline-block;vertical-align:middle;margin-left:8px;font:600 11px var(--f-body);text-transform:uppercase;letter-spacing:.05em;color:var(--accent);border:1px solid var(--accent);border-radius:999px;padding:1px 8px}
 /* driver notes at the foot of My sessions */
@@ -11682,7 +11682,7 @@ async function pw7Ready(){for(let i=0;i<50&&(CLOUD.sessions===null||CLOUD.game!=
 async function pw7GameAsk(then){if(PW7_ASK)return;PW7_ASK=true;let n={};try{n=await pw7Counts()}catch(e){}PW7_ASK=false;
   const gs=Object.keys(n).filter(g=>n[g]>0),go=async g=>{store.set("pw.anGame",g);PW7_PILL=GAME_NAMES[g]||"";if(vGame()!==g)toGame(g);await pw7Ready();then()};
   if(gs.length<2){PW7_PILL="";if(gs.length===1&&vGame()!==gs[0])toGame(gs[0]);await pw7Ready();return then()}
-  const last=store.get("pw.anGame","")||vGame(),T=Tx,logo={iracing:"iR",lmu:"LMU",acc:"ACC",ac:"AC"};
+  const last=store.get("pw.anGame","")||vGame(),T=Tx,logo={iracing:"iRacing",lmu:"LMU",acc:"ACC",ac:"AC"};
   let m=$("#pw7Gq");if(!m){m=document.createElement("div");m.id="pw7Gq";m.className="uidlg";document.body.appendChild(m)}
   const key=e=>{if(e.key==="Escape"){e.preventDefault();close()}},close=()=>{document.removeEventListener("keydown",key,true);m.hidden=true;m.innerHTML=""};document.addEventListener("keydown",key,true);
   const nS=k=>k>=200?T("200+ sessions","200+ sesiones",null,"200+ sessões"):T(`${k} ${k===1?"session":"sessions"}`,`${k} ${k===1?"sesión":"sesiones"}`,null,`${k} ${k===1?"sessão":"sessões"}`);

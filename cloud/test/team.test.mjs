@@ -129,6 +129,10 @@ assert.ok(!(await teamRoomMember(env, room, "mate3")));
 assert.ok(await teamRoomMember(env, room, "mate2"));
 assert.ok(!(await teamRoomMember(env, "nothex", "mate2")));
 
+// a removed driver cannot join again with the old invite link
+assert.equal((await call("mate3", "/team/join", "POST", { id, join, sealed: SEALED })).status, 403, "removed drivers stay out");
+await env.DB.prepare("DELETE FROM team_bans WHERE team=?1 AND account=?2").bind(id, "mate3").run();
+
 // leave: the owner's team passes to the oldest member; the last one deletes it with its log
 await call("mate3", "/team/join", "POST", { id, join, sealed: SEALED });
 fix("mate3", joinedAt + 30);

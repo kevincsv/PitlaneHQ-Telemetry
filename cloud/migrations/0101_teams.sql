@@ -34,3 +34,10 @@ CREATE TABLE IF NOT EXISTS team_log (
 );
 CREATE INDEX IF NOT EXISTS team_log_team_at ON team_log(team, at);
 CREATE INDEX IF NOT EXISTS team_log_account ON team_log(account);
+-- the drivers the owner removed: they cannot join again with the invite link they still have
+CREATE TABLE IF NOT EXISTS team_bans (
+  team TEXT NOT NULL,
+  account TEXT NOT NULL,
+  at INTEGER NOT NULL,
+  PRIMARY KEY (team, account)
+);

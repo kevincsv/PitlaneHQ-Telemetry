@@ -66,6 +66,7 @@ async function dropMember(env, team, account) {
   if (!next) {
     await env.DB.batch([
       env.DB.prepare("DELETE FROM team_log WHERE team=?1").bind(team),
+      env.DB.prepare("DELETE FROM team_bans WHERE team=?1").bind(team),
       env.DB.prepare("DELETE FROM teams WHERE id=?1").bind(team),
     ]);
     return;
@@ -137,6 +138,8 @@ export async function teamRoute(req, env, url) {
     const t = await env.DB.prepare("SELECT id, name, join_hash FROM teams WHERE id=?1").bind(id).first();
     if (!t) return err("This team does not exist.", 404);
     if (!same(await joinHash(b.join), t.join_hash)) return err("This invite link is not valid.", 403);
+    if (await env.DB.prepare("SELECT 1 AS x FROM team_bans WHERE team=?1 AND account=?2").bind(id, acc.id).first())
+      return err("The team's owner removed you from this team.", 403);
     if (await memberOf(env, id, acc.id)) {
       // already in it (another device joined first): its sealed copy is the newest
       await env.DB.prepare("UPDATE team_members SET sealed=?3 WHERE team=?1 AND account=?2").bind(id, acc.id, b.sealed).run();
@@ -165,6 +168,7 @@ export async function teamRoute(req, env, url) {
     if (!who || !(await memberOf(env, id, who))) return err("This driver is not in the team.", 404);
     await kick(env, id, who);
     await dropMember(env, id, who);
+    await env.DB.prepare("INSERT OR REPLACE INTO team_bans (team, account, at) VALUES (?1,?2,?3)").bind(id, who, now).run();
     return json({ ok: true });
   }
   if (p === "/team/rename" && m === "POST") {

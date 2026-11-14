@@ -38,7 +38,7 @@ All routes need the account's session (Bearer); answers are JSON, errors `{error
 | `POST /team/create` | `{name, room, join, sealed}` | `{id}` (name 2 to 40 characters, at most 5 teams per account) |
 | `POST /team/join` | `{id, join, sealed}` | `{id, name}` (403 when `join` is wrong, 409 when the team has 12 members) |
 | `POST /team/leave` | `{id}` | `{ok}`; an owner who leaves passes the team to the oldest member; the last one deletes it |
-| `POST /team/remove` | `{id, member}` | `{ok}`, owner only |
+| `POST /team/remove` | `{id, member}` | `{ok}`, owner only; the driver cannot join again with the invite link (`team_bans`, 403) |
 | `POST /team/rename` | `{id, name}` | `{ok}`, owner only |
 | `POST /team/log` | `{id, key, sealed}` | `{ok}`: upserts the member's entry `key` (at most 48 KB, members only) |
 | `GET /team/log?id=&since=` | | `{log:[{id, account, name, key, at, sealed}]}`, the last 30 days, at most 300, newest first |

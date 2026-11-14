@@ -104,7 +104,7 @@ export async function refCheck(env, now = Date.now()) {
     if (p.days < INV.days || p.drives < INV.drives) continue;
     const same = await env.DB.prepare("SELECT 1 FROM referral_marks a JOIN referral_marks b ON b.h=a.h WHERE a.account_id=?1 AND b.account_id=?2 LIMIT 1").bind(r.invitee, r.inviter).first();
     if (same) { await settle(r, "refused", "same PC or connection"); continue; }
-    const year = await env.DB.prepare("SELECT COUNT(*) AS n FROM referrals WHERE inviter=?1 AND state='given' AND why IS NULL AND done>?2").bind(r.inviter, now - 365 * DAY).first();
+    const year = await env.DB.prepare("SELECT COUNT(*) AS n FROM referrals WHERE inviter=?1 AND state='given' AND (why IS NULL OR why='approved by hand') AND done>?2").bind(r.inviter, now - 365 * DAY).first();
     const capped = ((year && year.n) || 0) * INV.months >= INV.max;
     await giveMonths(env, r.invitee, INV.months, gate, now);
     if (!capped) await giveMonths(env, r.inviter, INV.months, gate, now);
@@ -135,7 +135,7 @@ async function inviteState(env, acc) {
   const out = {
     gate, code: code.toUpperCase(), link: code ? inviteLink(code) : "",
     rule: { days: INV.days, drives: INV.drives, within: INV.within, months: INV.months, max: INV.max },
-    friends, given: mine.filter((r) => r.state === "given" && !r.why).length, waiting: mine.filter((r) => r.state === "waiting").length,
+    friends, given: mine.filter((r) => r.state === "given" && (!r.why || r.why === "approved by hand")).length, waiting: mine.filter((r) => r.state === "waiting").length,
     // the months kept for when Pro starts, and the end of the Pro the invites gave
     banked: acc.ref_months || 0, proUntil: (acc.ref_pro_until || 0) > now ? acc.ref_pro_until : 0,
     canClaim: !me && now - (acc.created || 0) < INV.claimDays * DAY,
@@ -150,7 +150,7 @@ async function inviteState(env, acc) {
 // GET /community/invite (the card), POST /community/invite/claim {code} (a new account types a friend's code) and
 // GET /community/admin/invites (the counts on the admin page's Pro part)
 export async function referralRoutes(req, env, p, m, body) {
-  if (p !== "/invite" && p !== "/invite/claim" && p !== "/admin/invites") return null;
+  if (p !== "/invite" && p !== "/invite/claim" && p !== "/admin/invites" && p !== "/admin/invites/approve") return null;
   const acc = await sessionAccount(req, env);
   if (!acc) return err("sign in with your Pitlane HQ account", 401);
   if (p === "/invite" && m === "GET") {
@@ -171,6 +171,18 @@ export async function referralRoutes(req, env, p, m, body) {
     await env.DB.batch([env.DB.prepare(add).bind(acc.id, inviter.id, now), env.DB.prepare(add).bind(inviter.id, acc.id, now)]).catch(() => {});
     return json(await inviteState(env, { ...acc, ref_watch: 1 }));
   }
+  // an admin approves an invite refused for the same PC or connection (two people in the same house, who wrote to
+  // Support): both get their month now, as the hourly job would have given it
+  if (p === "/admin/invites/approve" && m === "POST") {
+    if (!isAdmin(env, acc.id)) return err("only the admins of this server can do this", 403);
+    const r = await env.DB.prepare("SELECT invitee, inviter FROM referrals WHERE invitee=?1 AND state='refused'").bind(String((body && body.invitee) || "")).first();
+    if (!r) return err("no refused invite for this account", 404);
+    const now = Date.now(), gate = await proGate(env);
+    await giveMonths(env, r.invitee, INV.months, gate, now);
+    await giveMonths(env, r.inviter, INV.months, gate, now);
+    await env.DB.prepare("UPDATE referrals SET state='given', why='approved by hand', done=?2 WHERE invitee=?1").bind(r.invitee, now).run();
+    return json({ ok: true });
+  }
   if (p === "/admin/invites" && m === "GET") {
     if (!isAdmin(env, acc.id)) return err("only the admins of this server can do this", 403);
     const c = (await env.DB.prepare("SELECT state, COUNT(*) AS n FROM referrals GROUP BY state").all()).results || [];
@@ -180,7 +192,12 @@ export async function referralRoutes(req, env, p, m, body) {
        GROUP BY r.inviter ORDER BY given DESC, n DESC LIMIT 10`
     ).all()).results || [];
     const by = Object.fromEntries(c.map((x) => [x.state, x.n]));
-    return json({ waiting: by.waiting || 0, given: by.given || 0, refused: by.refused || 0, expired: by.expired || 0, banked: (b && b.banked) || 0, active: (b && b.active) || 0, top, rule: INV });
+    // the refused ones, to approve by hand when they wrote to Support (the same house)
+    const refused = (await env.DB.prepare(
+      `SELECT r.invitee, r.inviter, r.done, a.alias AS friend, b.alias AS by FROM referrals r LEFT JOIN community_users a ON a.id=r.invitee
+       LEFT JOIN community_users b ON b.id=r.inviter WHERE r.state='refused' ORDER BY r.done DESC LIMIT 30`
+    ).all()).results || [];
+    return json({ waiting: by.waiting || 0, given: by.given || 0, refused: by.refused || 0, expired: by.expired || 0, refusedList: refused, banked: (b && b.banked) || 0, active: (b && b.active) || 0, top, rule: INV });
   }
   return err("not found", 404);
 }

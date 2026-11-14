@@ -37,6 +37,7 @@ export const ACTS = {
   watch_code: [N("Watch with a code", "Seguir con un código", "Acompanhar com um código"), N("Watched a driver with a share code", "Siguió a un piloto con un código", "Acompanhou um piloto com um código")],
   drinks: [N("DRINKS mode", "Modo DRINKS", "Modo DRINKS"), N("Used DRINKS mode", "Usó el modo DRINKS", "Usou o modo DRINKS")],
   feedback_button: [N("Feedback button", "Botón de opiniones", "Botão de opiniões"), N("Pressed the floating feedback button", "Pulsó el botón flotante de opiniones", "Tocou o botão flutuante de opiniões")],
+  invite_menu: [N("Invite a friend (button)", "Invitar a un amigo (botón)", "Convidar um amigo (botão)"), N("Opened Invite a friend from the feedback button", "Abrió Invitar a un amigo desde el botón de opiniones", "Abriu Convidar um amigo pelo botão de opiniões")],
   feedback_sent: [N("Feedback sent", "Opinión enviada", "Opinião enviada"), N("Sent an answer to Share your feedback", "Envió una respuesta a Danos tu opinión", "Enviou uma resposta a Dê sua opinião")],
   support_open: [N("Support chat opened", "Chat de soporte abierto", "Chat de suporte aberto"), N("Opened the support chat", "Abrió el chat de soporte", "Abriu o chat de suporte")],
   support_sent: [N("Message to support", "Mensaje a soporte", "Mensagem ao suporte"), N("Wrote to support", "Escribió a soporte", "Escreveu ao suporte")],
@@ -51,7 +52,7 @@ export const AREAS = [
   ["overlays", N("Overlays"), ["view:overlays", "act:overlay_open", "act:widget_settings", "view:revbeep"]],
   ["community", N("Community", "Comunidad", "Comunidade"), ["view:community", "view:leagues", "act:leaderboard", "act:track_page", "act:profile", "view:profile", "act:share_code", "act:watch_code", "act:voice_call", "act:share_card", "view:drinks", "act:drinks"]],
   ["planning", N("Planning", "Planificación", "Planejamento"), ["view:calendar", "view:plan", "view:notes"]],
-  ["help", N("Help and feedback", "Ayuda y opiniones", "Ajuda e opiniões"), ["act:feedback_button", "act:feedback_sent", "act:support_open", "act:support_sent", "act:support_reply", "act:support_logs", "act:whats_new", "view:news"]],
+  ["help", N("Help and feedback", "Ayuda y opiniones", "Ajuda e opiniões"), ["act:feedback_button", "act:invite_menu", "act:feedback_sent", "act:support_open", "act:support_sent", "act:support_reply", "act:support_logs", "act:whats_new", "view:news"]],
   ["account", N("Home and account", "Inicio y cuenta", "Início e conta"), ["view:home", "view:me", "view:account", "view:settings", "act:connect"]],
 ];
 const cap = (s) => s.charAt(0).toUpperCase() + s.slice(1).replace(/_/g, " ");

@@ -53,7 +53,9 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   running (`ref_pro_until`, its own column, so a purchase or a refund never touches it; `proOf` gives proSrc
   "invite"). Abuse: never one's own code, never two drivers inviting each other, only a new account types a code, and
   a friend seen on the same PC (the agent's `?pc=`), install or connection as their inviter (`referral_marks`, hashes
-  with the server's secret, kept 90 days) is refused. An inviter earns at most 12 months a year; their friend still
+  with the server's secret, kept 90 days) is refused. The card always says so, with Contact support for two people in the same house: Support checks it and an
+  admin approves it on the admin page's Pro part (Approve on each refused invite, POST `/community/admin/invites/approve`),
+  which gives both their month. An inviter earns at most 12 months a year; their friend still
   gets theirs. The card shows the code, Share your link and Copy code, how many were invited, are in their first week
   and the months earned, each friend's days so far ("4 of 7 days", Month earned, Not counted, Expired), who invited
   you, and the months saved or "Pro until" a date; during the beta it says the months start when Pro launches. The

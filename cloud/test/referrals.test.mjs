@@ -95,6 +95,17 @@ use("cccccccccccc", created, 7);
 await refCheck(env);
 assert.equal(ref("cccccccccccc").state, "refused");
 assert.equal(acc("cccccccccccc").ref_pro_until, 0);
+// an admin approves it by hand (the same house, after writing to Support): both get the month
+env.ADMINS = "aaaaaaaaaaaa";
+const ad = await call(tA, "/admin/invites");
+assert.equal(ad.j.refusedList[0].invitee, "cccccccccccc");
+const before0 = acc("aaaaaaaaaaaa").ref_pro_until;
+assert.equal((await call(tA, "/admin/invites/approve", "POST", { invitee: "cccccccccccc" })).status, 200);
+assert.equal(ref("cccccccccccc").state, "given"); assert.equal(ref("cccccccccccc").why, "approved by hand");
+assert.ok(acc("cccccccccccc").ref_pro_until > now); assert.equal(acc("aaaaaaaaaaaa").ref_pro_until, before0 + 30 * DAY);
+assert.equal((await call(tA, "/admin/invites/approve", "POST", { invitee: "cccccccccccc" })).status, 404, "once");
+assert.equal((await call(tB, "/admin/invites/approve", "POST", { invitee: "cccccccccccc" })).status, 403, "admins only");
+env.ADMINS = "";
 
 // with Pro on, a month goes straight on top of the one running
 const tD = await acct("dddddddddddd", created);

@@ -91,12 +91,15 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   and, while a session runs, the live bar under it (the PC's state and Open live telemetry), four numbers (the laps and
   the hours on track this month, from the account's sessions, the races this month and the best result), then two
   columns. On the left (sticky) the recent sessions as compact cards (the track's short name, best lap, car, laps, the
-  kind Race, Qualifying, Practice, Test drive, vs AI or DRINKS, a race's place and iRating change, how long ago); a race
-  opens its choice of summary or laps. On the right three equal boxes, the days you drove (the last 18 weeks with the
+  kind Race, Qualifying, Practice, Test drive, vs AI or DRINKS, a race's place and iRating change, how long ago; a race
+  session with no race summary read near it shows as a session with its Race pill); a race opens its choice of summary
+  or laps. On the right three equal boxes, the days you drove (the last 18 weeks with the
   months and weekdays, "N days in 4 months"), the licence summary as a table (Category, Licence, SR, iRating; a rated row
   draws its iRating over your races under it) and Your feedback (stars, a text box, Send to the feedback inbox, Chat
-  with support, then the small Invite a friend with the code, Share and your invites), and under them the leagues
-  (`leagues.md`). Pressing the days you drove (anywhere on the squares) opens them as a calendar on every device
+  with support, then the small Invite a friend with the code, Share and your invites, and while Pro has not started the line that the months earned start when it does), and
+  under them the leagues (`leagues.md`; with demo data on, six invented leagues from `pitwall-demo.js`). Below 1100 px
+  wide everything is one column. The look is the design's own (panels with Barlow Condensed titles, four separate number
+  cards, outlined uppercase kind pills). Pressing the days you drove (anywhere on the squares) opens them as a calendar on every device
   (`openDays`; the phones' Days you drove screen): one month in the same squares, bigger and numbered, brighter the more
   sessions that day, from six months back (or the first day driven) to this month with arrows or a swipe; the day pressed
   (else the last one driven) is outlined and its races and sessions are listed under the month, newest first, each

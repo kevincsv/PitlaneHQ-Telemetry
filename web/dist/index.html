@@ -9171,8 +9171,9 @@ function homeCleanHTML(){loadRatingsSoon();homeRacesHTML();homeActivityHTML();
   h+=`<div class="hl-kpis">${kp(Tx("Your laps this month","Tus vueltas este mes","Deine Runden diesen Monat","Suas voltas este mês"),nLaps.toLocaleString(loc),null,nSes?Tx(`in ${nSes} sessions`,`en ${nSes} sesiones`,`in ${nSes} Sitzungen`,`em ${nSes} sessões`):"")}${kp(Tx("Hours on track this month","Horas en pista este mes","Stunden auf der Strecke diesen Monat","Horas na pista este mês"),nSec?hTxt:"–",null,nDays?Tx(`${nDays} days driven`,`${nDays} días corriendo`,`${nDays} Tage gefahren`,`${nDays} dias correndo`):"")}
     ${kp(Tx("Races this month","Carreras este mes","Rennen diesen Monat","Corridas este mês"),nRaces,null,nRaces?Tx(`${nTop5} in the top 5`,`${nTop5} en el top 5`,`${nTop5} in den Top 5`,`${nTop5} no top 5`):"")}
     ${kp(Tx("Best result","Mejor resultado","Bestes Ergebnis","Melhor resultado"),bestR?"P"+bestR.finish:"–",null,bestR?(bestR.car||"")+" · "+(bestR.track||""):"","acc")}</div>`;
-  // recent sessions: the races and the other sessions (practice, qualifying, test drives) together, newest first
-  const sx=homeSes().filter(x=>sessKindOf(x)!=="race"),rows=[...races.map(r=>({t:r.when,r})),...sx.map(x=>({t:x.started,x}))].sort((a,b)=>b.t-a.t).slice(0,8);
+  // recent sessions: the races and the other sessions (practice, qualifying, test drives) together, newest first; a race
+  // session with no race summary near it (none read yet) shows as a session
+  const sx=homeSes().filter(x=>sessKindOf(x)!=="race"||!races.some(r=>Math.abs((r.when||0)-(x.started||0))<4*3600e3)),rows=[...races.map(r=>({t:r.when,r})),...sx.map(x=>({t:x.started,x}))].sort((a,b)=>b.t-a.t).slice(0,8);
   let sesH=`<section class="hl-sec hl-sessec hs3-ses"><div class="cl-h"><h2>${esc(Tx("Recent sessions","Sesiones recientes","Letzte Sitzungen","Sessões recentes"))}</h2><button type="button" class="cl-link" data-go="cloudlaps">${esc(Tx("See all","Ver todas","Alle","Ver todas"))}</button></div>${rows.length?homeRecent3(rows):`<p class="note">${esc(aGame()==="lmu"?Tx("No sessions in Le Mans Ultimate yet.","Aún no hay sesiones en Le Mans Ultimate.","Noch keine Sitzungen in Le Mans Ultimate.","Ainda não há sessões no Le Mans Ultimate."):Tx("No sessions.","Sin sesiones.","Keine Sitzungen.","Sem sessões."))}</p>`}</section>`;
   // each discipline's licence; the chosen one draws its iRating over your races
   const hist=HOME.dk?real.filter(x=>hlRaceDisc(x)===HOME.dk&&x.ir>1).slice(0,30).reverse().map(x=>x.ir+(x.irChange||0)):[];if(HOME.dk&&R[HOME.dk]&&(!hist.length||hist[hist.length-1]!==R[HOME.dk].ir))hist.push(R[HOME.dk].ir);
@@ -10132,6 +10133,71 @@ html:not(.ov) .pill{font:600 11px/1.3 var(--f-body);letter-spacing:.05em;text-tr
 #homeBox .hs3-lgc .lgf-post{margin:0}#homeBox .hs3-lgc small.muted{font-size:12px}
 @media (max-width:1100px){#homeBox .hs3{grid-template-columns:minmax(0,1fr)}#homeBox .hs3-l{position:static}#homeBox .hs3-g3{grid-template-columns:repeat(2,minmax(0,1fr))}#homeBox .hs3-g3>.hs3-fb{grid-column:1/-1}}
 @media (max-width:820px){#homeBox .hs3-g3{grid-template-columns:minmax(0,1fr)}#homeBox .hs3-lgg{grid-template-columns:minmax(0,1fr)}#homeBox .hs3-lgtop{flex-direction:column;align-items:stretch}#homeBox .hs3-chips{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}#homeBox .hs3-chips .chip{flex:none}}
+/* round 2: the design's own rules (base.css .greet .livebar .month .kpi .pn .rl .lict .fbc .wm-invm .lg-* .lgf-*), on home */
+#v-home #homeBox.hl{gap:10px!important}
+#v-home #homeBox.hl .hl-hi h1{font:700 30px/1.1 var(--f-display)!important;letter-spacing:.03em!important;text-transform:uppercase!important;margin:4px 0 0!important}
+#v-home #homeBox.hl .hs3-live{padding:10px 14px!important;border-radius:8px!important;border:1px solid color-mix(in srgb,var(--good) 40%,var(--line))!important;background:color-mix(in srgb,var(--good) 12%,var(--surface))!important;min-height:0!important}
+#v-home #homeBox.hl .hs3-live b{font:700 13px var(--f-body)!important}#v-home #homeBox.hl .hs3-live span{font-size:13px!important}
+#v-home #homeBox.hl .hs3-live i{box-shadow:none!important;animation:none!important}
+#v-home #homeBox.hl .hl-kpis{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:10px!important;background:none!important;border:0!important;border-radius:0!important;padding:0!important;box-shadow:none!important}
+#v-home #homeBox.hl .hl-kpis>div{background:var(--surface)!important;border:1px solid var(--line)!important;border-radius:8px!important;padding:12px 14px!important;display:flex!important;flex-direction:column!important;gap:2px!important;min-width:0!important;box-shadow:none!important}
+#v-home #homeBox.hl .hl-kpis>div>span{font:400 11.5px/1.5 var(--f-body)!important;letter-spacing:.06em!important;text-transform:uppercase!important;color:var(--muted)!important}
+#v-home #homeBox.hl .hl-kpis>div>b{font:700 24px/1.15 var(--f-data)!important;letter-spacing:0!important;margin:0!important;color:var(--fg)!important;white-space:nowrap!important}
+#v-home #homeBox.hl .hl-kpis>div>small{font-size:12.5px!important;line-height:1.5!important;color:var(--muted)!important}
+#v-home #homeBox .hs3{grid-template-columns:260px minmax(0,1fr)!important;gap:10px!important;margin-top:10px!important}
+#v-home #homeBox .hs3-l{top:70px!important}#v-home #homeBox .hs3-r{gap:10px!important}#v-home #homeBox .hs3-g3{gap:10px!important}
+/* the panels (.pn and .pn>h3) */
+#v-home #homeBox.hl .hs3 .hl-sec>:not(.cl-h){margin-inline:0!important}
+#v-home #homeBox.hl .hs3 .hl-sec{background:var(--surface)!important;border:1px solid var(--line2,#2a3140)!important;border-radius:8px!important;padding:10px!important;margin:0!important;box-shadow:none!important;display:block!important;min-width:0!important}
+#v-home #homeBox.hl .hs3 .hl-sec>.cl-h{padding:0!important;margin:0 0 10px!important;min-height:0!important;display:flex!important;align-items:baseline!important;justify-content:space-between!important;gap:8px!important;border:0!important}
+#v-home #homeBox.hl .hs3 .hl-sec>.cl-h h2{font:700 14px/1.2 var(--f-display)!important;letter-spacing:.1em!important;text-transform:uppercase!important;color:var(--muted)!important;margin:0!important}
+#v-home #homeBox.hl .hs3 .hl-sec>.cl-h .cl-link{font:500 12px var(--f-body)!important;color:var(--muted)!important;padding:0!important;min-height:0!important}#v-home #homeBox.hl .hs3 .hl-sec>.cl-h .cl-link:hover{color:var(--accent)!important}
+/* recent sessions (.rl) */
+#v-home #homeBox .hs3-i{padding:9px 6px!important;font-size:13px!important;line-height:1.5!important}
+#v-home #homeBox .hs3-t{font:600 13px/1.5 var(--f-body)!important}#v-home #homeBox .hs3-b{font:400 13px/1.5 var(--f-data)!important}
+#v-home #homeBox .hs3-c,#v-home #homeBox .hs3-m{font-size:12px!important;line-height:1.5!important}#v-home #homeBox .hs3-n{font:400 12px/1.5 var(--f-data)!important}
+#v-home #homeBox .hs3-m{display:block!important;margin-top:0!important}#v-home #homeBox .hs3-m>*{margin-right:4px!important}#v-home #homeBox .hs3-m>span:last-child{margin-right:0!important}
+html:not(.ov) #v-home #homeBox .hs3-m :is(.hl-tag,.pill){display:inline-block!important;font:600 11px/1.3 var(--f-body)!important;letter-spacing:.05em!important;text-transform:uppercase!important;padding:2px 8px!important;border-radius:999px!important;background:var(--surface2)!important;color:var(--muted)!important;border:1px solid var(--line)!important;box-shadow:none!important;vertical-align:middle!important;margin-left:0!important}
+html:not(.ov) #v-home #homeBox .hs3-m .hl-tag.k-race{color:var(--accent)!important;border-color:var(--accent)!important}
+/* days you drove (.cals in .g3h) */
+#v-home #homeBox .hs3-wd{padding:18px 0 6px!important;font-size:10.5px!important}
+#v-home #homeBox .hs3-mo{height:18px!important;margin:0!important;font:400 10.5px/1.5 var(--f-body)!important;column-gap:3px!important;text-transform:none!important}
+#v-home #homeBox .hs3-cg .hm-d{border-radius:3px!important}
+#v-home #homeBox .hs3-cn{margin:4px 0 0!important;font-size:12px!important}
+/* licence summary (.tb.lict) */
+#v-home #homeBox .hs3-lic{width:100%!important;font-size:13px!important}
+#v-home #homeBox .hs3-lic th{font:600 11.5px var(--f-body)!important;letter-spacing:.05em!important;padding:9px 8px!important;white-space:nowrap!important}
+#v-home #homeBox .hs3-lic td{padding:9px 8px!important;color:var(--fg)!important;line-height:1.5!important}#v-home #homeBox .hs3-lic tr.none td{color:var(--fg)!important}
+#v-home #homeBox .hs3-lic tr:last-child td{border-bottom:1px solid var(--line)!important}
+#v-home #homeBox .hs3-lic td:first-child{font-weight:500!important}#v-home #homeBox .hs3-lic td:nth-child(n+2){font-family:var(--f-data)!important}
+/* your feedback (.fbc) and invite a friend (.wm-invm) */
+#v-home #homeBox .hs3-fbb{margin-top:0!important;gap:10px!important}#v-home #homeBox .hs3-fbb>b{font:700 13px/1.5 var(--f-body)!important}
+#v-home #homeBox .hs3-st{gap:6px!important}#v-home #homeBox .hs3-st button{min-width:36px!important;min-height:36px!important;padding:4px!important}
+#v-home #homeBox .hs3-fbb textarea{min-height:69px!important;border-radius:8px!important;border-color:var(--line)!important;background:var(--bg)!important}
+#v-home #homeBox.hl .hs3 :is(.hs3-a,.hs3-code,.hs3-lgact) .btn{border-radius:4.8px!important;padding:6px 12px!important;min-height:32px!important;font:400 13px/1.5 var(--f-body)!important;background:var(--surface2)!important;border:1px solid var(--line)!important;color:var(--fg)!important;display:inline-flex!important;align-items:center!important;justify-content:center!important}
+#v-home #homeBox.hl .hs3 :is(.hs3-a,.hs3-code,.hs3-lgact,.lgf-act) .btn.primary{background:var(--accent)!important;border-color:var(--accent)!important;color:var(--accent-ink)!important;font-weight:700!important}
+#v-home #homeBox .hs3-inv{margin-top:14px!important;padding-top:12px!important;gap:8px!important}
+#v-home #homeBox .hs3-invh b{font:700 13px/1.5 var(--f-body)!important}
+html:not(.ov) #v-home #homeBox .hs3-invh .pill{font:600 11px/1.3 var(--f-body)!important;letter-spacing:.05em!important;text-transform:uppercase!important;padding:2px 8px!important;border-radius:999px!important;background:var(--surface2)!important;color:var(--good)!important;border:1px solid color-mix(in srgb,var(--good) 50%,transparent)!important}
+#v-home #homeBox .hs3-inv .note{font-size:12.5px!important;line-height:1.4!important;color:var(--muted)!important}
+#v-home #homeBox .hs3-code .mono{font:600 16px var(--f-data)!important;letter-spacing:.14em!important;padding:8px 10px!important;min-height:38px!important;border-radius:8px!important}
+#v-home #homeBox .hs3-code .btn{min-height:38px!important}
+#v-home #homeBox .hs3-invn{margin-top:-2px!important;border-radius:4.8px!important;padding:6px 12px!important;font-size:13px!important;line-height:1.5!important;min-height:32px!important;background:transparent!important}
+/* leagues (.lg-top .lgf-*) */
+#v-home #homeBox .hs3-lgtop{margin:0 0 10px!important}
+#v-home #homeBox.hl .hs3 .hs3-lgact .btn{min-height:36px!important;padding:7px 12px!important}#v-home #homeBox.hl .hs3 .hs3-lgact .btn+.btn{background:transparent!important}
+#v-home #homeBox .hs3-lgh{margin:4px 0 8px!important}#v-home #homeBox .hs3-lgh b{font:700 15px var(--f-display)!important;letter-spacing:.04em!important;color:var(--fg)!important;text-transform:uppercase!important}
+#v-home #homeBox .hs3-lgg{margin-top:0!important}
+#v-home #homeBox .hs3-lgc{border-color:var(--line)!important;border-radius:10px!important;background:var(--surface2)!important;font-size:13px!important;line-height:1.5!important}
+#v-home #homeBox .hs3-lgt .lgf-nm{min-width:0!important}#v-home #homeBox .hs3-lgt .lgf-nm b{display:block!important;font-weight:700!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important}#v-home #homeBox .hs3-lgt .lgf-nm small{color:var(--muted)!important;font-size:12px!important}
+#v-home #homeBox .hs3-rk{font:400 13px var(--f-data)!important;width:16px!important;min-width:0!important}
+#v-home #homeBox .hs3-lgc .lgf-n{display:flex!important;gap:14px!important;font-size:13px!important;color:var(--muted)!important;align-items:baseline!important}#v-home #homeBox .hs3-lgc .lgf-n b{font:600 15px var(--f-data)!important;color:var(--fg)!important}#v-home #homeBox .hs3-lgc .lgf-n b.good{color:var(--good)!important}
+#v-home #homeBox .hs3-lgc .lgf-post{font-size:13px!important;margin:0!important;color:var(--fg)!important;text-decoration:none!important;display:-webkit-box!important;-webkit-line-clamp:2!important;-webkit-box-orient:vertical!important;overflow:hidden!important}#v-home #homeBox .hs3-lgc a.lgf-post:hover{text-decoration:underline!important}
+#v-home #homeBox .hs3-lgc small.muted{font-size:12px!important}#v-home #homeBox .hs3-lgc .lgf-act{margin-top:auto!important;display:flex!important;gap:6px!important}
+#v-home #homeBox.hl .hs3-lgc .lgf-act .btn{border-radius:4.8px!important;padding:6px 12px!important;min-height:32px!important;font:700 13px/1.5 var(--f-body)!important;display:inline-flex!important;align-items:center!important}
+@media (max-width:1100px){#v-home #homeBox .hs3{grid-template-columns:minmax(0,1fr)!important}#v-home #homeBox .hs3-g3{grid-template-columns:minmax(0,1fr)!important}}
+@media (max-width:760px){#v-home #homeBox.hl .hl-hi h1{font-size:26px!important}}
+@media (max-width:820px){#v-home #homeBox.hl .hl-kpis{grid-template-columns:repeat(2,minmax(0,1fr))!important}#v-home #homeBox .hs3-lgtop{flex-direction:row!important;align-items:center!important}#v-home #homeBox .hs3-chips{flex-wrap:wrap!important;overflow:visible!important}}
 </style>
 <script id="pw3-home-js">
 /* Pit Wall Workspace: home helpers. Home (signed in, `homeCleanHTML`) is the greeting with the live bar, the month's
@@ -10147,7 +10213,7 @@ function homeRecent3(rows){return`<div class="hs3-rl">${rows.map(({r,x})=>{
 // a row with a rating is pressed to draw its iRating under the table
 function homeLic3(R,chgOf){const th=[Tx("Category","Categoría",null,"Categoria"),Tx("Licence","Licencia",null,"Licença"),"SR","iRating"];
   return`<table class="hs3-lic"><thead><tr>${th.map(t=>`<th>${esc(t)}</th>`).join("")}</tr></thead><tbody>${LB_DISC.map(([k])=>{const r=R[k],c=r?chgOf(k):0,t=String(r&&r.lic||""),L=licLetter(t),sr=(t.match(/(\d+\.\d+)/)||[])[1];
-    return`<tr class="${HOME.dk===k?"on":""}${r?"":" none"}"${r?` data-dk="${k}" tabindex="0"`:""}><td><i style="background:${HL_DC[k]}"></i>${esc(discName(k))}</td><td>${L?`<span class="lic ${L}">${L==="P"?"Pro":L}</span>`:"–"}</td><td>${sr||"–"}</td><td>${r?r.ir:"–"}${c?` <em class="${c>0?"good":"bad"}">${hlSg(c)}</em>`:""}</td></tr>`}).join("")}</tbody></table>`}
+    return`<tr class="${HOME.dk===k?"on":""}${r?"":" none"}"${r?` data-dk="${k}" tabindex="0"`:""}><td>${esc(discName(k))}</td><td>${L?`<span class="lic ${L}">${L==="P"?"Pro":L}</span>`:"–"}</td><td>${sr||"–"}</td><td>${r?r.ir:"–"}${c?` <em class="${c>0?"good":"bad"}">${hlSg(c)}</em>`:""}</td></tr>`}).join("")}</tbody></table>`}
 // the days you drove: the last W weeks as squares filling the box, with the months over them and the weekdays beside
 function homeCal3(W){const by=homeActivity(),n0=k=>{const v=by.get(k);return v?v.ses.length+v.races.length:0},loc=locale(),today=new Date();today.setHours(0,0,0,0);
   const start=new Date(today);start.setDate(start.getDate()-((today.getDay()+6)%7)-(W-1)*7);
@@ -10168,21 +10234,22 @@ function homeFb3(){const star='<svg viewBox="0 0 24 24" aria-hidden="true"><path
 function homeInv3(){const I=INVITE;if(!I||!I.code)return`<div id="hs3Inv"></div>`;
   const mo=n=>n===1?Tx("1 month","1 mes",null,"1 mês"):Tx(`${n} months`,`${n} meses`,null,`${n} meses`),earned=I.proUntil?Tx(`Pro until ${new Date(I.proUntil).toLocaleDateString(locale(),{day:"numeric",month:"long"})}`,`Pro hasta el ${new Date(I.proUntil).toLocaleDateString(locale(),{day:"numeric",month:"long"})}`,null,`Pro até ${new Date(I.proUntil).toLocaleDateString(locale(),{day:"numeric",month:"long"})}`):I.banked?Tx(`${mo(I.banked)} saved`,`${mo(I.banked)} guardado${I.banked>1?"s":""}`,null,`${mo(I.banked)} guardado${I.banked>1?"s":""}`):"",r=I.rule||{months:1};
   return`<div class="hs3-inv" id="hs3Inv"><div class="hs3-invh"><b>${esc(Tx("Invite a friend","Invita a un amigo",null,"Convide um amigo"))}</b>${earned?`<span class="pill good">${esc(earned)}</span>`:""}</div>
-    <p class="note">${esc(Tx(`When a friend you invite uses Pitlane HQ for a week, you both get ${mo(r.months)} of Pro.`,`Cuando un amigo al que invitas usa Pitlane HQ durante una semana, los dos ganáis ${mo(r.months)} de Pro.`,null,`Quando um amigo que você convida usa o Pitlane HQ por uma semana, vocês dois ganham ${mo(r.months)} de Pro.`))}</p>
+    <p class="note">${esc(Tx(`When a friend you invite uses Pitlane HQ for a week, you both get ${mo(r.months)} of Pro.`,`Cuando un amigo al que invitas usa Pitlane HQ durante una semana, los dos ganáis ${mo(r.months)} de Pro.`,null,`Quando um amigo que você convida usa o Pitlane HQ por uma semana, vocês dois ganham ${mo(r.months)} de Pro.`))}${I.proUntil?"":" "+esc(Tx("The months you earn now start when Pro launches.","Los meses que ganes ahora empiezan cuando llegue Pro.",null,"Os meses que você ganhar agora começam quando o Pro chegar."))}</p>
     <div class="hs3-code"><span class="mono" id="invCode">${esc(I.code)}</span><button type="button" class="btn small primary" id="frInvite">${esc(Tx("Share","Compartir",null,"Compartilhar"))}</button></div>
     <button type="button" class="hs3-invn" data-hsfr="1">${(I.friends||[]).length} ${esc(Tx("invited","invitados",null,"convidados"))} · ${I.waiting||0} ${esc(Tx("in their first week","en su primera semana",null,"na primeira semana"))}</button></div>`}
 // the leagues' places between the server's last two reads, kept on this device: ▲/▼ the places moved, New for one
 // that was not on the list before (nothing until two reads were seen)
-function hs3Moves(all,at){const k="pw.lgrank."+vGame(),cur={};all.forEach((x,i)=>cur[x.guild]=i+1);let st=null;try{st=JSON.parse(localStorage.getItem(k)||"null")}catch(e){}
-  if(!st||st.at!==at){st={at,prev:st?st.cur:null,cur};try{localStorage.setItem(k,JSON.stringify(st))}catch(e){}}
+function hs3Moves(all,at,prev){const k="pw.lgrank."+vGame(),cur={};all.forEach((x,i)=>cur[x.guild]=i+1);let st=null;if(!prev)try{st=JSON.parse(localStorage.getItem(k)||"null")}catch(e){}
+  if(prev)st={at,prev,cur};else if(!st||st.at!==at){st={at,prev:st?st.cur:null,cur};try{localStorage.setItem(k,JSON.stringify(st))}catch(e){}}
   return g=>{const p=st.prev;if(!p||!Object.keys(p).length)return"";const was=p[g];if(!was)return`<span class="hs3-mv new">${esc(Tx("New","Nueva",null,"Nova"))}</span>`;const d=was-cur[g];
     return d>0?`<span class="hs3-mv up" aria-label="▲ ${d}">▲ ${d}</span>`:d<0?`<span class="hs3-mv dn" aria-label="▼ ${-d}">▼ ${-d}</span>`:`<span class="hs3-mv eq">–</span>`}}
 // the most active leagues (the Leagues hub's list, `loadLeagFound`): the discipline chips, Explore and Post, six cards
 function homeLeag3(){const none=`<section class="hl-sec hs3-lg" id="hs3Leag" hidden></section>`;if(!leagGameOk())return none;
-  const F=LEAG_FOUND_G===vGame()?LEAG_FOUND:null;
+  // demo data: the invented leagues (pitwall-demo.js), never fetched
+  const F=demoOn()&&window.PITLANE_DEMO&&vGame()==="iracing"?window.PITLANE_DEMO.get("/community/leagues/found"):LEAG_FOUND_G===vGame()?LEAG_FOUND:null;
   if(!F){if(!HOME3.lg){HOME3.lg=1;loadLeagFound().then(()=>{HOME3.lg=0;const el=$("#hs3Leag");if(el&&LEAG_FOUND_G===vGame()&&LEAG_FOUND){el.outerHTML=homeLeag3();homeLeagWire3($("#homeBox"))}})}return none}
   const all=(F.leagues||[]).filter(x=>!x.hidden);if(!all.length)return none;
-  const lmu=vGame()==="lmu",cat=lmu?"":HOME3.lgCat,mv=hs3Moves(all,F.updated||0),num=n=>Number(n||0).toLocaleString(locale());
+  const lmu=vGame()==="lmu",cat=lmu?"":HOME3.lgCat,mv=hs3Moves(all,F.updated||0,F.prev),num=n=>Number(n||0).toLocaleString(locale());
   const list=all.map((x,i)=>({x,r:i+1})).filter(({x})=>!cat||(x.cats||[]).includes(cat)).slice(0,6);
   const chips=lmu?"":`<div class="hs3-chips">${[["",Tx("All","Todas",null,"Todas")],...LB_DISC.map(([k])=>[k,discName(k)])].map(([k,l])=>`<button type="button" class="chip" data-hslc="${k}" aria-pressed="${cat===k}">${esc(l)}</button>`).join("")}</div>`;
   return`<section class="hl-sec hs3-lg" id="hs3Leag"><div class="cl-h"><h2>${esc(Tx("Leagues","Ligas",null,"Ligas"))}</h2></div>

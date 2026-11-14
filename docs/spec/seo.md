@@ -65,6 +65,8 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   never stuffed, never claiming an iPhone app before it is on the App Store; competitors' names only in a question, never a
   claim about them.
   They show the accounts' nicknames (never their iRacing names), or Anonymous (race rivals always).
+  Every file in `web/dist` (the landing's screenshots and laps, the drivers' flags) is one the worker serves (`isAppFile`;
+  `seo.test.mjs` checks it), and the landing's header links keep their names on a phone, where only their icons show.
 - `/privacy` (the privacy policy), `/terms` (the terms of service, linked from Google's sign-in screen) and `/delete-account` (how to delete an account, from the app, the web or by email),
   `cloud/src/legal.js`, the addresses Google Play and the App Store ask for: English, Spanish or Portuguese by `?lang=` or
   the browser's language; what is kept, why and for how long, never how it is stored or protected

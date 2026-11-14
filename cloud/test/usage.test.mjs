@@ -21,6 +21,7 @@ const many = {};
 for (let i = 0; i < 300; i++) many["view:v" + i] = 1;
 assert.equal(cleanUsage({ device: "web", counts: many }).counts.length, MAX_KEYS, "at most 100 keys a batch");
 assert.deepEqual(cleanUsage({ device: "ios", counts: [1, 2] }).counts, [], "counts is an object");
+assert.deepEqual(cleanUsage({ device: "web", counts: { "live:relative": 1, "live:mode.full": 1, "live:a b": 1, "live:": 1, "lives:map": 1 } }).counts, [["live:relative", 1], ["live:mode.full", 1]], "the Telemetry panels and mode are kept");
 
 // feedback
 assert.equal(cleanFeedback({ text: "   " }).error, "write something first");

@@ -77,6 +77,14 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   (`pw.liveV` 3); one the driver changed stays as it is. The live map is
   the coach maps' road with depth, its start/finish line, the direction arrow and the official turns; it has no
   "ideal" line.
+- Telemetry's Layout window is always whole on the screen: a card in the middle on computers (760 px at most, 16 px from
+  every edge, under the DEMO or BETA banner), the whole screen on phones (820 px and narrower). Its title, close button,
+  presets and "Reset order and widths" stay in place and only the list of panels scrolls, keeping its place when a
+  panel is shown, hidden or resized. The presets are Essentials, Most used by the community, Hide all and Show all.
+  Most used by the community shows the panels at least half of the drivers who used Telemetry in the last 30 days
+  show (GET `/community/live/popular`, `cloud/src/livepopular.js`: distinct accounts from the `live:` usage keys,
+  admin.md; at least 20 accounts, cached six hours) plus the flags; until then it is off with one sentence saying not
+  enough drivers have used it yet.
 - Live in the web and phone apps: Connect/Disconnect for your own PC (presence only until Connect),
   and watching someone else with a share code made on the PC (Settings → Phone) or from the phone.
   The room is one hash of the code and the key a PBKDF2 of it, so the server never reads the

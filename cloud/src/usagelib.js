@@ -1,7 +1,9 @@
 // The pure part of usage.js (what a batch or an answer keeps, when to ask, the analytics from the rows), so
 // cloud/test/usage.test.mjs runs it without the server.
 export const DEVICES = ["web", "pc", "android", "ios"];
-export const KEY_RE = /^(view|act|game):[a-z0-9_.-]{1,40}$/;
+// live: the Telemetry panels shown (once a day each) and its mode, for the Layout window's "Most used by the community"
+// (livepopular.js); kept out of the admin page's features
+export const KEY_RE = /^(view|act|game|live):[a-z0-9_.-]{1,40}$/;
 export const MAX_KEYS = 100, MAX_N = 1000, MAX_DAYS = 90;
 export const FEEDBACK_MAX = 4000, FEEDBACK_PER_DAY = 20;
 export const ASK_USED = 6 * 3600e3, ASK_RACES = 2, MAX_MS = 10 * 60e3;

@@ -9271,6 +9271,9 @@ async function renderCommLaps(){const box=$("#cmLaps");if(!box||!COMMSEL)return;
   box.querySelectorAll("[data-prof]").forEach(b=>b.onclick=e=>{e.stopPropagation();openProfile({lap:b.dataset.prof})});wireAdmDel(box,renderCommLaps);
   const pick=id=>{if(COMM_BSEL===id)return;COMM_BSEL=id;box.querySelectorAll("tr[data-bsel]").forEach(r=>r.classList.toggle("on",r.dataset.bsel===id));drawCommMap(s,laps)};
   box.querySelectorAll("tr[data-bsel]").forEach(r=>{r.onmouseenter=()=>{if(matchMedia("(hover:hover)").matches)pick(r.dataset.bsel)};r.onclick=()=>pick(r.dataset.bsel);r.onkeydown=e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();pick(r.dataset.bsel)}}});
+  // the leaderboard shows its first 20 drivers and scrolls inside for the rest, its header staying on top
+  {const sc=box.querySelector(".cl-tscroll"),rs=sc?sc.querySelectorAll("tbody tr"):[];if(sc){sc.classList.toggle("cl-t20",rs.length>20);sc.style.maxHeight="";
+    if(rs.length>20){const t=sc.getBoundingClientRect().top,b=rs[19].getBoundingClientRect().bottom;if(b>t)sc.style.maxHeight=Math.ceil(b-t+1)+"px"}}}
   {const h=box.querySelector("tr.on");if(h&&COMM_HL){COMM_HL="";setTimeout(()=>h.scrollIntoView({block:"center",behavior:"smooth"}),60)}}
   drawCommMap(s,laps)}
 /* "Share my lap": a picture of the driver's place on a leaderboard (track, car, time, place) to post anywhere; the
@@ -13113,6 +13116,9 @@ html:not(.ov,.ovwin) body:not(#_):not(#__) :is(.seg,.seg3):not(svg *){background
 html:not(.ov,.ovwin) .btn:disabled{opacity:.55}
 /* the map column of Laps (pw3-fitr): the Track map stays whole, the panels under it share the rest and scroll inside */
 @media (min-width:1101px){html:not(.ov) #v-laps .lws-r.pw3-fitr>*{flex:none}html:not(.ov) #v-laps .lws-r.pw3-fitr>.panel:not(:first-child){flex:0 1 auto;min-height:90px;overflow-y:auto;scrollbar-width:thin}}
+/* Community's leaderboard: 20 drivers, the rest scroll inside with the header on top */
+html:not(.ov) #v-community .cl-tscroll.cl-t20{max-height:820px;overflow-y:auto;scrollbar-width:thin}
+html:not(.ov) #v-community .cl-tscroll.cl-t20 thead th{position:sticky;top:0;z-index:1;background:var(--surface)}
 /* the community leaderboard in the Laps panel (Laps and Coach): ten laps, the rest scroll inside */
 html:not(.ov) .ls-board{max-height:400px;overflow-y:auto;scrollbar-width:thin;display:flex;flex-direction:column;gap:2px}
 /* the laps column of Laps: its top always in view, the lap list scrolls inside */

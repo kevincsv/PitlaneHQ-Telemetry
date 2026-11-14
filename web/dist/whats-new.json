@@ -2,9 +2,9 @@
   "versions": [
     {
       "v": "0.9.19",
-      "en": ["Fixes and improvements."],
-      "es": ["Arreglos y mejoras."],
-      "pt": ["Correções e melhorias."]
+      "en": ["Pitlane HQ has a new look on the PC and the web, with every screen laid out in panels side by side.", "Statistics shows much more of your progress, including your best lap each week against the community.", "Analysis asks which game you want to see first.", "A short tour shows the lap analyzer, the coach and telemetry.", "Race fuel learns from the drivers of the same car and track.", "You can change your public name in My account.", "Fixes and improvements."],
+      "es": ["Pitlane HQ tiene un nuevo aspecto en el PC y en la web, con cada pantalla en paneles uno al lado del otro.", "Estadísticas muestra mucho más de tu progreso, también tu mejor vuelta de cada semana frente a la comunidad.", "Análisis pregunta primero qué juego quieres ver.", "Un tour corto enseña el analizador de vueltas, el coach y la telemetría.", "El combustible de carrera aprende de los pilotos del mismo coche y circuito.", "Puedes cambiar tu nombre público en Mi cuenta.", "Arreglos y mejoras."],
+      "pt": ["O Pitlane HQ tem um novo visual no PC e na web, com cada tela em painéis lado a lado.", "Estatísticas mostra muito mais do seu progresso, inclusive sua melhor volta de cada semana contra a comunidade.", "Análise pergunta primeiro qual jogo você quer ver.", "Um tour curto mostra o analisador de voltas, o coach e a telemetria.", "O combustível de corrida aprende com os pilotos do mesmo carro e pista.", "Você pode mudar seu nome público em Minha conta.", "Correções e melhorias."]
     },
     {
       "v": "0.9.18",

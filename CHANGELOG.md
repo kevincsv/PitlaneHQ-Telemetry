@@ -6,6 +6,12 @@ improvements". 1.0.0 comes when the beta ends. Newest first.
 
 ## 0.9.19 beta
 
+- Pitlane HQ has a new look on the PC and the web, with every screen laid out in panels side by side.
+- Statistics shows much more of your progress, including your best lap each week against the community.
+- Analysis asks which game you want to see first.
+- A short tour shows the lap analyzer, the coach and telemetry.
+- Race fuel learns from the drivers of the same car and track.
+- You can change your public name in My account.
 - Fixes and improvements.
 
 ## 0.9.18 beta

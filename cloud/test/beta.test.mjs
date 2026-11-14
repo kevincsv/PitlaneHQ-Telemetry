@@ -28,6 +28,10 @@ assert.equal(await go(beta, "/community/leaderboard"), null);
 // signed in: testers and admins go through, everyone else is refused
 assert.equal(await go(beta, "/account/me", "s".repeat(48)), null);
 assert.equal(await go(beta, "/community/admin/online", "a".repeat(48)), null);
+// the laps and sessions answer on the test version too (never sent to pitlanehq.app, which would lose the session)
+for (const p of ["/api/sessions", "/api/bests", "/api/sessions/summary"]) assert.equal(await go(beta, p, "s".repeat(48)), null, p);
+assert.equal(await go(beta, "/api/upload", "a".repeat(48), "POST"), null);
+assert.equal((await go(beta, "/api/sessions", "t".repeat(48))).status, 403);
 const no = await go(beta, "/account/me", "t".repeat(48));
 assert.equal(no.status, 403);
 assert.equal((await no.json()).code, "beta_only");

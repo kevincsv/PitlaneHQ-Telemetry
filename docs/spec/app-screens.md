@@ -110,13 +110,20 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   Telemetry, Standings and Tyres under Telemetry). A finished race shows no notice on the PC
   (it appears in My races); only the phones tell you.
 - The Pit Wall Workspace layout of these three (Nov 2026, `pw3-analysis` at the end of index.html; it lays out what the
-  app's own render functions draw, so every button, vote and link stays). No subtitle under their titles. From 1180 px
-  wide they are workspaces; under that one column.
+  app's own render functions draw, so every button, vote and link stays). No subtitle under their titles. They use the
+  design's own components (panels with a #2a3140 edge, radius 8 and padding 10, titles in Barlow capitals, its pills,
+  buttons, tables and corner cards). From 1100 px wide they are workspaces; under that one column (the right column
+  last).
   - Coach: lap A against lap B as one full-width strip on top, then three columns. Left and sticky, Your plan for the
     next session. In the middle the gap to the reference, Work on this first and Ask the coach as three cards, the
     corners that cost the most as cards with a mini speed trace of A and B through the corner, then your pace among the
     drivers known here. Right and sticky, the track map, Corner by corner, Sectors and Offs explained (the incidents and
-    the offs leave the map's card for their own).
+    the offs leave the map's card for their own). Coach has no title on computers (the sub-tab names it), the strip reads
+    "Lap A · comparing" and "Lap B · reference", a plan step shows what you do and how to fix it (not the general why),
+    a corner card reads turn, phase and loss, the tip and why, then Braking, Slowest and Brakes at (trail and coast in a
+    line under them) with Practise and the votes at its foot. The sectors are a table (A, B, gap and the lap). With no
+    other driver known, the pace card says "No other driver of this car and track is known yet. Your laps are compared
+    with each other until community laps come in.".
   - My sessions: the filters, then Best per car and track on the left (your best lap and laps of each car and track,
     newest first; a card opens that session) and My sessions and Race summaries side by side. The session pills
     (Race, Practice…) are all one width with the word centred, a star sits beside the fastest lap of each car and track,
@@ -124,7 +131,10 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   - My races: a strip of race cards (date, track, start → finish, iRating change and incidents) chooses the race shown
     under it, the newest by default. Then the race's header (start, finish, incidents, iRating, Full report › for the
     whole report with the results, the story, the braking, Discord and delete), Lap times, Race summary beside What went
-    well (and Where you lost time), Driver notes, and the My races table (a row shows its summary on top).
+    well (and Where you lost time), Driver notes, and the My races table (a row shows its summary on top). Lap times is
+    the design's chart (a line, a line at the race average, a dot per lap, red for an incident, blue for a pit stop,
+    hollow for a lap not valid); the finger or the mouse reads a lap under it. The four summary cards over the table are
+    gone.
 
 - Home shows the track guide's brief (the three corners that matter most) while the agent sees a session on a track and
   car the model knows (`homeBriefHTML`); pressed, it opens the whole guide.

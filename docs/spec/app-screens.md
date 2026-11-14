@@ -2,19 +2,6 @@
 
 How this part of Pitlane HQ behaves. Read it before changing this area; keep it up to date when the behaviour changes.
 
-- The look (the Nov 2026 redesign, "Workspace", PC, web and Pitlane HQ Desktop; the phones later): one layer at the end
-  of index.html (`<style id="look">`) over every older rule. Pitlane HQ's own palette stays (night blue `--bg #0b0e14`,
-  `--surface #10141c`, the amber `#f5b43c`, purple for your best, the same light theme) and so does the logo with the
-  name in capitals (Barlow Condensed), at the top of the sidebar, on the splash and on the account welcome. Dense like a
-  timing screen: page titles in Barlow Condensed capitals, section labels and table heads in small spaced capitals,
-  body text in IBM Plex Sans, numbers in JetBrains Mono, tight panels with 6 px corners, no accent bar before titles,
-  no glows and no gradients. A chosen tab, segment or card is a raised surface; a chosen chart channel or map layer has
-  a thin amber outline. On computers the main tabs are a 208 px sidebar with the logo and each tab's icon and word; on
-  phones and narrow windows the bottom bar, and the header on one line (the version moves to Settings → About).
-  The lap analyzer keeps its sections and their order; its summary is one strip with hairlines, and every chart
-  (speed, delta, throttle, brake, gear, steering, line) is one stack on the same distance axis. From 1180 px wide it is
-  one workspace: the track map, sectors and corner consistency on the left, the chart stack on the right with the
-  braking points and recorded laps under it. The overlay windows (`html.ov`) keep their own designs.
 - Your iRating and licence of every discipline (`ratings.go`, `ratings.json` in the account, `/api/ratings`; iRacing's
   sessions say "Formula" for the formula cars, `discipline`/`raceDisc`/`catOf` read it as Formula Car): the game
   only says the one of the session you are in, so the PC keeps the last seen of each (every session, and from the

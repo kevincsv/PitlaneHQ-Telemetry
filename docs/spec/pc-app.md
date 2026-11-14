@@ -124,7 +124,8 @@ Testers are the Tester level (`isTester`, given in Admin → Users or in `TESTER
   same database and files. Only testers and admins can sign in there: anyone else's sign-in or sign-up gets 403
   `beta_only` and its new session is removed at once (`betaSignIn`), and any other session of theirs is refused too; the public pages go
   to pitlanehq.app; `server.json` answers its own address; every answer is `noindex`; it runs no timed jobs, holds no
-  webhooks or Discord commands, and its live room is its own (the PCs stay on pitlanehq.app's). It never changes the
+  webhooks or Discord commands, and it uses pitlanehq.app's live room (`script_name` on its `LIVE` binding), so a
+  tester sees their PC live there and a change made there reaches their PC and phones at once. It never changes the
   database: a branch with migrations production does not have stops unless `apply_migrations` is ticked (the owner's
   call; such a migration must keep pitlanehq.app working). The page shows a TEST VERSION bar (`betaBanner`).
 - Android: each CI build has its own build number (`versionCode` = 1000 + the run's number). Testers' and admins'

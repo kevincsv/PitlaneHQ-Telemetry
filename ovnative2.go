@@ -94,7 +94,8 @@ func (st *ovState) collect() {
 	if lc, ok := st.num("LapCompleted"); ok {
 		fuel, hasFuel := st.num("FuelLevel")
 		if !L.fuelInit {
-			L.fuelInit, L.fuelLap, L.fuelStart = true, int(lc), fuel
+			// the overlay can open mid-lap: that lap's use is only part of a lap, so it is never counted
+			L.fuelInit, L.fuelLap, L.fuelStart, L.fuelPit = true, int(lc), fuel, true
 		} else if int(lc) != L.fuelLap {
 			if int(lc) == L.fuelLap+1 && hasFuel && L.fuelStart > 0 && !L.fuelPit {
 				if use := L.fuelStart - fuel; use > 0 {

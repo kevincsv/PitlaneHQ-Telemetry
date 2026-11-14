@@ -1124,20 +1124,33 @@
     const tank = ctx && ctx.tank > 0 ? ctx.tank : null;
     return { perLap: r3(meanOf(ok.map((l) => l.fuel))), maxLap: r3(Math.max(...ok.map((l) => l.fuel))), lapTime: r3(meanOf(ok.map((l) => l.time))), laps: ok.length, tank };
   }
-  /* a race of raceLaps laps, or of raceMin minutes (counted at lapTime, plus the lap under way when the time runs out),
-     with a tank of tank litres and one lap of fuel kept spare: the laps, the fuel the race needs, the laps a full tank
-     lasts, the stops and the fuel each one adds (the same over every stop), and the fuel to start with. The phones do the
-     same sums. */
+  /* a race of race.laps laps, or of race.min minutes (counted at lapTime, plus the lap under way when the time runs out),
+     with a tank of tank litres and one lap of fuel kept spare at the flag. A stop comes only between laps, so a tank
+     lasts its whole laps (perTank, the last stint also carries the spare), and the stops are the fewest that cover the
+     race that way (counting the fuel alone missed a stop whenever the tank held part of a lap more). The stints are as
+     even as they can be (the longer ones first), the race starts with a full tank when it needs a stop, and each stop
+     adds the same fuel (add) when that works, else what each next stint needs (adds, add null). The phones do the same
+     sums. → {laps, need, perTank, stops, add, adds, start, stint, stints, tank} */
   function fuelPlan(u, race) {
     if (!u || !(u.perLap > 0)) return null;
-    const tank = race && race.tank > 0 ? race.tank : u.tank, spare = race && race.spare != null ? race.spare : 1;
+    const p = u.perLap, tank = race && race.tank > 0 ? race.tank : u.tank, spare = race && race.spare != null ? Math.max(0, race.spare) : 1, e = 1e-9;
     let laps = race && race.laps > 0 ? Math.ceil(race.laps) : 0;
     if (!laps && race && race.min > 0 && u.lapTime > 0) laps = Math.floor(race.min * 60 / u.lapTime) + 1;
     if (!laps) return null;
-    const need = (laps + spare) * u.perLap, perTank = tank ? Math.floor(tank / u.perLap) : null;
-    const stops = tank ? Math.max(0, Math.ceil(need / tank) - 1) : null;
-    const add = stops ? (need - tank) / stops : 0;
-    return { laps, need: r1(need), perTank, stops, add: r1(add), start: r1(stops ? tank : need), stint: stops != null ? Math.ceil(laps / (stops + 1)) : null, tank: tank || null };
+    const need = (laps + spare) * p, full = tank ? Math.floor(tank / p + e) : 0, lastCap = tank ? Math.floor(tank / p - spare + e) : 0;
+    if (!tank || full < 1 || lastCap < 1) return { laps, need: r1(need), perTank: tank ? full : null, stops: null, add: 0, adds: [], start: r1(need), stint: null, stints: null, tank: tank || null };
+    const stops = laps <= lastCap ? 0 : Math.ceil((laps - lastCap) / full - e), n = stops + 1;
+    const st = Array.from({ length: n }, (_, i) => Math.floor(laps / n) + (i < laps % n ? 1 : 0));
+    for (let i = 0; st[n - 1] > lastCap && i < n - 1; i++) while (st[n - 1] > lastCap && st[i] < full) { st[i]++; st[n - 1]--; }
+    if (!stops) return { laps, need: r1(need), perTank: full, stops: 0, add: 0, adds: [], start: r1(need), stint: laps, stints: st, tank };
+    // equal stops when the tank has room for them and every stint gets its fuel; else what each stint needs
+    const want = (i) => (st[i] + (i === n - 1 ? spare : 0)) * p, eq = (need - tank) / stops;
+    let f = tank - st[0] * p, ok = true;
+    for (let i = 1; i < n && ok; i++) { if (f + eq > tank + e) ok = false; f += eq; if (f < want(i) - e) ok = false; f -= st[i] * p; }
+    let adds;
+    if (ok) adds = Array(stops).fill(eq);
+    else { adds = []; f = tank - st[0] * p; for (let i = 1; i < n; i++) { const a = Math.max(0, want(i) - f); adds.push(a); f += a - st[i] * p; } }
+    return { laps, need: r1(need), perTank: full, stops, add: ok ? r1(eq) : null, adds: adds.map(r1), start: r1(tank), stint: st[0], stints: st, tank };
   }
 
   /* everything beyond one lap at once, for the phones: lap A against lap B and the session's laps (ctx.laps) →

@@ -189,7 +189,10 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
 - "Race fuel" (`fuelUse`, `fuelPlan`): fuel per lap and the most in a lap from the session's laps (not through the pits,
   within 7 % of the best), the laps a tank lasts, and for a race in laps or minutes (timed: the laps at your pace plus
   the one under way) the fuel it needs with one lap spare, the stops, the fuel to start with and to add at each stop
-  (the same at every stop) and the stints. The tank comes from the session (`tank`, the agent's DriverCarFuelMaxLtr
+  and the stints. A stop comes only between laps: a tank lasts its whole laps (the last stint also carries the spare
+  lap), and the stops are the fewest that cover the race that way. The stints are as even as they can be (longer
+  first), a race with a stop starts full, and every stop adds the same fuel when that works (else "Add at the stops"
+  lists each one). The tank comes from the session (`tank`, the agent's DriverCarFuelMaxLtr
   times DriverCarMaxFuelPct, `sessions.tank`), else what the driver typed for that car (`pw.tank.<car>`).
 - "More charts" (a switch, off by default, `LAPV.more`; the phones the same): a G-G chart (`ggOf`: g along the car from
   how the speed changes over time, across it from the speed and how much the path bends; only laps with a path), the

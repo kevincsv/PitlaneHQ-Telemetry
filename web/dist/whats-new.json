@@ -1,6 +1,12 @@
 {
   "versions": [
     {
+      "v": "0.9.16",
+      "en": ["Fixes and improvements."],
+      "es": ["Arreglos y mejoras."],
+      "pt": ["Correções e melhorias."]
+    },
+    {
       "v": "0.9.15",
       "en": ["Pitlane HQ Agent shows how to turn on telemetry in Le Mans Ultimate when it cannot read the game.", "Home and the Overlays tab tell you when the game is in full screen, where the overlays cannot show.", "Fixes and improvements."],
       "es": ["Pitlane HQ Agent te enseña a activar la telemetría en Le Mans Ultimate cuando no puede leer el juego.", "Inicio y la pestaña Overlays te avisan cuando el juego está en pantalla completa, donde los overlays no se pueden ver.", "Arreglos y mejoras."],

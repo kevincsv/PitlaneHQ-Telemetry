@@ -11328,7 +11328,7 @@ document.addEventListener("pointerover",e=>{if(e.pointerType!=="mouse"||!e.targe
 #v-stats .pw5-none{margin:0;font-size:13px}
 #v-stats .pw5-sel{width:100%;margin:0 0 10px;background:var(--bg);border:1px solid var(--line);border-radius:5px;min-height:36px;padding:7px 9px;font:400 13px var(--f-body);color:var(--fg)}
 #v-stats .pw5-leg{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:12px;color:var(--muted);margin:0 0 6px}
-#v-stats .pw5-leg i{display:inline-block;width:14px;height:6px;border-radius:3px;margin-right:5px;vertical-align:middle}
+#v-stats .pw5-leg i{display:inline-block;width:14px;height:6px;border-radius:3px;margin-right:5px;vertical-align:middle}#v-stats .pw5-leg i.dash{background:repeating-linear-gradient(90deg,var(--c) 0 5px,transparent 5px 8px);height:2px;border-radius:0}
 #v-stats .pw5-ch{position:relative;width:100%;border-bottom:1px solid var(--line);cursor:crosshair;touch-action:pan-y}
 #v-stats .pw5-ch svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
 #v-stats .pw5-ch .ln{fill:none;stroke-width:2}
@@ -11579,15 +11579,23 @@ async function statsLoadCorners(key,ref,wk){if(STATS_CBUSY||STATS_CORN.has(key))
     const ok=rows.filter(Boolean),ns=new Set();ok.forEach(r=>r.m.forEach((v,n)=>ns.add(n)));if(ok.some(r=>r.same))ok.forEach(r=>{if(r.same)ns.forEach(n=>r.m.set(n,0))});
     out={ref:R.time,weeks:ok,ns:[...ns].sort((a,b)=>a-b)}}}catch(e){out=null}
   STATS_CORN.set(key,out);STATS_CBUSY=false;if(CUR_VIEW==="stats")renderStatsView()}
-/* a chart the design's way: lines (non-scaling), dots, bars; the readout under it says the point under the pointer */
+/* the community of a car and track: its leaderboard as Laps and the Coach show it (each driver's best today, no
+   history), the record, the median and where your best would stand */
+const STATS_COMM=new Map();
+async function statsLoadComm(C){const k=aGame()+"|"+C.k;if(STATS_COMM.has(k))return;STATS_COMM.set(k,null);let out={n:0};
+  try{const g=aGame(),ses=C.list[C.list.length-1],combos=(await pw3CGet(withGame("/api/community/combos",g))).combos||[],hit=commComboForSession(combos,ses);
+    if(hit){const ts=((await pw3CGet(withGame(`/api/community/laps?trackId=${hit.trackId}&carId=${hit.carId}`,g))).laps||[]).map(l=>l.time).filter(t=>t>0).sort((a,b)=>a-b);
+      if(ts.length){const m=ts.length>>1;out={n:ts.length,ts,best:ts[0],med:ts.length%2?ts[m]:(ts[m-1]+ts[m])/2}}}}catch(e){out={n:0,err:1}}
+  STATS_COMM.set(k,out);if(CUR_VIEW==="stats")renderStatsView()}
+/* a chart the design's way: lines (non-scaling, dashed for a reference), dots, bars; the readout under it says the point under the pointer */
 function statsChart(o){const H=o.h||160,W=1000,pts=[].concat(...(o.series||[]).map(s=>s.pts)),bars=o.bars||[],all=pts.concat(bars);if(!all.length)return"";
   const xs=all.map(p=>p.x),x0=o.x0!=null?o.x0:Math.min(...xs),x1=o.x1!=null?o.x1:Math.max(...xs),ys=pts.map(p=>p.y);
   let y0=ys.length?Math.min(...ys):0,y1=ys.length?Math.max(...ys):1,pad=0;if(o.y0!=null&&o.y1!=null){y0=o.y0;y1=o.y1>o.y0?o.y1:o.y0+1}else{if(y1-y0<1e-6){y0-=1;y1+=1}pad=(y1-y0)*.12;y0-=pad;y1+=pad;if(o.floor!=null)y0=Math.max(o.floor,y0)}
   const xl0=14,X=x=>x1>x0?xl0+(x-x0)/(x1-x0)*(W-xl0-24):W/2,Y=y=>{const f=(y-y0)/(y1-y0);return o.invert?10+f*(H-30):H-20-f*(H-30)};
   const bmax=o.bmax||Math.max(1,...bars.map(b=>b.y)),bw=bars.length?Math.max(.6,Math.min(6,70/bars.length)):0,full=o.barsFull||!(o.series&&o.series.length);
   const barH=bars.map(b=>{const h=b.y/bmax*(full?(H-24):(H-20)*.35);return`<i class="bar${b.cls?" "+b.cls:""}" style="left:${(X(b.x)/W*100).toFixed(2)}%;width:${bw}%;height:${h.toFixed(1)}px" data-tip="${esc(b.tip)}"></i>`}).join("");
-  const lines=(o.series||[]).map(s=>s.pts.length>1?`<path class="ln" style="stroke:${s.color||"var(--accent)"}" vector-effect="non-scaling-stroke" d="${s.pts.map((p,i)=>(i?"L":"M")+X(p.x).toFixed(1)+" "+Y(p.y).toFixed(1)).join("")}"/>`:"").join("");
-  const dots=(o.series||[]).map(s=>s.pts.map(p=>`<span class="dt${p.cls?" "+p.cls:""}" style="left:${(X(p.x)/W*100).toFixed(2)}%;top:${(Y(p.y)/H*100).toFixed(2)}%;${p.cls?"":`background:${s.color||"var(--fg)"}`}" data-tip="${esc(p.tip)}"></span>`).join("")).join("");
+  const lines=(o.series||[]).map(s=>s.pts.length>1?`<path class="ln" style="stroke:${s.color||"var(--accent)"}${s.dash?";stroke-dasharray:6 5":""}" vector-effect="non-scaling-stroke" d="${s.pts.map((p,i)=>(i?"L":"M")+X(p.x).toFixed(1)+" "+Y(p.y).toFixed(1)).join("")}"/>`:"").join("");
+  const dots=(o.series||[]).filter(s=>!s.nodots).map(s=>s.pts.map(p=>`<span class="dt${p.cls?" "+p.cls:""}" style="left:${(X(p.x)/W*100).toFixed(2)}%;top:${(Y(p.y)/H*100).toFixed(2)}%;${p.cls?"":`background:${s.color||"var(--fg)"}`}" data-tip="${esc(p.tip)}"></span>`).join("")).join("");
   const yl=o.fmtY&&ys.length?`<span class="yl" style="top:${(Y(o.invert?y0+pad:y1-pad)/H*100).toFixed(1)}%">${esc(o.fmtY(o.invert?y0+pad:y1-pad))}</span><span class="yl" style="top:${(Y(o.invert?y1-pad:y0+pad)/H*100).toFixed(1)}%">${esc(o.fmtY(o.invert?y1-pad:y0+pad))}</span>`:"";
   const xl=o.fmtX?`<div class="pw5-x"><span>${esc(o.fmtX(x0))}</span><span>${esc(o.fmtX(x1))}</span></div>`:"";
   return`<div class="pw5-ch${o.fmtY?" yax":""}" style="height:${H}px"><svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" aria-hidden="true">${lines}</svg>${barH}${dots}${yl}</div>${xl}<div class="pw5-rd mono" aria-live="polite">${esc(o.idle||"")}</div>`}
@@ -11629,9 +11637,16 @@ function renderStatsView(){const box=$("#statsBody");if(!box)return;const T=Tx;
     // the best of each week, a bigger dot where it beat every earlier best
     const wm=new Map();list.forEach(s=>{const w=statsWeek(s.started),e=wm.get(w)||{w,s,laps:0};if(s.best<e.s.best)e.s=s;e.laps+=s.laps||0;wm.set(w,e)});const wk=[...wm.values()].sort((a,b)=>a.w-b.w);
     const before=all.filter(s=>s.started<t0).reduce((m,s)=>Math.min(m,s.best),Infinity);let rb=before;
-    const pts=wk.map(e=>{const isPb=e.s.best<rb-.0005;rb=Math.min(rb,e.s.best);return{x:e.w,y:e.s.best,cls:isPb?"pb":"",tip:`${wkT} ${dd(e.w)} · ${fmtT(e.s.best)}${e.s.best===pb?" · "+T("Personal best","Récord personal",null,"Recorde pessoal"):""} · ${T(`${e.laps} laps`,`${e.laps} vueltas`,null,`${e.laps} voltas`)}`}});
+    // the community of the same car and track: its record and median today, flat lines behind your weekly bests
+    const CM=STATS_COMM.get(G+"|"+C.k);if(CM===undefined)statsLoadComm(C);const hasC=CM&&CM.n>0;
+    const cTip=t=>hasC?` · ${T("community best","récord de la comunidad",null,"recorde da comunidade")} ${fmtT(CM.best)} (${sgn(t-CM.best)}) · ${T("median","mediana",null,"mediana")} ${fmtT(CM.med)} (${sgn(t-CM.med)})`:"";
+    const pts=wk.map(e=>{const isPb=e.s.best<rb-.0005;rb=Math.min(rb,e.s.best);return{x:e.w,y:e.s.best,cls:isPb?"pb":"",tip:`${wkT} ${dd(e.w)} · ${T("you","tú",null,"você")} ${fmtT(e.s.best)}${e.s.best===pb?" · "+T("Personal best","Récord personal",null,"Recorde pessoal"):""}${cTip(e.s.best)} · ${T(`${e.laps} laps`,`${e.laps} vueltas`,null,`${e.laps} voltas`)}`}});
     const since=wk.length>1?` · ${sgn(wk[wk.length-1].s.best-wk[0].s.best)} s ${T("since","desde el",null,"desde")} ${dd(wk[0].w)}`:"";
-    bestCh=pts.length?statsChart({h:170,series:[{color:"var(--accent)",pts}],fmtY:fmtT,fmtX:dd,idle:`${T("Personal best","Récord personal",null,"Recorde pessoal")} ${fmtT(pb)}${since}`}):none(noP);
+    let cIdle="",cSer=[],leg="";if(hasC&&pts.length){const x0=pts[0].x,x1=pts[pts.length-1].x,fl=y=>[{x:x0,y},{x:x1,y}],faster=CM.ts.filter(t=>t<pb-.0005).length,top=Math.max(1,Math.ceil((faster+1)/CM.n*100)),off=pb-CM.best;
+      cSer=[{color:"#5aa9ff",dash:1,nodots:1,pts:fl(CM.best)},{color:"var(--muted)",dash:1,nodots:1,pts:fl(CM.med)}];
+      leg=`<div class="pw5-leg"><span><i style="background:var(--accent)"></i>${esc(T("You","Tú",null,"Você"))}</span><span><i class="dash" style="--c:#5aa9ff"></i>${esc(T("Community best","Récord de la comunidad",null,"Recorde da comunidade"))}</span><span><i class="dash" style="--c:var(--muted)"></i>${esc(T("Community median","Mediana de la comunidad",null,"Mediana da comunidade"))}</span></div>`;
+      cIdle=off<=.0005?T(`Community record · ${CM.n} drivers`,`Récord de la comunidad · ${CM.n} pilotos`,null,`Recorde da comunidade · ${CM.n} pilotos`):T(`Top ${top}% of ${CM.n} drivers · ${off.toFixed(1)} s off the community best`,`Top ${top}% de ${CM.n} pilotos · a ${off.toFixed(1)} s del récord de la comunidad`,null,`Top ${top}% de ${CM.n} pilotos · a ${off.toFixed(1)} s do recorde da comunidade`)}
+    bestCh=pts.length?leg+statsChart({h:hasC?190:170,series:cSer.concat([{color:"var(--accent)",pts}]),fmtY:fmtT,fmtX:dd,idle:(cIdle?cIdle+" · ":"")+`${T("Personal best","Récord personal",null,"Recorde pessoal")} ${fmtT(pb)}${since}`}):none(noP);
     const kindT=s=>s.kind?" · "+sessKind(s.kind):"",cl=list.map(s=>({s,c:statsCons(s)})).filter(x=>x.c>0);statsLoadCons(list);
     consCh=cl.length?statsChart({h:130,series:[{color:"var(--pb)",pts:cl.map(({s,c})=>({x:s.started,y:c,tip:`${dd(s.started)}${kindT(s)} · ± ${c.toFixed(3)} s`}))}],fmtY:v=>"± "+v.toFixed(2)+" s",fmtX:dd,floor:0,idle:cl.length>1?`${T("Latest","Última",null,"Última")} ± ${cl[cl.length-1].c.toFixed(2)} s · ${T("first","primera",null,"primeira")} ± ${cl[0].c.toFixed(2)} s`:`± ${cl[0].c.toFixed(2)} s`}):none(STATS_BUSY?loadT:T("Not enough clean laps in this period.","No hay suficientes vueltas limpias en este periodo.",null,"Não há voltas limpas suficientes neste período."));
     // each corner, the best lap of the first and the latest week against your best lap (the last 12 weeks at most)

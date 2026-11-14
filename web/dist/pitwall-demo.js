@@ -101,8 +101,9 @@
     const i = COMBOS.findIndex((c) => c.trackId === +trackId && c.carId === +carId);
     if (i < 0) return [];
     const c = COMBOS[i], r = rng(i * 31 + 7);
-    return NAMES.map((n, k) => {
-      const time = c.lap - 0.7 + k * r.f(0.08, 0.35);
+    // ten named drivers, then the rest of the field (Statistics places you among them)
+    return Array.from({ length: 48 }, (_, k) => k < 10 ? NAMES[k] : "Demo Driver " + (k + 1)).map((n, k) => {
+      const time = k < 10 ? c.lap - 0.7 + k * r.f(0.08, 0.35) : c.lap + 0.4 + (k - 10) * r.f(0.04, 0.12);
       return { id: `comm:${i}:${k}`, alias: n, time, created: NOW - k * DAY, hasTrace: true, sectors: sectors(time, r), car: c.car, track: c.track };
     }).sort((a, b) => a.time - b.time);
   }

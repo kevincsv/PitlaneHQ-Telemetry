@@ -160,7 +160,10 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
     (fewer is green). Three columns below (one under the other on a phone). Left, Personal bests: each new best of the
     period, newest first, with its date, track, car, time and the time it took off (a row opens that session). Middle,
     Best lap per week: chips of the period's cars and tracks (the most driven first), the best lap of each week, a
-    bigger amber dot where it beat every earlier best; Consistency per session (the server's `cons`, or worked out from
+    bigger amber dot where it beat every earlier best, over the community of the same car and track as dashed lines
+    (its record in blue, its median in grey, from the leaderboard Laps and the Coach show; it keeps each driver's best
+    today and no history, so they are flat). The point under the pointer says your time against both and the gap; the
+    line under the chart says where your best stands ("Top 13% of 48 drivers · 0.9 s off the community best"); Consistency per session (the server's `cons`, or worked out from
     the valid laps within 3 % of the best) beside Laps and hours per week (laps as bars, hours as a line); Time per
     corner: the best lap of the first and the latest week (the last 12 weeks at most) against your best lap of that car
     and track, corner by corner with the coach's comparison (`coachCompare`, braking zone to exit), the change in green
@@ -172,7 +175,8 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
     sessions, the places come from your race sessions. Statistics reads up to 200 sessions of the game itself
     (`/api/sessions?limit=200`), more than My sessions keeps. Every chart reads the point under the pointer or the
     finger in the line under it. With no sessions it says one sentence. The demo (`pitwall-demo.js`) has four months
-    of practice for four of its cars and tracks, 22 races and four Le Mans Ultimate sessions.
+    of practice for four of its cars and tracks, 22 races, four Le Mans Ultimate sessions and 48 drivers on each
+    community leaderboard.
   - Which game?: entering Analysis from another tab, and every "choose a session" (`openSessPicker`), first asks the
     game when the account has sessions of more than one: a big card for each (its badge, its name, how many sessions),
     the last one chosen marked "Last time" (`pw.anGame`). The session window then opens on that game, its name in an

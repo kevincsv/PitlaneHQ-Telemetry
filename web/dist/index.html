@@ -4203,7 +4203,7 @@ function renderTyres(){
   CORNERS.forEach(c=>{const v=tyreVals(c),left=c[0]==="L";const lab=left?["O","M","I"]:["I","M","O"];const nm={LF:["Front left","Delantera izq."],RF:["Front right","Delantera der."],LR:["Rear left","Trasera izq."],RR:["Rear right","Trasera der."]}[c];
     const z=[v.L,v.M,v.R],avg=z.every(x=>x!=null)?(z[0]+z[1]+z[2])/3:null;
     const zl=(k,i)=>Tx({O:"outer",M:"middle",I:"inner"}[k],{O:"exterior",M:"centro",I:"interior"}[k]);
-    $("#tc-"+c).innerHTML=`<div class="hd"><span class="label">${c} · ${Lp(nm[0],nm[1],true)}</span><span class="mono" style="font-size:13px">${avg==null?"–":tmp(avg).toFixed(0)+tmpU()}</span></div>
+    $("#tc-"+c).innerHTML=`<div class="hd"><span class="label" title="${esc(Lp(nm[0],nm[1],true))}">${c}</span><span class="mono" style="font-size:13px">${avg==null?"–":tmp(avg).toFixed(0)+tmpU()}</span></div>
       <div class="zones">${z.map((t,i)=>`<div class="zone" style="background:${heatColor(t)}" title="${zl(lab[i])}">${t==null?"–":tmp(t).toFixed(0)}<small>${lab[i]}</small></div>`).join("")}</div>
       <div class="wear">${[v.wL,v.wM,v.wR].map(w=>`<span>${w==null?"–":Math.round(w*100)+"%"}</span>`).join("")}</div>${(()=>{const ws=[v.wL,v.wM,v.wR].filter(w=>w!=null);if(!ws.length)return"";const m=Math.min(...ws);return`<div class="wearbar" title="${esc(Tx("Rubber left","Goma que queda"))}"><b style="width:${Math.round(m*100)}%;background:${m<.7?"var(--bad)":"var(--good)"}"></b></div>`})()}
       <div class="tmeta"><span>${Tx("Cold","Frío")} ${kpa(v.cold)}</span>${v.hot>0?`<span>${Tx("Hot","Caliente")} ${kpa(v.hot)}</span>`:""}</div>`});
@@ -10988,7 +10988,7 @@ html:not(.ov) #v-live>#pw3Strip{order:1;display:grid;grid-template-columns:repea
 html:not(.ov) #v-live .wpanel:not([data-w=deltabar])>.label:first-child,html:not(.ov) #v-live .wpanel>.vhead:first-child,
 html:not(.ov) #v-tyres .panel>.label:first-child,html:not(.ov) #v-field .panel>.label:first-child{border-bottom:0!important;margin:0 -14px 4px!important;min-height:38px;padding-top:12px!important;padding-bottom:4px!important}
 html:not(.ov) #v-live .wpanel:not([data-w=deltabar])>.label:first-child,html:not(.ov) #v-live .wpanel>.vhead:first-child>.label,
-html:not(.ov) #v-tyres .panel>.label:first-child,html:not(.ov) #v-field .panel>.label:first-child{font:700 13.5px/1.2 var(--f-display)!important;letter-spacing:.1em!important;text-transform:uppercase;color:var(--muted)!important}
+html:not(.ov) #v-tyres .panel>.label:first-child,html:not(.ov) #v-field .panel>.label:first-child{font:700 13.5px/1.2 var(--f-display)!important;letter-spacing:.1em!important;text-transform:uppercase;color:var(--pw3-title,var(--muted))!important}
 html:not(.ov) #v-live .wpanel:not([data-w=deltabar])>.label:first-child::before,html:not(.ov) #v-live .wpanel>.vhead:first-child>.label::before,
 html:not(.ov) #v-tyres .panel>.label:first-child::before,html:not(.ov) #v-field .panel>.label:first-child::before{content:none!important;display:none!important}
 /* the car strip (the dash panel): gear, speed, rpm and the car's controls as cards */
@@ -11102,6 +11102,209 @@ html:not(.ov) #v-field .pw3-stdp>.pw3-ph{padding:12px 14px 6px!important;margin:
 html:not(.ov) :is(#v-field,#v-tyres) .pw3-ph .pw3-sub,html:not(.ov) #v-field .pw3-ph .std-bar,html:not(.ov) #v-field .pw3-ph .std-bar button{text-transform:none!important;letter-spacing:0!important}
 html:not(.ov) #v-field .pw3-ph .std-bar button{font:500 12.5px/1 var(--f-body)!important}
 @media (max-width:1439px){#liveGrid.pw3ws>[data-w=relative] .wtable .col-last{display:none}}
+/* ---- round 2: the design's own rules (base.css, themes.css .d3), on the app's elements ---- */
+/* the head: the track's name, the session under it, the modes and Layout */
+:root:not(.ov) #v-live>.lhead{margin:0 0 10px}
+:root:not(.ov) #v-live #trackName{font:700 30px/1.1 var(--f-display)!important;letter-spacing:.03em!important;margin:4px 0 0}
+:root:not(.ov) #v-live #sessLine{font:400 11px/1.4 var(--f-body)!important;color:var(--muted)}
+:root:not(.ov) #v-live #liveMode{padding:3px;gap:2px;background:var(--bg)!important;border:1px solid var(--line2)!important;border-radius:8px}
+:root:not(.ov) #v-live #liveMode button{min-height:32px;padding:6px 10px!important;border:0!important;border-radius:6px!important;font:600 12.5px/1 var(--f-body)!important;letter-spacing:0!important;text-transform:none!important}
+:root:not(.ov) #v-live #liveMode button[aria-pressed="true"]{background:var(--surface2)!important;color:var(--fg)!important;box-shadow:inset 0 0 0 1px var(--line2)!important}
+:root:not(.ov) #v-live #layoutBtn{min-height:32px;padding:6px 12px;font:400 13px/1 var(--f-body);letter-spacing:0;text-transform:none;background:var(--surface2);border:1px solid var(--line2);border-radius:5px;color:var(--fg)}
+/* the status strip */
+:root:not(.ov) #v-live>#pw3Strip{margin:0 0 20px;border-color:var(--line2);background:var(--line2)}
+#pw3Strip>div{padding:8px 10px;gap:1px}
+:root:not(.ov) #v-live #pw3Strip small{font:400 11px/1.5 var(--f-body)!important;text-transform:uppercase!important;letter-spacing:.04em!important;color:var(--muted)}
+#pw3Strip b{font:400 17px/1.5 var(--f-data)!important}
+#pw3Strip em{font:400 11.5px/1.5 var(--f-body)}
+/* the traces (Full) under the desk, the desk right under the strip */
+:root:not(.ov) #v-live>#liveGrid,:root:not(.ov) #v-live>#liveCmp{order:2}
+:root:not(.ov) #v-live>#liveTraces{order:3;margin-top:0}
+/* every panel: the design's .pn (10px in, the card edge, 8px corners) and its title (.pn>h3); the titles take the
+   frame's brighter colour of card contour B in the dark theme */
+@media (prefers-color-scheme:dark){html:not(.ov,.ovwin):not([data-theme="light"]){--pw3-title:#c3cad6}}
+html[data-theme="dark"]:not(.ov,.ovwin){--pw3-title:#c3cad6}
+:root:not(.ov) #v-live .wpanel{padding:10px!important;border:1px solid var(--line2)!important;border-radius:8px!important;background:var(--surface)}
+:root:not(.ov) #v-live .wpanel:not([data-w=deltabar])>.label:first-child,:root:not(.ov) #v-live .wpanel>.vhead:first-child,
+:root:not(.ov) #v-tyres .panel>.label:first-child,:root:not(.ov) #v-field .panel>.label:first-child{margin:0 0 10px!important;padding:0!important;min-height:0!important}
+:root:not(.ov) #v-live .wpanel>.vhead:first-child{padding-right:56px!important;min-height:22px!important;align-items:center}
+:root:not(.ov) #v-live .wpanel:not([data-w=deltabar])>.label:first-child,:root:not(.ov) #v-live .wpanel>.vhead:first-child>.label,
+:root:not(.ov) #v-tyres .panel>.label:first-child,:root:not(.ov) #v-tyres .panel>.label:first-child>span:first-child,:root:not(.ov) #v-field .panel>.label:first-child,:root:not(.ov) #v-field .panel>.label:first-child>span:first-child{font:700 14px/1.5 var(--f-display)!important;letter-spacing:.1em!important;text-transform:uppercase!important;color:var(--pw3-title,var(--muted))!important}
+/* the handles show on hover, as in the design's panels */
+:root:not(.ov) #v-live .wpanel>:is(.grip,.popbtn){opacity:0;transition:opacity .15s;top:6px!important}
+:root:not(.ov) #v-live .wpanel:hover>:is(.grip,.popbtn),:root:not(.ov) #v-live .wpanel>:is(.grip,.popbtn):focus-visible{opacity:1}
+@media (hover:none){:root:not(.ov) #v-live .wpanel>:is(.grip,.popbtn){opacity:.6}}
+/* the car strip */
+:root:not(.ov) #v-live .wpanel[data-w=dash]{border:0!important;padding:0!important;background:none!important;gap:6px}
+:root:not(.ov) #v-live [data-w=dash] .gearbox>div:not(.bars),:root:not(.ov) #v-live [data-w=dash]>.label,:root:not(.ov) #v-live [data-w=dash] .dcrow>span{border-color:var(--line)!important;padding:8px 10px!important;border-radius:8px!important}
+:root:not(.ov) #v-live [data-w=dash] .gearbox .label,:root:not(.ov) #v-live [data-w=dash]>.label,:root:not(.ov) #v-live [data-w=dash] .dcrow small{font:400 11px/1.5 var(--f-body)!important}
+#liveGrid.pw3ws>[data-w=dash] .gearbox .big,#liveGrid.pw3ws>[data-w=dash] .gear,#liveGrid.pw3ws>[data-w=dash] #rpmV,#liveGrid.pw3ws>[data-w=dash] .dcrow b,
+:root:not(.ov) #v-live [data-w=dash] .gear,:root:not(.ov) #v-live [data-w=dash] .big,:root:not(.ov) #v-live [data-w=dash] #rpmV,:root:not(.ov) #v-live [data-w=dash] .dcrow b{font:400 clamp(15px,1.45vw,20px)/1.5 var(--f-data)!important}
+/* the times */
+:root:not(.ov) #v-live .wpanel[data-w=timing]{border:0!important;padding:0!important;background:none!important}
+:root:not(.ov) #v-live [data-w=timing] .row>div{padding:10px 14px!important;border:1px solid var(--line)!important;border-radius:8px!important}
+:root:not(.ov) #v-live [data-w=timing] .label{font:400 11px/1.5 var(--f-body)!important}
+#liveGrid.pw3ws>[data-w=timing] .mid,:root:not(.ov) #v-live [data-w=timing] .mid{font:400 clamp(17px,1.6vw,22px)/1.5 var(--f-data)!important}
+:root:not(.ov) #v-live [data-w=timing] .mid.pb{color:var(--fg)}
+/* the delta bar: one bar, the value in its middle */
+:root:not(.ov) #v-live .wpanel[data-w=deltabar]{border:0!important;padding:0!important;background:none!important}
+:root:not(.ov) #v-live .wpanel[data-w=deltabar]>.label{display:none}
+:root:not(.ov) #v-live [data-w=deltabar] .dbar{display:block;position:relative;margin:0}
+:root:not(.ov) #v-live [data-w=deltabar] .dbar-track{height:30px;border:0;border-radius:8px;background:var(--surface2)}
+:root:not(.ov) #v-live [data-w=deltabar] .dbar-track i{top:0;bottom:0;background:var(--fg)}
+:root:not(.ov) #v-live [data-w=deltabar] .dbar-val{position:absolute;inset:0;display:grid;place-items:center;min-width:0;font:400 14px/1 var(--f-data)!important;color:var(--fg)!important;pointer-events:none}
+:root:not(.ov) #v-live [data-w=deltabar] #dbTrend{position:absolute;right:10px;top:50%;transform:translateY(-50%);font-size:12px}
+/* the Relative: the table, then the session as cards */
+:root:not(.ov) #v-live .wpanel[data-w=relative]>.vhead .legend{display:none}
+:root:not(.ov) #v-live #trackStrip{display:none!important}
+:root:not(.ov) #v-live #relBox{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px}
+:root:not(.ov) #v-live #relBox>*{grid-column:1/-1}
+:root:not(.ov) #v-live #relBox>.hstrip:not(.clsband){display:contents}
+:root:not(.ov) #v-live #relBox>.hstrip:not(.clsband)>div{grid-column:auto;order:2;background:var(--surface2);border-radius:5px;padding:8px 10px;gap:0;display:flex;flex-direction:column;align-items:flex-start;min-width:0}
+:root:not(.ov) #v-live #relBox>.tscroll{order:1}:root:not(.ov) #v-live #relBox>.clsband{order:0}
+:root:not(.ov) :is(#v-live #relBox,#v-field #stdFull) .hstrip .k{font:400 12px/1.5 var(--f-body)!important;letter-spacing:0!important;text-transform:none!important;color:var(--muted)}
+:root:not(.ov) :is(#v-live #relBox,#v-field #stdFull) .hstrip .v{font:400 16px/1.5 var(--f-data)!important;text-transform:none}
+/* the tables: the design's .tb */
+:root:not(.ov) :is(#v-live,#v-field) .wtable{font-size:13px;border-collapse:collapse}
+:root:not(.ov) :is(#v-live,#v-field) .wtable th{font:600 11.5px/1.5 var(--f-body)!important;letter-spacing:.05em!important;text-transform:uppercase!important;color:var(--muted)!important;padding:6px 8px!important;border-bottom:1px solid var(--line)!important}
+:root:not(.ov) :is(#v-live,#v-field) .wtable td{padding:7px 8px!important;border-bottom:1px solid var(--line)!important}
+:root:not(.ov) #v-live .wtable td{font-size:12.5px}
+#liveGrid.pw3ws>[data-w=relative] .wtable :is(th,td){padding:5px 4px!important}
+#liveGrid.pw3ws>[data-w=relative] .wtable{font-size:12.5px}
+:root:not(.ov) :is(#v-live,#v-field) .wtable tr.me td{background:color-mix(in srgb,var(--accent) 14%,transparent)!important;color:var(--fg)!important}
+:root:not(.ov) :is(#v-live,#v-field) .wtable .lic{font:600 11px/1.4 var(--f-data);height:auto;min-width:0;padding:1px 6px;border-radius:4px;border:0;box-shadow:none}
+:root:not(.ov) :is(#v-live,#v-field) .wtable td .note-ed,:root:not(.ov) :is(#v-live,#v-field) .wtable td [data-note]{opacity:.45}
+/* the kv cards (.kv in the design): fuel, engine, pit stop, weather */
+:root:not(.ov) #v-live [data-w=fuel]>.row,:root:not(.ov) #v-live #pitBox>.row,:root:not(.ov) #v-live #wxBox>.row{display:grid!important;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px!important;margin:0!important}
+:root:not(.ov) #v-live [data-w=fuel]>.row>div,:root:not(.ov) #v-live #pitBox>.row>div,:root:not(.ov) #v-live #wxBox>.row>div{display:flex;flex-direction:column;background:var(--surface2);border-radius:5px;padding:8px 10px;min-width:0}
+:root:not(.ov) #v-live [data-w=fuel]>.row>div{flex-direction:column-reverse;justify-content:flex-end}
+:root:not(.ov) #v-live [data-w=fuel] .sub,:root:not(.ov) #v-live #pitBox .label,:root:not(.ov) #v-live #wxBox small{font:400 12px/1.5 var(--f-body)!important;letter-spacing:0!important;text-transform:none!important;color:var(--muted)}
+:root:not(.ov) #v-live [data-w=fuel] .mid,:root:not(.ov) #v-live #pitBox .mid,:root:not(.ov) #v-live #wxBox .big{font:400 16px/1.5 var(--f-data)!important}
+:root:not(.ov) #v-live [data-w=fuel] .mid .unit{font-size:16px;margin-left:4px;color:var(--fg)}
+:root:not(.ov) #v-live [data-w=fuel] .meter{margin:8px 0 0;height:4px}
+:root:not(.ov) #v-live [data-w=fuel] .note,:root:not(.ov) #v-live #pitBox .note,:root:not(.ov) #v-live #wxBox .note,:root:not(.ov) #v-live [data-w=tyres] .note{font-size:12px;color:var(--muted);margin:8px 0 0}
+:root:not(.ov) #v-live #wxBox>.row>div.mono{justify-content:center;font-size:13px}
+:root:not(.ov) #v-live .wpanel[data-w=engine] dl.kv{display:grid;grid-template-columns:minmax(0,1fr)!important;gap:0!important;margin:0!important}
+:root:not(.ov) #v-live .wpanel[data-w=engine] dl.kv dt{background:var(--surface2);border-radius:5px 5px 0 0;padding:8px 10px 0;margin:0;font:400 12px/1.5 var(--f-body);color:var(--muted);text-transform:none;letter-spacing:0}
+:root:not(.ov) #v-live .wpanel[data-w=engine] dl.kv dd{background:var(--surface2);border-radius:0 0 5px 5px;padding:0 10px 8px;margin:0 0 8px;text-align:left!important;font:400 16px/1.5 var(--f-data)}
+:root:not(.ov) #v-live .wpanel[data-w=engine] dl.kv dd:last-of-type{margin-bottom:0}
+/* the mini-sectors: the design's .msec */
+:root:not(.ov) #v-live #secBox .msec{grid-template-columns:repeat(24,minmax(0,1fr));gap:3px;margin:0}
+:root:not(.ov) #v-live #secBox .msec i{height:22px;border:0;border-radius:3px;background:var(--surface2)}
+:root:not(.ov) #v-live #secBox .msec i.p{background:var(--pb)}:root:not(.ov) #v-live #secBox .msec i.g{background:var(--good)}:root:not(.ov) #v-live #secBox .msec i.y{background:var(--warn)}
+:root:not(.ov) #v-live #secBox .hstrip{padding:0 0 8px;gap:4px 14px}
+:root:not(.ov) #v-live #secBox .hstrip .k,:root:not(.ov) #v-live #secBox>.label{font:400 12px/1.5 var(--f-body)!important;letter-spacing:0!important;text-transform:none!important}
+:root:not(.ov) #v-live #secBox>.label{margin:8px 0 4px!important}
+:root:not(.ov) #v-live #secBox .hstrip .v{font:400 13px/1.5 var(--f-data)}
+:root:not(.ov) #v-live :is(#secBox,#gapLegend) .legend,:root:not(.ov) #v-live #secBox .legend{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:12px;color:var(--muted);margin-top:8px}
+:root:not(.ov) #v-live #secBox .legend i{width:12px;height:8px;border-radius:2px;margin-right:5px}
+/* the gap graph's names: the design's legend */
+:root:not(.ov) #v-live #gapLegend{gap:4px 14px;font-size:12px;padding:6px 0 0}
+:root:not(.ov) #v-live #gapLegend .k{font:400 12px/1.5 var(--f-body)!important;letter-spacing:0!important;text-transform:none!important}
+:root:not(.ov) #v-live #gapLegend .v{font:400 12px/1.5 var(--f-data)}
+/* the tyres: the design's four tyre cards */
+:root:not(.ov) #v-live #tyres{display:none}
+.pw3-tyres{display:none}
+:root:not(.ov) #v-live .pw3-tyres{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.pw3-tyre{background:var(--surface2);border-radius:5.6px;padding:10px;display:flex;flex-direction:column;gap:6px;min-width:0}
+.pw3-tyre .tyh{display:flex;justify-content:space-between;gap:6px}.pw3-tyre .tyh b{font-weight:700}
+.pw3-tyre .tyt{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:3px}
+.pw3-tyre .tyt span{border-radius:6px;padding:8px 2px;text-align:center;color:#fff;display:flex;flex-direction:column;font:700 13px/1.5 var(--f-data)}
+.pw3-tyre .tyt span.nd{background:var(--surface);color:var(--muted)}
+.pw3-tyre .tyt small{color:rgba(255,255,255,.85);font:400 10.5px/1.3 var(--f-data)}
+.pw3-tyre .tyw{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));text-align:center;font:400 12px/1.5 var(--f-data)}
+.pw3-tyre>small{font:400 12px/1.5 var(--f-data);color:var(--muted);overflow-wrap:anywhere}
+/* driving stats, braking markers */
+:root:not(.ov) #v-live #statsBox .wtable td:first-child{color:var(--fg)}
+:root:not(.ov) #v-live #bmCtl .chip,:root:not(.ov) #v-live #cmpCtl .chip{font:500 12.5px/1 var(--f-body)!important;padding:7px 12px!important;border-radius:5px!important;letter-spacing:0!important;text-transform:none!important}
+/* the radar and the g-force: centred, as small as the design's */
+#liveGrid.pw3ws>[data-w=radar] canvas,#liveGrid.pw3ws>[data-w=gg] canvas{display:block;margin:0 auto;max-width:100%}
+#liveGrid.pw3ws #ggStats{display:grid;grid-template-columns:minmax(0,1fr);gap:2px;font-size:12px;padding:6px 0 0}
+#liveGrid.pw3ws #ggStats>div{justify-content:space-between}
+#liveGrid.pw3ws #ggStats .k{font:400 11px/1.4 var(--f-body)!important;letter-spacing:0!important;text-transform:none!important}
+#liveGrid.pw3ws #ggStats .v{font:400 12px/1.4 var(--f-data)}
+
+/* Standings: the session's six cards in one row above the table, the table the design's */
+:root:not(.ov) #v-field .pw3-stdp{padding:10px!important;border:1px solid var(--line2)!important;border-radius:8px!important}
+:root:not(.ov) #v-field .pw3-stdp>.pw3-ph{padding:0!important;margin:0 0 10px!important;min-height:0!important}
+:root:not(.ov) #v-field #fieldSub{display:none}
+:root:not(.ov) #v-field #stdFull{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px}
+:root:not(.ov) #v-field #stdFull>*{grid-column:1/-1;order:3}
+:root:not(.ov) #v-field #stdFull>.hstrip{display:contents!important}
+:root:not(.ov) #v-field #stdFull>.hstrip>div{grid-column:auto;order:1;display:flex!important;flex-direction:column;align-items:flex-start;gap:0!important;background:var(--surface2);border-radius:5px;padding:8px 10px;min-width:0}
+:root:not(.ov) #v-field #stdFull>.hstrip:not(:first-child)>div{order:2}
+:root:not(.ov) #v-field #stdFull>.tscroll{margin-top:0}
+:root:not(.ov) #v-field #stdFull .wtable td.col-pos{font-weight:700}
+:root:not(.ov) #v-field #stdPos{margin-top:10px;padding:10px!important;border:1px solid var(--line2)!important;border-radius:8px!important}
+:root:not(.ov) #v-field #stdPos>.label{margin:0 0 10px!important;padding:0!important;font:700 14px/1.5 var(--f-display)!important;letter-spacing:.1em!important;text-transform:uppercase!important;color:var(--pw3-title,var(--muted))!important}
+:root:not(.ov) #v-field .std-bar{display:inline-flex;padding:3px;gap:2px;background:var(--bg);border:1px solid var(--line2);border-radius:8px}
+:root:not(.ov) #v-field .pw3-ph .std-bar button{min-height:30px;padding:6px 10px!important;border:0!important;border-radius:6px!important;font:600 12.5px/1 var(--f-body)!important;background:none!important;color:var(--muted)!important;box-shadow:none!important}
+:root:not(.ov) #v-field .pw3-ph .std-bar button[aria-pressed="true"]{background:var(--surface2)!important;color:var(--fg)!important;box-shadow:inset 0 0 0 1px var(--line2)!important}
+
+/* Tyres: Tyres and Setup hints side by side, then Balance, Brake pressure and Pit readings (two thirds) */
+:root:not(.ov) #v-tyres>.grid{grid-template-columns:repeat(6,minmax(0,1fr));gap:10px}
+:root:not(.ov) #v-tyres>.grid>.panel{grid-column:span 3!important;padding:10px!important;border:1px solid var(--line2)!important;border-radius:8px!important;margin:0}
+:root:not(.ov) #v-tyres>.grid>.panel:nth-child(3),:root:not(.ov) #v-tyres>.grid>.panel:nth-child(4){grid-column:span 2!important}
+:root:not(.ov) #v-tyres>.grid>.panel:nth-child(5){grid-column:span 4!important}
+:root:not(.ov) #v-tyres .pw3-ph{min-height:0!important}
+:root:not(.ov) #v-tyres #tyreSub{display:none}
+:root:not(.ov) #v-tyres .pw3-tywin{margin:0 0 4px}
+:root:not(.ov) #v-tyres .pw3-tywin>.label{font:400 12px/1.5 var(--f-body)!important;letter-spacing:0!important;text-transform:none!important}
+:root:not(.ov) #v-tyres .pw3-tywin .num{width:64px;font:400 16px var(--f-data);padding:4px 8px;min-height:32px}
+:root:not(.ov) #v-tyres .pw3-tynote{font-size:12px;margin:8px 0}
+:root:not(.ov) #v-tyres .carbox{gap:10px}
+:root:not(.ov) #v-tyres .tcard{background:var(--surface2)!important;border:0!important;border-radius:5.6px!important;padding:10px!important;gap:6px}
+:root:not(.ov) #v-tyres .tcard .hd .label{font:700 13px/1.5 var(--f-body)!important;letter-spacing:0!important;text-transform:none!important;color:var(--fg)!important}
+:root:not(.ov) #v-tyres .tcard .hd .mono{font:400 13px/1.5 var(--f-data)!important}
+:root:not(.ov) #v-tyres .tcard .zones{gap:3px}
+:root:not(.ov) #v-tyres .tcard .zone{border-radius:6px;padding:8px 2px;font:700 13px/1.5 var(--f-data);color:#fff}
+:root:not(.ov) #v-tyres .tcard .zone small{color:rgba(255,255,255,.85);font-size:10.5px}
+:root:not(.ov) #v-tyres .tcard .wear{font:400 12px/1.5 var(--f-data)}
+:root:not(.ov) #v-tyres .tcard .tmeta{font:400 12px/1.5 var(--f-data);color:var(--muted)}
+:root:not(.ov) #v-tyres #heatLegend{font-size:12px;margin-top:8px!important}
+:root:not(.ov) #v-tyres #tyreHints{margin:0!important;gap:4px!important}
+:root:not(.ov) #v-tyres #tyreHints .hint{display:list-item;list-style:disc;margin-left:18px;font-size:13px}
+:root:not(.ov) #v-tyres #tyreHints .hint .tag{background:none!important;border:0!important;padding:0!important;margin-right:4px;font:700 13px var(--f-body)!important;color:var(--fg)!important}
+:root:not(.ov) #v-tyres #tyreHints .note{font-size:12px;margin:4px 0 0}
+:root:not(.ov) #v-tyres #tyreBalance dt{font:400 12px/1.5 var(--f-body);border-radius:5px 5px 0 0}
+:root:not(.ov) #v-tyres #tyreBalance dd{font:400 16px/1.5 var(--f-data);border-radius:0 0 5px 5px}
+:root:not(.ov) #v-tyres #brakeBars{margin:0!important;display:grid!important;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px!important}
+:root:not(.ov) #v-tyres #brakeBars .bbar{display:grid;grid-template-columns:1fr;grid-template-rows:auto auto auto;gap:2px;background:var(--surface2);border-radius:5px;padding:8px 10px}
+:root:not(.ov) #v-tyres #brakeBars .bbar>span:first-child{font:400 12px/1.5 var(--f-body);color:var(--muted);order:0}
+:root:not(.ov) #v-tyres #brakeBars .bbar>span:last-child{order:1;text-align:left!important;font:400 16px/1.5 var(--f-data)}
+:root:not(.ov) #v-tyres #brakeBars .bbar>.tr{order:2;height:3px}
+:root:not(.ov) #v-tyres #brakeBars+.note{font-size:12px;margin:8px 0 0}
+:root:not(.ov) #v-tyres #tyreHist{font-size:13px;width:100%}
+:root:not(.ov) #v-tyres #tyreHist th{font:600 11.5px/1.5 var(--f-body)!important;letter-spacing:.05em!important;text-transform:uppercase!important;padding:6px 8px!important;text-align:left!important;border-bottom:1px solid var(--line)!important}
+:root:not(.ov) #v-tyres #tyreHist td{padding:7px 8px!important;text-align:left!important;border-bottom:1px solid var(--line)!important}
+
+:root:not(.ov) #v-live #incBox .big{font:400 22px/1.3 var(--f-data)!important}
+:root:not(.ov) #v-live #incBox .sub{font:400 12px/1.5 var(--f-body);color:var(--muted)}
+:root:not(.ov) #v-live #incBox .inclist{display:grid;gap:6px;margin-top:8px;font:400 13px/1.5 var(--f-body)}
+:root:not(.ov) #v-live #incBox .inclist>div{display:grid;grid-template-columns:1fr auto auto;gap:8px}
+:root:not(.ov) #v-live #incBox .inclist>.muted:only-child{display:block;color:var(--good);font:400 13px/1.5 var(--f-body)}
+:root:not(.ov) #v-live>#liveTraces{padding:10px!important;border:1px solid var(--line2)!important;border-radius:8px!important}
+:root:not(.ov) #v-live>#liveTraces>.trc-head{margin:0 0 10px!important;padding:0!important;min-height:0!important;border:0!important}
+:root:not(.ov) #v-live #trcTitle{font:700 14px/1.5 var(--f-display)!important;letter-spacing:.1em!important;text-transform:uppercase!important;color:var(--pw3-title,var(--muted))!important}
+@media (max-width:1100px){
+  :root:not(.ov) #v-tyres>.grid>.panel,:root:not(.ov) #v-tyres>.grid>.panel:nth-child(n){grid-column:1/-1!important}
+}
+@media (max-width:820px){
+  :root:not(.ov) #v-live #trackName{font-size:26px!important}
+  :root:not(.ov) #v-live>#pw3Strip{margin-bottom:20px}
+  #pw3Strip b{font-size:17px!important}
+  :root:not(.ov) #v-tyres .carbox{grid-template-columns:repeat(2,minmax(0,1fr))}
+  :root:not(.ov) #v-tyres #tyreBalance{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  :root:not(.ov) #v-tyres #tyreBalance dt:nth-of-type(1){grid-column:1!important;grid-row:1!important}:root:not(.ov) #v-tyres #tyreBalance dd:nth-of-type(1){grid-column:1!important;grid-row:2!important}
+  :root:not(.ov) #v-tyres #tyreBalance dt:nth-of-type(2){grid-column:2!important;grid-row:1!important}:root:not(.ov) #v-tyres #tyreBalance dd:nth-of-type(2){grid-column:2!important;grid-row:2!important}
+  :root:not(.ov) #v-tyres #tyreBalance dt:nth-of-type(3){grid-column:1!important;grid-row:3!important}:root:not(.ov) #v-tyres #tyreBalance dd:nth-of-type(3){grid-column:1!important;grid-row:4!important}
+  :root:not(.ov) #v-tyres #tyreBalance dt:nth-of-type(4){grid-column:2!important;grid-row:3!important}:root:not(.ov) #v-tyres #tyreBalance dd:nth-of-type(4){grid-column:2!important;grid-row:4!important}
+  :root:not(.ov) #v-tyres #tyreBalance dt:nth-of-type(5){grid-column:1!important;grid-row:5!important}:root:not(.ov) #v-tyres #tyreBalance dd:nth-of-type(5){grid-column:1!important;grid-row:6!important}
+  :root:not(.ov) #v-live .pw3-tyres{grid-template-columns:repeat(2,minmax(0,1fr))}
+  :root:not(.ov) #v-live [data-w=dash] .gear,:root:not(.ov) #v-live [data-w=dash] .big,:root:not(.ov) #v-live [data-w=dash] #rpmV,:root:not(.ov) #v-live [data-w=dash] .dcrow b{font-size:20px!important}
+  :root:not(.ov) #v-live [data-w=timing] .mid{font-size:22px!important}
+  :root:not(.ov) #v-live [data-w=dash] .gearbox>div:not(.bars),:root:not(.ov) #v-live [data-w=dash]>.label,:root:not(.ov) #v-live [data-w=dash] .dcrow>span{flex:1 1 calc(25% - 6px)!important;max-width:calc(25% - 4.5px)}
+}
 </style>
 <script id="pw3-live-js">
 /* Pit Wall Workspace: live helpers. Telemetry's default arrangement is the Workspace desk: the Relative and the
@@ -11112,7 +11315,7 @@ html:not(.ov) #v-field .pw3-ph .std-bar button{font:500 12.5px/1 var(--f-body)!i
 const PW3_SLOT={relative:"L",incidents:"L",
   dash:"M",timing:"M",deltabar:"M",compare:"M",sectors:"M",inputs:"M",fuel:"M",engine:"M",tyres:"M",gaps:"M",pit:"M",stats:"M",brakes:"M",coach:"M",standings:"M",telemetry:"M",
   map:"R",trackbar:"R",radar:"R",gg:"R",weather:"R",boost:"R",spotter:"R",system:"R"};
-const PW3_SEQ=["relative","incidents","dash","timing","deltabar","compare","sectors","inputs","fuel","engine","tyres","gaps","pit","stats","brakes","coach","standings","telemetry","map","trackbar","radar","gg","weather","boost","spotter","system"];
+const PW3_SEQ=["relative","incidents","dash","timing","deltabar","sectors","inputs","fuel","engine","tyres","gaps","pit","stats","brakes","compare","coach","standings","telemetry","map","trackbar","radar","gg","weather","boost","spotter","system"];
 const PW3_GROUPS=[["inputs","fuel","engine"],["gaps","pit"],["stats","brakes"],["radar","gg"]];
 const PW3_ROW=2,PW3_GAP=10;
 let PW3_WS=0,PW3_COL={};
@@ -11182,13 +11385,23 @@ function pw3DragHook(grid){grid.addEventListener("pointerdown",e=>{const h=e.tar
   PW3_COL=store.get("pw.liveWsCol",{})||{};if(!pw3HasOwnLayout()&&Object.keys(PW3_COL).length){PW3_COL={};store.set("pw.liveWsCol",{})}
   const grid=$("#liveGrid");if(!grid)return;
   if(PW3_WS&&!ORDER){const by=Object.fromEntries([...grid.querySelectorAll(":scope>.wpanel")].map(p=>[p.dataset.w,p])),empty=$("#liveEmpty");PW3_SEQ.forEach(w=>{if(by[w])grid.insertBefore(by[w],empty)})}
-  if(PW3_WS){const r=$("#radarC"),g=$("#ggC");if(r)r.setAttribute("height","170");if(g)g.setAttribute("height","170")}
+  if(PW3_WS){const r=$("#radarC"),g=$("#ggC"),gp=$("#gapC");if(r)r.setAttribute("height","170");if(g)g.setAttribute("height","170");if(gp)gp.setAttribute("height","150")}
   pw3DragHook(grid);
   try{applyLayout()}catch(e){}
   const moveState=()=>{const st=$("#pwDashState"),sub=$("#sessLine");if(st&&sub&&st.parentElement!==sub.parentElement){st.classList.add("pw3-state");sub.after(st)}};
   if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",()=>{moveState();packGrid()});else moveState();
   setInterval(()=>{if(CUR_VIEW!=="live")return;pw3Strip();if(pw3WsOn())pw3Mason()},400);
   let lw=innerWidth;addEventListener("resize",()=>{if((lw>1100)!==(innerWidth>1100)){lw=innerWidth;packGrid()}lw=innerWidth})})();
+/* round 2: the Tyres panel as the design's four tyre cards (the edges' temperatures, the wear and the pressures) */
+function pw3TyreCards(){const box=$("#pw3Tyres");if(!box||OV.on)return;const ty=ui("tyres")||{};
+  const html=["LF","RF","LR","RR"].map(k=>{const v=tyreVals(k),z=[v.L,v.M,v.R],lab=k[0]==="L"?["O","M","I"]:["I","M","O"],avg=z.every(x=>x!=null)?(z[0]+z[1]+z[2])/3:v.M;
+    return `<div class="pw3-tyre"><div class="tyh"><b>${k}</b><span class="mono">${avg==null?"–":tmp(avg).toFixed(0)+tmpU()}</span></div>`
+      +`<div class="tyt">${z.map((t,i)=>`<span class="${t==null?"nd":""}"${t==null?"":` style="background:${heatColor(t)}"`}>${t==null?"–":tmp(t).toFixed(0)}<small>${lab[i]}</small></span>`).join("")}</div>`
+      +(ty.wear===false?"":`<div class="tyw">${[v.wL,v.wM,v.wR].map(w=>`<span>${w==null?"–":Math.round(w*100)+"%"}</span>`).join("")}</div>`)
+      +`<small>${esc(Tx("Cold","Frío",null,"Frio"))} ${kpa(v.cold)}${v.hot>0?` · ${esc(Tx("Hot","Caliente",null,"Quente"))} ${kpa(v.hot)}`:""}</small></div>`}).join("");
+  if(box.dataset.h!==html){box.dataset.h=html;box.innerHTML=html}}
+(function pw3LiveR2(){if(typeof OV==="undefined"||OV.on)return;const t=$("#tyres");if(t&&!$("#pw3Tyres")){const d=document.createElement("div");d.className="pw3-tyres";d.id="pw3Tyres";t.after(d)}
+  setInterval(()=>{if(CUR_VIEW==="live")pw3TyreCards()},500)})();
 </script>
 <style id="pw3-more">
 /* Pit Wall Workspace: more (Overlays, Community, Leagues, My account, Settings). The linear layout: the title and the

@@ -137,5 +137,14 @@
     "_help": "The Support button beside Patreon: buy is the Stripe Payment Link (customer chooses the amount), link its id (plink_...). A donation gives the Supporter badge, never Pro.",
     "buy": "https://buy.stripe.com/fZu00beDP64g0fK5LKcwg01",
     "link": "plink_1UX1wZ0v1vN4NxKYN7Dn0YeK"
+  },
+  "invite": {
+    "_help": "Invite a friend (cloud/src/referrals.js): a friend who signed up with a driver's link or code and used Pitlane HQ on `days` different days, with at least `drives` sessions driven, within `within` days of signing up gives both a month of Pro (`months`). Earned during the beta, the months are kept and start when Pro is switched on. An inviter earns at most `max` months a year; the friend always gets theirs. A friend types a code only in their first `claimDays` days.",
+    "days": 7,
+    "drives": 1,
+    "within": 60,
+    "months": 1,
+    "max": 12,
+    "claimDays": 14
   }
 }

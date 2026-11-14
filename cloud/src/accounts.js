@@ -12,6 +12,7 @@ import { proOnRegister, proOf, proGate, proHere } from "./lemon.js";
 import { discordAccount, discordStart, useDiscordGrant, discordAccountId, discordLinkedAny, linkDiscordLogin, oauthReady as discordReady } from "./discord.js";
 import { steamAccount, steamStart, useSteamGrant, steamAccountId, linkSteam } from "./steam.js";
 import { notePresence } from "./presence.js";
+import { inviteOnSignup, noteRef } from "./referrals.js";
 import { sealEscrow, escrowLogin, escrowReady } from "./escrow.js";
 import { visitOf, appSignupSrc, countryOf, dlKey, DL_DAYS, SQL_ACCOUNT_SRC, SQL_DL_FIND } from "./sourceslib.js";
 import { googleStart, googleReady, useGoogleGrant, googleAccountId, linkGoogle } from "./google.js";
@@ -141,6 +142,9 @@ const accountRows = (env, id) => [
   env.DB.prepare("DELETE FROM alert_subs WHERE account_id=?1").bind(id),
   env.DB.prepare("UPDATE crash_reports SET last_account=NULL WHERE last_account=?1").bind(id),
   env.DB.prepare("DELETE FROM support_threads WHERE account_id=?1").bind(id),
+  // its invites: the ones still waiting go; a given one stays (it counts for its inviter's yearly limit), under no name
+  env.DB.prepare("DELETE FROM referrals WHERE (invitee=?1 OR inviter=?1) AND state<>'given'").bind(id),
+  env.DB.prepare("DELETE FROM referral_marks WHERE account_id=?1").bind(id),
   env.DB.prepare("DELETE FROM accounts WHERE id=?1").bind(id),
 ];
 
@@ -323,7 +327,7 @@ export async function accounts(req, env, url) {
       env.DB.prepare("INSERT INTO community_users (id, token_hash, alias, created) VALUES (?1,?2,?3,?4)").bind(id, "acct:" + id, display, Date.now()),
       await signupSrc(env, req, id, body),
     ]);
-    await inviteFollow(env, id, body).catch(() => {});
+    await inviteFollow(env, id, body, req).catch(() => {});
     if (steam) await linkSteam(env, steam.steamid, id, steam.persona);
     if (google) await linkGoogle(env, google.sub, id);
     // that Discord was linked to another account in the meantime: the account is made without it, and the page says so
@@ -488,6 +492,8 @@ export async function accounts(req, env, url) {
     return json({ error: "verify your email first: we sent you a link, open it and then sign in", code: "verify_first" }, 403);
   // the reads every app makes about once a minute say who is online and where (the admin page's Online tab)
   if (m === "GET" && (p === "/me" || p === "/sync" || p === "/sync/meta")) await notePresence(env, req, a);
+  // part of a waiting invite: the PCs and connections it is used on (a friend on the inviter's own PC is refused, referrals.js)
+  if (m === "GET" && p === "/me" && a.ref_watch) await noteRef(env, req, a.id);
   const reauth = async () => noPassword(a) || (isKey(body.auth) && same(await authHash(a.auth_salt, body.auth), a.auth_hash));
   const SOCIAL_ONLY = () => json({ error: "this account signs in with Steam, Discord or Google", code: "social_only" }, 400);
   // a passwordless account never unlinks the last way it signs in with
@@ -721,7 +727,7 @@ async function quickRegister(env, body, ip, req) {
     env.DB.prepare("INSERT INTO community_users (id, token_hash, alias, created) VALUES (?1,?2,?3,?4)").bind(id, "acct:" + id, display, Date.now()),
       await signupSrc(env, req, id, body),
   ]);
-  await inviteFollow(env, id, body).catch(() => {});
+  await inviteFollow(env, id, body, req).catch(() => {});
   if (prov === "steam") await linkSteam(env, g.steamid, id, g.persona);
   else if (prov === "discord") await linkDiscordLogin(env, g, id);
   else await linkGoogle(env, g.sub, id);
@@ -736,11 +742,16 @@ async function quickRegister(env, body, ip, req) {
 
 // "Invite a friend": a driver's link (https://pitlanehq.app/?ref=invite-<their account id>) is the first visit of the
 // browser the new account is made in; the two accounts then follow each other (Friends on every device)
-export async function inviteFollow(env, id, body) {
-  const v = body && body.src && typeof body.src === "object" ? visitOf(body.src) : null, by = v && v.inviter;
+export async function inviteFollow(env, id, body, req) {
+  const v = body && body.src && typeof body.src === "object" ? visitOf(body.src) : null;
+  let by = v && v.inviter;
   if (!by || by === id) return;
-  const ok = await env.DB.prepare("SELECT id FROM accounts WHERE id=?1").bind(by).first().catch(() => null);
-  if (!ok) return;
+  // the link carries the inviter's code (or their account id, the links made before codes)
+  const ok = await env.DB.prepare("SELECT id FROM accounts WHERE invite_code=?1 OR id=?1 LIMIT 1").bind(by).first().catch(() => null);
+  if (!ok || ok.id === id) return;
+  by = ok.id;
+  // and it counts for "Invite a friend": a month of Pro for both once the friend has used Pitlane HQ for a week
+  await inviteOnSignup(env, req, id, by).catch(() => {});
   const now = Date.now(), add = "INSERT OR IGNORE INTO follows (account_id, driver_id, created) VALUES (?1,?2,?3)";
   await env.DB.batch([env.DB.prepare(add).bind(id, by, now), env.DB.prepare(add).bind(by, id, now)]).catch(() => {});
 }

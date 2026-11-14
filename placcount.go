@@ -1089,7 +1089,8 @@ func registerPLRoutes(mux *http.ServeMux) {
 			p == "/community/tester/ask" || // asking to test what is in development (testask.js)
 			p == "/community/report" || p == "/community/blocks" || // reporting and blocking what drivers post (moderation.js)
 			p == "/community/crash" || // the page's errors (reports.js)
-			p == "/community/friends/follow" || p == "/community/friends/unfollow") // following drivers (friends.js)
+			p == "/community/friends/follow" || p == "/community/friends/unfollow" || // following drivers (friends.js)
+			p == "/community/invite/claim") // a friend's invite code (referrals.js)
 		// and the admin panel deletes shared items and accounts
 		del := r.Method == http.MethodDelete && strings.HasPrefix(p, "/community/admin/")
 		if (r.Method != http.MethodGet && !post && !del) || !ok || strings.Contains(p, "..") {
@@ -1107,7 +1108,8 @@ func registerPLRoutes(mux *http.ServeMux) {
 			return
 		}
 		// Pro is kept on one PC: its questions carry this PC's id and name
-		if p == "/community/pro" || strings.HasPrefix(p, "/community/pro?") || p == "/community/pro/pc" {
+		// and so do the invites: a friend on the inviter's own PC does not count (referrals.js)
+		if p == "/community/pro" || strings.HasPrefix(p, "/community/pro?") || p == "/community/pro/pc" || p == "/community/invite" || p == "/community/invite/claim" {
 			sep := "?"
 			if strings.Contains(p, "?") {
 				sep = "&"

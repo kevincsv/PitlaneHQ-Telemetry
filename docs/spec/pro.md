@@ -39,3 +39,23 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   they keep it ($3 a month or $29.50 a year), still if they come back within two months of stopping, and can buy Pro for
   life for $29.99 within two months of the beta ending. A supporter's own profile says "You are a founding supporter. Your
   50% off Pro is locked in." (PC, web and phones). None of it is built into the payments yet.
+
+- Invite a friend (`cloud/src/referrals.js`, migration 0100, `invite` in license_plans.json, the card at the top of
+  Community → Friends on every device, `inviteHTML()` in index.html). Every account has a short code (8 letters and
+  digits without 0/O/1/I/L, shown in capitals) and the link https://pitlanehq.app/?ref=invite-<code> (the older links
+  with the account id still work). A friend is an invite when they make their account from the link (the first visit
+  of that browser, `inviteFollow` in accounts.js), or type the code on the card in their account's first 14 days (POST
+  `/community/invite/claim`; the PC agent and the phones, where no link was opened); either way the two follow each
+  other. Once the friend has used Pitlane HQ on 7 different days (any device, `usage_days` and the sessions they drove)
+  with at least one session driven, within 60 days of signing up, and their email is confirmed, both get a month of
+  Pro (the hourly job, `refCheck`). Invites count from today, during the beta too: a month earned while everything is
+  free is kept (`ref_months`) and starts when the admin switches Pro on; with Pro on it goes on top of the invite Pro
+  running (`ref_pro_until`, its own column, so a purchase or a refund never touches it; `proOf` gives proSrc
+  "invite"). Abuse: never one's own code, never two drivers inviting each other, only a new account types a code, and
+  a friend seen on the same PC (the agent's `?pc=`), install or connection as their inviter (`referral_marks`, hashes
+  with the server's secret, kept 90 days) is refused. An inviter earns at most 12 months a year; their friend still
+  gets theirs. The card shows the code, Share your link and Copy code, how many were invited, are in their first week
+  and the months earned, each friend's days so far ("4 of 7 days", Month earned, Not counted, Expired), who invited
+  you, and the months saved or "Pro until" a date; during the beta it says the months start when Pro launches. The
+  admin page's Pro part counts them. Deleting an account removes its waiting invites; a given one stays, under no
+  name, for the yearly limit.

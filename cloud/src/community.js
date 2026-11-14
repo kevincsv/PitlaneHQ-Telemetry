@@ -59,6 +59,7 @@ async function countUpload(env, u) {
 import { gameOf } from "./games.js";
 import { famId, famIds, famName, famGroups, noteCar } from "./carfamily.js";
 import { proRoutes } from "./lemon.js";
+import { referralRoutes } from "./referrals.js";
 import { coachTipRoutes } from "./coachtips.js";
 import { lmuApiRoutes } from "./lmuapi.js";
 import { turnsFromPath } from "./trackgeo.js";
@@ -300,6 +301,7 @@ export async function community(req, env, url, ctx) {
     return json({ id, token });
   }
   { const pr = await proRoutes(req, env, p, m, body); if (pr) return pr; } // Pitlane HQ Pro: the offer, the beta switch
+  { const rr = await referralRoutes(req, env, p, m, body); if (rr) return rr; } // "Invite a friend": a month of Pro for both (referrals.js)
   { const ta = await testAskRoutes(req, env, p, m, body, { sessionAccount, isAdmin, isTester, testerAlert, testAskAlert }); if (ta) return ta; } // asking to test what is in development: testask.js
   { const mo = await moderationRoutes(req, env, p, m, body, { sessionAccount, isAdmin, mail: sendContentReport }); if (mo) return mo; } // reporting and blocking what drivers post: moderation.js
   // every list is for one game: laps and analyses of different games are never mixed

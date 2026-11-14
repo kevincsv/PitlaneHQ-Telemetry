@@ -161,6 +161,10 @@
     // the drivers you follow: two of the board's drivers, their laps the board's own (Compare opens them)
     if (p === "/community/friends") return { friends: [6, 8].map((k, n) => ({ id: "demofriend" + n, name: NAMES[k], sup: n === 0, since: NOW - 30 * DAY,
       laps: COMBOS.slice(0, 3).map((c, i) => { const l = board(c.trackId, c.carId)[k]; return l && { id: l.id, track: c.track, car: c.car, trackId: c.trackId, carId: c.carId, time: l.time, game: "iracing", created: NOW - (i + n) * DAY }; }).filter(Boolean) })) };
+    // "Invite a friend": a code, three friends invited (one in their first week, one month earned), saved for when Pro starts
+    if (p === "/community/invite") return { gate: false, code: "K7PX4QMB", link: "https://pitlanehq.app/?ref=invite-k7px4qmb", rule: { days: 7, drives: 1, within: 60, months: 1, max: 12 },
+      friends: [{ name: NAMES[2], state: "waiting", since: NOW - 4 * DAY, days: 4, drives: 1 }, { name: NAMES[6], state: "given", since: NOW - 20 * DAY }, { name: NAMES[8], state: "given", since: NOW - 30 * DAY }],
+      given: 2, waiting: 1, banked: 2, proUntil: 0, canClaim: false };
     if (p === "/community/friends/laps") return { laps: [6, 8].map((k) => board(q.get("trackId"), q.get("carId"))[k]).filter(Boolean).map((l) => ({ id: l.id, alias: l.alias, time: l.time, sectors: l.sectors })) };
     if (p === "/community/admin/analytics") {
       const days = Math.max(1, Math.min(90, +q.get("days") || 30)), r = rng(7), d = (i) => new Date(NOW - i * DAY).toISOString().slice(0, 10);

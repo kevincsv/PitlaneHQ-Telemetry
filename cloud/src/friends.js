@@ -7,6 +7,7 @@
 //   GET  /community/friends          → {friends: [{id, name, sup, laps: [{id, track, car, trackId, carId, time, game, created}]}]}
 //   GET  /community/friends/laps?trackId=&carId=&game= → {laps: [{id, alias, time, sectors, fid}]}: each friend's lap there
 //   follows(env, account, id) → whether the account follows that driver (the profile opens a friend's by their id)
+import { inviteCode, inviteLink } from "./referralslib.js";
 import { famId } from "./carfamily.js";
 
 const JSONH = { "content-type": "application/json; charset=utf-8", "cache-control": "no-store", "access-control-allow-origin": "*" };
@@ -67,7 +68,8 @@ export async function friendRoutes(req, env, p, m, body, url, game, acc) {
     for (const l of laps) { const k = by.get(l.uid) || []; if (k.length < 8) k.push(l); by.set(l.uid, k); }
     // "Invite a friend": the account's own link; whoever makes an account from it and this account follow each other
     // (inviteFollow in accounts.js)
-    return json({ invite: "https://pitlanehq.app/?ref=invite-" + acc.id, friends: fr.map((f) => ({ id: f.id, name: f.name || "Driver", sup: !!f.sup, since: f.created, laps: (by.get(f.id) || []).map(({ uid, ...l }) => l) })) });
+    const code = await inviteCode(env, acc);
+    return json({ invite: code ? inviteLink(code) : "https://pitlanehq.app/?ref=invite-" + acc.id, friends: fr.map((f) => ({ id: f.id, name: f.name || "Driver", sup: !!f.sup, since: f.created, laps: (by.get(f.id) || []).map(({ uid, ...l }) => l) })) });
   }
   if (p === "/friends/laps" && m === "GET") {
     const t = +url.searchParams.get("trackId"), c = await famId(env, game, url.searchParams.get("carId"));

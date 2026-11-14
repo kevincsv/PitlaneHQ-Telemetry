@@ -1,5 +1,6 @@
 // Pitlane HQ cloud: receives sessions and laps from PitlaneHQ.exe (the
 // agent) and serves the web viewer. Runs on Cloudflare Workers with D1.
+import { refCheck } from "./referrals.js";
 import { discordServerRoute } from "./discordserver.js";
 import { voiceIce } from "./voiceice.js";
 import { downloads, latestBuild } from "./downloads.js";
@@ -560,7 +561,7 @@ export default {
     // the coach learns from every session: the server's own coach over the sessions nobody opened it on, and the answers
     // the next sessions give to every tip (coachlearn.js)
     ctx.waitUntil(shadowRun(env).then(() => answerRun(env)).catch(() => {}));
-    if (hourly) { ctx.waitUntil(fillCats(env).catch(() => {})); ctx.waitUntil(fillSectors(env).catch(() => {})); ctx.waitUntil(pruneUsage(env).catch(() => {})); ctx.waitUntil(pruneSeen(env).catch(() => {})); }
+    if (hourly) { ctx.waitUntil(fillCats(env).catch(() => {})); ctx.waitUntil(fillSectors(env).catch(() => {})); ctx.waitUntil(pruneUsage(env).catch(() => {})); ctx.waitUntil(pruneSeen(env).catch(() => {})); ctx.waitUntil(refCheck(env).catch(() => {})); }
     if (daily) { ctx.waitUntil(buildOvalKinds(env).catch(() => {})); ctx.waitUntil(fixLapTimes(env).catch(() => {})); ctx.waitUntil(repairImpossibleShares(env).catch(() => {})); ctx.waitUntil(env.DB.prepare(ALL_SESSION_SUMS).run().catch(() => {})); } ctx.waitUntil(resharePending(env).catch(() => {})); ctx.waitUntil(rebuildTrackMaps(env).catch(() => {})); ctx.waitUntil(rebuildEdges(env).catch(() => {})); ctx.waitUntil(scanLeagues(env).catch(() => {})); ctx.waitUntil(prunePresence(env).catch(() => {}));
     wait(Promise.allSettled(all).then(() => flushUsage(raw, true)));
   },

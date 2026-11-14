@@ -21,10 +21,13 @@ export async function proGate(env) {
   gateOn = !!(r && r.v === "1"); gateAt = Date.now();
   return gateOn;
 }
+export const proGateReset = () => { gateAt = 0; };
 
 // an account's Pro, from its row (accounts.*)
+// (or from its invites: "Invite a friend" gives months of Pro of its own, ref_pro_until, referrals.js)
 export function proOf(a) {
-  const on = !!(a && a.pro) && (!a.pro_until || a.pro_until > Date.now());
+  const now = Date.now(), on = !!(a && a.pro) && (!a.pro_until || a.pro_until > now);
+  if (!on && a && (a.ref_pro_until || 0) > now) return { pro: true, proSrc: "invite", proUntil: a.ref_pro_until };
   return { pro: on, proSrc: on ? a.pro_src || "" : "", proUntil: on ? a.pro_until || 0 : 0 };
 }
 

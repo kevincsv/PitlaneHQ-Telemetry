@@ -61,6 +61,16 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   (`pw.liveWsCol`). A driver with a layout of their own from before (`pw.order`, `pw.sizes`, `pw.heights`) keeps the
   classic 12-column grid (`pw.liveWs` 0) until Layout's reset, which brings the desk back. Narrower screens stack the
   panels in the desk's order.
+  The panels copy the design's own rules (10 px inside, a #2a3140 edge, 8 px corners, the titles in Barlow Condensed
+  capitals, the drag handles showing on hover). The Relative shows its table, then the session as cards; its own dots
+  bar is gone (the track position bar shows the same). The delta bar is one bar with its value in the middle. Fuel,
+  Engine & track, the pit calculator and the weather show their values as cards. Tyres shows the four tyre cards
+  (the three edges coloured by the working window, the wear and the pressures, `pw3TyreCards`). Lap comparison sits
+  after the braking markers, and in Full the traces come under the desk.
+- Standings (`#v-field`) is one panel: its title with To the leader / Interval at its right, the session's six cards
+  in one row (session, laps left, SOF, position, iRating, incidents), the table, then Positions lap by lap. Tyres
+  (`#v-tyres`) has Tyres beside Setup hints, then Balance and Brake pressure (as cards) beside each other and the pit
+  readings under them, two thirds wide.
 - In Basic, the Telemetry screen shows only the essentials (`LIVE_ESSENTIAL`: flags, the car strip, the lap times, the
   delta bar, the relative, inputs, fuel, engine & track, tyres, the map and the track position bar); every other widget
   is one click away in Layout ("Essentials" puts them back). A Basic still on the old essentials moves to these once

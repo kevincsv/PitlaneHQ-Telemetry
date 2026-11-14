@@ -21,7 +21,8 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   (your numbers, your leaderboards with the record of each and how your best came down over your last sessions:
   `rec` and `trend` on /profile?me=1; the latest records; you in the community), Leaderboards (the table with the
   sectors and the track map coloured by sector against your lap, or the record when you have none: the shape and
-  where each sector ends from a lap of the board with its telemetry, `commMapGeo`) and Recent records.
+  where each sector ends from a lap of the board with its telemetry, `commMapGeo`) and Recent records. The discipline
+  cards sit above Leaderboards and Recent records and filter both; Leaderboards has no "Only mine" switch.
   A Le Mans Ultimate leaderboard has "This car / Whole class" (`CMF.whole`, `COMM_CLS` in index.html; the phones the
   same): every LMU class mixes many car models, so the class view is each driver's best lap of any car of that class on
   the track, one per driver, with their car (`community_laps.cls`, migration 0071, `cloud/src/lmuclass.js`: GET

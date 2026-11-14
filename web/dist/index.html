@@ -2408,20 +2408,13 @@ html .hl-sec{padding:0 0 12px;border-radius:var(--radius);display:flex;flex-dire
   <div id="lapsBody" hidden><div class="lws">
     <aside class="lws-l">
       <section class="panel lws-p lws-laps"><div class="label lws-h" id="lwsLapsT"></div><div id="lapPick"></div></section>
-      <section class="panel lws-p secpanel"><div class="label lws-h" data-i18n="sectors"></div><div class="lws-sech" id="secHead"></div><div class="secstrip" id="secStrip"></div></section>
+      <section class="panel lws-p secpanel"><div class="label lws-h" data-i18n="sectors"></div><div class="tw" id="secStrip"></div></section>
     </aside>
     <main class="lws-m">
-    <section class="pnl la-charts">
-    <div class="panel s12">
-      <div id="cmpChips"></div>
+    <section class="panel lws-p la-charts">
+      <div id="cmpChips" class="chshow" role="group"></div>
       <div id="cmpTip" class="cmp-tip" hidden></div>
-      <div class="vhead ch-head" style="margin:0 0 6px"><div class="label" data-i18n="speedByDist"></div><span class="ch-read mono" data-read="speed"></span>
-      <div class="legend"><span><i style="background:var(--accent)"></i><span id="legA">A</span></span><span><i style="background:var(--pb)"></i><span id="legB">B</span></span></div></div>
-      <div class="cmpwrap"><canvas id="cmp" height="220"></canvas></div>
-    </div>
-    <div class="panel s12 ch-delta"><div class="ch-head"><div class="label" data-i18n="deltaCum"></div><span class="ch-read mono" data-read="delta"></span></div>
-      <canvas id="cmpDelta" height="110"></canvas></div>
-    <div id="cmpCh" style="display:contents"></div>
+      <div id="pw3Ch"></div>
     </section>
     <section class="panel lws-p la-brk">
       <div class="label lws-h" data-i18n="brakeTitle"></div>
@@ -2436,7 +2429,7 @@ html .hl-sec{padding:0 0 12px;border-radius:var(--radius);display:flex;flex-dire
     <div class="lap-more" id="lapMore2" hidden></div>
     </main>
     <aside class="lws-r">
-      <section class="panel lws-p lws-map"><div class="label lws-h" data-i18n="trackMap"></div><div id="lapMap"></div><div class="lws-read mono" id="lapRead"></div></section>
+      <section class="panel lws-p lws-map"><div class="label lws-h" data-i18n="trackMap"></div><div id="lapMap"></div><div class="lws-read mono" id="lapRead"></div><div class="lws-mfoot" id="lapMapFoot"></div></section>
       <section class="panel lws-p lws-ins" id="lapIns" hidden></section>
       <section class="panel lws-p lws-cor" id="lapCorP" hidden><div class="label lws-h" id="lwsCorT"></div><div id="lapCorners"></div></section>
       <section class="panel lws-p lws-offs" id="lapOffs" hidden></section>
@@ -10214,31 +10207,38 @@ function homeWire3(box){
   homeLeagWire3(box)}
 </script>
 <style id="pw3-laps">
-/* Pit Wall Workspace: laps. The header and the numbers across the top, then the laps and sectors (left), the charts and
-   tables (middle) and the map, corners and offs (right); one column on narrow screens */
+/* Pit Wall Workspace: laps (the design's look, base.css and the .d3 theme, on the app's lap analyzer). The header and
+   the numbers across the top, then the laps and sectors (left), the charts and tables (middle) and the map, corners and
+   offs (right); one column on narrow screens */
+html:not(.ov) #v-laps{font-size:13px;line-height:1.5;--m1:#ffd76a;--m2:#ff9a3c;--m3:#ff4d4d;--mg:#3ddc84}
 html:not(.ov) #v-laps.lws-has>.vhead{display:none}
 html:not(.ov) #v-laps.lws-has.lws-live>.vhead{display:flex}
 html:not(.ov) #v-laps.lws-has.lws-live>.vhead .lapcontrols>:not(#lapSess){display:none!important}
-html:not(.ov) #v-laps.lws-has .lapctx{margin:0 0 8px;font-size:12px}
+html:not(.ov) #v-laps.lws-has .lapctx{display:none!important}
+#v-laps .mono{font-family:var(--f-data);font-variant-numeric:tabular-nums}
+/* panels and their titles */
+html:not(.ov) #v-laps .lws-p{background:var(--surface)!important;border:1px solid var(--line2)!important;border-radius:8px!important;padding:10px!important;margin:0!important;box-shadow:none!important;min-width:0}
+html:not(.ov) #v-laps .lws-h,html:not(.ov) #v-laps .lm-p>.label,html:not(.ov) #v-laps .lws-insh h3{display:flex;align-items:center;gap:6px;margin:0 0 10px!important;padding:0!important;border:0!important;font:700 14px/1.2 var(--f-display)!important;letter-spacing:.1em!important;text-transform:uppercase!important}
+html:not(.ov) #v-laps .lws-h::before,html:not(.ov) #v-laps .lm-p>.label::before{content:none!important}
+#v-laps .foot,#v-laps .lws-p>.note{color:var(--muted);font-size:12px;margin:8px 0 0}
 /* Lap A vs lap B */
-html:not(.ov) #v-laps #lapCompareHeads{display:grid!important;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:12px;align-items:center;padding:12px 16px;margin:0 0 10px}
+html:not(.ov) #v-laps #lapCompareHeads{display:grid!important;grid-template-columns:1fr auto 1fr;gap:12px;align-items:center;padding:12px 16px;margin:0 0 10px;background:var(--surface);border:1px solid var(--line2);border-radius:8px;box-shadow:none}
 html:not(.ov) #v-laps #lapCompareHeads:empty{display:none!important}
-html:not(.ov) #v-laps #lapCompareHeads .lapcmp{display:flex!important;flex-direction:column;align-items:flex-start;gap:1px;padding:0!important;min-width:0}
-html:not(.ov) #v-laps #lapCompareHeads .lapcmp.b{align-items:flex-end;text-align:right}
-html:not(.ov) #v-laps #lapCompareHeads .lapcmp .role{order:1;align-self:auto;padding:0;background:none!important;color:var(--muted)!important;font:500 11.5px/1.3 var(--f-body);letter-spacing:.02em;text-transform:none}
-html:not(.ov) #v-laps #lapCompareHeads .lapcmp .name{order:2;font:700 15px/1.3 var(--f-body);max-width:100%}
-html:not(.ov) #v-laps #lapCompareHeads .lapcmp .time{order:3;font:600 20px/1.25 var(--f-data);color:var(--accent)}
-html:not(.ov) #v-laps #lapCompareHeads .lapcmp.b .time{color:var(--blue)}html:not(.ov) #v-laps #lapCompareHeads .lapcmp.b.mine .time{color:var(--pb)}
-html:not(.ov) #v-laps #lapCompareHeads .lapcmp .meta{order:4;font-size:11px}
-html:not(.ov) #v-laps #lapCompareHeads .lapcmp-vs{display:block!important;font:700 13px var(--f-display);letter-spacing:.08em;color:var(--muted)}
+#v-laps #lapCompareHeads .lh{display:flex;flex-direction:column;min-width:0}
+#v-laps #lapCompareHeads .lh small{font-size:12px;line-height:18px;color:var(--muted)}
+#v-laps #lapCompareHeads .lh b{font:700 15px/22.5px var(--f-body);color:var(--fg);overflow-wrap:anywhere}
+#v-laps #lapCompareHeads .lh .mono{font:400 20px/30px var(--f-data);color:var(--accent)}
+#v-laps #lapCompareHeads .lh.b{text-align:right}#v-laps #lapCompareHeads .lh.b .mono{color:var(--blue)}#v-laps #lapCompareHeads .lh.b.mine .mono{color:var(--pb)}
+#v-laps #lapCompareHeads .lh.vs{color:var(--muted);font:700 14px var(--f-display)}
 /* the numbers */
 html:not(.ov) #v-laps #lapAnalyzer{background:none!important;border:0!important;box-shadow:none!important;padding:0!important;margin:0 0 10px}
-html:not(.ov) #v-laps #lapAnalyzer .la-row.lws-kpis{display:grid!important;grid-template-columns:repeat(auto-fit,minmax(170px,1fr))!important;gap:10px!important;background:none!important;border:0!important;border-radius:0}
-html:not(.ov) #v-laps #lapAnalyzer .lws-kpis>.kcard{background:var(--surface)!important;border:1px solid var(--line)!important;border-radius:var(--radius)!important;padding:12px 14px!important;gap:2px;min-width:0}
-html:not(.ov) #v-laps #lapAnalyzer .lws-kpis>.kcard+.kcard{border-left:1px solid var(--line)!important}
-html:not(.ov) #v-laps #lapAnalyzer .lws-kpis .kcard>b{font-size:24px!important;line-height:1.15}
+html:not(.ov) #v-laps #lapAnalyzer .la-row.lws-kpis{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:10px!important;background:none!important;border:0!important;border-radius:0}
+html:not(.ov) #v-laps #lapAnalyzer .lws-kpis:has(>.kcard:nth-child(5)){grid-template-columns:repeat(5,minmax(0,1fr))!important}
+html:not(.ov) #v-laps #lapAnalyzer .lws-kpis>.kcard{display:flex!important;flex-direction:column;background:var(--surface)!important;border:1px solid var(--line2)!important;border-radius:8px!important;padding:12px 14px!important;gap:2px;min-width:0;box-shadow:none!important}
+html:not(.ov) #v-laps #lapAnalyzer .lws-kpis .kcard>.k{font:400 11.5px/17.25px var(--f-body)!important;letter-spacing:.06em!important;text-transform:uppercase;color:var(--muted)!important}
+html:not(.ov) #v-laps #lapAnalyzer .lws-kpis .kcard>b{font:700 24px/1.15 var(--f-data)!important;color:var(--fg)}
 html:not(.ov) #v-laps #lapAnalyzer .lws-kpis .kcard.bad>b{color:var(--bad)}html:not(.ov) #v-laps #lapAnalyzer .lws-kpis .kcard.good>b{color:var(--good)}
-html:not(.ov) #v-laps #lapAnalyzer .lws-kpis .kcard>small{font-size:12.5px;color:var(--muted);line-height:1.4}
+html:not(.ov) #v-laps #lapAnalyzer .lws-kpis .kcard>small{font-size:12.5px;line-height:18.75px;color:var(--muted)}
 /* the three columns */
 #v-laps #lapsBody{display:block}#v-laps #lapsBody[hidden]{display:none}
 #v-laps .lws{display:grid;grid-template-columns:270px minmax(0,1fr) 300px;gap:10px;align-items:start}
@@ -10246,56 +10246,70 @@ html:not(.ov) #v-laps #lapAnalyzer .lws-kpis .kcard>small{font-size:12.5px;color
 #v-laps .lws-m{display:flex;flex-direction:column;gap:10px;min-width:0}
 #v-laps .lws-m>*,#v-laps .lws-l>*,#v-laps .lws-r>*{margin:0}
 @media (max-width:1100px){#v-laps .lws{grid-template-columns:minmax(0,1fr)}#v-laps .lws-l,#v-laps .lws-r{position:static}}
-html:not(.ov) #v-laps .lws-p{padding:10px 12px!important;margin:0!important;border-radius:var(--radius);min-width:0}
-html:not(.ov) #v-laps .lws-h,html:not(.ov) #v-laps .lm-p>.label{display:flex;align-items:center;gap:6px;margin:0 0 8px!important;padding:0!important;border:0!important;font:600 12.5px/1.2 var(--f-display)!important;letter-spacing:.12em!important;text-transform:uppercase!important;color:var(--muted)!important}
-html:not(.ov) #v-laps .lws-h::before,html:not(.ov) #v-laps .lm-p>.label::before{content:none!important}
-#v-laps .lws-p>.tscroll{margin:0 -12px}#v-laps .lws-p>.note{font-size:12px;margin:6px 0 0}
 #v-laps .lap-more{display:flex;flex-direction:column;gap:10px;min-width:0}#v-laps .lap-more[hidden]{display:none}
-#v-laps .lap-more .lm-p{margin:0;padding:10px 12px}
+html:not(.ov) #v-laps .lap-more .lm-p{margin:0!important;padding:10px!important;background:var(--surface)!important;border:1px solid var(--line2)!important;border-radius:8px!important;box-shadow:none!important}
+#v-laps .lap-more .lm-sum{margin:0 0 8px;font-size:13px}
+#v-laps .lap-more .lm-more{display:flex;gap:6px;flex-wrap:wrap}
+/* tables: the design's .tb */
+#v-laps .tw,#v-laps .tscroll{overflow-x:auto;max-width:100%;margin:0}
+html:not(.ov) #v-laps :is(.tb,#brakeTable,#lapTable,.lm-t){width:100%;min-width:0;max-width:none;border-collapse:collapse;font-size:13px;margin:0}
+html:not(.ov) #v-laps :is(.tb,#brakeTable,#lapTable,.lm-t) th{text-align:left!important;font:600 11.5px/1.3 var(--f-body)!important;text-transform:uppercase;letter-spacing:.05em!important;color:var(--muted);padding:6px 8px!important;border-bottom:1px solid var(--line)!important;white-space:nowrap;background:var(--surface)}
+html:not(.ov) #v-laps :is(.tb,#brakeTable,#lapTable,.lm-t) td{text-align:left!important;padding:7px 8px!important;border-bottom:1px solid var(--line)!important;vertical-align:top;font-size:13px}
+html:not(.ov) #v-laps :is(.tb,#brakeTable,#lapTable,.lm-t) tr:last-child td{border-bottom:1px solid var(--line)!important}
+#v-laps .tb tr.tot td{font-weight:700}
+#v-laps #brakeTable .bt-tip{color:var(--muted);min-width:200px}#v-laps #brakeTable td.bt-tip{white-space:normal}
+#v-laps .lm-t .lm-bar{display:none}#v-laps .lm-t tr.lm-hot td b{color:inherit}
+#v-laps #lapTable td.pb{color:inherit}
+#v-laps .la-laps{display:flex;flex-direction:column}#v-laps .la-laps #lapInvNote{order:3;margin:8px 0 0!important;color:var(--muted);font-size:12px}#v-laps .la-laps #lapValidate{order:4;align-self:flex-start}
+html:not(.ov) #v-laps .lws-l :is(.tb) th,html:not(.ov) #v-laps .lws-l :is(.tb) td{padding:5px 4px!important;font-size:12px}
+html:not(.ov) #v-laps .lws-l .tb th{font-size:11.5px!important}
 /* Laps */
 #v-laps .lws-src{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:2px;padding:3px;background:var(--bg);border:1px solid var(--line);border-radius:8px;margin-bottom:8px}
-#v-laps .lws-src button{background:none;border:0;color:var(--muted);font:600 12px var(--f-body);padding:7px 4px;border-radius:6px;cursor:pointer;min-height:32px;display:inline-flex;align-items:center;justify-content:center;gap:2px}
+#v-laps .lws-src button{background:none;border:0;color:var(--muted);font:600 12px var(--f-body);padding:7px 4px;border-radius:6px;cursor:pointer;min-height:32px;display:inline-flex;align-items:center;justify-content:center;gap:4px}
 #v-laps .lws-src button[aria-selected="true"]{background:var(--surface2);color:var(--fg);box-shadow:inset 0 0 0 1px var(--line)}
 #v-laps .lws-src button:focus-visible{outline:2px solid var(--accent)}
-#v-laps .lws-spbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:2px 0 8px}#v-laps .lws-spbar .sp-sum{color:var(--muted)}
+#v-laps .lws-src .pro,#v-laps .lws-src .pill{font:700 10px/1 var(--f-data);letter-spacing:.06em;color:#1a1206;background:#ffb02e;border:0;border-radius:4px;padding:3px 5px}
+#v-laps .lws-spbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:2px 0 8px}#v-laps .lws-spbar .sp-sum{font-size:12.5px;color:var(--muted)}
+#v-laps .lws-spbar .btn{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;min-height:32px;font-size:13px;border-radius:5px}#v-laps .lws-spbar .btn svg{width:15px;height:15px}
+#v-laps .lws-spbar .btn.primary{background:var(--accent);border:1px solid var(--accent);color:var(--accent-ink);font-weight:700}
 #v-laps .lapsel{display:grid;gap:2px}
-#v-laps .ls{display:grid;grid-template-columns:minmax(0,1fr) 30px 30px;gap:4px;align-items:center;border-radius:6px;font-size:13px;padding-right:6px}
-#v-laps .ls-main{display:grid;grid-template-columns:22px auto 1fr;gap:8px;align-items:center;background:none;border:0;color:inherit;font:inherit;text-align:left;padding:6px 8px;min-height:32px;cursor:pointer;border-radius:6px;min-width:0}
-#v-laps .ls-main:hover{background:var(--surface2)}#v-laps .ls-main>span{color:var(--muted);font:12px var(--f-data)}#v-laps .ls-main small{color:var(--muted);text-align:right;font-size:11.5px}
+#v-laps .ls{display:grid;grid-template-columns:minmax(0,1fr) 30px 30px;gap:4px;align-items:center;border-radius:6px;font-size:13px;padding-right:8px}
+#v-laps .ls-main{display:grid;grid-template-columns:22px auto 1fr;gap:8px;align-items:center;background:none;border:0;color:inherit;font:inherit;text-align:left;padding:7px 8px;min-height:34px;cursor:pointer;border-radius:6px;min-width:0}
+#v-laps .ls-main:hover{background:var(--surface2)}#v-laps .ls-main>span{color:var(--muted);font:13px var(--f-body)}#v-laps .ls-main>b{font:700 13px var(--f-data)}#v-laps .ls-main small{color:var(--muted);text-align:right;font:12px var(--f-data)}
 #v-laps .ls-main em{grid-column:2/4;font-style:normal;font-size:12px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-#v-laps .ls-ab{height:28px;border-radius:6px;border:1px solid var(--line2,var(--line));background:transparent;color:var(--muted);font:700 12px var(--f-data);cursor:pointer;padding:0}
+#v-laps .ls-ab{height:28px;border-radius:6px;border:1px solid var(--line);background:transparent;color:var(--muted);font:700 12px var(--f-data);cursor:pointer;padding:0}
 #v-laps .ls-ab:hover{border-color:var(--fg);color:var(--fg)}
-#v-laps .ls-ab[data-set=A][aria-pressed=true]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
-#v-laps .ls-ab[data-set=B][aria-pressed=true]{background:var(--blue);border-color:var(--blue);color:#0d1116}
+#v-laps .ls-ab[data-set=A][aria-pressed=true]{background:var(--accent);border-color:var(--accent);color:#111}
+#v-laps .ls-ab[data-set=B][aria-pressed=true]{background:var(--blue);border-color:var(--blue);color:#111}
 #v-laps #lapsBody.bmine .ls-ab[data-set=B][aria-pressed=true]{background:var(--pb);border-color:var(--pb)}
 #v-laps .ls-ab:focus-visible,#v-laps .ls-main:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
-#v-laps .ls.a{background:color-mix(in srgb,var(--accent) 20%,transparent)}
-#v-laps .ls.b{background:color-mix(in srgb,var(--blue) 20%,transparent)}#v-laps #lapsBody.bmine .ls.b{background:color-mix(in srgb,var(--pb) 20%,transparent)}
+#v-laps .ls.a{background:color-mix(in srgb,var(--accent) 22%,transparent)}
+#v-laps .ls.b{background:color-mix(in srgb,var(--blue) 22%,transparent)}#v-laps #lapsBody.bmine .ls.b{background:color-mix(in srgb,var(--pb) 22%,transparent)}
 #v-laps .ls.inv .ls-main b{text-decoration:line-through;color:var(--muted)}
 #v-laps .lws-star{width:14px;height:14px;fill:var(--accent);vertical-align:-2px;display:inline-block}
-#v-laps .lapsel .ls-h{display:flex;align-items:baseline;gap:8px;margin:10px 6px 6px 0;padding:8px 10px;background:var(--surface2);border:1px solid var(--line2,var(--line));border-left:3px solid var(--gc,var(--accent));border-radius:8px;box-shadow:0 2px 6px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.04);font-size:12.5px;color:var(--muted);min-width:0}
-#v-laps .lapsel .ls-h:first-child{margin-top:0}#v-laps .lapsel .ls-h b{color:var(--fg);font-weight:700;white-space:nowrap}#v-laps .lapsel .ls-h span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}#v-laps .lapsel .ls-h small{margin-left:auto;font-size:12px;white-space:nowrap}
-/* Sectors as a table */
-#v-laps .lws-sech,#v-laps .lws-l #secStrip .ss-c{display:grid!important;grid-template-columns:40px minmax(0,1fr) minmax(0,1fr) 62px;gap:4px;align-items:center}
-#v-laps .lws-sech{font:600 10.5px/1.3 var(--f-body)!important;text-transform:uppercase!important;letter-spacing:.06em;color:var(--muted);padding:0 2px 6px;border-bottom:1px solid var(--line)}
-#v-laps .lws-l #secStrip{display:flex!important;flex-direction:column;gap:0;max-width:none}
-#v-laps .lws-l #secStrip .ss-c{border:0!important;border-bottom:1px solid var(--line)!important;border-radius:0!important;background:none!important;padding:6px 2px!important;font:12.5px var(--f-data)}
-#v-laps .lws-l #secStrip .ss-c:last-of-type{border-bottom:0!important}
-#v-laps .lws-l #secStrip .ss-c.tot{font-weight:700}
-#v-laps .lws-l #secStrip .ss-v{display:contents!important}
-#v-laps .lws-l #secStrip .ss-n{order:1;font:inherit;letter-spacing:0;text-transform:none;color:var(--fg)}
-#v-laps .lws-l #secStrip .ss-a{order:2;color:var(--fg);font:inherit}#v-laps .lws-l #secStrip .ss-b{order:3;color:var(--fg)!important;font:inherit}
-#v-laps .lws-l #secStrip .ss-d{order:4;font:inherit;text-align:left}
+#v-laps .lapsel .ls-h{display:flex;align-items:baseline;gap:8px;margin:10px 8px 6px 0;padding:8px 10px;background:var(--surface2);border:1px solid var(--line2);border-left:3px solid var(--gc,var(--accent));border-radius:8px;box-shadow:0 2px 6px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.04);font-size:12.5px;color:var(--muted);min-width:0}
+#v-laps .lapsel .ls-h:first-child{margin-top:0}#v-laps .lapsel .ls-h b{color:var(--fg);font-weight:700;white-space:nowrap}#v-laps .lapsel .ls-h span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}#v-laps .lapsel .ls-h small{margin-left:auto;font:12px var(--f-data);white-space:nowrap}
 /* the charts */
-html:not(.ov) #v-laps .lws-m>.la-charts{display:flex;flex-direction:column;gap:0;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;padding:0}
-html:not(.ov) #v-laps .lws-m>.la-charts .panel{border:0!important;border-radius:0!important;background:none!important;margin:0!important;box-shadow:none!important;padding:10px 12px}
-html:not(.ov) #v-laps .lws-m>.la-charts .panel+.panel,html:not(.ov) #v-laps .lws-m>.la-charts #cmpCh>.panel{border-top:1px solid var(--line)!important}
-html:not(.ov) #v-laps .la-charts #cmpChips{margin:-10px -12px 10px;padding:8px 12px}
-html:not(.ov) #v-laps .la-charts #cmpChips .chip[aria-pressed="true"]{background:var(--accent)!important;border-color:var(--accent)!important;color:var(--accent-ink)!important}
-/* the map, its read-out, the insight, the corners, the offs */
-#v-laps #lapMap .rb-tip,#v-laps #lapMap .hdot{display:none!important}
-#v-laps #lapMap .rb-bar{flex-wrap:wrap;gap:4px}
-#v-laps #lapMap svg.rbmap{--k:2;width:100%;display:block}
+#v-laps .chshow{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:0 0 10px;padding:0;border:0;background:none}
+#v-laps .chshow>span{font-size:12px;color:var(--muted);margin-right:2px}
+html:not(.ov) #v-laps .chshow .chip,html:not(.ov) #v-laps .pw3-mchips .chip,html:not(.ov) #v-laps .lm-more .chip{border:1px solid var(--line)!important;background:transparent!important;color:var(--muted)!important;border-radius:999px!important;padding:5px 12px!important;font:500 12px/1.2 var(--f-body)!important;letter-spacing:0!important;text-transform:none!important;cursor:pointer;min-height:30px;box-shadow:none!important}
+html:not(.ov) #v-laps .chshow .chip[aria-pressed="true"],html:not(.ov) #v-laps .pw3-mchips .chip[aria-pressed="true"],html:not(.ov) #v-laps .lm-more .chip[aria-pressed="true"]{background:var(--accent)!important;border-color:var(--accent)!important;color:var(--accent-ink)!important}
+#v-laps .chart{margin:4px 0 12px;position:relative}#v-laps .chart:last-child{margin-bottom:0}
+#v-laps .ch-t{font:600 13px var(--f-body);margin-bottom:2px;color:var(--fg)}
+#v-laps .ch-leg{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:12px;color:var(--muted);align-items:center;margin-bottom:4px}
+#v-laps .lg i{display:inline-block;width:18px;height:0;border-top:2.5px solid currentColor;vertical-align:middle;margin-right:5px}#v-laps .lg i.d{border-top-style:dashed}
+#v-laps .lg.sa{color:var(--accent)}#v-laps .lg.sb{color:var(--blue)}#v-laps .lg.sd{color:var(--bad)}
+#v-laps .ch-read{margin-left:auto;font:500 12px var(--f-data);color:var(--fg)}
+#v-laps .ch-box{position:relative;width:100%;border-bottom:1px solid var(--line);cursor:crosshair;touch-action:pan-y}
+#v-laps .ch-box canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+/* the map, its read-out, its legend and switches, the insight, the corners, the offs */
+#v-laps #lapMap .rb-tip,#v-laps #lapMap .hdot,#v-laps #lapMap svg text.sec{display:none!important}
+#v-laps #lapMap svg.rbmap{--k:2;width:100%;display:block;max-height:260px;cursor:crosshair}
+#v-laps #lapMap svg .trkS{stroke:var(--line)!important}#v-laps #lapMap svg .trk{stroke:var(--line2)!important}#v-laps #lapMap svg .trkI{stroke:var(--muted)!important;opacity:.5}
+#v-laps #lapMap .pw3-mp{fill:none;stroke-width:5.4;stroke-linecap:round;stroke-linejoin:round}
+#v-laps #lapMap .pw3-mp.m1{stroke:var(--m1)}#v-laps #lapMap .pw3-mp.m2{stroke:var(--m2)}#v-laps #lapMap .pw3-mp.m3{stroke:var(--m3)}#v-laps #lapMap .pw3-mp.mg{stroke:var(--mg)}
+#v-laps #lapMap g.mc{cursor:pointer}#v-laps #lapMap g.mc circle{fill:var(--surface);stroke:var(--fg);stroke-width:1.5}#v-laps #lapMap g.mc text{fill:var(--fg);font:700 8px var(--f-data);text-anchor:middle}
+#v-laps #lapMap g.mc.sel circle,#v-laps #lapMap g.mc:hover circle,#v-laps #lapMap g.mc:focus-visible circle{fill:var(--accent);stroke:var(--accent)}#v-laps #lapMap g.mc.sel text,#v-laps #lapMap g.mc:hover text{fill:var(--accent-ink)}#v-laps #lapMap g.mc:focus{outline:none}
 #v-laps #lapMap .pw3-cs{transform:scale(var(--k));transition:transform .15s ease-out}
 #v-laps #lapMap.hot .pw3-cur .pw3-cs{transform:scale(calc(var(--k) * 1.7))}
 #v-laps #lapMap .pw3-a{fill:var(--accent);stroke:#fff;stroke-width:2;vector-effect:non-scaling-stroke}
@@ -10303,16 +10317,21 @@ html:not(.ov) #v-laps .la-charts #cmpChips .chip[aria-pressed="true"]{background
 #v-laps #lapMap .pw3-gh circle{fill:var(--blue);fill-opacity:.25;stroke:var(--blue);stroke-width:2.5;vector-effect:non-scaling-stroke}
 #v-laps #lapsBody.bmine #lapMap .pw3-gh circle{fill:var(--pb);stroke:var(--pb)}
 #v-laps #lapMap .pw3-cur,#v-laps #lapMap .pw3-gh{pointer-events:none}
-#v-laps #lapMap svg.rbmap text.cn{cursor:pointer;pointer-events:auto}#v-laps #lapMap svg.rbmap text.cn:hover,#v-laps #lapMap svg.rbmap text.cn.sel{fill:var(--accent)}
-#v-laps #lapMap svg.rbmap text.cn:focus-visible{outline:none;fill:var(--accent);text-decoration:underline}
+#v-laps #lapMap .rp-bar{margin-top:6px}
 @media (hover:hover) and (min-width:1101px){#v-laps .lws-r #lapMap svg.rbmap{transform-origin:top right;transition:transform .2s ease-out,box-shadow .2s;border-radius:12px}
   #v-laps .lws-r #lapMap.hot svg.rbmap{transform:scale(1.9);position:relative;z-index:15;background:var(--surface);box-shadow:0 18px 48px rgba(0,0,0,.55),0 0 0 1px var(--line)}}
 @media (prefers-reduced-motion:reduce){#v-laps #lapMap .pw3-cs,#v-laps #lapMap svg.rbmap{transition:none!important}}
-#v-laps .lws-read{display:flex;flex-wrap:wrap;gap:4px 10px;align-items:baseline;font-size:12px;margin-top:6px;min-height:18px}
+#v-laps .lws-read{display:flex;flex-wrap:wrap;gap:4px 10px;align-items:baseline;font:12px var(--f-data);margin-top:6px;min-height:18px}
 #v-laps .lws-read .ra{color:var(--accent)}#v-laps .lws-read .rb{color:var(--blue)}#v-laps #lapsBody.bmine .lws-read .rb{color:var(--pb)}#v-laps .lws-read small{color:var(--muted);font-size:12px}
-#v-laps .lws-insh{display:flex;justify-content:space-between;align-items:center;gap:8px}
-html:not(.ov) #v-laps .lws-insh h3{margin:0;font:600 12.5px/1.2 var(--f-display)!important;letter-spacing:.12em!important;text-transform:uppercase!important;color:var(--muted)!important}
-#v-laps .lws-x{background:none;border:0;color:var(--muted);font-size:22px;line-height:1;cursor:pointer;min-width:36px;min-height:36px;border-radius:6px}#v-laps .lws-x:hover{color:var(--fg);background:var(--surface2)}
+#v-laps .lws-mfoot:empty{display:none}
+#v-laps .map-leg{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:12px;color:var(--muted);margin-top:6px}#v-laps .map-leg>span{display:inline-flex;align-items:center}
+#v-laps .map-leg i{display:inline-block;width:14px;height:6px;border-radius:3px;margin-right:5px;vertical-align:middle}
+#v-laps .map-leg .m1{background:var(--m1)}#v-laps .map-leg .m2{background:var(--m2)}#v-laps .map-leg .m3{background:var(--m3)}#v-laps .map-leg .mg{background:var(--mg)}
+#v-laps .map-leg .lgd{gap:0}#v-laps .map-leg .lgd i{width:9px;height:9px;border-radius:50%}
+#v-laps .pw3-mchips{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0 0!important;padding:8px 0 0;border-top:1px solid var(--line)}
+html:not(.ov) #v-laps .pw3-mchips .chip{min-height:28px!important;padding:3px 10px!important;font-size:11.5px!important;display:inline-flex;align-items:center;gap:4px}
+#v-laps .lws-insh{display:flex;justify-content:space-between;align-items:center;gap:8px}html:not(.ov) #v-laps .lws-insh h3{margin:0!important}
+#v-laps .lws-x{background:none;border:0;color:var(--muted);font-size:24px;line-height:1;cursor:pointer;width:36px;height:36px;border-radius:8px}#v-laps .lws-x:hover{color:var(--fg);background:var(--surface2)}
 #v-laps .lws-cch{display:flex;gap:8px;align-items:center;margin-top:4px}#v-laps .lws-cch>b{font:700 20px var(--f-data)}#v-laps .lws-cch>.mono:last-child{margin-left:auto;font-size:16px}
 #v-laps .lws-tip{font-weight:600;margin:6px 0 8px}
 #v-laps .lws-dl{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin:0}#v-laps .lws-dl dt{font-size:11px;color:var(--muted)}#v-laps .lws-dl dd{margin:0;font-size:12.5px}#v-laps .lws-dl small{color:var(--muted)}
@@ -10320,28 +10339,93 @@ html:not(.ov) #v-laps .lws-insh h3{margin:0;font:600 12.5px/1.2 var(--f-display)
 #v-laps .lws-insgo{width:100%;margin-top:10px}
 #v-laps .lws-ins.flash{animation:lwsfl .6s ease-out}@keyframes lwsfl{from{box-shadow:0 0 0 2px var(--accent)}to{box-shadow:0 0 0 0 transparent}}
 @media (prefers-reduced-motion:reduce){#v-laps .lws-ins.flash{animation:none}}
-#v-laps .lws-cc{display:grid;grid-template-columns:repeat(auto-fill,minmax(24px,1fr));gap:4px 2px}
-html:not(.ov) #v-laps #lapCorners .la-c{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:3px;height:132px;min-width:0;min-height:44px;padding:2px 0;border:1px solid transparent;border-radius:6px;background:none;cursor:pointer;color:var(--fg)}
-html:not(.ov) #v-laps #lapCorners .la-c:hover{background:var(--surface2)}
-html:not(.ov) #v-laps #lapCorners .la-c.on{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 9%,transparent)}
-#v-laps #lapCorners .la-cb>.mono{font-size:9.5px;white-space:nowrap;letter-spacing:-.04em;margin-bottom:2px}
-#v-laps #lapCorners .la-cb{flex:1;width:100%;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;min-height:0}
+#v-laps .lws-cc{display:grid;grid-template-columns:repeat(var(--n,9),minmax(0,1fr));gap:6px;align-items:end}
+html:not(.ov) #v-laps #lapCorners .la-c{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:4px;height:150px;min-width:0;padding:0;border:0;border-radius:4px;background:none!important;cursor:pointer;color:var(--fg);box-shadow:none!important}
+html:not(.ov) #v-laps #lapCorners .la-c:hover>b,html:not(.ov) #v-laps #lapCorners .la-c.on>b{color:var(--accent)}
+#v-laps #lapCorners .la-cb{flex:1;width:100%;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;min-height:0;gap:4px}
+#v-laps #lapCorners .la-cb>.mono{font:10px/15px var(--f-data);white-space:nowrap;color:var(--fg);letter-spacing:-.02em}
 #v-laps #lapCorners .la-cb i{display:block;width:70%;border-radius:4px 4px 0 0;background:var(--muted);min-height:4px}
 #v-laps #lapCorners .la-c.bad .la-cb i{background:var(--bad)}#v-laps #lapCorners .la-c.good .la-cb i{background:var(--good)}
-#v-laps #lapCorners .la-c>b{font:700 12px var(--f-data)}
-#v-laps #lapOffs .offs{margin:0}#v-laps #lapOffs .offs ul{font-size:13px;gap:6px}
-#v-laps .lws-go{width:100%;min-height:44px;font-weight:700;background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
-@media (max-width:820px){html:not(.ov) #v-laps #lapCompareHeads{grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important}html:not(.ov) #v-laps #lapCompareHeads .lapcmp-vs{display:none!important}
-  html:not(.ov) #v-laps #lapAnalyzer .la-row.lws-kpis{grid-template-columns:repeat(2,minmax(0,1fr))!important}html:not(.ov) #v-laps #lapAnalyzer .lws-kpis .kcard>b{font-size:20px!important}
+#v-laps #lapCorners .la-c>b{font:700 13px var(--f-data)}
+#v-laps #lapOffs .offs{margin:0}#v-laps #lapOffs .offs ul{margin:0;padding:0;list-style:none;display:grid;gap:6px;font-size:13.5px}
+#v-laps #lapOffs .offs li .ik{display:block;font-weight:700;font-size:13px;color:var(--fg);margin:0}
+#v-laps #lapOffs .rb-sum{margin:0 0 6px;font-size:12px;color:var(--muted)}
+html:not(.ov) #v-laps .lws-go{width:100%;min-height:44px;font:700 13px var(--f-body);background:var(--accent);border:1px solid var(--accent);color:var(--accent-ink);border-radius:5px;padding:7px 12px}
+html:not(.ov) #v-laps .lm-more .chip .pro,html:not(.ov) #v-laps .lm-p>.label .pill{margin-left:4px}
+@media (max-width:820px){
+  html:not(.ov) #v-laps #lapCompareHeads{grid-template-columns:1fr!important}#v-laps #lapCompareHeads .lh.b{text-align:left}
+  html:not(.ov) #v-laps #lapAnalyzer .la-row.lws-kpis{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  #v-laps .lws-cc{height:auto}html:not(.ov) #v-laps #lapCorners .la-c{height:120px}
   #v-laps .lws-dl{grid-template-columns:repeat(2,minmax(0,1fr))}}
-/* Select sessions: tick one or several sessions of the same car and track */
-#spDlg.pw3-sp .sp-row{grid-template-columns:auto 62px minmax(0,1fr) auto 86px}
+/* Select sessions (the design's window): one or several sessions of the same car and track */
+#spDlg.pw3-sp .pn.sp-pn{width:min(760px,calc(100% - 32px));max-height:calc(100vh - 32px);padding:0!important;border-radius:14px;border:1px solid var(--line);background:var(--surface)}
+#spDlg.pw3-sp .sp-h{padding:14px 16px;border-bottom:1px solid var(--line);background:var(--surface)}
+#spDlg.pw3-sp .sp-h h2{font:700 18px/1.2 var(--f-display);letter-spacing:0;text-transform:none;margin:0}
+#spDlg.pw3-sp .sp-body{padding:12px 16px;display:grid;gap:14px;overflow:auto}
+#spDlg.pw3-sp .sp-sec h3{margin:0 0 8px;font:600 11px var(--f-display);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+#spDlg.pw3-sp .sp-chips{display:flex;flex-wrap:wrap;gap:6px}
+#spDlg.pw3-sp .sp-chips .chip{border:1px solid var(--line);background:transparent;color:var(--muted);border-radius:999px;padding:5px 12px;font:500 12px var(--f-body);letter-spacing:0;text-transform:none;min-height:30px;cursor:pointer}
+#spDlg.pw3-sp .sp-chips .chip[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}#spDlg.pw3-sp .sp-chips .chip:disabled{opacity:.4;cursor:default}
+#spDlg.pw3-sp .sp-two{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:14px}
+#spDlg.pw3-sp select{width:100%;background:var(--bg);color:var(--fg);border:1px solid var(--line);border-radius:8px;padding:7px 8px;font:13px var(--f-body);min-height:35px}
+#spDlg.pw3-sp .hm-card{background:none;border:0;padding:0;box-shadow:none}#spDlg.pw3-sp .hm-leg{display:none}
+#spDlg.pw3-sp .hm-d{width:14px;height:14px;border-radius:3px;background:var(--surface2);border:0}#spDlg.pw3-sp .hm-d.off{visibility:hidden}
+#spDlg.pw3-sp :is(.hm-d.l1,.hm-d.l2,.hm-d.l3,.hm-d.l4){background:var(--accent)}#spDlg.pw3-sp button.hm-d:hover{filter:brightness(1.2)}#spDlg.pw3-sp .hm-d.sel{outline:2px solid var(--fg);outline-offset:1px}
+#spDlg.pw3-sp .sp-list{display:grid;gap:4px;max-height:none}
+#spDlg.pw3-sp .sp-row{grid-template-columns:auto 52px minmax(0,1fr) auto 84px;gap:10px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:transparent}
+#spDlg.pw3-sp .sp-row:hover{background:var(--surface2);border-color:var(--line)}
 #spDlg.pw3-sp .sp-row input{width:18px;height:18px;margin:0;accent-color:var(--accent)}
-#spDlg.pw3-sp .sp-row.off{opacity:.5;cursor:default}#spDlg.pw3-sp .sp-row.off:hover{border-color:var(--line)}
-#spDlg.pw3-sp .sp-row.cur{background:color-mix(in srgb,var(--accent) 8%,var(--surface2))}
-#spDlg.pw3-sp .sp-why{display:block;font-style:normal;font-size:11.5px;color:var(--warn)}
-#spDlg.pw3-sp .sp-foot{display:flex;justify-content:space-between;gap:8px}#spDlg.pw3-sp .sp-foot .btn:disabled{opacity:.5}
-@media (max-width:640px){#spDlg.pw3-sp .sp-row{grid-template-columns:auto 44px minmax(0,1fr) auto}#spDlg.pw3-sp .sp-tags{grid-column:3/-1;grid-row:2}#spDlg.pw3-sp .sp-num{grid-row:1;grid-column:4}}
+#spDlg.pw3-sp .sp-row b{font-weight:600}#spDlg.pw3-sp .sp-row small{color:var(--muted);font-size:12px;font-weight:400}
+#spDlg.pw3-sp .sp-row.off{opacity:.5;cursor:default}#spDlg.pw3-sp .sp-row.off:hover{background:transparent}
+#spDlg.pw3-sp .sp-row.cur{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 8%,transparent)}
+#spDlg.pw3-sp .sp-k{font:400 11.5px var(--f-body);text-transform:none;letter-spacing:0;padding:2px 8px;border-radius:999px;background:var(--surface2);color:var(--muted);border:0}
+#spDlg.pw3-sp .sp-k.race{color:var(--accent)}#spDlg.pw3-sp .sp-k.prac{color:var(--pb)}
+#spDlg.pw3-sp .sp-num{text-align:right}
+#spDlg.pw3-sp .sp-why{display:block;font-style:normal;font-size:12px;color:var(--warn)}
+#spDlg.pw3-sp .sp-foot{display:flex;justify-content:space-between;gap:8px;padding:12px 16px;border-top:1px solid var(--line);margin:0}
+#spDlg.pw3-sp .sp-foot .btn{min-height:36px;padding:7px 12px;border-radius:5px;font-size:13px;background:var(--surface2);border:1px solid var(--line);color:var(--fg)}
+#spDlg.pw3-sp .sp-foot .btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:700}#spDlg.pw3-sp .sp-foot .btn:disabled{opacity:.5}
+@media (max-width:640px){#spDlg.pw3-sp .sp-two{grid-template-columns:1fr}#spDlg.pw3-sp .sp-row{grid-template-columns:auto 44px minmax(0,1fr) 70px}#spDlg.pw3-sp .sp-k{display:none}#spDlg.pw3-sp .sp-tags{grid-column:3/-1;grid-row:2}#spDlg.pw3-sp .sp-num{grid-row:1;grid-column:4}
+  #spDlg.pw3-sp .pn.sp-pn{width:100%;max-height:100vh;height:100vh;border-radius:0}}
+/* the window fits the screen: the filters and the calendar stay, only the list of sessions scrolls; the controls in the
+   size of the live version */
+#spDlg.pw3-sp .pn.sp-pn{width:min(860px,calc(100% - 32px));height:calc(100vh - 32px);max-height:calc(100vh - 32px);display:flex;flex-direction:column;overflow:hidden}
+#spDlg.pw3-sp .sp-h,#spDlg.pw3-sp .sp-foot{flex:none}
+#spDlg.pw3-sp .sp-body{flex:1 1 auto;min-height:0;overflow:hidden;display:flex;flex-direction:column;gap:14px}
+#spDlg.pw3-sp .sp-body>*{flex:none;margin:0}
+#spDlg.pw3-sp .sp-body>.sp-lsec{flex:1 1 auto;min-height:0;display:flex;flex-direction:column}
+#spDlg.pw3-sp .sp-lsec>.sp-list{flex:1 1 auto;min-height:0;overflow:auto;overscroll-behavior:contain;padding-right:2px;align-content:start}
+#spDlg.pw3-sp .sp-h h2{font-size:20px}
+#spDlg.pw3-sp .sp-sec h3{font-size:12px}
+#spDlg.pw3-sp .lb-cats.mini{gap:8px}
+#spDlg.pw3-sp .lb-cats.mini .lb-cat{padding:9px 10px;gap:10px;border-radius:8px;border:1px solid var(--line);background:var(--surface);min-height:52px}
+#spDlg.pw3-sp .lb-cats.mini .lb-cat[aria-pressed="true"]{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 10%,var(--surface))}
+#spDlg.pw3-sp .lb-cats.mini .lb-ic{width:30px;height:30px}#spDlg.pw3-sp .lb-cats.mini .lb-ic svg{width:17px;height:17px}
+#spDlg.pw3-sp .lb-cats.mini .lb-t b{font-size:14px;line-height:1.25}
+#spDlg.pw3-sp .lb-cats.mini .lb-t small{font-size:12px;line-height:1.3}
+#spDlg.pw3-sp .sp-chips .chip{font-size:14px;min-height:36px;padding:6px 14px}
+#spDlg.pw3-sp select{font-size:14px;min-height:40px;padding:8px 10px}
+#spDlg.pw3-sp .sp-row{font-size:14px}#spDlg.pw3-sp .sp-row small{font-size:12.5px}
+#spDlg.pw3-sp .hm-cal{overflow-x:auto}
+@media (max-width:640px){#spDlg.pw3-sp .pn.sp-pn{width:100%;height:100vh;height:100dvh;max-height:none;border-radius:0}
+  #spDlg.pw3-sp .sp-body{overflow:auto}#spDlg.pw3-sp .sp-body>.sp-lsec{flex:1 0 auto;min-height:260px}
+  #spDlg.pw3-sp .lb-cats.mini{grid-template-columns:repeat(2,minmax(0,1fr))}}
+html:not(.ov) #spDlg.pw3-sp .sp-h h2{font:700 20px/1.2 var(--f-display)!important;letter-spacing:0!important;text-transform:none!important}
+html:not(.ov) #spDlg.pw3-sp .sp-sec h3{font:600 12px/1.2 var(--f-display)!important;letter-spacing:.08em!important;text-transform:uppercase!important;color:var(--muted)}
+html:not(.ov) #spDlg.pw3-sp .lb-cats.mini{grid-template-columns:repeat(3,minmax(0,1fr))}
+html:not(.ov) #spDlg.pw3-sp .lb-cats.mini .lb-t small{white-space:nowrap;overflow:visible}
+html:not(.ov) #v-laps #cmpChips.chshow .chip[aria-pressed="true"]{background:var(--accent)!important;border-color:var(--accent)!important;color:var(--accent-ink)!important}
+@media (max-width:640px){html:not(.ov) #spDlg.pw3-sp .sp-body{overflow:hidden;gap:10px;padding:10px 12px}html:not(.ov) #spDlg.pw3-sp .sp-body>.sp-lsec{flex:1 1 auto;min-height:150px}
+  html:not(.ov) #spDlg.pw3-sp .sp-h{padding:12px}html:not(.ov) #spDlg.pw3-sp .sp-foot{padding:10px 12px}
+  html:not(.ov) #spDlg.pw3-sp .lb-cats.mini{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+  html:not(.ov) #spDlg.pw3-sp .lb-cats.mini .lb-cat{padding:7px 8px;min-height:0;gap:6px}html:not(.ov) #spDlg.pw3-sp .lb-cats.mini .lb-ic{display:none}
+  html:not(.ov) #spDlg.pw3-sp .lb-cats.mini .lb-t b{font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}html:not(.ov) #spDlg.pw3-sp .lb-cats.mini .lb-t small{font-size:11px}
+  html:not(.ov) #spDlg.pw3-sp .sp-chips{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}html:not(.ov) #spDlg.pw3-sp .sp-chips .chip{flex:none;min-height:34px;font-size:13px;padding:5px 12px}
+  html:not(.ov) #spDlg.pw3-sp .sp-two{gap:10px}html:not(.ov) #spDlg.pw3-sp .sp-two>.sp-sec+.sp-sec{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:auto auto;grid-auto-flow:column;column-gap:8px}
+  html:not(.ov) #spDlg.pw3-sp .sp-two>.sp-sec+.sp-sec>h3{margin:0 0 6px!important}html:not(.ov) #spDlg.pw3-sp select{min-height:38px;font-size:13.5px}
+  html:not(.ov) #spDlg.pw3-sp .sp-row{grid-template-columns:auto 50px minmax(0,1fr) 72px;gap:8px;padding:8px}html:not(.ov) #spDlg.pw3-sp .sp-when b{white-space:nowrap}}
+#v-laps #lapMap svg .trkS{stroke-width:10px!important;stroke:var(--line)!important;filter:none!important;opacity:1!important}#v-laps #lapMap svg .trk{stroke-width:7px!important;stroke:var(--line2)!important}#v-laps #lapMap svg .trkI{display:none}
+#v-laps #lapMap .pw3-mp{stroke-width:3.6px}
 </style>
 <script id="pw3-laps-js">
 /* Pit Wall Workspace: laps helpers. The lap analyzer as a workspace (docs/spec/app-screens.md, "Lap analyzer"): the header
@@ -10400,8 +10484,8 @@ window.openSessPicker=function(px){if(px!=="lap")return _pw3SP.apply(this,argume
     const same=prim.id===CLOUD.sid&&coachCloudOn();PW3L.xs=xs;PW3L.loaded="";PW3L.sid=prim.id;LAPF.extra=xs.length>0;
     if(!same||!CLOUD.laps.length&&!CLOUD.busy){CLOUD.bid=xs[0]||"";CLOUD.lapsB=[];CLOUD_CACHE.delete(prim.id);cloudLoadSession(prim.id)}
     else{CLOUD.bid=xs[0]||"";if(!xs.length)CLOUD.lapsB=[];renderLaps()}};
-  const draw=()=>{sessFilterFix(ss,F);const top=(m.querySelector(".sp-body")||{}).scrollTop||0;
-    const forCat=ss.filter(x=>sessMatch(x,F,"cat")),forKind=ss.filter(x=>sessMatch(x,F,"kind")),forCar=ss.filter(x=>sessMatch(x,F,"car")),forTrk=ss.filter(x=>sessMatch(x,F,"track")),forDay=ss.filter(x=>sessMatch(x,F,"day")),list=ss.filter(x=>sessMatch(x,F));
+  const draw=()=>{sessFilterFix(ss,F);const top=(m.querySelector(".sp-list")||{}).scrollTop||0;
+    const forCat=ss.filter(x=>sessMatch(x,F,"cat")),forKind=ss.filter(x=>sessMatch(x,F,"kind")),forCar=ss.filter(x=>sessMatch(x,F,"car")),forTrk=ss.filter(x=>sessMatch(x,F,"track")),forDay=ss.filter(x=>sessMatch(x,F,"day")),ref0=ss.find(x=>x.id===pick[0])||null,list=ss.filter(x=>sessMatch(x,F)&&(pick.includes(x.id)||!pw3Why(ref0,x)));
     const group=(list,key,name)=>{const out=[];list.forEach(x=>{const k=key(x),c=out.find(y=>y.k===k);if(c)c.n++;else out.push({k,name:name(x),n:1})});return out.sort((a,b)=>a.name.localeCompare(b.name))};
     const cars=group(forCar,sessCar,x=>carFam(x.car)),trks=group(forTrk,sessTrk,sessTn);
     const days={};forDay.forEach(x=>{const k=dayKey(x.started||0);days[k]=(days[k]||0)+1});const cal=calGrid(k=>days[k]||0,true);
@@ -10419,9 +10503,9 @@ window.openSessPicker=function(px){if(px!=="lap")return _pw3SP.apply(this,argume
         <div class="sp-sec"><h3>${esc(Tx("Car","Coche","Auto","Carro"))}</h3><select id="spCar"><option value="">${esc(Tx("Every car","Todos los coches","Alle Autos","Todos os carros"))} (${forCar.length})</option>${cars.map(c=>`<option value="${esc(c.k)}"${c.k===sessCarKey(F.car)?" selected":""}>${esc(c.name)} (${c.n})</option>`).join("")}</select>
           <h3 style="margin-top:10px">${esc(Tx("Track","Circuito","Strecke","Pista"))}</h3><select id="spTrk"><option value="">${esc(Tx("Every track","Todos los circuitos","Alle Strecken","Todas as pistas"))} (${forTrk.length})</option>${trks.map(c=>`<option value="${esc(c.k)}"${c.k===F.track?" selected":""}>${esc(c.name)} (${c.n})</option>`).join("")}</select></div></div>
       <div class="sp-sec"><h3>${esc(Tx("Days you drove","Días que corriste","Gefahrene Tage","Dias em que correu"))}</h3>${cal.html}${F.day?`<div class="frow sp-day"><span class="pill acc">${esc(dd)}</span><button type="button" class="linklike" data-spday0>${esc(Tx("every day","todos los días","alle Tage","todos os dias"))}</button></div>`:""}</div>
-      <div class="sp-sec"><h3>${esc(Tx("Your sessions","Tus sesiones","Deine Sitzungen","Suas sessões"))} · ${list.length}</h3><div class="sp-list">${list.slice(0,300).map(row).join("")||`<p class="note">${esc(Tx("Nothing with these filters.","Nada con estos filtros.","Nichts mit diesen Filtern.","Nada com estes filtros."))}</p>`}</div></div>
+      <div class="sp-sec sp-lsec"><h3>${esc(Tx("Your sessions","Tus sesiones","Deine Sitzungen","Suas sessões"))} · ${list.length}</h3><div class="sp-list">${list.slice(0,300).map(row).join("")||`<p class="note">${esc(Tx("Nothing with these filters.","Nada con estos filtros.","Nichts mit diesen Filtern.","Nada com estes filtros."))}</p>`}</div></div>
       </div><div class="uidlg-b sp-foot"><button type="button" class="btn" id="spClr">${esc(Tx("Clear the filters","Quitar los filtros","Filter löschen","Limpar os filtros"))}</button><button type="button" class="btn primary" id="spGo"${n?"":" disabled"}>${esc(n>1?Tx(`Compare ${n} sessions`,`Comparar ${n} sesiones`,null,`Comparar ${n} sessões`):n?Tx("Show this session","Ver esta sesión",null,"Ver esta sessão"):Tx("Pick a session","Elige una sesión",null,"Escolha uma sessão"))}</button></div></div>`;
-    m.classList.add("pw3-sp");m.hidden=false;m.querySelector(".sp-body").scrollTop=top;m.querySelector(".bg").onclick=close;m.querySelector("#spX").onclick=close;
+    m.classList.add("pw3-sp");m.hidden=false;{const sl=m.querySelector(".sp-list");if(sl)sl.scrollTop=top}m.querySelector(".bg").onclick=close;m.querySelector("#spX").onclick=close;
     m.querySelector("#spGo").onclick=apply;m.querySelector("#spClr").onclick=()=>{F.cat=F.car=F.track=F.kind=F.day="";draw()};
     m.querySelectorAll(".lb-cats [data-cat]").forEach(b=>b.onclick=()=>{F.cat=b.dataset.cat===F.cat?"":b.dataset.cat;draw()});
     m.querySelectorAll("[data-spk]").forEach(b=>b.onclick=()=>{F.kind=b.dataset.spk;draw()});
@@ -10468,7 +10552,13 @@ function pw3LapsPanel(){const host=$("#lapPick");if(!host)return;const As=$("#la
     if(l===A){const ob=Bs.value,va=optOf(As,lapOf(ob));if(va==="")return;As.value=va;ANASEL.a=selKey(va,lapOf(va));Bs.value=v;ANASEL.b=selKey(v,l);ANASEL.bu=true;renderLaps();return}
     Bs.value=v;fire(Bs);pw3LapsPanel()})}
 
-/* ---------- the numbers across the top and the corners on the right ---------- */
+/* ---------- lap A against lap B (the design's lap header), then the numbers across the top and the corners on the right ---------- */
+const pw3Mine=l=>!!(l&&!(l.comm||l.cid)&&!l.drv&&l.who==null);
+const pw3Nm=l=>{if(!l)return"";const n=String(l.n??"").replace(/^⟡ /,"");return pw3Mine(l)?Tx("Lap","Vuelta",null,"Volta")+" "+n:lapName(l)};
+function pw3Heads(A,B){const box=$("#lapCompareHeads");if(!box)return;if(!A||!B){box.innerHTML="";return}
+  const nm=l=>pw3Mine(l)&&l._sessionBest?Tx("My best · ","Mi mejor · ",null,"Minha melhor · ")+pw3Nm(l):pw3Nm(l),src=l=>pw3Mine(l)?"":lapSource(l);
+  const side=(cls,role,l)=>`<div class="lh ${cls}${cls==="b"&&bMine(l)?" mine":""}"><small>${esc(role)}${src(l)?" · "+esc(src(l)):""}</small><b>${esc(nm(l))}</b><span class="mono">${fmtT(l.time)}</span></div>`;
+  box.innerHTML=side("a",Tx("Lap A · comparing","Vuelta A · comparando",null,"Volta A · comparando"),A)+`<div class="lh vs">vs</div>`+side("b",Tx("Lap B · reference","Vuelta B · referencia",null,"Volta B · referência"),B)}
 function renderLapAnalyzer(A,B){const box=$("#lapAnalyzer"),cp=$("#lapCorP"),cb=$("#lapCorners");if(!box)return;
   if(!A||!B){box.hidden=true;box.innerHTML="";if(cp)cp.hidden=true;if(cb)cb.innerHTML="";pw3Ins(0);return}box.hidden=false;
   const F=PWA.analyzerFacts(A,B,anaCtx(A,B)),ad=F.ad,all=F.corners||[],sa=lapSeries(A),sb=lapSeries(B),n=Math.min(sa.end,sb.end);
@@ -10481,10 +10571,10 @@ function renderLapAnalyzer(A,B){const box=$("#lapAnalyzer"),cp=$("#lapCorP"),cb=
     k(Tx("Furthest behind","Más atrás",null,"Mais atrás"),peak>.005?sgn(peak,3)+" s":"–",peak>.005?Tx(`at ${Math.round(pI*BIN)} m`,`en ${Math.round(pI*BIN)} m`,null,`em ${Math.round(pI*BIN)} m`):Tx("A is never behind","A nunca va por detrás",null,"A nunca fica atrás"),"")];
   if(all.length)cards.push(k(Tx("Corners vs straights","Curvas frente a rectas",null,"Curvas contra retas"),sgn(inC,2)+" s",Tx(`loses in ${nL} corners, gains in ${nG} · straights ${sgn(st,2)} s`,`pierde en ${nL} curvas, gana en ${nG} · rectas ${sgn(st,2)} s`,null,`perde em ${nL} curvas, ganha em ${nG} · retas ${sgn(st,2)} s`),""));
   if(gain<-.05)cards.push(k(Tx("Gains most","Donde más gana",null,"Onde mais ganha"),sgn(gain,3)+" s",Tx(`around ${Math.round(gI*BIN)} m`,`hacia ${Math.round(gI*BIN)} m`,null,`por volta de ${Math.round(gI*BIN)} m`),"good"));
-  box.innerHTML=`<div class="la-row lws-kpis">${cards.join("")}</div>`;
+  box.innerHTML=`<div class="la-row lws-kpis">${cards.join("")}</div>`;PW3L.cs=all.map(c=>c.apex||c.d).filter(d=>d>0);pw3Heads(A,B);
   if(cp&&cb){cp.hidden=!all.length;const t=$("#lwsCorT");if(t)t.textContent=Tx("Corners","Curvas","Kurven","Curvas");
     const mx=Math.max(.05,...all.map(c=>Math.abs(c.lost))),pin=CMP_HOVER&&CMP_HOVER.pin?CMP_HOVER.i:null;
-    cb.innerHTML=`<div class="lws-cc">${all.map(c=>`<button type="button" class="la-c lws-c${c.lost>.02?" bad":c.lost<-.02?" good":""}${pin===Math.round(c.d/BIN)?" on":""}" data-cd="${Math.round(c.d)}" data-cn="${c.n}" aria-label="T${c.n} ${sgn(c.lost,2)} s"><span class="la-cb"><span class="mono">${sgn(c.lost,2)}</span><i style="height:${Math.max(4,Math.round(Math.abs(c.lost)/mx*82))}%"></i></span><b>T${c.n}</b></button>`).join("")}</div>`;
+    cb.innerHTML=`<div class="lws-cc" style="--n:${Math.min(12,Math.max(1,all.length))}">${all.map(c=>`<button type="button" class="la-c lws-c${c.lost>.02?" bad":c.lost<-.02?" good":""}${pin===Math.round(c.d/BIN)?" on":""}" data-cd="${Math.round(c.d)}" data-cn="${c.n}" aria-label="T${c.n} ${sgn(c.lost,2)} s"><span class="la-cb"><span class="mono">${sgn(c.lost,2).replace("−","-")}</span><i style="height:${Math.max(3,Math.round(Math.abs(c.lost)/mx*100))}%"></i></span><b>T${c.n}</b></button>`).join("")}</div>`;
     cb.querySelectorAll("[data-cd]").forEach(b=>b.onclick=()=>{const i=Math.round(+b.dataset.cd/BIN),same=CMP_HOVER&&CMP_HOVER.pin&&CMP_HOVER.i===i;CMP_HOVER=same?null:{i,quiet:true,pin:true};
       cb.querySelectorAll(".la-c").forEach(x=>x.classList.toggle("on",!same&&x===b));markBrakeRow();drawCmp(true);pw3Ins(same?0:+b.dataset.cn)})}
   if(PW3L.ins)pw3Ins(PW3L.ins,true);
@@ -10492,7 +10582,7 @@ function renderLapAnalyzer(A,B){const box=$("#lapAnalyzer"),cp=$("#lapCorP"),cb=
 
 /* "<turn> insight": the corner under the map, from the comparison of A and B */
 function pw3Ins(n,quiet){const box=$("#lapIns");if(!box)return;PW3L.ins=n||0;
-  document.querySelectorAll("#lapMap text.cn").forEach(t=>t.classList.toggle("sel",!!n&&t.textContent==="T"+n));
+  document.querySelectorAll("#lapMap g.mc").forEach(t=>t.classList.toggle("sel",!!n&&t.dataset.cn===String(n)));
   if(!n){box.hidden=true;box.innerHTML="";return}
   const A=lapOf($("#lapA").value),B=lapOf($("#lapB").value);let c=null;try{c=A&&B?coachCompare(A,B).find(x=>x.n===n):null}catch(e){}
   if(!c){box.hidden=true;box.innerHTML="";PW3L.ins=0;return}
@@ -10520,19 +10610,41 @@ window.cmpMapWire=function(box,A,B,sa,sb,n,L,N,P,cs){if(box)box._pw3={A,B,sa,sb,
 const _pw3RCM=window.renderCmpMap;
 window.renderCmpMap=async function(A,B,box){const r=await _pw3RCM.apply(this,arguments);if(box&&box.id==="lapMap")try{pw3MapPost(box)}catch(e){}return r};
 function pw3MapPost(box){const offs=$("#lapOffs"),svg=box.querySelector("svg.rbmap");
-  if(offs){const o=box.querySelector(".offs");offs.innerHTML="";offs.hidden=!o;if(o){const lb=o.querySelector(".label");if(lb)lb.classList.add("lws-h");offs.appendChild(o)}}
+  if(offs){const o=box.querySelector(".offs"),sum=box.querySelector(":scope>.rb-sum");offs.innerHTML="";offs.hidden=!o;if(o){const lb=o.querySelector(".label");if(lb)lb.classList.add("lws-h");offs.appendChild(o);if(sum)lb?lb.after(sum):o.prepend(sum)}else if(sum)sum.remove()}
   box.querySelectorAll(":scope>p.note").forEach(p=>p.remove());
+  const foot=$("#lapMapFoot");if(foot)foot.innerHTML="";
   if(!svg){const rd=$("#lapRead");if(rd)rd.innerHTML="";pw3Stick();return}
+  pw3MapLook(box,svg,foot);
   svg.insertAdjacentHTML("beforeend",`<g class="pw3-gh" transform="translate(-99 -99)"><g class="pw3-cs"><circle r="6"/></g></g><g class="pw3-cur" transform="translate(-99 -99)"><g class="pw3-cs"><circle class="pw3-halo" r="11"/><circle class="pw3-a" r="6"/></g></g>`);
-  svg.querySelectorAll("text.cn").forEach(t=>{t.setAttribute("role","button");t.setAttribute("tabindex","0")});
-  const pickT=t=>{const n=parseInt(String(t.textContent||"").replace(/^T/,""),10);if(!n)return;const b=$(`#lapCorners .la-c[data-cn="${n}"]`);if(b&&!b.classList.contains("on"))b.click();else if(!b)pw3Ins(n)};
-  svg.addEventListener("click",e=>{const t=e.target.closest&&e.target.closest("text.cn");if(t)pickT(t)});
-  svg.addEventListener("keydown",e=>{const t=e.target.closest&&e.target.closest("text.cn");if(t&&(e.key==="Enter"||e.key===" ")){e.preventDefault();pickT(t)}});
+  const pickT=t=>{const n=+t.dataset.cn;if(!n)return;const b=$(`#lapCorners .la-c[data-cn="${n}"]`);if(b&&!b.classList.contains("on"))b.click();else if(!b)pw3Ins(n)};
+  svg.addEventListener("click",e=>{const t=e.target.closest&&e.target.closest("g.mc");if(t)pickT(t)});
+  svg.addEventListener("keydown",e=>{const t=e.target.closest&&e.target.closest("g.mc");if(t&&(e.key==="Enter"||e.key===" ")){e.preventDefault();pickT(t)}});
   const hot=on=>{box.classList.toggle("hot",on);pw3MapCursor(PW3L.idx);clearTimeout(box._pw3t);box._pw3t=setTimeout(()=>pw3MapCursor(PW3L.idx),260)};
   svg.addEventListener("transitionend",e=>{if(e.target===svg)pw3MapCursor(PW3L.idx)});
   svg.addEventListener("pointerenter",e=>{if(e.pointerType==="mouse")hot(true)});svg.addEventListener("pointerleave",e=>{if(e.pointerType==="mouse")hot(false)});
   if(PW3L.ins)pw3Ins(PW3L.ins,true);
   pw3MapCursor(CMP_HOVER?CMP_HOVER.i:PW3L.idx);pw3Stick()}
+/* the design's map: where A loses or gains as four colours along the track (with their legend), the turns as numbered
+   dots on the track, and the map's switches as a row of small chips under it */
+function pw3MapLook(box,svg,foot){const g=box._pw3;if(!g||!box._at)return;const at=box._at,L=g.L,n=g.n,sa=g.sa,sb=g.sb;
+  svg.querySelectorAll("text.sec").forEach(e=>e.remove());
+  // the track fills the panel: the drawing cropped to the circuit
+  try{const t=svg.querySelector("polyline.trkS")||svg.querySelector("polyline.trk");if(t){const bb=t.getBBox(),p=16;if(bb.width>20&&bb.height>20)svg.setAttribute("viewBox",`${(bb.x-p).toFixed(1)} ${(bb.y-p).toFixed(1)} ${(bb.width+2*p).toFixed(1)} ${(bb.height+2*p).toFixed(1)}`)}}catch(e){}
+  if(LAPV.delta){svg.querySelectorAll("polyline.seg").forEach(e=>e.remove());const SEG=Math.min(160,Math.max(24,Math.round(L/40)));let segs="";
+    const tAt=(s,i)=>{const r=s.arr[i];return r&&r[1]!=null?r[1]:null};
+    for(let j=0;j<SEG;j++){const i0=Math.floor(j/SEG*(n-1)),i1=Math.floor((j+1)/SEG*(n-1));if(i1<=i0)continue;const a0=tAt(sa,i0),a1=tAt(sa,i1),b0=tAt(sb,i0),b1=tAt(sb,i1);if(a0==null||a1==null||b0==null||b1==null)continue;
+      const rate=((a1-b1)-(a0-b0))/((i1-i0)*BIN)*100,cls=rate>.08?"m3":rate>.03?"m2":rate>0?"m1":"mg",pts=[];for(let d=i0*BIN;d<=i1*BIN;d+=Math.max(2,BIN)){const q=at(Math.min(d,L-1));pts.push(q[0].toFixed(1)+","+q[1].toFixed(1))}
+      segs+=`<polyline class="pw3-mp ${cls}" points="${pts.join(" ")}"/>`}
+    const ref=svg.querySelector("text.cn")||svg.querySelector(".pw3-gh");if(ref)ref.insertAdjacentHTML("beforebegin",segs);else svg.insertAdjacentHTML("beforeend",segs)}
+  // the turns: a numbered dot on the track at each turn
+  svg.querySelectorAll("text.cn").forEach(t=>t.remove());
+  const cur=svg.querySelector(".pw3-gh");let mk="";(g.cs||[]).forEach(c=>{const q=at(c.d);mk+=`<g class="mc${PW3L.ins===c.n?" sel":""}" data-cn="${c.n}" role="button" tabindex="0" aria-label="T${c.n}"><circle cx="${q[0].toFixed(1)}" cy="${q[1].toFixed(1)}" r="6.5"/><text x="${q[0].toFixed(1)}" y="${(q[1]+2.9).toFixed(1)}">${c.n}</text></g>`});
+  if(cur)cur.insertAdjacentHTML("beforebegin",mk);else svg.insertAdjacentHTML("beforeend",mk);
+  if(!foot)return;const bar=box.querySelector(".rb-bar");
+  const leg=LAPV.delta?`<div class="map-leg"><span><i class="m1"></i>${esc(Tx("losing a little","pierde un poco",null,"perde um pouco"))}</span><span><i class="m2"></i>${esc(Tx("losing","pierde",null,"perde"))}</span><span><i class="m3"></i>${esc(Tx("losing a lot","pierde mucho",null,"perde muito"))}</span><span><i class="mg"></i>${esc(Tx("gaining","gana",null,"ganha"))}</span></div>`:"";
+  foot.insertAdjacentHTML("beforeend",leg);
+  if(bar){const lg=[...bar.querySelectorAll(".lgd")];if(LAPV.brk&&lg.length){const d=document.createElement("div");d.className="map-leg";lg.forEach(x=>d.appendChild(x));foot.appendChild(d)}else lg.forEach(x=>x.remove());
+    bar.classList.add("pw3-mchips");foot.appendChild(bar)}}
 function pw3MapCursor(i){const b=$("#lapMap"),g=b&&b._pw3,svg=b&&b.querySelector("svg.rbmap");if(!g||!svg||!b._at||g.n<2)return;
   i=Math.max(0,Math.min(g.n-1,Math.round(i)||0));PW3L.idx=i;const d=i*BIN,q=b._at(d),a=g.sa.arr[i],bb=g.sb.arr[i];
   // lap B where it was at the same moment of its lap
@@ -10547,6 +10659,72 @@ function cmpMapHover(i){const b=$("#lapMap");if(!b||!b._at)return;const d=b.quer
   if(d){if(i==null)d.setAttribute("hidden","");else{const q=b._at(i*BIN);d.setAttribute("cx",q[0].toFixed(1));d.setAttribute("cy",q[1].toFixed(1));d.removeAttribute("hidden")}}
   if(i!=null)pw3MapCursor(i)}
 
+/* ---------- the charts: one panel with the Show chips, then each channel as its own titled chart (the design's charts):
+   its legend and, on the right, the values at the point you hover or touch (or the whole lap), the turns as thin lines ---------- */
+const PW3CH=[["speed",["Speed","Velocidad",null,"Velocidade"],0,170],["delta",["Gap to lap B","Diferencia con la vuelta B",null,"Diferença para a volta B"],null,110],["thr",["Throttle","Acelerador",null,"Acelerador"],2,90],["brk",["Brake","Freno",null,"Freio"],3,90],["gear",["Gear","Marcha",null,"Marcha"],4,90],["steer",["Steering","Volante",null,"Volante"],5,90],["line",["Line (A beside B)","Trazada (A respecto a B)",null,"Trajetória (A ao lado de B)"],"line",90]];
+function pw3ChWire(box){let down=false;box.style.touchAction="pan-y";
+  const at=e=>{const r=box.getBoundingClientRect(),n=PW3L.n||0;if(n<2||!r.width)return;const i=Math.max(0,Math.min(n-1,Math.round((e.clientX-r.left)/r.width*(n-1))));
+    CMP_HOVER={i,x:e.clientX-r.left,y:e.clientY,cx:e.clientX,cy:e.clientY,quiet:true};document.querySelectorAll("#lapCorners .la-c.on").forEach(q=>q.classList.remove("on"));pw3Redraw()};
+  box.addEventListener("pointermove",e=>{if(e.pointerType==="mouse"||down)at(e)});
+  box.addEventListener("pointerdown",e=>{if(e.pointerType!=="mouse"){down=true;at(e)}});
+  const up=e=>{if(e.pointerType!=="mouse")down=false};box.addEventListener("pointerup",up);box.addEventListener("pointercancel",up);
+  box.addEventListener("pointerleave",e=>{if(e.pointerType==="mouse"){CMP_HOVER=null;pw3Redraw()}})}
+function pw3Redraw(){if(pw3Redraw.raf)return;pw3Redraw.raf=requestAnimationFrame(()=>{pw3Redraw.raf=0;drawCmp(true)})}
+function pw3Charts(A,B,sa,sb,n,hover){const host=$("#pw3Ch"),chips=$("#cmpChips");if(!host||!chips)return;PW3L.n=n;
+  if(!hover||!chips.firstChild){chips.innerHTML=`<span>${esc(Tx("Show","Mostrar",null,"Mostrar"))}</span>${LAPCH_ALL.map(([k,t])=>`<button type="button" class="chip" data-ch="${k}" aria-pressed="${!!LAPCH[k]}">${esc(Tx(t[0],t[1],null,t[3]))}</button>`).join("")}`;
+    chips.setAttribute("aria-label",Tx("Charts to show","Gráficas que mostrar",null,"Gráficos a mostrar"));
+    chips.querySelectorAll("[data-ch]").forEach(b=>b.onclick=()=>{LAPCH[b.dataset.ch]=!LAPCH[b.dataset.ch];b.setAttribute("aria-pressed",!!LAPCH[b.dataset.ch]);store.set("pw.lapch",LAPCH);drawCmp(true)})}
+  const lanes=PW3CH.filter(c=>LAPCH[c[0]]),na="A · "+pw3Nm(A),nb="B · "+pw3Nm(B),key=lanes.map(c=>c[0]).join()+"|"+na+"|"+nb+"|"+LANG;
+  if(host.dataset.k!==key){host.dataset.k=key;
+    host.innerHTML=lanes.map(([k,t,,h])=>`<div class="chart" data-chp="${k}"><div class="ch-t">${esc(Tx(t[0],t[1],null,t[3]))}</div><div class="ch-leg">${k==="delta"?`<span class="lg sd"><i></i>${esc(Tx("A vs B (s)","A vs B (s)",null,"A vs B (s)"))}</span>`:`<span class="lg sa"><i></i>${esc(na)}</span><span class="lg sb"><i class="d"></i>${esc(nb)}</span>`}<b class="ch-read mono" data-read="${k}"></b></div><div class="ch-box" style="height:${h}px"><canvas></canvas></div></div>`).join("");
+    host.querySelectorAll(".ch-box").forEach(pw3ChWire)}
+  host.querySelectorAll(".lg.sb").forEach(e=>e.style.color=`var(${bVar(B)})`);
+  const cA=css("--accent"),cB=css(bVar(B)),cBad=css("--bad"),cLn=css("--line"),cFg=css("--fg"),cMu=css("--muted"),hi=CMP_HOVER?Math.min(n-1,CMP_HOVER.i):-1,LAT=LAPCH.line?lineOffsets(A,B):null;
+  lanes.forEach(([k,t,col])=>{const cv=host.querySelector(`[data-chp="${k}"] canvas`);if(!cv)return;const dpr=Math.min(2,devicePixelRatio||1),w=cv.clientWidth,h=cv.clientHeight;if(!w||!h)return;
+    if(cv.width!==Math.round(w*dpr)||cv.height!==Math.round(h*dpr)){cv.width=Math.round(w*dpr);cv.height=Math.round(h*dpr)}const x=cv.getContext("2d");x.setTransform(dpr,0,0,dpr,0,0);x.clearRect(0,0,w,h);
+    const X=i=>n>1?i/(n-1)*w:0;
+    // the turns, as thin lines across the chart
+    x.strokeStyle=cLn;x.lineWidth=1;(PW3L.cs||[]).forEach(d=>{const i=d/BIN;if(i<0||i>n-1)return;const px=Math.round(X(i))+.5;x.beginPath();x.moveTo(px,0);x.lineTo(px,h);x.stroke()});
+    const val=k==="delta"?(i=>{const a=sa.arr[i],b=sb.arr[i];return a&&b&&a[1]!=null&&b[1]!=null?a[1]-b[1]:null}):k==="line"?(i=>LAT&&isFinite(LAT[i])?LAT[i]:null):null;
+    let lo=Infinity,up=-Infinity;const take=v=>{if(v!=null&&isFinite(v)){if(v<lo)lo=v;if(v>up)up=v}};
+    if(k==="thr"||k==="brk"){lo=-.05;up=1.05}else if(val){for(let i=0;i<n;i++)take(val(i));if(k==="delta"||k==="line"){take(0)}}else for(let i=0;i<n;i++){const a=sa.arr[i],b=sb.arr[i];if(a)take(a[col]);if(b)take(b[col])}
+    if(!isFinite(lo)){if(k==="line"){x.fillStyle=cMu;x.font="12px "+css("--f-body");x.fillText(Tx("Both laps need their path (recorded with Pitlane HQ Agent on the same track).","Las dos vueltas necesitan su trazado (grabadas con Pitlane HQ Agent en el mismo circuito).",null,"As duas voltas precisam do seu traçado (gravadas com o Pitlane HQ Agent na mesma pista)."),6,h/2)}return}
+    if(k!=="thr"&&k!=="brk"){const r=(up-lo)||1;lo-=r*.06;up+=r*.06}
+    const Y=v=>4+(1-(v-lo)/((up-lo)||1))*(h-8);
+    const path=f=>{x.beginPath();let on=false;for(let i=0;i<n;i++){const v=f(i);if(v==null||!isFinite(v)){on=false;continue}const px=X(i),py=Y(v);on?x.lineTo(px,py):x.moveTo(px,py);on=true}};
+    if(k==="delta"||k==="line"||k==="steer"){x.strokeStyle=cMu;x.globalAlpha=.5;x.beginPath();x.moveTo(0,Math.round(Y(0))+.5);x.lineTo(w,Math.round(Y(0))+.5);x.stroke();x.globalAlpha=1}
+    if(k==="delta"){const y0=Y(0);x.beginPath();let st=-1,last=-1;for(let i=0;i<n;i++){const v=val(i);if(v==null)continue;if(st<0){st=i;x.moveTo(X(i),y0)}x.lineTo(X(i),Y(v));last=i}
+      if(st>=0){x.lineTo(X(last),y0);x.closePath();x.fillStyle=cBad;x.globalAlpha=.14;x.fill();x.globalAlpha=1}
+      path(val);x.strokeStyle=cBad;x.lineWidth=2;x.stroke()}
+    else if(k==="line"){path(()=>0);x.strokeStyle=cB;x.lineWidth=2;x.setLineDash([7,4]);x.stroke();x.setLineDash([]);path(val);x.strokeStyle=cA;x.lineWidth=2;x.stroke()}
+    else{path(i=>{const a=sa.arr[i];return a?a[col]:null});x.strokeStyle=cA;x.lineWidth=2;x.stroke();
+      path(i=>{const b=sb.arr[i];return b?b[col]:null});x.strokeStyle=cB;x.setLineDash([7,4]);x.stroke();x.setLineDash([])}
+    if(hi>=0){const px=Math.round(X(hi))+.5;x.strokeStyle=cFg;x.globalAlpha=.6;x.lineWidth=1;x.beginPath();x.moveTo(px,0);x.lineTo(px,h);x.stroke();x.globalAlpha=1}});
+  // the values: at the point you hover or touch, or the whole lap
+  const a=hi>=0?sa.arr[hi]:null,b=hi>=0?sb.arr[hi]:null,f={speed:r=>Math.round(spd(r[0])),thr:r=>Math.round(r[2]*100)+"%",brk:r=>Math.round(r[3]*100)+"%",gear:r=>String(r[4]),steer:r=>isFinite(r[5])?Math.round(r[5]*57.3)+"°":"–"},u={speed:" "+spdU()};
+  const avg=(s,j)=>{let z=0,c=0;for(let i=0;i<n;i++){const r=s.arr[i];if(r&&isFinite(r[j])){z+=r[j];c++}}return c?z/c:null},mx=(s,j)=>{let z=0;for(let i=0;i<n;i++){const r=s.arr[i];if(r&&isFinite(r[j]))z=Math.max(z,Math.abs(r[j]))}return z};
+  const whole={speed:s=>Math.round(spd(mx(s,0))),thr:s=>{const v=avg(s,2);return v==null?"–":Math.round(v*100)+"%"},brk:s=>{const v=avg(s,3);return v==null?"–":Math.round(v*100)+"%"},gear:s=>String(Math.round(mx(s,4))||"–"),steer:s=>{const v=mx(s,5);return v?Math.round(v*57.3)+"°":"–"}};
+  const wl={speed:Tx("max","máx.",null,"máx."),thr:Tx("average","media",null,"média"),brk:Tx("average","media",null,"média"),gear:Tx("top","máx.",null,"máx."),steer:Tx("max","máx.",null,"máx.")};
+  let where="";if(hi>=0){const d=hi*BIN,cs=(PW3L.cs||[]),k=cs.findIndex(c=>Math.abs(c-d)<=150);where=Math.round(d)+" m"+(k>=0?" · T"+(k+1):"")}
+  host.querySelectorAll(".ch-read").forEach(el=>{const k=el.dataset.read;let t="";
+    if(k==="delta"){if(hi>=0){t=a&&b&&a[1]!=null&&b[1]!=null?where+" · "+sgn(a[1]-b[1],3)+" s":where}else{t=Tx("Lap","Vuelta",null,"Volta")+" · "+sgn(A.time-B.time,3)+" s"}}
+    else if(k==="line"){if(!LAT)t="";else if(hi>=0){const v=LAT[hi];t=where+(isFinite(v)?" · A "+Math.abs(v).toFixed(1)+" m "+(v>=0?Tx("to the left of B","a la izquierda de B",null,"à esquerda de B"):Tx("to the right of B","a la derecha de B",null,"à direita de B")):"")}
+      else{let m=0;for(let j=0;j<n&&j<LAT.length;j++)if(isFinite(LAT[j]))m=Math.max(m,Math.abs(LAT[j]));t=Tx("furthest from B","lo más lejos de B",null,"mais longe de B")+" · "+m.toFixed(1)+" m"}}
+    else if(hi>=0)t=where+(a||b?" · A "+(a?f[k](a):"–")+" · B "+(b?f[k](b):"–")+(u[k]||""):"");
+    else t=wl[k]+" · A "+whole[k](sa)+" · B "+whole[k](sb)+(u[k]||"");
+    el.textContent=t})}
+/* the analyzer's drawing: the header, the numbers, the charts, the sectors, the braking points and the map (the design's
+   look; the same data as before) */
+function drawCmp(hover){const A=lapOf($("#lapA").value),B=lapOf($("#lapB").value);if(!A||!B)return;{const lb=$("#lapsBody");if(lb)lb.classList.toggle("bmine",bMine(B))}
+  if(!hover){renderLapCompareHeads(A,B);renderLapAnalyzer(A,B);try{renderLapMore(A,B)}catch(e){}}
+  const sa=lapSeries(A),sb=lapSeries(B),n=Math.min(sa.end,sb.end);CMP_SECN=Math.max(A.sectors?.length||0,B.sectors?.length||0,3);
+  pw3Charts(A,B,sa,sb,n,hover);{const t=$("#cmpTip");if(t)t.hidden=true}
+  if(!hover){renderBrakeTable(A,B);renderCmpMap(A,B,$("#lapMap"));
+    const box=$("#secStrip");if(box){const secs=pairSecs(A,B,sa,sb,n),row=(nm,ta,tb,tot)=>`<tr${tot?' class="tot"':""}><td>${esc(nm)}</td><td class="mono">${tot?fmtT(ta):ta.toFixed(3)}</td><td class="mono">${tot?fmtT(tb):tb.toFixed(3)}</td><td class="mono ${ta-tb>0?"bad":"good"}">${sgn(ta-tb)}</td></tr>`;
+      box.innerHTML=`<table class="tb sectors"><thead><tr><th></th><th>A</th><th>B</th><th>${esc(Tx("Gap","Dif.",null,"Dif."))}</th></tr></thead><tbody>${secs.map(([a,b],k)=>row("S"+(k+1),a,b)).join("")}${row(Tx("Lap","Vuelta",null,"Volta"),A.time,B.time,true)}</tbody></table>${secs.length?"":`<p class="foot">${esc(Tx("No sector times for these laps.","Estas vueltas no tienen tiempos por sector.",null,"Estas voltas não têm tempos por setor."))}</p>`}`}}
+  cmpMapHover(CMP_HOVER?Math.min(n-1,CMP_HOVER.i):null)}
+addEventListener("resize",()=>{if(CUR_VIEW==="laps")pw3Redraw()});
+
 /* the panels beyond one lap (corner consistency, race fuel, more charts) all stay in the middle column */
 function lapMoreBalance(){const L=$("#lapMore"),R=$("#lapMore2");if(!L||!R)return;[...R.children].forEach(u=>L.appendChild(u));R.hidden=true;R.innerHTML=""}
 
@@ -10556,7 +10734,6 @@ window.renderLaps=function(){try{pw3XsSync()}catch(e){}const r=_pw3RL.apply(this
 function pw3After(){const v=$("#v-laps");if(!v)return;const body=$("#lapsBody"),has=!!body&&!body.hidden,cloud=coachCloudOn();
   v.classList.add("lws-on");v.classList.toggle("lws-has",has);v.classList.toggle("lws-cloud",cloud);v.classList.toggle("lws-live",!cloud&&pcPick());
   {const t=$("#lwsLapsT");if(t)t.textContent=Tx("Laps","Vueltas",null,"Voltas")}
-  {const h=$("#secHead");if(h)h.innerHTML=`<span></span><span>A</span><span>B</span><span>${esc(Tx("Gap","Dif.",null,"Dif."))}</span>`}
   {const g=$("#lapGoCoach");if(g){g.textContent=Tx("Learn from this lap in the Coach","Aprende de esta vuelta en el Coach",null,"Aprenda com esta volta no Coach")+" →";g.onclick=openInCoach}}
   if(has)pw3LapsPanel();pw3StickWire();pw3Stick()}
 /* the side columns stay in view: their top stops under what sticks at the top of the window, and a column taller

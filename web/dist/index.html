@@ -11212,9 +11212,11 @@ function pw3After(){const v=$("#v-laps");if(!v)return;const body=$("#lapsBody"),
   if(has){pw3LapsPanel();pw3LapRows()}pw3StickWire();pw3Stick()}
 /* the side columns stay in view: their top stops under what sticks at the top of the window, and a column taller
    than the window scrolls with the page until its end shows */
-function pw3Stick(){const v=$("#v-laps");if(!v||v.hidden)return;const cols=v.querySelectorAll(".lws-l,.lws-r");if(innerWidth<=1100){cols.forEach(a=>a.style.top="");return}
-  let base=12;document.querySelectorAll("body>*,.wrap>*").forEach(e=>{if(e.offsetHeight<=0||e.offsetHeight>160)return;const cs=getComputedStyle(e);if(cs.position!=="sticky"&&cs.position!=="fixed")return;const r=e.getBoundingClientRect();if(r.top<=1&&r.width>innerWidth*.5)base=Math.max(base,r.bottom+12)});
-  cols.forEach(a=>{a.style.top=Math.min(base,innerHeight-a.offsetHeight-12)+"px"})}
+function pw3Stick(){const v=$("#v-laps");if(!v||v.hidden)return;const cols=v.querySelectorAll(".lws-l,.lws-r");if(innerWidth<=1100){cols.forEach(a=>{a.style.top="";a.style.maxHeight="";a.classList.remove("pw3-fit")});return}
+  let base=12;document.querySelectorAll("body>*,.wrap>*,header.top").forEach(e=>{if(e.offsetHeight<=0||e.offsetHeight>160)return;const cs=getComputedStyle(e);if(cs.position!=="sticky"&&cs.position!=="fixed")return;const r=e.getBoundingClientRect();if(r.width<=innerWidth*.5)return;if(cs.position==="sticky"){const t=parseFloat(cs.top);if(!isNaN(t)&&t<=40)base=Math.max(base,t+e.offsetHeight+12)}else if(r.top<=1)base=Math.max(base,r.bottom+12)});
+  /* the laps column always shows its top: it stops under the header and, when taller than the window, its lap list scrolls inside */
+  cols.forEach(a=>{if(a.classList.contains("lws-l")){a.style.top=base+"px";a.style.maxHeight=(innerHeight-base-12)+"px";a.classList.add("pw3-fit");return}
+    a.style.top=Math.min(base,innerHeight-a.offsetHeight-12)+"px"})}
 function pw3StickWire(){if(pw3StickWire.on)return;pw3StickWire.on=1;addEventListener("resize",pw3Stick);
   if(window.ResizeObserver){const ro=new ResizeObserver(()=>pw3Stick());document.querySelectorAll("#v-laps .lws-l,#v-laps .lws-r").forEach(c=>ro.observe(c))}
   {const b=$("#lapB");if(b)b.addEventListener("change",()=>setTimeout(()=>{pw3LapsPanel();pw3LapRows()},0))}}
@@ -12979,4 +12981,6 @@ html[data-theme="dark"]:not(.ov,.ovwin){--btn2:#273145;--btn2h:#313c53;--edge2:#
 html:not(.ov,.ovwin) body:not(#_):not(#__) :is(.btn:not(.primary,.on,.active,.dc,.gg,.danger,[aria-pressed="true"],[aria-selected="true"]),.chip:not(.on,.active,[id],[aria-pressed="true"],[aria-pressed=true],[aria-selected="true"]),#commBody .cl-link,.hl-links .cl-link,.inv-code .mono){background:var(--btn2,var(--surface2))!important;border:1px solid var(--edge2,var(--line2))!important;color:var(--fg)}
 html:not(.ov,.ovwin) body:not(#_):not(#__) :is(.btn:not(.primary,.on,.active,.dc,.gg,.danger,[aria-pressed="true"],[aria-selected="true"]),.chip:not(.on,.active,[id],[aria-pressed="true"],[aria-pressed=true],[aria-selected="true"]),#commBody .cl-link,.hl-links .cl-link):hover{background:var(--btn2h,var(--surface2))!important;border-color:var(--faint)!important}
 html:not(.ov,.ovwin) .btn:disabled{opacity:.55}
+/* the laps column of Laps: its top always in view, the lap list scrolls inside */
+@media (min-width:1101px){html:not(.ov) #v-laps .lws-l.pw3-fit{min-height:0;overflow-y:auto;scrollbar-width:thin}html:not(.ov) #v-laps .lws-l.pw3-fit>*{flex:none}html:not(.ov) #v-laps .lws-l.pw3-fit>.lws-laps{flex:1 1 auto;min-height:280px;display:flex;flex-direction:column;overflow:hidden}html:not(.ov) #v-laps .lws-l.pw3-fit>.lws-laps>:last-child{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;overflow:hidden}html:not(.ov) #v-laps .lws-l.pw3-fit>.lws-laps>:last-child>*{flex:none}html:not(.ov) #v-laps .lws-l.pw3-fit>.lws-laps>:last-child>.lapsel{flex:1 1 auto;min-height:0;overflow-y:auto;scrollbar-width:thin}}}
 </style>

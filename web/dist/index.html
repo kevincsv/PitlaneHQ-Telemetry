@@ -11403,6 +11403,11 @@ document.addEventListener("pointerover",e=>{if(e.pointerType!=="mouse"||!e.targe
 #v-coach .pw3c-offs .offs{margin:0;display:grid;gap:6px}#v-coach .pw3c-offs .offs>.label{display:none}#v-coach .pw3c-offs .rb-sum{margin:0 0 6px;font-size:13.5px}
 /* the pace among the drivers known here */
 #v-coach .co-pace .co-commnote{margin:0;color:var(--muted);font-size:13px;line-height:1.5}
+/* what moves under the three columns when the middle ends (pw3CoachFlow) */
+#v-coach .pw3c-flow{display:grid;gap:10px;margin-top:10px}
+#v-coach .pw3cf-plan .co-plan.nums{grid-template-columns:repeat(auto-fill,minmax(300px,1fr));align-items:start}
+#v-coach .pw3cf-side{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:10px;align-items:start}
+#v-coach .pw3cf-side>*{margin:0!important}
 @media (max-width:1100px){#v-coach .co-wrap.pw3c{grid-template-columns:minmax(0,1fr)}#v-coach .pw3c-l,#v-coach .pw3c-r{position:static}#v-coach .pw3c-r{order:3}}
 @media (max-width:760px){#v-coach .lapcmpheads{grid-template-columns:minmax(0,1fr)!important}#v-coach .lapcmp.b{align-items:flex-start;text-align:left}#v-coach .pw3c-top{grid-template-columns:minmax(0,1fr)}}
 /* ----- My sessions (.ws without a right column: best per car and track · the sessions and the race summaries, .g2.g2s) ----- */
@@ -11628,7 +11633,7 @@ const mk=(tag,cls,html)=>{const e=document.createElement(tag);if(cls)e.className
 /* ---------- Coach ---------- */
 // the corners the coach shows as cards, so each card can draw its own mini speed trace
 const cch=window.coachCornersHTML;if(typeof cch==="function")window.coachCornersHTML=function(cs,limit){window.PW3_CS=cs||[];return cch.apply(this,arguments)};
-const rc=window.renderCoach;if(typeof rc==="function")window.renderCoach=function(){const out=rc.apply(this,arguments);try{pw3CoachLayout()}catch(e){console.error(e)}try{pw5CoachPick()}catch(e){console.error(e)}return out};
+const rc=window.renderCoach;if(typeof rc==="function")window.renderCoach=function(){const out=rc.apply(this,arguments);try{pw3CoachLayout()}catch(e){console.error(e)}try{pw5CoachPick()}catch(e){console.error(e)}pw3FlowSoon();return out};
 function pw3Mini(c,A,R){if(!A||!R||!Array.isArray(A.bins)||!Array.isArray(R.bins))return"";const B=5,ap=+c.apex,br=c.d!=null?+c.d:ap-150;if(!(ap>0))return"";
   const d0=Math.max(0,Math.min(br,ap)-90),d1=ap+140,i0=Math.floor(d0/B),i1=Math.ceil(d1/B),get=(l,i)=>{const b=l.bins[i];return b&&b[0]>0?b[0]:null};
   const sa=[],sb=[];for(let i=i0;i<=i1;i++){sa.push(get(A,i));sb.push(get(R,i))}const ok=[...sa,...sb].filter(v=>v!=null);if(ok.length<6)return"";
@@ -11653,8 +11658,37 @@ function pw3CoachLayout(){const box=$("#coachBody"),w=box&&box.querySelector(".c
   try{pw3CoachLook(w,secs,ai)}catch(e){console.error(e)}
   // the incidents and the offs explained leave the map card for their own card (the map draws itself later, and again)
   const map=$("#coachMap");if(!map)return;const body=offs.querySelector(".pnl-b");
-  const pull=fresh=>{if(fresh)body.innerHTML="";const s=map.querySelector(":scope>.rb-sum"),o=map.querySelector(":scope>.offs");if(s)body.appendChild(s);if(o){const lb=o.querySelector(":scope>.label .pill");if(lb&&!offs.querySelector(".pnl-h .pill"))offs.querySelector(".pnl-h").appendChild(lb);body.appendChild(o)}offs.hidden=!body.children.length};
+  const pull=fresh=>{if(fresh)body.innerHTML="";const s=map.querySelector(":scope>.rb-sum"),o=map.querySelector(":scope>.offs");if(s)body.appendChild(s);if(o){const lb=o.querySelector(":scope>.label .pill");if(lb&&!offs.querySelector(".pnl-h .pill"))offs.querySelector(".pnl-h").appendChild(lb);body.appendChild(o)}offs.hidden=!body.children.length;pw3FlowSoon()};
   pull(true);const mo=new MutationObserver(rs=>{if(!map.isConnected){mo.disconnect();return}if(rs.some(r=>r.addedNodes.length))pull(true)});mo.observe(map,{childList:true})}
+/* Coach: when the middle column ends, what is left of the side columns moves under it, full width. Your plan's later
+   steps (with its vote and its button) go into a wide Your plan, and the right column's panels that hang below the
+   middle sit side by side; the Track map always stays at the top on the right. Worked out when the coach is drawn, the
+   window resized or a panel fills in, never while scrolling, so nothing jumps; one column keeps everything in place. */
+function pw3CoachFlow(){const w=document.querySelector("#coachBody .co-wrap.pw3c");if(!w)return;const L=w.querySelector(":scope>.pw3c-l"),M=w.querySelector(":scope>.pw3c-m"),R=w.querySelector(":scope>.pw3c-r");if(!L||!M||!R)return;
+  const pp=L.querySelector(".co-planp"),ol=pp&&pp.querySelector(".co-plan.nums"),pb=ol&&ol.parentElement;
+  // put everything back first
+  let fl=w.nextElementSibling&&w.nextElementSibling.classList.contains("pw3c-flow")?w.nextElementSibling:null;
+  if(fl){if(ol){fl.querySelectorAll(".pw3cf-plan .co-plan.nums>li").forEach(li=>ol.appendChild(li));fl.querySelectorAll(".pw3cf-plan .pnl-b>:not(ol)").forEach(x=>pb.appendChild(x))}
+    fl.querySelectorAll(".pw3cf-side>*").forEach(x=>{(x.dataset.cfFrom==="l"?L:R).appendChild(x);delete x.dataset.cfFrom});fl.remove()}
+  if(pp)pp.hidden=false;
+  if(getComputedStyle(w).gridTemplateColumns.split(" ").length<3)return;
+  const st=[L.style.position,R.style.position];L.style.position=R.style.position="static";
+  const end=M.getBoundingClientRect().bottom+1,below=e=>e.getBoundingClientRect().bottom>end;
+  const tail=pb?[...pb.children].filter(x=>x!==ol):[],tailH=tail.reduce((h,x)=>h+x.getBoundingClientRect().height+10,0)+14;
+  const mvP=[],mvL=[],mvR=[];
+  if(ol)[...ol.children].forEach((li,i)=>{if(i>0&&(mvP.length||li.getBoundingClientRect().bottom+tailH>end))mvP.push(li)});
+  [...L.children].filter(x=>x!==pp&&pp&&(pp.compareDocumentPosition(x)&Node.DOCUMENT_POSITION_FOLLOWING)).forEach(x=>{if(mvL.length||below(x))mvL.push(x)});
+  [...R.children].slice(1).forEach(x=>{if(!x.hidden&&(mvR.length||below(x)))mvR.push(x)});
+  L.style.position=st[0];R.style.position=st[1];
+  if(!mvP.length&&!mvL.length&&!mvR.length)return;
+  fl=mk("div","pw3c-flow");
+  if(mvP.length){const h=pp.querySelector(":scope>.pnl-h");fl.appendChild(mk("section","pnl pw3cf-plan",`<div class="pnl-h">${esc(h?h.textContent:"")}</div><div class="pnl-b"><ol class="co-plan nums"></ol></div>`))}
+  if(mvL.length||mvR.length)fl.appendChild(mk("div","pw3cf-side"));
+  w.after(fl);
+  if(mvP.length){const o=fl.querySelector(".pw3cf-plan ol"),b=o.parentElement;mvP.forEach(li=>o.appendChild(li));tail.forEach(x=>b.appendChild(x))}
+  const sd=fl.querySelector(".pw3cf-side");mvL.forEach(x=>{x.dataset.cfFrom="l";sd.appendChild(x)});mvR.forEach(x=>{x.dataset.cfFrom="r";sd.appendChild(x)})}
+let pw3FlowT=0;function pw3FlowSoon(){clearTimeout(pw3FlowT);pw3FlowT=setTimeout(()=>{try{pw3CoachFlow()}catch(e){console.error(e)}},120)}
+addEventListener("resize",pw3FlowSoon);if(document.fonts&&document.fonts.ready)document.fonts.ready.then(pw3FlowSoon);
 /* the corner card the design's way: the turn, its phase and the loss on one row, the tip and why, then Braking · Slowest · Brakes at */
 function pw3Split(s){s=String(s||"").trim();const m=s.match(/^(.*\S)\s*\(([^()]+)\)\.?$/);if(m)return[m[1],m[2].charAt(0).toUpperCase()+m[2].slice(1)+"."];
   const ps=s.split(/(?<=\.)\s+(?=\S)/);if(ps.length>1)return[ps[ps.length-1].replace(/\.$/,""),ps.slice(0,-1).join(" ")];return[s,""]}

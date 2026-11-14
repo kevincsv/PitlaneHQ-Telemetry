@@ -30,7 +30,11 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   with the distance, the corner, both speeds, the gap and how far B is ahead or behind, and a ring for lap B at the same
   moment of its lap. On computers (a fine pointer, from 1101 px) the whole Track map panel of Laps and of the Coach
   grows from its top right corner while the pointer is on it, above the page and as large as the window allows, without
-  moving anything else; on phones and touch screens it does not grow. Pressing a turn (on the map or in Corners) pins
+  moving anything else; on phones and touch screens it does not grow. On the Coach (from 1101 px), what is left of
+  the side columns once the middle column ends moves under the three columns at full width (`pw3CoachFlow`): Your
+  plan's later steps, with their votes, "Was this plan useful?" and its button, in a wide Your plan, and the right
+  column's panels that hang below the middle side by side. The Track map always stays at the top right and keeps its
+  growing. It is worked out when the coach is drawn, the window resized or a panel fills in, never while scrolling. Pressing a turn (on the map or in Corners) pins
   the charts there and opens "T3 insight" under the map (the tip, the braking against B, the slowest speeds, the speed
   of both laps through it, "Work on T3 in the Coach"). The overlay windows (`html.ov`) keep their own designs.
 - Overlays, Community, Leagues, My account and Settings in the Pit Wall Workspace look (`pw3-more` in index.html,

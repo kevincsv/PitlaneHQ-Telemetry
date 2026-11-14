@@ -5351,16 +5351,17 @@ function openLayout(){floatDrawer(false);LAYOUT_VIEW=openLayout;CFG_BACK=null;
     <button type="button" class="pin" data-show="${w}" aria-pressed="${!HIDDEN.has(w)}">${esc(HIDDEN.has(w)?Tx("Hidden","Oculto"):Tx("Shown","Visible"))}</button>
     ${w!=="flag"?`<button type="button" class="pin" data-size="${w}" title="${esc(Tx("Width","Ancho"))}">${esc(Tx("Width","Ancho"))}: ${sizeLabel(w)}</button>`:""}
     ${CONFIGURABLE[w]?`<button type="button" class="pin" data-cfg="${w}">${L("configure",true)}</button>`:""}</div>`).join("");
-  $("#dBody").innerHTML=`<button type="button" class="btn primary" id="toOverlays" style="margin-bottom:10px">${L("ovSettings",true)} →</button><div class="frow" style="margin:0 0 10px"><button type="button" class="btn small" id="lyRec">★ ${esc(Tx("Essentials","Lo esencial","Das Wichtigste","O essencial"))}</button><button type="button" class="btn small" id="lyNone">${esc(Tx("Hide all","Desactivar todos","Alle ausblenden","Desativar todos"))}</button><button type="button" class="btn small" id="lyAll">${esc(Tx("Show all","Mostrar todos","Alle anzeigen","Mostrar todos"))}</button></div><p class="note" style="margin:0 0 10px">${Lp("Tip: drag the ⠿ handle on any block to move it.","Consejo: arrastra el asa ⠿ de cualquier bloque para moverlo.")}</p><div class="panel">${rows}</div>
-   <div style="margin-top:10px"><button type="button" class="btn" id="resetOrder">${esc(Tx("Reset order and widths","Restablecer orden y anchos"))}</button></div>`;
+  $("#dBody").innerHTML=`<div class="ly-top"><button type="button" class="btn primary" id="toOverlays" style="margin-bottom:10px">${L("ovSettings",true)} →</button><div class="frow" style="margin:0 0 10px"><button type="button" class="btn small" id="lyRec">★ ${esc(Tx("Essentials","Lo esencial","Das Wichtigste","O essencial"))}</button><button type="button" class="btn small" id="lyPop" disabled>${esc(Tx("Most used by the community","Lo más usado por la comunidad",null,"O mais usado pela comunidade"))}</button><button type="button" class="btn small" id="lyNone">${esc(Tx("Hide all","Desactivar todos","Alle ausblenden","Desativar todos"))}</button><button type="button" class="btn small" id="lyAll">${esc(Tx("Show all","Mostrar todos","Alle anzeigen","Mostrar todos"))}</button></div><p class="note" id="lyPopNote" hidden></p><p class="note" style="margin:0 0 10px">${Lp("Tip: drag the ⠿ handle on any block to move it.","Consejo: arrastra el asa ⠿ de cualquier bloque para moverlo.")}</p></div><div class="panel" id="lyList">${rows}</div>
+   <div class="ly-foot"><button type="button" class="btn" id="resetOrder">${esc(Tx("Reset order and widths","Restablecer orden y anchos"))}</button></div>`;
   document.querySelectorAll("#dBody [data-size]").forEach(b=>b.onclick=()=>{cycleSize(b.dataset.size);openLayout()});
   $("#resetOrder").onclick=()=>{ORDER=null;WSIZE={};WHGT={};store.set("pw.order",null);store.set("pw.sizes",{});store.set("pw.heights",{});location.reload()};
   $("#toOverlays").onclick=()=>{closeDrawer();show("overlays")};
   const setShown=keep=>{const all=new Set([...WIDGETS,...[...document.querySelectorAll("#v-live .wpanel[data-w]")].map(p=>p.dataset.w)]);HIDDEN=new Set([...all].filter(w=>!keep.includes(w)));store.set("pw.hiddenW",[...HIDDEN]);applyLayout();openLayout()};
-  $("#lyRec").onclick=()=>setShown(LIVE_REC);$("#lyNone").onclick=()=>setShown([]);$("#lyAll").onclick=()=>setShown(WIDGETS);
+  $("#lyRec").onclick=()=>setShown(LIVE_REC);$("#lyNone").onclick=()=>setShown([]);if(typeof pw3LyPop==="function")pw3LyPop(setShown);$("#lyAll").onclick=()=>setShown(WIDGETS);
   document.querySelectorAll("#dBody [data-show]").forEach(b=>b.onclick=()=>{const w=b.dataset.show;HIDDEN.has(w)?HIDDEN.delete(w):HIDDEN.add(w);store.set("pw.hiddenW",[...HIDDEN]);applyLayout();openLayout()});
   document.querySelectorAll("#dBody [data-cfg]").forEach(b=>b.onclick=()=>openWidgetCfg(b.dataset.cfg));
-  if($("#drawer").hidden){$("#drawer").hidden=false;$("#dClose").focus()}}
+  const sc=$("#lyList"),st=openLayout.scroll;if(sc&&st!=null)sc.scrollTop=st;if(sc)sc.onscroll=()=>{openLayout.scroll=sc.scrollTop};
+  if($("#drawer").hidden){openLayout.scroll=0;if(sc)sc.scrollTop=0;$("#drawer").hidden=false;$("#dClose").focus()}if(typeof pw3LyTop==="function")pw3LyTop()}
 /* each overlay's own settings beyond its title and opacity (the agent's ovsettings.go and the native overlays read the
    same keys): a list of [field, kind, label, choices] under its ui key; b a switch, c one choice, m several */
 const T3=(en,es,pt)=>Tx(en,es,null,pt);
@@ -6390,7 +6391,7 @@ setTimeout(tellAgentAdminMode,1500);
    from an overlay window, never while an admin has admin mode on */
 var USAGE={c:{},ms:0,vis:document.visibilityState==="visible"?Date.now():0,track:false,sess:"",gt:0};
 const usageDev=()=>{try{if(OV.on||REMOTE)return null;return !COMPANION?(PCACC&&PCACC.token?"pc":null):(CP.acc&&CP.server&&CP.acc.token?"web":null)}catch(e){return null}};
-function usageCount(k){try{if(OV.on)return}catch(e){}k=String(k).toLowerCase().replace(/[^a-z0-9_.:-]/g,"_");if(!/^(view|act|game):[a-z0-9_.-]{1,40}$/.test(k)||Object.keys(USAGE.c).length>=100&&!USAGE.c[k])return;USAGE.c[k]=(USAGE.c[k]||0)+1}
+function usageCount(k){try{if(OV.on)return}catch(e){}k=String(k).toLowerCase().replace(/[^a-z0-9_.:-]/g,"_");if(!/^(view|act|game|live):[a-z0-9_.-]{1,40}$/.test(k)||Object.keys(USAGE.c).length>=100&&!USAGE.c[k])return;USAGE.c[k]=(USAGE.c[k]||0)+1}
 function usageTick(){if(USAGE.vis){const n=Date.now();USAGE.ms+=n-USAGE.vis;USAGE.vis=n}}
 function usageFlush(){usageTick();let dev=null,off=true;try{dev=usageDev();off=!dev||demoOn()||isAdmin()}catch(e){}
   if(off){USAGE.c={};USAGE.ms=0;return}if(!Object.keys(USAGE.c).length&&USAGE.ms<60e3)return;
@@ -11494,6 +11495,39 @@ html[data-theme="dark"]:not(.ov,.ovwin){--pw3-title:#c3cad6}
   :root:not(.ov) #v-live [data-w=timing] .mid{font-size:22px!important}
   :root:not(.ov) #v-live [data-w=dash] .gearbox>div:not(.bars),:root:not(.ov) #v-live [data-w=dash]>.label,:root:not(.ov) #v-live [data-w=dash] .dcrow>span{flex:1 1 calc(25% - 6px)!important;max-width:calc(25% - 4.5px)}
 }
+/* Telemetry's Layout window: always whole on the screen. A card in the middle on computers, the whole screen on phones,
+   under the DEMO/BETA banner; the title, the presets and Reset stay put and the list of panels scrolls */
+#drawer:has(#lyList){z-index:45}
+#drawer:has(#lyList) .drawer-panel{position:fixed;left:50%;top:calc(var(--ly-top,0px) + 16px);bottom:auto;right:auto;transform:translateX(-50%);width:min(760px,calc(100vw - 32px))!important;max-height:calc(100dvh - var(--ly-top,0px) - 32px);display:flex;flex-direction:column;overflow:hidden;padding:0;background:var(--surface);border:1px solid var(--line2);border-radius:10px;box-shadow:0 24px 60px rgba(0,0,0,.55)}
+html.ownframe #drawer:has(#lyList) .drawer-panel{top:calc(max(var(--ly-top,0px),53px) + 16px);max-height:calc(100dvh - max(var(--ly-top,0px),53px) - 32px)}
+#drawer:has(#lyList) .drawer-panel>.vhead{flex:none;display:flex;flex-wrap:nowrap!important;align-items:flex-start;justify-content:space-between;gap:12px;margin:0!important;padding:14px 16px 12px;border-bottom:1px solid var(--line)}
+#drawer:has(#lyList) .drawer-panel>.vhead>div:first-child{flex:1;min-width:0}
+#drawer:has(#lyList) #dTitle{margin:0;font:700 22px/1.1 var(--f-display)!important;letter-spacing:.06em;text-transform:uppercase}
+#drawer:has(#lyList) #dSub{margin:4px 0 0;font-size:12.5px;color:var(--muted)}
+#drawer:has(#lyList) #dClose{flex:none;width:34px;height:34px}
+#drawer:has(#lyList) #dBody{flex:1 1 auto;min-height:0;display:flex;flex-direction:column}
+#drawer:has(#lyList) .ly-top{flex:none;padding:12px 16px 0}
+#drawer:has(#lyList) .ly-top .frow{gap:6px;flex-wrap:wrap}
+#drawer:has(#lyList) .ly-top .btn.small{min-height:32px;padding:6px 12px;font:600 12.5px/1 var(--f-body);background:var(--surface2);border:1px solid var(--line2);border-radius:6px;color:var(--fg)}
+#drawer:has(#lyList) .ly-top .btn.small:disabled{opacity:.45;cursor:default}
+#drawer:has(#lyList) #lyPopNote{margin:-4px 0 10px;font-size:12px}
+#drawer:has(#lyList) #lyList{flex:1 1 auto;min-height:80px;overflow-y:auto;overscroll-behavior:contain;margin:0 16px;padding:0 12px;background:var(--bg);border:1px solid var(--line2);border-radius:8px}
+#drawer:has(#lyList) #lyList .lyrow{display:flex;align-items:center;flex-wrap:wrap;gap:6px 8px;padding:8px 0;border-bottom:1px solid var(--line)}
+#drawer:has(#lyList) #lyList .lyrow:last-child{border-bottom:0}
+#drawer:has(#lyList) #lyList .lyrow>.s{flex:1 1 220px;min-width:0;display:flex;align-items:center;flex-wrap:wrap;gap:4px 6px;font-size:13.5px}
+#drawer:has(#lyList) #lyList .pin{min-height:30px;padding:5px 10px;border-radius:6px;font:500 12px/1 var(--f-data)}
+#drawer:has(#lyList) #lyList .pin[aria-pressed="true"]{background:color-mix(in srgb,var(--accent) 16%,transparent);border-color:var(--accent);color:var(--accent)}
+#drawer:has(#lyList) .ly-foot{flex:none;display:flex;justify-content:flex-end;gap:8px;padding:12px 16px;border-top:1px solid var(--line);margin-top:12px}
+@media (max-width:820px){
+  #drawer:has(#lyList) .drawer-panel{left:0;right:0;top:var(--ly-top,0px);bottom:0;transform:none;width:100%!important;max-height:none;border-radius:0;border:0;box-shadow:none}
+  #drawer:has(#lyList) .drawer-panel>.vhead{padding:calc(12px + env(safe-area-inset-top,0px)) 16px 10px}
+  #drawer:has(#lyList) #dTitle{font-size:20px!important}
+  #drawer:has(#lyList) #lyList{margin:0 12px;padding:0 10px}
+  #drawer:has(#lyList) .ly-top{padding:10px 12px 0}
+  #drawer:has(#lyList) .ly-foot{padding:10px 12px calc(10px + env(safe-area-inset-bottom,0px));margin-top:10px}
+  #drawer:has(#lyList) #lyList .lyrow>.s{flex-basis:100%}
+}
+@media (max-height:560px) and (min-width:821px){#drawer:has(#lyList) .ly-top .note:not(#lyPopNote){display:none}#drawer:has(#lyList) #dSub{display:none}}
 </style>
 <script id="pw3-live-js">
 /* Pit Wall Workspace: live helpers. Telemetry's default arrangement is the Workspace desk: the Relative and the
@@ -11591,6 +11625,26 @@ function pw3TyreCards(){const box=$("#pw3Tyres");if(!box||OV.on)return;const ty=
   if(box.dataset.h!==html){box.dataset.h=html;box.innerHTML=html}}
 (function pw3LiveR2(){if(typeof OV==="undefined"||OV.on)return;const t=$("#tyres");if(t&&!$("#pw3Tyres")){const d=document.createElement("div");d.className="pw3-tyres";d.id="pw3Tyres";t.after(d)}
   setInterval(()=>{if(CUR_VIEW==="live")pw3TyreCards()},500)})();
+/* Layout's "Most used by the community": the panels at least half of the drivers show (GET /community/live/popular,
+   livepopular.js), off with one sentence until enough drivers have used Telemetry */
+const PW3_POP={at:0,v:null,busy:false};
+function pw3LyPop(setShown){const b=$("#lyPop"),note=$("#lyPopNote");if(!b)return;
+  const paint=()=>{const v=PW3_POP.v,ok=!!(v&&v.ready&&v.top&&v.top.some(w=>WIDGETS.includes(w)));b.disabled=!ok;
+    if(note){note.hidden=ok||PW3_POP.busy;note.textContent=ok?"":Tx("Not enough drivers yet to know what is used most.","Aún no hay suficientes pilotos para saber qué se usa más.",null,"Ainda não há pilotos suficientes para saber o que é mais usado.")}};
+  b.onclick=()=>{const v=PW3_POP.v;if(!v||!v.ready)return;setShown([...new Set(["flag",...v.top.filter(w=>WIDGETS.includes(w))])])};
+  paint();if(PW3_POP.busy||Date.now()-PW3_POP.at<30*60e3)return;PW3_POP.busy=true;paint();
+  cloudGet("/community/live/popular").then(v=>{PW3_POP.v=v&&typeof v==="object"?v:null}).catch(()=>{PW3_POP.v=null}).finally(()=>{PW3_POP.busy=false;PW3_POP.at=Date.now();if($("#lyPop")===b)paint()})}
+/* the window under the DEMO or BETA banner, never behind it */
+function pw3LyTop(){const d=$("#drawer");if(!d)return;const top=Math.max(0,...["#demoBanner","#betaBanner"].map(s=>{const e=$(s);if(!e||e.hidden)return 0;const r=e.getBoundingClientRect();return r.height?r.bottom:0}));d.style.setProperty("--ly-top",Math.round(top)+"px")}
+addEventListener("resize",()=>{try{if(!$("#drawer").hidden)pw3LyTop()}catch(e){}});
+/* what the drivers show in Telemetry, for that preset: each panel shown once a day ("live:<panel>") and the mode
+   ("live:mode.<basic|full|cmp>"), after twenty seconds on the screen, through the usage counter */
+const PW3_LU={t0:0};
+function pw3LiveUse(){let off=true;try{off=demoOn()||isAdmin()}catch(e){}if(off)return;
+  const d=new Date().toISOString().slice(0,10);let st=store.get("pw.liveUse",null);if(!st||st.d!==d)st={d,k:[]};
+  const keys=["live:mode."+LIVE_MODE];const g=$("#liveGrid");if(g&&!g.hidden)g.querySelectorAll(":scope>.wpanel[data-w]").forEach(p=>{if(!p.hidden&&p.offsetParent!==null)keys.push("live:"+p.dataset.w.toLowerCase())});
+  let n=0;keys.forEach(k=>{if(!st.k.includes(k)){st.k.push(k);usageCount(k);n++}});if(n)store.set("pw.liveUse",st)}
+setInterval(()=>{try{if(OV.on||CUR_VIEW!=="live"||document.visibilityState!=="visible"){PW3_LU.t0=0;return}if(!PW3_LU.t0)PW3_LU.t0=Date.now();if(Date.now()-PW3_LU.t0>=20e3)pw3LiveUse()}catch(e){}},5000);
 </script>
 <style id="pw3-more">
 /* Pit Wall Workspace: more (Overlays, Community, Leagues, My account, Settings). The linear layout: the title and the

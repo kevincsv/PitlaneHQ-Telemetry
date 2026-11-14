@@ -5,6 +5,7 @@
 //   minutes and when it goes to the background; the server adds them to one row per day, account, device and key.
 //   ms (optional, the web and the PC) is how long the app was on the screen since the last batch: it feeds the
 //   feedback window's six hours of use.
+// GET  /community/live/popular (signed in)  the Telemetry panels most accounts show (livepopular.js)
 // GET  /community/admin/analytics?days=N (admins)  the numbers of the Summary and the Users tabs over the days asked (at
 //   most 90) and the same days before them: grouped reads of usage_days, sessions, accounts, visits_days and presence;
 //   never a query per account.
@@ -26,6 +27,7 @@ import { installsOf, supportersOf } from "./pcstats.js";
 import { srcName, KIND_NAMES, hiText, areasOf } from "./usagenames.js";
 import { visitOf, countryOf, isBot, sourcesOf, SQL_VISIT_ADD, DL_DAYS } from "./sourceslib.js";
 import { openEscrow } from "./escrow.js";
+import { livePopular } from "./livepopular.js";
 import { sendFeedback } from "./email.js";
 import { discordFeedback } from "./discord.js";
 import { driverMessage, cleanLang } from "./supportlib.js";
@@ -37,7 +39,7 @@ const err = (m, s) => json({ error: m }, s);
 /** The routes above; null when the path is none of them. */
 export async function usageRoute(req, env, url) {
   const p = url.pathname, m = req.method;
-  const ours = ["/community/usage", "/community/feedback", "/community/feedback/ask", "/community/feedback/seen", "/community/feedback/ovrace", "/community/admin/analytics", "/community/admin/feedback"];
+  const ours = ["/community/live/popular", "/community/usage", "/community/feedback", "/community/feedback/ask", "/community/feedback/seen", "/community/feedback/ovrace", "/community/admin/analytics", "/community/admin/feedback"];
   if (p === "/community/visit" && m === "POST") {
     // text/plain (sendBeacon), so the browser sends it without asking first; robots and Pitlane HQ's own links are not visits
     if (isBot(req.headers.get("user-agent"))) return json({ ok: true });
@@ -61,6 +63,7 @@ export async function usageRoute(req, env, url) {
     if (st.length) await env.DB.batch(st);
     return json({ ok: true, kept: u.counts.length });
   }
+  if (p === "/community/live/popular" && m === "GET") return json(await livePopular(env, now));
   if (p === "/community/feedback/ask" && m === "GET") {
     const r = await env.DB.prepare("SELECT shown, used, ov_races, ov_answered, ov_last_style FROM feedback_ask WHERE account_id=?1").bind(acc.id).first();
     // the first time: the clock starts now, nobody is asked the day this comes out
@@ -147,7 +150,7 @@ export async function usageRoute(req, env, url) {
     const q = (sql, ...a) => env.DB.prepare(sql).bind(...a).all().then((r) => r.results || []);
     const [actDays, rows, pres, ses, pSes, pAct, accs, allAcc, vis] = await Promise.all([
       q("SELECT DISTINCT account_id, day FROM usage_days WHERE day>=?1 LIMIT 20000", from),
-      q("SELECT account_id, device, key, SUM(n) AS n, MAX(day) AS last FROM usage_days WHERE day>=?1 GROUP BY account_id, device, key LIMIT 20000", from),
+      q("SELECT account_id, device, key, SUM(n) AS n, MAX(day) AS last FROM usage_days WHERE day>=?1 AND key NOT LIKE 'live:%' GROUP BY account_id, device, key LIMIT 20000", from),
       q("SELECT account_id, kind, app_version, last_seen FROM presence WHERE last_seen>?1 LIMIT 5000", now - 7 * 86400e3),
       q(SQL_SESSIONS_DAYS, t0),
       q("SELECT COUNT(*) AS sessions, COUNT(DISTINCT uploader) AS drivers, SUM(COALESCE(secs,0)) AS secs FROM sessions WHERE started>=?1 AND started<?2 AND uploader LIKE 'acct:%'", p0, t0),

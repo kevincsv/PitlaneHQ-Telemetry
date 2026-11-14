@@ -59,7 +59,10 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   {device: web|pc|android|ios, v, counts, ms} every 5 minutes and when the page goes to the background (fetch with
   keepalive; `USAGE`/`usageCount`/`usageFlush` in index.html, through the agent's `/api/sync/get` on the PC); never in
   demo data, never for a visitor (dropped unsent), never from an overlay window, never while an admin has admin mode on.
-  The server keeps keys matching `^(view|act|game):[a-z0-9_.-]{1,40}$` only, 100 a batch, 1000 per key, added into one row
+  Telemetry also counts, once a day each and after 20 seconds on the screen, the panels it shows (`live:<panel>`) and its
+  mode (`live:mode.basic|full|cmp`) for Layout's "Most used by the community" (telemetry.md); those keys stay out of
+  the admin page's features and users.
+  The server keeps keys matching `^(view|act|game|live):[a-z0-9_.-]{1,40}$` only, 100 a batch, 1000 per key, added into one row
   per day, account, device and key (rows over 400 days go, hourly). `ms` (how long the page was on the screen, 10 minutes
   a batch at most) adds to the account's use for the feedback window. One use of the same action with the same thing within a
   minute counts once (a screen that opens itself again when a setting changes in it, like the overlay settings, is one use).

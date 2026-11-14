@@ -10,7 +10,7 @@ the Google Play closed test.
 
 ## In progress
 
-- Workspace look for the PC and web: live on beta only, waiting for the owner's OK to promote.
+- Pit Wall Workspace (design 3) for the PC and web: every screen ported on the working branch, on beta only, waiting for the owner's OK.
 - iOS App Store: answer Apple's 2.1 request (review video, resubmit). Waiting on the owner.
 - Google Play: closed test needs 12 testers for 14 days. Waiting on the owner's tester list.
 - Microsoft Store 0.9.15 submission: prepared, the owner submits.

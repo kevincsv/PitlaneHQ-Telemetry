@@ -12,3 +12,14 @@ Status as of 2026-11-07. The look is described in `docs/spec/app-screens.md` ("T
 - State: commit 06cb33a, live on beta only (cloud run 42233220551, Windows run 42233227054). On master but not
   promoted. Production waits for the owner's OK.
 - Not done yet: the phones, the landing screenshots (`web/dist/landing/<lang>/*.jpg`), the public SEO pages (`cloud/src/seo.js`).
+
+## Pit Wall Workspace (design 3), 2026-11-14
+
+- Refined in the artifact https://claude.ai/artifact/Ns45NZTLYFetLpkNjsSS5F (source in the project files,
+  `web-looks/redesigns/`), then ported into the real app on the working branch `claude/project-thread-757k7n`
+  (not on master). Each part is its own block at the end of index.html (`pw3`, `pw3-home`, `pw3-laps`,
+  `pw3-analysis`, `pw3-live`, `pw3-more`).
+- Ported: the frame (icon rail, sub-tabs as a well), Home, Lap analyzer with Select sessions, Coach, My sessions,
+  My races, Telemetry, Standings, Tyres, Overlays, Community, Leagues, My account, Settings.
+- Beta only. Production waits for the owner's OK. The phones are not changed (their own Track First design), so
+  "Only mine" in Community and the old layouts stay there until a follow-up in the phone repository.

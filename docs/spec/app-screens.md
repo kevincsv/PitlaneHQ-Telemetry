@@ -146,8 +146,9 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   - Coach's left column starts with the Laps panel of the Lap analyzer (in place of the picker bar and the "Looking at"
     line). My laps lists the laps of the chosen sessions under a header per session (Select sessions picks them), A and B
     on each lap set the Coach's lap A and its reference, and a star marks the fastest valid lap. Community lists the
-    community and model laps the Coach can compare with, under "Compare with the community". Lap A against lap B stays on
-    top.
+    model laps the Coach can compare with and then the same leaderboard of the car and track as Laps (place, time, driver,
+    gap to the record), where B makes that community lap the Coach's reference, under "Compare with the community". Lap
+    A against lap B stays on top.
   - My sessions: the filters, then Best per car and track on the left (your best lap and laps of each car and track,
     newest first; a card opens that session) and My sessions and Race summaries side by side. The session pills
     (Race, Practice…) are all one width with the word centred, a star sits beside the fastest lap of each car and track,

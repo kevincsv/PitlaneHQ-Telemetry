@@ -10751,7 +10751,7 @@ html:not(.ov) #v-live>#pw3Strip{order:1;display:grid;grid-template-columns:repea
 html:not(.ov) #v-live .wpanel:not([data-w=deltabar])>.label:first-child,html:not(.ov) #v-live .wpanel>.vhead:first-child,
 html:not(.ov) #v-tyres .panel>.label:first-child,html:not(.ov) #v-field .panel>.label:first-child{border-bottom:0!important;margin:0 -14px 4px!important;min-height:38px;padding-top:12px!important;padding-bottom:4px!important}
 html:not(.ov) #v-live .wpanel:not([data-w=deltabar])>.label:first-child,html:not(.ov) #v-live .wpanel>.vhead:first-child>.label,
-html:not(.ov) #v-tyres .panel>.label:first-child,html:not(.ov) #v-field .panel>.label:first-child{font:700 13.5px/1.2 var(--f-display)!important;letter-spacing:.1em!important;text-transform:uppercase;color:var(--muted)!important}
+html:not(.ov) #v-tyres .panel>.label:first-child,html:not(.ov) #v-field .panel>.label:first-child{font:700 13.5px/1.2 var(--f-display)!important;letter-spacing:.1em!important;text-transform:uppercase;color:var(--pw3-title,var(--muted))!important}
 html:not(.ov) #v-live .wpanel:not([data-w=deltabar])>.label:first-child::before,html:not(.ov) #v-live .wpanel>.vhead:first-child>.label::before,
 html:not(.ov) #v-tyres .panel>.label:first-child::before,html:not(.ov) #v-field .panel>.label:first-child::before{content:none!important;display:none!important}
 /* the car strip (the dash panel): gear, speed, rpm and the car's controls as cards */
@@ -10883,13 +10883,16 @@ html:not(.ov) #v-field .pw3-ph .std-bar button{font:500 12.5px/1 var(--f-body)!i
 /* the traces (Full) under the desk, the desk right under the strip */
 :root:not(.ov) #v-live>#liveGrid,:root:not(.ov) #v-live>#liveCmp{order:2}
 :root:not(.ov) #v-live>#liveTraces{order:3;margin-top:0}
-/* every panel: the design's .pn (10px in, a #2a3140 edge, 8px corners) and its title (.pn>h3) */
+/* every panel: the design's .pn (10px in, the card edge, 8px corners) and its title (.pn>h3); the titles take the
+   frame's brighter colour of card contour B in the dark theme */
+@media (prefers-color-scheme:dark){html:not(.ov,.ovwin):not([data-theme="light"]){--pw3-title:#c3cad6}}
+html[data-theme="dark"]:not(.ov,.ovwin){--pw3-title:#c3cad6}
 :root:not(.ov) #v-live .wpanel{padding:10px!important;border:1px solid var(--line2)!important;border-radius:8px!important;background:var(--surface)}
 :root:not(.ov) #v-live .wpanel:not([data-w=deltabar])>.label:first-child,:root:not(.ov) #v-live .wpanel>.vhead:first-child,
 :root:not(.ov) #v-tyres .panel>.label:first-child,:root:not(.ov) #v-field .panel>.label:first-child{margin:0 0 10px!important;padding:0!important;min-height:0!important}
 :root:not(.ov) #v-live .wpanel>.vhead:first-child{padding-right:56px!important;min-height:22px!important;align-items:center}
 :root:not(.ov) #v-live .wpanel:not([data-w=deltabar])>.label:first-child,:root:not(.ov) #v-live .wpanel>.vhead:first-child>.label,
-:root:not(.ov) #v-tyres .panel>.label:first-child,:root:not(.ov) #v-tyres .panel>.label:first-child>span:first-child,:root:not(.ov) #v-field .panel>.label:first-child,:root:not(.ov) #v-field .panel>.label:first-child>span:first-child{font:700 14px/1.5 var(--f-display)!important;letter-spacing:.1em!important;text-transform:uppercase!important;color:var(--muted)!important}
+:root:not(.ov) #v-tyres .panel>.label:first-child,:root:not(.ov) #v-tyres .panel>.label:first-child>span:first-child,:root:not(.ov) #v-field .panel>.label:first-child,:root:not(.ov) #v-field .panel>.label:first-child>span:first-child{font:700 14px/1.5 var(--f-display)!important;letter-spacing:.1em!important;text-transform:uppercase!important;color:var(--pw3-title,var(--muted))!important}
 /* the handles show on hover, as in the design's panels */
 :root:not(.ov) #v-live .wpanel>:is(.grip,.popbtn){opacity:0;transition:opacity .15s;top:6px!important}
 :root:not(.ov) #v-live .wpanel:hover>:is(.grip,.popbtn),:root:not(.ov) #v-live .wpanel>:is(.grip,.popbtn):focus-visible{opacity:1}
@@ -10996,7 +10999,7 @@ html:not(.ov) #v-field .pw3-ph .std-bar button{font:500 12.5px/1 var(--f-body)!i
 :root:not(.ov) #v-field #stdFull>.tscroll{margin-top:0}
 :root:not(.ov) #v-field #stdFull .wtable td.col-pos{font-weight:700}
 :root:not(.ov) #v-field #stdPos{margin-top:10px;padding:10px!important;border:1px solid var(--line2)!important;border-radius:8px!important}
-:root:not(.ov) #v-field #stdPos>.label{margin:0 0 10px!important;padding:0!important;font:700 14px/1.5 var(--f-display)!important;letter-spacing:.1em!important;text-transform:uppercase!important;color:var(--muted)!important}
+:root:not(.ov) #v-field #stdPos>.label{margin:0 0 10px!important;padding:0!important;font:700 14px/1.5 var(--f-display)!important;letter-spacing:.1em!important;text-transform:uppercase!important;color:var(--pw3-title,var(--muted))!important}
 :root:not(.ov) #v-field .std-bar{display:inline-flex;padding:3px;gap:2px;background:var(--bg);border:1px solid var(--line2);border-radius:8px}
 :root:not(.ov) #v-field .pw3-ph .std-bar button{min-height:30px;padding:6px 10px!important;border:0!important;border-radius:6px!important;font:600 12.5px/1 var(--f-body)!important;background:none!important;color:var(--muted)!important;box-shadow:none!important}
 :root:not(.ov) #v-field .pw3-ph .std-bar button[aria-pressed="true"]{background:var(--surface2)!important;color:var(--fg)!important;box-shadow:inset 0 0 0 1px var(--line2)!important}
@@ -11045,7 +11048,7 @@ html:not(.ov) #v-field .pw3-ph .std-bar button{font:500 12.5px/1 var(--f-body)!i
 :root:not(.ov) #v-live #incBox .inclist>.muted:only-child{display:block;color:var(--good);font:400 13px/1.5 var(--f-body)}
 :root:not(.ov) #v-live>#liveTraces{padding:10px!important;border:1px solid var(--line2)!important;border-radius:8px!important}
 :root:not(.ov) #v-live>#liveTraces>.trc-head{margin:0 0 10px!important;padding:0!important;min-height:0!important;border:0!important}
-:root:not(.ov) #v-live #trcTitle{font:700 14px/1.5 var(--f-display)!important;letter-spacing:.1em!important;text-transform:uppercase!important;color:var(--muted)!important}
+:root:not(.ov) #v-live #trcTitle{font:700 14px/1.5 var(--f-display)!important;letter-spacing:.1em!important;text-transform:uppercase!important;color:var(--pw3-title,var(--muted))!important}
 @media (max-width:1100px){
   :root:not(.ov) #v-tyres>.grid>.panel,:root:not(.ov) #v-tyres>.grid>.panel:nth-child(n){grid-column:1/-1!important}
 }

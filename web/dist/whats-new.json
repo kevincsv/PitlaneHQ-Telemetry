@@ -1,6 +1,12 @@
 {
   "versions": [
     {
+      "v": "0.9.18",
+      "en": ["Invite a friend and you both get a month of Pro after their first week.", "Le Mans Ultimate is no longer in beta.", "Fixes and improvements."],
+      "es": ["Invita a un amigo y los dos tendréis un mes de Pro después de su primera semana.", "Le Mans Ultimate ya no está en beta.", "Arreglos y mejoras."],
+      "pt": ["Convide um amigo e os dois ganham um mês de Pro depois da primeira semana dele.", "O Le Mans Ultimate não está mais em beta.", "Correções e melhorias."]
+    },
+    {
       "v": "0.9.17",
       "en": ["Fixes and improvements."],
       "es": ["Arreglos y mejoras."],

@@ -29,3 +29,5 @@ Status as of 2026-11-07. The look is described in `docs/spec/app-screens.md` ("T
   ticked session's car and track, fits the window and has bigger controls. Beta only.
 - 2026-11-14: the first-run tour (analyzer, coach, telemetry; `docs/spec/app-screens.md`) is on the working branch for
   the next PC and web beta build. Not on the phones (the owner's choice).
+- 2026-11-14 23:40: promoted to production as 0.9.19 (master 7ea9ccb), PC and web. The other designs are dropped. Phones
+  unchanged until the owner says.

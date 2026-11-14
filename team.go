@@ -272,7 +272,7 @@ func setTeamActive(id string) {
 // ---------- the page's actions: {action:"team", op, …} on /api/sync ----------
 
 func teamAction(raw []byte) (any, error) {
-	if !wipOpen() {
+	if !betaAllowed() {
 		return nil, errors.New("team mode is not available yet")
 	}
 	var in struct {
@@ -648,7 +648,7 @@ var (
 // teamLapEnded: a lap ended in the car (the lap recorder, after its time and verdict are known). With a team active,
 // the stint goes up to the team log in the background; the recorder never waits for it.
 func teamLapEnded(s cloudSession, n int, lt float64, valid bool, fuelUsed float64) {
-	if lt <= 0 || s.ID == "" || !wipOpen() {
+	if lt <= 0 || s.ID == "" || !betaAllowed() {
 		return
 	}
 	teamStints.Lock()
@@ -807,7 +807,7 @@ func liveTeamRelay() {
 	wait := 5 * time.Second
 	for {
 		token, _, base, ok := liveWanted()
-		if !ok || !wipOpen() {
+		if !ok || !betaAllowed() {
 			time.Sleep(5 * time.Second)
 			continue
 		}
@@ -833,7 +833,7 @@ func liveTeamRelay() {
 		liveRunOpts(c, t.teamKey(), liveOpts{
 			room: "team",
 			keep: func() bool {
-				if !wipOpen() {
+				if !betaAllowed() {
 					return false
 				}
 				a := teamActiveNow()

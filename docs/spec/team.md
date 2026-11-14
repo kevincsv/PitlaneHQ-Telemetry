@@ -1,8 +1,10 @@
 # Team mode
 
 How this part of Pitlane HQ behaves. Read it before changing this area; keep it up to date when the behaviour changes.
-Team mode is in development: usable only by admins with admin mode on and by testers (`wipOk()`/`wipView()` in
-index.html, `wipAllowed()` in Go, the phones' own check), shown with "In development". Never in a changelog.
+Team mode is in the beta (the owner's choice, 2026-11-14): every tester and every admin can use it, admin mode or not
+(`teamOk()` in index.html, `betaAllowed()` in Go, `realAdmin || tester` on the phones), with a "Beta" pill; on
+beta.pitlanehq.app the server's `/team` routes are for testers and admins (beta.js). Never in a changelog while it is
+in the beta.
 
 ## What it is
 

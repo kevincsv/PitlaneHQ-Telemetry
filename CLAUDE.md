@@ -82,10 +82,11 @@ owner), update that detail file and the index in the same commit, and keep the i
 
 - In development (shown with "In development", usable only by admins with admin mode on and by testers, every device; `wipOk()`/
   `wipView()` in index.html, `wipAllowed()` in Go): the Planner (until iRacing switches its data API back on), ACC,
-  Assetto Corsa, NASCAR 26, team mode, Ask the coach (the AI coach with the driver's own API key), Watch in replay and the pedal and wheel check.
+  Assetto Corsa, NASCAR 26, Ask the coach (the AI coach with the driver's own API key), Watch in replay and the pedal and wheel check.
 - Switched off for now: setups, per-car settings (`carProfilesOn` in carprofiles.go), the Data view and sharing race
   analyses. Hidden from everyone on the PC (admins too) until the owner says otherwise: profiles and Settings →
   Connections (`CONN_ON` in index.html). Full telemetry is gone everywhere.
+- In the beta (every tester and admin, admin mode or not, a "Beta" pill): team mode (`teamOk()`, `betaAllowed()`).
 - Released to everyone: the overlays, the leagues hub. Le Mans Ultimate, with no "Beta" label (the owner's choice, 2026-11-14). ACC and Assetto Corsa are labelled "Beta" where they are offered (still in development).
 
 ## Where things are

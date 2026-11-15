@@ -11921,7 +11921,7 @@ function statsSpark(v){const a=v.filter(x=>x!=null);if(a.length<2)return"";const
 function renderStatsView(){const box=$("#statsBody");if(!box)return;const T=Tx;
   // the period switch, in the head
   const per=[["4w",T("4 weeks","4 semanas",null,"4 semanas")],["3m",T("3 months","3 meses",null,"3 meses")],["12m",T("12 months","12 meses",null,"12 meses")],["all",T("All","Todo",null,"Tudo")]];
-  const ctl=$("#statsPer");if(ctl){ctl.innerHTML=per.map(([k,l])=>`<button type="button" data-sp="${k}" aria-pressed="${k===STATS_P}">${esc(l)}</button>`).join("");ctl.querySelectorAll("[data-sp]").forEach(b=>b.onclick=()=>{STATS_P=b.dataset.sp;try{localStorage.setItem("pw.statsP",STATS_P)}catch(e){}renderStatsView()})}
+  const ctl=$("#statsPer");if(ctl){if(!$("#statsPro"))ctl.insertAdjacentHTML("beforebegin",`<span id="statsPro" style="align-self:center;margin-right:8px">${proB("stats")}</span>`);ctl.innerHTML=per.map(([k,l])=>`<button type="button" data-sp="${k}" aria-pressed="${k===STATS_P}">${esc(l)}</button>`).join("");ctl.querySelectorAll("[data-sp]").forEach(b=>b.onclick=()=>{STATS_P=b.dataset.sp;try{localStorage.setItem("pw.statsP",STATS_P)}catch(e){}renderStatsView()})}
   if(CLOUD.sessions===null||CLOUD.game!==aGame()){box.innerHTML=`<div class="pnl"><p class="muted" style="margin:0">${esc(CLOUD.err||T("Loading…","Cargando…",null,"Carregando…"))}</p></div>`;if(!CLOUD.busy)cloudLoadSessions(true,true).then(()=>{if(CUR_VIEW==="stats")renderStatsView()});return}
   if(RACES===null&&typeof loadRaces==="function"){loadRaces().then(()=>{if(CUR_VIEW==="stats")renderStatsView()}).catch(()=>{});}
   statsLoadList();

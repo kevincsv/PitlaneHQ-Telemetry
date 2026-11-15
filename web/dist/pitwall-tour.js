@@ -162,6 +162,7 @@
     t("The full coach with its plan on the track map", "El coach completo con su plan en el mapa", "O coach completo com o plano no mapa"),
     t("Compare with friends, rivals and the fastest laps", "Compara con amigos, rivales y las vueltas más rápidas", "Compare com amigos, rivais e as voltas mais rápidas"),
     t("Race fuel, corner consistency and offs explained", "Combustible de carrera, constancia por curva y salidas explicadas", "Combustível de corrida, consistência por curva e saídas explicadas"),
+    t("Statistics of your progress over time", "Estadísticas de tu progreso en el tiempo", "Estatísticas do seu progresso ao longo do tempo"),
     t("The experimental overlays", "Los overlays experimentales", "Os overlays experimentais"),
   ];
   const CHK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>';

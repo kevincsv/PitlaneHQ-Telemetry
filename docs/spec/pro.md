@@ -27,7 +27,7 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   basic overlays; `proAppsAllowed`: the first 3 programs of the list), and the app asks for Pro on a fourth program.
 
 - PRO badges (`proB()` in index.html, `ProBadge` on the phones): a small amber PRO on what will be part of Pro when the
-  beta ends, while it is free for everyone: the coach plan chip on the map, "Compare with the community" (and the
+  beta ends, while it is free for everyone: the Statistics tab (the owner's choice, Nov 15 2026, the badge beside its period switch, also on the pricing lists), the coach plan chip on the map, "Compare with the community" (and the
   phones' next level, record and friend references), corner consistency, offs explained, race fuel, More charts, Ask
   the coach and the experimental overlays. Pressing one opens a small window (`proInfo()`) saying it is free during the beta and part of Pro after it ($6 a month or $59 a year), with See pricing (the public `/pricing` page) and, where donations are offered, the supporters' offer and Support Pitlane HQ (a supporter reads that their 50% is locked in instead). The phones keep their own note without the offer (store rules). The
   sign-up form, the Support box and its inbox item say Pitlane HQ is free while it is in beta; so does the Discord

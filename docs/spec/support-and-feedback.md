@@ -61,8 +61,9 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   while a Discord feedback forum is chosen (discord.md) and some answers were never posted there, "Post the N earlier ones
   on Discord" (POST `/community/admin/feedback/discord`, 8 per request, oldest first; `feedback.discord_at`, migration 0093).
 - "Why did you uninstall Pitlane HQ?" (the PC only): the uninstaller opens https://pitlanehq.app/uninstalled?v=&lang=
-  in the browser once Pitlane HQ is gone, never in a silent uninstall (`CurUninstallStepChanged` in
-  installer/PitlaneHQ.iss). The page (`cloud/src/uninstall.js`, English, Spanish or Portuguese by ?lang= or the
+  in the browser once Pitlane HQ is gone (the agent's `-uninstall` step in uninstall_windows.go, which Windows'
+  Uninstall starts on every PC whatever version it was installed with, or `CurUninstallStepChanged` in
+  installer/PitlaneHQ.iss when the installer's uninstaller is run by itself). The page (`cloud/src/uninstall.js`, English, Spanish or Portuguese by ?lang= or the
   browser's, noindex): the title, the reasons as chips to pick any of (`REASONS`: it does not work with my game, bugs
   or crashes, it slows down my PC or my game, it is missing something I need, hard to use, I use another app, I do not
   race enough, I am going to install it again, something else), a text box under "Tell us what happened" (a hint of what to write inside it) and Send, then "Thank you. We

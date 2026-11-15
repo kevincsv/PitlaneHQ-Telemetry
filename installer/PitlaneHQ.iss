@@ -79,7 +79,8 @@ Type: files; Name: "{userdesktop}\Pitlane HQ Desktop.lnk"
 
 [Icons]
 Name: "{group}\Pitlane HQ"; Filename: "{app}\PitlaneHQ.Desktop.exe"; AppUserModelID: "PitlaneHQ.App"
-Name: "{group}\{cm:UninstallProgram,Pitlane HQ}"; Filename: "{uninstallexe}"
+; through the agent, which asks why once Pitlane HQ is gone (uninstall_windows.go)
+Name: "{group}\{cm:UninstallProgram,Pitlane HQ}"; Filename: "{app}\PitlaneHQ.exe"; Parameters: "-uninstall"
 Name: "{userdesktop}\Pitlane HQ"; Filename: "{app}\PitlaneHQ.Desktop.exe"; Tasks: desktopicon
 
 [Registry]

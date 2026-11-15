@@ -24,7 +24,7 @@ import (
 
 // One version for PitlaneHQ.exe, the web and the phone apps (see CHANGELOG.md). While in beta:
 // 0.MINOR.PATCH, PATCH for fixes, MINOR for a set of new features. 1.0.0 ends the beta.
-const appVersion = "0.9.21"
+const appVersion = "0.9.22"
 
 // appMinVersion: the oldest PitlaneHQ.exe that still works with today's server and files. Raise it
 // only when an older one really breaks (a changed API, a new data format): those PCs are then
@@ -468,7 +468,17 @@ func main() {
 	cd := flag.Bool("cloud-demo", false, "internal: upload the demo race laps (testing)")
 	server := flag.String("server", "", "development: the Pitlane HQ server to use (http://127.0.0.1:8787 for the one tools/local.cmd runs on this PC) instead of pitlanehq.app")
 	localMode := flag.Bool("local", false, "development: everything on this PC without internet (tools/local.cmd): the server on this PC, its own data folder (PitlaneHQ-local) and port")
+	uninstall := flag.Bool("uninstall", false, "internal: Windows' Uninstall starts this, which asks why once Pitlane HQ is gone (uninstall_windows.go)")
+	uninstallRun := flag.String("uninstall-run", "", "internal: the uninstall's second step, from the temp folder")
 	flag.Parse()
+	if *uninstallRun != "" {
+		runUninstallFrom(*uninstallRun)
+		return
+	}
+	if *uninstall {
+		runUninstall()
+		return
+	}
 	// local mode: the server on this PC, a data folder and a port of its own, so the normal Pitlane HQ is left alone;
 	// the native window's engine and the overlay windows inherit it all through the environment (localmode.go)
 	if *localMode {
@@ -532,6 +542,7 @@ func main() {
 
 	initProfiles()
 	loadProfileState()
+	go uninstallHook() // Windows' Uninstall asks why (uninstall_windows.go)
 	// a crash of the last run is reported, and each part starts again by itself after a panic (reports.go)
 	watchFatalCrashes()
 	go keepAlive("reader", func() { reader(*demo) })

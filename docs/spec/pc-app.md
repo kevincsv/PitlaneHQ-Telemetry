@@ -72,9 +72,15 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   black window on the screen; opening it uncloaks it and centres it.
 - Uninstalling PitlaneHQ.exe removes everything it keeps on the PC (`[UninstallDelete]` in
   installer/PitlaneHQ.iss); nothing on the server is touched (the account, the leaderboards, the model).
-- Once it is uninstalled (not a silent uninstall), the browser opens https://pitlanehq.app/uninstalled with the
-  version and the uninstaller's language ("Why did you uninstall Pitlane HQ?", `CurUninstallStepChanged` in the
-  .iss), see support-and-feedback.md. The phones have no such page (Android and iOS tell an app nothing when it is
+- Once it is uninstalled, the browser opens https://pitlanehq.app/uninstalled with the version and the language
+  ("Why did you uninstall Pitlane HQ?"), see support-and-feedback.md. The app's updates never replace the installer's
+  uninstaller, so a PC installed before the uninstaller opened the page never showed it: since 0.9.22 the agent
+  points Windows' Uninstall entry at `PitlaneHQ.exe -uninstall` every time it starts (`uninstallHook` in
+  uninstall_windows.go; the Start menu's Uninstall too), which copies itself to the temp folder, asks once ("Remove
+  Pitlane HQ and everything it keeps on this PC?", in Windows' language), runs the installer's uninstaller with
+  `/SILENT` and opens the page when the app is gone. If any step fails, the installer's uninstaller runs as before.
+  The installer's uninstaller run by itself still opens the page (`CurUninstallStepChanged` in the .iss), never in
+  a silent uninstall. The Microsoft Store and Steam remove their own copies and show no page. The phones have no such page (Android and iOS tell an app nothing when it is
   removed).
 - Pitlane HQ never shows Windows notifications (nothing in the action centre; `notify` only logs, and the PC app
   schedules no browser notifications): what it has to say shows inside the app.

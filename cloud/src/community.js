@@ -63,6 +63,7 @@ import { referralRoutes } from "./referrals.js";
 import { coachTipRoutes } from "./coachtips.js";
 import { lmuApiRoutes } from "./lmuapi.js";
 import { turnsFromPath } from "./trackgeo.js";
+import { refTurns, refNames } from "./turnsref.js";
 import { turnCount, noteTurnCount, rebuildTrackMaps, traceLen, fitsLayout, layoutN } from "./trackmaps.js";
 import { estimateTrace } from "./pedals.js";
 import { discordLapAlert } from "./discord.js";
@@ -408,7 +409,7 @@ export async function community(req, env, url, ctx) {
     return json({
       trackId: t, game, track: name, drivers: (tot && tot.drivers) || 0, laps: (tot && tot.laps) || 0,
       layout: pts && pts.x && pts.x.length > 10 ? { n: lay.n, len: lay.len, x: pts.x, y: pts.y } : null,
-      turns: tu && tu.turns ? JSON.parse(tu.turns) : [],
+      turns: tu && tu.turns ? JSON.parse(tu.turns) : ((pts && pts.x && refTurns(game, t, lay.track, pts.x, pts.y)) || { turns: [] }).turns,
       cars: maskBlocked(r.results || [], await blockedIds(env, who && who.id)).map(({ uid, hint, ...x }) => ({ ...x, car: famName(game, x.carId, x.car), track: x.track || name, trackId: t, cat: cm ? catOf(cm, t, x.carId, hint, x.track || name, x.car) : "sports_car", prof: !!x.prof, sup: !!x.sup, hasTrace: !!x.hasTrace, mine: !!who && uid === who.id, field: String(uid).startsWith("o:") })),
     });
   }
@@ -493,17 +494,30 @@ export async function community(req, env, url, ctx) {
     let turns = [], auto = false, count = 0, names = [];
     try { turns = r ? JSON.parse(r.turns) : []; } catch (e) { turns = []; }
     try { names = r && r.names ? JSON.parse(r.names) : []; } catch (e) { names = []; }
-    // no official turns placed yet: the corners come from the geometry of the track's layout (trackgeo.js), the same on
-    // every device, until an admin places them
+    // no turns placed by hand: the circuit's real turns (their numbers and names, turnsref.js) put on the track's layout;
+    // a track the reference does not know takes its corners from the geometry of its layout (trackgeo.js) until an
+    // admin places them. Both are the same on every device.
+    let ref = "";
     if (!turns.length) {
-      // fitted to the track's official number of turns when the game said it (iRacing's TrackNumTurns, track_info)
-      // and to where the drivers really slow down (the models of the cars on this track): kinks taken flat go first
-      const [lay, want, slows] = await Promise.all([env.DB.prepare("SELECT pts FROM track_maps WHERE game=?1 AND track_id=?2").bind(game, t).first(), turnCount(env, game, t), slowsOf(env, game, t)]);
-      if (lay) { try { const p = JSON.parse(lay.pts); turns = turnsFromPath(p.x, p.y, want, slows); auto = true; } catch (e) { turns = []; } }
-      if (want) count = want;
+      const lay = await env.DB.prepare("SELECT track, pts FROM track_maps WHERE game=?1 AND track_id=?2").bind(game, t).first();
+      let path = null;
+      try { path = lay ? JSON.parse(lay.pts) : null; } catch (e) { path = null; }
+      const real = path ? refTurns(game, t, lay.track, path.x, path.y) : null;
+      if (real) { turns = real.turns; names = real.names; ref = real.key; }
+      else {
+        // fitted to the track's official number of turns when the game said it (iRacing's TrackNumTurns, track_info)
+        // and to where the drivers really slow down (the models of the cars on this track): kinks taken flat go first
+        const [want, slows] = await Promise.all([turnCount(env, game, t), slowsOf(env, game, t)]);
+        if (path) { try { turns = turnsFromPath(path.x, path.y, want, slows); auto = true; } catch (e) { turns = []; } }
+        if (want) count = want;
+      }
+    } else if (!names.some(Boolean)) {
+      // turns placed by hand without names: the reference's, when it has as many turns
+      const lay = await env.DB.prepare("SELECT track, n FROM track_maps WHERE game=?1 AND track_id=?2").bind(game, t).first();
+      names = (lay && refNames(game, t, lay.track, (lay.n || 0) * 5, turns.length)) || [];
     }
-    // the names only go with the official turns they were typed for
-    return new Response(JSON.stringify({ trackId: t, game, turns, auto, ...(!auto && names.some(Boolean) ? { names } : {}), ...(count ? { count } : {}), updated: r ? r.updated : 0 }), { headers: { ...JSONH, "cache-control": "public, max-age=300" } });
+    // the names only go with the turns they were written for (never with the geometry's own corners)
+    return new Response(JSON.stringify({ trackId: t, game, turns, auto, ...(!auto && names.some(Boolean) ? { names } : {}), ...(ref ? { ref } : {}), ...(count ? { count } : {}), updated: r ? r.updated : 0 }), { headers: { ...JSONH, "cache-control": "public, max-age=300" } });
   }
   // the pit lane of a track, from laps through the pits: [point of the lap (5 m), metres to the left of the track]
   if (p === "/pitlane" && m === "GET") {
@@ -666,15 +680,17 @@ export async function community(req, env, url, ctx) {
     for (const r of rows) {
       let placed = 0;
       try { placed = r.turns ? JSON.parse(r.turns).length : 0; } catch (e) { placed = 0; }
-      let found = 0, fitted = 0;
+      let found = 0, fitted = 0, ref = 0;
       try {
         const q = JSON.parse(r.pts), slows = await slowsOf(env, r.game, r.track_id);
         found = turnsFromPath(q.x, q.y, 0, slows).length;
         fitted = r.nturns ? turnsFromPath(q.x, q.y, r.nturns, slows).length : found;
+        // the circuit's real turns, when the reference knows it (turnsref.js): nothing to place by hand
+        ref = (refTurns(r.game, r.track_id, r.track, q.x, q.y) || { turns: [] }).turns.length;
       } catch (e) { /* a layout that does not read */ }
-      out.push({ game: r.game, trackId: r.track_id, track: r.track || "", len: (r.n || 0) * 5, official: r.nturns || 0, placed, found, fitted });
+      out.push({ game: r.game, trackId: r.track_id, track: r.track || "", len: (r.n || 0) * 5, official: r.nturns || 0, placed, found, fitted, ref });
     }
-    const bad = (x) => (x.placed ? 0 : 2) + (x.official && x.fitted !== x.official ? 1 : 0);
+    const bad = (x) => (x.placed || x.ref ? 0 : 2 + (x.official && x.fitted !== x.official ? 1 : 0));
     out.sort((a, b) => bad(b) - bad(a) || a.track.localeCompare(b.track));
     return json({ tracks: out });
   }

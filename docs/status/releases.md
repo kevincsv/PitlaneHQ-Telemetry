@@ -6,8 +6,8 @@ Status as of 2026-11-14. Rules for releasing are in CLAUDE.md and `docs/spec/pc-
 
 | Where | Version | Notes |
 | --- | --- | --- |
-| PC agent + web (production) | 0.9.22 | 2026-11-15 14:12 UTC, build d324f77: the race summary opens after a race with the leaderboard place and Compare with the next driver up, Time to beat and Last week on Home, real track turns, a PC without an account teaches the coach, Start with Windows by default, uninstalling asks why, the admin Analytics revamp, Pro offers switched off (founding from $3), two new guides. Migrations 0103 and 0105 applied. Lap telemetry storage in its own bucket is deployed and not switched on (the database thread sets `trace_store`). After this: admin → Analytics → Data → Add up everything, once. |
-| Beta (beta.pitlanehq.app, PC Test builds) | 0.9.23 | 2026-11-15: the feedback button's menu (with Invite a friend) for admins in admin mode too. Promoted to production once it passes. |
+| PC agent + web (production) | 0.9.23 | 2026-11-15 14:30 UTC, build a374514: 0.9.22 plus the feedback button's menu (with Invite a friend) for admins in admin mode. 0.9.22 (14:12 UTC, d324f77): the race summary opens after a race with the leaderboard place and Compare with the next driver up, Time to beat and Last week on Home, real track turns, a PC without an account teaches the coach, Start with Windows by default, uninstalling asks why, the admin Analytics revamp, Pro offers switched off (founding from $3), two new guides. Migrations 0103 and 0105 applied. Lap telemetry storage in its own bucket is deployed and not switched on (the database thread sets `trace_store`). After this: admin → Analytics → Data → Add up everything, once. |
+| Beta (beta.pitlanehq.app, PC Test builds) | 0.9.23 | The same build as production. |
 | Android | 0.9.14 | Production APK from /dl. Google Play: internal testing build 1291 (see `stores.md`). |
 | iOS | 0.9.14 | TestFlight build 392. App Store review not passed yet (see `stores.md`). |
 | Microsoft Store | 0.9.14 | 0.9.15 submission prepared, the owner submits it in Partner Center (see `stores.md`). |

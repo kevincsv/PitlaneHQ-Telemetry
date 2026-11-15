@@ -109,7 +109,9 @@ there are several):
   or down, gaps; `data-eng` on their boxes) and the track map (`drawMap(canvas)`), from the telemetry this page has
   (the game's on the PC, the teammate's while watching), redrawn twice a second (`teamPaintEng`). Under them the share
   code: on the PC the code for others (`renderCodeShare(box)`, without the voice chat), on the web Watch another driver
-  (a code opens Telemetry watching it).
+  (a code opens Telemetry watching it). Customize (beside the Engineer title) shows a switch for each part (Fuel tracker, Relative, Standings,
+  Track map, Share with a code, a ✓ on the shown ones); a hidden part is not drawn. Kept per device (`pw.teamEng`, the
+  parts hidden).
 
 The PC streams to the active team; Settings is not needed (the team picker on the Team screen sets it).
 

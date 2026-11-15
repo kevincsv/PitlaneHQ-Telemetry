@@ -5359,14 +5359,21 @@ const teamT=(en,es,pt)=>Tx(en,es,null,pt);
 /* the Team screen's Engineer: the fuel to the end, the relative and the standings with each car's tyres, PIT, OUT and
    OFF and laps up or down, and the track map, from the telemetry this page has (the game's on the PC, the teammate's
    while watching), and the share code (the PC's code for others, the web's Watch another driver) */
-function teamEngHTML(){const h=(t)=>`<div class="label">${esc(t)}</div>`;
-  return`<div class="frow tm-eng-h" style="margin-top:16px"><h2 style="margin:0">${esc(teamT("Engineer","Ingeniero","Engenheiro"))}</h2></div>
+/* each part can be hidden: Customize lists them as switches (kept per device, "pw.teamEng": the parts hidden) */
+const TEAM_ENG_PARTS=[["fuel",["Fuel tracker","Control de combustible","Controle de combustível"]],["rel",["Relative","Relativo","Relativo"]],["std",["Standings","Clasificación","Classificação"]],["map",["Track map","Mapa del circuito","Mapa da pista"]],["code",["Share with a code","Compartir con un código","Compartilhar com um código"]]];
+const teamEngOff=()=>{const v=store.get("pw.teamEng",[]);return new Set(Array.isArray(v)?v:[])};
+let TEAM_ENG_ED=false;
+function teamEngHTML(){const h=(t)=>`<div class="label">${esc(t)}</div>`,off=teamEngOff(),hid=k=>off.has(k)?" hidden":"";
+  const ed=TEAM_ENG_ED?`<div class="panel tm-eng-ed" style="margin-top:8px"><div class="frow" style="gap:6px;flex-wrap:wrap">${TEAM_ENG_PARTS.map(([k,n])=>`<button type="button" class="chip${off.has(k)?" muted":""}" data-tmeng="${k}" aria-pressed="${!off.has(k)}"${off.has(k)?' style="text-decoration:line-through"':""}>${off.has(k)?"":"✓ "}${esc(teamT(...n))}</button>`).join("")}</div></div>`:"";
+  return`<div class="frow tm-eng-h" style="margin-top:16px;justify-content:space-between"><h2 style="margin:0">${esc(teamT("Engineer","Ingeniero","Engenheiro"))}</h2><button type="button" class="btn small" id="tmEngEd" aria-expanded="${TEAM_ENG_ED}">${esc(TEAM_ENG_ED?teamT("Done","Listo","Pronto"):teamT("Customize","Personalizar","Personalizar"))}</button></div>${ed}
   <div class="grid tm-eng" style="margin-top:8px">
-    <div class="panel s4" id="tmFuel"></div>
-    <div class="panel s8">${h(teamT("Relative","Relativo","Relativo"))}<div id="tmRel" data-eng="1"></div></div>
-    <div class="panel s7">${h(teamT("Standings","Clasificación","Classificação"))}<div id="tmStd" data-eng="1"></div></div>
-    <div class="panel s5">${h(teamT("Track map","Mapa del circuito","Mapa da pista"))}<canvas id="tmMap" height="320"></canvas></div>
-    <div class="panel s12" id="tmCode"></div></div>`}
+    <div class="panel s4" id="tmFuel"${hid("fuel")}></div>
+    <div class="panel s8"${hid("rel")}>${h(teamT("Relative","Relativo","Relativo"))}<div id="tmRel" data-eng="1"></div></div>
+    <div class="panel s7"${hid("std")}>${h(teamT("Standings","Clasificación","Classificação"))}<div id="tmStd" data-eng="1"></div></div>
+    <div class="panel s5"${hid("map")}>${h(teamT("Track map","Mapa del circuito","Mapa da pista"))}<canvas id="tmMap" height="320"></canvas></div>
+    <div class="panel s12" id="tmCode"${hid("code")}></div></div>`}
+/* Customize and its switches redraw only the Engineer part of the screen */
+function teamEngRedo(){const a=$(".tm-eng-h");if(!a)return;const ed=$(".tm-eng-ed"),g=$(".tm-eng");if(ed)ed.remove();if(g)g.remove();a.outerHTML=teamEngHTML();teamEngWire();teamPaintEng()}
 /* the fuel: the car's own telemetry when this page has it, else the teammate in the car (the team event) */
 function teamFuel(){const d=(teamInCar().map(a=>TEAM.ev[a].d)[0])||null,local=T.FuelLevel!=null&&T.FuelLevel>=0&&(T.IsOnTrack||T.IsOnTrackCar||!d);
   const fuel=local?T.FuelLevel:d?d.fuel:null,per=local&&FUELPER>0?FUELPER:local&&T.FuelUsePerLap>0?T.FuelUsePerLap:d&&d.fuelPerLap>0?d.fuelPerLap:null;
@@ -5383,9 +5390,11 @@ function teamFuelHTML(){const f=teamFuel(),V=v=>v==null?"–":vol(v).toFixed(1)+
   return`<div class="label">${esc(teamT("Fuel tracker","Control de combustible","Controle de combustível"))}${f.driver?` <span class="muted">· ${esc(f.driver)}</span>`:""}</div>
     <div class="tm-stats">${st.map(([k,v])=>`<div><div class="label">${esc(k)}</div><div class="tm-v mono">${esc(v)}</div></div>`).join("")}</div>
     ${f.need>0&&f.fuel!=null?`<div class="meter" style="margin-top:10px"><b style="width:${pct.toFixed(1)}%;background:${ok?"var(--good)":"var(--accent)"}"></b></div><p class="note" style="margin:6px 0 0">${esc(ok?teamT("The fuel reaches the end.","El combustible llega al final.","O combustível chega ao fim."):teamT(`${vol(f.add).toFixed(1)} ${volU()} short of the end.`,`Faltan ${vol(f.add).toFixed(1)} ${volU()} para el final.`,`Faltam ${vol(f.add).toFixed(1)} ${volU()} para o fim.`))}</p>`:""}`}
-function teamPaintEng(){if(CUR_VIEW!=="team"||OV.on)return;const fb=$("#tmFuel");if(!fb)return;try{fb.innerHTML=teamFuelHTML()}catch(e){}
-  try{renderRelative($("#tmRel"))}catch(e){}try{renderStandingsWidget($("#tmStd"))}catch(e){}try{const c=$("#tmMap");if(c)drawMap(c)}catch(e){}}
-function teamEngWire(){const box=$("#tmCode");if(!box)return;
+function teamPaintEng(){if(CUR_VIEW!=="team"||OV.on)return;const fb=$("#tmFuel");if(!fb)return;try{if(!fb.hidden)fb.innerHTML=teamFuelHTML()}catch(e){}
+  const vis=e=>e&&!e.closest("[hidden]");try{const r=$("#tmRel");if(vis(r))renderRelative(r)}catch(e){}try{const r=$("#tmStd");if(vis(r))renderStandingsWidget(r)}catch(e){}try{const c=$("#tmMap");if(vis(c))drawMap(c)}catch(e){}}
+function teamEngWire(){{const b=$("#tmEngEd");if(b)b.onclick=()=>{TEAM_ENG_ED=!TEAM_ENG_ED;teamEngRedo()}}
+  document.querySelectorAll("[data-tmeng]").forEach(b=>b.onclick=()=>{const off=teamEngOff(),k=b.dataset.tmeng;off.has(k)?off.delete(k):off.add(k);store.set("pw.teamEng",[...off]);teamEngRedo()});
+  const box=$("#tmCode");if(!box||box.hidden)return;
   if(MODE==="bridge"&&!REMOTE&&!COMPANION){renderCodeShare(box);return}
   // the web and the phones: watch another driver with the code they give
   const T=Tx,cw=CPLIVE.mode==="code";box.innerHTML=`<h2>${esc(T("Watch another driver","Ver a otro piloto",null,"Ver outro piloto"))}</h2>

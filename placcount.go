@@ -1065,11 +1065,18 @@ func plStatus() map[string]any {
 	if !a.LastSync.IsZero() {
 		out["lastSync"] = a.LastSync.UnixMilli()
 	}
+	if a.Token == "" { // trying it without an account (tryout.go)
+		used, limit, locked := tryStatusSigned(false)
+		out["tryUsed"], out["tryLimit"], out["tryLocked"] = used, limit, locked
+	} else if a.Admin {
+		go tryReset() // an admin's PC tries it again as new once signed out
+	}
 	return out
 }
 
 func registerPLRoutes(mux *http.ServeMux) {
-	go syncWatcher() // also keeps the profile (public name, admin…) up to date
+	go syncWatcher()   // also keeps the profile (public name, admin…) up to date
+	go tryServerRead() // what this PC already used without an account, from an install before this one (tryout.go)
 	go companionRefresher()
 	// the PC reads your laps in your account through here (the server does not answer other origins);
 	// only reading, only the lap and community lists, and closed to remote viewers like /api/sync

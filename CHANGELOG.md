@@ -10,6 +10,7 @@ improvements". 1.0.0 comes when the beta ends. Newest first.
 - Telemetry no longer freezes the app when you switch to Full during a session.
 - Telemetry has a new Engineer view between Basic and Full, with each car's tyres and pit stops in the relative and the standings. You choose its panels in Layout.
 - Closing a driver's profile or a track page before it loads no longer shows an error.
+- You can try Pitlane HQ Agent for three sessions before you create an account. Your laps go with you when you sign up.
 
 ## 0.9.23 beta
 

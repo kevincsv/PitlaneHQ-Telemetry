@@ -12,7 +12,7 @@ const PRIVACY = {
       ["What we keep", [
         "Your account. Your email address, your nickname and the language you chose.",
         "Your laps and sessions. The Pitlane HQ Agent on your PC uploads the laps you drive in iRacing and Le Mans Ultimate, with their times and telemetry, so you can see them on the web and the phone apps.",
-        "Laps without an account. If you use the Pitlane HQ Agent without an account, it still uploads the laps you drive, with their times and telemetry, so the coach learns from them. They are kept under a random id of that installation, with no name and no email, and nobody sees them. If you create an account or sign in on that PC, they become part of your account.",
+        "Laps without an account. If you use the Pitlane HQ Agent without an account, it still uploads the laps you drive, with their times and telemetry, so the coach learns from them. They are kept under a random id of that installation, with no name and no email, and nobody sees them. If you create an account or sign in on that PC, they become part of your account. It also counts the sessions that PC drove without an account, by a code made from the PC's own Windows id, so the free sessions are counted once even after reinstalling.",
         "What you share. Laps on the leaderboards, track notes, league posts and support messages, under your nickname or as an anonymous driver if you choose so.",
         "Linked accounts. When you sign in with Steam or Discord or link them, their account id and name, to sign you in and show them where you choose.",
         "The apps' use. Which screens are opened each day, error reports when an app fails and the logs you send from the support chat, to fix problems.",
@@ -30,7 +30,7 @@ const PRIVACY = {
       ["Qué guardamos", [
         "Tu cuenta. Tu email, tu apodo y el idioma que elegiste.",
         "Tus vueltas y sesiones. Pitlane HQ Agent en tu PC sube las vueltas que das en iRacing y Le Mans Ultimate, con sus tiempos y su telemetría, para que las veas en la web y en las apps del móvil.",
-        "Vueltas sin cuenta. Si usas Pitlane HQ Agent sin una cuenta, también sube las vueltas que das, con sus tiempos y su telemetría, para que el coach aprenda de ellas. Se guardan bajo un identificador aleatorio de esa instalación, sin nombre ni email, y nadie las ve. Si creas una cuenta o inicias sesión en ese PC, pasan a formar parte de tu cuenta.",
+        "Vueltas sin cuenta. Si usas Pitlane HQ Agent sin una cuenta, también sube las vueltas que das, con sus tiempos y su telemetría, para que el coach aprenda de ellas. Se guardan bajo un identificador aleatorio de esa instalación, sin nombre ni email, y nadie las ve. Si creas una cuenta o inicias sesión en ese PC, pasan a formar parte de tu cuenta. También cuenta las sesiones que ese PC condujo sin cuenta, con un código hecho a partir del propio id de Windows del PC, para que las sesiones gratis se cuenten una sola vez aunque reinstales.",
         "Lo que compartes. Vueltas en las leaderboards, notas de circuito, publicaciones de ligas y mensajes de soporte, con tu apodo o como piloto anónimo si lo eliges.",
         "Cuentas vinculadas. Si inicias sesión con Steam o Discord o los vinculas, su id y su nombre, para iniciar sesión y mostrarlos donde elijas.",
         "El uso de las apps. Qué pantallas se abren cada día, informes de error cuando una app falla y los logs que envías desde el chat de soporte, para arreglar problemas.",
@@ -48,7 +48,7 @@ const PRIVACY = {
       ["O que guardamos", [
         "Sua conta. Seu email, seu apelido e o idioma que você escolheu.",
         "Suas voltas e sessões. O Pitlane HQ Agent no seu PC envia as voltas que você dá no iRacing e no Le Mans Ultimate, com os tempos e a telemetria, para você vê-las na web e nos apps do celular.",
-        "Voltas sem conta. Se você usa o Pitlane HQ Agent sem uma conta, ele também envia as voltas que você dá, com seus tempos e sua telemetria, para o coach aprender com elas. Elas ficam sob um identificador aleatório daquela instalação, sem nome nem email, e ninguém as vê. Se você criar uma conta ou entrar nesse PC, elas passam a fazer parte da sua conta.",
+        "Voltas sem conta. Se você usa o Pitlane HQ Agent sem uma conta, ele também envia as voltas que você dá, com seus tempos e sua telemetria, para o coach aprender com elas. Elas ficam sob um identificador aleatório daquela instalação, sem nome nem email, e ninguém as vê. Se você criar uma conta ou entrar nesse PC, elas passam a fazer parte da sua conta. Ele também conta as sessões que esse PC pilotou sem conta, com um código feito a partir do próprio id do Windows do PC, para que as sessões grátis sejam contadas uma só vez mesmo depois de reinstalar.",
         "O que você compartilha. Voltas nas classificações, notas de pista, publicações de ligas e mensagens de suporte, com seu apelido ou como piloto anônimo se você escolher.",
         "Contas vinculadas. Se você entrar com Steam ou Discord ou vinculá-los, o id e o nome delas, para entrar e mostrá-las onde você escolher.",
         "O uso dos apps. Quais telas são abertas por dia, relatórios de erro quando um app falha e os logs que você envia pelo chat de suporte, para corrigir problemas.",

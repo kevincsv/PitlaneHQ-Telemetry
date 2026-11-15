@@ -6,6 +6,7 @@ import { sessionAccount, isAdmin, isTester, nameTaken, purgeAccount, emailHash, 
 import { mailReady, mailLog, mailDomain } from "./email.js";
 import { sealData, openData } from "./crypt.js";
 import { ownTrace } from "./tracestore.js";
+import { tryoutRoutes } from "./tryout.js";
 import { getModel, forCompound, getCarCard, likeFor, markModel, forgetLap, pseudoId, PSEUDO_MIN, moveDriver, slowsOf } from "./model.js";
 import { linkDriver, unlinkDriver } from "./driverlinks.js";
 import { recordSeen, seenSummary } from "./seasonseen.js";
@@ -302,6 +303,7 @@ export async function community(req, env, url, ctx) {
   { const la = await lmuApiRoutes(req, env, p, m, url); if (la) return la; } // admins: what LMU's own API answered (lmuapi.js; its body is gzipped)
   const body = m === "POST" ? await req.json().catch(() => ({})) : {};
 
+  { const tr = await tryoutRoutes(env, p, m, body, url); if (tr) return tr; } // trying it without an account: tryout.js
   if (p === "/register" && m === "POST") {
     const id = rid(), token = rid() + rid();
     await env.DB.prepare("INSERT INTO community_users (id, token_hash, alias, created) VALUES (?1,?2,?3,?4)").bind(id, await sha256(token), cleanAlias(body.alias), Date.now()).run();

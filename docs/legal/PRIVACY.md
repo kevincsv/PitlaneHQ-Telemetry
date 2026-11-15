@@ -16,6 +16,8 @@ Uninstalling Pitlane HQ removes them.
   from them. They are kept under a random id of this installation, with no name and no email, and nobody sees them.
   If you create an account or sign in on this PC they become part of your account. Otherwise they are deleted after
   180 days. What the coach model learnt from them stays, without any name.
+- Without an account, the agent also counts the sessions this PC drove, by a code made from the PC's own Windows id,
+  so the free sessions before an account are counted once even after reinstalling.
 - Which screens are opened each day and error reports when the app fails, to fix problems.
 
 ## What we do not do

@@ -9,6 +9,7 @@ import { pageLang, messagePage, badLinkPage, forgotPage, resetPage } from "./pag
 import { ownTrace, dropTraces, lapTracePtrs } from "./tracestore.js";
 import { sealData, openData, newTotpSecret, totpOK, otpauthURL, newRecoveryCodes } from "./crypt.js";
 import { patreonOnRegister } from "./patreon.js";
+import { tryReset } from "./tryout.js";
 import { proOnRegister, proOf, proGate, proHere } from "./lemon.js";
 import { discordAccount, discordStart, useDiscordGrant, discordAccountId, discordLinkedAny, linkDiscordLogin, oauthReady as discordReady } from "./discord.js";
 import { steamAccount, steamStart, useSteamGrant, steamAccountId, linkSteam } from "./steam.js";
@@ -518,6 +519,7 @@ export async function accounts(req, env, url) {
   if (m === "GET" && (p === "/me" || p === "/sync" || p === "/sync/meta")) await notePresence(env, req, a);
   // part of a waiting invite: the PCs and connections it is used on (a friend on the inviter's own PC is refused, referrals.js)
   if (m === "GET" && p === "/me" && a.ref_watch) await noteRef(env, req, a.id);
+  if (m === "GET" && p === "/me" && isAdmin(env, a.id)) await tryReset(env, url.searchParams.get("pc")); // an admin's PC tries it again as new
   const reauth = async () => noPassword(a) || (isKey(body.auth) && same(await authHash(a.auth_salt, body.auth), a.auth_hash));
   const SOCIAL_ONLY = () => json({ error: "this account signs in with Steam, Discord or Google", code: "social_only" }, 400);
   // a passwordless account never unlinks the last way it signs in with

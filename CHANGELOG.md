@@ -4,9 +4,10 @@ Pitlane HQ is in **beta**. Pitlane HQ Agent (the PC app), the web app and the ph
 number, `0.MINOR.PATCH`. A MINOR version brings a set of new features, and fixes go in as "Fixes and
 improvements". 1.0.0 comes when the beta ends. Newest first.
 
-## 0.9.24 beta
+## 0.10.0 beta
 
-- The lap comparison's track map opens in full screen, with zoom, both racing lines, braking points, turns and the replay in step with the telemetry.
+- The track map opens in full screen from the lap comparison, the coach and the leaderboards, with zoom, both racing lines, braking points, turns and the replay in step with the telemetry. A chase view follows the car from behind.
+- Each overlay has a text size slider that makes the whole overlay smaller or larger, down to half its size.
 - Telemetry no longer freezes the app when you switch to Full during a session.
 - Telemetry has a new Engineer view between Basic and Full, with each car's tyres and pit stops in the relative and the standings. You choose its panels in Layout.
 - Closing a driver's profile or a track page before it loads no longer shows an error.

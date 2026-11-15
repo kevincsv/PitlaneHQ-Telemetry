@@ -43,7 +43,7 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   inside the head, where a browser reads it as text) (one canonical address, 301 for any other such as /index.html, a real
   404 page for any address that does not exist, never the app or the lap viewer with 200; the viewer is noindex), the
   sitemap made by the server, IndexNow once a day. A database read that fails while a public page or the sitemap is
-  drawn is tried once more; if it fails again the answer is a 503 with Retry-After (never cached), never a 404 or a page
+  drawn is tried twice more; if it still fails the answer is a 503 with Retry-After (never cached), never a 404 or a page
   missing its data, so search engines keep the page and come back (`watchDb`, `busy` in seo.js). Record pages whose title
   does not fit 60 characters fall back to one under 70 (`recTitle`), and a description over 160 keeps its first sentence. www.pitlanehq.app is a custom domain of the Worker
   (made by the deploy) that answers 301 to pitlanehq.app.

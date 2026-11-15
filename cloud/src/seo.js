@@ -33,10 +33,12 @@ const altsOf = (o) => ({ en: o.en.path, es: o.es.path, pt: o.pt.path });
 const GNAME = { iracing: "iRacing", lmu: "Le Mans Ultimate" }, GSHORT = { iracing: "iRacing", lmu: "LMU" };
 // a record page's title: the whole game's name while it fits about 60 characters, else the short one, else none
 // (the car and the description say the game)
-const recTitle = (W, car, track, game) => [W.cT(car, track, GNAME[game]), W.cT(car, track, GSHORT[game]), W.cT(car, track, GSHORT[game], true)].find((x) => x.length <= 60) || [W.cTs(car, track), W.cTs(car, shortTrack(track))].find((x) => x.length <= 70) || W.cTs(car, shortTrack(track));
+const recTitle = (W, car, track, game) => [W.cT(car, track, GNAME[game]), W.cT(car, track, GSHORT[game]), W.cT(car, track, GSHORT[game], true)].find((x) => x.length <= 60) || [W.cTs(car, track), W.cTs(car, shortTrack(track)), bareT(W.cTs(car, shortTrack(track)))].find((x) => x.length <= 70) || bareT(W.cTs(car, shortTrack(track)));
+// "Car at Track" (en), "Car en Track" (es), "Car em Track" (pt): the shortest that still says its language
+const bareT = (t) => t.replace(/ lap records$/, "").replace(/^(Récords|Recordes) de /, "");
 // a track's name without its common words (its layout after " · " stays, so two layouts never share a title); the title keeps its
 // language's words, so the three languages of a page never share one
-const shortTrack = (track) => { const [n, ...lay] = String(track).split(" · "); const s = n.replace(/\b(International|Internacional|Raceway|Circuit|Circuito|Motorsport|Speedway|Park|Autodromo|Autódromo|Racing|Ring|Motorsports)\b/g, "").replace("Baden-Württemberg", "").replace(/\s+/g, " ").trim() || n; return [s, ...lay].join(" · "); };
+const shortTrack = (track) => { const [n, ...lay] = String(track).split(" · "); const s = n.replace(/\b(International|Internacional|Raceway|Circuit|Circuito|Motorsport|Speedway|Park|Autodromo|Autódromo|Racing|Ring|Motorsports)\b/g, "").replace("Baden-Württemberg", "").replace(/\s+/g, " ").trim().replace(/^(de|do|da|of|the) /i, "") || n; return [s, ...lay].join(" · "); };
 const CAT = {
   en: { oval: "Oval", sports_car: "Sports Car", formula_car: "Formula Car", dirt_oval: "Dirt Oval", dirt_road: "Dirt Road" },
   es: { oval: "Óvalo", sports_car: "Sports Car", formula_car: "Fórmula", dirt_oval: "Óvalo de tierra", dirt_road: "Tierra" },
@@ -705,7 +707,8 @@ const busy = (l) => new Response(`<!doctype html><html lang="${HLANG[l]}"><head>
 function watchDb(env) {
   const db = { failed: false };
   if (!env || !env.DB) return [env, db];
-  const twice = async (q, f) => { try { return await f(); } catch (e) { await new Promise((r) => setTimeout(r, 250)); try { return await f(); } catch (e2) { db.failed = true; db.why = String(q).replace(/\s+/g, " ").slice(0, 40) + " | " + String((e2 && e2.message) || e2).slice(0, 80); throw e2; } } };
+  const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+  const twice = async (q, f) => { try { return await f(); } catch (e) { await wait(300); try { return await f(); } catch (e2) { await wait(900); try { return await f(); } catch (e3) { db.failed = true; db.why = String((e3 && e3.message) || e3).slice(0, 80); throw e3; } } } };
   const wrap = (q, st) => ({ bind: (...a) => wrap(q, st.bind(...a)), first: (...a) => twice(q, () => st.first(...a)), all: () => twice(q, () => st.all()), run: () => twice(q, () => st.run()), raw: (...a) => twice(q, () => st.raw(...a)) });
   const DB = new Proxy(env.DB, { get: (t, k) => (k === "prepare" ? (q) => wrap(q, t.prepare(q)) : typeof t[k] === "function" ? t[k].bind(t) : t[k]) });
   // env.RAW: the database unwatched, for the reads a page can do without (a discipline, the other cars at the track)
@@ -994,7 +997,7 @@ export async function seoPage(req, env, url, ctx) {
   let res = cache ? await cache.match(key).catch(() => null) : null;
   if (!res) {
     await readHas(env);
-    // a read the database refused (it does so now and then under many visits at once) is tried once more; a page
+    // a read the database refused (it does so now and then under many visits at once) is tried twice more; a page
     // drawn without its data is a 503 to come back to, never a 404 or a page cached with half its data
     const [denv, db] = watchDb(env);
     res = await draw(req, denv, url, p);

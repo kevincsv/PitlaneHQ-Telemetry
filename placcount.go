@@ -1167,6 +1167,7 @@ func registerPLRoutes(mux *http.ServeMux) {
 		if r.Method == http.MethodPost {
 			var in struct {
 				Action, Email, Password, NewPassword, Nick, NameKind, ID, Lang, Code string
+				Invite                                                               string // a friend's invite code typed on the sign-up form
 				Device, State, Sid, DiscordSid, Prov                                 string // the sign-in with Steam or Discord: this device's name, its state, the sign-up grant of a new account (and its provider, quickSignup)
 				Anon                                                                 *bool  // share as "Anonymous" (kept with the account)
 				On                                                                   bool
@@ -1198,6 +1199,9 @@ func registerPLRoutes(mux *http.ServeMux) {
 				rand.Read(key)
 				wrapped, _ := sealAES(wrap, key)
 				reg := map[string]any{"email": normEmail(in.Email), "auth": auth, "wrappedKey": wrapped, "display": name, "nameKind": kind, "device": host, "lang": in.Lang, "gate": true}
+				if c := strings.TrimSpace(in.Invite); c != "" && len(c) <= 200 {
+					reg["invite"] = c
+				}
 				if sid := steamStateClean(in.Sid); sid != "" { // created from the Steam sign-in: linked to that Steam at once
 					reg["sid"], reg["code"] = sid, steamProv.newCode(sid)
 				} else if sid := steamStateClean(in.DiscordSid); sid != "" { // the same from the Discord sign-in

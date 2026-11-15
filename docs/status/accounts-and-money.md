@@ -22,4 +22,6 @@ Status as of 2026-11-07. Behaviour is in `docs/spec/sync-and-accounts.md`, `admi
 - Invite a friend (2026-11-14, on master, live after the next cloud and Windows build): a friend's week of use gives both a month of
   Pro, counted from now and saved until Pro is switched on. Needs migration 0100 and a Windows build for the agent to
   pass the code box through (older agents show the card without it).
+- Invite code on the PC and web sign-up form (2026-11-15, committed on the working branch, waiting for "sube"; the
+  phones are left as they are for now, the owner's choice). Needs the cloud deploy and, for the agent, a Windows build.
 - Owner's to-do: upload the square icon in Stripe Branding.

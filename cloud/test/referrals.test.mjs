@@ -10,7 +10,7 @@ import { register } from "node:module";
 register("data:text/javascript," + encodeURIComponent(`import {readFile} from "node:fs/promises";export async function load(u,c,n){if(u.endsWith(".json"))return {format:"module",source:"export default "+await readFile(new URL(u),"utf8"),shortCircuit:true};return n(u,c)}`));
 const { referralRoutes, refCheck, cleanCode, INV } = await import("../src/referrals.js");
 const { proOf, proGateReset } = await import("../src/lemon.js");
-const { sha256 } = await import("../src/accounts.js");
+const { sha256, inviteFollow } = await import("../src/accounts.js");
 
 const db = new DatabaseSync(":memory:");
 const dir = new URL("../migrations/", import.meta.url);
@@ -141,5 +141,16 @@ await call(tG, "/invite/claim", "POST", { code: a.j.code }, "7.7.7.7");
 use("gggggggggggg", created, 7);
 await refCheck(env);
 assert.equal(ref("gggggggggggg").state, "waiting");
+
+// the code typed on the sign-up form (any case, spaces) counts like the link; it wins over a link's
+const tH = await acct("hhhhhhhhhhhh", now - DAY);
+const req = new Request("https://x/account/register", { method: "POST", headers: { "cf-connecting-ip": "8.8.8.8" } });
+await inviteFollow(env, "hhhhhhhhhhhh", { invite: " " + a.j.code + " ", src: { us: "invite-nobody00" } }, req);
+assert.equal(ref("hhhhhhhhhhhh").inviter, "aaaaaaaaaaaa");
+assert.equal(db.prepare("SELECT COUNT(*) AS n FROM follows WHERE account_id='hhhhhhhhhhhh'").get().n, 1);
+// a code that is nobody's adds nothing
+await acct("iiiiiiiiiiii", now - DAY);
+await inviteFollow(env, "iiiiiiiiiiii", { invite: "zzzz9999" }, req);
+assert.equal(ref("iiiiiiiiiiii"), undefined);
 
 console.log("referrals ok");

@@ -44,7 +44,9 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   Community → Friends on every device, `inviteHTML()` in index.html). Every account has a short code (8 letters and
   digits without 0/O/1/I/L, shown in capitals) and the link https://pitlanehq.app/?ref=invite-<code> (the older links
   with the account id still work). A friend is an invite when they make their account from the link (the first visit
-  of that browser, `inviteFollow` in accounts.js), or type the code on the card in their account's first 14 days (POST
+  of that browser, `inviteFollow` in accounts.js), type it in "Invite code (optional)" on the PC and web sign-up form
+  (filled in already when the browser came from a link; a code that is nobody's stops the sign-up with "This invite code
+  is not valid."; the typed code wins over the link's), or type the code on the card in their account's first 14 days (POST
   `/community/invite/claim`; the PC agent and the phones, where no link was opened); either way the two follow each
   other. Once the friend has used Pitlane HQ on 7 different days (any device, `usage_days` and the sessions they drove)
   with at least one session driven, within 60 days of signing up, and their email is confirmed, both get a month of

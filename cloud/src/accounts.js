@@ -13,6 +13,7 @@ import { discordAccount, discordStart, useDiscordGrant, discordAccountId, discor
 import { steamAccount, steamStart, useSteamGrant, steamAccountId, linkSteam } from "./steam.js";
 import { notePresence } from "./presence.js";
 import { inviteOnSignup, noteRef } from "./referrals.js";
+import { cleanCode } from "./referralslib.js";
 import { sealEscrow, escrowLogin, escrowReady } from "./escrow.js";
 import { visitOf, appSignupSrc, countryOf, dlKey, DL_DAYS, SQL_ACCOUNT_SRC, SQL_DL_FIND } from "./sourceslib.js";
 import { googleStart, googleReady, useGoogleGrant, googleAccountId, linkGoogle } from "./google.js";
@@ -328,6 +329,8 @@ export async function accounts(req, env, url) {
       if (!google) return err("this Google sign-in is not valid any more, sign in with Google again", 400);
       if (await googleAccountId(env, google.sub, null)) return json({ error: "this Google account is already linked to another account", code: "taken" }, 409);
     }
+    // a friend's invite code typed on the sign-up form (optional): a code that is nobody's stops the sign-up, so it can be fixed
+    if (cleanCode(body.invite) && !(await inviterByCode(env, cleanCode(body.invite)))) return json({ error: "this invite code is not valid", code: "bad_invite" }, 400);
     await fail(env, ["reg:" + ip]); // counts towards the hourly limit too
     const id = rid(), salt = rid(16);
     await env.DB.batch([
@@ -751,12 +754,15 @@ async function quickRegister(env, body, ip, req) {
 
 // "Invite a friend": a driver's link (https://pitlanehq.app/?ref=invite-<their account id>) is the first visit of the
 // browser the new account is made in; the two accounts then follow each other (Friends on every device)
+const inviterByCode = (env, code) => env.DB.prepare("SELECT id FROM accounts WHERE invite_code=?1 OR id=?1 LIMIT 1").bind(code).first().catch(() => null);
+
 export async function inviteFollow(env, id, body, req) {
   const v = body && body.src && typeof body.src === "object" ? visitOf(body.src) : null;
-  let by = v && v.inviter;
+  // the code typed on the sign-up form, else the one the link carried (the inviter's code, or their account id, the links
+  // made before codes)
+  let by = cleanCode(body && body.invite) || (v && v.inviter);
   if (!by || by === id) return;
-  // the link carries the inviter's code (or their account id, the links made before codes)
-  const ok = await env.DB.prepare("SELECT id FROM accounts WHERE invite_code=?1 OR id=?1 LIMIT 1").bind(by).first().catch(() => null);
+  const ok = await inviterByCode(env, by);
   if (!ok || ok.id === id) return;
   by = ok.id;
   // and it counts for "Invite a friend": a month of Pro for both once the friend has used Pitlane HQ for a week

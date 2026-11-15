@@ -39,6 +39,20 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   they keep it ($3 a month or $29.50 a year), still if they come back within two months of stopping, and can buy Pro for
   life for $29.99 within two months of the beta ending. A supporter's own profile says "You are a founding supporter. Your
   50% off Pro is locked in." (PC, web and phones). None of it is built into the payments yet.
+- The offers for the day Pro is switched on (the owner's choice, Nov 15 2026; `license_plans.json`, `cloud/src/lemon.js`,
+  migration 0103; all of it does nothing while the gate is off):
+  - Founding supporter needs $10 or more in donations in all (`founding.min`, `foundingCheck` adds up the account's
+    `pro_orders` of kind 'supporter'; `accounts.founder`). A smaller gift keeps the ♥ Supporter badge without the
+    offer. Whoever was a supporter before migration 0103, and Patreon's patrons, are founders. The 50% and the Pro for
+    life offer are the founders' (`isFounder()` in index.html, `founder` on /account/me and the sign-in).
+  - A new account gets 14 days of Pro (`trialDays`, `trialOnRegister`, `accounts.trial_until`, `proSrc` "trial"), only
+    when it is made with Pro switched on, and once per PC (`trial_pcs`: the second account that reports the same PC
+    reads `trialUsed` and has no Pro from it). A purchase always wins over the trial. The PRO window says the days left.
+  - Switching Pro on gives every account made before that day one month of Pro (`launch.thanksMonths`, `proLaunch`,
+    once, app_state `pro_launch`): it goes to the account's banked months (`ref_months`), which start that hour like
+    the invites' months.
+  - The admin page's Pro panel shows the prices, the trial days, the thanks month, and counts founders and trials.
+  - Comparing with the next driver up stays free; the rest of "Compare with the community" is Pro.
 
 - Invite a friend (`cloud/src/referrals.js`, migration 0100, `invite` in license_plans.json, the card at the top of
   Community → Friends on every device, `inviteHTML()` in index.html). Every account has a short code (8 letters and

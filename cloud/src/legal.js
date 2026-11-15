@@ -4,7 +4,7 @@
 // is stored or protected (the product rules).
 const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
 const MAIL = "support@pitlanehq.app";
-const UPDATED = "2026-11-02";
+const UPDATED = "2026-11-15";
 
 const PRIVACY = {
   en: { title: "Privacy policy", up: "Last updated", intro: "Pitlane HQ is a free app for sim racing drivers. This page says what it keeps about you, why and for how long.",
@@ -12,6 +12,7 @@ const PRIVACY = {
       ["What we keep", [
         "Your account. Your email address, your nickname and the language you chose.",
         "Your laps and sessions. The Pitlane HQ Agent on your PC uploads the laps you drive in iRacing and Le Mans Ultimate, with their times and telemetry, so you can see them on the web and the phone apps.",
+        "Laps without an account. If you use the Pitlane HQ Agent without an account, it still uploads the laps you drive, with their times and telemetry, so the coach learns from them. They are kept under a random id of that installation, with no name and no email, and nobody sees them. If you create an account or sign in on that PC, they become part of your account.",
         "What you share. Laps on the leaderboards, track notes, league posts and support messages, under your nickname or as an anonymous driver if you choose so.",
         "Linked accounts. When you sign in with Steam or Discord or link them, their account id and name, to sign you in and show them where you choose.",
         "The apps' use. Which screens are opened each day, error reports when an app fails and the logs you send from the support chat, to fix problems.",
@@ -19,7 +20,7 @@ const PRIVACY = {
       ]],
       ["What we do not do", ["We do not sell your data, show ads or share your data with advertisers.", "We never send reminders or summaries by email. Emails are only for your account (confirming the address, signing in, a new password)."]],
       ["Who helps us run it", ["Cloudflare hosts the server, the database and the downloads.", "Resend sends the account emails.", "Google Firebase and Apple deliver the phone notifications when you turn them on.", "Steam and Discord, only when you sign in with them or link them."]],
-      ["How long we keep it", ["Your account and its data stay until you delete the account.", "Notifications are kept 30 days, phone tokens until notifications are turned off or 270 days without use, error reports 30 days."]],
+      ["How long we keep it", ["Your account and its data stay until you delete the account.", "Laps uploaded without an account are deleted after 180 days unless they have joined an account by then. What the coach model learnt from them stays, without any name.", "Notifications are kept 30 days, phone tokens until notifications are turned off or 270 days without use, error reports 30 days."]],
       ["Deleting your account", ["You can delete your account at any time in the app (Account → Delete account) or as explained at <a href=\"/delete-account\">pitlanehq.app/delete-account</a>. Deleting it removes the account, your synced data, your devices and your race analyses. Your laps on the leaderboard and the laps the coach model learns from stay, as an anonymous driver without your name."]],
       ["Children", ["Pitlane HQ is not meant for children under 13 and does not knowingly keep data about them."]],
       ["Contact", [`Questions about your data go to <a href="mailto:${MAIL}">${MAIL}</a>. We may update this page and the date at the top says when it last changed.`]],
@@ -29,6 +30,7 @@ const PRIVACY = {
       ["Qué guardamos", [
         "Tu cuenta. Tu email, tu apodo y el idioma que elegiste.",
         "Tus vueltas y sesiones. Pitlane HQ Agent en tu PC sube las vueltas que das en iRacing y Le Mans Ultimate, con sus tiempos y su telemetría, para que las veas en la web y en las apps del móvil.",
+        "Vueltas sin cuenta. Si usas Pitlane HQ Agent sin una cuenta, también sube las vueltas que das, con sus tiempos y su telemetría, para que el coach aprenda de ellas. Se guardan bajo un identificador aleatorio de esa instalación, sin nombre ni email, y nadie las ve. Si creas una cuenta o inicias sesión en ese PC, pasan a formar parte de tu cuenta.",
         "Lo que compartes. Vueltas en las leaderboards, notas de circuito, publicaciones de ligas y mensajes de soporte, con tu apodo o como piloto anónimo si lo eliges.",
         "Cuentas vinculadas. Si inicias sesión con Steam o Discord o los vinculas, su id y su nombre, para iniciar sesión y mostrarlos donde elijas.",
         "El uso de las apps. Qué pantallas se abren cada día, informes de error cuando una app falla y los logs que envías desde el chat de soporte, para arreglar problemas.",
@@ -36,7 +38,7 @@ const PRIVACY = {
       ]],
       ["Qué no hacemos", ["No vendemos tus datos, no mostramos anuncios ni compartimos tus datos con anunciantes.", "Nunca enviamos recordatorios ni resúmenes por email. Los emails son solo para tu cuenta (confirmar la dirección, iniciar sesión, una contraseña nueva)."]],
       ["Quién nos ayuda", ["Cloudflare aloja el servidor, la base de datos y las descargas.", "Resend envía los emails de la cuenta.", "Google Firebase y Apple entregan las notificaciones del móvil cuando las activas.", "Steam y Discord, solo cuando inicias sesión con ellos o los vinculas."]],
-      ["Cuánto tiempo lo guardamos", ["Tu cuenta y sus datos se quedan hasta que borras la cuenta.", "Los avisos se guardan 30 días, los tokens del móvil hasta que desactivas las notificaciones o 270 días sin uso, los informes de error 30 días."]],
+      ["Cuánto tiempo lo guardamos", ["Tu cuenta y sus datos se quedan hasta que borras la cuenta.", "Las vueltas subidas sin cuenta se borran a los 180 días si para entonces no se han unido a una cuenta. Lo que el modelo del coach aprendió de ellas se queda, sin ningún nombre.", "Los avisos se guardan 30 días, los tokens del móvil hasta que desactivas las notificaciones o 270 días sin uso, los informes de error 30 días."]],
       ["Borrar tu cuenta", ["Puedes borrar tu cuenta cuando quieras en la app (Cuenta → Borrar cuenta) o como se explica en <a href=\"/delete-account?lang=es\">pitlanehq.app/delete-account</a>. Al borrarla se van la cuenta, tus datos sincronizados, tus dispositivos y tus análisis de carrera. Tus vueltas en la leaderboard y las vueltas de las que aprende el modelo del coach se quedan, como un piloto anónimo sin tu nombre."]],
       ["Menores", ["Pitlane HQ no está pensada para menores de 13 años y no guarda a sabiendas datos sobre ellos."]],
       ["Contacto", [`Las preguntas sobre tus datos van a <a href="mailto:${MAIL}">${MAIL}</a>. Podemos actualizar esta página y la fecha de arriba dice cuándo cambió por última vez.`]],
@@ -46,6 +48,7 @@ const PRIVACY = {
       ["O que guardamos", [
         "Sua conta. Seu email, seu apelido e o idioma que você escolheu.",
         "Suas voltas e sessões. O Pitlane HQ Agent no seu PC envia as voltas que você dá no iRacing e no Le Mans Ultimate, com os tempos e a telemetria, para você vê-las na web e nos apps do celular.",
+        "Voltas sem conta. Se você usa o Pitlane HQ Agent sem uma conta, ele também envia as voltas que você dá, com seus tempos e sua telemetria, para o coach aprender com elas. Elas ficam sob um identificador aleatório daquela instalação, sem nome nem email, e ninguém as vê. Se você criar uma conta ou entrar nesse PC, elas passam a fazer parte da sua conta.",
         "O que você compartilha. Voltas nas classificações, notas de pista, publicações de ligas e mensagens de suporte, com seu apelido ou como piloto anônimo se você escolher.",
         "Contas vinculadas. Se você entrar com Steam ou Discord ou vinculá-los, o id e o nome delas, para entrar e mostrá-las onde você escolher.",
         "O uso dos apps. Quais telas são abertas por dia, relatórios de erro quando um app falha e os logs que você envia pelo chat de suporte, para corrigir problemas.",
@@ -53,7 +56,7 @@ const PRIVACY = {
       ]],
       ["O que não fazemos", ["Não vendemos seus dados, não mostramos anúncios nem compartilhamos seus dados com anunciantes.", "Nunca enviamos lembretes nem resumos por email. Os emails são só para sua conta (confirmar o endereço, entrar, uma nova senha)."]],
       ["Quem nos ajuda", ["A Cloudflare hospeda o servidor, o banco de dados e os downloads.", "A Resend envia os emails da conta.", "O Google Firebase e a Apple entregam as notificações do celular quando você as ativa.", "Steam e Discord, só quando você entra com eles ou os vincula."]],
-      ["Por quanto tempo guardamos", ["Sua conta e seus dados ficam até você apagar a conta.", "Os avisos ficam 30 dias, os tokens do celular até você desativar as notificações ou 270 dias sem uso, os relatórios de erro 30 dias."]],
+      ["Por quanto tempo guardamos", ["Sua conta e seus dados ficam até você apagar a conta.", "As voltas enviadas sem conta são apagadas depois de 180 dias se até lá não tiverem entrado em uma conta. O que o modelo do coach aprendeu com elas fica, sem nenhum nome.", "Os avisos ficam 30 dias, os tokens do celular até você desativar as notificações ou 270 dias sem uso, os relatórios de erro 30 dias."]],
       ["Apagar sua conta", ["Você pode apagar sua conta quando quiser no app (Conta → Apagar conta) ou como explicado em <a href=\"/delete-account?lang=pt\">pitlanehq.app/delete-account</a>. Ao apagá-la vão a conta, seus dados sincronizados, seus dispositivos e suas análises de corrida. Suas voltas na classificação e as voltas com que o modelo do coach aprende ficam, como um piloto anônimo sem seu nome."]],
       ["Crianças", ["O Pitlane HQ não é feito para menores de 13 anos e não guarda conscientemente dados sobre eles."]],
       ["Contato", [`Perguntas sobre seus dados vão para <a href="mailto:${MAIL}">${MAIL}</a>. Podemos atualizar esta página e a data no topo diz quando ela mudou pela última vez.`]],

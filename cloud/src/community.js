@@ -61,6 +61,7 @@ import { famId, famIds, famName, famGroups, noteCar } from "./carfamily.js";
 import { proRoutes } from "./lemon.js";
 import { referralRoutes } from "./referrals.js";
 import { coachTipRoutes } from "./coachtips.js";
+import { anonAdopt, anonForget } from "./anon.js";
 import { lmuApiRoutes } from "./lmuapi.js";
 import { turnsFromPath } from "./trackgeo.js";
 import { turnCount, noteTurnCount, rebuildTrackMaps, traceLen, fitsLayout, layoutN } from "./trackmaps.js";
@@ -1220,8 +1221,11 @@ export async function community(req, env, url, ctx) {
     );
     await env.DB.batch(q);
     await moveDriver(env, "acct:" + d.id, "acct:" + u.id);
+    // what that PC uploaded before anyone signed in on it (anon.js): its sessions and laps are the account's now
+    const anon = await anonAdopt(env, d.id, u.id).catch(() => 0);
+    if (anon) await moveDriver(env, "dev:" + d.id, "acct:" + u.id);
     for (const c of combos) { const [g, tr, ca] = c.split("|"); await markModel(env, g, +tr, +ca); }
-    return json({ adopted: laps.length });
+    return json({ adopted: laps.length, sessions: anon });
   }
   // the names of the race rivals this account's PC shared before their names went up (they stayed "Anonymous"): the
   // PC's race history knows each rival's name, car, track and best lap, and the rival whose lap is that one takes
@@ -1280,6 +1284,7 @@ export async function community(req, env, url, ctx) {
       env.DB.prepare("DELETE FROM community_setups WHERE user_id=?1").bind(u.id),
       ...(u.account ? [] : [env.DB.prepare("DELETE FROM community_users WHERE id=?1").bind(u.id)]),
     ]);
+    if (!u.account) await anonForget(env, u.id); // and what the PC uploaded without an account
     return json({ deleted: true });
   }
   // a lap from your account to the community: the one you chose, or the session's fastest valid lap

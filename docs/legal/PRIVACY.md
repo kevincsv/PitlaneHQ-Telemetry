@@ -1,26 +1,27 @@
-# Pitlane HQ — Privacy / Privacidad
+# Pitlane HQ privacy notice
 
-*Borrador / Draft — revisar con un abogado antes de vender (RGPD/GDPR).*
+The full privacy policy is at https://pitlanehq.app/privacy (English, Spanish and Portuguese). This is its short form
+for the Pitlane HQ Agent on your PC.
 
-## Español
+## What stays on your PC
 
-**Qué se queda en tu PC.** Telemetría, vueltas, informes de carrera, notas, perfiles, ajustes y grabaciones de voz se guardan en tu PC (`%APPDATA%\PitlaneHQ`). Los inicios de sesión (iRacing, Garage 61), el webhook de Discord, la licencia y la lista de dispositivos emparejados se guardan **cifrados** con tu cuenta de Windows.
+Your settings, the overlays' layout, the sign-ins and the app's logs are kept on your PC, in `%APPDATA%\PitlaneHQ`.
+Uninstalling Pitlane HQ removes them.
 
-**Qué sale de tu PC, y solo si lo activas:**
-- iRacing Data API (tu cuenta, resultados): directamente entre tu PC e iRacing.
-- Garage 61: vueltas de referencia que pides.
-- Pitlane HQ Cloud (versión web): tus vueltas y sesiones, a **tu** cuenta de Cloudflare (o al servicio alojado, si lo contratas).
-- Discord: los mensajes que publicas en tu canal.
-- Enlace de ingeniero: una conexión temporal de Cloudflare mientras está activo.
-- Licencia: tu clave y el nombre del PC, para comprobarla con la tienda (Lemon Squeezy u otro proveedor).
-- Actualizaciones y noticias: se descargan de GitHub e iracing.com.
+## What the agent uploads
 
-**Tus derechos.** Puedes borrar tus datos locales en cualquier momento (desinstalar y borrar `%APPDATA%\PitlaneHQ`). Para datos en el servicio alojado o en la tienda, escríbenos: [correo de contacto].
+- With an account, the laps you drive in iRacing and Le Mans Ultimate, with their times and telemetry, go to your
+  Pitlane HQ account so you can see them on the web and the phone apps.
+- Without an account, the agent still uploads the laps you drive, with their times and telemetry, so the coach learns
+  from them. They are kept under a random id of this installation, with no name and no email, and nobody sees them.
+  If you create an account or sign in on this PC they become part of your account. Otherwise they are deleted after
+  180 days. What the coach model learnt from them stays, without any name.
+- Which screens are opened each day and error reports when the app fails, to fix problems.
 
-## English
+## What we do not do
 
-**What stays on your PC.** Telemetry, laps, race reports, notes, profiles, settings and voice recordings are stored on your PC (`%APPDATA%\PitlaneHQ`). Sign-ins (iRacing, Garage 61), the Discord webhook, the licence and the list of paired devices are stored **encrypted** with your Windows account.
+We do not sell your data, show ads or share your data with advertisers.
 
-**What leaves your PC, only if you turn it on:** iRacing Data API (directly between your PC and iRacing), Garage 61, Pitlane HQ Cloud (your laps, to **your** Cloudflare account or the hosted service), Discord (the messages you post), the engineer link (a temporary Cloudflare tunnel), the licence (your key and PC name, checked with the store) and updates and news (from GitHub and iracing.com).
+## Contact
 
-**Your rights.** Delete your local data at any time (uninstall and delete `%APPDATA%\PitlaneHQ`). For data in the hosted service or the store, contact us: [contact e-mail].
+Questions about your data go to support@pitlanehq.app.

@@ -200,7 +200,7 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
 ## How the coach learns from every session (coachlearn.js, migration 0088)
 
 - **The server's own coach** (`shadowRun`, every ten minutes, newest sessions first and back through 180 days): for every
-  session of an account (official or against the AI, never a test drive) nobody opened the coach on, it runs the module's
+  session of an account or of a PC without one (`dev:` sessions, `docs/spec/sync-and-accounts.md`; official or against the AI, never a test drive) nobody opened the coach on, it runs the module's
   `coachCompare` over the session's best whole lap against the model's next level for that time (else the record) and keeps
   what it would have said (`coach_tips` with `src` 'auto'; `coach_shadow` marks the sessions gone over). Those tips are never
   shown and never answer `/coach/last`; when the driver opens the coach on that session, what they saw replaces them

@@ -11,7 +11,7 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   /es/overlays-iracing, /pt/overlays-iracing); for Le Mans Ultimate /le-mans-ultimate-telemetry,
   /es/telemetria-le-mans-ultimate, /pt/telemetria-le-mans-ultimate and /le-mans-ultimate-overlays,
   /es/overlays-le-mans-ultimate, /pt/overlays-le-mans-ultimate (short addresses such as /lmu, /lmu-telemetry,
-  /lmu-overlays, /lmu-coach go there with 301); the guides (`seo-topics.js`, one page per thing people search for, each in
+  /lmu-overlays, /lmu-coach go there with 301); the guides (`seo-topics.js`, one page per thing people search for or ask an assistant, such as "Free telemetry for Le Mans Ultimate" and "Where do I lose time in iRacing?", each in
   the three languages, linked at the foot of every public page and in the app's <noscript>: the coach, comparing laps,
   braking points, the racing line, the iRating, the shift beep, telemetry on the phone, free telemetry, the fuel
   calculator /iracing-fuel-calculator (the fuel overlay, which measures each lap; never a form to fill in), and for Le

@@ -94,6 +94,23 @@ assert.equal(ua.n, 8);
 assert.equal(ua.top[0].key, "view:laps");
 assert.equal(ub.lastSeen, Date.parse("2026-10-20T12:00:00Z"), "without presence, the last day it used the app");
 
+// the overlays: minutes (the agent's "ov:" keys) and races ("ovrace:", written by the server), apart from the rest
+assert.deepEqual(cleanUsage({ device: "pc", counts: { "ov:relative": 12, "ovrace:radar": 1 } }).counts, [["ov:relative", 12]], "a batch never brings races");
+const O = analyticsOf(30, [], [
+  { account_id: "a", device: "pc", key: "ov:relative", n: 40, last: "2026-10-28" },
+  { account_id: "b", device: "pc", key: "ov:relative", n: 10, last: "2026-10-28" },
+  { account_id: "a", device: "pc", key: "ovrace:relative", n: 2, last: "2026-10-28" },
+  { account_id: "c", device: "pc", key: "ovrace:radar", n: 1, last: "2026-10-28" },
+  { account_id: "a", device: "pc", key: "ov:radar", n: 5, last: "2026-10-28" },
+  { account_id: "a", device: "pc", key: "view:overlays", n: 1, last: "2026-10-28" },
+], [], new Map());
+assert.deepEqual(O.overlays, [
+  { ov: "relative", users: 2, minutes: 50, minUsers: 2, races: 2, raceUsers: 1 },
+  { ov: "radar", users: 2, minutes: 5, minUsers: 1, races: 1, raceUsers: 1 },
+]);
+assert.deepEqual(O.top, [{ key: "view:overlays", users: 1, n: 1 }], "never among the features");
+assert.deepEqual(O.byDevice, [{ device: "pc", users: 1, n: 1 }], "minutes are not uses");
+
 // the email
 const m = feedbackMail({ text: "Love it", rating: 5, nick: "Ana", accountId: "acct_1", device: "pc", v: "0.9.14", view: "home", email: "ana@example.com" });
 assert.equal(m.subject, "Pitlane HQ feedback · Ana · 5/5");

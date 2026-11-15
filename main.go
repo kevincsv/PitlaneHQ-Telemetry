@@ -541,6 +541,7 @@ func main() {
 	go keepAlive("lapRecorder", lapRecorder)
 	go keepAlive("carWatcher", carWatcher)
 	go keepAlive("raceWatcher", raceWatcher)
+	go keepAlive("ovUsageWatcher", ovUsageWatcher)
 	go keepAlive("fieldWatcher", fieldWatcher)
 	go keepAlive("myLapWatcher", myLapWatcher)
 	go keepAlive("updateWatcher", updateWatcher)

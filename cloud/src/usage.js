@@ -17,7 +17,8 @@
 //   says so, and the PC the overlay window when ov does (after the first race with overlays, once answered every six)
 // POST /community/feedback/seen (signed in)  the window was shown and put off (Not now): it waits again; with
 //   {kind: "overlays"} the overlay window, which waits for the next races with overlays
-// POST /community/feedback/ovrace (signed in, the PC)  {style, ovs, game, sid}  a race ended with overlays open
+// POST /community/feedback/ovrace (signed in, the PC)  {style, ovs, game, sid}  a race ended with overlays open (and
+//   which ones, kept as "ovrace:<overlay>" usage of the day for the Analytics, once per race)
 // GET  /community/admin/feedback (admins)  every answer, newest first; DELETE /community/admin/feedback/:id one;
 // POST /community/admin/feedback/old {days} the older ones; POST /community/admin/feedback/discord the earlier ones to Discord
 //   (the uninstall answers, uninstall.js, come with no account: accountId null)
@@ -31,7 +32,7 @@ import { livePopular } from "./livepopular.js";
 import { sendFeedback } from "./email.js";
 import { discordFeedback } from "./discord.js";
 import { driverMessage, cleanLang } from "./supportlib.js";
-import { SQL_USAGE_ADD, SQL_ASK_USED, SQL_ASK_SEEN, SQL_RACES_SINCE, SQL_OV_RACE, SQL_OV_SEEN, SQL_OV_ANSWERED, day, cleanUsage, cleanFeedback, analyticsMore, highlightsOf, SQL_SESSIONS_DAYS, gamesOf, SQL_GAMES_PREV, SQL_GAMES_FIRSTS, SQL_GAMES_TRACKS, SQL_GAMES_CARS, cleanOvRace, shouldAsk, shouldAskOv, analyticsOf, ASK_USED, FEEDBACK_PER_DAY, MAX_DAYS } from "./usagelib.js";
+import { SQL_USAGE_ADD, SQL_ASK_USED, SQL_ASK_SEEN, SQL_RACES_SINCE, SQL_OV_RACE, SQL_OV_SEEN, SQL_OV_ANSWERED, OVRACE_KEY, day, cleanUsage, cleanFeedback, analyticsMore, highlightsOf, SQL_SESSIONS_DAYS, gamesOf, SQL_GAMES_PREV, SQL_GAMES_FIRSTS, SQL_GAMES_TRACKS, SQL_GAMES_CARS, cleanOvRace, shouldAsk, shouldAskOv, analyticsOf, ASK_USED, FEEDBACK_PER_DAY, MAX_DAYS } from "./usagelib.js";
 
 const json = (o, s = 200) => new Response(JSON.stringify(o), { status: s, headers: { "content-type": "application/json", "cache-control": "no-store" } });
 const err = (m, s) => json({ error: m }, s);
@@ -85,7 +86,12 @@ export async function usageRoute(req, env, url) {
   if (p === "/community/feedback/ovrace" && m === "POST") {
     const o = cleanOvRace(await req.json().catch(() => null));
     if (o.error) return err(o.error, 400);
-    await env.DB.prepare(SQL_OV_RACE).bind(acc.id, now, o.style, o.sid || crypto.randomUUID()).run();
+    const sid = o.sid || crypto.randomUUID();
+    // the overlays open in it, for the Analytics: once per race (the same session told again counts once)
+    const last = await env.DB.prepare("SELECT ov_last_sid FROM feedback_ask WHERE account_id=?1").bind(acc.id).first().catch(() => null);
+    const st = [env.DB.prepare(SQL_OV_RACE).bind(acc.id, now, o.style, sid)];
+    if (!last || last.ov_last_sid !== sid) for (const ov of o.ovs) st.push(env.DB.prepare(SQL_USAGE_ADD).bind(day(now), acc.id, "pc", OVRACE_KEY + ov, 1));
+    await env.DB.batch(st);
     return json({ ok: true });
   }
   if (p === "/community/feedback" && m === "POST") {

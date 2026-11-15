@@ -7,7 +7,7 @@ Status as of 2026-11-14. Rules for releasing are in CLAUDE.md and `docs/spec/pc-
 | Where | Version | Notes |
 | --- | --- | --- |
 | PC agent + web (production) | 0.9.21 | 2026-11-15: the invite code on the sign-up form, the light landing, the web app inside the screen on phones, and the minutes each overlay is open (admin Analytics), on top of 0.9.20. |
-| Beta (beta.pitlanehq.app, PC Test builds) | 0.9.22 | 2026-11-15: uninstalling always asks why (the agent runs the uninstall, so PCs installed before the page existed show it too). On master, test build started, not promoted yet. |
+| Beta (beta.pitlanehq.app, PC Test builds) | 0.9.22 | 2026-11-15: uninstalling always asks why (the agent runs the uninstall, so PCs installed before the page existed show it too). On master, the test builds passed, promoted together with the growth batch when the owner says. |
 | Android | 0.9.14 | Production APK from /dl. Google Play: internal testing build 1291 (see `stores.md`). |
 | iOS | 0.9.14 | TestFlight build 392. App Store review not passed yet (see `stores.md`). |
 | Microsoft Store | 0.9.14 | 0.9.15 submission prepared, the owner submits it in Partner Center (see `stores.md`). |
@@ -19,6 +19,17 @@ Status as of 2026-11-14. Rules for releasing are in CLAUDE.md and `docs/spec/pc-
   master has the Google Play commits (play.yml) the working branch lacks. Merge them before the next phone release.
 
 ## Held until the owner says
+
+- Growth and sales batch (2026-11-15, branch `claude/project-thread-gh6hsr`, four commits on top of 0.9.22, pushed to
+  the branch only). It goes to master in one push when the owner says "sube", and 0.9.22 is promoted with it, not
+  before (the owner's choice). In it: Pro offers switched off (migration 0103, prices $6 and $59, 14-day trial,
+  launch month, founding from $10); a PC without an account uploads its laps for the coach with no name and they
+  join the account at sign-in (privacy policy updated); the race summary opens by itself after a race with the
+  leaderboard place and "Compare with" the next driver up; "Time to beat" and "Last week" on Home; "Invite a friend"
+  after a good result or a personal best; the Le Mans Ultimate telemetry help comes back while the game is unread;
+  the agent's daily counters; two new public guides. Built and switched off, waiting for the owner's yes: Start with
+  Windows ticked by default in the installer (`StartupTicked`) and the question in the app (`AUTOSTART_ASK`). Needs
+  a cloud deploy with migration 0103 and a Windows build. None of it ran on a real PC. Not for the phones.
 
 - Watch in replay and the pedal and wheel check stay testers-only, also in production.
 - Version 1.0 waits for the Steam version to be approved by Valve. Stay on 0.9.x.

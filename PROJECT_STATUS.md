@@ -14,6 +14,7 @@ web (0.9.19); a full-app bug sweep follows.
 - Google Play: closed test needs 12 testers for 14 days. Waiting on the owner's tester list.
 - Microsoft Store 0.9.15 submission: prepared, the owner submits.
 - Phone repo: merge the App Store and Report/Block work with master's Google Play commits before the next release.
+- Growth and sales batch (branch `claude/project-thread-gh6hsr`, waiting for "sube", ships together with 0.9.22): a PC without an account teaches the coach, the race summary opens after a race, time to beat and last week on Home, Pro offers switched off, two new guides. Detail in `docs/status/releases.md`.
 - Team mode (beta, every tester and admin): in production code since 0.9.19 behind its beta gate (PC, web, Android beta). Not run on real hardware yet.
 
 ## Live now

@@ -82,8 +82,10 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   third session goes on while its laps come: the app asks once it has had no lap for 20 minutes (`tryGrace`), or at
   once when a lap of a fourth session comes (that one is not counted). Then the PC app shows the sign-in wall with one
   line saying the sessions are used (`signWall`, the Create an account form first) and no overlay opens
-  (`openNamedOverlay` answers `errTryOver`; the ones open close). Before that, Home has a line with the sessions left
-  and Create a free account (`tryingOn`, `homeHealth`), and the leaderboards question (`askShare`) waits until someone
+  (`openNamedOverlay` answers `errTryOver`; the ones open close). Before that, the first open says it once (`tryTell`,
+  pw.tryTold: the 3 trial sessions, then sign in or create a free account to keep using every feature, everything
+  driven is saved and goes to the account), Home has the same line with the trial sessions left and Create a free
+  account (`tryingOn`, `homeHealth`), and the leaderboards question (`askShare`) waits until someone
   signs in. The PC keeps its count in the data folder (`tryout.json`) and tells the server (POST
   /community/tryout {pc, session}, no account, the PC's `pcID()` hash of Windows' own machine id, 10 rows a PC at
   most, table `tryout_pcs`, migration 0106); the agent reads the server's count when it starts (GET

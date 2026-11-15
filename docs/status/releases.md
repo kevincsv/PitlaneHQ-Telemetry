@@ -6,8 +6,8 @@ Status as of 2026-11-14. Rules for releasing are in CLAUDE.md and `docs/spec/pc-
 
 | Where | Version | Notes |
 | --- | --- | --- |
-| PC agent + web (production) | 0.9.19 | Promoted 2026-11-14 from master 7ea9ccb (the Workspace batch). |
-| Beta (beta.pitlanehq.app, PC Test builds) | 0.9.19 | Same commit as production, 2026-11-14. |
+| PC agent + web (production) | 0.9.20 | 2026-11-15: the bug sweep's fixes (one look for both game questions, a close button on every window) and the donation bar every day, on top of 0.9.19 (the Workspace batch). |
+| Beta (beta.pitlanehq.app, PC Test builds) | 0.9.20 | Same commit as production, 2026-11-15. |
 | Android | 0.9.14 | Production APK from /dl. Google Play: internal testing build 1291 (see `stores.md`). |
 | iOS | 0.9.14 | TestFlight build 392. App Store review not passed yet (see `stores.md`). |
 | Microsoft Store | 0.9.14 | 0.9.15 submission prepared, the owner submits it in Partner Center (see `stores.md`). |

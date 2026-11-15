@@ -201,6 +201,9 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
     time" pill (`pw.anGame`). The session window then opens on that game, its name in an
     amber pill beside the title.
     On My sessions and Statistics, entering Analysis asks only the game.
+  - What do you want to see?: when the app opens with sessions of more than one game (`gameAskAtOpen`), it asks which
+    game to show in the same look as Which game? (a card for each game, one close button, a tap on a card opens it).
+  - Every window has one close button at its top right, also one that redraws itself (a profile, a track page).
 
 - Home shows the track guide's brief (the three corners that matter most) while the agent sees a session on a track and
   car the model knows (`homeBriefHTML`); pressed, it opens the whole guide.

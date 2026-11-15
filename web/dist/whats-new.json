@@ -1,6 +1,12 @@
 {
   "versions": [
     {
+      "v": "0.9.20",
+      "en": ["Every window has its close button in the same place.", "Choosing a game when the app opens looks the same as in Analysis.", "The bar to support Pitlane HQ comes back each day after you hide it.", "Fixes and improvements."],
+      "es": ["Todas las ventanas tienen su botón de cerrar en el mismo sitio.", "Elegir el juego al abrir la app se ve igual que en Análisis.", "La barra para apoyar Pitlane HQ vuelve cada día después de ocultarla.", "Correcciones y mejoras."],
+      "pt": ["Todas as janelas têm o botão de fechar no mesmo lugar.", "Escolher o jogo ao abrir o app tem o mesmo visual que em Análise.", "A barra para apoiar o Pitlane HQ volta a cada dia depois de ocultá-la.", "Correções e melhorias."]
+    },
+    {
       "v": "0.9.19",
       "en": ["Pitlane HQ has a new look on the PC and the web, with every screen laid out in panels side by side.", "Statistics shows much more of your progress, including your best lap each week against the community.", "Analysis asks which game you want to see first.", "A short tour shows the lap analyzer, the coach and telemetry.", "Race fuel learns from the drivers of the same car and track.", "You can change your public name in My account.", "Fixes and improvements."],
       "es": ["Pitlane HQ tiene un nuevo aspecto en el PC y en la web, con cada pantalla en paneles uno al lado del otro.", "Estadísticas muestra mucho más de tu progreso, también tu mejor vuelta de cada semana frente a la comunidad.", "Análisis pregunta primero qué juego quieres ver.", "Un tour corto enseña el analizador de vueltas, el coach y la telemetría.", "El combustible de carrera aprende de los pilotos del mismo coche y circuito.", "Puedes cambiar tu nombre público en Mi cuenta.", "Arreglos y mejoras."],

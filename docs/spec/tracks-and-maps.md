@@ -23,7 +23,8 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   fewer split a corner with two clear apexes (peaks 30 m or more apart, the bend easing under 60 % between them), then
   relax the radius limit step by step (400, 550, 750, 1000 m), never inventing a turn on a straight (`fitCount`). Served
   by `/community/turns` as `auto: true` (with `count` when known) until an admin places the official turns, which always
-  win, so every device numbers the same corners. The coach's corners (`cornerZones` in web/dist/pitwall-analysis.js, which the web, the PC app and the phones run,
+  win, so every device numbers the same corners. A circuit the turn reference knows never gets this far (see "The real
+  turns of a circuit" below). The coach's corners (`cornerZones` in web/dist/pitwall-analysis.js, which the web, the PC app and the phones run,
   and in ovnative4.go; the phones' LapMath/Models keep a copy only for when their JavaScript engine cannot run) are the
   reference's braking zones named by those turns (two brake applications in one corner are one corner) plus the turns the
   reference takes without braking (a lift, from its last full throttle before the apex), whose tips never speak of braking.
@@ -50,6 +51,35 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   (analyzer, coach, race summary, phones, map overlay) draws the direction arrow beside the start/finish line.
 - The coach's line: when the reference is a rival's lap (no path), the model's `lineXY` (the fastest lap of the car
   and track with a path) or, on the phones, your own best lap gives the line to compare with.
+
+## The real turns of a circuit
+
+- The geometry cannot know that a flat kink has no number (Spa's Kemmel kink took T5 and every turn after it was one
+  late) or that a long corner counts twice (Pouhon is T10 and T11). So the circuits people know have their real turns
+  written down: `tools/turns-ref/src.mjs` holds, per circuit layout, T1 … Tn in order with the way each one turns, the
+  turns that share one bend, the numbered turns with no bend at all and the names (from the circuits' and the series'
+  own maps and Wikipedia's track pages; `sure: false` where the numbering could not be checked). `node
+  tools/turns-ref/build.mjs` places them on the first layout listed (fetched from the server) and writes
+  `cloud/src/turnsref-data.js`: per layout its length, the games' track ids, the words of its name and each turn's
+  metres from the line, direction, whether it is a clear corner or a light one, and its name. Change `src.mjs` and build
+  again, never the data file; `--show` prints every layout placed again.
+- `/community/turns` (`refTurns` in `cloud/src/turnsref.js`): turns an admin placed by hand win; else the reference's,
+  placed on the track's own layout (`placeRef`), served with `auto: false`, their `names` and `ref` (the reference's
+  key), so every device shows the numbers and the names with no change in the apps; else the geometry's (`auto: true`).
+  Hand-placed turns without names take the reference's when it has as many turns (`refNames`).
+- `placeRef` finds the reference's corners on whatever layout the track has (another game's, one drawn again, a line a
+  little further on): the layout's bends (`bends`: stretches tighter than 900 m of radius, cut at a double apex), the
+  clear corners (40° or more on the reference's layout) matched in order by direction and by the distances between
+  them, two corners that one game draws as one long bend or a double apex drawn as two bends allowed, then the light
+  turns between the clear ones as in the reference, moved to a bend of their direction within 40 m. A layout more than
+  4 % longer or shorter, a clear corner missing or found over 150 m from where it should be, or the first one over
+  400 m from the line: not that layout, and the track keeps the geometry's corners.
+- A track takes its reference by the game's own id (`ids`), else by the circuit's name in the track's name together
+  with the lap's length (`match`: how an ACC or AC track, or a new id, finds it; `NOT` lists the layouts of a known
+  circuit that are another layout). A track of no reference (24 of the 117 the server had on 2026-11-15: the
+  Nordschleife, VIR, the Charlotte Roval, Oschersleben, Navarra, Ledenon, Rudskogen, Winton, Oran Park, the smaller
+  Oulton, Lime Rock, Hockenheim and Fuji layouts and the dirt tracks) stays as before; Admin → Tools → "Turns to check"
+  says `ref` for the ones that have it. `cloud/test/turnsref.test.mjs` checks the data and the placing on real layouts.
 
 ## Corners from how drivers drive, edges and the wrong layout
 

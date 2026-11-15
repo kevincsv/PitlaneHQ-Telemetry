@@ -22,3 +22,13 @@ Status as of 2026-11-14. Behaviour is in `docs/spec/lmu.md` and `docs/spec/asset
 
 - The Planner waits for iRacing to switch its data API back on. The season comes from the schedule PDF the owner
   uploads in the admin Season tab each season, plus race starts the PCs report.
+
+## Track maps (every game)
+
+- 2026-11-15: the turns of 93 of the server's 117 track layouts come from a reference of the real turns (numbers and
+  names), placed by the server; the phones get them with no change. Not checked against an official map (`sure: false`
+  in `tools/turns-ref/src.mjs`): Le Mans, Daytona road, Bathurst, Oulton International, Okayama, Phillip Island, Zolder,
+  Hockenheim, Miami, Mexico, St Petersburg, Algarve, Bahrain Outer, Tsukuba, Summit Point, the Silverstone
+  International and Nürburgring sprint layouts. 24 layouts have no reference yet (listed in
+  `docs/spec/tracks-and-maps.md`). ACC and AC have no layouts on the server yet; they will take a circuit's reference
+  by its name.

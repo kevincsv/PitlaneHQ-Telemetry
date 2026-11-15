@@ -14,6 +14,7 @@ web (0.9.19); a full-app bug sweep follows.
 - Google Play: closed test needs 12 testers for 14 days. Waiting on the owner's tester list.
 - Microsoft Store 0.9.15 submission: prepared, the owner submits.
 - Phone repo: merge the App Store and Report/Block work with master's Google Play commits before the next release.
+- Analytics revamp (admin page): weekly numbers, cohorts, source funnel, sales counters and counter health built on `claude/project-thread-jy09k6`, not pushed. Needs migration 0105, a cloud deploy, then Data → Add up everything once.
 - Team mode (beta, every tester and admin): in production code since 0.9.19 behind its beta gate (PC, web, Android beta). Not run on real hardware yet.
 
 ## Live now

@@ -5,7 +5,10 @@ export const DEVICES = ["web", "pc", "android", "ios"];
 // (livepopular.js); kept out of the admin page's features
 // ov: the minutes a native overlay was open while driving (the agent, ovusage.go); ovrace: the races driven with it open
 // (written here from POST /community/feedback/ovrace, never taken from a batch); both only in the Analytics' overlays
-export const KEY_RE = /^(view|act|game|live|ov):[a-z0-9_.-]{1,40}$/;
+// run: the agent ran that day ("run:agent"); set: a setting as it stands, once a day ("set:autostart.on"); pro_use: a
+// Pro feature used; the three only in the weekly numbers (metrics.js)
+export const KEY_RE = /^(view|act|game|live|ov|run|set|pro_use):[a-z0-9_.-]{1,40}$/;
+const APART = /^(run|set|pro_use):/;
 export const OV_KEY = "ov:", OVRACE_KEY = "ovrace:";
 export const MAX_KEYS = 100, MAX_N = 1000, MAX_DAYS = 90;
 export const FEEDBACK_MAX = 4000, FEEDBACK_PER_DAY = 20;
@@ -89,13 +92,16 @@ export const shouldAsk = (used, races) => used >= ASK_USED || races >= ASK_RACES
 
 /** The analytics answer from the grouped rows (pure, so the test can run it). */
 export function analyticsOf(days, perDay, rows, presence, accounts) {
-  const byDev = new Map(), byKey = new Map(), byGame = new Map(), byUser = new Map(), byOvMin = new Map(), byOvRace = new Map();
+  const byDev = new Map(), byKey = new Map(), byGame = new Map(), byUser = new Map(), byOvMin = new Map(), byOvRace = new Map(), byLive = new Map();
   const add = (m, k, acc, n) => { let x = m.get(k); if (!x) m.set(k, (x = { n: 0, users: new Set() })); x.n += n; x.users.add(acc); };
   for (const r of rows) {
     if (!gameKeyOk(r.key)) continue; // "game:auto" rows of the PCs before 0.7.3 counted the Settings choice
     // the overlays are apart: minutes and races, not uses of a screen
     if (r.key.startsWith(OV_KEY)) { add(byOvMin, r.key.slice(OV_KEY.length), r.account_id, r.n); continue; }
     if (r.key.startsWith(OVRACE_KEY)) { add(byOvRace, r.key.slice(OVRACE_KEY.length), r.account_id, r.n); continue; }
+    // the Telemetry panels and modes are apart too (once a day each, so n is days), and so is what only the weekly numbers read
+    if (r.key.startsWith("live:")) { add(byLive, r.key.slice(5), r.account_id, r.n); continue; }
+    if (APART.test(r.key)) continue;
     add(byDev, r.device, r.account_id, r.n);
     if (r.key.startsWith("game:")) add(byGame, r.key.slice(5), r.account_id, r.n);
     else add(byKey, r.key, r.account_id, r.n);
@@ -119,6 +125,8 @@ export function analyticsOf(days, perDay, rows, presence, accounts) {
     top: list(byKey, "key").slice(0, 60),
     games: list(byGame, "game"),
     overlays: overlaysOf(byOvMin, byOvRace),
+    // the Telemetry panels (and its modes, "mode.<m>") by the drivers who showed them
+    live: [...byLive].map(([w, x]) => ({ w, users: x.users.size, days: x.n })).sort((a, b) => b.users - a.users || b.days - a.days || (a.w < b.w ? -1 : 1)).slice(0, 60),
     versions: [...versions].map(([k, n]) => ({ device: k.split("|")[0], v: k.split("|")[1], devices: n })).sort((a, b) => b.devices - a.devices),
     users: [...byUser].map(([id, u]) => ({
       id, nick: (accounts.get(id) || {}).display || "", lastSeen: seen.get(id) || (u.last ? Date.parse(u.last + "T12:00:00Z") : 0), lastDay: u.last,
@@ -163,6 +171,7 @@ export function analyticsMore({ from, t0, actDays, rows, sessions, prevSessions,
   }
   const devices = new Map(), keys = new Map();
   for (const r of rows) {
+    if (/^(run|set):/.test(r.key)) continue; // the agent by itself: not a screen opened
     let d = devices.get(r.account_id); if (!d) devices.set(r.account_id, (d = new Set())); d.add(r.device);
     let k = keys.get(r.account_id); if (!k) keys.set(r.account_id, (k = new Set())); k.add(r.key);
   }

@@ -25,7 +25,7 @@ export const proGateReset = () => { gateAt = 0; };
 
 const DAY = 86400e3, MONTH = 30 * DAY;
 export const TRIAL_DAYS = PLANS.trialDays > 0 ? PLANS.trialDays : 0;
-export const FOUNDING = { min: 10, off: 50, lifetime: 29.99, months: 2, graceMonths: 2, ...(PLANS.founding || {}) };
+export const FOUNDING = { min: 3, off: 50, lifetime: 29.99, months: 2, graceMonths: 2, ...(PLANS.founding || {}) };
 const THANKS_MONTHS = (PLANS.launch && PLANS.launch.thanksMonths) || 0;
 
 // an account's Pro, from its row (accounts.*)

@@ -49,8 +49,9 @@ pt.StartGroup=Início:
 
 [Tasks]
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"
-; "Open Pitlane HQ when Windows starts" is unticked until the owner says yes to ticking it by default: then the build
-; passes /DStartupTicked (or it is defined here) and nothing else changes
+; "Open Pitlane HQ when Windows starts" comes ticked (the owner's choice, Nov 15 2026): a driver who forgets to open
+; the agent has no sessions. Removing the define below leaves it unticked again
+#define StartupTicked
 #ifdef StartupTicked
 Name: "startup"; Description: "{cm:StartWithWindows}"; GroupDescription: "{cm:StartGroup}"
 #else

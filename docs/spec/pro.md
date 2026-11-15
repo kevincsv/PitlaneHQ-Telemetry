@@ -41,7 +41,7 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   50% off Pro is locked in." (PC, web and phones). None of it is built into the payments yet.
 - The offers for the day Pro is switched on (the owner's choice, Nov 15 2026; `license_plans.json`, `cloud/src/lemon.js`,
   migration 0103; all of it does nothing while the gate is off):
-  - Founding supporter needs $10 or more in donations in all (`founding.min`, `foundingCheck` adds up the account's
+  - Founding supporter needs $3 or more in donations in all (the owner's choice, Nov 15 2026) (`founding.min`, `foundingCheck` adds up the account's
     `pro_orders` of kind 'supporter'; `accounts.founder`). A smaller gift keeps the ♥ Supporter badge without the
     offer. Whoever was a supporter before migration 0103, and Patreon's patrons, are founders. The 50% and the Pro for
     life offer are the founders' (`isFounder()` in index.html, `founder` on /account/me and the sign-in).

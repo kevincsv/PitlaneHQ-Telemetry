@@ -6256,8 +6256,8 @@ addEventListener("click",e=>{const b=e.target&&e.target.closest&&e.target.closes
 /* the PRO badge's window: free during the beta, the price after it and, where donations are offered (not the Steam app),
    the supporters' offer (the owner's prices, the same as /pricing and the landing; docs/spec/pro.md) */
 const PRICING_URL=()=>"https://pitlanehq.app"+({es:"/es/precios",pt:"/pt/precos"}[LANG]||"/pricing");
-function supOfferTxt(){return Tx("Support Pitlane HQ with $10 or more during the beta and keep Pro at half price forever. You can also buy Pro for life for $29.99 within two months of the beta ending.","Apoya Pitlane HQ con $10 o más durante la beta y mantén Pro a mitad de precio para siempre. También podrás comprar Pro de por vida por $29,99 en los dos meses tras el final de la beta.",null,"Apoie o Pitlane HQ com $10 ou mais durante o beta e mantenha o Pro pela metade do preço para sempre. Você também poderá comprar o Pro vitalício por $29,99 nos dois meses depois do fim do beta.")}
-/* the founding supporter offer is for donations of $10 or more in all (accounts.founder); a smaller gift has the badge */
+function supOfferTxt(){return Tx("Support Pitlane HQ with $3 or more during the beta and keep Pro at half price forever. You can also buy Pro for life for $29.99 within two months of the beta ending.","Apoya Pitlane HQ con $3 o más durante la beta y mantén Pro a mitad de precio para siempre. También podrás comprar Pro de por vida por $29,99 en los dos meses tras el final de la beta.",null,"Apoie o Pitlane HQ com $3 ou mais durante o beta e mantenha o Pro pela metade do preço para sempre. Você também poderá comprar o Pro vitalício por $29,99 nos dois meses depois do fim do beta.")}
+/* the founding supporter offer is for donations of $3 or more in all (accounts.founder); a smaller gift has the badge */
 function isFounder(){return !!(proAcc()||{}).founder}
 /* a new account's days of Pro once Pro is on (trial_until on the server): the days left, 0 without one */
 function trialLeft(){const a=proAcc()||{};return a.proSrc==="trial"&&a.proUntil>Date.now()?Math.ceil((a.proUntil-Date.now())/86400e3):0}
@@ -8364,9 +8364,9 @@ function racePaceHTML(r){const PW=window.PW_ANALYSIS;if(!PW||!PW.racePace||r.par
   return`<div class="panel" style="margin-top:10px"><div class="label">${esc(Tx("Race pace","Ritmo de carrera","Renntempo","Ritmo de corrida"))}</div>${p.lines.length?`<ul class="rp-l">${p.lines.map(l=>`<li class="${l.good?"good":"bad"}">${esc(l.t)}</li>`).join("")}</ul>`:""}
   <div style="overflow:auto"><table class="rtable"><thead><tr><th>Pos</th><th>${esc(Tx("Driver","Piloto"))}</th><th>${esc(Tx("Average","Media","Schnitt","Média"))}</th><th>±</th><th>${esc(Tx("Per lap","Por vuelta","Pro Runde","Por volta"))}</th><th>${esc(Tx("Second half","Segunda mitad","Zweite Hälfte","Segunda metade"))}</th></tr></thead><tbody>${p.rows.map(x=>`<tr class="${x.me?"me":""}"><td class="mono">P${x.pos}</td><td>${x.me?esc(Tx("You","Tú","Du","Você")):esc(x.name)}${bot(x)?` <span class="pill aib">${esc(Tx("AI","IA","KI","IA"))}</span>`:""}</td><td class="mono">${fmtT(x.avg)}</td><td class="mono">${x.sd.toFixed(2)}</td><td class="mono ${x.me?"":x.gap<-.05?"bad":x.gap>.05?"good":""}">${x.me?"–":sgn(x.gap,2)}</td><td class="mono ${x.me?"":x.late<-.05?"bad":x.late>.05?"good":""}">${x.me?"–":sgn(x.late,2)}</td></tr>`).join("")}</tbody></table></div></div>`}
 /* "Open Pitlane HQ when Windows starts?" asked once on the PC, after the first lap saved, when it is off (a driver
-   who forgets to open the agent has no sessions). Switched off (AUTOSTART_ASK) until the owner says yes; never in the
+   who forgets to open the agent has no sessions). On since the owner said yes (Nov 15 2026; AUTOSTART_ASK switches it off); never in the
    Microsoft Store or Steam copies (they start their own way), never while driving */
-const AUTOSTART_ASK=false;
+const AUTOSTART_ASK=true;
 async function autostartAsk(){try{if(!AUTOSTART_ASK||MODE!=="bridge"||COMPANION||demoOn()||!INFO||INFO.steam||INFO.store||CFG.startWithWindows||localStorage.getItem("pw.autostart.asked"))return;
   if(STATUS.connected||document.querySelector(".uidlg")){clearTimeout(autostartAsk.t);autostartAsk.t=setTimeout(autostartAsk,30e3);return} // once the car is parked
   localStorage.setItem("pw.autostart.asked","1");usageCount("act:autostart_ask");

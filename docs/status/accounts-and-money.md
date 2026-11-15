@@ -19,7 +19,7 @@ Status as of 2026-11-07. Behaviour is in `docs/spec/sync-and-accounts.md`, `admi
   within 2 months of stopping), plus a $29.99 lifetime offer in the first 2 months after release. The discount is not
   built yet. RevenueCat for the phones later.
 - Pro offers (2026-11-15, on the working branch, waiting for "sube", all switched off with the gate): founding
-  supporter from $10 in donations, 14 days of Pro for a new account once per PC, a month of Pro for every beta account
+  supporter from $3 in donations, 14 days of Pro for a new account once per PC, a month of Pro for every beta account
   the day Pro is switched on. Needs migration 0103. The Stripe prices and the checkout are not set up yet.
 - A PC without an account uploads its laps for the coach to learn from, with no name, and they join the account at
   sign-in (2026-11-15, working branch, waiting for "sube"; needs the cloud deploy and a Windows build; privacy policy

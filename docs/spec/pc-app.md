@@ -101,10 +101,11 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   on (`homeHealth`), and the overlays open for 20 s over a game in exclusive full screen, where no window can show
   (`gameFullscreen`: Windows' QUNS_RUNNING_D3D_FULL_SCREEN; borderless is not it), asking for Borderless or Windowed
   (`fullCallout`, on Home and at the top of the Overlays tab).
-- Start with Windows by default (built, switched off until the owner says yes, Nov 15 2026): the installer's "Open
-  Pitlane HQ when Windows starts" stays unticked unless the build defines `StartupTicked` (PitlaneHQ.iss), and the app's
-  question "Open Pitlane HQ when Windows starts?" (`autostartAsk`, once per PC, after the first lap saved and with the
-  car parked, never in the Microsoft Store or Steam copies) shows only with `AUTOSTART_ASK` true in index.html.
+- Start with Windows by default (the owner's choice, Nov 15 2026): the installer's "Open Pitlane HQ when Windows
+  starts" comes ticked for a new install (`StartupTicked` in PitlaneHQ.iss), and on a PC where it is off the app asks
+  once "Open Pitlane HQ when Windows starts?" (`autostartAsk`, after the first lap saved and with the car parked,
+  never in the Microsoft Store or Steam copies; `AUTOSTART_ASK` in index.html switches the question off). A PC that
+  has it off is only asked, never changed.
 - The agent counts its days (`agentuse.go`): once a day, signed in and not an admin, it sends "run:agent" and
   "set:autostart.on" or "set:autostart.off" with the usage counter, for the admin page's Analytics.
 - Le Mans Ultimate's telemetry (PC app, 5 Nov 2026, the owner's choice): a window "Turn on telemetry in Le Mans

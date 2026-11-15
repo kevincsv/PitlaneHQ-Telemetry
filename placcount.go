@@ -62,7 +62,7 @@ type plAccount struct {
 	TwoFactor    bool      `json:"twoFactor,omitempty"` // signs in with an authenticator app too
 	Anon         bool      `json:"anon,omitempty"`      // what you share goes as "Anonymous" (kept with the account)
 	Supporter    bool      `json:"supporter,omitempty"` // has the supporter badge (donates)
-	Founder      bool      `json:"founder,omitempty"`   // has the founding supporter offer ($10 or more in all)
+	Founder      bool      `json:"founder,omitempty"`   // has the founding supporter offer ($3 or more in all)
 	ProUntil     int64     `json:"proUntil,omitempty"`  // when this Pro ends (a trial, an invite month, a subscription), ms; 0 for good
 	SupHidden    bool      `json:"supHidden,omitempty"` // and chose to hide it
 	Pro          bool      `json:"pro,omitempty"`       // has Pitlane HQ Pro (lifetime, a subscription or given by hand)

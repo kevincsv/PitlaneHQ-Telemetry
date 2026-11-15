@@ -15,7 +15,7 @@
     "thanksMonths": 1
   },
   "founding": {
-    "min": 10,
+    "min": 3,
     "off": 50,
     "lifetime": 29.99,
     "months": 2,

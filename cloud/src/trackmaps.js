@@ -63,6 +63,67 @@ export function geoPath(tr) {
   return { x: x.map(r1), y: y.map(r1), g: tr.g.map((v) => Math.round(v * 1e5) / 1e5) };
 }
 
+// ---------- a layout with even points ----------
+// A game that gives its position less often than the lap is recorded (Le Mans Ultimate) leaves the path with points on
+// top of each other and then a gap of 15 m: the map looks made of straight pieces and a share of the lap is not the same
+// share of the road. evenPath answers the same path through the points that really moved, as a smooth curve read at
+// even steps (the same number of points, point 0 where it was), or null when the path is already even.
+export function isUneven(x, y) {
+  const n = x.length; if (n < 60) return false;
+  const d = []; for (let i = 0; i < n - 1; i++) d.push(Math.hypot(x[i + 1] - x[i], y[i + 1] - y[i]));
+  const m = [...d].sort((a, b) => a - b)[d.length >> 1] || 0; if (!(m > 0)) return false;
+  let bad = 0; for (const v of d) if (v < m * 0.35 || v > m * 2.2) bad++;
+  return bad > n * 0.02;
+}
+export function evenPath(x, y) {
+  if (!Array.isArray(x) || !Array.isArray(y) || x.length !== y.length || !isUneven(x, y)) return null;
+  const N = x.length, px = [], py = [];
+  for (let i = 0; i < N; i++) { const k = px.length; if (k && Math.hypot(x[i] - px[k - 1], y[i] - py[k - 1]) < 1.5) continue; px.push(x[i]); py.push(y[i]); }
+  while (px.length > 8 && Math.hypot(px[px.length - 1] - px[0], py[py.length - 1] - py[0]) < 1.5) { px.pop(); py.pop(); }
+  const n = px.length; if (n < 30) return null;
+  const mod = (i) => ((i % n) + n) % n, t = new Float64Array(n + 1);
+  for (let i = 0; i < n; i++) { const j = (i + 1) % n; t[i + 1] = t[i] + Math.hypot(px[j] - px[i], py[j] - py[i]); }
+  const T = t[n], ch = (i) => t[mod(i) + 1] - t[mod(i)], ox = new Array(N), oy = new Array(N);
+  for (let k = 0, i = 0; k < N; k++) {
+    const sK = (k * T) / N; while (i < n - 1 && t[i + 1] <= sK) i++;
+    const h = ch(i) || 1, u = Math.max(0, Math.min(1, (sK - t[i]) / h)), i0 = mod(i - 1), i2 = mod(i + 1), i3 = mod(i + 2), ha = ch(i - 1) + h || 1, hb = h + ch(i + 1) || 1;
+    const u2 = u * u, u3 = u2 * u, h00 = 2 * u3 - 3 * u2 + 1, h10 = u3 - 2 * u2 + u, h01 = -2 * u3 + 3 * u2, h11 = u3 - u2;
+    ox[k] = h00 * px[i] + (h10 * h * (px[i2] - px[i0])) / ha + h01 * px[i2] + (h11 * h * (px[i3] - px[i])) / hb;
+    oy[k] = h00 * py[i] + (h10 * h * (py[i2] - py[i0])) / ha + h01 * py[i2] + (h11 * h * (py[i3] - py[i])) / hb;
+  }
+  // the held position also steps a little to the side: rounded off over about 10 m each way
+  for (let pass = 0; pass < 3; pass++) {
+    const ax = ox.slice(), ay = oy.slice();
+    for (let i = 0; i < N; i++) { const a = (i - 1 + N) % N, b = (i + 1) % N; ox[i] = (ax[a] + 2 * ax[i] + ax[b]) / 4; oy[i] = (ay[a] + 2 * ay[i] + ay[b]) / 4; }
+  }
+  const r1 = (v) => Math.round(v * 10) / 10;
+  return { x: ox.map(r1), y: oy.map(r1) };
+}
+
+// one run: the layouts kept before evenPath existed are looked at once, twenty a run, and the uneven ones written again
+// (what was there is kept in app_state "trackmap_raw:<game>:<track>"; its edges are measured again on the new points)
+const EVEN_STATE = "trackmaps_even";
+export async function evenTrackMaps(env, { per = 20 } = {}) {
+  const st = await env.DB.prepare("SELECT v FROM app_state WHERE k=?1").bind(EVEN_STATE).first().catch(() => null);
+  let state = { done: false, off: 0, fixed: 0 };
+  try { if (st && st.v) state = { ...state, ...JSON.parse(st.v) }; } catch (e) { /* starts again */ }
+  if (state.done) return { checked: 0, fixed: 0, done: true };
+  const rows = (await env.DB.prepare("SELECT game, track_id, pts FROM track_maps ORDER BY game, track_id LIMIT ?1 OFFSET ?2").bind(per, state.off).all()).results || [];
+  let fixed = 0;
+  for (const r of rows) {
+    let q = null; try { q = JSON.parse(r.pts); } catch (e) { q = null; }
+    const ev = q && evenPath(q.x, q.y); if (!ev) continue;
+    const now = Date.now();
+    await env.DB.prepare("INSERT INTO app_state (k, v, at) VALUES (?1, ?2, ?3) ON CONFLICT(k) DO NOTHING").bind("trackmap_raw:" + r.game + ":" + r.track_id, r.pts, now).run();
+    await env.DB.prepare("UPDATE track_maps SET pts=?3 WHERE game=?1 AND track_id=?2").bind(r.game, r.track_id, JSON.stringify(ev)).run();
+    await env.DB.prepare("DELETE FROM track_edges WHERE game=?1 AND track_id=?2").bind(r.game, r.track_id).run().catch(() => {});
+    fixed++;
+  }
+  state = { done: rows.length < per, off: state.off + rows.length, fixed: state.fixed + fixed };
+  await env.DB.prepare("INSERT INTO app_state (k, v, at) VALUES (?1, ?2, ?3) ON CONFLICT(k) DO UPDATE SET v=excluded.v, at=excluded.at").bind(EVEN_STATE, JSON.stringify(state), Date.now()).run();
+  return { checked: rows.length, fixed, done: state.done };
+}
+
 // one run: the layouts without geo not looked at yet (all of them when all is set) take the fastest valid lap of their
 // game and track with a path from the game's position. Answers {checked, rebuilt, left, done}.
 export async function rebuildTrackMaps(env, { all = false } = {}) {
@@ -88,6 +149,7 @@ export async function rebuildTrackMaps(env, { all = false } = {}) {
       let path = null;
       try { path = geoPath(JSON.parse(await openData(env, l.trace))); } catch (e) { path = null; }
       if (!path) continue;
+      const ev = evenPath(path.x, path.y); if (ev) { path.x = ev.x; path.y = ev.y; }
       await env.DB.prepare("UPDATE track_maps SET n=?3, pts=?4, time=?5, geo=?6, created=?7 WHERE game=?1 AND track_id=?2 AND geo IS NULL")
         .bind(t.game, t.track_id, path.x.length, JSON.stringify({ x: path.x, y: path.y }), l.time, JSON.stringify(path.g), Date.now()).run();
       rebuilt++;

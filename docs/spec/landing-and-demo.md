@@ -9,12 +9,19 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   (`web/dist/pitwall-tour.js`, COMPANION and not signed in): the landing, the "Boxes" design 1 (the owner's choice,
   built exactly as its mockup). The app header carries real buttons (Pricing, which scrolls to the Pricing section, Records, Leagues, the language, Downloads in
   amber; at phone width only their icons, the version badge hidden). The hero is the tagline ("Telemetry, coach and
-  overlays for your laps", the eyebrow "iRacing · Le Mans Ultimate (beta)"), one sentence, Create account, Download for
+  overlays for your laps", the eyebrow "Le Mans Ultimate · iRacing", Le Mans Ultimate first since Nov 15 2026), one sentence, Create account, Download for
   Windows, Android, the Microsoft Store (a link to its listing, apps.microsoft.com/detail/9P3642QCS9ZG, `MS_STORE` in
   pitwall-tour.js, downloads.js and index.html, also on `/downloads` beside the Windows download and in the app's
   Download grid) and a Steam "Coming soon" badge that is not a link (no date) and "Run an iRacing or LMU league? Post it for free", beside the "me" view's own sign-in (or create
   account) panel moved there as a card (`#tour` after `#meBody`, mounted by `signWall` while the wall is up; its title
-  and welcome hidden). Under it "See it from the inside": one app window in a Windows 11 frame (its icon and name,
+  and welcome hidden). Under the buttons a note that the PC app can be tried for three sessions without an account,
+  then sign in or create a free account to keep every feature, everything driven kept (the trial, `tryout.go`). Then
+  "Just arrived" (`NEW`): the full-screen track map with its chase view and the Engineer view (`landing/new-*.webp`,
+  taken from the app, no demo banner and no admin button), the coach (`landing/<lang>/coach-1440.webp`) and the trial
+  without an account; "Le Mans Ultimate" (`LMU`): four cards that open its lap times, multiclass, virtual energy and
+  coach pages. Pricing is followed by "Coming next", the phone and tablet dashboard app ("Coming soon", no store or
+  platform named, no date), and the steps are install the agent (three sessions need no account), drive, create the
+  free account. Under them "See it from the inside": one app window in a Windows 11 frame (its icon and name,
   minimise, maximise, close; never a browser bar or an address) with tabs on its left that change what it shows (Coach,
   Analyzer, Races, Your laps and Leaderboards are screenshots, `landing/<lang>/*.jpg`; Live telemetry is a canvas that
   plays two real laps of the owner's account in a loop, `landing/live-lap.json` (Super Formula SF23 at Spa, lap 5 against

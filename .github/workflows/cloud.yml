@@ -155,6 +155,8 @@ jobs:
           npx wrangler d1 migrations apply DB --remote
           # the downloads bucket (the Windows and phone builds upload there); needs Account · Workers R2 Storage · Edit on the token
           npx wrangler r2 bucket create pitlanehq-downloads 2>/dev/null || true
+          # the laps' telemetry (cloud/src/tracestore.js)
+          npx wrangler r2 bucket create pitlanehq-telemetry 2>/dev/null || true
           if [ -n "$SEASON_UPLOADERS" ]; then sed -i "s/^SEASON_UPLOADERS = \".*\"/SEASON_UPLOADERS = \"$SEASON_UPLOADERS\"/" wrangler.toml; fi
           if [ -n "$ADMINS" ]; then sed -i "s/^ADMINS = \".*\"/ADMINS = \"$ADMINS\"/" wrangler.toml; fi
           # your own domain (for example pitlanehq.com), once it is in your Cloudflare account, and its www.

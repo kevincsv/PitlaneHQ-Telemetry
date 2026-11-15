@@ -9,6 +9,11 @@ workers_dev = true
 binding = "DL"
 bucket_name = "pitlanehq-downloads"
 
+# the laps' telemetry, gzipped and sealed, one object a lap (src/tracestore.js); the database keeps only where it is
+[[r2_buckets]]
+binding = "TRACES"
+bucket_name = "pitlanehq-telemetry"
+
 [[d1_databases]]
 binding = "DB"
 database_name = "pitlanehq"

@@ -2,6 +2,7 @@
 // the second-factor secret): sealed at rest with AES-GCM under DATA_KEY, a secret only the
 // Worker has (`npx wrangler secret put DATA_KEY`). A database dump alone reads nothing.
 // Without DATA_KEY everything is stored as before (plain), so an old server keeps working.
+// A lap's telemetry can live in the telemetry bucket instead of the database (tracestore.js): gzipped, sealed the same way.
 // Also the time-based one-time codes (TOTP, RFC 6238) of the authenticator apps.
 
 const enc = new TextEncoder(), dec = new TextDecoder();
@@ -31,14 +32,63 @@ export async function sealData(env, s) {
   return "enc:" + b64(out);
 }
 
-/** Opens what sealData sealed; a plain value (older rows, or no DATA_KEY) comes back as it is. */
+/** Opens what sealData sealed; a plain value (older rows, or no DATA_KEY) comes back as it is. A lap's telemetry kept
+ *  in the telemetry bucket ("r2:" + its key, tracestore.js) is read from there, so every reader opens both. */
 export async function openData(env, s) {
-  if (typeof s !== "string" || !s.startsWith("enc:")) return s;
+  if (typeof s !== "string") return s;
+  if (s.startsWith("r2:")) return openStored(env, s);
+  if (!s.startsWith("enc:")) return s;
   const key = await dataKey(env);
   if (!key) throw new Error("DATA_KEY is not set on this server: sealed data cannot be read");
   const all = unb64(s.slice(4));
   const pt = await crypto.subtle.decrypt({ name: "AES-GCM", iv: all.subarray(0, 12), additionalData: enc.encode("trackiq-data") }, key, all.subarray(12));
   return dec.decode(pt);
+}
+
+// ---------- telemetry in the bucket (env.TRACES): gzip, then sealed ----------
+const gzip = async (bytes) => new Uint8Array(await new Response(new Blob([bytes]).stream().pipeThrough(new CompressionStream("gzip"))).arrayBuffer());
+const gunzip = async (bytes) => new Uint8Array(await new Response(new Blob([bytes]).stream().pipeThrough(new DecompressionStream("gzip"))).arrayBuffer());
+
+/** A string as the bucket keeps it: one byte saying how (1 sealed, 0 not: a server without DATA_KEY), then the
+ *  gzipped text, sealed as sealData seals (iv + ciphertext) when the server has its key. */
+export async function packData(env, s) {
+  const z = await gzip(enc.encode(String(s)));
+  const key = await dataKey(env);
+  if (!key) { const out = new Uint8Array(1 + z.byteLength); out.set(z, 1); return out; }
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const ct = new Uint8Array(await crypto.subtle.encrypt({ name: "AES-GCM", iv, additionalData: enc.encode("trackiq-data") }, key, z));
+  const out = new Uint8Array(13 + ct.byteLength);
+  out[0] = 1; out.set(iv, 1); out.set(ct, 13);
+  return out;
+}
+
+/** The string packData packed. */
+export async function unpackData(env, bytes) {
+  const b = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes);
+  if (b[0] === 0) return dec.decode(await gunzip(b.subarray(1)));
+  if (b[0] !== 1) throw new Error("unknown telemetry format");
+  const key = await dataKey(env);
+  if (!key) throw new Error("DATA_KEY is not set on this server: sealed data cannot be read");
+  const z = await crypto.subtle.decrypt({ name: "AES-GCM", iv: b.subarray(1, 13), additionalData: enc.encode("trackiq-data") }, key, b.subarray(13));
+  return dec.decode(await gunzip(new Uint8Array(z)));
+}
+
+/** The bytes of a telemetry object ("r2:" + key), or null when the bucket has none of that key. A read that fails
+ *  is tried again (twice): a reader must not take a busy moment for a lap without telemetry. */
+export async function storedBytes(env, ptr) {
+  if (!env.TRACES) throw new Error("this server has no telemetry bucket (TRACES)");
+  let last;
+  for (let i = 0; i < 3; i++) {
+    try { const o = await env.TRACES.get(String(ptr).slice(3)); return o ? new Uint8Array(await o.arrayBuffer()) : null; }
+    catch (e) { last = e; }
+  }
+  throw last;
+}
+
+async function openStored(env, ptr) {
+  const b = await storedBytes(env, ptr);
+  if (!b) throw new Error("telemetry not found");
+  return unpackData(env, b);
 }
 
 // ---------- TOTP ----------

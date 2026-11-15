@@ -16,7 +16,8 @@ import { lemonWebhook } from "./lemon.js";
 import { stripeWebhook } from "./stripe.js";
 import PLANS from "../../license_plans.json";
 import { news } from "./news.js";
-import { sealData, openData } from "./crypt.js";
+import { openData } from "./crypt.js";
+import { sealTrace, dropTraces, lapTracePtrs, moveTraces } from "./tracestore.js";
 import { traceHole } from "./laphealth.js";
 import { gameOf } from "./games.js";
 import { noteCar } from "./carfamily.js";
@@ -136,7 +137,7 @@ async function addLap(env, sessionId, l) {
   if (!idOk(sessionId) || !idOk(l.id) || !num(l.n) || !num(l.time) || l.time <= 0 || l.time > 3600) return "lap needs id, n and time";
   const plain = l.trace ? JSON.stringify(l.trace) : null;
   if (plain && plain.length > 900000) return "lap trace too large";
-  const trace = await sealData(env, plain); // telemetry is sealed at rest
+  // telemetry is sealed at rest, in the telemetry bucket or in the row (tracestore.js): only once the lap is really kept
   // the same lap read again from the game's telemetry file (repair): it replaces the account's copy, not valid, only
   // when that copy has a hole the live recording left (never a lap the driver really drove off the track)
   if (l.repair === true) {
@@ -147,18 +148,28 @@ async function addLap(env, sessionId, l) {
     try { tr = old.trace ? JSON.parse(await openData(env, old.trace)) : null; } catch (e) { tr = null; }
     if (!traceHole(tr) || l.valid === false || !plain) return null;
     const sectors = Array.isArray(l.sectors) ? JSON.stringify(l.sectors.filter((x) => typeof x === "number").slice(0, 40)) : null;
+    const trace = await sealTrace(env, plain, "l");
     await env.DB.prepare("UPDATE laps SET trace=?2, valid=1, sectors=COALESCE(?3, sectors), inc=?4 WHERE id=?1").bind(old.id, trace, sectors, Math.max(0, Math.round(num(l.inc) || 0))).run();
+    await dropTraces(env, [old.trace]); // the copy with the hole
     await env.DB.prepare(SESSION_SUMS).bind(sessionId).run().catch(() => {});
     return null;
   }
   const sectors = Array.isArray(l.sectors) ? JSON.stringify(l.sectors.filter((x) => typeof x === "number").slice(0, 40)) : null;
-  await env.DB.batch([
+  // a lap the account has already (the PC sends one again when it did not hear the answer) is left as it is
+  if (await env.DB.prepare("SELECT 1 FROM laps WHERE id=?1").bind(l.id).first().catch(() => null)) {
+    await env.DB.prepare(SESSION_SUMS).bind(sessionId).run();
+    return null;
+  }
+  const trace = await sealTrace(env, plain, "l");
+  const done = await env.DB.batch([
     env.DB.prepare(
       `INSERT INTO laps (id, session_id, n, time, valid, fuel, vmax, sectors, trace, created, inc, drv) VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12)
        ON CONFLICT(id) DO NOTHING`
     ).bind(l.id, sessionId, Math.round(l.n), l.time, l.valid === false ? 0 : 1, num(l.fuel), num(l.vmax), sectors, trace, Date.now(), Math.max(0, Math.round(num(l.inc) || 0)), lapDrv(l)),
     env.DB.prepare(SESSION_SUMS).bind(sessionId),
   ]);
+  // the same lap came in twice at once: the row kept the first, this telemetry has no row
+  if (done && done[0] && done[0].meta && done[0].meta.changes === 0) await dropTraces(env, [trace]);
   return null;
 }
 
@@ -340,7 +351,7 @@ async function api(req, env, url, ctx) {
     if (!s || role === "viewer" || (own && s.uploader !== own)) return err("not found", 404);
     const b = await req.json().catch(() => ({}));
     const laps = Array.isArray(b.laps) ? b.laps.slice(0, 200) : [];
-    const stmts = [];
+    const stmts = [], replaced = [];
     const have = (await env.DB.prepare("SELECT n, trace FROM laps WHERE session_id=?1 AND COALESCE(inc,0)=0").bind(sid).all()).results || [];
     const byN = new Map(have.map((r) => [r.n, r]));
     for (const l of laps) {
@@ -348,18 +359,23 @@ async function api(req, env, url, ctx) {
       const at = Array.isArray(l.at) ? l.at.filter((v) => typeof v === "number" && isFinite(v)).slice(0, 160) : [];
       if (!n || !byN.has(n)) continue;
       const ks = Array.isArray(l.k) ? l.k.filter((v) => ["off", "loss", "light", "contact"].includes(v)).slice(0, 80) : [];
-      let trace = byN.get(n).trace;
+      let trace = byN.get(n).trace, swap = null;
       if (trace) {
         try {
           const t = JSON.parse(await openData(env, trace));
           t.inc = at;
           t.incK = ks;
-          trace = await sealData(env, JSON.stringify(t));
+          const was = trace;
+          trace = await sealTrace(env, JSON.stringify(t), "l");
+          swap = [was, trace];
         } catch (e) { /* an unreadable trace keeps what it has */ }
       }
       stmts.push(env.DB.prepare("UPDATE laps SET inc=?3, trace=?4 WHERE session_id=?1 AND n=?2 AND COALESCE(inc,0)=0").bind(sid, n, inc, trace));
+      replaced.push(swap);
     }
-    if (stmts.length) await env.DB.batch(stmts);
+    const done = stmts.length ? await env.DB.batch(stmts) : [];
+    // the telemetry written again: the object of before leaves the bucket, or the new one when its row did not change
+    await dropTraces(env, replaced.map((sw, i) => sw && sw[done && done[i] && done[i].meta && done[i].meta.changes === 0 ? 1 : 0]));
     return json({ ok: true, laps: stmts.length });
   }
 
@@ -381,7 +397,9 @@ async function api(req, env, url, ctx) {
     if (m === "DELETE") {
       const own = await env.DB.prepare("SELECT uploader FROM sessions WHERE id=?1").bind(mm[1]).first();
       if (role === "viewer" || ((role === "member" || role === "account") && (!own || own.uploader !== me.name))) return err("you can only delete your own sessions", 403);
+      const gone = await lapTracePtrs(env, "l.session_id=?1", mm[1]);
       await env.DB.batch([env.DB.prepare("DELETE FROM laps WHERE session_id=?1").bind(mm[1]), env.DB.prepare("DELETE FROM sessions WHERE id=?1").bind(mm[1])]);
+      await dropTraces(env, gone); // its telemetry leaves the bucket with it
       return json({ ok: true });
     }
     const sid = decodeURIComponent(mm[1]);
@@ -390,8 +408,10 @@ async function api(req, env, url, ctx) {
     // ?traces=1: every lap with its telemetry in one answer (the app's analyzer), instead of one call per lap
     const withTraces = url.searchParams.get("traces") === "1";
     const { results } = await env.DB.prepare(`SELECT id, n, time, valid, fuel, vmax, sectors, inc, drv${withTraces ? ", trace" : ""} FROM laps WHERE session_id=?1 ORDER BY n`).bind(sid).all();
-    const laps = [];
-    for (const l of results) laps.push({ ...l, sectors: l.sectors ? JSON.parse(l.sectors) : null, ...(withTraces ? { trace: l.trace ? JSON.parse(await openData(env, l.trace)) : null } : {}) });
+    // the telemetry of the laps, six at a time (the bucket's reads run side by side)
+    const traces = new Array(results.length).fill(null);
+    if (withTraces) for (let i = 0; i < results.length; i += 6) await Promise.all(results.slice(i, i + 6).map(async (l, j) => { try { traces[i + j] = l.trace ? JSON.parse(await openData(env, l.trace)) : null; } catch (e) { traces[i + j] = null; } }));
+    const laps = results.map((l, i) => ({ ...l, sectors: l.sectors ? JSON.parse(l.sectors) : null, ...(withTraces ? { trace: traces[i] } : {}) }));
     // another driver's session (an admin opening it): who it is, so the analyzer never calls their laps "my best"
     let who;
     if (me && s.uploader !== me.name && String(s.uploader || "").startsWith("acct:")) {
@@ -564,6 +584,8 @@ export default {
     // the coach learns from every session: the server's own coach over the sessions nobody opened it on, and the answers
     // the next sessions give to every tip (coachlearn.js)
     ctx.waitUntil(shadowRun(env).then(() => answerRun(env)).catch(() => {}));
+    // the laps of before go to the telemetry bucket, some each run, once the database says so (tracestore.js)
+    ctx.waitUntil(moveTraces(env, { limit: 120, ms: 25000, daily }).catch(() => {}));
     if (hourly) { ctx.waitUntil(fillCats(env).catch(() => {})); ctx.waitUntil(fillSectors(env).catch(() => {})); ctx.waitUntil(pruneUsage(env).catch(() => {})); ctx.waitUntil(pruneSeen(env).catch(() => {})); ctx.waitUntil(refCheck(env).catch(() => {})); }
     if (daily) { ctx.waitUntil(buildOvalKinds(env).catch(() => {})); ctx.waitUntil(fixLapTimes(env).catch(() => {})); ctx.waitUntil(repairImpossibleShares(env).catch(() => {})); ctx.waitUntil(env.DB.prepare(ALL_SESSION_SUMS).run().catch(() => {})); ctx.waitUntil(env.DB.prepare(FUEL_SUMS).bind(fuelSince(at.getTime())).run().catch(() => {})); } ctx.waitUntil(resharePending(env).catch(() => {})); ctx.waitUntil(rebuildTrackMaps(env).catch(() => {})); ctx.waitUntil(rebuildEdges(env).catch(() => {})); ctx.waitUntil(scanLeagues(env).catch(() => {})); ctx.waitUntil(prunePresence(env).catch(() => {}));
     wait(Promise.allSettled(all).then(() => flushUsage(raw, true)));

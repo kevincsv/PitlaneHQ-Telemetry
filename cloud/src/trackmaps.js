@@ -81,7 +81,7 @@ export async function rebuildTrackMaps(env, { all = false } = {}) {
     // the session's laps by its track (sessions_combo_ids), only the ones whose trace can hold the game's position
     const laps = (await env.DB.prepare(
       `SELECT a.trace, a.time FROM sessions s JOIN laps a ON a.session_id=s.id
-       WHERE s.track_id=?1 AND s.game=?2 AND a.valid=1 AND a.trace IS NOT NULL AND (instr(a.trace,'"g":[')>0 OR substr(a.trace,1,4)='enc:')
+       WHERE s.track_id=?1 AND s.game=?2 AND a.valid=1 AND a.trace IS NOT NULL AND (instr(a.trace,'"g":[')>0 OR substr(a.trace,1,4)='enc:' OR substr(a.trace,1,3)='r2:')
          AND COALESCE(s.kind,'') NOT LIKE '%test%' ORDER BY a.time LIMIT ${PER_TRACK}`
     ).bind(t.track_id, t.game).all().catch(() => ({ results: [] }))).results || [];
     for (const l of laps) {
@@ -184,7 +184,7 @@ export async function rebuildEdges(env) {
     if (!lay) continue;
     const laps = (await env.DB.prepare(
       `SELECT a.trace FROM sessions s JOIN laps a ON a.session_id=s.id
-       WHERE s.track_id=?1 AND s.game=?2 AND a.valid=1 AND a.trace IS NOT NULL AND (instr(a.trace,'"g":[')>0 OR substr(a.trace,1,4)='enc:')
+       WHERE s.track_id=?1 AND s.game=?2 AND a.valid=1 AND a.trace IS NOT NULL AND (instr(a.trace,'"g":[')>0 OR substr(a.trace,1,4)='enc:' OR substr(a.trace,1,3)='r2:')
        ORDER BY a.id DESC LIMIT ${EDGE_LAPS * 2}`
     ).bind(t.track_id, t.game).all().catch(() => ({ results: [] }))).results || [];
     const offs = [];

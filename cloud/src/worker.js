@@ -572,10 +572,18 @@ function harden(r) {
   return new Response(r.body, { status: r.status, statusText: r.statusText, headers: h });
 }
 
+const MOVE_CRON = "* * * * *"; // wrangler.toml's second timed job
 export default {
   // every 10 minutes: the models of the cars and tracks that got new laps
   async scheduled(ev, env, ctx) {
     if (isBeta(env)) return; // the test version (beta.js): the production Worker runs the timed jobs, never twice
+    // every minute, by itself: the laps of before go to the telemetry bucket, once the database says so (tracestore.js).
+    // Nothing else runs then, so the move has the whole run; once every lap is over it reads one row and stops
+    if (ev.cron === MOVE_CRON) {
+      const db = env.DB;
+      await moveTraces({ ...env, DB: countingDB(db, "cron 1 min") }, { limit: 400, ms: 45000, daily: true }).catch(() => {});
+      return flushUsage(db, true);
+    }
     // the repairs of old data once an hour (the first run of each hour), the rest every ten minutes
     // the database's reads per day are limited: the repairs that read the whole laps table (and find nothing almost
     // always: the uploads repair their own laps) run once a day, at 03:00 UTC
@@ -597,8 +605,6 @@ export default {
     // the coach learns from every session: the server's own coach over the sessions nobody opened it on, and the answers
     // the next sessions give to every tip (coachlearn.js)
     ctx.waitUntil(shadowRun(env).then(() => answerRun(env)).catch(() => {}));
-    // the laps of before go to the telemetry bucket, some each run, once the database says so (tracestore.js)
-    ctx.waitUntil(moveTraces(env, { limit: 120, ms: 25000, daily }).catch(() => {}));
     if (hourly) { ctx.waitUntil(fillCats(env).catch(() => {})); ctx.waitUntil(fillSectors(env).catch(() => {})); ctx.waitUntil(pruneUsage(env).catch(() => {})); ctx.waitUntil(pruneSeen(env).catch(() => {})); ctx.waitUntil(refCheck(env).catch(() => {})); }
     if (daily) { ctx.waitUntil(weeklyMetrics(env).catch(() => {})); ctx.waitUntil(anonPrune(env).catch(() => {})); ctx.waitUntil(buildOvalKinds(env).catch(() => {})); ctx.waitUntil(fixLapTimes(env).catch(() => {})); ctx.waitUntil(repairImpossibleShares(env).catch(() => {})); ctx.waitUntil(env.DB.prepare(ALL_SESSION_SUMS).run().catch(() => {})); ctx.waitUntil(env.DB.prepare(FUEL_SUMS).bind(fuelSince(at.getTime())).run().catch(() => {})); } ctx.waitUntil(resharePending(env).catch(() => {})); ctx.waitUntil(rebuildTrackMaps(env).catch(() => {})); ctx.waitUntil(evenTrackMaps(env).catch(() => {})); ctx.waitUntil(rebuildEdges(env).catch(() => {})); ctx.waitUntil(scanLeagues(env).catch(() => {})); ctx.waitUntil(prunePresence(env).catch(() => {}));
     wait(Promise.allSettled(all).then(() => flushUsage(raw, true)));

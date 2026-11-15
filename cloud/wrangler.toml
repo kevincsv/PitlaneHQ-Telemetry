@@ -70,6 +70,7 @@ type = "Text"
 globs = ["**/*.html"]
 fallthrough = false
 
-# the community model learns the cars and tracks that got new laps
+# every 10 minutes the community model learns the cars and tracks that got new laps (and the repairs, hourly and daily);
+# every minute the laps of before move to the telemetry bucket (src/tracestore.js), nothing else
 [triggers]
-crons = ["*/10 * * * *"]
+crons = ["*/10 * * * *", "* * * * *"]

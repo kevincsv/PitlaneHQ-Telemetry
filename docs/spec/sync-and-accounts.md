@@ -23,8 +23,9 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   object belongs to one row and is never rewritten: a lap shared to the leaderboard gets its own copy (`ownTrace`, key
   `c/…`), a lap's own (`l/…`) leaves the bucket when its session or account is deleted, when the lap is repaired and
   when its incidents are written again (`dropTraces`); a leaderboard lap's object is never deleted (an undone driver
-  link puts rows back with their telemetry). The laps of before move over in the 10-minute job (`moveTraces`, 120 laps
-  a run, its place in `app_state` `trace_move`): each one is read back from the bucket and must be the same text
+  link puts rows back with their telemetry). The laps of before move over in a timed job of their own, every minute (`moveTraces`, up to
+  400 laps and 45 seconds a run, its place in `app_state` `trace_move`; sharing the 10-minute job with the model's
+  rebuild moved about 40 a run): each one is read back from the bucket and must be the same text
   before its row changes, the row changes only if it still holds what was read, and one that does not open keeps what
   it has. A server without the bucket keeps everything in the column as before.
 - Signing in with an email that has no account says so and offers to create it (`no_account`).

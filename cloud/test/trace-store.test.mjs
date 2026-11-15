@@ -211,4 +211,13 @@ assert.equal((await call("POST", "/api/upload", { session: { ...up.session, id: 
 assert.match(db.prepare("SELECT trace FROM laps WHERE id='sess-w2-1'").get().trace, /^enc:/, "off: in the row");
 assert.deepEqual((await call("GET", "/api/sessions/sess-w2?traces=1")).j.laps[0].trace, JSON.parse(plain));
 assert.equal(objs.size, 0);
+// the move's own timed job, every minute: it moves the laps of before and runs nothing else
+setOn(true);
+db.exec("DELETE FROM app_state WHERE k='trace_move'");
+const usage = () => db.prepare("SELECT route FROM d1_usage").all().map((r) => r.route).join();
+await worker.scheduled({ cron: "* * * * *", scheduledTime: Date.now() }, wenv, { waitUntil: () => { throw new Error("the minute job starts nothing else"); } });
+assert.match(db.prepare("SELECT trace FROM laps WHERE id='sess-w2-1'").get().trace, /^r2:l\//, "the lap sealed in its row a moment ago is in the bucket");
+assert.deepEqual(JSON.parse(await openData(env, db.prepare("SELECT trace FROM laps WHERE id='sess-w2-1'").get().trace)), JSON.parse(plain), "the same telemetry");
+assert.ok(usage().split(",").includes("cron 1 min"), "its reads counted under its own name");
+assert.equal((await worker.scheduled({ cron: "* * * * *" }, { ...wenv, BETA: "1" }, {})), undefined, "never on the test version");
 console.log("trace store: ok");

@@ -111,11 +111,12 @@ export async function moveTraces(env, opts = {}) {
   const limit = opts.limit || 60, until = Date.now() + (opts.ms || 20000), now = opts.now || Date.now();
   const st = await stateOf(env);
   const out = { on: true, moved: 0, bad: 0, skipped: 0 };
-  let left = limit;
+  let left = limit, looked = false;
   for (const table of Object.keys(TABLES)) {
     const t = st[table] || (st[table] = { at: 0, moved: 0, bad: 0 });
     if (t.done && !(opts.daily && now - t.done > 20 * 3600e3)) continue;
     if (t.done) { t.done = 0; t.at = 0; }
+    looked = true;
     while (left > 0 && Date.now() < until) {
       const n = Math.min(left, 10); // ten rows a read: an answer of half a megabyte at most
       const rows = (await env.DB.prepare(`SELECT rowid AS rid, trace FROM ${table} WHERE rowid>?1 AND trace IS NOT NULL AND substr(trace,1,3)<>'r2:' ORDER BY rowid LIMIT ?2`).bind(t.at, n).all()).results || [];
@@ -129,6 +130,6 @@ export async function moveTraces(env, opts = {}) {
     }
     if (left <= 0 || Date.now() >= until) break;
   }
-  await saveState(env, st).catch(() => {});
+  if (looked) await saveState(env, st).catch(() => {}); // both tables through: nothing to write, run after run
   return out;
 }

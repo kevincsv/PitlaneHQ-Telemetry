@@ -33,21 +33,24 @@ const usage = [
   u("b", "2026-10-27", "view:home", "web"), u("c", "2026-11-02", "view:home"), u("c", "2026-11-05", "ov:relative", "pc", 30),
   u("t", "2026-10-26", "view:home"), u("t", "2026-11-04", "view:home"), u("old", "2026-11-10", "run:agent"), u("old", "2026-11-11", "view:home"),
 ];
-const sessions = [s("a", "2026-10-26", "lmu", 1), s("c", "2026-11-05", "iracing"), s("t", "2026-10-26", "lmu", 1), s("old", "2026-11-11", "iracing", 1)];
+const sessions = [s("a", "2026-10-26", "lmu", 1), s("a", "2026-11-03", "lmu"), s("c", "2026-11-05", "iracing"), s("t", "2026-10-26", "lmu", 1), s("old", "2026-11-11", "iracing", 1)];
 const built = buildMetrics({ accounts, usage, sessions, visits: [{ day: "2026-10-26", src: "chatgpt", n: 10 }, { day: "2026-10-28", src: "reddit-lmu", n: 4 }, { day: "2026-11-10", src: "google", n: 7 }],
   pc: [{ day: "2026-10-27", kind: "download", n: 5 }, { day: "2026-10-27", kind: "uninstall", n: 1 }], orders: [{ at: T("2026-11-03"), amount: 500, currency: "USD" }],
   referrals: [{ created: T("2026-10-28"), state: "given", done: T("2026-11-05") }], events: [{ at: T("2026-11-04"), name: "trial_started" }],
   anon: [{ day: "2026-11-12", uploader: "dev:1", n: 3 }, { day: "2026-11-13", uploader: "dev:1", n: 1 }], from: "2026-10-26", today: "2026-11-15", supporters: 2 });
 const val = (week, metric, split = "", aud = 0) => (built.metrics.find((x) => x.week === week && x.aud === aud && x.metric === metric && x.split === split) || { value: 0 }).value;
-assert.equal(val("2026-10-26", "users"), 2, "the tester is not one of the drivers");
-assert.equal(val("2026-10-26", "users", "", 1), 3, "everyone counts the tester");
+assert.equal(val("2026-10-26", "users"), 1, "only who drove is a weekly driver, and the tester is not one of the drivers");
+assert.equal(val("2026-10-26", "users", "", 1), 2, "everyone counts the tester");
+assert.equal(val("2026-10-26", "opened"), 2, "opening the app is a second number");
+assert.equal(val("2026-10-26", "opened", "", 1), 3);
 assert.equal(val("2026-10-26", "drove"), 1);
 assert.equal(val("2026-10-26", "drove", "game:lmu"), 1);
 assert.equal(val("2026-10-26", "raced"), 1);
 assert.equal(val("2026-10-26", "new"), 2);
 assert.equal(val("2026-10-26", "new", "src:chatgpt"), 1);
 assert.equal(val("2026-10-26", "used", "dev:web"), 1);
-assert.equal(val("2026-11-09", "users"), 1, "the agent running is not opening a screen, the day after is");
+assert.equal(val("2026-11-09", "users"), 1);
+assert.equal(val("2026-11-09", "opened"), 1, "the agent running is not opening a screen, the day after is");
 assert.equal(val("2026-11-09", "agent"), 1);
 assert.equal(val("2026-11-09", "users_bg"), 1);
 assert.equal(val("2026-10-26", "visits"), 14);
@@ -67,7 +70,8 @@ assert.equal(val("2026-10-26", "kn:act:pro_badge.race_fuel"), 2);
 // the sign-up week
 assert.equal(val("2026-10-26", "c:n"), 2);
 assert.equal(val("2026-10-26", "c:mature"), 2);
-assert.equal(val("2026-10-26", "c:kept"), 1, "a came back on day 8, b never did");
+assert.equal(val("2026-10-26", "c:kept"), 1, "a drove again on day 8, b never did");
+assert.equal(val("2026-10-26", "c:kept_open"), 1);
 assert.equal(val("2026-10-26", "c:up2"), 1);
 assert.equal(val("2026-10-26", "c:up7"), 1);
 assert.equal(val("2026-10-26", "c:kept", "src:chatgpt"), 1);
@@ -104,13 +108,22 @@ const weeks = weeksBetween("2026-10-26", "2026-11-15");
 const ans = metricsAnswer({ rows: built.metrics.filter((x) => x.aud === 0), cohorts: built.cohorts.filter((x) => x.aud === 0), weeks, today: "2026-11-15", links: [{ tag: "reddit-lmu", name: "LMU post", place: "r/LeMansUltimateWEC" }, { tag: "yt-clip", name: "Clip", place: "YouTube" }] });
 assert.deepEqual(ans.monday.map((x) => x.k), ["users", "new", "kept", "up7", "raced", "visits_day", "supporters"], "the seven Monday numbers");
 const mon = (k) => ans.monday.find((x) => x.k === k);
-assert.deepEqual(mon("users").v, [2, 2, 1]);
+assert.deepEqual(mon("users").v, [1, 2, 1]);
+assert.deepEqual(mon("users").open, [2, 2, 1]);
 assert.deepEqual(mon("kept").v, [50, null, null], "a week with no account old enough has no share yet");
+assert.deepEqual(mon("kept").open, [50, null, null]);
 assert.deepEqual(mon("up7").v, [50, 100, null]);
 assert.deepEqual(mon("raced").share, [100, 0, 100]);
 assert.equal(mon("visits_day").v[0], 2);
 assert.equal(mon("visits_day").v[2], 1, "the week it is divides by its days so far");
 assert.deepEqual(mon("users").t, TARGETS.t.users);
+// coming back to look, without driving, is not staying: only the second number counts it
+{
+  const b2 = buildMetrics({ accounts: [{ id: "x", created: T("2026-10-26"), src: "direct", staff: false }], usage: [u("x", "2026-10-26", "view:home"), u("x", "2026-11-03", "view:laps")], sessions: [s("x", "2026-10-26", "lmu")], from: "2026-10-26", today: "2026-11-15" });
+  const v2 = (w, m) => (b2.metrics.find((r) => r.week === w && r.aud === 0 && r.metric === m && r.split === "") || { value: 0 }).value;
+  assert.equal(v2("2026-10-26", "c:kept"), 0); assert.equal(v2("2026-10-26", "c:kept_open"), 1);
+  assert.equal(v2("2026-11-02", "users"), 0); assert.equal(v2("2026-11-02", "opened"), 1);
+}
 const raced = ans.stay.find((x) => x.k === "raced");
 assert.deepEqual([raced.n, raced.kept, raced.rate, raced.restN, raced.restKept, raced.restRate], [1, 1, 100, 1, 0, 0]);
 assert.equal(ans.sources[0].src, "chatgpt", "the source whose drivers stayed comes first");
@@ -119,7 +132,7 @@ assert.ok(ans.sources.find((x) => x.src === "yt-clip"), "a link nobody used yet 
 assert.deepEqual(ans.steps.rows.find((x) => x.k === "drove").w7, [1, 1, 0]);
 
 // what is written
-const have = [{ week: "2026-10-26", aud: 0, metric: "users", split: "", value: 2 }, { week: "2026-10-26", aud: 0, metric: "new", split: "", value: 1 }];
+const have = [{ week: "2026-10-26", aud: 0, metric: "users", split: "", value: 1 }, { week: "2026-10-26", aud: 0, metric: "new", split: "", value: 1 }];
 const ch = changedRows(built.metrics, have, metricKey, sameMetric);
 assert.ok(!ch.find((x) => metricKey(x) === "2026-10-26|0|users|"), "a number that did not move is not written again");
 assert.ok(ch.find((x) => metricKey(x) === "2026-10-26|0|new|"));
@@ -155,8 +168,9 @@ const now = T("2026-11-15", 3);
 const r1 = await weeklyMetrics(env, { now, staff: (a) => a.id === "t" });
 assert.ok(r1.wrote > 50, "the first run writes every row");
 const row = (week, metric, split = "", aud = 0) => (db.prepare("SELECT value FROM metrics_weeks WHERE week=? AND aud=? AND metric=? AND split=?").get(week, aud, metric, split) || {}).value;
-assert.equal(row("2026-10-26", "users"), 2);
-assert.equal(row("2026-10-26", "users", "", 1), 3);
+assert.equal(row("2026-10-26", "users"), 1);
+assert.equal(row("2026-10-26", "users", "", 1), 2);
+assert.equal(row("2026-10-26", "opened"), 2);
 assert.equal(row("2026-10-26", "c:kept"), 1);
 assert.equal(row("2026-11-09", "anon_pcs"), 1);
 assert.equal(db.prepare("SELECT active FROM cohort_weeks WHERE week='2026-10-26' AND aud=0 AND split='' AND wk=1").get().active, 1);
@@ -166,7 +180,8 @@ assert.equal(r2.wrote, 0, "a second run with nothing new writes nothing");
 db.prepare("DELETE FROM sessions WHERE uploader='acct:c'").run();
 const r3 = await weeklyMetrics(env, { now, staff: (a) => a.id === "t" });
 assert.ok(r3.wrote > 0);
-assert.equal(row("2026-11-02", "drove"), 0);
+assert.equal(row("2026-11-02", "drove", "game:iracing"), 0);
+assert.equal(row("2026-11-02", "users"), 1, "a still drove that week");
 assert.equal(row("2026-11-02", "c:up7"), 0);
 const all = await weeklyMetrics(env, { now, all: true, staff: () => false });
 assert.equal(all.from, "2026-08-31", "the backfill starts at the first account or usage, a Monday");

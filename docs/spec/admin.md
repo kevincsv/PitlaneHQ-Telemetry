@@ -118,10 +118,13 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   part in `metricslib.js`, migration 0105 `metrics_weeks`, `cohort_weeks`, `links`, `events`). The words mean one thing
   everywhere: a week is Monday to Sunday, UTC; used it is opening a screen of an app that day (a usage row that is not
   the agent's own `ov:`, `ovrace:`, `run:`, `set:`); drove is uploading a session that day and raced one of them being a
-  race; a weekly user used it or drove (the agent running in the background, `run:agent`, is `users_bg` and `agent`,
-  apart); the drivers are every account but the admins and the testers (`aud` 0, the default; 1 counts everyone); a new
-  account is kept ("still using it a week later") when it is active on any of days 7 to 13 after the day it was
-  created, counted only once it is 14 days old; activated is a session uploaded on its day or the next.
+  race; active means drove (the owner's choice, 2026-11-15: what matters is that the app is used to drive, not that it
+  was opened), so the weekly drivers (`users`) are the accounts that uploaded a session, and opening an app (`opened`,
+  used it or drove) is a second, smaller number under it (the agent running in the background, `run:agent`, is
+  `users_bg` and `agent`, apart); the drivers are every account but the admins and the testers (`aud` 0, the default; 1 counts everyone); a new
+  account is kept ("still driving a week later") when it uploads a session on any of days 7 to 13 after the day it was
+  created (`c:kept_open` counts opening an app too, shown beside it), and Retention opens on Drove, with Raced and
+  Opened the app as the other two; kept is counted only once it is 14 days old; activated is a session uploaded on its day or the next.
   The daily job (03:00 UTC, `weeklyMetrics`, under "cron daily" in Database reads) reads the usage, the sessions, the
   accounts, the visits, the installer's counts, the paid donations, the invites, the server's events and the sessions
   of PCs with no account (`uploader LIKE 'dev:%'`) of the last 15 weeks (`JOB_WEEKS`), adds them up (`buildMetrics`)

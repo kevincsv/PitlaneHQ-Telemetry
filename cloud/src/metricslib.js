@@ -3,9 +3,11 @@
 //   week      Monday to Sunday, UTC
 //   used it   opened a screen of an app that day (a usage row that is not the agent's own)
 //   drove     uploaded a session that day; raced: one of them was a race
-//   active    used it or drove (the agent running in the background, "run:agent", is counted apart)
+//   active    drove: what matters is that the app is used to drive, not that it was opened (the owner's choice,
+//             2026-11-15). "users" is the accounts that drove; "opened" (used it or drove) stays as a second number;
+//             the agent running in the background, "run:agent", is counted apart
 //   new       an account created in the week; the drivers leave the admins and the testers out
-//   kept      a new account active on any of days 7 to 13 after the day it was created
+//   kept      a new account that drove on any of days 7 to 13 after the day it was created (c:kept_open: opened or drove)
 //   activated a new account that uploaded a session within 2 days (its day and the next)
 import { USAGE_GAMES } from "./usagelib.js";
 import { kindOf } from "./sourceslib.js";
@@ -72,7 +74,8 @@ export function buildMetrics({ accounts = [], usage = [], sessions = [], visits 
   for (const [id, m] of days) for (const [d, x] of m) {
     const w = weekOf(d);
     for (const aud of auds(id)) {
-      if (x.used || x.drove) mark(w, aud, "users", "", id);
+      if (x.drove) mark(w, aud, "users", "", id);
+      if (x.used || x.drove) mark(w, aud, "opened", "", id);
       if (x.used || x.drove || x.agent) mark(w, aud, "users_bg", "", id);
       if (x.agent) mark(w, aud, "agent", "", id);
       if (x.used) { mark(w, aud, "used", "", id); for (const dv of x.devs) mark(w, aud, "used", "dev:" + dv, id); }
@@ -118,7 +121,7 @@ export function buildMetrics({ accounts = [], usage = [], sessions = [], visits 
       for (const k of x.keys) { if (LAPS.has(k)) step("laps", n); if (COACH.has(k)) step("coach", n); if (COMMUNITY.has(k)) step("community", n); if (OVERLAY(k)) step("overlay", n); if (k === "set:autostart.on" && n <= 1) at.autostart = 0; }
       for (const dv of x.devs) { if (!devs.has(dv)) { devs.add(dv); if (devs.size === 2) step("second", n); } }
     }
-    const age = tn - c0, mature = age > 13, kept = !!(wks[1] && wks[1].active);
+    const age = tn - c0, mature = age > 13, kept = !!(wks[1] && wks[1].drove), keptOpen = !!(wks[1] && wks[1].active);
     const splits = ["", "src:" + (a.src || "unknown")]; if (firstGame) splits.push("game:" + firstGame);
     for (const aud of a.staff ? [1] : [0, 1]) {
       for (const sp of splits) {
@@ -126,7 +129,7 @@ export function buildMetrics({ accounts = [], usage = [], sessions = [], visits 
         if (at.opened != null && at.opened <= 6) put(w, aud, "c:open7", sp, 1);
         if (at.drove != null && at.drove <= 1) put(w, aud, "c:up2", sp, 1);
         if (at.drove != null && at.drove <= 6) put(w, aud, "c:up7", sp, 1);
-        if (mature) { put(w, aud, "c:mature", sp, 1); if (kept) put(w, aud, "c:kept", sp, 1); }
+        if (mature) { put(w, aud, "c:mature", sp, 1); if (kept) put(w, aud, "c:kept", sp, 1); if (keptOpen) put(w, aud, "c:kept_open", sp, 1); }
         for (let wk = 0; wk <= MAX_WK; wk++) {
           if (c0 + wk * 7 > tn) break; // that week has not begun
           const x = coh(w, aud, sp, wk), y = wks[wk] || {};
@@ -168,10 +171,10 @@ export function metricsAnswer({ rows = [], cohorts = [], weeks = [], today, targ
   const pct = (a, b) => (b ? Math.round((a / b) * 1000) / 10 : null);
   const T = (targets && targets.t) || {};
   const monday = [
-    { k: "users", v: g("users"), t: T.users },
+    { k: "users", v: g("users"), open: g("opened"), t: T.users },
     { k: "new", v: g("new"), t: T.new },
     // a sign-up week's share is only whole once every account of it has had its 14 days
-    { k: "kept", unit: "%", v: weeks.map((_, i) => pct(g("c:kept")[i], g("c:mature")[i])), n: g("c:mature"), of: g("c:n"), t: T.kept },
+    { k: "kept", unit: "%", v: weeks.map((_, i) => pct(g("c:kept")[i], g("c:mature")[i])), n: g("c:mature"), of: g("c:n"), open: weeks.map((_, i) => pct(g("c:kept_open")[i], g("c:mature")[i])), t: T.kept },
     { k: "up7", unit: "%", v: weeks.map((_, i) => pct(g("c:up7")[i], g("c:n")[i])), n: g("c:n"), t: T.up7 },
     { k: "raced", v: g("raced"), share: weeks.map((_, i) => pct(g("raced")[i], g("drove")[i])), n: g("drove"), t: T.raced_share, tk: "share" },
     { k: "visits_day", v: weeks.map((_, i) => Math.round((g("visits")[i] / dIn[i]) * 10) / 10), t: T.visits_day },

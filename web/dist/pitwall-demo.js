@@ -215,7 +215,7 @@
       const n = [4, 8, 12, 26].includes(+q.get("weeks")) ? +q.get("weeks") : 12, r0 = rng(11), r = () => r0.f(0, 1), today = new Date(NOW).toISOString().slice(0, 10);
       const mon = (t) => { const d = new Date(t); d.setUTCDate(d.getUTCDate() - ((d.getUTCDay() + 6) % 7)); return d.toISOString().slice(0, 10); };
       const weeks = [...Array(n).keys()].map((i) => mon(NOW - (n - 1 - i) * 7 * DAY)), S = {}, put = (k, f) => { S[k] = weeks.map((_, i) => Math.max(0, Math.round(f(i)))); };
-      put("users", (i) => 20 + i * 4 + r() * 6); put("new", (i) => 22 + i + r() * 10); put("drove", (i) => 14 + i * 3 + r() * 4); put("raced", (i) => 6 + i * 1.5 + r() * 3);
+      put("users", (i) => 14 + i * 3 + r() * 4); put("opened", (i) => S.users[i] + 6 + i + r() * 3); put("new", (i) => 22 + i + r() * 10); put("drove", (i) => 14 + i * 3 + r() * 4); put("raced", (i) => 6 + i * 1.5 + r() * 3);
       put("visits", (i) => 180 + i * 18 + r() * 60); put("downloads", (i) => 30 + i * 2 + r() * 10); put("uninstalls", () => r() * 4); put("supporters", (i) => (i > n - 4 ? 2 : 0));
       put("c:n", (i) => S.new[i]); put("c:up2", (i) => S.new[i] * 0.6); put("c:up7", (i) => S.new[i] * 0.72); put("c:mature", (i) => (i < n - 2 ? S.new[i] : 0)); put("c:kept", (i) => S["c:mature"][i] * (0.2 + r() * 0.1)); put("c:med_h", () => 1 + r() * 5);
       for (const [k, share] of [["opened", 0.9], ["drove", 0.7], ["laps", 0.55], ["raced", 0.3], ["coach", 0.25], ["overlay", 0.35], ["community", 0.3], ["second", 0.12]]) for (const [w, f] of [[1, 0.7], [2, 0.85], [7, 1]]) put("s:" + k + ":" + w, (i) => S.new[i] * share * f);
@@ -224,7 +224,7 @@
       put("donated|cur:usd", (i) => S.donations[i] * 500);
       const pct = (a, b) => (b ? Math.round((a / b) * 1000) / 10 : null), days = weeks.map((w, i) => (i === n - 1 ? Math.max(1, Math.round((NOW - Date.parse(w)) / DAY) + 1) : 7));
       const T = { users: [120, 300], new: [60, 120], kept: [30, 40], up7: [80, 85], raced_share: [null, 50], visits_day: [80, 150], supporters: [6, 15] };
-      const monday = [{ k: "users", v: S.users, t: T.users }, { k: "new", v: S.new, t: T.new }, { k: "kept", unit: "%", v: weeks.map((_, i) => pct(S["c:kept"][i], S["c:mature"][i])), n: S["c:mature"], of: S["c:n"], t: T.kept },
+      const monday = [{ k: "users", v: S.users, open: S.opened, t: T.users }, { k: "new", v: S.new, t: T.new }, { k: "kept", unit: "%", v: weeks.map((_, i) => pct(S["c:kept"][i], S["c:mature"][i])), n: S["c:mature"], of: S["c:n"], t: T.kept },
         { k: "up7", unit: "%", v: weeks.map((_, i) => pct(S["c:up7"][i], S["c:n"][i])), n: S["c:n"], t: T.up7 }, { k: "raced", v: S.raced, share: weeks.map((_, i) => pct(S.raced[i], S.drove[i])), n: S.drove, t: T.raced_share, tk: "share" },
         { k: "visits_day", v: weeks.map((_, i) => Math.round((S.visits[i] / days[i]) * 10) / 10), t: T.visits_day }, { k: "supporters", v: S.supporters, t: T.supporters }];
       const cohorts = [];

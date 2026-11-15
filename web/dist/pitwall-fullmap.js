@@ -165,7 +165,7 @@
       <div class="fm-t"><div class="fm-rp"><button type="button" class="go" aria-label="${esc(T("Replay", "Repetición", "Replay"))}">▶</button><input type="range" min="0" max="1000" value="0" aria-label="${esc(T("Replay", "Repetición", "Replay"))}"><span class="sp">${[1, 2, 4, 8].map((k) => `<button type="button" data-sp="${k}" aria-pressed="${k === 2}">${k}×</button>`).join("")}</span><span class="tm"></span></div><canvas></canvas></div>`;
     document.body.appendChild(root);
     const prevOv = document.documentElement.style.overflow; document.documentElement.style.overflow = "hidden";
-    const box = root.querySelector(".fm-m"), svg = box.querySelector("svg"), rd = root.querySelector(".fm-rd"), cv = root.querySelector("canvas"), sc = root.querySelector(".fm-sc");
+    const box = root.querySelector(".fm-m"), svg = box.querySelector("svg"), rd = root.querySelector(".fm-rd"), cv = root.querySelector("canvas"), sc = root.querySelector(".fm-sc"), scI = sc.querySelector("i"), scS = sc.querySelector("span");
 
     // the world: the road's frame turned so the circuit fills the screen (y down for the screen)
     let rot = 0;
@@ -227,15 +227,22 @@
     // the cursor: lap A's car, and lap B where it was at the same moment
     const cB = el("g", {}, gCur); el("circle", { class: "cb", r: 7 }, cB); const cA = el("g", {}, gCur); el("circle", { class: "halo", r: 14 }, cA); el("circle", { class: "ca", r: 6.5 }, cA);
 
+    /* the box's size, read once and again only when it changes (never a layout read per frame) */
+    let BW = box.clientWidth || 800, BH = box.clientHeight || 500;
     /* the camera: the middle of the screen in the world and metres per screen pixel */
     let cx = (bx0 + bx1) / 2, cy = (by0 + by1) / 2, u = 1, uFit = 1;
-    const fitU = () => { const W = box.clientWidth || 800, H = box.clientHeight || 500, pad = 40; return Math.max((bx1 - bx0) / Math.max(50, W - 2 * pad), (by1 - by0) / Math.max(50, H - 2 * pad)); };
+    const fitU = () => { const W = BW, H = BH, pad = 40; return Math.max((bx1 - bx0) / Math.max(50, W - 2 * pad), (by1 - by0) / Math.max(50, H - 2 * pad)); };
     const U_MIN = 0.04;
     const fit = () => { uFit = fitU(); u = uFit; cx = (bx0 + bx1) / 2; cy = (by0 + by1) / 2; view(); };
+    let lastU = 0, lastST = "";
     function view() {
-      const W = box.clientWidth || 800, H = box.clientHeight || 500;
+      const W = BW, H = BH;
       u = clamp(u, U_MIN, uFit * 1.6);
       svg.setAttribute("viewBox", `${f1(cx - W / 2 * u)} ${f1(cy - H / 2 * u)} ${f1(W * u)} ${f1(H * u)}`);
+      // moving the camera (the replay following lap A) only moves the view box; sizes change with the zoom alone
+      const stKey = JSON.stringify(ST);
+      if (u === lastU && stKey === lastST) { placeCur(); drawT(); return; }
+      lastU = u; lastST = stKey;
       // widths in metres: the real road when it is big enough, never thinner than a few pixels
       grass.setAttribute("stroke-width", f1(Math.max(34, 26 * u)));
       casing.setAttribute("stroke-width", f1(10 * u)); roadP.setAttribute("stroke-width", f1(1.4 * u));
@@ -253,7 +260,7 @@
       gTurns.style.display = ST.turns ? "" : "none"; gDelta.style.display = ST.delta ? "" : "none"; gLines.style.display = ST.lines ? "" : "none";
       placeCur();
       // the scale bar: a round number of metres about 90 px long
-      const m = [5, 10, 20, 25, 50, 100, 200, 250, 500, 1000, 2000].find((v) => v / u >= 70) || 2000; sc.querySelector("i").style.width = (m / u).toFixed(0) + "px"; sc.querySelector("span").textContent = m + " m";
+      const m = [5, 10, 20, 25, 50, 100, 200, 250, 500, 1000, 2000].find((v) => v / u >= 70) || 2000; scI.style.width = (m / u).toFixed(0) + "px"; scS.textContent = m + " m";
       drawT();
     }
     const zoomAt = (k, px, py) => { const W = box.clientWidth, H = box.clientHeight, wx = cx + (px - W / 2) * u, wy = cy + (py - H / 2) * u, nu = clamp(u * k, U_MIN, uFit * 1.6); cx = wx - (px - W / 2) * nu; cy = wy - (py - H / 2) * nu; u = nu; view(); };
@@ -268,9 +275,11 @@
     const dAt = (ts, t) => { if (t <= ts[0]) return 0; if (t >= ts[n - 1]) return (n - 1) * BIN; let lo = 0, hi = n - 1; while (hi - lo > 1) { const m = (lo + hi) >> 1; if (ts[m] <= t) lo = m; else hi = m; } return (lo + (t - ts[lo]) / ((ts[hi] - ts[lo]) || 1)) * BIN; };
     let cur = clamp(Math.round(o.start || 0), 0, n - 1), curD = cur * BIN;
     const corner = (d) => { let b = null, bd = 181; (o.corners || []).forEach((c) => { let dd = Math.abs(c.d - d); dd = Math.min(dd, L - dd); if (dd < bd) { bd = dd; b = c; } }); return b; };
+    let rdT = 0;
     function placeCur() {
-      const qa = atLine(LA, curD), tAt = ta[clamp(Math.round(curD / BIN), 0, n - 1)], dbb = dAt(tb, tAt), qb = atLine(LB, Math.min(dbb, L - 1));
+      const qa = atLine(LA, curD), fi = clamp(curD / BIN, 0, n - 1), i0 = Math.floor(fi), i1 = Math.min(n - 1, i0 + 1), tAt = ta[i0] + (ta[i1] - ta[i0]) * (fi - i0), dbb = dAt(tb, tAt), qb = atLine(LB, Math.min(dbb, L - 1));
       cA.setAttribute("transform", `translate(${f1(qa[0])} ${f1(qa[1])}) scale(${u.toFixed(4)})`); cB.setAttribute("transform", `translate(${f1(qb[0])} ${f1(qb[1])}) scale(${u.toFixed(4)})`);
+      const now = performance.now(); if (playing && now - rdT < 80) return; rdT = now;
       const i = clamp(Math.round(curD / BIN), 0, n - 1), a = sa[i], b = sb[i], c = corner(curD), dl = a && b && a[1] != null && b[1] != null ? a[1] - b[1] : null, ah = Math.round(dbb - curD);
       const pct = (v) => (v == null ? "–" : Math.round(v * 100) + "%");
       rd.innerHTML = `<b>${Math.round(curD)} m${c ? " · T" + c.n + (c.name ? " " + esc(c.name) : "") : ""}</b>
@@ -281,42 +290,53 @@
     }
     function setCur(i, fromReplay) {
       cur = clamp(i, 0, n - 1); curD = cur * BIN; if (!fromReplay && !playing) t = ta[clamp(Math.round(cur), 0, n - 1)];
-      if (ST.follow) { const q = atLine(LA, curD), W = box.clientWidth, H = box.clientHeight; if (Math.abs(q[0] - cx) > W * u * .18 || Math.abs(q[1] - cy) > H * u * .18 || fromReplay) { cx += (q[0] - cx) * (fromReplay ? .2 : 1); cy += (q[1] - cy) * (fromReplay ? .2 : 1); } view(); }
+      // following lap A: the camera stays on the car (the replay locks it there, a jump glides to it)
+      if (ST.follow) { const q = atLine(LA, curD); if (fromReplay && playing) { cx = q[0]; cy = q[1]; view(); } else if (Math.abs(q[0] - cx) > BW * u * .18 || Math.abs(q[1] - cy) > BH * u * .18) glide(q[0], q[1], u, 250); else { placeCur(); drawT(); } }
       else { placeCur(); drawT(); }
       rg.value = String(Math.round(t / (tEnd || 1) * 1000)); tm.innerHTML = tEnd ? `${fmtT(t)} / ${fmtT(tEnd)}` : "";
       if (o.onCursor) try { o.onCursor(Math.round(cur)); } catch (e) { }
     }
 
     /* the telemetry under the map: speed of both laps, the gap and the pedals, the part of the lap on screen shaded */
-    const tx = cv.getContext("2d");
+    const tx = cv.getContext("2d"), layer = document.createElement("canvas");
+    let CW = cv.clientWidth, CH = cv.clientHeight, COL = null, layerKey = "";
+    const colors = () => ({ a: css(root, "--accent", "#f5b43c"), b: css(root, "--fm-b", "#4f9cff"), mu: css(root, "--muted", "#8a93a3"), ln: css(root, "--line", "#1c222d"), fg: css(root, "--fg", "#e6e9ef"), good: css(root, "--good", "#3ddc84"), bad: css(root, "--bad", "#ff5c5c"), font: css(root, "--f-data", "monospace"), s2: css(root, "--surface2", "#151a24") });
+    const VP = []; for (let i = 0; i < n; i++) VP.push(atRoad(i * BIN)); // the road under every 5 m, for the shade of what is on screen
+    let vmax = 1; for (let i = 0; i < n; i++) { if (sa[i]) vmax = Math.max(vmax, sa[i][0]); if (sb[i]) vmax = Math.max(vmax, sb[i][0]); }
+    let gmx = .2; for (let i = 0; i < n; i++) { const a = tA(i), b = tB(i); if (a != null && b != null) gmx = Math.max(gmx, Math.abs(a - b)); }
     function drawT() {
-      const dpr = window.devicePixelRatio || 1, w = cv.clientWidth, h = cv.clientHeight; if (!w || !h) return;
+      const dpr = window.devicePixelRatio || 1, w = CW, h = CH; if (!w || !h) return;
       if (cv.width !== Math.round(w * dpr) || cv.height !== Math.round(h * dpr)) { cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr); }
-      const x = tx; x.setTransform(dpr, 0, 0, dpr, 0, 0); x.clearRect(0, 0, w, h);
-      const cA_ = css(root, "--accent", "#f5b43c"), cB_ = css(root, "--fm-b", "#4f9cff"), mu = css(root, "--muted", "#8a93a3"), ln = css(root, "--line", "#1c222d"), fg = css(root, "--fg", "#e6e9ef"), good = css(root, "--good", "#3ddc84"), bad = css(root, "--bad", "#ff5c5c"), font = css(root, "--f-data", "monospace");
+      if (!COL) COL = colors();
       const pl = 44, pr = 8, X = (d) => pl + d / L * (w - pl - pr), hS = h * .56, hD = h * .2, hP = h - hS - hD - 14, yS = 12, yD = yS + hS, yP = yD + hD;
+      const top = Math.ceil(spd(vmax) / 50) * 50, YS = (v) => yS + hS - spd(v) / top * (hS - 4);
+      const key = w + "x" + h + "@" + dpr; if (key !== layerKey) { layerKey = key; drawLayer(w, h, dpr, pl, pr, X, hS, hD, hP, yS, yD, yP, top, YS); }
+      const x = tx; x.setTransform(dpr, 0, 0, dpr, 0, 0); x.clearRect(0, 0, w, h);
       // the part of the lap on screen
-      { const W = box.clientWidth, H = box.clientHeight, vx0 = cx - W / 2 * u, vx1 = cx + W / 2 * u, vy0 = cy - H / 2 * u, vy1 = cy + H / 2 * u; if (u < uFit * .9) { x.fillStyle = css(root, "--surface2", "#151a24"); let run = -1; const step = Math.max(1, Math.round(n / 600)); for (let i = 0; i <= n; i += step) { const q = i < n ? atRoad(i * BIN) : null, inn = q && q[0] >= vx0 && q[0] <= vx1 && q[1] >= vy0 && q[1] <= vy1; if (inn && run < 0) run = i; if (!inn && run >= 0) { x.fillRect(X(run * BIN), 0, X(i * BIN) - X(run * BIN), h); run = -1; } } } }
+      { const vx0 = cx - BW / 2 * u, vx1 = cx + BW / 2 * u, vy0 = cy - BH / 2 * u, vy1 = cy + BH / 2 * u; if (u < uFit * .9) { x.fillStyle = COL.s2; let run = -1; for (let i = 0; i <= n; i++) { const q = i < n ? VP[i] : null, inn = q && q[0] >= vx0 && q[0] <= vx1 && q[1] >= vy0 && q[1] <= vy1; if (inn && run < 0) run = i; if (!inn && run >= 0) { x.fillRect(X(run * BIN), 0, X(i * BIN) - X(run * BIN), h); run = -1; } } } }
+      x.setTransform(1, 0, 0, 1, 0, 0); x.drawImage(layer, 0, 0); x.setTransform(dpr, 0, 0, dpr, 0, 0);
+      // the cursor
+      const cxp = X(curD), ci = clamp(Math.round(curD / BIN), 0, n - 1); x.strokeStyle = COL.fg; x.lineWidth = 1; x.globalAlpha = .7; x.setLineDash([3, 3]); x.beginPath(); x.moveTo(cxp, yS); x.lineTo(cxp, h); x.stroke(); x.setLineDash([]); x.globalAlpha = 1;
+      const a = sa[ci], b = sb[ci]; if (a) { x.fillStyle = COL.a; x.beginPath(); x.arc(cxp, YS(a[0]), 3.5, 0, 7); x.fill(); } if (b) { x.strokeStyle = COL.b; x.lineWidth = 2; x.beginPath(); x.arc(cxp, YS(b[0]), 3.5, 0, 7); x.stroke(); }
+    }
+    function drawLayer(w, h, dpr, pl, pr, X, hS, hD, hP, yS, yD, yP, top, YS) {
+      layer.width = Math.round(w * dpr); layer.height = Math.round(h * dpr); const x = layer.getContext("2d"); x.setTransform(dpr, 0, 0, dpr, 0, 0);
+      const cA_ = COL.a, cB_ = COL.b, mu = COL.mu, ln = COL.ln, fg = COL.fg, good = COL.good, bad = COL.bad, font = COL.font;
       x.font = "10px " + font; x.lineWidth = 1;
       // turns
       (o.corners || []).forEach((c) => { const xx = X(c.d); x.strokeStyle = ln; x.beginPath(); x.moveTo(xx, yS); x.lineTo(xx, h - 2); x.stroke(); x.fillStyle = mu; x.fillText("T" + c.n, xx + 2, 9); });
       // speed
-      let vmax = 1; for (let i = 0; i < n; i++) { if (sa[i]) vmax = Math.max(vmax, sa[i][0]); if (sb[i]) vmax = Math.max(vmax, sb[i][0]); }
-      const top = Math.ceil(spd(vmax) / 50) * 50, YS = (v) => yS + hS - spd(v) / top * (hS - 4);
       x.fillStyle = mu; x.strokeStyle = ln; for (let v = 50; v < top; v += 50) { const y = yS + hS - v / top * (hS - 4); x.beginPath(); x.moveTo(pl, y); x.lineTo(w - pr, y); x.stroke(); x.fillText(String(v), 4, y + 3); }
       const trace = (s, col, k, Y, lw) => { x.beginPath(); let on = false; for (let i = 0; i < n; i++) { const r = s[i]; if (!r || r[k] == null) { on = false; continue; } const px = X(i * BIN), py = Y(r[k]); on ? x.lineTo(px, py) : x.moveTo(px, py); on = true; } x.strokeStyle = col; x.lineWidth = lw || 1.6; x.stroke(); };
       trace(sb, cB_, 0, YS); trace(sa, cA_, 0, YS);
       // the gap, A − B
-      let mx = .2; for (let i = 0; i < n; i++) { const a = tA(i), b = tB(i); if (a != null && b != null) mx = Math.max(mx, Math.abs(a - b)); }
+      const mx = gmx;
       const YD = (v) => yD + hD / 2 - v / mx * (hD / 2 - 3); x.strokeStyle = ln; x.beginPath(); x.moveTo(pl, YD(0)); x.lineTo(w - pr, YD(0)); x.stroke(); x.fillStyle = mu; x.fillText("±" + mx.toFixed(1), 4, YD(0) + 3);
       x.beginPath(); let on = false; for (let i = 0; i < n; i++) { const a = tA(i), b = tB(i); if (a == null || b == null) { on = false; continue; } const px = X(i * BIN), py = YD(a - b); on ? x.lineTo(px, py) : x.moveTo(px, py); on = true; } x.strokeStyle = fg; x.lineWidth = 1.3; x.stroke();
       // the pedals: throttle up, brake down
       const YP = (v) => yP + hP / 2 - v * (hP / 2 - 1), YB = (v) => yP + hP / 2 + v * (hP / 2 - 1);
       x.globalAlpha = .9; trace(sb, cB_, 2, YP, 1); trace(sa, cA_, 2, YP, 1); trace(sb, cB_, 3, YB, 1); trace(sa, cA_, 3, YB, 1); x.globalAlpha = 1;
       x.fillStyle = good; x.fillText(T("thr", "gas", "acel"), 4, yP + 8); x.fillStyle = bad; x.fillText(T("brk", "fren", "freio"), 4, yP + hP - 2);
-      // the cursor
-      const cxp = X(curD); x.strokeStyle = fg; x.globalAlpha = .7; x.setLineDash([3, 3]); x.beginPath(); x.moveTo(cxp, yS); x.lineTo(cxp, h); x.stroke(); x.setLineDash([]); x.globalAlpha = 1;
-      const a = sa[cur], b = sb[cur]; if (a) { x.fillStyle = cA_; x.beginPath(); x.arc(cxp, YS(a[0]), 3.5, 0, 7); x.fill(); } if (b) { x.strokeStyle = cB_; x.lineWidth = 2; x.beginPath(); x.arc(cxp, YS(b[0]), 3.5, 0, 7); x.stroke(); }
     }
     // pointer on the telemetry: the cursor follows (a finger drags it)
     const dOfX = (e) => { const r = cv.getBoundingClientRect(), pl = 44, pr = 8; return clamp((e.clientX - r.left - pl) / (r.width - pl - pr), 0, 1) * L; };
@@ -329,7 +349,10 @@
     /* the map's pointer: drag moves, the wheel and two fingers zoom, a hover or a tap reads the nearest point of the road */
     const ptrs = new Map(); let drag = null, pinch = null;
     const local = (e) => { const r = box.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; };
-    const nearestD = (px, py, lim) => { const W = box.clientWidth, H = box.clientHeight, wx = cx + (px - W / 2) * u, wy = cy + (py - H / 2) * u; let bi = -1, bd = (lim * u) ** 2; for (let i = 0; i < R.N; i++) { const dx = C[i][0] - wx, dy = C[i][1] - wy, d2 = dx * dx + dy * dy; if (d2 < bd) { bd = d2; bi = i; } } return bi < 0 ? null : bi / R.N * L; };
+    const nearestD = (px, py, lim) => { const W = BW, H = BH, wx = cx + (px - W / 2) * u, wy = cy + (py - H / 2) * u; let bi = -1, bd = (lim * u) ** 2; for (let i = 0; i < R.N; i++) { const dx = C[i][0] - wx, dy = C[i][1] - wy, d2 = dx * dx + dy * dy; if (d2 < bd) { bd = d2; bi = i; } } if (bi < 0) return null;
+      // between the nearest point and the next or the one before
+      let s = bi, best = 1e18; for (const a of [mod(bi - 1, R.N), bi]) { const b = mod(a + 1, R.N), sx = C[b][0] - C[a][0], sy = C[b][1] - C[a][1], m2 = sx * sx + sy * sy || 1, f = clamp(((wx - C[a][0]) * sx + (wy - C[a][1]) * sy) / m2, 0, 1), qx = C[a][0] + sx * f - wx, qy = C[a][1] + sy * f - wy, d2 = qx * qx + qy * qy; if (d2 < best) { best = d2; s = a + f; } }
+      return mod(s, R.N) / R.N * L; };
     box.addEventListener("pointerdown", (e) => { if (e.target.closest && e.target.closest(".fm-z,.tn")) return; box.setPointerCapture(e.pointerId); ptrs.set(e.pointerId, local(e)); cancelAnimationFrame(anim);
       if (ptrs.size === 1) drag = { p: local(e), cx, cy, moved: false }; else if (ptrs.size === 2) { const [p1, p2] = [...ptrs.values()]; pinch = { d: Math.hypot(p1[0] - p2[0], p1[1] - p2[1]), u, m: [(p1[0] + p2[0]) / 2, (p1[1] + p2[1]) / 2], cx, cy }; drag = null; } });
     box.addEventListener("pointermove", (e) => {
@@ -354,7 +377,7 @@
     const go = root.querySelector(".go"), rg = root.querySelector(".fm-rp input"), tm = root.querySelector(".tm");
     let t = ta[cur] || 0, playing = false, raf = 0, last = 0, rate = 2;
     root.querySelectorAll("[data-sp]").forEach((b) => b.addEventListener("click", () => { rate = +b.dataset.sp; root.querySelectorAll("[data-sp]").forEach((x) => x.setAttribute("aria-pressed", String(x === b))); }));
-    function stop() { cancelAnimationFrame(raf); raf = 0; playing = false; go.textContent = "▶"; }
+    function stop() { cancelAnimationFrame(raf); raf = 0; const was = playing; playing = false; go.textContent = "▶"; if (was) { rdT = 0; placeCur(); } }
     const step = (ts) => { if (!root.isConnected) return stop(); if (last) t = Math.min(tEnd, t + (ts - last) / 1000 * rate); last = ts; setCur(dAt(ta, t) / BIN, true); if (t >= tEnd) return stop(); raf = requestAnimationFrame(step); };
     function play() { if (!(tEnd > 0)) return; if (t >= tEnd - .01) t = 0; playing = true; last = 0; go.textContent = "❚❚"; raf = requestAnimationFrame(step); }
     go.addEventListener("click", () => (playing ? stop() : play()));
@@ -371,9 +394,11 @@
       else if (e.key === "ArrowRight" || e.key === "ArrowLeft") { e.preventDefault(); stop(); setCur(cur + (e.key === "ArrowRight" ? 1 : -1) * (e.shiftKey ? 10 : 1)); }
     };
     document.addEventListener("keydown", onKey, true);
-    const onResize = () => { const k = u / uFit; uFit = fitU(); u = uFit * k; view(); };
+    const onResize = () => { BW = box.clientWidth || BW; BH = box.clientHeight || BH; CW = cv.clientWidth; CH = cv.clientHeight; COL = null; layerKey = ""; const k = u / uFit; uFit = fitU(); u = uFit * k; lastU = 0; view(); };
     window.addEventListener("resize", onResize);
-    function close() { stop(); cancelAnimationFrame(anim); document.removeEventListener("keydown", onKey, true); window.removeEventListener("resize", onResize); document.documentElement.style.overflow = prevOv; root.remove(); if (o.onClose) try { o.onClose(Math.round(cur)); } catch (e) { } }
+    const ro = window.ResizeObserver ? new ResizeObserver(onResize) : null; if (ro) { ro.observe(box); ro.observe(cv); }
+    const mq = window.matchMedia ? matchMedia("(prefers-color-scheme: dark)") : null, onTheme = () => { COL = null; layerKey = ""; drawT(); }; if (mq && mq.addEventListener) mq.addEventListener("change", onTheme);
+    function close() { stop(); cancelAnimationFrame(anim); document.removeEventListener("keydown", onKey, true); window.removeEventListener("resize", onResize); if (ro) ro.disconnect(); if (mq && mq.removeEventListener) mq.removeEventListener("change", onTheme); document.documentElement.style.overflow = prevOv; root.remove(); if (o.onClose) try { o.onClose(Math.round(cur)); } catch (e) { } }
     root.querySelector(".fm-x").addEventListener("click", close);
 
     fit(); setCur(cur);

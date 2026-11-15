@@ -37,6 +37,12 @@ function world({ lmu = true } = {}) {
     if (/FROM league_found/.test(sql)) return found[a[1]] || [];
     if (/FROM community_laps l JOIN/.test(sql)) return laps(a[2], a[0], a[1]);
     if (/GROUP BY game, track_id/.test(sql)) return [];
+    // Le Mans Ultimate's lap times: its tracks, the record of each class, each driver's best of each class, the cars
+    if (/GROUP BY track_id, cls/.test(sql)) return lmu ? [{ t: 7001, cls: "Hypercar", drivers: 3, best: 205.4 }, { t: 7001, cls: "LMGT3", drivers: 1, best: 240.1 }, { t: 7002, cls: "LMP3", drivers: 1, best: 101.2 }] : [];
+    if (/game='lmu' AND track_id>0 .* GROUP BY track_id$/.test(sql)) return lmu ? [{ t: 7001, track: "Circuit de la Sarthe", drivers: 4, upd: now }, { t: 7002, track: "Fuji Speedway", drivers: 1, upd: now }] : [];
+    if (/PARTITION BY l\.cls, l\.user_id/.test(sql)) return a[0] === 7001 ? [{ cls: "Hypercar", time: 205.4, car: "Toyota GR010 Hybrid", c: 9001, created: now, alias: "Speedy" }, { cls: "Hypercar", time: 205.9, car: "Ferrari 499P", c: 9002, created: now, alias: "" }, { cls: "Hypercar", time: 206.3, car: "Toyota GR010 Hybrid", c: 9001, created: now, alias: "Late" }, { cls: "LMGT3", time: 240.1, car: "BMW M4 LMGT3", c: 9003, created: now, alias: "Gt Guy" }]
+      : [{ cls: "LMP3", time: 101.2, car: "Ligier JS P325", c: 9004, created: now, alias: "Solo" }];
+    if (/GROUP BY l\.car_id/.test(sql)) return a[0] === 7001 ? [{ c: 9001, car: "Toyota GR010 Hybrid", cls: "Hypercar", drivers: 3, best: 205.4 }, { c: 9002, car: "Ferrari 499P", cls: "Hypercar", drivers: 1, best: 205.9 }, { c: 9003, car: "BMW M4 LMGT3", cls: "LMGT3", drivers: 1, best: 240.1 }] : [{ c: 9004, car: "Ligier JS P325", cls: "LMP3", drivers: 1, best: 101.2 }];
     if (/GROUP BY car_id HAVING/.test(sql)) return combos[a[0]].filter((x) => x.t === a[1] && x.c !== a[2] && x.drivers >= a[3]).map((x) => ({ c: x.c, car: x.car, drivers: x.drivers, best: x.best }));
     return [];
   };
@@ -75,6 +81,7 @@ const STATIC = [
 const LMU_DATA = [
   { en: "/le-mans-ultimate-leagues", es: "/es/ligas-le-mans-ultimate", pt: "/pt/ligas-le-mans-ultimate" },
   { en: "/le-mans-ultimate-records", es: "/es/records-le-mans-ultimate", pt: "/pt/recordes-le-mans-ultimate" },
+  { en: "/le-mans-ultimate-lap-times", es: "/es/tiempos-le-mans-ultimate", pt: "/pt/tempos-le-mans-ultimate" },
 ];
 assert.ok(TOPICS.some((x) => x.id === "lmu-coach"), "a coach guide for Le Mans Ultimate");
 
@@ -142,6 +149,30 @@ for (const [game, pre, t, c] of [["iracing", "", 1, 10], ["lmu", "lmu/", 7001, 9
   assert.match(full.robots, /^index/); assert.match(full.text, /Drivers\s+3/); assert.match(full.text, /Gap to P3\s+\+/); assert.match(full.text, /Newest lap/);
 }
 assert.equal((await get(env, "/records/lmu/1-10")).status, 404, "an iRacing car is no Le Mans Ultimate record");
+// Le Mans Ultimate's lap times of a track: the name people search it by, each class's board, its cars, its corners and
+// a FAQ that names only the classes with drivers enough; a track of few drivers is shown but not indexed
+{
+  const any = await get(env, "/le-mans-ultimate-lap-times/7001"); assert.equal(any.status, 301);
+  const canon = new URL(any.headers.get("location")).pathname; assert.equal(canon, "/le-mans-ultimate-lap-times/7001-le-mans");
+  for (const [l, path] of [["en", canon], ["es", "/es/tiempos-le-mans-ultimate/7001-le-mans"], ["pt", "/pt/tempos-le-mans-ultimate/7001-le-mans"]]) {
+    const r = await get(env, path); assert.equal(r.status, 200, path); const p = parse(await r.text()); pages.set(path, p);
+    assert.equal(p.canon, SITE + path); assert.match(p.robots, /^index/); assert.equal(p.h1, 1);
+    assert.ok(p.title.length <= 62 && !/\S: /.test(p.title), p.title); assert.ok(p.desc.length >= 70 && p.desc.length <= 160 && !/\S: /.test(p.desc), p.desc);
+    assert.ok(!seen.title.has(p.title), p.title); seen.title.set(p.title, path);
+    assert.match(p.desc, /Hypercar 3:25\.400/); assert.ok(!/LMGT3 4:00/.test(p.desc), "a class of one driver is not in the description");
+    assert.match(p.text, /Speedy/); assert.match(p.text, /An[oóô]nimo|Anonymous/); assert.match(p.text, /Gt Guy/); assert.match(p.text, /T1/);
+    assert.ok(p.ld.some((x) => x["@type"] === "BreadcrumbList") && p.ld.some((x) => x["@type"] === "FAQPage"));
+    assert.equal(p.ld.find((x) => x["@type"] === "FAQPage").mainEntity.length, 3, "the record and the good lap of Hypercar, and how to see your own");
+    assert.ok(!/[^\s\d]: /.test(p.text.replace(/support@pitlanehq\.app/g, "")), `${path} joins phrases with a colon`);
+  }
+  const thin = parse(await (await get(env, "/le-mans-ultimate-lap-times/7002-fuji")).text()); assert.match(thin.robots, /noindex/);
+  assert.equal((await get(env, "/le-mans-ultimate-lap-times/9999-x")).status, 404);
+  assert.equal((await get(env, "/es/le-mans-ultimate-lap-times/7001-le-mans")).status, 404, "one address per language");
+  const sm = await (await get(env, "/sitemap.xml")).text();
+  assert.ok(sm.includes(SITE + canon + "<") && sm.includes(SITE + "/pt/tempos-le-mans-ultimate/7001-le-mans<") && !sm.includes("7002-fuji"), "the tracks worth finding are in the sitemap");
+  const idx = parse(await (await get(env, "/le-mans-ultimate-lap-times")).text()); assert.ok(idx.links.includes(canon), "the index links each track");
+  const land = parse(await (await get(env, "/le-mans-ultimate-telemetry")).text()); assert.ok(land.links.includes(canon), "the LMU landing links the tracks");
+}
 assert.equal((await get(env, "/records/999-999/x")).status, 404);
 // a database that refuses every read: a 503 to come back to (and nothing cached), never a 404 or a page without its data
 {

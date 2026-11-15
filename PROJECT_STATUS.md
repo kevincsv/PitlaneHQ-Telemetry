@@ -15,6 +15,7 @@ web (0.9.19); a full-app bug sweep follows.
 - Microsoft Store 0.9.23: submitted 2026-11-15, in certification.
 - Phone repo: merge the App Store and Report/Block work with master's Google Play commits before the next release.
 - Lap telemetry out of the database into R2, compressed: built on its branch, waits for the owner's push, then the switch (`docs/status/server-and-ops.md`).
+- SEO refocused on Le Mans Ultimate (lap times by track and class, two LMU guides, LMU first everywhere): on its branch, waits for the owner's push (`docs/status/server-and-ops.md`).
 - Team mode (beta, every tester and admin): in production code since 0.9.19 behind its beta gate (PC, web, Android beta). Not run on real hardware yet.
 
 ## Live now

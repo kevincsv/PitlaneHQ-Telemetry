@@ -61,7 +61,7 @@ function ovsPane(w){const k=ovsK(w),own=OVS_OWN[k]||{},tab=OVS.tab;
   const g=ui(w),own2=(CFG.ui||{})[w]||{},a=ovAlphaOf(w),ts=g.textScale||1,hd=g.hide||"",seg=(s,list,cur)=>`<div class="seg3 ovt-seg3">${list.map(([v,...n])=>`<button type="button" data-s="${s}" data-v="${v}" aria-pressed="${String(cur)===String(v)}">${esc(T3(...n))}</button>`).join("")}</div>`;
   return `<label class="ovs-grp"><span class="ovt-lab">${esc(ovsT("Design","Diseño","Design"))}</span><select id="ovsStyle"><option value="">${esc(ovsT("Same as all","Igual que todos","Igual a todos"))} · ${esc(ovStyleLabel(ovtStyleAll()))}</option>${OV_STYLES.map(([s])=>`<option value="${s}"${own2.style===s?" selected":""}>${esc(ovStyleLabel(s))}${s==="classic"?"":" · Beta"}</option>`).join("")}</select></label>
     <label class="ovs-grp"><span class="ovt-lab">${esc(ovsT("Opacity","Opacidad","Opacidade"))} <b id="ovsAV">${Math.round(a/255*100)}%</b></span><input type="range" id="ovsAlpha" min="60" max="255" step="5" value="${a}"></label>
-    <div class="ovs-grp"><span class="ovt-lab">${esc(ovsT("Text size","Tamaño del texto","Tamanho do texto"))}</span>${seg("ts",[[.85,"Small","Pequeño","Pequeno"],[1,"Normal","Normal","Normal"],[1.2,"Large","Grande","Grande"]],ts)}</div>
+    <label class="ovs-grp">${ovSizeHTML(w)}</label>
     <div class="ovs-grp"><span class="ovt-lab">${esc(ovsT("Hide by itself","Ocultarse solo","Ocultar sozinho"))}</span>${seg("hide",[["","Never","Nunca","Nunca"],["car","Out of the car","Fuera del coche","Fora do carro"],["pits","And in the pits","Y en boxes","E nos boxes"]],hd)}</div>
     <div class="ovs-grp"><span class="ovt-lab">${esc(ovsT("Frame rate","Fotogramas por segundo","Quadros por segundo"))}</span><div class="ovs-opts">${[10,15,20,30,45,60].map(n=>`<button type="button" class="ovt-chip${ovsFps(w)===n?" on":""}" data-s="fps" data-v="${n}" aria-pressed="${ovsFps(w)===n}">${n}</button>`).join("")}</div></div>
     ${OV_TITLED.includes(w)?`<button type="button" class="ovs-sw" data-s="title" aria-pressed="${g.title!==false}"><span>${esc(ovsT("Title","Título","Título"))}</span><span class="ovs-tg${g.title!==false?" on":""}"><i></i></span></button>`:""}`}
@@ -85,7 +85,7 @@ function ovsDraw(keepScroll){const w=OVS.w,d=$("#ovsDlg");if(!d||!w)return;const
     <div class="ovs-end"><button type="button" class="btn primary" data-s="close">${esc(ovsT("Done","Listo","Pronto"))}</button></div></div>`;
   $("#ovsTabs").innerHTML=tabs.map(([t,n])=>`<button type="button" role="tab" data-tab="${t}" aria-selected="${OVS.tab===t}">${esc(n)}</button>`).join("");
   {const on=ovtAutoAny(w);$("#ovsAuto").innerHTML=`<button type="button" class="ovs-atg" data-au="1" aria-pressed="${on}" aria-label="Auto"${ovtAutoGames(w).length?"":" disabled"}><span class="ovs-tg${on?" on":""}"><i></i></span></button>`;$("#ovsCompat").innerHTML=ovtCompat(w)}
-  $("#ovsPane").innerHTML=ovsPane(w);$("#ovsPane").scrollTop=sc;
+  $("#ovsPane").innerHTML=ovsPane(w);if(typeof ovSizeLoad==="function")ovSizeLoad(w);$("#ovsPane").scrollTop=sc;
   if(first)ovsPreview(w);else{const p=$("#ovsPv");if(p)p.style.opacity=String(ovAlphaOf(w)/255)}
   if(typeof markOvOpen==="function")d.querySelectorAll("[data-ovw]").forEach(el=>el.classList.toggle("is-open",OV_OPEN.has(el.dataset.ovw)))}
 function ovtSettings(w){if(!WIDGETS.includes(w))return;OVS.w=w;OVS.q="";if(!OVS.tab||OVS.lastW!==w)OVS.tab=null;OVS.lastW=w;
@@ -114,7 +114,6 @@ function ovsClick(e){const d=e.currentTarget;if(e.target===d)return ovsClose();c
   if(s==="rm"){if(key==="tel"){toggleTelVar(c[f][+b.dataset.i]);return ovsDraw(true)}const a=c[f].slice();a.splice(+b.dataset.i,1);setUI(key,{[f]:a});return done()}
   if(s==="clear"){setUI(key,{[f]:[]});return done()}
   if(s==="mv"){const a=c[f].slice(),i=+b.dataset.i,j=i+ +b.dataset.d;if(j<0||j>=a.length)return;[a[i],a[j]]=[a[j],a[i]];setUI(key,{[f]:a});return done()}
-  if(s==="ts"){setUI(w,{textScale:+b.dataset.v});return ovsDraw(true)}
   if(s==="hide"){setUI(w,{hide:b.dataset.v});return ovsDraw(true)}
   if(s==="title"){setUI(w,{title:ui(w).title===false});return ovsDraw(true)}
   if(s==="fps"){const n=+b.dataset.v;CFG.ui=CFG.ui||{};const m=Object.assign({},CFG.ui[w]||{});if(n===ovsFpsDef(w))delete m.fps;else m.fps=n;CFG.ui[w]=m;saveCfg();return ovsDraw(true)}
@@ -125,13 +124,13 @@ async function ovsReset(w){if(!await uiConfirm(ovsT(`Put ${ovtName(w)} back as i
   CFG.ui=CFG.ui||{};const k=ovsK(w),sp=OV_OPTS[w];if(k&&k!=="tel")delete CFG.ui[k];if(sp&&sp.k!==k)delete CFG.ui[sp.k];
   const m=Object.assign({},CFG.ui[w]||{});["style","alpha","textScale","hide","title","fps"].forEach(x=>delete m[x]);CFG.ui[w]=m;saveCfg();
   const d=$("#ovsDlg");if(d)d.innerHTML="";ovsDraw();toast(ovsT("Settings back to how they come.","Ajustes como vienen.","Ajustes como vêm."))}
-function ovsChange(e){const t=e.target,w=OVS.w;if(!w)return;
+function ovsChange(e){const t=e.target,w=OVS.w;if(!w)return;if(t.dataset&&t.dataset.ovsz)return ovSizeSet(t,true);
   if(t.id==="ovsStyle"){CFG.ui=CFG.ui||{};const m=Object.assign({},CFG.ui[w]||{});if(t.value)m.style=t.value;else delete m.style;CFG.ui[w]=m;saveCfg();return ovsDraw(true)}
   if(t.id==="ovsAlpha"){setUI(w,{alpha:Math.max(60,Math.min(255,+t.value||255))});return}
   if(t.id==="ovsCopy"){const v=t.value;t.value="";if(!v)return;
     if(v==="__look"){CFG.ui=CFG.ui||{};const me=(CFG.ui[w]||{});WIDGETS.forEach(x=>{if(x===w)return;const m=Object.assign({},CFG.ui[x]||{});["style","alpha","textScale","hide","fps"].forEach(k=>{if(k in me)m[k]=me[k];else delete m[k]});CFG.ui[x]=m});saveCfg();toast(ovsT("Look copied to every overlay.","Aspecto copiado a todos los overlays.","Aparência copiada para todos os overlays."));return}
     const o=ui(v);setUI(ovsK(w),{cols:o.cols.slice(),head:o.head.slice(),foot:o.foot.slice()});toast(ovsT("Columns, header and footer copied.","Columnas, cabecera y pie copiados.","Colunas, cabeçalho e rodapé copiados."));ovsDraw(true)}}
-function ovsInput(e){const t=e.target;
+function ovsInput(e){const t=e.target;if(t.dataset&&t.dataset.ovsz)return ovSizeSet(t,false);
   if(t.id==="ovsAlpha"){const p=$("#ovsPv"),v=$("#ovsAV");if(p)p.style.opacity=String(+t.value/255);if(v)v.textContent=Math.round(+t.value/255*100)+"%"}
   if(t.id==="ovsQ"){OVS.q=t.value;const pos=t.selectionStart;ovsDraw(true);const n=$("#ovsQ");if(n){n.focus();n.setSelectionRange(pos,pos)}}}
 addEventListener("resize",()=>{if(OVS.w&&MODE!=="bridge")ovsPreview(OVS.w)});

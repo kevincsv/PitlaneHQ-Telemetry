@@ -6321,8 +6321,8 @@ $("#lockBtn").onclick=()=>{CFG.edit=!CFG.edit;saveCfg();renderLock();toast(CFG.e
 const OVSZ={flag:[520,90],dash:[560,230],timing:[440,190],map:[440,480],relative:[600,380],compare:[680,320],radar:[260,300],boost:[360,170],inputs:[560,210],fuel:[420,220],engine:[320,260],tyres:[420,260],standings:[720,640],telemetry:[420,300],gg:[280,300],deltabar:[520,90],stats:[420,220],pit:[440,260],sectors:[560,150],gaps:[560,260],incidents:[380,300],coach:[520,200],weather:[360,250],trackbar:[700,70],system:[320,230],spotter:[520,64]};
 let SCREEN=null,SCREEN_DRAG=false;
 async function screenInfo(){if(SCREEN)return SCREEN;try{if(MODE==="bridge"&&!REMOTE){SCREEN=await (await fetch("/api/overlay/screen")).json()}}catch(e){}if(!SCREEN)SCREEN={virtual:[0,0,1920,1080],primary:[0,0,1920,1080]};return SCREEN}
-/* the smallest each overlay may be (overlayMinSize in overlay.go: its default width; the map, the radar and the g-force their default height too) */
-const OV_MINW={flag:520,dash:560,timing:440,map:440,relative:600,fuel:420,engine:320,tyres:420,inputs:560,standings:720,radar:260,boost:360,telemetry:420,compare:680,gg:280,deltabar:520,stats:420,pit:440,sectors:560,gaps:560,incidents:380,coach:520,brakes:480,weather:360,trackbar:700,system:320,spotter:520},OV_MINH={map:480,radar:300,gg:300};
+/* the smallest each overlay may be (overlayMinSize in overlay.go: half its default width, the text size slider's 50 %; the map, the radar and the g-force half their default height too) */
+const OV_MINW={flag:260,dash:280,timing:220,map:220,relative:300,fuel:210,engine:160,tyres:210,inputs:280,standings:360,radar:130,boost:180,telemetry:210,compare:340,gg:140,deltabar:260,stats:210,pit:220,sectors:280,gaps:280,incidents:190,coach:260,brakes:240,weather:180,trackbar:350,system:160,spotter:260},OV_MINH={map:240,radar:150,gg:150};
 /* overlay windows keep their look: each widget is drawn at its own width and scaled with the
    window, and the window's height follows the content (no scroll bars, nothing cut off).
    Resizing keeps the proportions, between half and two and a half times the normal size. */

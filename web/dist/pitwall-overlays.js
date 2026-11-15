@@ -135,15 +135,30 @@ function ovtRenderScreen(){const sel=ovtPick();OVT.sel=sel;
   $("#ovtNav").innerHTML=ovtGroups().map(([g,ws])=>`<div class="ovt-ng"><span class="ovt-gh">${esc(T3(...OVT_GROUP_NAMES[g]))}</span>${ws.map(w=>`<button type="button" class="ovt-ni${w===sel?" sel":""}" data-a="sel" data-w="${w}" data-ovw="${w}" aria-current="${w===sel}">${ovtDot(w)}<span class="nm">${esc(ovtName(w))}</span>${ovtExp(w)?`<span class="ovt-x">Beta</span>`:""}<span class="ovt-auto"${ovtAutoAny(w)?"":` style="visibility:hidden" aria-hidden="true"`}>Auto</span></button>`).join("")}</div>`).join("");
   $("#ovtStageBar").innerHTML=`${ovtDesignHTML()}<span class="ovt-legend"><i class="open"></i>${esc(T3("Open","Abierto","Aberto"))}<i class="closed"></i>${esc(T3("Closed","Cerrado","Fechado"))}</span><button type="button" class="btn small" data-a="reset"${ovtRemote()?"":" disabled"}>${L("resetPos",true)}</button>`;
   ovtRenderInsp()}
+/* an overlay's text size: a slider, 50 to 150 %, that makes its window that much of its normal width, so the text and
+   the box shrink or grow together (/api/overlay/size, ovSizeRect in overlay.go; an overlay not open opens at it); it
+   takes the old Small/Normal/Large (textScale) into it. Only where the overlays are this PC's */
+const OV_SIZE={};let OV_SIZE_T=0;
+function ovSizeHTML(w){const v=Math.round((OV_SIZE[w]||1)*100),on=typeof pcOverlays==="function"&&pcOverlays();
+  return `<span class="ovt-lab">${esc(T3("Text size","Tamaño del texto","Tamanho do texto"))} <b class="ovsz-v" data-w="${w}">${v}%</b></span><input type="range" min="50" max="150" step="5" value="${v}" data-ovsz="${w}" aria-label="${esc(T3("Text size","Tamaño del texto","Tamanho do texto"))}"${on?"":" disabled"}>`}
+function ovSizeShow(w,v){document.querySelectorAll(`.ovsz-v[data-w="${w}"]`).forEach(b=>{b.textContent=v+"%"})}
+async function ovSizeLoad(w){if(!(typeof pcOverlays==="function"&&pcOverlays()))return;
+  try{const r=await (await fetch(`/api/overlay/size?w=${encodeURIComponent(w)}`)).json();if(!r||!(r.s>0))return;OV_SIZE[w]=r.s;const v=Math.round(r.s*100);
+    document.querySelectorAll(`input[data-ovsz="${w}"]`).forEach(i=>{if(document.activeElement!==i)i.value=v});ovSizeShow(w,v)}catch(e){}}
+// while the slider moves the window follows (a few times a second); on release it is kept
+function ovSizeSet(t,done){const w=t.dataset.ovsz,v=Math.max(50,Math.min(150,+t.value||100));ovSizeShow(w,v);OV_SIZE[w]=v/100;
+  const now=performance.now();if(!done&&now-OV_SIZE_T<150)return;OV_SIZE_T=now;
+  if(done){const m=(CFG.ui||{})[w];if(m&&"textScale" in m){const n=Object.assign({},m);delete n.textScale;CFG.ui[w]=n;saveCfg()}}
+  if(typeof pcOverlays==="function"&&pcOverlays())fetch(`/api/overlay/size?w=${encodeURIComponent(w)}&s=${v/100}`,{method:"POST"}).then(r=>r.json()).then(j=>{if(done&&j&&j.rect){CFG.positions=Object.assign({},CFG.positions,{[w]:j.rect});try{renderScreenEditor();refreshScreenRects()}catch(e){}}}).catch(()=>{})}
 function ovtRenderInsp(){const w=OVT.sel,g=ui(w),own=(CFG.ui||{})[w]||{},alpha=ovAlphaOf(w),ts=g.textScale||1,hd=g.hide||"";
   $("#ovtInspHead").innerHTML=`<div class="ovt-ih" data-ovw="${w}"><h2>${esc(ovtName(w))}</h2>${ovtExpPill(w)}<span class="ovt-pvtag" hidden></span><span class="ovt-state">${ovtDot(w)}<span class="on-t">${esc(T3("Open","Abierto","Aberto"))}</span><span class="off-t">${esc(T3("Closed","Cerrado","Fechado"))}</span></span></div>${ovtCompat(w)}`;
-  ovtPreview(w);ovtTagShow($("#ovtPrev"));
+  ovtPreview(w);ovtTagShow($("#ovtPrev"));ovSizeLoad(w);
   const seg=(a,list,cur)=>`<div class="seg3 ovt-seg3">${list.map(([v,...n])=>`<button type="button" data-a="${a}" data-k="${v}" aria-pressed="${String(cur)===String(v)}">${esc(T3(...n))}</button>`).join("")}</div>`;
   $("#ovtInsp").innerHTML=`<div class="ovt-row2" data-ovw="${w}">${ovtOpenBtn(w)}${ovtCfgBtn(w).replace('class="btn small ovt-cfg"','class="btn small ovt-cfg wide"').replace(ovtIcon.cfg,ovtIcon.cfg+`<span>${esc(T3("All settings","Todos los ajustes","Todos os ajustes"))}</span>`)}</div>
     <div class="ovt-f">${ovtAutoSwitch(w)}</div>
     <label class="ovt-f"><span class="ovt-lab">${esc(T3("Design","Diseño","Design"))}</span><select data-c="ovstyle" data-w="${w}"><option value="">${esc(T3("Same as all","Igual que todos","Igual a todos"))} · ${esc(ovStyleLabel(ovtStyleAll()))}</option>${OV_STYLES.map(([k])=>`<option value="${k}"${own.style===k?" selected":""}>${esc(ovStyleLabel(k))}${k==="classic"?"":" · Beta"}</option>`).join("")}</select></label>
     <label class="ovt-f"><span class="ovt-lab">${esc(T3("Opacity","Opacidad","Opacidade"))} <b id="ovtAlphaV">${Math.round(alpha/255*100)}%</b></span><input type="range" min="60" max="255" step="5" value="${alpha}" data-c="alpha" data-w="${w}"></label>
-    <div class="ovt-f"><span class="ovt-lab">${esc(T3("Text size","Tamaño del texto","Tamanho do texto"))}</span>${seg("ts",[[.85,"Small","Pequeño","Pequeno"],[1,"Normal","Normal","Normal"],[1.2,"Large","Grande","Grande"]],ts)}</div>
+    <label class="ovt-f">${ovSizeHTML(w)}</label>
     <div class="ovt-f"><span class="ovt-lab">${esc(T3("Hide by itself","Ocultarse solo","Ocultar sozinho"))}</span>${seg("hide",[["","Never","Nunca","Nunca"],["car","Out of the car","Fuera del coche","Fora do carro"],["pits","And in the pits","Y en boxes","E nos boxes"]],hd)}</div>
     ${OV_TITLED.includes(w)?`<div class="ovt-f"><button type="button" class="ovt-chip${g.title!==false?" on":""}" data-a="title" aria-pressed="${g.title!==false}">${esc(T3("Show the title","Mostrar el título","Mostrar o título"))}</button></div>`:""}`}
 /* the chosen overlay's live preview: the overlay page itself (scaled to the column), playing the game's data or a real
@@ -202,7 +217,6 @@ async function ovtClick(e){const b=e.target.closest("[data-a]");if(!b||b.disable
   if(a==="opennow"){const lg=liveNow(),ws=(CFG.autoWidgets||[]).filter(x=>!lg||autoIn(x,lg));if(!ws.length){toast(T3("Mark some overlays with Auto first.","Marca primero algunos overlays con Auto.","Marque primeiro alguns overlays com Auto."));return}
     for(const x of ws){if(proGated()&&!OV_BASIC.includes(x))continue;if(await openOverlayOnPC(x))OV_OPEN.add(x)}markOvOpen();setTimeout(refreshScreenRects,600);toast(T3("Opened on your PC.","Abiertos en tu PC.","Abertos no seu PC."));return}
   if(a==="closeall"){[...OV_OPEN].forEach(ovtBackToLive);OV_OPEN.clear();markOvOpen();fetch("/api/overlay/close?w=*",{method:"POST"}).catch(()=>{}).finally(()=>setTimeout(refreshScreenRects,400));return}
-  if(a==="ts"){setUI(OVT.sel,{textScale:+k});return}
   if(a==="hide"){setUI(OVT.sel,{hide:k});return}
   if(a==="title"){setUI(OVT.sel,{title:ui(OVT.sel).title===false});return}}
 // the footer's switches keep their ids (chk): Open my overlays when I get in the car, Close them when the game closes, click-through
@@ -211,8 +225,9 @@ function ovtChange(e){const t=e.target,c=t.dataset&&t.dataset.c;if(!c)return;
   if(c==="style"){CFG.ui=CFG.ui||{};if(t.value===OV_DEFAULT_STYLE)delete CFG.ui.ovstyle;else CFG.ui.ovstyle=t.value;saveCfg();renderOverlaysTab()}
   else if(c==="ovstyle"){const w=t.dataset.w;CFG.ui=CFG.ui||{};const m=Object.assign({},CFG.ui[w]||{});if(t.value)m.style=t.value;else delete m.style;CFG.ui[w]=m;saveCfg()}
   else if(c==="alpha")setUI(t.dataset.w,{alpha:Math.max(60,Math.min(255,+t.value||255))});
+  else if(t.dataset.ovsz)ovSizeSet(t,true);
 }
-function ovtInput(e){const t=e.target,c=t.dataset&&t.dataset.c;
+function ovtInput(e){const t=e.target,c=t.dataset&&t.dataset.c;if(t.dataset&&t.dataset.ovsz)return ovSizeSet(t,false);
   if(c==="alpha"){const p=$("#ovtPrev"),v=$("#ovtAlphaV");if(p)p.style.opacity=String(+t.value/255);if(v)v.textContent=Math.round(+t.value/255*100)+"%"}}
 addEventListener("resize",()=>{if(typeof CUR_VIEW!=="undefined"&&CUR_VIEW==="overlays")ovtPreview(OVT.sel)});
 
@@ -229,7 +244,7 @@ const OV_HOME={relative:[1880,900],radar:[1150,700],deltabar:[1020,40],timing:[4
 async function renderScreenEditor(){const box=$("#ovScreen");if(!box||SCREEN_DRAG)return;const sc=await screenInfo(),[vx,vy,vw,vh]=sc.virtual;if(!box.isConnected)return;box.style.aspectRatio=vw+" / "+vh;
   const pos=CFG.positions||{},sel=OVT.sel,names=[...new Set([...(CFG.autoWidgets||[]),...OV_OPEN,...(sel?[sel]:[])])].filter(n=>OVSZ[n]&&WIDGETS.includes(n));
   const inside=([x,y,w,h])=>{w=Math.min(w,vw);h=Math.min(h,vh);return[Math.max(vx,Math.min(vx+vw-w,x)),Math.max(vy,Math.min(vy+vh-h,y)),w,h]};
-  const home=n=>{const h=OV_HOME[n],[px,py,pw,ph]=sc.primary;return h&&[px+Math.round(h[0]*pw/2560),py+Math.round(h[1]*ph/1440),OVSZ[n][0],OVSZ[n][1]]};
+  const home=n=>{const h=OV_HOME[n],[px,py,pw,ph]=sc.primary;const k=Math.max(.5,Math.min(1,ph/1440)) /* its size for the main screen too (ovScreenK) */,w=Math.round(OVSZ[n][0]*k),hh=Math.round(OVSZ[n][1]*k);return h&&[px+Math.max(0,Math.min(pw-w,Math.round(h[0]*pw/2560))),py+Math.max(0,Math.min(ph-hh,Math.round(h[1]*ph/1440))),w,hh]};
   const rect=(n,i)=>inside(pos[n]||home(n)||[vx+80+i*40,vy+80+i*40,OVSZ[n][0],OVSZ[n][1]]);
   box.innerHTML=`<div class="mon" style="left:${(sc.primary[0]-vx)/vw*100}%;top:${(sc.primary[1]-vy)/vh*100}%;width:${sc.primary[2]/vw*100}%;height:${sc.primary[3]/vh*100}%"></div>`+
     (names.map((n,i)=>{const[x,y,w,h]=rect(n,i);return `<div class="ovrect${(CFG.autoWidgets||[]).includes(n)?" auto":""}${OV_OPEN.has(n)?"":" closed"}${n===sel?" sel":""}" data-n="${n}" style="left:${(x-vx)/vw*100}%;top:${(y-vy)/vh*100}%;width:${w/vw*100}%;height:${h/vh*100}%"><span>${esc(ovtName(n))}</span><i class="rz"></i></div>`}).join("")||

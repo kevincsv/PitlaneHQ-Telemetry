@@ -258,6 +258,8 @@ ${pricingHTML()}
     me.insertAdjacentElement("afterend", el); S.el = el; render();
     document.documentElement.classList.add("tour-on");
     S.mo = new MutationObserver(auth); S.mo.observe(me, { childList: true }); auth();
+    // from the light landing of "/" (pitwall-landing.js): the field or button the visitor reached for there
+    try { const id = typeof LANDING === "undefined" && sessionStorage.getItem("pw.landAuth"); if (id) { sessionStorage.removeItem("pw.landAuth"); setTimeout(() => { if (id === "feedback") { try { FB.busy = false; feedbackAsk(false); } catch (e) {} return; } const x = document.getElementById(id); if (x) { if (x.tagName === "INPUT") x.focus(); else x.click(); } }, 300); } } catch (e) {}
     // the language window sits over the page: once chosen, the page says it in that language
     S.lang = L(); S.langT = setInterval(() => { if (!S.el) { clearInterval(S.langT); return; } if (L() !== S.lang) { S.lang = L(); render(); } }, 400);
     // from the public leagues page ("Post your league for free"): the form to create an account, then the hub

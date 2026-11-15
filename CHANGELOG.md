@@ -4,6 +4,13 @@ Pitlane HQ is in **beta**. Pitlane HQ Agent (the PC app), the web app and the ph
 number, `0.MINOR.PATCH`. A MINOR version brings a set of new features, and fixes go in as "Fixes and
 improvements". 1.0.0 comes when the beta ends. Newest first.
 
+## 0.9.21 beta
+
+- You can enter a friend's invite code when you create an account.
+- The web app fits inside the screen on phones.
+- The website opens faster.
+- Fixes and improvements.
+
 ## 0.9.20 beta
 
 - Every window has its close button in the same place.

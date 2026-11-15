@@ -1,6 +1,12 @@
 {
   "versions": [
     {
+      "v": "0.9.21",
+      "en": ["You can enter a friend's invite code when you create an account.", "The web app fits inside the screen on phones.", "The website opens faster.", "Fixes and improvements."],
+      "es": ["Puedes poner el código de invitación de un amigo al crear tu cuenta.", "La app web cabe en la pantalla del móvil.", "La web abre más rápido.", "Correcciones y mejoras."],
+      "pt": ["Você pode inserir o código de convite de um amigo ao criar sua conta.", "O app web cabe na tela do celular.", "O site abre mais rápido.", "Correções e melhorias."]
+    },
+    {
       "v": "0.9.20",
       "en": ["Every window has its close button in the same place.", "Choosing a game when the app opens looks the same as in Analysis.", "The bar to support Pitlane HQ comes back each day after you hide it.", "Fixes and improvements."],
       "es": ["Todas las ventanas tienen su botón de cerrar en el mismo sitio.", "Elegir el juego al abrir la app se ve igual que en Análisis.", "La barra para apoyar Pitlane HQ vuelve cada día después de ocultarla.", "Correcciones y mejoras."],

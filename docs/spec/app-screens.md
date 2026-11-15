@@ -213,6 +213,17 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
 - The lap compare map (Analysis and the coach, every device) has "▶ Replay": A and B drive the map together on the same
   clock, four times as fast, with the gap in metres and seconds and a bar to scrub (`cmpReplay`; the phones' TrackMap).
 - The race summary has "Race pace" against the cars around you (coach-and-model.md, `racePace`).
+- The race summary opens by itself on the PC about three seconds after a race is saved (`onRaceReport`), so it is
+  there when the driver looks at the app: never over an open window, and not when the driver touched the app in the
+  last minute. Under the result it shows "Leaderboard" (`raceBoard`, `boardStand`): the place of the driver's best lap
+  there on the community board of that car and track, the next driver up with the gap, "Compare with <name>" (the
+  race's session in the lap analyzer with that lap as lap B, `raceCompareNext`; comparing with the next driver up
+  stays free when Pro is on), the board, and after a top 3 or places gained "Invite a friend" (the invite card).
+- Home has "Time to beat" (`homeTargetHTML`): at the car and track of the newest session with a best lap, the place on
+  the community board, your best, the next time above it with its driver and the gap, and a button to the board.
+  Nothing shows without a board there. "Your week" becomes "Last week" (last Monday to this Monday, GET
+  /api/sessions/summary with `to`) until the first session of the new week, and with new personal bests it offers
+  "Invite a friend". Both cards are on the Workspace Home and the older Home, PC and web (the phones later).
 
 ## Beyond one lap: corner consistency, offs explained, race fuel, more charts
 

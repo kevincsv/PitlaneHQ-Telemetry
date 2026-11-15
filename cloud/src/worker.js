@@ -8,11 +8,12 @@ import { betaGate, betaHeaders, betaSignIn, isBeta } from "./beta.js";
 import { markModel, rebuildDirty, reconcileIds, buildOvalKinds } from "./model.js";
 import { fillCats } from "./coachtips.js";
 import { shadowRun, answerRun } from "./coachlearn.js";
+import { DEV, deviceOf, anonSession, anonCount, anonPrune } from "./anon.js";
 import { rebuildTrackMaps, rebuildEdges } from "./trackmaps.js";
 import { autoShare, reshareSession, unshareInvalid } from "./community.js";
 import { catMap, catOf, licOf } from "./categories.js";
 import { patreonWebhook } from "./patreon.js";
-import { lemonWebhook } from "./lemon.js";
+import { lemonWebhook, foundingCheck } from "./lemon.js";
 import { stripeWebhook } from "./stripe.js";
 import PLANS from "../../license_plans.json";
 import { news } from "./news.js";
@@ -76,7 +77,11 @@ async function who(req, env) {
   if (env.PITLANE_KEY && same(key, env.PITLANE_KEY)) return { role: "owner", name: "owner" };
   if (env.VIEW_KEY && same(key, env.VIEW_KEY)) return { role: "viewer", name: "viewer" };
   const m = await env.DB.prepare("SELECT name FROM members WHERE key_hash=?1").bind(await sha256(key)).first().catch(() => null);
-  return m ? { role: "member", name: m.name } : null;
+  if (m) return { role: "member", name: m.name };
+  // a PC with no account (its own token, POST /community/register): its laps teach the coach under that install's
+  // random id, with no name, until someone signs in there and they move to the account (anon.js). Upload only
+  const d = key.length >= 20 ? await deviceOf(env, await sha256(key)) : null;
+  return d ? { role: "device", name: DEV + d.id, dev: d } : null;
 }
 
 const str = (v, max = 120) => (typeof v === "string" ? v.slice(0, max) : v == null ? null : String(v).slice(0, max));
@@ -169,6 +174,8 @@ async function api(req, env, url, ctx) {
   const role = me.role;
   const p = url.pathname;
   const m = req.method;
+  // a PC without an account only uploads: it reads nothing here (its laps are on the PC)
+  if (role === "device" && !(p === "/api/upload" && m === "POST")) return err("sign in with your Pitlane HQ account", 401);
 
   if (p === "/api/me") return json({ role, name: me.name, display: me.display });
   // accounts only ever see their own laps; the admins of this server read anybody's (to check a lap)
@@ -182,7 +189,12 @@ async function api(req, env, url, ctx) {
     const body = await req.json().catch(() => null);
     if (!body || !body.session) return err("bad upload", 400);
     // a member's sessions are kept apart from the owner's even with the same iRacing session id
-    if ((role === "member" || role === "account") && body.session.id) body.session.id = (me.name.replace(/[^A-Za-z0-9_.-]/g, "_") + ":" + body.session.id).slice(0, 80);
+    if (role === "device") {
+      // no name goes with it, and each install has a daily limit like every driver
+      body.session = anonSession(body.session);
+      if (!(await anonCount(env, me.dev, (body.laps || []).length))) return err("too many uploads today", 429);
+    }
+    if ((role === "member" || role === "account" || role === "device") && body.session.id) body.session.id = (me.name.replace(/[^A-Za-z0-9_.-]/g, "_") + ":" + body.session.id).slice(0, 80);
     // a session read afterwards from a telemetry file on the PC: a lap the account has already (the same time on the same
     // track and car within 12 hours of it, under any session) never comes in twice, whatever the PC checked before
     if (body.session.imported === true && Array.isArray(body.laps) && body.laps.length) {
@@ -199,7 +211,7 @@ async function api(req, env, url, ctx) {
     if (!e && posInt(body.session.trackId) && posInt(body.session.carId)) await reconcileIds(env, gameOf(body.session.game), str(body.session.track), str(body.session.trackConfig), str(body.session.car), posInt(body.session.trackId), posInt(body.session.carId)).catch(() => {});
     // a badge of a car family (NASCAR's, the Supercars', the SF23's) joins it the first time it is seen
     if (!e && posInt(body.session.carId)) await noteCar(env, gameOf(body.session.game), posInt(body.session.carId), str(body.session.car)).catch(() => {});
-    if (role === "member" || role === "account") body.laps = (body.laps || []).map((l) => ({ ...l, id: (me.name.replace(/[^A-Za-z0-9_.-]/g, "_") + ":" + l.id).slice(0, 80) }));
+    if (role === "member" || role === "account" || role === "device") body.laps = (body.laps || []).map((l) => ({ ...l, id: (me.name.replace(/[^A-Za-z0-9_.-]/g, "_") + ":" + l.id).slice(0, 80) }));
     if (e) return err(e, 400);
     for (const l of (body.laps || []).slice(0, 50)) {
       e = await addLap(env, body.session.id, l);
@@ -225,7 +237,7 @@ async function api(req, env, url, ctx) {
   // Home's four numbers over every session of the account since the device's start of the month (sessionsum.js)
   if (p === "/api/sessions/summary" && m === "GET") {
     const q = url.searchParams;
-    const sum = await sessionSummary(env.DB, { from: q.get("from"), tz: q.get("tz"), game: q.get("game") ? gameOf(q.get("game")) : null, uploader: own || q.get("who") || null });
+    const sum = await sessionSummary(env.DB, { from: q.get("from"), to: q.get("to"), tz: q.get("tz"), game: q.get("game") ? gameOf(q.get("game")) : null, uploader: own || q.get("who") || null });
     // ?pbs=1 (Home's "Your week", own account only): the cars and tracks whose best this period beats every one before
     if (q.get("pbs") === "1" && own) sum.pbs = pbsOf(((await env.DB.prepare(SQL_PBS).bind(own, sum.from).all().catch(() => ({ results: [] }))).results) || []).map((r) => ({ track: r.track, track_config: r.track_config || null, car: r.car, best: r.b, before: r.before }));
     return json(sum);
@@ -566,7 +578,7 @@ export default {
     // the next sessions give to every tip (coachlearn.js)
     ctx.waitUntil(shadowRun(env).then(() => answerRun(env)).catch(() => {}));
     if (hourly) { ctx.waitUntil(fillCats(env).catch(() => {})); ctx.waitUntil(fillSectors(env).catch(() => {})); ctx.waitUntil(pruneUsage(env).catch(() => {})); ctx.waitUntil(pruneSeen(env).catch(() => {})); ctx.waitUntil(refCheck(env).catch(() => {})); }
-    if (daily) { ctx.waitUntil(weeklyMetrics(env).catch(() => {})); ctx.waitUntil(buildOvalKinds(env).catch(() => {})); ctx.waitUntil(fixLapTimes(env).catch(() => {})); ctx.waitUntil(repairImpossibleShares(env).catch(() => {})); ctx.waitUntil(env.DB.prepare(ALL_SESSION_SUMS).run().catch(() => {})); ctx.waitUntil(env.DB.prepare(FUEL_SUMS).bind(fuelSince(at.getTime())).run().catch(() => {})); } ctx.waitUntil(resharePending(env).catch(() => {})); ctx.waitUntil(rebuildTrackMaps(env).catch(() => {})); ctx.waitUntil(rebuildEdges(env).catch(() => {})); ctx.waitUntil(scanLeagues(env).catch(() => {})); ctx.waitUntil(prunePresence(env).catch(() => {}));
+    if (daily) { ctx.waitUntil(weeklyMetrics(env).catch(() => {})); ctx.waitUntil(anonPrune(env).catch(() => {})); ctx.waitUntil(buildOvalKinds(env).catch(() => {})); ctx.waitUntil(fixLapTimes(env).catch(() => {})); ctx.waitUntil(repairImpossibleShares(env).catch(() => {})); ctx.waitUntil(env.DB.prepare(ALL_SESSION_SUMS).run().catch(() => {})); ctx.waitUntil(env.DB.prepare(FUEL_SUMS).bind(fuelSince(at.getTime())).run().catch(() => {})); } ctx.waitUntil(resharePending(env).catch(() => {})); ctx.waitUntil(rebuildTrackMaps(env).catch(() => {})); ctx.waitUntil(rebuildEdges(env).catch(() => {})); ctx.waitUntil(scanLeagues(env).catch(() => {})); ctx.waitUntil(prunePresence(env).catch(() => {}));
     wait(Promise.allSettled(all).then(() => flushUsage(raw, true)));
   },
   async fetch(req, env, ctx) {
@@ -719,7 +731,7 @@ async function handle(req, env, ctx) {
     // Lemon Squeezy tells the server about purchases: Pitlane HQ Pro on the account
     if (url.pathname === "/lemonsqueezy/webhook" && req.method === "POST") return lemonWebhook(req, env);
     // Stripe tells the server about Pro purchases (stripe.js)
-    if (url.pathname === "/stripe/webhook" && req.method === "POST") return stripeWebhook(req, env, emailHash, { supportLink: (PLANS.donate && PLANS.donate.link) || "" });
+    if (url.pathname === "/stripe/webhook" && req.method === "POST") return stripeWebhook(req, env, emailHash, { supportLink: (PLANS.donate && PLANS.donate.link) || "", founding: foundingCheck });
     if (url.pathname === "/voice/ice" && req.method === "GET") return voiceIce(env);
     // the admin page: the app opened on it (only the admins see anything there)
     if (url.pathname === "/admin" && req.method === "GET") return Response.redirect(url.origin + "/app#admin", 302);

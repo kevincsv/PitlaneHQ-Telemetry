@@ -219,8 +219,8 @@
       put("visits", (i) => 180 + i * 18 + r() * 60); put("downloads", (i) => 30 + i * 2 + r() * 10); put("uninstalls", () => r() * 4); put("supporters", (i) => (i > n - 4 ? 2 : 0));
       put("c:n", (i) => S.new[i]); put("c:up2", (i) => S.new[i] * 0.6); put("c:up7", (i) => S.new[i] * 0.72); put("c:mature", (i) => (i < n - 2 ? S.new[i] : 0)); put("c:kept", (i) => S["c:mature"][i] * (0.2 + r() * 0.1)); put("c:med_h", () => 1 + r() * 5);
       for (const [k, share] of [["opened", 0.9], ["drove", 0.7], ["laps", 0.55], ["raced", 0.3], ["coach", 0.25], ["overlay", 0.35], ["community", 0.3], ["second", 0.12]]) for (const [w, f] of [[1, 0.7], [2, 0.85], [7, 1]]) put("s:" + k + ":" + w, (i) => S.new[i] * share * f);
-      for (const k of ["k:act:donate_shown", "k:act:donate_bar", "k:act:donate_bar_no", "k:act:pro_info", "k:act:invite_menu", "invited", "anon_pcs", "anon_sessions", "donations"]) put(k, (i) => (i > n - 3 ? 1 + r() * (k.includes("shown") ? 30 : 5) : 0));
-      for (const f of ["race_fuel", "community_compare", "plan_map", "ask_coach"]) { put("kn:act:pro_badge." + f, (i) => (i > n - 3 ? 2 + r() * 9 : 0)); put("k:act:pro_badge." + f, (i) => (i > n - 3 ? 1 + r() * 5 : 0)); }
+      for (const k of ["k:act:donate_bar_shown", "k:act:donate_bar", "k:act:donate_bar_no", "k:act:pro_info", "k:act:invite_menu", "invited", "anon_pcs", "anon_sessions", "donations"]) put(k, (i) => (i > n - 3 ? 1 + r() * (k.includes("shown") ? 30 : 5) : 0));
+      for (const f of ["race_fuel", "community", "coach_plan", "ask_coach"]) { put("kn:act:pro_badge." + f, (i) => (i > n - 3 ? 2 + r() * 9 : 0)); put("k:act:pro_badge." + f, (i) => (i > n - 3 ? 1 + r() * 5 : 0)); }
       put("donated|cur:usd", (i) => S.donations[i] * 500);
       const pct = (a, b) => (b ? Math.round((a / b) * 1000) / 10 : null), days = weeks.map((w, i) => (i === n - 1 ? Math.max(1, Math.round((NOW - Date.parse(w)) / DAY) + 1) : 7));
       const T = { users: [120, 300], new: [60, 120], kept: [30, 40], up7: [80, 85], raced_share: [null, 50], visits_day: [80, 150], supporters: [6, 15] };

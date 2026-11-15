@@ -8,6 +8,7 @@
 import PLANS from "../../license_plans.json";
 import { sessionAccount, isAdmin, emailHash } from "./accounts.js";
 import { setPro } from "./prostore.js";
+import { logEvent } from "./eventslib.js";
 
 const JSONH = { "content-type": "application/json", "access-control-allow-origin": "*" };
 const json = (o, s = 200) => new Response(JSON.stringify(o), { status: s, headers: JSONH });
@@ -23,19 +24,62 @@ export async function proGate(env) {
 }
 export const proGateReset = () => { gateAt = 0; };
 
+const DAY = 86400e3, MONTH = 30 * DAY;
+export const TRIAL_DAYS = PLANS.trialDays > 0 ? PLANS.trialDays : 0;
+export const FOUNDING = { min: 10, off: 50, lifetime: 29.99, months: 2, graceMonths: 2, ...(PLANS.founding || {}) };
+const THANKS_MONTHS = (PLANS.launch && PLANS.launch.thanksMonths) || 0;
+
 // an account's Pro, from its row (accounts.*)
-// (or from its invites: "Invite a friend" gives months of Pro of its own, ref_pro_until, referrals.js)
+// (or from its invites: "Invite a friend" gives months of Pro of its own, ref_pro_until, referrals.js; the launch's
+// thank-you month goes there too; or the new account's first days, trial_until, given only once Pro is on)
 export function proOf(a) {
   const now = Date.now(), on = !!(a && a.pro) && (!a.pro_until || a.pro_until > now);
-  if (!on && a && (a.ref_pro_until || 0) > now) return { pro: true, proSrc: "invite", proUntil: a.ref_pro_until };
-  return { pro: on, proSrc: on ? a.pro_src || "" : "", proUntil: on ? a.pro_until || 0 : 0 };
+  if (on) return { pro: true, proSrc: a.pro_src || "", proUntil: a.pro_until || 0 };
+  const gift = (a && a.ref_pro_until) || 0, trial = (a && a.trial_until) || 0;
+  if (gift > now && gift >= trial) return { pro: true, proSrc: "invite", proUntil: gift };
+  if (trial > now) return { pro: true, proSrc: "trial", proUntil: trial };
+  if (gift > now) return { pro: true, proSrc: "invite", proUntil: gift };
+  return { pro: false, proSrc: "", proUntil: 0 };
 }
 
-// what the apps show: the lifetime offer (its price now, the beta's half price while it lasts) and how many overlays
-// may be on Auto without Pro
+// a new account's days of Pro: only once Pro is on (during the beta everything is free and nothing is given)
+export async function trialOnRegister(env, id, now = Date.now()) {
+  if (!TRIAL_DAYS || !(await proGate(env))) return 0;
+  const until = now + TRIAL_DAYS * DAY;
+  const r = await env.DB.prepare("UPDATE accounts SET trial_until=?2 WHERE id=?1 AND trial_until=0").bind(id, until).run();
+  if (r.meta && r.meta.changes) await logEvent(env, "trial_started", id, { days: TRIAL_DAYS }, now); // the weekly numbers (metrics.js)
+  return until;
+}
+
+// the day Pro is switched on for the first time (app_state 'pro_launch'): everyone who has an account from the beta
+// gets the thank-you months, kept with their invite months (ref_months), which the hourly job starts (refCheck)
+export async function proLaunch(env, now = Date.now()) {
+  const r = await env.DB.prepare("INSERT INTO app_state (k, v, at) VALUES ('pro_launch', ?1, ?2) ON CONFLICT(k) DO NOTHING").bind(String(now), now).run();
+  if (!(r.meta && r.meta.changes)) return { launched: false, thanked: 0 };
+  if (!THANKS_MONTHS) return { launched: true, thanked: 0 };
+  const g = await env.DB.prepare("UPDATE accounts SET ref_months=ref_months+?1 WHERE created<?2").bind(THANKS_MONTHS, now).run();
+  const thanked = (g.meta && g.meta.changes) || 0;
+  await logEvent(env, "thanks_month", null, { accounts: thanked, months: THANKS_MONTHS }, now, "thanks_month");
+  return { launched: true, thanked };
+}
+
+// the founding supporter offer: donations of FOUNDING.min dollars or more in all (pro_orders of kind 'supporter', by the
+// account or its email; amounts in cents, a donation whose amount is unknown counts as none)
+export async function foundingCheck(env, accountId, eh) {
+  if (!accountId && !eh) return false;
+  const r = await env.DB.prepare("SELECT COALESCE(SUM(amount),0) AS cents FROM pro_orders WHERE kind='supporter' AND status='on' AND ((?1 IS NOT NULL AND account_id=?1) OR (?2 IS NOT NULL AND email_hash=?2))").bind(accountId || null, eh || null).first().catch(() => null);
+  const ok = !!r && r.cents >= FOUNDING.min * 100;
+  if (ok && accountId) await env.DB.prepare("UPDATE accounts SET founder=1 WHERE id=?1 AND founder=0").bind(accountId).run();
+  return ok;
+}
+
+// what the apps show: the prices, the trial, the founding offer, the lifetime offer (founding supporters only) and how
+// many programs may start by themselves without Pro
 export async function proOffer(env) {
-  const gate = await proGate(env), L = PLANS.lifetime || {};
-  return { gate, beta: !gate, freeApps: PLANS.freeApps || 3, lifetime: { price: gate ? L.full : L.beta, full: L.full, beta: L.beta, currency: L.currency || "EUR", buy: L.buy || "" }, donate: (PLANS.donate && PLANS.donate.buy) || "" };
+  const gate = await proGate(env), L = PLANS.lifetime || {}, P = PLANS.prices || {};
+  return { gate, beta: !gate, freeApps: PLANS.freeApps || 3, trialDays: TRIAL_DAYS, prices: { currency: P.currency || "USD", monthly: P.monthly || 0, yearly: P.yearly || 0 },
+    founding: { min: FOUNDING.min, off: FOUNDING.off, lifetime: FOUNDING.lifetime, months: FOUNDING.months },
+    lifetime: { price: gate ? L.full : L.beta, full: L.full, beta: L.beta, currency: L.currency || "USD", buy: L.buy || "", founders: !!L.founders }, donate: (PLANS.donate && PLANS.donate.buy) || "" };
 }
 
 async function hmacHex(secret, body) {
@@ -65,12 +109,15 @@ export async function lemonWebhook(req, env) {
     if (isSub) return json({ ok: true, skipped: "subscription order" });
     const paid = ev === "order_created" && at.status === "paid" && !at.refunded;
     await setPro(env, { accountId, eh, kind: "lifetime", until: 0, on: paid, order: "order:" + d.id });
+    await logEvent(env, paid ? "pro_paid" : "pro_refunded", accountId, { kind: "lifetime" }, 0, (paid ? "paid:order:" : "refund:order:") + d.id);
     return json({ ok: true, lifetime: paid });
   }
   if (/^subscription_/.test(ev)) {
     const live = ["active", "on_trial", "past_due", "cancelled"].includes(at.status);
     const until = at.status === "cancelled" ? t(at.ends_at) : t(at.renews_at) + 3 * 86400e3; // a few days of grace for the renewal
     await setPro(env, { accountId, eh, kind: "subscription", until, on: live && until > Date.now(), order: "sub:" + d.id });
+    if (ev === "subscription_created") await logEvent(env, "pro_paid", accountId, { kind: "subscription" }, 0, "paid:sub:" + d.id);
+    if (ev === "subscription_cancelled") await logEvent(env, "pro_cancelled", accountId, { kind: "subscription" }, 0, "cancel:sub:" + d.id);
     return json({ ok: true, subscription: live });
   }
   return json({ ok: true, skipped: ev });
@@ -81,6 +128,8 @@ export async function proOnRegister(env, id, eh) {
   // a donation on Stripe before the account existed: the ♥ Supporter badge (stripe.js)
   const d = await env.DB.prepare("SELECT 1 AS y FROM pro_orders WHERE email_hash=?1 AND kind='supporter' AND status='on' LIMIT 1").bind(eh).first().catch(() => null);
   if (d) await env.DB.prepare("UPDATE accounts SET supporter=1, supporter_src=COALESCE(supporter_src,'stripe') WHERE id=?1").bind(id).run();
+  if (d) await foundingCheck(env, id, eh).catch(() => {});
+  await trialOnRegister(env, id).catch(() => {}); // the new account's days of Pro, once Pro is on
   const o = await env.DB.prepare("SELECT kind, until FROM pro_orders WHERE email_hash=?1 AND status='on' AND kind<>'supporter' ORDER BY (kind='lifetime') DESC, until DESC LIMIT 1").bind(eh).first().catch(() => null);
   if (o && (!o.until || o.until > Date.now())) await env.DB.prepare("UPDATE accounts SET pro=1, pro_src=?2, pro_until=?3, pro_since=?4 WHERE id=?1").bind(id, o.kind, o.until || 0, Date.now()).run();
 }
@@ -91,8 +140,14 @@ const pcNameOf = (q) => String(q.get("pcname") || "").replace(/[^\w .-]/g, "").s
 // Pro is kept on one PC: the first PC that asks takes it, any other is told where it is (pcName) and may move it
 // (POST /community/pro/pc); asked by /community/pro and /account/me with the PC's ?pc=&pcname=
 export async function proHere(env, acc, q) {
-  const pc = pcOf(q);
-  if (!pc || !proOf(acc).pro) return {};
+  const pc = pcOf(q), mine = proOf(acc);
+  if (!pc || !mine.pro) return {};
+  // a new account's days of Pro run once on each PC: on a PC that already ran another account's, there is none
+  if (mine.proSrc === "trial") {
+    await env.DB.prepare("INSERT INTO trial_pcs (pc, account_id, at) VALUES (?1,?2,?3) ON CONFLICT(pc) DO NOTHING").bind(pc, acc.id, Date.now()).run().catch(() => {});
+    const t = await env.DB.prepare("SELECT account_id FROM trial_pcs WHERE pc=?1").bind(pc).first().catch(() => null);
+    if (t && t.account_id !== acc.id) return { pro: false, proSrc: "", proUntil: 0, trialUsed: true };
+  }
   if (!acc.pro_pc) {
     await env.DB.prepare("UPDATE accounts SET pro_pc=?2, pro_pc_name=?3, pro_pc_at=?4 WHERE id=?1 AND pro_pc IS NULL").bind(acc.id, pc, pcNameOf(q), Date.now()).run();
     return { pcOk: true };
@@ -126,6 +181,7 @@ export async function proRoutes(req, env, p, m, body) {
   if (p === "/admin/pro" && m === "POST") {
     await env.DB.prepare("INSERT INTO app_state (k, v, at) VALUES ('pro_gate', ?1, ?2) ON CONFLICT(k) DO UPDATE SET v=excluded.v, at=excluded.at").bind(body.gate ? "1" : "0", Date.now()).run();
     gateAt = 0;
+    if (body.gate) await proLaunch(env).catch(() => {}); // the first time: the thank-you month for everyone from the beta
   }
   if (p === "/admin/pro-user" && m === "POST") {
     const id = String(body.id || "");
@@ -136,7 +192,10 @@ export async function proRoutes(req, env, p, m, body) {
   }
   const c = await env.DB.prepare("SELECT COUNT(*) AS n, SUM(pro_src='lifetime') AS life, SUM(pro_src='subscription') AS sub, SUM(pro_src='manual') AS man FROM accounts WHERE pro=1 AND (pro_until=0 OR pro_until>?1)").bind(Date.now()).first().catch(() => ({}));
   const waiting = await env.DB.prepare("SELECT COUNT(*) AS n FROM pro_orders WHERE account_id IS NULL AND status='on' AND kind<>'supporter'").first().catch(() => ({ n: 0 }));
-  return json({ ...(await proOffer(env)), counts: { pro: c.n || 0, lifetime: c.life || 0, subscription: c.sub || 0, manual: c.man || 0, waiting: waiting.n || 0 },
+  const o = await env.DB.prepare("SELECT SUM(founder=1) AS founders, SUM(trial_until>?1) AS trials, COUNT(*) AS accounts FROM accounts").bind(Date.now()).first().catch(() => ({}));
+  const launch = await env.DB.prepare("SELECT v FROM app_state WHERE k='pro_launch'").first().catch(() => null);
+  return json({ ...(await proOffer(env)), counts: { pro: c.n || 0, lifetime: c.life || 0, subscription: c.sub || 0, manual: c.man || 0, waiting: waiting.n || 0, founders: o.founders || 0, trials: o.trials || 0, accounts: o.accounts || 0 },
+    launch: { at: launch ? +launch.v || 0 : 0, thanksMonths: THANKS_MONTHS },
     store: PLANS.provider === "stripe"
       ? { provider: "stripe", webhook: !!env.STRIPE_WEBHOOK_SECRET, secret: "STRIPE_WEBHOOK_SECRET", checkout: !!(PLANS.lifetime && PLANS.lifetime.buy), url: "https://pitlanehq.app/stripe/webhook" }
       : { provider: "lemonsqueezy", webhook: !!env.LEMONSQUEEZY_WEBHOOK_SECRET, secret: "LEMONSQUEEZY_WEBHOOK_SECRET", checkout: !!(PLANS.lifetime && PLANS.lifetime.buy), url: "https://pitlanehq.app/lemonsqueezy/webhook" } });

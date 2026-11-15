@@ -15,6 +15,7 @@
 //   same tip did not pay off twice (coachCompare in the module, ctx.progress).
 // Never an LLM and never an outside API; counts over real laps only.
 import "../../web/dist/pitwall-analysis.js";
+import { tipAccount, uploaderOf } from "./anon.js";
 import { goodLap, gunz } from "./model.js";
 import { famId, famSql } from "./carfamily.js";
 import { openData } from "./crypt.js";
@@ -101,13 +102,13 @@ async function modelOf(env, game, trackId, carId) {
 export async function shadowRun(env, now = Date.now()) {
   const ss = await env.DB.prepare(
     `SELECT s.id, s.started, s.game, s.track_id, s.car_id, s.uploader, s.cat, s.track, s.track_config, s.car FROM sessions s
-      WHERE s.uploader LIKE 'acct:%' AND s.track_id>0 AND s.car_id>0 AND s.started>?1 AND s.started>0
+      WHERE (s.uploader LIKE 'acct:%' OR s.uploader LIKE 'dev:%') AND s.track_id>0 AND s.car_id>0 AND s.started>?1 AND s.started>0
         AND LOWER(COALESCE(s.kind,'')) NOT LIKE '%test%' AND (COALESCE(s.official,1)<>0 OR s.ai=1)
         AND NOT EXISTS (SELECT 1 FROM coach_shadow c WHERE c.session_id=s.id)
       ORDER BY s.started DESC LIMIT ?2`).bind(now - SHADOW_DAYS * 86400e3, SHADOW_PER_RUN).all();
   let kept = 0;
   for (const s of ss.results || []) {
-    const account = s.uploader.slice(5), game = s.game || "iracing", carId = await famId(env, game, s.car_id);
+    const account = tipAccount(s.uploader), game = s.game || "iracing", carId = await famId(env, game, s.car_id);
     let n = -1;
     try {
       // the driver opened the coach on it: what they saw is already there
@@ -140,7 +141,7 @@ export async function answerRun(env, now = Date.now()) {
     const game = o.game || "iracing";
     const nx = await env.DB.prepare(
       `SELECT id FROM sessions WHERE uploader=?1 AND game=?2 AND track_id=?3 AND car_id IN (${await famSql(env, game, o.car_id)}) AND started>?4 AND started<?5 AND id<>?6
-        ORDER BY started LIMIT 3`).bind("acct:" + o.account, game, o.track_id, o.started, o.started + NEXT_DAYS * 86400e3, o.session_id).all();
+        ORDER BY started LIMIT 3`).bind(uploaderOf(o.account), game, o.track_id, o.started, o.started + NEXT_DAYS * 86400e3, o.session_id).all();
     let lap = null;
     for (const s of nx.results || []) { lap = await bestLap(env, s.id, 0); if (lap) break; }
     const tips = await env.DB.prepare("SELECT id, d, apex, tbest FROM coach_tips WHERE account=?1 AND session_id=?2 AND outcome IS NULL AND kind<>'' AND tbest IS NOT NULL").bind(o.account, o.session_id).all();

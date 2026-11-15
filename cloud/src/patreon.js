@@ -68,7 +68,7 @@ export async function patreonWebhook(req, env) {
   await env.DB.batch([
     env.DB.prepare("INSERT INTO patreon_patrons (email_hash, active, updated) VALUES (?1,?2,?3) ON CONFLICT(email_hash) DO UPDATE SET active=excluded.active, updated=excluded.updated").bind(eh, active ? 1 : 0, now),
     active
-      ? env.DB.prepare("UPDATE accounts SET supporter=1, supporter_src=COALESCE(supporter_src,'patreon') WHERE email_hash=?1").bind(eh)
+      ? env.DB.prepare("UPDATE accounts SET supporter=1, founder=1, supporter_src=COALESCE(supporter_src,'patreon') WHERE email_hash=?1").bind(eh)
       : env.DB.prepare("UPDATE accounts SET supporter=0, supporter_src=NULL WHERE email_hash=?1 AND supporter_src='patreon'").bind(eh),
   ]);
   return json({ ok: true, active });
@@ -77,5 +77,5 @@ export async function patreonWebhook(req, env) {
 // a new account whose email is an active patron's
 export async function patreonOnRegister(env, id, eh) {
   const p = await env.DB.prepare("SELECT active FROM patreon_patrons WHERE email_hash=?1").bind(eh).first().catch(() => null);
-  if (p && p.active) await env.DB.prepare("UPDATE accounts SET supporter=1, supporter_src='patreon' WHERE id=?1").bind(id).run();
+  if (p && p.active) await env.DB.prepare("UPDATE accounts SET supporter=1, founder=1, supporter_src='patreon' WHERE id=?1").bind(id).run();
 }

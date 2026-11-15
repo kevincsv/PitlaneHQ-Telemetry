@@ -163,8 +163,11 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   testers. A share over fewer than 20 accounts is grey, and a week still running is lighter. The phones' admin panel
   does not have it yet.
   The page counts for it: a PRO badge pressed (`act:pro_badge.<feature>`, `proB("<feature>")`), the PRO window
-  (`act:pro_info`), See pricing in it (`act:pricing_open`), Support in it (`act:donate_pro`), the donation bar shown once
-  a day (`act:donate_shown`), the invite code copied and the link shared (`act:invite_copy`, `act:invite_share`).
+  (`act:pro_info`), See pricing in it (`act:pricing_open`), Support in it (`act:donate_pro`), Support offered in it
+  (`act:donate_shown`), the donation bar shown once a day (`act:donate_bar_shown`), the invite code copied and the link shared (`act:invite_copy`, `act:invite_share`).
+  The server keeps its own events for the Sales tab (`events`, `logEvent` in eventslib.js): `trial_started` (a new
+  account's days of Pro), `thanks_month` (the day Pro is switched on), `pro_paid`, `pro_refunded` and `pro_cancelled`
+  (lemon.js); a payment notice sent twice is kept once.
   `cloud/test/metrics.test.mjs` also checks that every action counted by wrapping a function (`USE_LAST` in index.html)
   is still a function of the page, so a renamed one cannot stop counting unseen.
 - The Summary's analytics (`admAnalyticsHTML`, the owner's approved design): 7, 30 or 90 days with "Changes are against

@@ -192,6 +192,6 @@ console.log("metrics ok");
   const re = /if\(!\/\^\(([a-z_|]+)\):\[a-z0-9_\.-\]\{1,40\}\$\/\.test\(k\)/.exec(html);
   assert.ok(re, "usageCount's key filter");
   for (const fam of re[1].split("|")) assert.ok(KEY_RE.test(fam + ":x"), `the server drops the family ${fam}`);
-  for (const k of ["act:pro_badge", "act:pro_info", "act:pricing_open", "act:donate_shown", "act:invite_copy", "act:invite_share"]) assert.ok(html.includes('usageCount("' + k + '"'), `${k} is counted`);
+  for (const k of ["act:pro_badge.", "act:pro_info", "act:pricing_open", "act:donate_shown", "act:donate_bar_shown", "act:donate_pro", "act:invite_copy", "act:invite_share"]) assert.ok(html.includes('usageCount("' + k + '"'), `${k} is counted`);
 }
 console.log("counters ok");

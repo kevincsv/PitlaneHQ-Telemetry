@@ -13,7 +13,7 @@ import { rebuildTrackMaps, rebuildEdges } from "./trackmaps.js";
 import { autoShare, reshareSession, unshareInvalid } from "./community.js";
 import { catMap, catOf, licOf } from "./categories.js";
 import { patreonWebhook } from "./patreon.js";
-import { lemonWebhook, foundingCheck } from "./lemon.js";
+import { lemonWebhook, foundingCheck, FOUNDING } from "./lemon.js";
 import { stripeWebhook } from "./stripe.js";
 import PLANS from "../../license_plans.json";
 import { news } from "./news.js";
@@ -45,7 +45,7 @@ import { pruneSeen } from "./seasonseen.js";
 import { legal } from "./legal.js";
 import { isLanding, landingPage } from "./landing.js";
 import { uninstallRoute } from "./uninstall.js";
-import { sendFeedback } from "./email.js";
+import { sendFeedback, sendThanks } from "./email.js";
 import { alertsRoute, weeklyAlerts, pruneAlerts, prunePushTokens } from "./alerts.js";
 import { reportsRoute, pruneReports, countingDB, flushUsage, routeKey } from "./reports.js";
 export { LiveRoom } from "./live.js";
@@ -753,7 +753,7 @@ async function handle(req, env, ctx) {
     // Lemon Squeezy tells the server about purchases: Pitlane HQ Pro on the account
     if (url.pathname === "/lemonsqueezy/webhook" && req.method === "POST") return lemonWebhook(req, env);
     // Stripe tells the server about Pro purchases (stripe.js)
-    if (url.pathname === "/stripe/webhook" && req.method === "POST") return stripeWebhook(req, env, emailHash, { supportLink: (PLANS.donate && PLANS.donate.link) || "", founding: foundingCheck, isAdmin });
+    if (url.pathname === "/stripe/webhook" && req.method === "POST") return stripeWebhook(req, env, emailHash, { supportLink: (PLANS.donate && PLANS.donate.link) || "", founding: foundingCheck, isAdmin, thanks: (e, to, o) => sendThanks(e, to, { ...o, f: FOUNDING }) });
     if (url.pathname === "/voice/ice" && req.method === "GET") return voiceIce(env);
     // the admin page: the app opened on it (only the admins see anything there)
     if (url.pathname === "/admin" && req.method === "GET") return Response.redirect(url.origin + "/app#admin", 302);

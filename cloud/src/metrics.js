@@ -17,6 +17,8 @@ import { sessionAccount, isAdmin, testersSet } from "./accounts.js";
 import { metricsAnswer, healthOf, timelineOf, cleanTag, weekOf, addDays, weeksBetween, dayOf, TARGETS, DAY } from "./metricslib.js";
 import { weeklyMetrics as runWeekly } from "./metricsjob.js";
 import { SRC_RE } from "./sourceslib.js";
+import { paymentsOf } from "./paymentslib.js";
+import { FOUNDING } from "./lemon.js";
 
 const json = (o, s = 200) => new Response(JSON.stringify(o), { status: s, headers: { "content-type": "application/json", "cache-control": "no-store" } });
 const err = (m, s) => json({ error: m }, s);
@@ -65,6 +67,19 @@ export async function metricsRoute(req, env, url) {
       ]);
       return { ...metricsAnswer({ rows, cohorts, weeks, today, targets: targets || TARGETS, links, job }), aud, links };
     }));
+  }
+  // every payment and donation, the supporters and the founding supporters (paymentslib.js); read live, it is small
+  if (p === "/community/admin/metrics/payments" && m === "GET") {
+    const who = "SELECT account_id FROM pro_orders WHERE account_id IS NOT NULL UNION SELECT id FROM accounts WHERE supporter=1 OR founder=1";
+    const [orders, accounts, clicks, seen, patrons] = await Promise.all([
+      q(env, "SELECT id, account_id, email_hash, kind, status, until, at, amount, currency, ref FROM pro_orders WHERE status<>'test' ORDER BY at DESC LIMIT 5000"),
+      q(env, `SELECT id, display, created, supporter, supporter_src, supporter_hidden, founder, pro, pro_src FROM accounts WHERE id IN (${who}) LIMIT 5000`),
+      soft(q(env, `SELECT account_id, day, key, SUM(n) AS n FROM usage_days WHERE key IN ('act:donate_bar','act:donate_menu','act:donate_pro') AND account_id IN (${who}) GROUP BY account_id, day, key LIMIT 20000`)),
+      soft(q(env, `SELECT account_id, MAX(last_seen) AS last_seen FROM presence WHERE account_id IN (${who}) GROUP BY account_id LIMIT 5000`)),
+      soft(q(env, "SELECT COUNT(*) AS n FROM patreon_patrons WHERE active=1")),
+    ]);
+    const staff = (id) => isAdmin({ ...env, LOCAL: "0" }, id) || testersSet(env, id);
+    return json(paymentsOf({ orders, accounts, clicks, seen, patrons: (patrons[0] || {}).n || 0, staff, min: FOUNDING.min, now }));
   }
   if (p === "/community/admin/metrics/run" && m === "POST") {
     const b = await req.json().catch(() => null);

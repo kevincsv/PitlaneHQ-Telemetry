@@ -14,6 +14,7 @@
 // The account comes from client_reference_id; without it the buyer's email is matched by its hash, now or when they
 // sign up (pro_orders, proOnRegister in lemon.js). A subscription's events find their account through its order.
 import { setPro } from "./prostore.js";
+import { langOf } from "./email.js";
 
 const JSONH = { "content-type": "application/json" };
 const json = (o, s = 200) => new Response(JSON.stringify(o), { status: s, headers: JSONH });
@@ -75,7 +76,14 @@ export async function stripeWebhook(req, env, emailHash, opts = {}) {
       if (test) return json({ ok: true, test: true });
       if (accountId) await env.DB.prepare("UPDATE accounts SET supporter=1, supporter_src=COALESCE(supporter_src,'stripe') WHERE id=?1").bind(accountId).run();
       // the founding supporter offer needs founding.min dollars or more in all (smaller gifts keep the badge alone)
-      const founder = opts.founding ? await opts.founding(env, accountId, eh).catch(() => false) : false;
+      let founder = opts.founding ? await opts.founding(env, accountId, eh).catch(() => false) : false;
+      // the thank-you email, saying what the donation gave (the founding offer may come from before, migration 0103)
+      if (email && opts.thanks) {
+        if (accountId && !founder) { const a = await env.DB.prepare("SELECT founder FROM accounts WHERE id=?1").bind(accountId).first().catch(() => null); founder = !!(a && a.founder); }
+        const sl = accountId ? await env.DB.prepare("SELECT lang FROM support_msgs WHERE account_id=?1 AND from_support=0 AND lang IS NOT NULL ORDER BY created DESC LIMIT 1").bind(accountId).first().catch(() => null) : null;
+        const country = (o.customer_details && o.customer_details.address && o.customer_details.address.country) || "";
+        await opts.thanks(env, email, { l: langOf(sl && sl.lang, country), founder, account: !!accountId }).catch(() => false);
+      }
       return json({ ok: true, supporter: !!accountId, founder });
     }
     if (o.mode === "subscription" && o.subscription) {

@@ -19,7 +19,7 @@ web (0.9.19); a full-app bug sweep follows.
 
 ## Live now
 
-PC and web 0.9.23 (2026-11-15: the race summary opens after a race, time to beat and last week on Home, real track turns, a PC without an account teaches the coach, Start with Windows by default, the admin Analytics revamp, Pro offers built and switched off, lap telemetry storage ready for its own bucket and not switched on; 0.9.19 brought the Workspace look), phones 0.9.14, Microsoft Store 0.9.15 (0.9.23 in certification). The phones have not had any of it (the owner said no phone work for now). Stay on 0.9.x until Steam is approved.
+PC and web 0.9.23 (2026-11-15: the race summary opens after a race, time to beat and last week on Home, real track turns, a PC without an account teaches the coach, Start with Windows by default, the admin Analytics revamp, Pro offers built and switched off, lap telemetry storage ready for its own bucket and not switched on; on the server only, Payments in admin Analytics and a thank-you email for donations; 0.9.19 brought the Workspace look), phones 0.9.14, Microsoft Store 0.9.15 (0.9.23 in certification). The phones have not had any of it (the owner said no phone work for now). Stay on 0.9.x until Steam is approved.
 
 ## Areas
 

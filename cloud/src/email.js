@@ -155,6 +155,49 @@ export async function sendTest(env, to, l) {
   return { ok, via: env.RESEND_API_KEY ? "resend" : "", from: env.EMAIL_FROM, replyTo: env.EMAIL_REPLY_TO || SUPPORT, error: ok ? null : lastError };
 }
 
+// the thank-you after a donation (stripe.js): what the donor got for it, the ♥ Supporter badge and, from founding.min
+// dollars in all, the founding supporter offer; a donor without an account gets the badge once they sign up
+const TH = {
+  subject: { en: "Thank you for supporting Pitlane HQ", es: "Gracias por apoyar Pitlane HQ", pt: "Obrigado por apoiar o Pitlane HQ" },
+  thanks: {
+    en: "Thank you for your donation. It helps keep Pitlane HQ free while it is in beta, and it goes straight into making it better.",
+    es: "Gracias por tu donación. Ayuda a que Pitlane HQ siga siendo gratis mientras está en beta, y va directa a mejorarlo.",
+    pt: "Obrigado pela sua doação. Ela ajuda a manter o Pitlane HQ grátis durante a beta e vai direto para melhorá-lo.",
+  },
+  badge: {
+    en: "Your account now has the ♥ Supporter badge. It shows next to your name everywhere it appears, on the leaderboards, your profile and the race results. You can hide the badge in your profile if you prefer.",
+    es: "Tu cuenta tiene ahora el badge ♥ Supporter. Sale junto a tu nombre en todas partes, en las clasificaciones, tu perfil y los resultados de carrera. Si lo prefieres, puedes ocultar el badge en tu perfil.",
+    pt: "Sua conta agora tem o selo ♥ Supporter. Ele aparece ao lado do seu nome em todo lugar, nos rankings, no seu perfil e nos resultados das corridas. Se preferir, você pode ocultar o selo no seu perfil.",
+  },
+  badgeLater: {
+    en: "When you make your Pitlane HQ account with this email, it gets the ♥ Supporter badge by itself. It shows next to your name everywhere it appears, on the leaderboards, your profile and the race results.",
+    es: "Cuando crees tu cuenta de Pitlane HQ con este email, tendrá el badge ♥ Supporter automáticamente. Sale junto a tu nombre en todas partes, en las clasificaciones, tu perfil y los resultados de carrera.",
+    pt: "Quando você criar sua conta do Pitlane HQ com este email, ela recebe o selo ♥ Supporter automaticamente. Ele aparece ao lado do seu nome em todo lugar, nos rankings, no seu perfil e nos resultados das corridas.",
+  },
+  founder: {
+    en: "You are also a founding supporter. When Pro arrives with version 1.0, you keep it at {off}% off for as long as you have it, and in its first {months} months you can get Pro for life for ${life}.",
+    es: "Además eres supporter fundador. Cuando llegue Pro con la versión 1.0, lo tendrás con un {off}% de descuento mientras lo mantengas, y en sus {months} primeros meses podrás conseguir Pro de por vida por ${life}.",
+    pt: "Você também é um apoiador fundador. Quando o Pro chegar com a versão 1.0, você o terá com {off}% de desconto enquanto mantiver, e nos {months} primeiros meses poderá ter o Pro vitalício por ${life}.",
+  },
+  notYet: {
+    en: "Donations of ${min} or more in total also make you a founding supporter, with Pro at {off}% off when it arrives.",
+    es: "Si tus donaciones suman ${min} o más, también serás supporter fundador, con Pro al {off}% cuando llegue.",
+    pt: "Doações de ${min} ou mais no total também fazem de você um apoiador fundador, com o Pro a {off}% quando chegar.",
+  },
+  button: { en: "Open Pitlane HQ", es: "Abrir Pitlane HQ", pt: "Abrir Pitlane HQ" },
+};
+const WORDS = { 2: { en: "two", es: "dos", pt: "dois" }, 3: { en: "three", es: "tres", pt: "três" } };
+/** The thank-you email's subject, text, button and link. f: the founding offer (min, off, lifetime, months). */
+export function thanksMail({ l, founder, account = true, f = {} }) {
+  const L = lang(l), fill = (t) => t.replace("{off}", f.off ?? 50).replace("{months}", (WORDS[f.months] || {})[L] || f.months || 2).replace("{life}", f.lifetime ?? 29.99).replace("{min}", f.min ?? 3);
+  const text = [TH.thanks[L], (account ? TH.badge : TH.badgeLater)[L], fill((founder ? TH.founder : TH.notYet)[L])].join("\n\n");
+  return { subject: TH.subject[L], text, button: TH.button[L], link: SITE + "/app" };
+}
+export const sendThanks = (env, to, o) => { const m = thanksMail(o); return send(env, to, m.subject, m.text, m.link, m.button, o.l); };
+// the language of a donor: what they wrote to support in, else their country (Stripe's), else English
+const ES_C = new Set("ES MX AR CO CL PE VE EC GT CU BO DO HN PY SV NI CR PA UY PR GQ".split(" ")), PT_C = new Set(["BR", "PT", "AO", "MZ"]);
+export const langOf = (supportLang, country) => supportLang && ["en", "es", "pt"].includes(supportLang) ? supportLang : ES_C.has(String(country || "").toUpperCase()) ? "es" : PT_C.has(String(country || "").toUpperCase()) ? "pt" : "en";
+
 export const sendVerify = (env, to, link, l) => send(env, to, T.verifySubject[lang(l)], T.verifyText[lang(l)], link, T.verifyButton[lang(l)], l);
 export const previewHTML = (kind, l) => kind === "reset" ? mailHTML(T.resetSubject[lang(l)], T.resetText[lang(l)], SITE + "/reset?t=example", T.resetButton[lang(l)], l) : mailHTML(T.verifySubject[lang(l)], T.verifyText[lang(l)], SITE + "/verify?t=example", T.verifyButton[lang(l)], l);
 export const sendReset = (env, to, link, l) => send(env, to, T.resetSubject[lang(l)], T.resetText[lang(l)], link, T.resetButton[lang(l)], l);

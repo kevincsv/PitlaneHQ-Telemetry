@@ -156,5 +156,11 @@ console.log("stripe.test: ok");
   assert.equal(r.test, true);
   assert.equal(db.prepare("SELECT status FROM pro_orders WHERE id='stripe:don:cs_adm'").get().status, "test");
   assert.deepEqual([row("acctadmin1").supporter, row("acctadmin1").founder], [0, 0], "no badge for a test");
+  // the thank-you email goes to the donor, with the founding offer when they have it (not for a test)
+  const sent = [], th = async (e, to, o) => { sent.push({ to, ...o }); return true; };
+  acct("acctthanks", "th@x.io");
+  const tb = JSON.stringify({ id: "evt_th", type: "checkout.session.completed", data: { object: { id: "cs_th", mode: "payment", payment_status: "paid", payment_intent: "pi_th", payment_link: "plink_x", amount_total: 213, currency: "usd", client_reference_id: "support-acctthanks", customer_details: { email: "th@x.io", address: { country: "ES" } } } } });
+  await stripeWebhook(new Request("https://x/stripe/webhook", { method: "POST", body: tb, headers: { "stripe-signature": sign(tb) } }), env, emailHash, { supportLink: "plink_x", founding: foundingCheck, isAdmin: (e, id) => id === "acctadmin1", thanks: th });
+  assert.deepEqual(sent, [{ to: "th@x.io", l: "es", founder: false, account: true }]);
 }
 console.log("founding, trial and launch month ok");

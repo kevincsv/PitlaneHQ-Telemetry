@@ -1,7 +1,7 @@
 // node cloud/test/trackmaps.test.mjs: the track maps drawn by dead reckoning are rebuilt from a stored lap with the
 // game's own position, and the official number of turns is kept per track.
 import assert from "node:assert/strict";
-import { geoPath, rebuildTrackMaps, noteTurnCount, turnCount, traceLen, fitsLayout, lateral, edgesOf } from "../src/trackmaps.js";
+import { geoPath, rebuildTrackMaps, noteTurnCount, turnCount, traceLen, fitsLayout, lateral, edgesOf, isUneven, evenPath, evenTrackMaps } from "../src/trackmaps.js";
 
 const ring = (n, g) => ({ bin: 5, d: [], x: Array.from({ length: n }, (_, i) => 300 * Math.cos((2 * Math.PI * i) / n)), y: Array.from({ length: n }, (_, i) => 300 * Math.sin((2 * Math.PI * i) / n)), ...(g ? { g } : {}) });
 assert.equal(geoPath(ring(400)), null, "a dead-reckoning path is no exact layout");
@@ -91,3 +91,41 @@ function fakeDB() {
   assert.equal(edgesOf(offs.slice(0, 5), N), null, "too few laps");
 }
 console.log("trackmaps ok");
+
+// a layout from a position the game gives slowly: three points on top of each other, then a jump
+{
+  const n = 600, R = 400, even = { x: [], y: [] }, held = { x: [], y: [] };
+  for (let i = 0; i < n; i++) { const a = (2 * Math.PI * i) / n, h = (2 * Math.PI * (i - (i % 3))) / n; even.x.push(R * Math.cos(a)); even.y.push(R * Math.sin(a)); held.x.push(R * Math.cos(h) + (i % 3) * 0.2); held.y.push(R * Math.sin(h)); }
+  assert.equal(isUneven(even.x, even.y), false);
+  assert.equal(evenPath(even.x, even.y), null, "an even layout is left as it is");
+  assert.equal(isUneven(held.x, held.y), true);
+  const ev = evenPath(held.x, held.y);
+  assert.equal(ev.x.length, n, "the same number of points");
+  const d = []; for (let i = 0; i < n; i++) { const j = (i + 1) % n; d.push(Math.hypot(ev.x[j] - ev.x[i], ev.y[j] - ev.y[i])); }
+  const mean = d.reduce((a, b) => a + b, 0) / n;
+  assert.ok(Math.min(...d) > mean * 0.8 && Math.max(...d) < mean * 1.2, "even steps: " + Math.min(...d).toFixed(2) + " to " + Math.max(...d).toFixed(2));
+  assert.ok(ev.x.every((x, i) => Math.abs(Math.hypot(x, ev.y[i]) - R) < 0.6), "the road stays where it was");
+  assert.ok(Math.hypot(ev.x[0] - held.x[0], ev.y[0] - held.y[0]) < 1, "point 0 stays on the line");
+  assert.equal(isUneven(ev.x, ev.y), false);
+
+  // the stored ones: the uneven one is written again, its old points kept, its edges asked again; once
+  const maps = [{ game: "iracing", track_id: 1, pts: JSON.stringify(even) }, { game: "lmu", track_id: 2, pts: JSON.stringify(held) }], app = {}, edges = { "lmu:2": 1 };
+  const q = (sql, a) => ({
+    first: async () => (sql.includes("FROM app_state") && app[a[0]] ? { v: app[a[0]] } : null),
+    all: async () => ({ results: maps.slice(a[1], a[1] + a[0]) }),
+    run: async () => {
+      if (sql.includes("INSERT INTO app_state") && !(sql.includes("DO NOTHING") && app[a[0]])) app[a[0]] = a[1];
+      if (sql.startsWith("UPDATE track_maps")) maps.find((m) => m.game === a[0] && m.track_id === a[1]).pts = a[2];
+      if (sql.startsWith("DELETE FROM track_edges")) delete edges[a[0] + ":" + a[1]];
+      return {};
+    },
+  });
+  const env = { DB: { prepare: (sql) => ({ bind: (...a) => q(sql, a), ...q(sql, []) }) } };
+  const r = await evenTrackMaps(env);
+  assert.deepEqual(r, { checked: 2, fixed: 1, done: true });
+  assert.equal(maps[0].pts, JSON.stringify(even));
+  assert.equal(isUneven(JSON.parse(maps[1].pts).x, JSON.parse(maps[1].pts).y), false);
+  assert.equal(app["trackmap_raw:lmu:2"], JSON.stringify(held));
+  assert.equal(edges["lmu:2"], undefined);
+  assert.deepEqual(await evenTrackMaps(env), { checked: 0, fixed: 0, done: true });
+}

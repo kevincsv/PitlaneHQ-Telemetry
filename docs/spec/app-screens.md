@@ -213,6 +213,29 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   car the model knows (`homeBriefHTML`); pressed, it opens the whole guide.
 - The lap compare map (Analysis and the coach, every device) has "▶ Replay": A and B drive the map together on the same
   clock, four times as fast, with the gap in metres and seconds and a bar to scrub (`cmpReplay`; the phones' TrackMap).
+- "⛶ Full screen" beside "▶ Replay" on the lap compare map (Analysis → Laps and the Coach, the PC app and the web;
+  `openFullMap` in index.html, `web/dist/pitwall-fullmap.js`) opens the map over the whole window. The road is drawn at
+  its real width (the edges the drivers' laps give, `/community/trackmaps` `edges`, else 13 m), with both laps' racing
+  lines on it (each lap's path put on the road: from the game's position as it is, a path by dead reckoning fitted onto
+  the layout; a lap without a path or one that does not fit has no line), A's and B's braking points ("A 182→96" beside
+  them when zoomed in) and slowest points, the turns with their names (a press zooms on the turn), the sectors, the
+  start/finish line and where A gains or loses against B as green and red kerbs. The wheel, + and −, two fingers or a
+  double click zoom (down to the road filling the screen); a drag moves it; ⤢ shows the whole track; ◎ follows lap A.
+  Under it the speed of both laps, the gap and the pedals share one cursor with the map (hover or tap either), the part
+  of the lap on screen shaded; ▶ plays both laps on the same clock at 1×, 2×, 4× or 8×. Keys: Esc closes, + − 0, the
+  space bar plays, ← → move the cursor 5 m (Shift 50 m). The chips (Racing lines, Braking, Slowest points, Turns, A vs B
+  time) are kept on the device (`pw.fmap`). "Chase" (beside the zoom buttons) puts the camera behind and
+  above the car on the middle of the road, pointed along it (so it never shakes), with lap A's car as an arrow that moves
+  across the road, some track behind it in view and the road, both lines, kerbs and turns ahead in perspective as the
+  replay runs; the wheel and + − move the camera closer or further. The replay keeps the screen's refresh rate: the
+  chase view is a canvas drawn in a few paths that lowers its own resolution when frames come late, the telemetry's
+  cursor is moved without redrawing the traces. The same map opens from the Coach's track map (the same button) and
+  from a press on the Leaderboards' track map (community.md). What is drawn is corrected so it moves evenly (the
+  owner's choice, 2026-11-15, corrections nobody can see): the layout is drawn again as a smooth curve with a point every
+  3 m of road (`roadOf`: a game that gives its position slowly leaves points on top of each other, gaps of 15 m and a
+  step to the side where two laps were joined), and a lap's line is its side of the road read at even steps and averaged
+  over about 12 m (`lineOf`), followed as a curve (`atLine`). Closing it leaves the analyzer's cursor where the map's was. The phones do
+  not have it yet (no phone work for now, the owner's choice).
 - The race summary has "Race pace" against the cars around you (coach-and-model.md, `racePace`).
 - The race summary opens by itself on the PC about three seconds after a race is saved (`onRaceReport`), so it is
   there when the driver looks at the app: never over an open window, and not when the driver touched the app in the

@@ -6,6 +6,7 @@ improvements". 1.0.0 comes when the beta ends. Newest first.
 
 ## 0.9.24 beta
 
+- The lap comparison's track map opens in full screen, with zoom, both racing lines, braking points, turns and the replay in step with the telemetry.
 - Telemetry no longer freezes the app when you switch to Full during a session.
 - Telemetry has a new Engineer view between Basic and Full, with each car's tyres and pit stops in the relative and the standings. You choose its panels in Layout.
 - Closing a driver's profile or a track page before it loads no longer shows an error.

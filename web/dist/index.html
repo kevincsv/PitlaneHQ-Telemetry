@@ -820,6 +820,7 @@ label.btn{display:inline-flex;align-items:center;cursor:pointer}
 .wetb svg{width:9px;height:11px;fill:currentColor}.wetb.rain{color:color-mix(in srgb,var(--blue) 55%,var(--fg));background:color-mix(in srgb,var(--blue) 8%,transparent)}.wetb.rain svg{fill:none;stroke:currentColor;stroke-width:1.4;stroke-linecap:round}.wetb.damp{color:color-mix(in srgb,var(--blue) 55%,var(--muted));background:color-mix(in srgb,var(--blue) 6%,transparent)}.wetb.damp svg{fill:none;stroke:currentColor;stroke-width:1.4}
 .cl-clsw button{padding:6px 10px;font-size:11px}
 .cl-map{display:flex;flex-direction:column;gap:10px;padding-top:6px}.cl-mh{display:flex;justify-content:space-between;align-items:baseline;gap:10px}.cl-mh b{font-size:15px}
+.cl-mapbox.fs{position:relative;cursor:zoom-in;border-radius:8px}.cl-mapbox.fs:hover,.cl-mapbox.fs:focus-visible{background:var(--surface2)}.cl-mapbox.fs.busy{opacity:.6;cursor:progress}.cl-mapbox .cl-fs{position:absolute;right:8px;top:6px;font-size:15px;color:var(--muted);pointer-events:none}.cl-mapbox.fs:hover .cl-fs{color:var(--accent)}
 .cl-mapsvg{display:block;width:100%;height:auto}.cl-mapsvg polyline{fill:none;stroke-linejoin:round;stroke-linecap:round;stroke-width:6}.cl-mapsvg .road{stroke:var(--surface2);stroke-width:16}
 .cl-mapsvg .sf{stroke:var(--fg);stroke-width:3}.cl-mapsvg .dirarr line{stroke:var(--fg);stroke-width:2.2;stroke-linecap:round}.cl-mapsvg .dirarr polygon{fill:var(--fg)}
 .cl-mapsvg rect{fill:var(--bg);stroke-width:1}.cl-mapsvg text{font:10px var(--f-body);fill:var(--muted);text-anchor:middle}.cl-mapsvg text.d{font:500 12px var(--f-data)}
@@ -2582,6 +2583,7 @@ nav.subtabs button[aria-selected="true"] .pill{color:inherit;border-color:curren
 
 <script src="pitwall-games.js"></script>
 <script src="pitwall-analysis.js"></script>
+<script src="pitwall-fullmap.js"></script>
 <script src="pitwall-aicoach.js"></script>
 <script src="pitwall-i18n.js"></script>
 <script>; // (an empty statement first: "use strict" below stays a plain string, as it always was)
@@ -4041,7 +4043,7 @@ async function renderCmpMap(A,B,box,opt){if(!box)return;box._plan=opt&&opt.plan&
   const incSum=incs.length?`<p class="rb-sum"><b class="bad">${incs.length} ${esc(Tx(incs.length>1?"incidents":"incident",incs.length>1?"incidentes":"incidente",incs.length>1?"Zwischenfälle":"Zwischenfall",incs.length>1?"incidentes":"incidente"))} (${pts}x)</b>: ${["off","loss","contact"].filter(q=>byK[q]).map(q=>`<span class="ik ${q}">${esc(incN(q,byK[q]))}</span>`).join(" · ")}${worst&&worst[1]>1?` · ${esc(Tx("most in","la mayoría en","die meisten in","a maioria em"))} <b>T${worst[0]}</b> (${worst[1]})`:""}</p>`:"";
   const X=(x,y,cls,title)=>`<g class="incmk ${cls}"><path d="M${(x-5).toFixed(1)} ${(y-5).toFixed(1)}L${(x+5).toFixed(1)} ${(y+5).toFixed(1)}M${(x+5).toFixed(1)} ${(y-5).toFixed(1)}L${(x-5).toFixed(1)} ${(y+5).toFixed(1)}"/><title>${title}</title></g>`;
   box.innerHTML=`<div class="rb-bar"><span class="lgd"><i class="dotm"></i>${esc(Tx("A brakes","A frena","A bremst","A freia"))}</span><span class="lgd"><i class="doto"></i>${esc(Tx("B brakes","B frena","B bremst","B freia"))}</span>
-      <button type="button" class="chip" data-lv="brk" aria-pressed="${LAPV.brk}">${esc(Tx("Braking","Frenadas","Bremsen","Freadas"))}</button>${incs.length?`<button type="button" class="chip" data-lv="inc" aria-pressed="${LAPV.inc}"><span class="incx">✕</span> ${esc(Tx("Incidents","Incidentes","Zwischenfälle","Incidentes"))}</button>`:""}${box._plan?`<button type="button" class="chip" data-lv="plan" aria-pressed="${LAPV.plan}"><span class="pn-i">1</span> ${esc(Tx("Plan","Plan",null,"Plano"))}${proB("coach_plan")}</button>`:co.length?`<button type="button" class="chip" data-lv="coach" aria-pressed="${LAPV.coach}"><i class="dotc"></i> Coach</button>`:""}<button type="button" class="chip" data-lv="delta" aria-pressed="${LAPV.delta}"><span class="good">■</span><span class="bad">■</span> ${esc(Tx("A vs B time","Tiempo A vs B","Zeit A vs B","Tempo A vs B"))}</button><button type="button" class="chip" data-rp aria-pressed="false">▶ ${esc(Tx("Replay","Repetición","Wiederholung","Replay"))}</button></div>
+      <button type="button" class="chip" data-lv="brk" aria-pressed="${LAPV.brk}">${esc(Tx("Braking","Frenadas","Bremsen","Freadas"))}</button>${incs.length?`<button type="button" class="chip" data-lv="inc" aria-pressed="${LAPV.inc}"><span class="incx">✕</span> ${esc(Tx("Incidents","Incidentes","Zwischenfälle","Incidentes"))}</button>`:""}${box._plan?`<button type="button" class="chip" data-lv="plan" aria-pressed="${LAPV.plan}"><span class="pn-i">1</span> ${esc(Tx("Plan","Plan",null,"Plano"))}${proB("coach_plan")}</button>`:co.length?`<button type="button" class="chip" data-lv="coach" aria-pressed="${LAPV.coach}"><i class="dotc"></i> Coach</button>`:""}<button type="button" class="chip" data-lv="delta" aria-pressed="${LAPV.delta}"><span class="good">■</span><span class="bad">■</span> ${esc(Tx("A vs B time","Tiempo A vs B","Zeit A vs B","Tempo A vs B"))}</button><button type="button" class="chip" data-rp aria-pressed="false">▶ ${esc(Tx("Replay","Repetición","Wiederholung","Replay"))}</button>${window.PW_FULLMAP?`<button type="button" class="chip" data-fsmap>⛶ ${esc(Tx("Full screen","Pantalla completa",null,"Tela cheia"))}</button>`:""}</div>
     <svg class="rbmap rbmap-wide" viewBox="0 0 600 400" role="img" aria-label="${esc(Tx("Track map: corners, braking points, incidents, coach, and where lap A gains or loses time against lap B","Mapa del circuito: curvas, frenadas, incidentes, coach y dónde la vuelta A gana o pierde tiempo frente a la B"))}">${(()=>{const pl=`${xs.map((_,i)=>f(P(i))).join(" ")} ${f(P(0))}`;return `<polyline class="trkS" points="${pl}"/><polyline class="trk" points="${pl}"/><polyline class="trkI" points="${pl}"/>`})()}
     ${dirArrowSvg(P(0),P(Math.max(2,Math.round(N/60))),W/2,H/2)}
     ${LAPV.delta?segs.map(g=>{const m0=Math.round(g.i0*BIN/L*N),m1=Math.round(g.i1*BIN/L*N),pts2=[];for(let m=m0;m<=m1;m++)pts2.push(f(P(m)));const op=g.v>0?.3+.7*Math.min(1,g.v/mx):.3+.7*Math.min(1,-g.v/mx);return Math.abs(g.v)<.003?"":`<polyline class="seg" points="${pts2.join(" ")}" style="stroke:var(${g.v>0?"--bad":"--good"});opacity:${op.toFixed(2)}"/>`}).join(""):""}
@@ -4053,7 +4055,19 @@ async function renderCmpMap(A,B,box,opt){if(!box)return;box._plan=opt&&opt.plan&
     <g class="planG"></g><circle class="hdot" r="6" hidden/><circle class="rpB" r="6" visibility="hidden"/><circle class="rpA" r="7" visibility="hidden"/></svg><div class="rp-bar" hidden><button type="button" class="btn small" data-rpgo>❚❚</button><input type="range" min="0" max="1000" value="0" aria-label="${esc(Tx("Replay","Repetición","Wiederholung","Replay"))}"><span class="mono rp-t"></span></div>${incSum}${LAPV.inc?offsHTML(offs,A):""}
     <p class="note" style="margin:6px 0 0">${esc(Tx("Touch or hover the map to read that point; the charts follow it.","Toca o pasa por el mapa para leer ese punto; las gráficas lo siguen.","Berühre die Karte oder fahre darüber, um den Punkt zu lesen; die Diagramme folgen.","Toque ou passe pelo mapa para ler esse ponto; os gráficos acompanham."))}</p>`;
   box.querySelectorAll("[data-lv]").forEach(b=>b.onclick=()=>{LAPV[b.dataset.lv]=!LAPV[b.dataset.lv];store.set("pw.lapv",LAPV);renderCmpMap(A,B,box,opt)});
+  {const fb=box.querySelector("[data-fsmap]");if(fb)fb.onclick=()=>openFullMap(box,A,B,map,sa,sb,n,cs,cnt)}
   box._at=at;box._L=L;drawPlanLayer(box);cmpMapWire(box,A,B,sa,sb,n,L,N,P,cs,incs,brA,brB);cmpReplay(box,sa,sb,n,L,at);replayWire(box,k=>sesLapsOf(A).find(l=>l.n===k))}
+/* the lap compare's map in full screen (pitwall-fullmap.js): the road at its real width, both laps' racing lines on it (the
+   one map that draws them, the owner's choice 2026-11-15), their braking and slowest points, the turns with their names,
+   zoom and drag, and the telemetry under it on one cursor with the replay. Closing it leaves the analyzer's cursor
+   where the map's was. */
+function openFullMap(box,A,B,map,sa,sb,n,cs,cnt){if(!window.PW_FULLMAP||!map||!map.x)return;
+  const names=TURN_TID?turnNamesFor(TURN_TID,A.game||B.game):null,L=n*BIN,zones=l=>brakeZones(serOf(l)),lap=box.id==="lapMap";
+  const start=CMP_HOVER?CMP_HOVER.i:lap&&typeof PW3L!=="undefined"&&PW3L.idx?PW3L.idx:0;
+  const sync=i=>{if(!lap)return;CMP_HOVER={i,quiet:true,pin:true};try{drawCmp(true)}catch(e){}};
+  PW_FULLMAP.open({map,n,A:{name:lapName(A),ser:sa.arr,xy:A.xy||null},B:{name:lapName(B),ser:sb.arr,xy:B.xy||null},bColor:bVar(B),
+    corners:cs.map(c=>({n:c.n,d:c.d,name:names&&names[c.n-1]||""})),brA:zones(A),brB:zones(B),sectors:cnt,start,
+    T:(en,es,pt)=>Tx(en,es,null,pt),spd,spdU,fmtT,onClose:sync})}
 /* the lap compare as a replay: A and B drive the map together on the same clock (four times as fast), with the gap in
    metres and seconds; the bar scrubs it */
 function cmpReplay(box,sa,sb,n,L,at){const b=box.querySelector("[data-rp]"),bar=box.querySelector(".rp-bar"),svg=box.querySelector("svg.rbmap");if(!b||!bar||!svg)return;
@@ -9222,7 +9236,23 @@ async function drawCommMap(s,laps){const box=$("#cmMap");if(!box)return;if(!laps
     ${f.hasTrace?`<button type="button" class="btn primary cl-cta" data-cmp="${esc(f.id)}">${esc(f.mine?Tx("Analyse my lap","Analizar mi vuelta","Meine Runde analysieren","Analisar minha volta"):Tx(`Compare with ${nm}`,`Comparar con ${nm}`,`Mit ${nm} vergleichen`,`Comparar com ${nm}`))}</button>`:`<p class="note">${esc(NO_TRACE())}</p>`}`;
   const cb=box.querySelector("[data-cmp]");if(cb)cb.onclick=()=>loadCommLap(cb.dataset.cmp,cb);
   const g=await commMapGeo(s,laps),mb=box.querySelector(".cl-mapbox");if(!mb||COMMSEL!==s)return;
-  mb.innerHTML=g.x?commMapSvg(g,secs):`<p class="note">${esc(Tx("No map of this track yet","Aún no hay mapa de este circuito","Noch keine Karte dieser Strecke","Ainda não há mapa desta pista"))}</p>`}
+  mb.innerHTML=g.x?commMapSvg(g,secs):`<p class="note">${esc(Tx("No map of this track yet","Aún no hay mapa de este circuito","Noch keine Karte dieser Strecke","Ainda não há mapa desta pista"))}</p>`;
+  // a press on the map opens it in full screen: the driver chosen (A) against your lap or the record (B)
+  if(g.x&&window.PW_FULLMAP&&laps.some(l=>l.hasTrace)){turnsFor(s.trackId,aGame());const fs=Tx("Full screen","Pantalla completa",null,"Tela cheia");mb.classList.add("fs");mb.setAttribute("role","button");mb.tabIndex=0;mb.title=fs;mb.setAttribute("aria-label",fs);mb.insertAdjacentHTML("beforeend",`<span class="cl-fs" aria-hidden="true">⛶</span>`);
+    const go=()=>commFullMap(s,laps,f,ref,mb);mb.onclick=go;mb.onkeydown=e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();go()}}}}
+const COMM_FSLAP={};
+async function commFsLap(l){if(COMM_FSLAP[l.id])return COMM_FSLAP[l.id];const r=await cget(`/api/community/laps?id=${encodeURIComponent(l.id)}`),tr=r&&r.trace;if(!tr||!tr.d||!tr.d.length)return null;
+  const bins=tr.d.map(x=>[x[0],x[5],x[1],x[2],x[3],x[4],null]),nm=l.mine?Tx("You","Tú",null,"Você"):l.alias==="Anonymous"?Tx("Anonymous","Anónimo",null,"Anônimo"):unMojibake(l.alias||"");
+  return COMM_FSLAP[l.id]={n:"COM",alias:nm,name:nm,time:r.time||l.time,bins,maxBin:bins.length-1,xy:traceXY(tr),cid:l.id,game:aGame(),sectors:l.sectors||null}}
+async function commFullMap(s,laps,f,ref,mb){if(mb._busy)return;mb._busy=true;mb.classList.add("busy");
+  try{const tr=laps.filter(l=>l.hasTrace),a=f.hasTrace?f:ref.hasTrace?ref:tr[0],b=ref!==a&&ref.hasTrace?ref:tr.find(l=>l!==a)||a,g=aGame();
+    const [A,B,map]=await Promise.all([commFsLap(a),commFsLap(b),trackMapFor(s.trackId,g)]);if(!A||!B)throw new Error(NO_TRACE());if(!map||!map.x||map.x.length<=10)return;
+    const sa=lapSeries(A),sb=lapSeries(B),n=Math.min(sa.end,sb.end);if(n<8)return;
+    for(let i=0;i<15&&!turnsFor(s.trackId,g);i++)await new Promise(r=>setTimeout(r,100));
+    const L=n*BIN,cs=officialCorners(s.trackId,g,map.x.length,L)||trackCorners(map,L),names=turnNamesFor(s.trackId,g),cnt=Math.max(A.sectors?.length||0,B.sectors?.length||0)||3,zones=l=>brakeZones(serOf(l));
+    PW_FULLMAP.open({map,n,A:{name:A.name+" "+fmtT(A.time),ser:sa.arr,xy:A.xy},B:{name:B.name+" "+fmtT(B.time),ser:sb.arr,xy:B.xy},bColor:"--blue",
+      corners:cs.map(c=>({n:c.n,d:c.d,name:names&&names[c.n-1]||""})),brA:zones(A),brB:zones(B),sectors:cnt,start:0,T:(en,es,pt)=>Tx(en,es,null,pt),spd,spdU,fmtT})}
+  catch(e){uiNotice(e.message)}finally{mb._busy=false;mb.classList.remove("busy")}}
 let COMM_ALL=[];
 /* Recent records: the fastest lap of every car and track, the newest first, with the lap it beat; filtered by the
    discipline chosen above, a Compare (lap B in the analyzer), its leaderboard and its track page */

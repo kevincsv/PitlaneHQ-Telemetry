@@ -66,7 +66,7 @@ import { anonAdopt, anonForget } from "./anon.js";
 import { lmuApiRoutes } from "./lmuapi.js";
 import { turnsFromPath } from "./trackgeo.js";
 import { refTurns, refNames } from "./turnsref.js";
-import { turnCount, noteTurnCount, rebuildTrackMaps, traceLen, fitsLayout, layoutN } from "./trackmaps.js";
+import { turnCount, noteTurnCount, rebuildTrackMaps, traceLen, fitsLayout, layoutN, evenPath } from "./trackmaps.js";
 import { estimateTrace } from "./pedals.js";
 import { discordLapAlert } from "./discord.js";
 import { recordBeaten, testerAlert, testAskAlert } from "./alerts.js";
@@ -1399,7 +1399,7 @@ export async function community(req, env, url, ctx) {
     await env.DB.prepare(
       `INSERT INTO track_maps (game, track_id, track, n, len, pts, time, user_id, created, geo) VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10)
        ON CONFLICT(game, track_id) DO UPDATE SET track=excluded.track, n=excluded.n, len=excluded.len, pts=excluded.pts, time=excluded.time, user_id=excluded.user_id, created=excluded.created, geo=excluded.geo`
-    ).bind(game, trackId, str(body.track), n, num(body.len), JSON.stringify({ x: x.map(r2), y: y.map(r2) }), time, u.id, Date.now(), g ? JSON.stringify(g) : null).run();
+    ).bind(game, trackId, str(body.track), n, num(body.len), JSON.stringify(evenPath(x, y) || { x: x.map(r2), y: y.map(r2) }), time, u.id, Date.now(), g ? JSON.stringify(g) : null).run();
     return json({ shared: true });
   }
   if (p === "/pitlane" && m === "POST") {

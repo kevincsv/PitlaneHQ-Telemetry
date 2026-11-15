@@ -9,7 +9,7 @@ import { markModel, rebuildDirty, reconcileIds, buildOvalKinds } from "./model.j
 import { fillCats } from "./coachtips.js";
 import { shadowRun, answerRun } from "./coachlearn.js";
 import { DEV, deviceOf, anonSession, anonCount, anonPrune } from "./anon.js";
-import { rebuildTrackMaps, rebuildEdges } from "./trackmaps.js";
+import { rebuildTrackMaps, rebuildEdges, evenTrackMaps } from "./trackmaps.js";
 import { autoShare, reshareSession, unshareInvalid } from "./community.js";
 import { catMap, catOf, licOf } from "./categories.js";
 import { patreonWebhook } from "./patreon.js";
@@ -600,7 +600,7 @@ export default {
     // the laps of before go to the telemetry bucket, some each run, once the database says so (tracestore.js)
     ctx.waitUntil(moveTraces(env, { limit: 120, ms: 25000, daily }).catch(() => {}));
     if (hourly) { ctx.waitUntil(fillCats(env).catch(() => {})); ctx.waitUntil(fillSectors(env).catch(() => {})); ctx.waitUntil(pruneUsage(env).catch(() => {})); ctx.waitUntil(pruneSeen(env).catch(() => {})); ctx.waitUntil(refCheck(env).catch(() => {})); }
-    if (daily) { ctx.waitUntil(weeklyMetrics(env).catch(() => {})); ctx.waitUntil(anonPrune(env).catch(() => {})); ctx.waitUntil(buildOvalKinds(env).catch(() => {})); ctx.waitUntil(fixLapTimes(env).catch(() => {})); ctx.waitUntil(repairImpossibleShares(env).catch(() => {})); ctx.waitUntil(env.DB.prepare(ALL_SESSION_SUMS).run().catch(() => {})); ctx.waitUntil(env.DB.prepare(FUEL_SUMS).bind(fuelSince(at.getTime())).run().catch(() => {})); } ctx.waitUntil(resharePending(env).catch(() => {})); ctx.waitUntil(rebuildTrackMaps(env).catch(() => {})); ctx.waitUntil(rebuildEdges(env).catch(() => {})); ctx.waitUntil(scanLeagues(env).catch(() => {})); ctx.waitUntil(prunePresence(env).catch(() => {}));
+    if (daily) { ctx.waitUntil(weeklyMetrics(env).catch(() => {})); ctx.waitUntil(anonPrune(env).catch(() => {})); ctx.waitUntil(buildOvalKinds(env).catch(() => {})); ctx.waitUntil(fixLapTimes(env).catch(() => {})); ctx.waitUntil(repairImpossibleShares(env).catch(() => {})); ctx.waitUntil(env.DB.prepare(ALL_SESSION_SUMS).run().catch(() => {})); ctx.waitUntil(env.DB.prepare(FUEL_SUMS).bind(fuelSince(at.getTime())).run().catch(() => {})); } ctx.waitUntil(resharePending(env).catch(() => {})); ctx.waitUntil(rebuildTrackMaps(env).catch(() => {})); ctx.waitUntil(evenTrackMaps(env).catch(() => {})); ctx.waitUntil(rebuildEdges(env).catch(() => {})); ctx.waitUntil(scanLeagues(env).catch(() => {})); ctx.waitUntil(prunePresence(env).catch(() => {}));
     wait(Promise.allSettled(all).then(() => flushUsage(raw, true)));
   },
   async fetch(req, env, ctx) {

@@ -20,8 +20,10 @@ Status as of 2026-11-14. Rules for releasing are in CLAUDE.md and `docs/spec/pc-
 
 ## Held until the owner says
 
-- Telemetry's Engineer view and the Team screen's Engineer (fuel tracker, field with tyres and PIT/OUT/OFF, map, share
-  code): on branch `claude/project-thread-om4yc5` (on top of the 0.9.24 fixes), not built, waits for the owner's push.
+- On the beta channel together (2026-11-15 20:45 UTC, branch `claude/project-thread-om4yc5`, a merge of
+  `claude/project-thread-mewaaa`): the full-screen track map of the lap comparison (a user's review), Telemetry's
+  Engineer view and the Team screen's Engineer (fuel tracker, field with tyres and PIT/OUT/OFF, map, share code,
+  Customize), and the 0.9.24 fixes. Not on master. Waits for testing and the owner's "sube". Phones not done (no phone work).
 
 - Watch in replay and the pedal and wheel check stay testers-only, also in production.
 - Version 1.0 waits for the Steam version to be approved by Valve. Stay on 0.9.x.

@@ -12,7 +12,11 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   `shareTrackMap`). The layouts drawn by dead reckoning are rebuilt from a stored lap of the same game and track with the
   game's position (`cloud/src/trackmaps.js`, `rebuildTrackMaps`: a few tracks per ten-minute run, looked at again once a
   day, app_state `trackmaps_rebuild`; Admin → Server → "Rebuild the track maps" does them all, POST
-  `/community/admin/trackmaps-rebuild`), and the PC replays the newest .ibt files of a track whose community map has no
+  `/community/admin/trackmaps-rebuild`). A layout whose points are uneven (a game that gives its position slowly, Le
+  Mans Ultimate: points on top of each other, then a gap of 15 m) is kept as the same path read at even steps
+  (`evenPath`, the same number of points; when it is shared, when it is rebuilt, and the ones kept before once, twenty
+  per ten-minute run, `evenTrackMaps`, app_state `trackmaps_even`, what was there under `trackmap_raw:<game>:<track>`,
+  its edges measured again). And the PC replays the newest .ibt files of a track whose community map has no
   `g` to share its fastest valid lap with the game's position (`ibtTrackScan` in trackturns.go). A track's corners come
   from the geometry of its layout (`cloud/src/trackgeo.js`: a bend tighter than 300 m of radius for 20 m or more, bends
   the same way closer than 60 m are one corner, the apex where it bends most), fitted to the track's official number of
@@ -34,7 +38,8 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   ±400 m moving average); the coach turns it into inside/outside at B's turn-in, apex and exit (1.5 m or more) and says
   it first when you brake at the reference's point on the wrong part of the track. The model's record and next levels
   carry their line (`idealXY`, ladder x/y, `lapPath` in model.js). The line is read in the coach's tips and the "Line"
-  chart only: no map draws it (the owner's choice, they never looked right). Every map (analyzer, coach, race summary,
+  chart, and drawn on one map only: the lap compare's full-screen map (app-screens.md), where the road has its real width
+  (the owner's choice 2026-11-15; the small maps never looked right with it). Every other map (analyzer, coach, race summary,
   track page, the live map, the Community board's map, the map overlay, phones) draws the track as a road with depth
   (shadow, rim, asphalt) from the community's generated layout (`trackMapFor`/`commTrackMap` on the web, `loadMap` in
   ovnative4.go, `trackLayout`, `layout` in the phones' `LapAnalysis`), never a lap's own path, no lap's line on it and no

@@ -61,7 +61,8 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   demo data, never for a visitor (dropped unsent), never from an overlay window, never while an admin has admin mode on.
   Telemetry also counts, once a day each and after 20 seconds on the screen, the panels it shows (`live:<panel>`) and its
   mode (`live:mode.basic|full|cmp`) for Layout's "Most used by the community" (telemetry.md); those keys stay out of
-  the admin page's features and users.
+  the admin page's features and users and make the Analytics' Telemetry panels card (`live` in the answer [{w, users,
+  days}], `admLiveHTML`).
   Which overlays are used: the agent (`ovusage.go`) counts, once a minute while the driver is in the car in a real
   session, each native overlay open (`ov:<overlay>`, minutes) and sends them with the same POST `/community/usage`
   (device pc) every ten minutes, never in demo data, never for an admin, dropped when signed out. The race report the PC
@@ -71,7 +72,9 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   (`overlays` in the answer, `overlaysOf` in usagelib.js, `admOverlaysHTML` in pitwall-admin.js): drivers, time open and
   races per overlay, the most drivers first. Counting began with the server and agent of 2026-11-15 (before it only "an
   overlay was opened from the app" was counted, without which one). The phones' admin panel does not show it yet.
-  The server keeps keys matching `^(view|act|game|live|ov):[a-z0-9_.-]{1,40}$` only, 100 a batch, 1000 per key, added into one row
+  The server keeps keys matching `^(view|act|game|live|ov|run|set|pro_use):[a-z0-9_.-]{1,40}$` only (`run:agent` the agent ran that day,
+  `set:autostart.on|off` a setting as it stands once a day, `pro_use:<feature>` a Pro feature used: the three only feed
+  the weekly numbers below, never the features, devices or users), 100 a batch, 1000 per key, added into one row
   per day, account, device and key (rows over 400 days go, hourly). `ms` (how long the page was on the screen, 10 minutes
   a batch at most) adds to the account's use for the feedback window. One use of the same action with the same thing within a
   minute counts once (a screen that opens itself again when a setting changes in it, like the overlay settings, is one use).
@@ -110,6 +113,66 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   signups, prevSignups}], byCountry, byPage}, highlights [{k, tone, a, text [en, es, pt]}], areas [{k, name, rows [{key,
   name, what, users, n}]}]} (`analyticsOf`, `analyticsMore`, `sourcesOf`, `highlightsOf` in usagelib.js; the names and
   sentences in the three languages in `usagenames.js`, so the phones show the same).
+- The answer of `/community/admin/analytics` is kept ten minutes (`adminCache` in metrics.js, a key nobody can open).
+- The weekly numbers (the admin page's Analytics section; `cloud/src/metrics.js`, the job in `metricsjob.js`, the pure
+  part in `metricslib.js`, migration 0105 `metrics_weeks`, `cohort_weeks`, `links`, `events`). The words mean one thing
+  everywhere: a week is Monday to Sunday, UTC; used it is opening a screen of an app that day (a usage row that is not
+  the agent's own `ov:`, `ovrace:`, `run:`, `set:`); drove is uploading a session that day and raced one of them being a
+  race; active means drove (the owner's choice, 2026-11-15: what matters is that the app is used to drive, not that it
+  was opened), so the weekly drivers (`users`) are the accounts that uploaded a session, and opening an app (`opened`,
+  used it or drove) is a second, smaller number under it (the agent running in the background, `run:agent`, is
+  `users_bg` and `agent`, apart); the drivers are every account but the admins and the testers (`aud` 0, the default; 1 counts everyone); a new
+  account is kept ("still driving a week later") when it uploads a session on any of days 7 to 13 after the day it was
+  created (`c:kept_open` counts opening an app too, shown beside it), and Retention opens on Drove, with Raced and
+  Opened the app as the other two; kept is counted only once it is 14 days old; activated is a session uploaded on its day or the next.
+  The daily job (03:00 UTC, `weeklyMetrics`, under "cron daily" in Database reads) reads the usage, the sessions, the
+  accounts, the visits, the installer's counts, the paid donations, the invites, the server's events and the sessions
+  of PCs with no account (`uploader LIKE 'dev:%'`) of the last 15 weeks (`JOB_WEEKS`), adds them up (`buildMetrics`)
+  and writes only the rows that changed, so a quiet night writes nothing; a number that is gone goes back to zero. Per
+  week: users, used (and per device), drove (and per game), raced, sessions, races, new (and per source), visits (and
+  per source), downloads, uninstalls, donations and what they raised per currency, invited, invite_given, `e:<event>`,
+  anon_pcs, anon_sessions, the sales counters (`k:<key>` drivers and `kn:<key>` uses of `act:pro_*`, `act:donate_*`,
+  `act:invite_*`, `act:trial_*`, `act:checkout_*`, `act:pricing_*`, `act:share_card`, `pro_use:*`) and the supporters as
+  they stand (only the week it is: earlier weeks keep what was counted then). Per sign-up week, for all, per source and
+  per first game: `c:n`, `c:open7`, `c:up2`, `c:up7`, `c:mature`, `c:kept`, `c:med_h` (the median hours from the account
+  to its first session); the steps reached the same day, within 2 days and within 7 (`s:<step>:1|2|7`: opened, drove,
+  laps, raced, coach, overlay, community, second device) and, for the accounts already 14 days old, what they did in
+  their first two days against being kept (`b:<behaviour>:n|kept`). `cohort_weeks` has, per sign-up week and split, each
+  week after (wk 0 is the account's first seven days, up to 12) with its size, how many were active, drove and raced,
+  and `ripe`, the accounts whose week is already over.
+  GET `/community/admin/metrics?weeks=4|8|12|26&aud=0|1` (admins, kept ten minutes) answers {weeks, days, monday (the
+  seven numbers: users, new, kept, up7, raced with its share of who drove, visits_day, supporters, each with its list
+  per week and its two targets), targets, series (every number as a list per week), cohorts, stay, stayAll, sources
+  (each source and tagged link: visits, accounts, up2, mature, kept, the ones whose drivers stayed first), steps, job,
+  links}; POST `/community/admin/metrics/run` {all} runs the job now (all: from the first day there is, the backfill);
+  POST `/community/admin/metrics/targets` {d1, d2, t} saves the targets (app_state `metrics_targets`; the defaults are
+  the growth plan's, 20 Dec 2026 and 31 Jan 2027); GET `/community/admin/metrics/health` answers every counter family
+  and device with the last day it sent anything in 30 days (`healthOf`: ok, quiet after 3 days of silence, never), the
+  versions seen, the job's last run and the rows the Analytics and the daily job cost in 7 days; GET
+  `/community/admin/metrics/account?id=` one account's steps with their days and where it came from (`timelineOf`), shown
+  under the account's detail in Users; GET/POST `/community/admin/links` and DELETE `/community/admin/links/<tag>` the
+  tagged links (`pitlanehq.app/?ref=<tag>`: a visit and a sign-up from one carry the tag as their source).
+  The server's own events (`eventslib.js`, `logEvent(env, name, accountId, info)`: trial_started, trial_ended, pro_paid,
+  pro_renewed, pro_cancelled, pro_refunded, thanks_month, email_sent, email_click) go to `events` and are counted per
+  week; deleting an account deletes its events. Nothing writes one yet: the Pro trial and the payments will.
+  The Analytics section (`admMetrics` in pitwall-admin.js, parts `m_*`): Monday (the seven numbers as cards with the
+  week that just ended, the change, the line of the weeks, the week so far and the targets, green once reached; week by
+  week; the targets' form), Growth (from the visit to staying per source and link, the tagged links' form, week by
+  week), Activation (the steps the same day, within 2 and within 7 days, and by sign-up week), Retention (each sign-up
+  week over time with Active, Drove or Raced and a split by game or source; what goes with staying), Sales (PRO badge
+  presses by feature, the PRO window, pricing, the donation bar shown, pressed and refused, donations and what they
+  raised, invites, the PCs with no account) and Data (is every counter arriving, the job with Add up now and Add up
+  everything, the weeks as CSV, what it costs, what each word means). 4, 8, 12 or 26 weeks; Drivers or With admins and
+  testers. A share over fewer than 20 accounts is grey, and a week still running is lighter. The phones' admin panel
+  does not have it yet.
+  The page counts for it: a PRO badge pressed (`act:pro_badge.<feature>`, `proB("<feature>")`), the PRO window
+  (`act:pro_info`), See pricing in it (`act:pricing_open`), Support in it (`act:donate_pro`), Support offered in it
+  (`act:donate_shown`), the donation bar shown once a day (`act:donate_bar_shown`), the invite code copied and the link shared (`act:invite_copy`, `act:invite_share`).
+  The server keeps its own events for the Sales tab (`events`, `logEvent` in eventslib.js): `trial_started` (a new
+  account's days of Pro), `thanks_month` (the day Pro is switched on), `pro_paid`, `pro_refunded` and `pro_cancelled`
+  (lemon.js); a payment notice sent twice is kept once.
+  `cloud/test/metrics.test.mjs` also checks that every action counted by wrapping a function (`USE_LAST` in index.html)
+  is still a function of the page, so a renamed one cannot stop counting unseen.
 - The Summary's analytics (`admAnalyticsHTML`, the owner's approved design): 7, 30 or 90 days with "Changes are against
   the N days before", What stands out (the server's sentences: active drivers against before, the biggest drop of the new
   accounts, the coach used by few, where most accounts or visits came from, sessions a driver per game, a phone with no
@@ -124,7 +187,7 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   nobody drove greyed: drivers and sessions with their change, new to the game, races, laps, hours, sessions a driver;
   then a chooser of the game (`admGameHTML`, `ADM.game`, no new request) with its tiles (drivers and new to it, sessions
   and races, time driven and laps, counted by the apps), its drivers per day and the tracks and cars driven most), What drivers use (by area, the share of the active drivers and the
-  uses, what each counts on hover), Overlays (each overlay's drivers, time open while driving and races), Devices (drivers) and Up to date (devices on each app's newest version, the older ones
+  uses, what each counts on hover), Overlays (each overlay's drivers, time open while driving and races), Telemetry panels (each panel's drivers and days, and the modes), Devices (drivers) and Up to date (devices on each app's newest version, the older ones
   on hover). Users merges the answer into every account.
 - The admin page's look (Nov 2026): the sections as a dark well with the chosen one raised, every part a card with its
   title in the display font, the key numbers as tiles, the rows as cards (`#v-admin` rules and `.an-*` in index.html).

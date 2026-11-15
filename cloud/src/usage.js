@@ -28,6 +28,7 @@ import { installsOf, supportersOf } from "./pcstats.js";
 import { srcName, KIND_NAMES, hiText, areasOf } from "./usagenames.js";
 import { visitOf, countryOf, isBot, sourcesOf, SQL_VISIT_ADD, DL_DAYS } from "./sourceslib.js";
 import { openEscrow } from "./escrow.js";
+import { adminCache } from "./metrics.js";
 import { livePopular } from "./livepopular.js";
 import { sendFeedback } from "./email.js";
 import { discordFeedback } from "./discord.js";
@@ -151,17 +152,19 @@ export async function usageRoute(req, env, url) {
   }
   if (p === "/community/admin/analytics" && m === "GET") {
     const days = Math.max(1, Math.min(MAX_DAYS, Math.floor(Number(url.searchParams.get("days")) || 30)));
+    // kept ten minutes: the page is opened often and its numbers move by the day (metrics.js adminCache)
+    return json(await adminCache(env, "analytics/" + days, 600, async () => {
     // this period and the same number of days before it, for the changes
     const t0 = Date.parse(day(now - (days - 1) * 86400e3) + "T00:00:00Z"), p0 = t0 - days * 86400e3;
     const from = day(t0), pFrom = day(p0);
     const q = (sql, ...a) => env.DB.prepare(sql).bind(...a).all().then((r) => r.results || []);
     const [actDays, rows, pres, ses, pSes, pAct, accs, allAcc, vis] = await Promise.all([
-      q("SELECT DISTINCT account_id, day FROM usage_days WHERE day>=?1 LIMIT 20000", from),
-      q("SELECT account_id, device, key, SUM(n) AS n, MAX(day) AS last FROM usage_days WHERE day>=?1 AND key NOT LIKE 'live:%' GROUP BY account_id, device, key LIMIT 20000", from),
+      q("SELECT DISTINCT account_id, day FROM usage_days WHERE day>=?1 AND key NOT LIKE 'run:%' AND key NOT LIKE 'set:%' LIMIT 20000", from),
+      q("SELECT account_id, device, key, SUM(n) AS n, MAX(day) AS last FROM usage_days WHERE day>=?1 GROUP BY account_id, device, key LIMIT 20000", from),
       q("SELECT account_id, kind, app_version, last_seen FROM presence WHERE last_seen>?1 LIMIT 5000", now - 7 * 86400e3),
       q(SQL_SESSIONS_DAYS, t0),
       q("SELECT COUNT(*) AS sessions, COUNT(DISTINCT uploader) AS drivers, SUM(COALESCE(secs,0)) AS secs FROM sessions WHERE started>=?1 AND started<?2 AND uploader LIKE 'acct:%'", p0, t0),
-      q("SELECT COUNT(*) AS n FROM (SELECT account_id AS a FROM usage_days WHERE day>=?1 AND day<?2 UNION SELECT substr(uploader,6) FROM sessions WHERE started>=?3 AND started<?4 AND uploader LIKE 'acct:%')", pFrom, from, p0, t0),
+      q("SELECT COUNT(*) AS n FROM (SELECT account_id AS a FROM usage_days WHERE day>=?1 AND day<?2 AND key NOT LIKE 'run:%' AND key NOT LIKE 'set:%' UNION SELECT substr(uploader,6) FROM sessions WHERE started>=?3 AND started<?4 AND uploader LIKE 'acct:%')", pFrom, from, p0, t0),
       q("SELECT id, created, src, country FROM accounts WHERE created>=?1 LIMIT 20000", p0),
       q("SELECT COUNT(*) AS n FROM accounts"),
       q("SELECT day, src, country, page, n FROM visits_days WHERE day>=?1 LIMIT 20000", pFrom).catch(() => []),
@@ -194,7 +197,8 @@ export async function usageRoute(req, env, url) {
     const all = { ...out, ...more, installs, supporters, sources: sourcesOf(vNow, vPrev, accs.filter((a) => a.created >= t0), accs.filter((a) => a.created < t0)) };
     // the names and sentences in the three languages, so the phones show what the web shows (usagenames.js)
     all.sources.bySource = all.sources.bySource.map((x) => ({ ...x, name: srcName(x.src), kindName: KIND_NAMES[x.kind] || KIND_NAMES.other }));
-    return json({ ...all, highlights: highlightsOf(all).map((h) => ({ ...h, text: hiText(h.k, h.a) })), areas: areasOf(all.top || []) });
+    return { ...all, highlights: highlightsOf(all).map((h) => ({ ...h, text: hiText(h.k, h.a) })), areas: areasOf(all.top || []) };
+    }));
   }
   return err("not found", 404);
 }

@@ -6,7 +6,7 @@ const { chromium } = require('playwright');
 const OUT = process.argv[2] || require('path').join(require('os').tmpdir(), 'pitlanehq-ui-sweep'); // never a folder named "undefined" in the repository
 require('fs').mkdirSync(OUT + '/ui', { recursive: true });
 const views=["home","laps","coach","cloudlaps","stats","live","team","overlays","community","leagues","me","settings","admin"];
-const ADMIN_SECS=["summary","users","feedback","content","sessions","coach","health","server"]; // the admin page's sections, each checked too
+const ADMIN_SECS=["summary","analytics","users","feedback","content","sessions","coach","health","server"]; // the admin page's sections, each checked too
 (async () => {
   const b = await chromium.launch();
   for (const width of [1300, 390]) {
@@ -28,6 +28,13 @@ const ADMIN_SECS=["summary","users","feedback","content","sessions","coach","hea
         const a = await p.evaluate(()=>{const W=innerWidth,bad=[];for(const el of document.querySelectorAll('#v-admin *')){const r=el.getBoundingClientRect();if(r.width&&r.height&&r.right>W+1&&el.closest('[hidden]')==null){bad.push(el.tagName.toLowerCase()+(el.className&&typeof el.className==='string'?'.'+el.className.trim().split(/\s+/)[0]:'')+' r='+Math.round(r.right));if(bad.length>4)break}}return {sw:document.documentElement.scrollWidth,W,bad}});
         console.log(width, 'admin/'+sec, 'overflow:', a.sw>a.W?a.sw:'ok', a.bad.join(' | '));
         await p.screenshot({path:`${OUT}/ui/shot-${width}-admin-${sec}.png`, fullPage:true});
+        // the Analytics section's tabs, each one checked
+        if (sec==="analytics") for (const part of ["m_growth","m_activation","m_retention","m_sales","m_data"]) {
+          await p.evaluate(part=>{const b=document.querySelector(`[data-adm="${part}"]`);if(b)b.click()}, part); await p.waitForTimeout(900);
+          const c = await p.evaluate(()=>{const W=innerWidth,bad=[];for(const el of document.querySelectorAll('#v-admin *')){const r=el.getBoundingClientRect();if(r.width&&r.height&&r.right>W+1&&el.closest('[hidden]')==null&&!el.closest('.an-tw,.an-chart'))bad.push(el.tagName+'.'+String(el.className).slice(0,30)+' '+Math.round(r.right))}return{W,sw:document.documentElement.scrollWidth,bad:bad.slice(0,4),empty:!document.querySelector('#admBody .an-card')}});
+          console.log(width, 'admin/analytics/'+part, 'overflow:', c.sw>c.W?c.sw:'ok', c.bad.join(' | '), c.empty?'EMPTY':'');
+          await p.screenshot({path:`${OUT}/ui/shot-${width}-admin-${part}.png`, fullPage:true});
+        }
       }
       if (v==="laps"||v==="coach") { await p.evaluate(()=>{try{closeOpenPanels()}catch(e){} const d=document.querySelector('#sesPick,#pickWin,.pickwin');}); }
     }

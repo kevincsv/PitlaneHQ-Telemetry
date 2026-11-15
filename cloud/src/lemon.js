@@ -8,6 +8,7 @@
 import PLANS from "../../license_plans.json";
 import { sessionAccount, isAdmin, emailHash } from "./accounts.js";
 import { setPro } from "./prostore.js";
+import { logEvent } from "./eventslib.js";
 
 const JSONH = { "content-type": "application/json", "access-control-allow-origin": "*" };
 const json = (o, s = 200) => new Response(JSON.stringify(o), { status: s, headers: JSONH });
@@ -45,7 +46,8 @@ export function proOf(a) {
 export async function trialOnRegister(env, id, now = Date.now()) {
   if (!TRIAL_DAYS || !(await proGate(env))) return 0;
   const until = now + TRIAL_DAYS * DAY;
-  await env.DB.prepare("UPDATE accounts SET trial_until=?2 WHERE id=?1 AND trial_until=0").bind(id, until).run();
+  const r = await env.DB.prepare("UPDATE accounts SET trial_until=?2 WHERE id=?1 AND trial_until=0").bind(id, until).run();
+  if (r.meta && r.meta.changes) await logEvent(env, "trial_started", id, { days: TRIAL_DAYS }, now); // the weekly numbers (metrics.js)
   return until;
 }
 
@@ -56,7 +58,9 @@ export async function proLaunch(env, now = Date.now()) {
   if (!(r.meta && r.meta.changes)) return { launched: false, thanked: 0 };
   if (!THANKS_MONTHS) return { launched: true, thanked: 0 };
   const g = await env.DB.prepare("UPDATE accounts SET ref_months=ref_months+?1 WHERE created<?2").bind(THANKS_MONTHS, now).run();
-  return { launched: true, thanked: (g.meta && g.meta.changes) || 0 };
+  const thanked = (g.meta && g.meta.changes) || 0;
+  await logEvent(env, "thanks_month", null, { accounts: thanked, months: THANKS_MONTHS }, now, "thanks_month");
+  return { launched: true, thanked };
 }
 
 // the founding supporter offer: donations of FOUNDING.min dollars or more in all (pro_orders of kind 'supporter', by the
@@ -105,12 +109,15 @@ export async function lemonWebhook(req, env) {
     if (isSub) return json({ ok: true, skipped: "subscription order" });
     const paid = ev === "order_created" && at.status === "paid" && !at.refunded;
     await setPro(env, { accountId, eh, kind: "lifetime", until: 0, on: paid, order: "order:" + d.id });
+    await logEvent(env, paid ? "pro_paid" : "pro_refunded", accountId, { kind: "lifetime" }, 0, (paid ? "paid:order:" : "refund:order:") + d.id);
     return json({ ok: true, lifetime: paid });
   }
   if (/^subscription_/.test(ev)) {
     const live = ["active", "on_trial", "past_due", "cancelled"].includes(at.status);
     const until = at.status === "cancelled" ? t(at.ends_at) : t(at.renews_at) + 3 * 86400e3; // a few days of grace for the renewal
     await setPro(env, { accountId, eh, kind: "subscription", until, on: live && until > Date.now(), order: "sub:" + d.id });
+    if (ev === "subscription_created") await logEvent(env, "pro_paid", accountId, { kind: "subscription" }, 0, "paid:sub:" + d.id);
+    if (ev === "subscription_cancelled") await logEvent(env, "pro_cancelled", accountId, { kind: "subscription" }, 0, "cancel:sub:" + d.id);
     return json({ ok: true, subscription: live });
   }
   return json({ ok: true, skipped: ev });

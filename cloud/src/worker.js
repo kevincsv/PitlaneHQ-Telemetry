@@ -35,6 +35,7 @@ import { scanLeagues } from "./leaguescan.js";
 import { onlineRoute, prunePresence } from "./presence.js";
 import { winbackRoute } from "./winback.js";
 import { usageRoute, pruneUsage } from "./usage.js";
+import { metricsRoute, weeklyMetrics } from "./metrics.js";
 import { supportRoute } from "./support.js";
 import { sessionSummary, SESSION_SUMS, ALL_SESSION_SUMS } from "./sessionsum.js";
 import { FUEL_SUMS, fuelSince } from "./fuel.js";
@@ -577,7 +578,7 @@ export default {
     // the next sessions give to every tip (coachlearn.js)
     ctx.waitUntil(shadowRun(env).then(() => answerRun(env)).catch(() => {}));
     if (hourly) { ctx.waitUntil(fillCats(env).catch(() => {})); ctx.waitUntil(fillSectors(env).catch(() => {})); ctx.waitUntil(pruneUsage(env).catch(() => {})); ctx.waitUntil(pruneSeen(env).catch(() => {})); ctx.waitUntil(refCheck(env).catch(() => {})); }
-    if (daily) { ctx.waitUntil(anonPrune(env).catch(() => {})); ctx.waitUntil(buildOvalKinds(env).catch(() => {})); ctx.waitUntil(fixLapTimes(env).catch(() => {})); ctx.waitUntil(repairImpossibleShares(env).catch(() => {})); ctx.waitUntil(env.DB.prepare(ALL_SESSION_SUMS).run().catch(() => {})); ctx.waitUntil(env.DB.prepare(FUEL_SUMS).bind(fuelSince(at.getTime())).run().catch(() => {})); } ctx.waitUntil(resharePending(env).catch(() => {})); ctx.waitUntil(rebuildTrackMaps(env).catch(() => {})); ctx.waitUntil(rebuildEdges(env).catch(() => {})); ctx.waitUntil(scanLeagues(env).catch(() => {})); ctx.waitUntil(prunePresence(env).catch(() => {}));
+    if (daily) { ctx.waitUntil(weeklyMetrics(env).catch(() => {})); ctx.waitUntil(anonPrune(env).catch(() => {})); ctx.waitUntil(buildOvalKinds(env).catch(() => {})); ctx.waitUntil(fixLapTimes(env).catch(() => {})); ctx.waitUntil(repairImpossibleShares(env).catch(() => {})); ctx.waitUntil(env.DB.prepare(ALL_SESSION_SUMS).run().catch(() => {})); ctx.waitUntil(env.DB.prepare(FUEL_SUMS).bind(fuelSince(at.getTime())).run().catch(() => {})); } ctx.waitUntil(resharePending(env).catch(() => {})); ctx.waitUntil(rebuildTrackMaps(env).catch(() => {})); ctx.waitUntil(rebuildEdges(env).catch(() => {})); ctx.waitUntil(scanLeagues(env).catch(() => {})); ctx.waitUntil(prunePresence(env).catch(() => {}));
     wait(Promise.allSettled(all).then(() => flushUsage(raw, true)));
   },
   async fetch(req, env, ctx) {
@@ -625,6 +626,8 @@ async function handle(req, env, ctx) {
     // the admin page's Online tab: who is on the web, the PC or the phones now (presence.js)
     // the admin page's Activity part: when each account last used Pitlane HQ, and the "we miss you" email (winback.js)
     if (url.pathname === "/community/admin/activity" || url.pathname.startsWith("/community/admin/winback")) return winbackRoute(req, env, url).catch((e) => new Response(JSON.stringify({ error: "server error: " + (e && e.message) }), { status: 500, headers: { "content-type": "application/json" } }));
+    // the admin Analytics' weekly numbers, cohorts, counter health and tagged links (metrics.js)
+    if (url.pathname.startsWith("/community/admin/metrics") || url.pathname.startsWith("/community/admin/links")) return metricsRoute(req, env, url).catch((e) => new Response(JSON.stringify({ error: "server error: " + (e && e.message) }), { status: 500, headers: { "content-type": "application/json" } }));
     if (url.pathname === "/community/admin/online" && req.method === "GET") return onlineRoute(req, env).catch((e) => new Response(JSON.stringify({ error: "server error: " + (e && e.message) }), { status: 500, headers: { "content-type": "application/json" } }));
     // what the drivers use and what they tell us (usage.js): the usage batches, the feedback window, the visits, the admin's analytics
     if (url.pathname.startsWith("/community/usage") || url.pathname === "/community/live/popular" || url.pathname.startsWith("/community/feedback") || url.pathname === "/community/visit" || url.pathname === "/community/admin/analytics" || url.pathname.startsWith("/community/admin/feedback")) {

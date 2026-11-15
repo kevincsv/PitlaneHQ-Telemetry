@@ -66,7 +66,7 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   installer/PitlaneHQ.iss when the installer's uninstaller is run by itself). The page (`cloud/src/uninstall.js`, English, Spanish or Portuguese by ?lang= or the
   browser's, noindex): the title, the reasons as chips to pick any of (`REASONS`: it does not work with my game, bugs
   or crashes, it slows down my PC or my game, it is missing something I need, hard to use, I use another app, I do not
-  race enough, I am going to install it again, something else), a text box under "Tell us what happened" (a hint of what to write inside it) and Send, then "Thank you. We
+  race enough, I am going to install it again, something else), a text box under "Tell us what happened" (a hint of what to write inside it) (choosing "Something else" turns its label into "What was it?" and focuses it, Send with it empty says "Tell us what it was.", and the server refuses "other" with no text) and Send, then "Thank you. We
   read every answer." with a link to download it again. POST `/community/feedback/uninstall` {reasons, text, v}, no
   sign-in (robots are ignored), at least one reason or some text: a `feedback` row of kind "uninstall" (device pc, view
   "uninstall", the reason codes in `style`, the text the reasons' English names on the first line then what they

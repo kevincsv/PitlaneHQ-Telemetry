@@ -31,9 +31,9 @@ export const REASONS = {
 };
 
 const TXT = {
-  en: { title: "Why did you uninstall Pitlane HQ?", more: "Tell us what happened", hint: "What went wrong, what was missing, what would bring you back…", send: "Send", thanks: "Thank you. We read every answer.", pick: "Choose a reason or write something first.", fail: "It could not be sent. Try again in a minute.", again: "Download Pitlane HQ" },
-  es: { title: "¿Por qué has desinstalado Pitlane HQ?", more: "Cuéntanos qué pasó", hint: "Qué falló, qué echaste de menos, qué te haría volver…", send: "Enviar", thanks: "Gracias. Leemos todas las respuestas.", pick: "Elige un motivo o escribe algo primero.", fail: "No se pudo enviar. Prueba otra vez en un minuto.", again: "Descargar Pitlane HQ" },
-  pt: { title: "Por que você desinstalou o Pitlane HQ?", more: "Conte o que aconteceu", hint: "O que deu errado, o que faltou, o que faria você voltar…", send: "Enviar", thanks: "Obrigado. Lemos todas as respostas.", pick: "Escolha um motivo ou escreva algo primeiro.", fail: "Não foi possível enviar. Tente de novo em um minuto.", again: "Baixar o Pitlane HQ" },
+  en: { title: "Why did you uninstall Pitlane HQ?", more: "Tell us what happened", hint: "What went wrong, what was missing, what would bring you back…", send: "Send", thanks: "Thank you. We read every answer.", pick: "Choose a reason or write something first.", other: "What was it?", otherNeed: "Tell us what it was.", fail: "It could not be sent. Try again in a minute.", again: "Download Pitlane HQ" },
+  es: { title: "¿Por qué has desinstalado Pitlane HQ?", more: "Cuéntanos qué pasó", hint: "Qué falló, qué echaste de menos, qué te haría volver…", send: "Enviar", thanks: "Gracias. Leemos todas las respuestas.", pick: "Elige un motivo o escribe algo primero.", other: "¿Qué fue?", otherNeed: "Cuéntanos qué fue.", fail: "No se pudo enviar. Prueba otra vez en un minuto.", again: "Descargar Pitlane HQ" },
+  pt: { title: "Por que você desinstalou o Pitlane HQ?", more: "Conte o que aconteceu", hint: "O que deu errado, o que faltou, o que faria você voltar…", send: "Enviar", thanks: "Obrigado. Lemos todas as respostas.", pick: "Escolha um motivo ou escreva algo primeiro.", other: "O que foi?", otherNeed: "Conte o que foi.", fail: "Não foi possível enviar. Tente de novo em um minuto.", again: "Baixar o Pitlane HQ" },
 };
 
 /** The page's language: ?lang= (the uninstaller's), else the browser's, else English (no German). */
@@ -54,6 +54,8 @@ export function cleanUninstall(b) {
   const text = String(b.text == null ? "" : b.text).replace(/\r\n?/g, "\n").replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f]/g, "").trim();
   if (text.length > FEEDBACK_MAX) return { error: "too long (" + FEEDBACK_MAX + " characters at most)" };
   if (!reasons.length && !text) return { error: "choose a reason or write something first" };
+  // "Something else" says nothing on its own: the page asks what it was and the answer needs it
+  if (reasons.includes("other") && !text) return { error: "say what it was" };
   // what the admin page, the email and Discord show: the reasons on the first line, then what they wrote
   const said = [reasons.map((k) => REASONS[k].en).join(" · "), text].filter(Boolean).join("\n\n");
   return { reasons, text: said, rating: null, kind: "uninstall", style: reasons.join(",").slice(0, 100) || null, device: "pc", v: cleanV(b.v), view: "uninstall" };
@@ -73,8 +75,10 @@ button{margin-top:14px;padding:11px 22px;border:0;border-radius:10px;background:
 <div id="done" hidden><p id="ok">${esc(t.thanks)}</p><p class="m"><a href="/downloads">${esc(t.again)}</a></p></div></main>
 <script>(()=>{const f=document.getElementById("f"),e=document.getElementById("e"),s=document.getElementById("s"),V=${JSON.stringify(cleanV(v))};
 try{if(!sessionStorage.getItem("pwUn")){sessionStorage.setItem("pwUn","1");fetch("/community/feedback/uninstall/shown",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({v:V}),keepalive:true}).catch(()=>{})}}catch(x){}
-f.onsubmit=async(ev)=>{ev.preventDefault();const reasons=[...f.querySelectorAll("input:checked")].map(x=>x.value),text=document.getElementById("t").value.trim();
-if(!reasons.length&&!text){e.textContent=${JSON.stringify(t.pick)};return}e.textContent="";s.disabled=true;
+const ta=document.getElementById("t"),lb=document.querySelector("label.l"),o=f.querySelector('input[value="other"]');
+o.onchange=()=>{lb.textContent=o.checked?${JSON.stringify(t.other)}:${JSON.stringify(t.more)};if(o.checked)ta.focus();else e.textContent=""};
+f.onsubmit=async(ev)=>{ev.preventDefault();const reasons=[...f.querySelectorAll("input:checked")].map(x=>x.value),text=ta.value.trim();
+if(!reasons.length&&!text){e.textContent=${JSON.stringify(t.pick)};return}if(o.checked&&!text){e.textContent=${JSON.stringify(t.otherNeed)};ta.focus();return}e.textContent="";s.disabled=true;
 try{const r=await fetch("/community/feedback/uninstall",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({reasons,text,v:V})});if(!r.ok)throw 0;f.hidden=true;document.getElementById("done").hidden=false}
 catch(x){e.textContent=${JSON.stringify(t.fail)};s.disabled=false}}})()</script></html>`;
 }

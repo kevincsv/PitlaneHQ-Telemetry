@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"math"
 	"net/http"
 	"net/url"
 	"regexp"
@@ -44,18 +45,94 @@ func ovHomeAt(name string, pw, ph, w, h int) (int, int, bool) {
 	return x, y, true
 }
 
-// the smallest an overlay may be made: its default width, so its text never gets too small to read (its
-// height follows its content); the map, the radar and the g-force keep the window's height, so theirs too
+// the smallest an overlay may be made: half its default width, the smallest of its Size slider (ovSizeMin), so its
+// text stays readable (its height follows its content); the map, the radar and the g-force keep the window's height,
+// so half theirs too
 func overlayMinSize(name string) (int, int) {
 	d, ok := overlaySizes[name]
 	if !ok {
 		return 200, 60
 	}
-	w, h := d[0], 40
-	if name == "map" || name == "radar" || name == "gg" {
-		h = d[1]
+	w, h := int(float64(d[0])*ovSizeMin+0.5), 40
+	if ovSquare(name) {
+		h = int(float64(d[1])*ovSizeMin + 0.5)
 	}
 	return w, h
+}
+
+// ovSquare: the overlays whose drawing fills the window's height too (the rest fit their height to what they show)
+func ovSquare(name string) bool { return name == "map" || name == "radar" || name == "gg" }
+
+// An overlay's size (its settings' Size slider, the Overlays tab): its window's width against the width it is drawn
+// for (ovDesign; the relative's and the standings' for the columns chosen), which scales its whole drawing, text and
+// box together. 50 % to 150 %.
+const ovSizeMin, ovSizeMax = 0.5, 1.5
+
+// ovScreenK: the default sizes are for a 2560×1440 screen (as ovHome): a smaller main screen opens them smaller by as
+// much, never below the smallest size and never larger than the default
+func ovScreenK(ph int) float64 {
+	if ph <= 0 {
+		return 1
+	}
+	return math.Max(ovSizeMin, math.Min(1, float64(ph)/1440))
+}
+
+// ovNormalW: the width an overlay is drawn for at 100 %, with the settings ui and the game it is in
+func ovNormalW(name string, ui map[string]any, game string) float64 {
+	if name == "relative" || name == "standings" {
+		st := newOvState("en")
+		st.ui, st.game = ui, game
+		return tableDesignW(name, st)
+	}
+	if d, ok := ovDesign[name]; ok {
+		return d
+	}
+	if d, ok := overlaySizes[name]; ok {
+		return float64(d[0])
+	}
+	return 460
+}
+
+// ovSizeOf: an overlay's size now (its saved width, or the one it opens at), with its old text size in (textScale)
+func ovSizeOf(name string, c Config, game string, ph int) float64 {
+	nw := ovNormalW(name, c.UI, game)
+	w := 0.0
+	if p, ok := c.Positions[name]; ok && p[2] > 0 {
+		w = float64(p[2])
+	} else if d, ok := overlaySizes[name]; ok {
+		w = float64(d[0]) * c.Scale * ovScreenK(ph)
+	}
+	if w <= 0 || nw <= 0 {
+		return 1
+	}
+	s := w / nw
+	if m, ok := c.UI[name].(map[string]any); ok {
+		if v, ok := m["textScale"].(float64); ok && v >= 0.8 && v <= 1.3 {
+			s *= v
+		}
+	}
+	return math.Round(math.Max(ovSizeMin, math.Min(ovSizeMax, s))*100) / 100
+}
+
+// ovSizeRect: the place and size of an overlay made s of its normal size: it keeps its top-left corner, its height
+// follows its width, and it stays inside a desktop dw wide
+func ovSizeRect(name string, old [4]int, s, normalW float64, dw int) [4]int {
+	s = math.Max(ovSizeMin, math.Min(ovSizeMax, s))
+	w := int(normalW*s + 0.5)
+	if mw, _ := overlayMinSize(name); w < mw {
+		w = mw
+	}
+	if dw > 0 && w > dw {
+		w = dw
+	}
+	h := old[3]
+	if old[2] > 0 && h > 0 {
+		h = int(float64(h)*float64(w)/float64(old[2]) + 0.5)
+	}
+	if _, mh := overlayMinSize(name); h < mh {
+		h = mh
+	}
+	return [4]int{old[0], old[1], w, h}
 }
 
 func itoa(i int) string { return strconv.Itoa(i) }
@@ -90,6 +167,9 @@ func openNamedOverlay(name string) error {
 	if p, ok := c.Positions[name]; ok {
 		o.X, o.Y, o.Width, o.Height, o.HasPos = p[0], p[1], p[2], p[3], true
 	} else if pr, ok := screenInfo()["primary"].([4]int); ok {
+		// never placed: its size and its home both for the main screen (ovScreenK, ovHomeAt)
+		k := ovScreenK(pr[3])
+		o.Width, o.Height = int(float64(o.Width)*k+0.5), int(float64(o.Height)*k+0.5)
 		o.X, o.Y, o.HomePos = ovHomeAt(name, pr[2], pr[3], o.Width, o.Height)
 	}
 	return openOverlay(o, overlayURL(name), "webview") // always the frameless window (the Edge one was dropped)
@@ -168,6 +248,59 @@ func registerOverlayRoutes(mux *http.ServeMux) {
 		cfgMu.Unlock()
 		writeJSON(w, map[string]any{"moved": n})
 	}))
+	// An overlay's size (the Size slider): GET says it (s, 0.5–1.5), POST ?s= makes its window that size, text and box
+	// together, and keeps it (an overlay not open opens at it). The page takes the old text size (textScale) out.
+	mux.HandleFunc("/api/overlay/size", func(w http.ResponseWriter, r *http.Request) {
+		n, ok := name(r)
+		if !ok || n == "*" {
+			http.Error(w, "bad widget", 400)
+			return
+		}
+		game := currentStatus().Source
+		ph := 0
+		if pr, ok := screenInfo()["primary"].([4]int); ok {
+			ph = pr[3]
+		}
+		if r.Method != http.MethodPost {
+			c, _ := settingsSnapshot()
+			writeJSON(w, map[string]any{"s": ovSizeOf(n, c, game, ph)})
+			return
+		}
+		s, err := strconv.ParseFloat(r.URL.Query().Get("s"), 64)
+		if err != nil || math.IsNaN(s) {
+			http.Error(w, "bad size", 400)
+			return
+		}
+		cfgMu.Lock()
+		old, has := cfg.Positions[n]
+		if rc, ok := overlayRects()[n]; ok && rc[2] > 0 { // open: where its window really is
+			old, has = rc, true
+		}
+		if !has {
+			sz, ok := overlaySizes[n]
+			if !ok {
+				sz = [2]int{460, 260}
+			}
+			k := cfg.Scale * ovScreenK(ph)
+			old = [4]int{0, 0, int(float64(sz[0])*k + 0.5), int(float64(sz[1])*k + 0.5)}
+			if pr, ok := screenInfo()["primary"].([4]int); ok {
+				old[0], old[1], _ = ovHomeAt(n, pr[2], pr[3], old[2], old[3])
+			}
+		}
+		dw := 0
+		if v, ok := screenInfo()["virtual"].([4]int); ok {
+			dw = v[2]
+		}
+		rc := ovSizeRect(n, old, s, ovNormalW(n, cfg.UI, game), dw)
+		if cfg.Positions == nil {
+			cfg.Positions = map[string][4]int{}
+		}
+		cfg.Positions[n] = rc
+		saveSettingsLocked()
+		cfgMu.Unlock()
+		moveOverlay(n, rc[0], rc[1], rc[2], rc[3])
+		writeJSON(w, map[string]any{"s": math.Max(ovSizeMin, math.Min(ovSizeMax, s)), "rect": rc})
+	})
 	mux.HandleFunc("/api/overlay/screen", func(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, screenInfo())
 	})

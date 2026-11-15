@@ -20,6 +20,8 @@ Status as of 2026-11-14. Rules for releasing are in CLAUDE.md and `docs/spec/pc-
 
 ## Held until the owner says
 
+- Full-screen track map of the lap comparison (0.9.24, PC and web, a user's review): on `claude/project-thread-mewaaa`
+  on top of the 0.9.24 fixes, not pushed to master, no build. Waits for the owner's "sube". Phones not done (no phone work).
 
 - Watch in replay and the pedal and wheel check stay testers-only, also in production.
 - Version 1.0 waits for the Steam version to be approved by Valve. Stay on 0.9.x.

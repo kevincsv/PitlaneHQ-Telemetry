@@ -1,0 +1,385 @@
+/* Pitlane HQ: the lap comparison's track map in full screen (Analysis → Laps and the Coach, on the PC app and the web).
+   The road at its real width (the edges the drivers' laps give, else 13 m), both laps' racing lines on it, their braking
+   points and slowest points, the turns with their names, the sectors and where lap A gains or loses time against lap B.
+   Zoom with the wheel, the buttons or two fingers; drag to move; the telemetry under the map and the map follow one
+   cursor, and the replay drives both laps on the same clock. The same file runs in the app and in previews: everything
+   it needs comes in `open(o)` (see the end of the file). */
+(function () {
+  "use strict";
+  const BIN = 5;
+  const mod = (i, n) => ((i % n) + n) % n;
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+
+  /* ---------- the road ---------- */
+  // the layout's points (x east, y north, metres; point 0 on the start/finish line), its direction and left normal at every
+  // point, and how far each edge is to the left (+) and to the right (−) of it
+  function roadOf(map) {
+    const x = map.x, y = map.y, N = x.length, tx = new Float64Array(N), ty = new Float64Array(N);
+    for (let i = 0; i < N; i++) { const a = mod(i - 3, N), b = mod(i + 3, N); let dx = x[b] - x[a], dy = y[b] - y[a]; const m = Math.hypot(dx, dy) || 1; tx[i] = dx / m; ty[i] = dy / m; }
+    const e = map.edges && Array.isArray(map.edges.l) && map.edges.l.length === N && Array.isArray(map.edges.r) && map.edges.r.length === N ? map.edges : null;
+    const sm = (a, w) => a.map((_, i) => { let s = 0, c = 0; for (let k = -w; k <= w; k++) { const v = a[mod(i + k, N)]; if (v != null && isFinite(v)) { s += v; c++; } } return c ? s / c : null; });
+    // the drivers' outermost positions are the car's centre: the road goes a car's half width further
+    const l = e ? sm(e.l, 4).map((v) => clamp(v == null ? 6.5 : v + 1.3, 4.5, 16)) : new Array(N).fill(6.5);
+    const r = e ? sm(e.r, 4).map((v) => clamp(v == null ? -6.5 : v - 1.3, -16, -4.5)) : new Array(N).fill(-6.5);
+    return { x, y, N, tx, ty, l, r, g: map.g || null, measured: !!e };
+  }
+  // a point of the road at a fractional index, and its left normal
+  function roadAt(R, s) {
+    const N = R.N, i = Math.floor(s), f = s - i, a = mod(i, N), b = mod(i + 1, N);
+    const x = R.x[a] + (R.x[b] - R.x[a]) * f, y = R.y[a] + (R.y[b] - R.y[a]) * f;
+    let tx = R.tx[a] + (R.tx[b] - R.tx[a]) * f, ty = R.ty[a] + (R.ty[b] - R.ty[a]) * f; const m = Math.hypot(tx, ty) || 1; tx /= m; ty /= m;
+    return { x, y, nx: -ty, ny: tx, l: R.l[a] + (R.l[b] - R.l[a]) * f, r: R.r[a] + (R.r[b] - R.r[a]) * f };
+  }
+
+  /* ---------- a lap's racing line on the road ---------- */
+  // the similarity (turn, scale within ±10 %, move) that puts points P on points Q best
+  function simil(P, Q) {
+    let pmx = 0, pmy = 0, qmx = 0, qmy = 0; const n = P.length; if (n < 10) return null;
+    for (let i = 0; i < n; i++) { pmx += P[i][0]; pmy += P[i][1]; qmx += Q[i][0]; qmy += Q[i][1]; }
+    pmx /= n; pmy /= n; qmx /= n; qmy /= n; let sxx = 0, sxy = 0, pp = 0;
+    for (let i = 0; i < n; i++) { const px = P[i][0] - pmx, py = P[i][1] - pmy, qx = Q[i][0] - qmx, qy = Q[i][1] - qmy; sxx += px * qx + py * qy; sxy += px * qy - py * qx; pp += px * px + py * py; }
+    let a = sxx / (pp || 1), b = sxy / (pp || 1); const k = Math.hypot(a, b) || 1, kk = clamp(k, 0.9, 1.1); a *= kk / k; b *= kk / k;
+    return { a, b, tx: qmx - (a * pmx - b * pmy), ty: qmy - (b * pmx + a * pmy) };
+  }
+  const apply = (t, x, y) => [t.a * x - t.b * y + t.tx, t.b * x + t.a * y + t.ty];
+  const compose = (t2, t) => ({ a: t2.a * t.a - t2.b * t.b, b: t2.b * t.a + t2.a * t.b, tx: t2.a * t.tx - t2.b * t.ty + t2.tx, ty: t2.b * t.tx + t2.a * t.ty + t2.ty });
+  function nearest(R, x, y, j0, win) { let bj = j0, bd = 1e18; for (let k = -win; k <= win; k++) { const j = mod(j0 + k, R.N), dx = R.x[j] - x, dy = R.y[j] - y, d2 = dx * dx + dy * dy; if (d2 < bd) { bd = d2; bj = j; } } return [bj, bd]; }
+  /* where the lap's car was on the road every 5 m: its path put in the road's frame (from the game's position, exact; a
+     path by dead reckoning is fitted onto the road), then at each point how far to the side of the road's line it was.
+     Null when the lap has no path or it does not fit this road. */
+  function lineOf(xy, R) {
+    if (!xy || !Array.isArray(xy.x) || xy.x.length < 60 || xy.y.length !== xy.x.length) return null;
+    let px = xy.x, py = xy.y; const NB = px.length, N = R.N; let geo = false;
+    if (R.g && xy.g) { geo = true; if (R.g[0] !== xy.g[0] || R.g[1] !== xy.g[1]) { const dx = (xy.g[1] - R.g[1]) * 111320 * Math.cos(R.g[0] * Math.PI / 180), dy = (xy.g[0] - R.g[0]) * 110540; px = px.map((v) => v + dx); py = py.map((v) => v + dy); } }
+    const jOf = (i) => Math.round(i / NB * N) % N, st = Math.max(1, Math.round(NB / 400));
+    let t = { a: 1, b: 0, tx: 0, ty: 0 };
+    const med = () => { const ds = []; for (let i = 0; i < NB; i += st) { const q = apply(t, px[i], py[i]); ds.push(nearest(R, q[0], q[1], jOf(i), 40)[1]); } ds.sort((a, b) => a - b); return Math.sqrt(ds[ds.length >> 1]); };
+    if (!geo || med() > 10) {
+      // first by the share of the lap (both start on the line), then a few times by the nearest point of the road
+      const P = [], Q = []; for (let i = 0; i < NB; i += st) { P.push([px[i], py[i]]); const j = jOf(i); Q.push([R.x[j], R.y[j]]); }
+      const t0 = simil(P, Q); if (!t0) return null; t = t0;
+      for (let it = 0; it < 5; it++) {
+        const P2 = [], Q2 = [], ds = [];
+        for (let i = 0; i < NB; i += st) { const q = apply(t, px[i], py[i]), [j, d2] = nearest(R, q[0], q[1], jOf(i), 60); ds.push(d2); P2.push(q); Q2.push([R.x[j], R.y[j]]); }
+        const lim = Math.max(15 * 15, [...ds].sort((a, b) => a - b)[ds.length >> 1] * 9), P3 = [], Q3 = [];
+        P2.forEach((p, k) => { if (ds[k] <= lim) { P3.push(p); Q3.push(Q2[k]); } });
+        const t2 = simil(P3, Q3); if (!t2) break; t = compose(t2, t);
+      }
+      geo = false;
+    }
+    if (med() > 9) return null;
+    // the side of the road at every point of the lap
+    const s = new Float64Array(NB), lat = new Float64Array(NB); let last = -1;
+    for (let i = 0; i < NB; i++) {
+      const q = apply(t, px[i], py[i]), j0 = last < 0 ? jOf(i) : mod(last + Math.round(N / NB), N);
+      let [j] = nearest(R, q[0], q[1], j0, last < 0 ? 60 : 12); if (last >= 0) { const [jj, dd] = nearest(R, q[0], q[1], jOf(i), 40); const [, dj] = nearest(R, q[0], q[1], j, 0); if (dd < dj - 25) j = jj; }
+      // onto the segment before or after the nearest point
+      let bs = j, bl = 0, bd = 1e18;
+      for (const a of [mod(j - 1, N), j]) { const b = mod(a + 1, N), sx = R.x[b] - R.x[a], sy = R.y[b] - R.y[a], m2 = sx * sx + sy * sy || 1, f = clamp(((q[0] - R.x[a]) * sx + (q[1] - R.y[a]) * sy) / m2, 0, 1), cx = R.x[a] + sx * f, cy = R.y[a] + sy * f, d2 = (q[0] - cx) ** 2 + (q[1] - cy) ** 2; if (d2 < bd) { bd = d2; bs = a + f; const m = Math.sqrt(m2); bl = (-sy * (q[0] - cx) + sx * (q[1] - cy)) / m; } }
+      s[i] = bs; lat[i] = bl; last = j;
+    }
+    // a path by dead reckoning drifts slowly: its average over ±400 m is the road's line
+    let L2 = Array.from(lat);
+    if (!geo) { const W = 80, pre = [0]; L2.forEach((v, i) => pre.push(pre[i] + v)); L2 = L2.map((v, i) => { const lo = Math.max(0, i - W), hi = Math.min(NB - 1, i + W); return v - (pre[hi + 1] - pre[lo]) / (hi - lo + 1); }); }
+    const out = { x: new Float64Array(NB), y: new Float64Array(NB), N: NB };
+    for (let i = 0; i < NB; i++) { let v = 0, c = 0; for (let k = -1; k <= 1; k++) { const ii = i + k; if (ii >= 0 && ii < NB) { v += L2[ii]; c++; } } v /= c; const p = roadAt(R, s[i]); v = clamp(v, p.r - 2, p.l + 2); out.x[i] = p.x + p.nx * v; out.y[i] = p.y + p.ny * v; }
+    return out;
+  }
+
+  /* ---------- the styles (the app's colours: --accent is lap A, --blue lap B, --pb lap B when it is your best) ---------- */
+  const CSS = `
+.fm{position:fixed;inset:0;z-index:9500;display:flex;flex-direction:column;background:var(--bg,#0b0e14);color:var(--fg,#e6e9ef);font:14px var(--f-body,system-ui,sans-serif)}
+.fm *{box-sizing:border-box}
+.fm-h{display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px;padding:10px 14px;border-bottom:1px solid var(--line,#1c222d);background:var(--surface,#10141c)}
+.fm .fm-h h2{margin:0 6px 0 0;font:700 18px var(--f-display,"Barlow Condensed",system-ui);letter-spacing:.04em;text-transform:uppercase}
+.fm-lg{display:inline-flex;align-items:center;gap:6px;font-size:13px;max-width:28ch;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.fm-lg i{width:18px;height:3px;border-radius:2px;flex:none}.fm-lg.a i{background:var(--accent,#f5b43c)}.fm-lg.b i{background:var(--fm-b)}
+.fm-ch{display:flex;flex-wrap:wrap;gap:6px;margin-left:auto}
+.fm-c{appearance:none;border:1px solid var(--line2,#2a3140);background:transparent;color:var(--muted,#8a93a3);border-radius:999px;padding:5px 11px;font:600 12px var(--f-body,system-ui);cursor:pointer;white-space:nowrap}
+.fm-c[aria-pressed="true"]{background:var(--surface2,#151a24);color:var(--fg,#e6e9ef);border-color:var(--accent,#f5b43c)}
+.fm-c:disabled{opacity:.45;cursor:default}
+.fm-x{appearance:none;border:1px solid var(--line2,#2a3140);background:transparent;color:var(--fg,#e6e9ef);width:34px;height:34px;border-radius:8px;font-size:20px;line-height:1;cursor:pointer}
+.fm-m{position:relative;flex:1;min-height:200px;overflow:hidden;touch-action:none;cursor:grab;background:radial-gradient(ellipse at 50% 40%,color-mix(in srgb,var(--surface,#10141c) 70%,transparent),transparent 70%)}
+.fm-m.drag{cursor:grabbing}
+.fm-m svg{position:absolute;inset:0;width:100%;height:100%;display:block;user-select:none;-webkit-user-select:none}
+.fm .grass{fill:none;stroke:color-mix(in srgb,var(--good,#3ddc84) 7%,transparent);stroke-linejoin:round}
+.fm .road{fill:color-mix(in srgb,var(--surface2,#151a24) 55%,#2a3140 45%);fill-rule:evenodd;stroke:color-mix(in srgb,var(--fg,#e6e9ef) 55%,transparent);stroke-linejoin:round}
+.fm .casing{fill:none;stroke:color-mix(in srgb,var(--surface2,#151a24) 55%,#2a3140 45%);stroke-linejoin:round;stroke-linecap:round}
+.fm .dseg{fill:none;stroke-linecap:butt;stroke-linejoin:round}
+.fm .ln{fill:none;stroke-linejoin:round;stroke-linecap:round}.fm .ln.a{stroke:var(--accent,#f5b43c)}.fm .ln.b{stroke:var(--fm-b)}
+.fm .sf{stroke:#fff;stroke-dasharray:1.2 1.2}.fm .secb{stroke:var(--muted,#8a93a3)}
+.fm .sec{fill:var(--muted,#8a93a3);font-family:var(--f-data,monospace);font-weight:700;text-anchor:middle;dominant-baseline:middle}
+.fm .tn{cursor:pointer;outline:none}.fm .tn:focus-visible rect{stroke:var(--accent,#f5b43c)}.fm .tn rect{fill:var(--surface,#10141c);stroke:var(--line2,#2a3140)}.fm .tn text{fill:var(--fg,#e6e9ef);font-family:var(--f-data,monospace);font-weight:700;text-anchor:middle;dominant-baseline:central}
+.fm .tn .nm{fill:var(--muted,#8a93a3);font-family:var(--f-body,system-ui);font-weight:500}
+.fm .tn:hover rect,.fm .tn.on rect{stroke:var(--accent,#f5b43c)}
+.fm .bk circle{stroke:var(--bg,#0b0e14);stroke-width:1.5}.fm .bk.a circle{fill:var(--accent,#f5b43c)}.fm .bk.b circle{fill:var(--fm-b)}
+.fm .bk text,.fm .mn text{font-family:var(--f-data,monospace);font-weight:700;paint-order:stroke;stroke:var(--bg,#0b0e14);stroke-width:3px;dominant-baseline:central}.fm .bk.a text,.fm .mn.a text{fill:var(--accent,#f5b43c)}.fm .bk.b text,.fm .mn.b text{fill:var(--fm-b)}
+.fm .mn path{stroke:var(--bg,#0b0e14);stroke-width:1.2}.fm .mn.a path{fill:var(--accent,#f5b43c)}.fm .mn.b path{fill:var(--fm-b)}
+.fm .cur .ca{fill:var(--accent,#f5b43c);stroke:var(--bg,#0b0e14);stroke-width:2}.fm .cur .halo{fill:color-mix(in srgb,var(--accent,#f5b43c) 22%,transparent)}.fm .cur .cb{fill:none;stroke:var(--fm-b);stroke-width:3}
+.fm-rd{position:absolute;left:12px;top:12px;min-width:210px;max-width:calc(100% - 24px);padding:10px 12px;border:1px solid var(--line2,#2a3140);border-radius:10px;background:color-mix(in srgb,var(--surface,#10141c) 92%,transparent);font:12px var(--f-data,monospace);pointer-events:none;display:grid;gap:4px}
+.fm-rd b{font-size:13px;color:var(--fg,#e6e9ef)}.fm-rd .r{display:flex;gap:12px;flex-wrap:wrap}.fm-rd .a{color:var(--accent,#f5b43c)}.fm-rd .b{color:var(--fm-b)}.fm-rd .good{color:var(--good,#3ddc84)}.fm-rd .bad{color:var(--bad,#ff5c5c)}.fm-rd .mu{color:var(--muted,#8a93a3)}
+.fm-z{position:absolute;right:12px;bottom:12px;display:flex;flex-direction:column;gap:6px}
+.fm-z button{appearance:none;width:38px;height:38px;border-radius:9px;border:1px solid var(--line2,#2a3140);background:var(--surface,#10141c);color:var(--fg,#e6e9ef);font:600 18px var(--f-body,system-ui);cursor:pointer}
+.fm-z button[aria-pressed="true"]{border-color:var(--accent,#f5b43c);color:var(--accent,#f5b43c)}
+.fm-sc{position:absolute;left:12px;bottom:12px;font:11px var(--f-data,monospace);color:var(--muted,#8a93a3);pointer-events:none}
+.fm-sc i{display:block;height:6px;border:1.5px solid var(--muted,#8a93a3);border-top:0;margin-bottom:3px}
+.fm-t{border-top:1px solid var(--line,#1c222d);background:var(--surface,#10141c);padding:8px 14px 10px}
+.fm-rp{display:flex;align-items:center;gap:10px;margin-bottom:6px;font:12px var(--f-data,monospace)}
+.fm-rp .go{appearance:none;width:34px;height:30px;border-radius:8px;border:1px solid var(--accent,#f5b43c);background:var(--accent,#f5b43c);color:var(--accent-ink,#161003);font-size:13px;cursor:pointer}
+.fm-rp input{flex:1;min-width:80px;accent-color:var(--accent,#f5b43c)}
+.fm-rp .sp{display:flex;gap:4px}.fm-rp .sp button{appearance:none;border:1px solid var(--line2,#2a3140);background:transparent;color:var(--muted,#8a93a3);border-radius:6px;padding:3px 7px;font:600 11px var(--f-data,monospace);cursor:pointer}.fm-rp .sp button[aria-pressed="true"]{color:var(--fg,#e6e9ef);border-color:var(--accent,#f5b43c)}
+.fm-rp .tm{min-width:15ch;text-align:right}.fm-rp .good{color:var(--good,#3ddc84)}.fm-rp .bad{color:var(--bad,#ff5c5c)}
+.fm-t canvas{display:block;width:100%;height:190px;touch-action:none;cursor:crosshair}
+.fm:focus{outline:none}.fm-rp button,.fm-rp .tm{white-space:nowrap}
+@media (max-width:700px){.fm-h{padding:8px 10px;padding-top:max(8px,env(safe-area-inset-top,0px))}.fm .fm-h h2{font-size:16px}.fm-x{margin-left:auto;width:32px;height:32px}.fm-ch{order:9;margin-left:0;width:100%;overflow-x:auto;flex-wrap:nowrap;scrollbar-width:none}.fm-lg{max-width:40vw;font-size:12px}
+  .fm-t{padding:6px 10px max(8px,env(safe-area-inset-bottom,0px))}.fm-t canvas{height:140px}.fm-rp{flex-wrap:wrap;gap:6px 8px}.fm-rp input{order:9;flex-basis:100%}.fm-rp .tm{margin-left:auto}
+  .fm-rd{left:8px;top:8px;min-width:0;font-size:10.5px;padding:6px 8px;gap:2px}.fm-rd .pd{display:none}.fm-z{right:8px;bottom:8px}.fm-z button{width:34px;height:34px}}
+`;
+  function styleOnce() { if (document.getElementById("fmCss")) return; const s = document.createElement("style"); s.id = "fmCss"; s.textContent = CSS; document.head.appendChild(s); }
+  const css = (el, v, d) => (getComputedStyle(el).getPropertyValue(v) || "").trim() || d;
+  const NS = "http://www.w3.org/2000/svg";
+  const el = (tag, attrs, parent) => { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (parent) parent.appendChild(e); return e; };
+  const esc = (s) => String(s == null ? "" : s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+
+  /* ---------- the view ---------- */
+  function open(o) {
+    styleOnce();
+    const T = o.T || ((en) => en), spd = o.spd || ((v) => v * 3.6), spdU = o.spdU || (() => "km/h"), fmtT = o.fmtT || ((s) => s.toFixed(3));
+    const sgn = (v, d) => (v > 0 ? "+" : v < 0 ? "−" : "±") + Math.abs(v).toFixed(d == null ? 2 : d);
+    const R = roadOf(o.map), A = o.A, B = o.B, sa = A.ser, sb = B.ser, n = o.n, L = n * BIN;
+    const lineA = lineOf(A.xy, R), lineB = lineOf(B.xy, R);
+    let ST = { lines: true, brk: true, mins: true, turns: true, delta: true, follow: false };
+    try { ST = Object.assign(ST, JSON.parse(localStorage.getItem("pw.fmap") || "{}")); } catch (e) { }
+    const save = () => { try { localStorage.setItem("pw.fmap", JSON.stringify(ST)); } catch (e) { } };
+
+    const root = document.createElement("div"); root.className = "fm"; root.setAttribute("role", "dialog"); root.setAttribute("aria-modal", "true");
+    root.style.setProperty("--fm-b", `var(${o.bColor || "--blue"})`);
+    const chip = (k, label, dis) => `<button type="button" class="fm-c" data-k="${k}" aria-pressed="${!!ST[k] && !dis}"${dis ? " disabled" : ""}>${esc(label)}</button>`;
+    root.innerHTML = `<div class="fm-h"><h2>${esc(T("Track map", "Mapa del circuito", "Mapa da pista"))}</h2>
+      <span class="fm-lg a"><i></i>A · ${esc(A.name)}</span><span class="fm-lg b"><i></i>B · ${esc(B.name)}</span>
+      <div class="fm-ch">${chip("lines", T("Racing lines", "Trazadas", "Traçados"), !lineA && !lineB)}${chip("brk", T("Braking", "Frenadas", "Freadas"))}${chip("mins", T("Slowest points", "Puntos más lentos", "Pontos mais lentos"))}${chip("turns", T("Turns", "Curvas", "Curvas"))}${chip("delta", T("A vs B time", "Tiempo A vs B", "Tempo A vs B"))}</div>
+      <button type="button" class="fm-x" aria-label="${esc(T("Close", "Cerrar", "Fechar"))}">×</button></div>
+      <div class="fm-m"><svg aria-label="${esc(T("Track map", "Mapa del circuito", "Mapa da pista"))}" role="img"></svg><div class="fm-rd"></div>
+        <div class="fm-sc"><i></i><span></span></div>
+        <div class="fm-z"><button type="button" data-z="in" aria-label="${esc(T("Zoom in", "Acercar", "Aproximar"))}">+</button><button type="button" data-z="out" aria-label="${esc(T("Zoom out", "Alejar", "Afastar"))}">−</button><button type="button" data-z="fit" aria-label="${esc(T("Whole track", "Circuito entero", "Pista inteira"))}">⤢</button><button type="button" data-z="follow" aria-pressed="${!!ST.follow}" aria-label="${esc(T("Follow lap A", "Seguir la vuelta A", "Seguir a volta A"))}" title="${esc(T("Follow lap A", "Seguir la vuelta A", "Seguir a volta A"))}">◎</button></div></div>
+      <div class="fm-t"><div class="fm-rp"><button type="button" class="go" aria-label="${esc(T("Replay", "Repetición", "Replay"))}">▶</button><input type="range" min="0" max="1000" value="0" aria-label="${esc(T("Replay", "Repetición", "Replay"))}"><span class="sp">${[1, 2, 4, 8].map((k) => `<button type="button" data-sp="${k}" aria-pressed="${k === 2}">${k}×</button>`).join("")}</span><span class="tm"></span></div><canvas></canvas></div>`;
+    document.body.appendChild(root);
+    const prevOv = document.documentElement.style.overflow; document.documentElement.style.overflow = "hidden";
+    const box = root.querySelector(".fm-m"), svg = box.querySelector("svg"), rd = root.querySelector(".fm-rd"), cv = root.querySelector("canvas"), sc = root.querySelector(".fm-sc");
+
+    // the world: the road's frame turned so the circuit fills the screen (y down for the screen)
+    let rot = 0;
+    const pickRot = () => { const W = box.clientWidth || 800, H = box.clientHeight || 500; let best = 0, bk = 0; for (let d = 0; d < 180; d += 3) { const a = d * Math.PI / 180, c = Math.cos(a), s = Math.sin(a); let x0 = 1e9, x1 = -1e9, y0 = 1e9, y1 = -1e9; for (let i = 0; i < R.N; i += 4) { const u = R.x[i] * c - R.y[i] * s, v = R.x[i] * s + R.y[i] * c; x0 = Math.min(x0, u); x1 = Math.max(x1, u); y0 = Math.min(y0, v); y1 = Math.max(y1, v); } const k = Math.min(W / (x1 - x0 || 1), H / (y1 - y0 || 1)); if (k > bk * 1.0001) { bk = k; best = a; } } return best; };
+    rot = pickRot();
+    const rc = Math.cos(rot), rs = Math.sin(rot);
+    const Wp = (x, y) => [x * rc - y * rs, -(x * rs + y * rc)];
+    const f1 = (v) => v.toFixed(2);
+    // the road's points, its edges and the lines in world coordinates
+    const C = [], EL = [], ER = [];
+    for (let i = 0; i < R.N; i++) { const p = roadAt(R, i); C.push(Wp(p.x, p.y)); EL.push(Wp(p.x + p.nx * p.l, p.y + p.ny * p.l)); ER.push(Wp(p.x + p.nx * p.r, p.y + p.ny * p.r)); }
+    let bx0 = 1e9, bx1 = -1e9, by0 = 1e9, by1 = -1e9; C.forEach((q) => { bx0 = Math.min(bx0, q[0]); bx1 = Math.max(bx1, q[0]); by0 = Math.min(by0, q[1]); by1 = Math.max(by1, q[1]); });
+    const ptsStr = (arr) => arr.map((q) => f1(q[0]) + "," + f1(q[1])).join(" ");
+    const lineW = (ln) => { if (!ln) return null; const r = []; for (let i = 0; i < ln.N; i++) r.push(Wp(ln.x[i], ln.y[i])); return r; };
+    const LA = lineW(lineA), LB = lineW(lineB);
+    // where a lap's car was at d metres: on its line when it has one, else on the road's line
+    const atRoad = (d) => { const p = roadAt(R, mod(d / L * R.N, R.N)); return Wp(p.x, p.y); };
+    const atLine = (ln, d) => { if (!ln || !ST.lines) return atRoad(d); const s = clamp(d / BIN, 0, ln.length - 1), i = Math.floor(s), f = s - i, a = ln[i], b = ln[Math.min(ln.length - 1, i + 1)]; return [a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f]; };
+    const outward = (d) => { // the outside of the bend at d, in world coordinates
+      const s = d / L * R.N, p = roadAt(R, s), p1 = roadAt(R, s - 6), p2 = roadAt(R, s + 6), cr = (p.x - p1.x) * (p2.y - p.y) - (p.y - p1.y) * (p2.x - p.x), side = cr > 0 ? -1 : 1, w = side > 0 ? p.l : -p.r;
+      const a = Wp(p.x, p.y), b = Wp(p.x + p.nx * side, p.y + p.ny * side); return { a, nx: b[0] - a[0], ny: b[1] - a[1], w };
+    };
+
+    // the layers
+    const gGrass = el("g", {}, svg), gRoad = el("g", {}, svg), gDelta = el("g", {}, svg), gMarks = el("g", {}, svg), gLines = el("g", {}, svg), gPts = el("g", {}, svg), gTurns = el("g", {}, svg), gCur = el("g", { class: "cur" }, svg);
+    const ring = `M${ptsStr(EL).replace(/ /g, "L")}Z M${ptsStr(ER).replace(/ /g, "L")}Z`;
+    const grass = el("polyline", { class: "grass", points: ptsStr(C) + " " + f1(C[0][0]) + "," + f1(C[0][1]) }, gGrass);
+    const casing = el("polyline", { class: "casing", points: ptsStr(C) + " " + f1(C[0][0]) + "," + f1(C[0][1]) }, gRoad);
+    const roadP = el("path", { class: "road", d: ring }, gRoad);
+    // start/finish and the sector cuts across the road
+    const cut = (d, cls) => { const s = d / L * R.N, p = roadAt(R, s), a = Wp(p.x + p.nx * p.l, p.y + p.ny * p.l), b = Wp(p.x + p.nx * p.r, p.y + p.ny * p.r); return el("line", { class: cls, x1: f1(a[0]), y1: f1(a[1]), x2: f1(b[0]), y2: f1(b[1]) }, gMarks); };
+    const sfL = cut(0, "sf"), cnt = Math.max(1, o.sectors || 3), secL = []; for (let j = 1; j < cnt; j++) secL.push(cut(j / cnt * L, "secb"));
+    const secT = []; for (let j = 0; j < cnt; j++) { const d = (j + .5) / cnt * L, ow = outward(d); secT.push({ el: el("text", { class: "sec" }, gMarks), ow, inner: true, txt: "S" + (j + 1) }); secT[j].el.textContent = "S" + (j + 1); }
+    // where A gains (green) or loses (red) against B, every 25 m
+    const tA = (i) => { const r = sa[i]; return r && r[1] != null ? r[1] : null; }, tB = (i) => { const r = sb[i]; return r && r[1] != null ? r[1] : null; };
+    const dSegs = []; { const st = 5; let mx = .004; const raw = []; for (let i = 0; i + st < n; i += st) { const a0 = tA(i), a1 = tA(i + st), b0 = tB(i), b1 = tB(i + st); if (a0 == null || a1 == null || b0 == null || b1 == null) continue; const v = (a1 - b1) - (a0 - b0); raw.push([i, v]); mx = Math.max(mx, Math.abs(v)); }
+      // drawn as the road's kerbs on both sides, so the lines stay readable on the asphalt
+      const edgeAt = (d, side, inset) => { const p = roadAt(R, mod(d / L * R.N, R.N)), w = (side > 0 ? p.l : p.r) - side * inset; return Wp(p.x + p.nx * w, p.y + p.ny * w); };
+      raw.forEach(([i, v]) => { if (Math.abs(v) < mx * .08) return; const col = v > 0 ? "var(--bad,#ff5c5c)" : "var(--good,#3ddc84)", op = (.35 + .65 * Math.min(1, Math.abs(v) / mx)).toFixed(2);
+        [1, -1].forEach((side) => { const pts = []; for (let k = i; k <= i + st; k++) pts.push(edgeAt(k * BIN, side, 0)); dSegs.push(el("polyline", { class: "dseg", points: ptsStr(pts), stroke: col, "stroke-opacity": op }, gDelta)); }); }); }
+    // the racing lines
+    const lnB = LB ? el("polyline", { class: "ln b", points: ptsStr(LB) }, gLines) : null, lnA = LA ? el("polyline", { class: "ln a", points: ptsStr(LA) }, gLines) : null;
+    // the braking points and the slowest points of both laps, the same size on screen at any zoom
+    const PX = []; // {g, d, lap, kind}
+    const brk = (zs, k, ser) => (zs || []).forEach((z) => {
+      const g = el("g", { class: "bk " + k }, gPts); el("circle", { r: 5.5 }, g); const t = el("text", k === "a" ? { x: 9, y: 0 } : { x: -9, y: 0, "text-anchor": "end" }, g); t.textContent = `${k.toUpperCase()} ${Math.round(spd(z.v))}→${Math.round(spd(z.vmin))}`;
+      el("title", {}, g).textContent = `${k.toUpperCase()} · ${T("brakes at", "frena en", "freia em")} ${Math.round(z.i * BIN)} m · ${Math.round(spd(z.v))} → ${Math.round(spd(z.vmin))} ${spdU()}`;
+      PX.push({ g, d: z.i * BIN, lap: k, kind: "brk", t });
+      if (z.imin != null) { const m = el("g", { class: "mn " + k }, gPts); el("path", { d: "M0 -5L5 0L0 5L-5 0Z" }, m); const tt = el("text", k === "a" ? { x: 8, y: 0 } : { x: -8, y: 0, "text-anchor": "end" }, m); tt.textContent = String(Math.round(spd(z.vmin))); el("title", {}, m).textContent = `${k.toUpperCase()} · ${T("slowest", "más lento", "mais lento")} ${Math.round(spd(z.vmin))} ${spdU()} · ${Math.round(z.imin * BIN)} m`; PX.push({ g: m, d: z.imin * BIN, lap: k, kind: "min", t: tt }); }
+    });
+    brk(o.brB, "b"); brk(o.brA, "a");
+    // the turns: T5 and its name outside the bend; a press zooms on it
+    const TN = (o.corners || []).filter((c) => c && isFinite(c.d)).map((c) => {
+      const g = el("g", { class: "tn", tabindex: "0", role: "button" }, gTurns), r = el("rect", { rx: 5 }, g), t = el("text", {}, g); t.textContent = "T" + c.n; const nm = c.name ? el("text", { class: "nm" }, g) : null; if (nm) nm.textContent = c.name;
+      el("title", {}, g).textContent = "T" + c.n + (c.name ? " " + c.name : "");
+      const it = { g, r, t, nm, c, ow: outward(c.d) }; g.addEventListener("click", (e) => { e.stopPropagation(); zoomTo(c.d, 260); setCur(c.d / BIN); }); g.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); zoomTo(c.d, 260); setCur(c.d / BIN); } });
+      return it;
+    });
+    // the cursor: lap A's car, and lap B where it was at the same moment
+    const cB = el("g", {}, gCur); el("circle", { class: "cb", r: 7 }, cB); const cA = el("g", {}, gCur); el("circle", { class: "halo", r: 14 }, cA); el("circle", { class: "ca", r: 6.5 }, cA);
+
+    /* the camera: the middle of the screen in the world and metres per screen pixel */
+    let cx = (bx0 + bx1) / 2, cy = (by0 + by1) / 2, u = 1, uFit = 1;
+    const fitU = () => { const W = box.clientWidth || 800, H = box.clientHeight || 500, pad = 40; return Math.max((bx1 - bx0) / Math.max(50, W - 2 * pad), (by1 - by0) / Math.max(50, H - 2 * pad)); };
+    const U_MIN = 0.04;
+    const fit = () => { uFit = fitU(); u = uFit; cx = (bx0 + bx1) / 2; cy = (by0 + by1) / 2; view(); };
+    function view() {
+      const W = box.clientWidth || 800, H = box.clientHeight || 500;
+      u = clamp(u, U_MIN, uFit * 1.6);
+      svg.setAttribute("viewBox", `${f1(cx - W / 2 * u)} ${f1(cy - H / 2 * u)} ${f1(W * u)} ${f1(H * u)}`);
+      // widths in metres: the real road when it is big enough, never thinner than a few pixels
+      grass.setAttribute("stroke-width", f1(Math.max(34, 26 * u)));
+      casing.setAttribute("stroke-width", f1(10 * u)); roadP.setAttribute("stroke-width", f1(1.4 * u));
+      dSegs.forEach((s) => s.setAttribute("stroke-width", f1(Math.max(2.2, 4 * u))));
+      [lnA, lnB].forEach((l) => l && l.setAttribute("stroke-width", f1(clamp(2.6 * u, .5, 6 * u))));
+      sfL.setAttribute("stroke-width", f1(Math.max(2.2, 3.5 * u))); secL.forEach((s) => s.setAttribute("stroke-width", f1(Math.max(1.2, 2 * u))));
+      secT.forEach((s) => { const w = s.ow, k = -(w.w + 18 * u); s.el.setAttribute("x", f1(w.a[0] + w.nx * k)); s.el.setAttribute("y", f1(w.a[1] + w.ny * k)); s.el.setAttribute("font-size", f1(11 * u)); });
+      const near = u < uFit * .45; // close enough for the numbers beside each point
+      PX.forEach((p) => { const q = p.lap === "a" ? atLine(LA, p.d) : atLine(LB, p.d); p.g.setAttribute("transform", `translate(${f1(q[0])} ${f1(q[1])}) scale(${u.toFixed(4)})`); p.t.style.display = near ? "" : "none"; p.g.style.display = (p.kind === "brk" ? ST.brk : ST.mins) ? "" : "none"; if (p.t) p.t.setAttribute("font-size", "11"); });
+      TN.forEach((t) => { const w = t.ow, off = w.w + 20 * u, x = w.a[0] + w.nx * off, y = w.a[1] + w.ny * off, showNm = t.nm && u < uFit * .35, fs = 12 * u;
+        t.t.setAttribute("font-size", f1(fs)); t.t.setAttribute("x", f1(x)); t.t.setAttribute("y", f1(y));
+        let wdt = (String(t.t.textContent).length * 7.6 + 10) * u, hgt = 20 * u;
+        if (t.nm) { t.nm.style.display = showNm ? "" : "none"; if (showNm) { t.nm.setAttribute("font-size", f1(11 * u)); t.nm.setAttribute("x", f1(x)); t.nm.setAttribute("y", f1(y + 15 * u)); wdt = Math.max(wdt, (t.c.name.length * 6.3 + 12) * u); hgt = 36 * u; } }
+        t.r.setAttribute("x", f1(x - wdt / 2)); t.r.setAttribute("y", f1(y - 10 * u)); t.r.setAttribute("width", f1(wdt)); t.r.setAttribute("height", f1(hgt)); t.r.setAttribute("stroke-width", f1(1.2 * u)); t.r.setAttribute("rx", f1(5 * u)); });
+      gTurns.style.display = ST.turns ? "" : "none"; gDelta.style.display = ST.delta ? "" : "none"; gLines.style.display = ST.lines ? "" : "none";
+      placeCur();
+      // the scale bar: a round number of metres about 90 px long
+      const m = [5, 10, 20, 25, 50, 100, 200, 250, 500, 1000, 2000].find((v) => v / u >= 70) || 2000; sc.querySelector("i").style.width = (m / u).toFixed(0) + "px"; sc.querySelector("span").textContent = m + " m";
+      drawT();
+    }
+    const zoomAt = (k, px, py) => { const W = box.clientWidth, H = box.clientHeight, wx = cx + (px - W / 2) * u, wy = cy + (py - H / 2) * u, nu = clamp(u * k, U_MIN, uFit * 1.6); cx = wx - (px - W / 2) * nu; cy = wy - (py - H / 2) * nu; u = nu; view(); };
+    let anim = 0;
+    const glide = (tx, ty, tu, ms) => { cancelAnimationFrame(anim); const x0 = cx, y0 = cy, u0 = u, t0 = performance.now(); const st = (ts) => { const k = clamp((ts - t0) / (ms || 350), 0, 1), e = k < .5 ? 2 * k * k : 1 - (-2 * k + 2) ** 2 / 2; cx = x0 + (tx - x0) * e; cy = y0 + (ty - y0) * e; u = Math.exp(Math.log(u0) + (Math.log(tu) - Math.log(u0)) * e); view(); if (k < 1) anim = requestAnimationFrame(st); }; anim = requestAnimationFrame(st); };
+    // a stretch of the lap (d ± span metres) filling the screen
+    function zoomTo(d, span) { let x0 = 1e9, x1 = -1e9, y0 = 1e9, y1 = -1e9; for (let k = -span; k <= span; k += 10) { const q = atRoad(mod(d + k, L)); x0 = Math.min(x0, q[0]); x1 = Math.max(x1, q[0]); y0 = Math.min(y0, q[1]); y1 = Math.max(y1, q[1]); } const W = box.clientWidth, H = box.clientHeight; glide((x0 + x1) / 2, (y0 + y1) / 2, clamp(Math.max((x1 - x0 + 60) / W, (y1 - y0 + 60) / H), U_MIN, uFit), 450); }
+
+    /* the cursor (index of 5 m) and the replay's clock */
+    const ta = [], tb = []; for (let i = 0; i < n; i++) { const a = sa[i], b = sb[i]; ta.push(a && a[1] != null ? a[1] : (i ? ta[i - 1] : 0)); tb.push(b && b[1] != null ? b[1] : (i ? tb[i - 1] : 0)); }
+    const tEnd = Math.max(ta[n - 1] || 0, tb[n - 1] || 0);
+    const dAt = (ts, t) => { if (t <= ts[0]) return 0; if (t >= ts[n - 1]) return (n - 1) * BIN; let lo = 0, hi = n - 1; while (hi - lo > 1) { const m = (lo + hi) >> 1; if (ts[m] <= t) lo = m; else hi = m; } return (lo + (t - ts[lo]) / ((ts[hi] - ts[lo]) || 1)) * BIN; };
+    let cur = clamp(Math.round(o.start || 0), 0, n - 1), curD = cur * BIN;
+    const corner = (d) => { let b = null, bd = 181; (o.corners || []).forEach((c) => { let dd = Math.abs(c.d - d); dd = Math.min(dd, L - dd); if (dd < bd) { bd = dd; b = c; } }); return b; };
+    function placeCur() {
+      const qa = atLine(LA, curD), tAt = ta[clamp(Math.round(curD / BIN), 0, n - 1)], dbb = dAt(tb, tAt), qb = atLine(LB, Math.min(dbb, L - 1));
+      cA.setAttribute("transform", `translate(${f1(qa[0])} ${f1(qa[1])}) scale(${u.toFixed(4)})`); cB.setAttribute("transform", `translate(${f1(qb[0])} ${f1(qb[1])}) scale(${u.toFixed(4)})`);
+      const i = clamp(Math.round(curD / BIN), 0, n - 1), a = sa[i], b = sb[i], c = corner(curD), dl = a && b && a[1] != null && b[1] != null ? a[1] - b[1] : null, ah = Math.round(dbb - curD);
+      const pct = (v) => (v == null ? "–" : Math.round(v * 100) + "%");
+      rd.innerHTML = `<b>${Math.round(curD)} m${c ? " · T" + c.n + (c.name ? " " + esc(c.name) : "") : ""}</b>
+        <div class="r">${a ? `<span class="a">A ${Math.round(spd(a[0]))}</span>` : ""}${b ? `<span class="b">B ${Math.round(spd(b[0]))} ${esc(spdU())}</span>` : ""}${dl != null ? `<span class="${dl > 0 ? "bad" : "good"}">${sgn(dl, 3)} s</span>` : ""}</div>
+        ${a || b ? `<div class="r mu pd">${esc(T("Throttle", "Gas", "Acelerador"))} <span class="a">${pct(a && a[2])}</span> <span class="b">${pct(b && b[2])}</span> · ${esc(T("Brake", "Freno", "Freio"))} <span class="a">${pct(a && a[3])}</span> <span class="b">${pct(b && b[3])}</span></div>` : ""}
+        <div class="mu">${esc(Math.abs(ah) < 5 ? T("B level with A", "B a la par de A", "B lado a lado com A") : ah > 0 ? T(`B ${ah} m ahead`, `B ${ah} m por delante`, `B ${ah} m à frente`) : T(`B ${-ah} m behind`, `B ${-ah} m por detrás`, `B ${-ah} m atrás`))}</div>`;
+      TN.forEach((t) => t.g.classList.toggle("on", !!c && t.c.n === c.n));
+    }
+    function setCur(i, fromReplay) {
+      cur = clamp(i, 0, n - 1); curD = cur * BIN; if (!fromReplay && !playing) t = ta[clamp(Math.round(cur), 0, n - 1)];
+      if (ST.follow) { const q = atLine(LA, curD), W = box.clientWidth, H = box.clientHeight; if (Math.abs(q[0] - cx) > W * u * .18 || Math.abs(q[1] - cy) > H * u * .18 || fromReplay) { cx += (q[0] - cx) * (fromReplay ? .2 : 1); cy += (q[1] - cy) * (fromReplay ? .2 : 1); } view(); }
+      else { placeCur(); drawT(); }
+      rg.value = String(Math.round(t / (tEnd || 1) * 1000)); tm.innerHTML = tEnd ? `${fmtT(t)} / ${fmtT(tEnd)}` : "";
+      if (o.onCursor) try { o.onCursor(Math.round(cur)); } catch (e) { }
+    }
+
+    /* the telemetry under the map: speed of both laps, the gap and the pedals, the part of the lap on screen shaded */
+    const tx = cv.getContext("2d");
+    function drawT() {
+      const dpr = window.devicePixelRatio || 1, w = cv.clientWidth, h = cv.clientHeight; if (!w || !h) return;
+      if (cv.width !== Math.round(w * dpr) || cv.height !== Math.round(h * dpr)) { cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr); }
+      const x = tx; x.setTransform(dpr, 0, 0, dpr, 0, 0); x.clearRect(0, 0, w, h);
+      const cA_ = css(root, "--accent", "#f5b43c"), cB_ = css(root, "--fm-b", "#4f9cff"), mu = css(root, "--muted", "#8a93a3"), ln = css(root, "--line", "#1c222d"), fg = css(root, "--fg", "#e6e9ef"), good = css(root, "--good", "#3ddc84"), bad = css(root, "--bad", "#ff5c5c"), font = css(root, "--f-data", "monospace");
+      const pl = 44, pr = 8, X = (d) => pl + d / L * (w - pl - pr), hS = h * .56, hD = h * .2, hP = h - hS - hD - 14, yS = 12, yD = yS + hS, yP = yD + hD;
+      // the part of the lap on screen
+      { const W = box.clientWidth, H = box.clientHeight, vx0 = cx - W / 2 * u, vx1 = cx + W / 2 * u, vy0 = cy - H / 2 * u, vy1 = cy + H / 2 * u; if (u < uFit * .9) { x.fillStyle = css(root, "--surface2", "#151a24"); let run = -1; const step = Math.max(1, Math.round(n / 600)); for (let i = 0; i <= n; i += step) { const q = i < n ? atRoad(i * BIN) : null, inn = q && q[0] >= vx0 && q[0] <= vx1 && q[1] >= vy0 && q[1] <= vy1; if (inn && run < 0) run = i; if (!inn && run >= 0) { x.fillRect(X(run * BIN), 0, X(i * BIN) - X(run * BIN), h); run = -1; } } } }
+      x.font = "10px " + font; x.lineWidth = 1;
+      // turns
+      (o.corners || []).forEach((c) => { const xx = X(c.d); x.strokeStyle = ln; x.beginPath(); x.moveTo(xx, yS); x.lineTo(xx, h - 2); x.stroke(); x.fillStyle = mu; x.fillText("T" + c.n, xx + 2, 9); });
+      // speed
+      let vmax = 1; for (let i = 0; i < n; i++) { if (sa[i]) vmax = Math.max(vmax, sa[i][0]); if (sb[i]) vmax = Math.max(vmax, sb[i][0]); }
+      const top = Math.ceil(spd(vmax) / 50) * 50, YS = (v) => yS + hS - spd(v) / top * (hS - 4);
+      x.fillStyle = mu; x.strokeStyle = ln; for (let v = 50; v < top; v += 50) { const y = yS + hS - v / top * (hS - 4); x.beginPath(); x.moveTo(pl, y); x.lineTo(w - pr, y); x.stroke(); x.fillText(String(v), 4, y + 3); }
+      const trace = (s, col, k, Y, lw) => { x.beginPath(); let on = false; for (let i = 0; i < n; i++) { const r = s[i]; if (!r || r[k] == null) { on = false; continue; } const px = X(i * BIN), py = Y(r[k]); on ? x.lineTo(px, py) : x.moveTo(px, py); on = true; } x.strokeStyle = col; x.lineWidth = lw || 1.6; x.stroke(); };
+      trace(sb, cB_, 0, YS); trace(sa, cA_, 0, YS);
+      // the gap, A − B
+      let mx = .2; for (let i = 0; i < n; i++) { const a = tA(i), b = tB(i); if (a != null && b != null) mx = Math.max(mx, Math.abs(a - b)); }
+      const YD = (v) => yD + hD / 2 - v / mx * (hD / 2 - 3); x.strokeStyle = ln; x.beginPath(); x.moveTo(pl, YD(0)); x.lineTo(w - pr, YD(0)); x.stroke(); x.fillStyle = mu; x.fillText("±" + mx.toFixed(1), 4, YD(0) + 3);
+      x.beginPath(); let on = false; for (let i = 0; i < n; i++) { const a = tA(i), b = tB(i); if (a == null || b == null) { on = false; continue; } const px = X(i * BIN), py = YD(a - b); on ? x.lineTo(px, py) : x.moveTo(px, py); on = true; } x.strokeStyle = fg; x.lineWidth = 1.3; x.stroke();
+      // the pedals: throttle up, brake down
+      const YP = (v) => yP + hP / 2 - v * (hP / 2 - 1), YB = (v) => yP + hP / 2 + v * (hP / 2 - 1);
+      x.globalAlpha = .9; trace(sb, cB_, 2, YP, 1); trace(sa, cA_, 2, YP, 1); trace(sb, cB_, 3, YB, 1); trace(sa, cA_, 3, YB, 1); x.globalAlpha = 1;
+      x.fillStyle = good; x.fillText(T("thr", "gas", "acel"), 4, yP + 8); x.fillStyle = bad; x.fillText(T("brk", "fren", "freio"), 4, yP + hP - 2);
+      // the cursor
+      const cxp = X(curD); x.strokeStyle = fg; x.globalAlpha = .7; x.setLineDash([3, 3]); x.beginPath(); x.moveTo(cxp, yS); x.lineTo(cxp, h); x.stroke(); x.setLineDash([]); x.globalAlpha = 1;
+      const a = sa[cur], b = sb[cur]; if (a) { x.fillStyle = cA_; x.beginPath(); x.arc(cxp, YS(a[0]), 3.5, 0, 7); x.fill(); } if (b) { x.strokeStyle = cB_; x.lineWidth = 2; x.beginPath(); x.arc(cxp, YS(b[0]), 3.5, 0, 7); x.stroke(); }
+    }
+    // pointer on the telemetry: the cursor follows (a finger drags it)
+    const dOfX = (e) => { const r = cv.getBoundingClientRect(), pl = 44, pr = 8; return clamp((e.clientX - r.left - pl) / (r.width - pl - pr), 0, 1) * L; };
+    let tDown = false;
+    cv.addEventListener("pointerdown", (e) => { tDown = true; cv.setPointerCapture(e.pointerId); stop(); setCur(dOfX(e) / BIN); });
+    cv.addEventListener("pointermove", (e) => { if (tDown || e.pointerType === "mouse") { if (!tDown && playing) return; setCur(dOfX(e) / BIN); } });
+    cv.addEventListener("pointerup", () => { tDown = false; }); cv.addEventListener("pointercancel", () => { tDown = false; });
+    cv.addEventListener("dblclick", (e) => zoomTo(dOfX(e), 220));
+
+    /* the map's pointer: drag moves, the wheel and two fingers zoom, a hover or a tap reads the nearest point of the road */
+    const ptrs = new Map(); let drag = null, pinch = null;
+    const local = (e) => { const r = box.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; };
+    const nearestD = (px, py, lim) => { const W = box.clientWidth, H = box.clientHeight, wx = cx + (px - W / 2) * u, wy = cy + (py - H / 2) * u; let bi = -1, bd = (lim * u) ** 2; for (let i = 0; i < R.N; i++) { const dx = C[i][0] - wx, dy = C[i][1] - wy, d2 = dx * dx + dy * dy; if (d2 < bd) { bd = d2; bi = i; } } return bi < 0 ? null : bi / R.N * L; };
+    box.addEventListener("pointerdown", (e) => { if (e.target.closest && e.target.closest(".fm-z,.tn")) return; box.setPointerCapture(e.pointerId); ptrs.set(e.pointerId, local(e)); cancelAnimationFrame(anim);
+      if (ptrs.size === 1) drag = { p: local(e), cx, cy, moved: false }; else if (ptrs.size === 2) { const [p1, p2] = [...ptrs.values()]; pinch = { d: Math.hypot(p1[0] - p2[0], p1[1] - p2[1]), u, m: [(p1[0] + p2[0]) / 2, (p1[1] + p2[1]) / 2], cx, cy }; drag = null; } });
+    box.addEventListener("pointermove", (e) => {
+      if (ptrs.has(e.pointerId)) ptrs.set(e.pointerId, local(e));
+      if (pinch && ptrs.size === 2) { const [p1, p2] = [...ptrs.values()], d = Math.hypot(p1[0] - p2[0], p1[1] - p2[1]), m = [(p1[0] + p2[0]) / 2, (p1[1] + p2[1]) / 2], W = box.clientWidth, H = box.clientHeight; const nu = clamp(pinch.u * pinch.d / (d || 1), U_MIN, uFit * 1.6), wx = pinch.cx + (pinch.m[0] - W / 2) * pinch.u, wy = pinch.cy + (pinch.m[1] - H / 2) * pinch.u; u = nu; cx = wx - (m[0] - W / 2) * nu; cy = wy - (m[1] - H / 2) * nu; view(); return; }
+      if (drag) { const p = local(e), dx = p[0] - drag.p[0], dy = p[1] - drag.p[1]; if (!drag.moved && Math.hypot(dx, dy) < 4) return; drag.moved = true; box.classList.add("drag"); if (ST.follow) { ST.follow = false; save(); zb.follow.setAttribute("aria-pressed", "false"); } cx = drag.cx - dx * u; cy = drag.cy - dy * u; view(); return; }
+      if (e.pointerType === "mouse" && !playing) { const p = local(e), d = nearestD(p[0], p[1], 40); if (d != null) setCur(d / BIN); }
+    });
+    const up = (e) => { const was = drag; ptrs.delete(e.pointerId); if (ptrs.size < 2) pinch = null; if (ptrs.size === 0) { box.classList.remove("drag"); if (was && !was.moved) { const p = local(e), d = nearestD(p[0], p[1], e.pointerType === "mouse" ? 40 : 90); if (d != null) { stop(); setCur(d / BIN); } } drag = null; } };
+    box.addEventListener("pointerup", up); box.addEventListener("pointercancel", up);
+    box.addEventListener("wheel", (e) => { e.preventDefault(); const p = local(e); zoomAt(Math.exp(clamp(e.deltaY, -120, 120) * (e.ctrlKey ? .01 : .0025)), p[0], p[1]); }, { passive: false });
+    box.addEventListener("dblclick", (e) => { if (e.target.closest && e.target.closest(".fm-z")) return; const p = local(e); glideAt(.4, p); });
+    const glideAt = (k, p) => { const W = box.clientWidth, H = box.clientHeight, wx = cx + (p[0] - W / 2) * u, wy = cy + (p[1] - H / 2) * u, nu = clamp(u * k, U_MIN, uFit * 1.6); glide(wx - (p[0] - W / 2) * nu, wy - (p[1] - H / 2) * nu, nu, 300); };
+    const zb = {}; root.querySelectorAll("[data-z]").forEach((b) => { zb[b.dataset.z] = b; b.addEventListener("click", () => {
+      const W = box.clientWidth, H = box.clientHeight;
+      if (b.dataset.z === "in") glideAt(.6, [W / 2, H / 2]); else if (b.dataset.z === "out") glideAt(1 / .6, [W / 2, H / 2]); else if (b.dataset.z === "fit") { uFit = fitU(); glide((bx0 + bx1) / 2, (by0 + by1) / 2, uFit, 400); }
+      else { ST.follow = !ST.follow; save(); b.setAttribute("aria-pressed", String(ST.follow)); if (ST.follow) { const q = atLine(LA, curD); glide(q[0], q[1], Math.min(u, uFit * .22), 450); } }
+    }); });
+    root.querySelectorAll("[data-k]").forEach((b) => b.addEventListener("click", () => { const k = b.dataset.k; ST[k] = !ST[k]; save(); b.setAttribute("aria-pressed", String(ST[k])); view(); }));
+
+    /* the replay: both laps on the same clock */
+    const go = root.querySelector(".go"), rg = root.querySelector(".fm-rp input"), tm = root.querySelector(".tm");
+    let t = ta[cur] || 0, playing = false, raf = 0, last = 0, rate = 2;
+    root.querySelectorAll("[data-sp]").forEach((b) => b.addEventListener("click", () => { rate = +b.dataset.sp; root.querySelectorAll("[data-sp]").forEach((x) => x.setAttribute("aria-pressed", String(x === b))); }));
+    function stop() { cancelAnimationFrame(raf); raf = 0; playing = false; go.textContent = "▶"; }
+    const step = (ts) => { if (!root.isConnected) return stop(); if (last) t = Math.min(tEnd, t + (ts - last) / 1000 * rate); last = ts; setCur(dAt(ta, t) / BIN, true); if (t >= tEnd) return stop(); raf = requestAnimationFrame(step); };
+    function play() { if (!(tEnd > 0)) return; if (t >= tEnd - .01) t = 0; playing = true; last = 0; go.textContent = "❚❚"; raf = requestAnimationFrame(step); }
+    go.addEventListener("click", () => (playing ? stop() : play()));
+    rg.addEventListener("input", () => { stop(); t = +rg.value / 1000 * tEnd; setCur(dAt(ta, t) / BIN, true); });
+
+    /* keys: Esc closes, + − 0 zoom, space plays, ← → move the cursor (Shift: 50 m) */
+    const onKey = (e) => {
+      if (e.target && /^(INPUT|SELECT|TEXTAREA)$/.test(e.target.tagName) && e.target !== rg) return;
+      e.stopPropagation(); // the map is on top of everything: the screen under it gets no keys
+      const W = box.clientWidth, H = box.clientHeight;
+      if (e.key === "Escape") { e.preventDefault(); close(); }
+      else if (e.key === "+" || e.key === "=") glideAt(.6, [W / 2, H / 2]); else if (e.key === "-" || e.key === "_") glideAt(1 / .6, [W / 2, H / 2]); else if (e.key === "0") zb.fit.click();
+      else if (e.key === " ") { e.preventDefault(); playing ? stop() : play(); }
+      else if (e.key === "ArrowRight" || e.key === "ArrowLeft") { e.preventDefault(); stop(); setCur(cur + (e.key === "ArrowRight" ? 1 : -1) * (e.shiftKey ? 10 : 1)); }
+    };
+    document.addEventListener("keydown", onKey, true);
+    const onResize = () => { const k = u / uFit; uFit = fitU(); u = uFit * k; view(); };
+    window.addEventListener("resize", onResize);
+    function close() { stop(); cancelAnimationFrame(anim); document.removeEventListener("keydown", onKey, true); window.removeEventListener("resize", onResize); document.documentElement.style.overflow = prevOv; root.remove(); if (o.onClose) try { o.onClose(Math.round(cur)); } catch (e) { } }
+    root.querySelector(".fm-x").addEventListener("click", close);
+
+    fit(); setCur(cur);
+    root.tabIndex = -1; root.focus({ preventScroll: true });
+    return { close, setCursor: (i) => setCur(i), lines: { a: !!lineA, b: !!lineB } };
+  }
+
+  window.PW_FULLMAP = { open, lineOf: (xy, map) => lineOf(xy, roadOf(map)), VERSION: 1 };
+})();

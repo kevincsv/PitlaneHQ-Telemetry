@@ -34,7 +34,8 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   ±400 m moving average); the coach turns it into inside/outside at B's turn-in, apex and exit (1.5 m or more) and says
   it first when you brake at the reference's point on the wrong part of the track. The model's record and next levels
   carry their line (`idealXY`, ladder x/y, `lapPath` in model.js). The line is read in the coach's tips and the "Line"
-  chart only: no map draws it (the owner's choice, they never looked right). Every map (analyzer, coach, race summary,
+  chart, and drawn on one map only: the lap compare's full-screen map (app-screens.md), where the road has its real width
+  (the owner's choice 2026-11-15; the small maps never looked right with it). Every other map (analyzer, coach, race summary,
   track page, the live map, the Community board's map, the map overlay, phones) draws the track as a road with depth
   (shadow, rim, asphalt) from the community's generated layout (`trackMapFor`/`commTrackMap` on the web, `loadMap` in
   ovnative4.go, `trackLayout`, `layout` in the phones' `LapAnalysis`), never a lap's own path, no lap's line on it and no

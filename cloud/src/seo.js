@@ -11,11 +11,12 @@ import { TOPICS, GUIDES } from "./seo-topics.js";
 import { VISIT_JS } from "./sourceslib.js";
 import { MS_STORE } from "./downloads.js";
 import { foundLeagues } from "./leaguescan.js";
+import { refFor, REF } from "./turnsref.js";
 
 const SITE = "https://pitlanehq.app";
 // SEO_VER: raised when the public pages change (new languages, new addresses, new texts): every page is sent to
 // IndexNow again once. SEO_DATE: the day their texts last changed, the sitemap's lastmod of the pages without data.
-const SEO_VER = "18", SEO_DATE = "2026-11-14";
+const SEO_VER = "19", SEO_DATE = "2026-11-15";
 const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
 const slug = (s) => String(s || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 80);
 const fmt = (t) => { if (!(t > 0)) return "–"; const m = Math.floor(t / 60), s = t - m * 60; return (m ? m + ":" + (s < 10 ? "0" : "") : "") + s.toFixed(3); };
@@ -107,7 +108,7 @@ footer{border-top:1px solid var(--line);margin-top:50px;padding:22px 0;color:var
 figure{margin:0}figcaption{font-size:13px;color:var(--mut);margin-top:6px}.shot{margin:26px 0 0}.shot img{display:block;width:100%;height:auto;border:1px solid var(--line);border-radius:12px;background:#0d1116}
 .ovs{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px;margin-top:18px}.ovs figure{background:#0d1116;border:1px solid var(--line);border-radius:12px;padding:12px;text-align:center}.ovs img{height:auto}
 .phs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;max-width:640px;margin-top:22px}.phs img{display:block;width:100%;height:auto;border:5px solid #2a313c;border-radius:26px}.phs figcaption{text-align:center}
-@media(max-width:600px){h1{font-size:36px}.lead{font-size:17px}th:nth-child(4),td:nth-child(4){display:none}}`;
+@media(max-width:600px){h1{font-size:36px}.lead{font-size:17px}th:nth-child(4),td:nth-child(4){display:none}.nt th:nth-child(4),.nt td:nth-child(4){display:table-cell}}`;
 
 // the screenshots of the app (web/dist/landing/<lang>/, the same ones the landing shows) with their size, so the
 // page never moves while they load
@@ -148,7 +149,7 @@ const LMU_TOO_H = { phone: { en: "Telemetry on your phone", es: "La telemetría 
 const lmuToo = (l) => LMU_TOO.map((id) => ({ ...TOPIC_BY[id][l], h1: LMU_TOO_H[id][l] }));
 // the Le Mans Ultimate pages a page links to (only the ones that exist)
 const lmuLinks = (l) => [[LANDL[l].path, LANDL[l].h1], [OVLL[l].path, OVLL[l].h1], ...TOPICS.filter((x) => x.game === "lmu").map((x) => [x[l].path, x[l].h1]),
-  ...(HAS.lmuLeagues ? [[LEAGL[l].path, LEAGL[l].h1]] : []), ...(HAS.lmuRecords ? [[REC_IDX.lmu[l], S[l].recH(GNAME.lmu)]] : [])];
+  ...(HAS.lmuLeagues ? [[LEAGL[l].path, LEAGL[l].h1]] : []), ...(HAS.lmuRecords ? [[LT_IDX[l], LTW[l].h], [REC_IDX.lmu[l], S[l].recH(GNAME.lmu)]] : [])];
 const iracingLinks = (l) => [...TOPICS.filter((x) => x.game !== "lmu").map((x) => [x[l].path, x[l].h1]), [OVL[l].path, OVL[l].h1], [LEAG[l].path, LEAG[l].h1], [REC_IDX.iracing[l], S[l].recH(GNAME.iracing)]];
 
 // each JSON-LD item is its own script, an object that starts with @context: Safari and some extensions read the page's
@@ -181,13 +182,13 @@ ${ldTags(ld)}</head><body>
 // (a person, a search engine or an AI assistant) reads the whole of it. Only what exists today, and free only "during
 // the beta" beyond what is free now
 const WHAT = {
-  en: { t: "What is Pitlane HQ", p: ["Pitlane HQ (also written PitlaneHQ) is a free sim racing telemetry app for iRacing and Le Mans Ultimate. It is in beta, and everything in it is free during the beta.",
+  en: { t: "What is Pitlane HQ", p: ["Pitlane HQ (also written PitlaneHQ) is a free sim racing telemetry app for Le Mans Ultimate and iRacing. It is in beta, and everything in it is free during the beta.",
     "Pitlane HQ Agent runs on the Windows PC where you race, and it is also on the Microsoft Store. It records every lap by itself and draws overlays on top of the game, also in VR. The web app and the Android app show your laps with a lap analyzer, lap comparison, sectors and braking points, and a coach that learns from real laps, shows corner by corner where you lose time and gives a plan marked on the track map.",
     "Every lap syncs to your account with your whole history. Pitlane HQ also has live telemetry on your phone, race summaries with the fuel of each stint, leaderboards by car and track, friends, leagues and a Discord bot."] },
-  es: { t: "Qué es Pitlane HQ", p: ["Pitlane HQ (también escrito PitlaneHQ) es una app gratis de telemetría para sim racing en iRacing y Le Mans Ultimate. Está en beta, y durante la beta todo es gratis.",
+  es: { t: "Qué es Pitlane HQ", p: ["Pitlane HQ (también escrito PitlaneHQ) es una app gratis de telemetría para sim racing en Le Mans Ultimate e iRacing. Está en beta, y durante la beta todo es gratis.",
     "Pitlane HQ Agent funciona en el PC con Windows donde corres, y también está en la Microsoft Store. Graba cada vuelta solo y dibuja overlays encima del juego, también en VR. La app web y la app de Android te enseñan tus vueltas con un analizador de vueltas, comparación de vueltas, sectores y puntos de frenada, y un coach que aprende de vueltas reales, te enseña curva a curva dónde pierdes tiempo y te da un plan marcado en el mapa.",
     "Cada vuelta se sincroniza con tu cuenta, con todo tu historial. Pitlane HQ también tiene telemetría en vivo en el móvil, resúmenes de carrera con el combustible de cada stint, clasificaciones por coche y circuito, amigos, ligas y un bot de Discord."] },
-  pt: { t: "O que é o Pitlane HQ", p: ["O Pitlane HQ (também escrito PitlaneHQ) é um app grátis de telemetria para sim racing no iRacing e no Le Mans Ultimate. Ele está em beta, e durante a beta tudo é grátis.",
+  pt: { t: "O que é o Pitlane HQ", p: ["O Pitlane HQ (também escrito PitlaneHQ) é um app grátis de telemetria para sim racing no Le Mans Ultimate e no iRacing. Ele está em beta, e durante a beta tudo é grátis.",
     "O Pitlane HQ Agent roda no PC com Windows onde você corre, e também está na Microsoft Store. Ele grava cada volta sozinho e desenha overlays sobre o jogo, também em VR. O app web e o app de Android mostram suas voltas com um analisador de voltas, comparação de voltas, setores e pontos de frenagem, e um coach que aprende com voltas reais, mostra curva a curva onde você perde tempo e dá um plano marcado no mapa da pista.",
     "Cada volta sincroniza com a sua conta, com todo o seu histórico. O Pitlane HQ também tem telemetria ao vivo no celular, resumos de corrida com o combustível de cada stint, classificações por carro e pista, amigos, ligas e um bot de Discord."] },
 };
@@ -278,7 +279,7 @@ const LAND = {
     recs: "Récords por coche y circuito", recsLead: "Las vueltas más rápidas hechas con Pitlane HQ.",
     faqT: "Preguntas",
     faq: [
-      ["¿Qué es Pitlane HQ?", "Pitlane HQ (también escrito PitlaneHQ) es una app gratis de telemetría para sim racing en iRacing y Le Mans Ultimate. Pitlane HQ Agent graba tus vueltas en Windows y dibuja overlays sobre el juego, y la web y la app de Android te las enseñan con un analizador de vueltas, un coach, clasificaciones y resúmenes de carrera."],
+      ["¿Qué es Pitlane HQ?", "Pitlane HQ (también escrito PitlaneHQ) es una app gratis de telemetría para sim racing en Le Mans Ultimate e iRacing. Pitlane HQ Agent graba tus vueltas en Windows y dibuja overlays sobre el juego, y la web y la app de Android te las enseñan con un analizador de vueltas, un coach, clasificaciones y resúmenes de carrera."],
       ["¿Es gratis?", "Sí. La telemetría, el coach, las clasificaciones, los overlays básicos, la sincronización y todo tu historial de vueltas son gratis, y durante la beta lo es todo."],
       ["¿Pitlane HQ tiene un coach con IA?", "Sí. El coach aprende de las vueltas reales de todos los pilotos en cada coche y circuito y de cada una de tus sesiones. Te enseña curva a curva dónde pierdes tiempo y te da un plan con cada punto marcado en el mapa."],
       ["¿Guardo todas mis vueltas?", "Sí. Cada vuelta va a tu cuenta y se sincroniza entre tu PC, la web y tu móvil, con todo tu historial."],
@@ -309,7 +310,7 @@ const LAND = {
     recs: "Recordes por carro e pista", recsLead: "As voltas mais rápidas feitas com o Pitlane HQ.",
     faqT: "Perguntas",
     faq: [
-      ["O que é o Pitlane HQ?", "O Pitlane HQ (também escrito PitlaneHQ) é um app grátis de telemetria para sim racing no iRacing e no Le Mans Ultimate. O Pitlane HQ Agent grava suas voltas no Windows e desenha overlays sobre o jogo, e a web e o app de Android mostram as voltas com um analisador de voltas, um coach, classificações e resumos de corrida."],
+      ["O que é o Pitlane HQ?", "O Pitlane HQ (também escrito PitlaneHQ) é um app grátis de telemetria para sim racing no Le Mans Ultimate e no iRacing. O Pitlane HQ Agent grava suas voltas no Windows e desenha overlays sobre o jogo, e a web e o app de Android mostram as voltas com um analisador de voltas, um coach, classificações e resumos de corrida."],
       ["É grátis?", "Sim. A telemetria, o coach, as classificações, os overlays básicos, a sincronização e todo o seu histórico de voltas são grátis, e durante a beta tudo é."],
       ["O Pitlane HQ tem um coach com IA?", "Sim. O coach aprende com as voltas reais de todos os pilotos em cada carro e pista e com cada uma das suas sessões. Ele mostra curva a curva onde você perde tempo e dá um plano com cada ponto marcado no mapa da pista."],
       ["Eu guardo todas as minhas voltas?", "Sim. Cada volta vai para a sua conta e sincroniza entre o seu PC, a web e o seu celular, com todo o seu histórico."],
@@ -326,7 +327,7 @@ const LAND = {
 const LANDL = {
   en: {
     path: "/le-mans-ultimate-telemetry",
-    title: "Le Mans Ultimate telemetry, coach and overlays · Pitlane HQ",
+    title: "Le Mans Ultimate (LMU) telemetry and coach · Pitlane HQ",
     desc: "Free Le Mans Ultimate telemetry app. Record every LMU lap, compare it with faster drivers, see where you lose time and race with overlays.",
     h1: "Le Mans Ultimate telemetry and a coach for your laps",
     lead: "Pitlane HQ records every lap you drive in Le Mans Ultimate and shows where you lose time, against your best lap, the record and the driver just ahead of you in the same car. Le Mans Ultimate support is free, on Windows, Android and the web.",
@@ -348,13 +349,16 @@ const LANDL = {
       ["Does it work with Hypercar, LMP2 and LMGT3?", "Yes. Every car of the game is recorded, and the overlays colour each class."],
       ["Does it show the virtual energy?", "Yes. The dash overlay shows the virtual energy left next to TC, ABS, the engine map and the brake bias, and the fuel overlay shows what each lap used and what you may use per lap to finish."],
       ["Can I see my LMU telemetry on the phone?", "Yes. Sign in with the same account on the phone or at pitlanehq.app and press Connect in Telemetry."],
+      ["Where can I see LMU lap times for each track?", "On the Le Mans Ultimate lap times pages of pitlanehq.app. Every track has the fastest Hypercar, LMP2, LMP3, LMGTE and LMGT3 laps of real drivers, one per driver."],
+      ["Is there an app like Garage 61 for Le Mans Ultimate?", "Pitlane HQ keeps every Le Mans Ultimate lap in your account, compares it with faster drivers on the same car and track and has leaderboards by car, class and track. It is free during the beta."],
+      ["Does Pitlane HQ have LMU setups?", "Not for now. It shows where your laps lose time against faster laps on the same car, corner by corner, which tells you what to change first."],
       ["Is there an iRating?", "Le Mans Ultimate has no iRating or licences, so Pitlane HQ shows none for it. Everything else works as in iRacing."],
     ],
     dl: "Download for Windows", app: "Open the app",
   },
   es: {
     path: "/es/telemetria-le-mans-ultimate",
-    title: "Telemetría y overlays para Le Mans Ultimate · Pitlane HQ",
+    title: "Telemetría y coach para Le Mans Ultimate (LMU) · Pitlane HQ",
     desc: "App de telemetría gratis para Le Mans Ultimate. Graba cada vuelta de LMU, compárala con pilotos más rápidos y corre con overlays sobre el juego.",
     h1: "Telemetría para Le Mans Ultimate y un coach para tus vueltas",
     lead: "Pitlane HQ graba cada vuelta que das en Le Mans Ultimate y te enseña dónde pierdes tiempo, frente a tu mejor vuelta, el récord y el piloto que va justo por delante con el mismo coche. El soporte de Le Mans Ultimate es gratis, en Windows, Android y la web.",
@@ -376,13 +380,16 @@ const LANDL = {
       ["¿Funciona con Hypercar, LMP2 y LMGT3?", "Sí. Se graba cada coche del juego, y los overlays colorean cada clase."],
       ["¿Muestra la energía virtual?", "Sí. El overlay del dash muestra la energía virtual que queda junto al TC, el ABS, el mapa motor y el reparto de frenada, y el de combustible lo que gastó cada vuelta y lo que puedes gastar por vuelta para terminar."],
       ["¿Puedo ver mi telemetría de LMU en el móvil?", "Sí. Entra con la misma cuenta en el móvil o en pitlanehq.app y pulsa Conectar en Telemetría."],
+      ["¿Dónde veo los tiempos por vuelta de LMU de cada circuito?", "En las páginas de tiempos por vuelta de Le Mans Ultimate de pitlanehq.app. Cada circuito tiene las vueltas más rápidas de Hypercar, LMP2, LMP3, LMGTE y LMGT3 de pilotos reales, una por piloto."],
+      ["¿Hay una app como Garage 61 para Le Mans Ultimate?", "Pitlane HQ guarda cada vuelta de Le Mans Ultimate en tu cuenta, la compara con pilotos más rápidos en el mismo coche y circuito y tiene clasificaciones por coche, clase y circuito. Es gratis durante la beta."],
+      ["¿Pitlane HQ tiene setups de LMU?", "Por ahora no. Te enseña dónde pierden tiempo tus vueltas frente a vueltas más rápidas con el mismo coche, curva a curva, y eso te dice qué cambiar primero."],
       ["¿Hay iRating?", "Le Mans Ultimate no tiene iRating ni licencias, así que Pitlane HQ no muestra ninguno. Todo lo demás funciona como en iRacing."],
     ],
     dl: "Descargar para Windows", app: "Abrir la app",
   },
   pt: {
     path: "/pt/telemetria-le-mans-ultimate",
-    title: "Telemetria e overlays para Le Mans Ultimate · Pitlane HQ",
+    title: "Telemetria e coach para Le Mans Ultimate (LMU) · Pitlane HQ",
     desc: "App de telemetria grátis para Le Mans Ultimate. Grave cada volta do LMU, compare com pilotos mais rápidos e corra com overlays sobre o jogo.",
     h1: "Telemetria para Le Mans Ultimate e um coach para suas voltas",
     lead: "O Pitlane HQ grava cada volta que você dá no Le Mans Ultimate e mostra onde você perde tempo, contra a sua melhor volta, o recorde e o piloto logo à sua frente no mesmo carro. O suporte ao Le Mans Ultimate é grátis, no Windows, no Android e na web.",
@@ -404,6 +411,9 @@ const LANDL = {
       ["Funciona com Hypercar, LMP2 e LMGT3?", "Sim. Cada carro do jogo é gravado, e os overlays colorem cada classe."],
       ["Mostra a energia virtual?", "Sim. O overlay do dash mostra a energia virtual que resta ao lado do TC, do ABS, do mapa do motor e do balanço de freio, e o de combustível o que cada volta gastou e o que você pode gastar por volta para terminar."],
       ["Posso ver minha telemetria do LMU no celular?", "Sim. Entre com a mesma conta no celular ou em pitlanehq.app e toque em Conectar em Telemetria."],
+      ["Onde vejo os tempos de volta do LMU de cada pista?", "Nas páginas de tempos de volta do Le Mans Ultimate em pitlanehq.app. Cada pista tem as voltas mais rápidas de Hypercar, LMP2, LMP3, LMGTE e LMGT3 de pilotos reais, uma por piloto."],
+      ["Existe um app como o Garage 61 para Le Mans Ultimate?", "O Pitlane HQ guarda cada volta do Le Mans Ultimate na sua conta, compara com pilotos mais rápidos no mesmo carro e pista e tem classificações por carro, classe e pista. É grátis durante a beta."],
+      ["O Pitlane HQ tem setups do LMU?", "Por enquanto não. Ele mostra onde suas voltas perdem tempo contra voltas mais rápidas no mesmo carro, curva a curva, e isso diz o que mudar primeiro."],
       ["Tem iRating?", "O Le Mans Ultimate não tem iRating nem licenças, então o Pitlane HQ não mostra nenhum. Todo o resto funciona como no iRacing."],
     ],
     dl: "Baixar para Windows", app: "Abrir o app",
@@ -628,7 +638,7 @@ const recAlts = (x, game) => ({ en: recPath("en", x, game), es: recPath("es", x,
 const catFor = (cm, game, x, hint, track, car) => (game === "lmu" ? "sports_car" : catOf(cm, x.t, x.c, hint, track, car));
 
 async function landing(env, l, game) {
-  const lmu = game === "lmu", L = (lmu ? LANDL : LAND)[l], combos = await topCombos(env, 8, game), faq = L.faq;
+  const lmu = game === "lmu", L = (lmu ? LANDL : LAND)[l], [combos, tracks] = await Promise.all([topCombos(env, 8, game), lmu ? lmuTracks(env) : []]), faq = L.faq;
   const guides = lmu ? [...TOPICS.filter((x) => x.game === "lmu").map((x) => x[l]), OVLL[l], ...(HAS.lmuLeagues ? [LEAGL[l]] : []), ...lmuToo(l)]
     : [...TOPICS.filter((x) => x.game !== "lmu").map((x) => x[l]), OVL[l], LEAG[l]];
   const body = `<h1>${esc(L.h1)}</h1><p class="lead">${esc(L.lead)}</p>
@@ -638,6 +648,7 @@ ${shot(l, lmu ? "coach.jpg" : "compare.jpg")}
 <h2 id="start">${esc(START[l].t)}</h2><ol>${START[l].steps(GNAME[game]).map((x) => `<li>${esc(x)}</li>`).join("")}</ol>
 ${cross(l, game)}
 <h2>${esc(GUIDES[l])}</h2><div class="g">${guides.map((x) => `<a class="c" href="${x.path}"><h3>${esc(x.h1)} →</h3><p>${esc(x.desc)}</p></a>`).join("")}</div>
+${lapTimesTable(l, tracks)}
 ${combos.length ? `<h2>${esc(L.recs)}</h2><p class="m">${esc(L.recsLead)}</p><div class="tw"><table><tbody>${combos.map((x) => `<tr><td><a href="${recPath(l, x, game)}">${esc(fix(x.track))}</a></td><td class="m">${esc(fix(x.car))}</td><td class="t">${fmt(x.best)}</td></tr>`).join("")}</tbody></table></div><p><a href="${REC_IDX[game][l]}">${esc(T[l].rec)} →</a></p>` : ""}
 <h2>${esc(L.faqT)}</h2>${faq.map(([q, a]) => `<details><summary>${esc(q)}</summary><p>${esc(a)}</p></details>`).join("")}`;
   const ld = [...(lmu ? [crumbs([["Pitlane HQ", LAND[l].path], ["Le Mans Ultimate", L.path]])] : []), appLd(l, L.desc, [lmu ? "coach.jpg" : "compare.jpg"], L.cards.map(([h]) => h)), ...siteLd(l), howToLd(l, GNAME[game], L.path), faqLd(faq)];
@@ -700,6 +711,180 @@ ${stats.length ? `<div class="st">${stats.map(([k, v]) => `<div><span class="m">
 ${others.length ? `<h2>${esc(W.oth(track))}</h2><div class="tw"><table><tbody>${others.map((o) => `<tr><td><a href="${recPath(l, o, game)}">${esc(fix(o.car))}</a></td><td class="t">${fmt(o.best)}</td></tr>`).join("")}</tbody></table></div>` : ""}`;
   const ld = [crumbs([["Pitlane HQ", LAND[l].path], ...(game === "lmu" ? [["Le Mans Ultimate", LANDL[l].path]] : []), [T[l].rec, idx], [car + " · " + track, recPath(l, x, game)]])];
   return html(page(l, { title, desc, path: recPath(l, x, game), alts: recAlts(x, game), body, ld, game, noindex: thin, mod: later(SEO_DATE, day(newest)) }));
+}
+
+// ---------- Le Mans Ultimate lap times by track and class ----------
+// what Le Mans Ultimate drivers search most after the app itself: the lap times of a track for each class (Hypercar,
+// LMP2, LMP3, LMGTE, LMGT3). One page lists every track with the fastest lap of each class, and each track has its own
+// page with each class's leaderboard (one lap per driver, race rivals as Anonymous), its cars and its corners (the
+// turns reference the app's coach uses). A track with fewer than REC_MIN drivers is shown but noindex and left out of
+// the sitemap; a class with fewer than REC_MIN drivers is shown but never named in the title, description or FAQ.
+const LT_CLS = ["Hypercar", "LMP2", "LMP3", "LMGTE", "LMGT3"];
+const LT_IDX = { en: "/le-mans-ultimate-lap-times", es: "/es/tiempos-le-mans-ultimate", pt: "/pt/tempos-le-mans-ultimate" };
+// the name people search a track by (the game's own name stays on the page); two layouts that would share one keep the
+// game's name of the less driven one
+const LT_NAME = [[/sarthe/i, "Le Mans"], [/curva grande/i, "Monza Curva Grande"], [/monza/i, "Monza"], [/spa.*endurance/i, "Spa Endurance"], [/spa/i, "Spa-Francorchamps"],
+  [/enzo e dino|imola/i, "Imola"], [/algarve|portim/i, "Portimão"], [/road atlanta/i, "Road Atlanta"], [/silverstone international/i, "Silverstone International"],
+  [/silverstone national/i, "Silverstone National"], [/bahrain outer/i, "Bahrain Outer"], [/bahrain/i, "Bahrain"], [/fuji/i, "Fuji"], [/sebring/i, "Sebring"],
+  [/jos[eé] carlos pace|interlagos/i, "Interlagos"], [/barcelona|catalunya/i, "Barcelona"], [/long beach/i, "Long Beach"], [/daytona/i, "Daytona"],
+  [/lusail|qatar/i, "Lusail"], [/laguna seca/i, "Laguna Seca"], [/americas|cota/i, "COTA"], [/paul ricard/i, "Paul Ricard"]];
+const ltName = (x) => x.name || shortTrack(fix(x.track));
+const ltPath = (l, x) => `${LT_IDX[l]}/${x.t}-${slug(ltName(x))}`;
+const ltAlts = (x) => ({ en: ltPath("en", x), es: ltPath("es", x), pt: ltPath("pt", x) });
+const LTW = {
+  en: { h: "Le Mans Ultimate lap times", title: "Le Mans Ultimate lap times by track and class · Pitlane HQ",
+    desc: "Le Mans Ultimate lap times at every track. The fastest Hypercar, LMP2, LMP3, LMGTE and LMGT3 laps of real drivers, one per driver, updated after every session.",
+    lead: "The fastest laps driven in Le Mans Ultimate at every track, class by class, one per driver. They come from the drivers who race with Pitlane HQ and the rivals they race against, and they update by themselves after every session.",
+    track: "Track", drivers: "Drivers", none: "No laps yet.", open: "Open a track to see each class's leaderboard, its cars and its corners.",
+    howT: "Where these times come from", how: "Pitlane HQ Agent records every lap on the drivers' PCs, in practice, qualifying and races. Each driver's fastest valid lap of each class counts, and a lap off the track, through the pits or not round the whole circuit never does. The drivers show under their public name, and race rivals always as Anonymous.",
+    faq: [["What is a good lap time in Le Mans Ultimate?", "It depends on the class and the track. Each track page shows every class's record and the gap from the record to P10, a fair mark of a fast lap."],
+      ["Are these the game's own leaderboards?", "No. They are laps recorded by Pitlane HQ on real drivers' PCs, in every kind of session, one per driver."],
+      ["How do I get my laps here?", "Install Pitlane HQ Agent on the PC where you race, turn on Enable Plugins in the game's Gameplay settings and drive. Your fastest lap of each class goes up by itself."],
+      ["Can I compare my lap with these?", "Yes. In the app open Community → Leaderboards, choose the car and track and compare any lap with yours, corner by corner."]],
+    tT: (n) => `${n} lap times in Le Mans Ultimate`, tTs: (n) => `${n} LMU lap times`, tTx: (n) => `${n} lap times`,
+    tD: (n, recs, k) => `Le Mans Ultimate lap times at ${n}. ${recs ? recs + ". " : ""}One lap per driver, from ${k} drivers.`,
+    tL: (full, k) => `The fastest Le Mans Ultimate laps at ${full}, class by class, from ${k} ${k === 1 ? "driver" : "drivers"}. One lap per driver, their fastest valid one.`,
+    sCls: "Classes", sCars: "Cars", sNew: "Newest lap", rec: "Record", gap: (n) => `Gap to P${n}`, driver: "Driver", car: "Car", time: "Time", date: "Date", cls: "Class", anon: "Anonymous",
+    carsT: (n) => `Every car at ${n}`, cornT: (n) => `Corners of ${n}`, turn: "Turn", name: "Name", dir: "Direction", at: "From the line", L: "Left", R: "Right",
+    cornL: "The corners as Pitlane HQ's coach names them in its tips, with the distance from the start line.", others: "Other tracks",
+    q: (n) => `Where do you lose time at ${n}?`, a: (n) => `Pitlane HQ records your laps at ${n} and its coach compares them with the laps on this page, corner by corner, with each braking point and apex speed. It is free.`,
+    fRec: (cl, n, t, car) => [`What is the ${cl} lap record at ${n} in Le Mans Ultimate?`, `${t}, driven in the ${car}. It is the fastest ${cl} lap of the Pitlane HQ drivers and their rivals at ${n}.`],
+    fGood: (cl, n, k, t, g) => [`What is a good ${cl} lap time at ${n}?`, `P${k} of the ${cl} leaderboard is ${t}, ${g} s off the record. A lap near it is fast.`],
+    fMine: (n) => [`How do I see my own laps at ${n}?`, "Drive there with Pitlane HQ Agent open. Your fastest lap of each class goes on these leaderboards by itself, and the app shows all your laps with the coach."] },
+  es: { h: "Tiempos por vuelta de Le Mans Ultimate", title: "Tiempos por vuelta de Le Mans Ultimate · Pitlane HQ",
+    desc: "Tiempos por vuelta de Le Mans Ultimate en cada circuito. Las vueltas más rápidas de Hypercar, LMP2, LMP3, LMGTE y LMGT3 de pilotos reales, una por piloto.",
+    lead: "Las vueltas más rápidas de Le Mans Ultimate en cada circuito, clase a clase, una por piloto. Son de los pilotos que corren con Pitlane HQ y de los rivales contra los que corren, y se actualizan solas después de cada sesión.",
+    track: "Circuito", drivers: "Pilotos", none: "Aún no hay vueltas.", open: "Abre un circuito para ver la clasificación de cada clase, sus coches y sus curvas.",
+    howT: "De dónde salen estos tiempos", how: "Pitlane HQ Agent graba cada vuelta en el PC de cada piloto, en entrenamientos, clasificación y carreras. Cuenta la vuelta válida más rápida de cada piloto en cada clase, y nunca una vuelta fuera de pista, por boxes o que no da la vuelta entera al circuito. Los pilotos salen con su nombre público, y los rivales de carrera siempre como Anónimo.",
+    faq: [["¿Qué es un buen tiempo por vuelta en Le Mans Ultimate?", "Depende de la clase y del circuito. Cada página de circuito muestra el récord de cada clase y la diferencia del récord a P10, una buena referencia de una vuelta rápida."],
+      ["¿Son las clasificaciones del propio juego?", "No. Son vueltas grabadas por Pitlane HQ en el PC de pilotos reales, en todo tipo de sesiones, una por piloto."],
+      ["¿Cómo meto mis vueltas aquí?", "Instala Pitlane HQ Agent en el PC donde corres, activa Enable Plugins en los ajustes de Gameplay del juego y conduce. Tu vuelta más rápida de cada clase sube sola."],
+      ["¿Puedo comparar mi vuelta con estas?", "Sí. En la app abre Comunidad → Clasificaciones, elige el coche y el circuito y compara cualquier vuelta con la tuya, curva a curva."]],
+    tT: (n) => `Tiempos por vuelta en ${n} en Le Mans Ultimate`, tTs: (n) => `Tiempos de LMU en ${n}`, tTx: (n) => `Tiempos en ${n}`,
+    tD: (n, recs, k) => `Tiempos por vuelta de Le Mans Ultimate en ${n}. ${recs ? recs + ". " : ""}Una vuelta por piloto, de ${k} pilotos.`,
+    tL: (full, k) => `Las vueltas más rápidas de Le Mans Ultimate en ${full}, clase a clase, de ${k} ${k === 1 ? "piloto" : "pilotos"}. Una vuelta por piloto, su vuelta válida más rápida.`,
+    sCls: "Clases", sCars: "Coches", sNew: "Última vuelta", rec: "Récord", gap: (n) => `Diferencia con P${n}`, driver: "Piloto", car: "Coche", time: "Tiempo", date: "Fecha", cls: "Clase", anon: "Anónimo",
+    carsT: (n) => `Todos los coches en ${n}`, cornT: (n) => `Curvas de ${n}`, turn: "Curva", name: "Nombre", dir: "Sentido", at: "Desde la línea", L: "Izquierda", R: "Derecha",
+    cornL: "Las curvas como las nombra el coach de Pitlane HQ en sus consejos, con la distancia desde la línea de salida.", others: "Otros circuitos",
+    q: (n) => `¿Dónde pierdes tiempo en ${n}?`, a: (n) => `Pitlane HQ graba tus vueltas en ${n} y su coach las compara con las vueltas de esta página, curva a curva, con cada punto de frenada y la velocidad en el vértice. Es gratis.`,
+    fRec: (cl, n, t, car) => [`¿Cuál es el récord de ${cl} en ${n} en Le Mans Ultimate?`, `${t}, con el ${car}. Es la vuelta de ${cl} más rápida de los pilotos de Pitlane HQ y sus rivales en ${n}.`],
+    fGood: (cl, n, k, t, g) => [`¿Qué es un buen tiempo de ${cl} en ${n}?`, `P${k} de la clasificación de ${cl} es ${t}, a ${g} s del récord. Una vuelta cerca de ese tiempo es rápida.`],
+    fMine: (n) => [`¿Cómo veo mis propias vueltas en ${n}?`, "Conduce allí con Pitlane HQ Agent abierto. Tu vuelta más rápida de cada clase entra sola en estas clasificaciones, y la app te enseña todas tus vueltas con el coach."] },
+  pt: { h: "Tempos de volta do Le Mans Ultimate", title: "Tempos de volta do Le Mans Ultimate por pista · Pitlane HQ",
+    desc: "Tempos de volta do Le Mans Ultimate em cada pista. As voltas mais rápidas de Hypercar, LMP2, LMP3, LMGTE e LMGT3 de pilotos reais, uma por piloto.",
+    lead: "As voltas mais rápidas do Le Mans Ultimate em cada pista, classe por classe, uma por piloto. São dos pilotos que correm com o Pitlane HQ e dos rivais contra quem eles correm, e se atualizam sozinhas depois de cada sessão.",
+    track: "Pista", drivers: "Pilotos", none: "Ainda não há voltas.", open: "Abra uma pista para ver a classificação de cada classe, os carros e as curvas.",
+    howT: "De onde vêm estes tempos", how: "O Pitlane HQ Agent grava cada volta no PC de cada piloto, em treinos, classificação e corridas. Conta a volta válida mais rápida de cada piloto em cada classe, e nunca uma volta fora da pista, pelos boxes ou que não dá a volta inteira no circuito. Os pilotos aparecem com o nome público, e os rivais de corrida sempre como Anônimo.",
+    faq: [["O que é um bom tempo de volta no Le Mans Ultimate?", "Depende da classe e da pista. Cada página de pista mostra o recorde de cada classe e a diferença do recorde para P10, uma boa referência de volta rápida."],
+      ["São as classificações do próprio jogo?", "Não. São voltas gravadas pelo Pitlane HQ no PC de pilotos reais, em todo tipo de sessão, uma por piloto."],
+      ["Como coloco minhas voltas aqui?", "Instale o Pitlane HQ Agent no PC onde você corre, ative Enable Plugins nas configurações de Gameplay do jogo e pilote. Sua volta mais rápida de cada classe sobe sozinha."],
+      ["Posso comparar minha volta com estas?", "Sim. No app abra Comunidade → Classificações, escolha o carro e a pista e compare qualquer volta com a sua, curva a curva."]],
+    tT: (n) => `Tempos de volta em ${n} no Le Mans Ultimate`, tTs: (n) => `Tempos do LMU em ${n}`, tTx: (n) => `Tempos em ${n}`,
+    tD: (n, recs, k) => `Tempos de volta do Le Mans Ultimate em ${n}. ${recs ? recs + ". " : ""}Uma volta por piloto, de ${k} pilotos.`,
+    tL: (full, k) => `As voltas mais rápidas do Le Mans Ultimate em ${full}, classe por classe, de ${k} ${k === 1 ? "piloto" : "pilotos"}. Uma volta por piloto, a volta válida mais rápida.`,
+    sCls: "Classes", sCars: "Carros", sNew: "Volta mais recente", rec: "Recorde", gap: (n) => `Diferença para P${n}`, driver: "Piloto", car: "Carro", time: "Tempo", date: "Data", cls: "Classe", anon: "Anônimo",
+    carsT: (n) => `Todos os carros em ${n}`, cornT: (n) => `Curvas de ${n}`, turn: "Curva", name: "Nome", dir: "Sentido", at: "Desde a linha", L: "Esquerda", R: "Direita",
+    cornL: "As curvas como o coach do Pitlane HQ as chama nas dicas, com a distância desde a linha de largada.", others: "Outras pistas",
+    q: (n) => `Onde você perde tempo em ${n}?`, a: (n) => `O Pitlane HQ grava suas voltas em ${n} e o coach as compara com as voltas desta página, curva a curva, com cada ponto de frenagem e a velocidade no ápice. É grátis.`,
+    fRec: (cl, n, t, car) => [`Qual é o recorde de ${cl} em ${n} no Le Mans Ultimate?`, `${t}, com o ${car}. É a volta de ${cl} mais rápida dos pilotos do Pitlane HQ e seus rivais em ${n}.`],
+    fGood: (cl, n, k, t, g) => [`O que é um bom tempo de ${cl} em ${n}?`, `P${k} da classificação de ${cl} é ${t}, a ${g} s do recorde. Uma volta perto desse tempo é rápida.`],
+    fMine: (n) => [`Como vejo minhas próprias voltas em ${n}?`, "Pilote lá com o Pitlane HQ Agent aberto. Sua volta mais rápida de cada classe entra sozinha nestas classificações, e o app mostra todas as suas voltas com o coach."] },
+};
+const ltTitle = (W, n) => [W.tT(n), W.tTs(n), W.tTx(n)].map((x) => x + " · Pitlane HQ").find((x) => x.length <= 60) || W.tTx(n) + " · Pitlane HQ";
+const clsOrder = (a, b) => (LT_CLS.indexOf(a) + 1 || 99) - (LT_CLS.indexOf(b) + 1 || 99) || String(a).localeCompare(String(b));
+// every Le Mans Ultimate track with its drivers and the record of each class, the most driven first; kept a few
+// minutes per server (the index, every track page's "Other tracks", the sitemap and the landing read it)
+const LT_MEMO = new WeakMap();
+async function lmuTracks(env) {
+  const m = LT_MEMO.get(env);
+  if (m && Date.now() - m.at < 5 * 60e3) return m.list;
+  const base = "FROM community_laps WHERE game='lmu' AND track_id>0 AND car_id>0 AND COALESCE(shown,'')<>'model'";
+  const [a, b] = await Promise.all([
+    env.DB.prepare(`SELECT track_id AS t, MAX(track) AS track, COUNT(DISTINCT user_id) AS drivers, MAX(created) AS upd ${base} GROUP BY track_id`).all().catch(() => ({ results: [] })),
+    env.DB.prepare(`SELECT track_id AS t, cls, COUNT(DISTINCT user_id) AS drivers, MIN(time) AS best ${base} AND cls IS NOT NULL GROUP BY track_id, cls`).all().catch(() => ({ results: [] })),
+  ]);
+  const by = new Map((a.results || []).map((x) => [x.t, { ...x, cls: {} }]));
+  for (const x of b.results || []) { const tr = by.get(x.t); if (tr) tr.cls[x.cls] = { drivers: x.drivers, best: x.best }; }
+  const list = [...by.values()].sort((p, q) => q.drivers - p.drivers || p.t - q.t), used = new Set();
+  for (const x of list) { const g = fix(x.track), r = LT_NAME.find(([re]) => re.test(g)), n = r && !used.has(r[1]) ? r[1] : shortTrack(g); x.name = used.has(n) ? g : n; used.add(x.name); }
+  if (list.length) LT_MEMO.set(env, { at: Date.now(), list });
+  return list;
+}
+const ltClasses = (list) => LT_CLS.filter((k) => list.some((x) => x.cls[k])).concat([...new Set(list.flatMap((x) => Object.keys(x.cls)))].filter((k) => !LT_CLS.includes(k)).sort());
+
+// the turns reference of a track the game's id does not name: only when its name points to one circuit with one layout
+const refByName = (track) => { const n = " " + fix(track).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, " ").trim() + " ";
+  const hit = REF.filter((r) => (r.match || []).some((w) => n.includes(" " + w + " "))); return hit.length === 1 ? hit[0] : null; };
+// the landing's table: the tracks most driven with each class's record, and the way to every track
+function lapTimesTable(l, list) {
+  const top = list.filter((x) => x.drivers >= REC_MIN).slice(0, 10);
+  if (!top.length) return "";
+  const W = LTW[l], cls = ltClasses(top);
+  return `<h2>${esc(W.h)}</h2><div class="tw"><table class="nt"><thead><tr><th>${esc(W.track)}</th>${cls.map((k) => `<th>${esc(k)}</th>`).join("")}</tr></thead><tbody>${top.map((x) => `<tr><td><a href="${ltPath(l, x)}">${esc(ltName(x))}</a></td>${cls.map((k) => (x.cls[k] ? `<td class="t">${fmt(x.cls[k].best)}</td>` : `<td class="m">–</td>`)).join("")}</tr>`).join("")}</tbody></table></div><p><a href="${LT_IDX[l]}">${esc(W.h)} →</a></p>`;
+}
+async function lapTimesIndex(env, l) {
+  const list = await lmuTracks(env);
+  if (!list.length) return notFound(l);
+  const W = LTW[l], cls = ltClasses(list), path = LT_IDX[l];
+  const cell = (x, k) => (x.cls[k] ? `<td class="t">${fmt(x.cls[k].best)}</td>` : `<td class="m">–</td>`);
+  const body = `<p class="m"><a href="${LANDL[l].path}">Le Mans Ultimate</a></p><h1>${esc(W.h)}</h1><p class="lead">${esc(W.lead)}</p>
+<div class="tw"><table class="nt"><thead><tr><th>${esc(W.track)}</th>${cls.map((k) => `<th>${esc(k)}</th>`).join("")}<th>${esc(W.drivers)}</th></tr></thead><tbody>${list.map((x) => `<tr><td><a href="${ltPath(l, x)}">${esc(ltName(x))}</a></td>${cls.map((k) => cell(x, k)).join("")}<td class="m">${x.drivers}</td></tr>`).join("")}</tbody></table></div>
+<p class="m">${esc(W.open)}</p>
+<div class="cta"><a class="btn p" href="/dl/PitlaneHQ-Setup.exe">${esc(LANDL[l].dl)}</a><a class="btn" href="${LANDL[l].path}">${esc(T[l].tel.lmu)}</a></div>
+<h2>${esc(W.howT)}</h2><p>${esc(W.how)}</p>
+<h2>${esc(LAND[l].faqT)}</h2>${W.faq.map(([q, a]) => `<details open><summary>${esc(q)}</summary><p>${esc(a)}</p></details>`).join("")}${cross(l, "lmu")}`;
+  const ld = [crumbs([["Pitlane HQ", LAND[l].path], ["Le Mans Ultimate", LANDL[l].path], [W.h, path]]),
+    { "@context": "https://schema.org", "@type": "ItemList", name: W.h, itemListElement: list.filter((x) => x.drivers >= REC_MIN).map((x, i) => ({ "@type": "ListItem", position: i + 1, url: SITE + ltPath(l, x), name: W.tTx(ltName(x)) })) }, faqLd(W.faq)];
+  const mod = later(SEO_DATE, day(Math.max(0, ...list.map((x) => +x.upd || 0))));
+  return html(page(l, { title: W.title, desc: W.desc, path, alts: LT_IDX, body, ld, game: "lmu", mod }), 1800);
+}
+
+async function lapTimesTrack(env, l, t, asked) {
+  const list = await lmuTracks(env), tr = list.find((x) => x.t === t);
+  if (!tr) return null;
+  const canon = ltPath(l, tr);
+  if (asked !== canon) return Response.redirect(SITE + canon, 301);
+  const base = "FROM community_laps l WHERE l.game='lmu' AND l.track_id=?1 AND l.car_id>0 AND COALESCE(l.shown,'')<>'model'";
+  const [bd, cr] = await Promise.all([
+    // each class's ten fastest drivers (each driver's fastest lap of the class), with the car; the names as the records
+    // pages show them. How many drivers each class has comes from the track list
+    env.DB.prepare(`WITH b AS (SELECT l.user_id, l.cls, l.time, l.car, l.car_id, l.created, l.anon, ROW_NUMBER() OVER (PARTITION BY l.cls, l.user_id ORDER BY l.time) AS rk ${base} AND l.cls IS NOT NULL),
+      c AS (SELECT b.*, ROW_NUMBER() OVER (PARTITION BY b.cls ORDER BY b.time) AS pos FROM b WHERE b.rk=1)
+      SELECT c.cls, c.time, c.car, c.car_id AS c, c.created, CASE WHEN c.anon=1 OR COALESCE(ac.anon,0)=1 OR u.alias='Anonymous' THEN '' ELSE u.alias END AS alias
+        FROM c JOIN community_users u ON u.id=c.user_id LEFT JOIN accounts ac ON ac.id=c.user_id WHERE c.pos<=10 ORDER BY c.cls, c.time`).bind(t).all().catch(() => ({ results: [] })),
+    env.DB.prepare(`SELECT l.car_id AS c, MAX(l.car) AS car, MAX(l.cls) AS cls, COUNT(DISTINCT l.user_id) AS drivers, MIN(l.time) AS best ${base} GROUP BY l.car_id ORDER BY drivers DESC, best LIMIT 60`).bind(t).all().catch(() => ({ results: [] })),
+  ]);
+  const W = LTW[l], name = ltName(tr), full = fix(tr.track), k = tr.drivers;
+  const boards = {};
+  for (const x of bd.results || []) (boards[x.cls] = boards[x.cls] || []).push(x);
+  const cls = Object.keys(boards).sort(clsOrder), cars = (cr.results || []).map((x) => ({ ...x, car: famName("lmu", x.c, x.car) }));
+  const cnt = (c) => Math.max((tr.cls[c] || {}).drivers || 0, boards[c].length), strong = cls.filter((c) => cnt(c) >= REC_MIN);
+  const car1 = (x) => fix(famName("lmu", x.c, x.car)).replace(/\.+$/, "");
+  const recs = strong.map((c) => `${c} ${fmt(boards[c][0].time)}`).join(", ");
+  const dd = W.tD(name, recs, k), desc = dd.length <= 160 ? dd : W.tD(name, strong.slice(0, 2).map((c) => `${c} ${fmt(boards[c][0].time)}`).join(", "), k).slice(0, 160);
+  const newest = Math.max(+tr.upd || 0, 0), ref = refFor("lmu", t, tr.track, 0) || refByName(tr.track);
+  const stats = [[W.drivers, String(k)], [W.sCls, String(cls.length)], [W.sCars, String(cars.length)], [W.sNew, day(newest)]];
+  const board = (c) => { const v = boards[c], n = Math.min(v.length, 10), top = v.slice(0, n);
+    return `<h2 id="${slug(c)}">${esc(c)}</h2><div class="st"><div><span class="m">${esc(W.rec)}</span><b>${fmt(v[0].time)}</b></div><div><span class="m">${esc(W.drivers)}</span><b>${cnt(c)}</b></div>${n > 1 ? `<div><span class="m">${esc(W.gap(n))}</span><b>+${(v[n - 1].time - v[0].time).toFixed(3)} s</b></div>` : ""}</div>
+<div class="tw"><table><thead><tr><th class="n">#</th><th>${esc(W.driver)}</th><th>${esc(W.time)}</th><th>${esc(W.car)}</th><th>${esc(W.date)}</th></tr></thead><tbody>${top.map((x, i) => `<tr><td class="n">${i + 1}</td><td>${esc(x.alias || W.anon)}</td><td class="t">${fmt(x.time)}</td><td class="m">${esc(car1(x))}</td><td class="m">${day(x.created)}</td></tr>`).join("")}</tbody></table></div>`; };
+  const corners = ref ? ref.t.map((c, i) => [i + 1, c[3] || "", c[1] === "L" ? W.L : c[1] === "R" ? W.R : "", Math.round(c[0] / 10) * 10]) : [];
+  const faq = [...strong.map((c) => { const v = boards[c]; return W.fRec(c, name, fmt(v[0].time), car1(v[0])); }),
+    // a good lap of the class most driven here: P10 (or the last place) and its gap to the record
+    ...[...strong].sort((p, q) => cnt(q) - cnt(p)).slice(0, 1).map((c) => { const v = boards[c], n = Math.min(v.length, 10); return W.fGood(c, name, n, fmt(v[n - 1].time), (v[n - 1].time - v[0].time).toFixed(3)); }),
+    W.fMine(name)];
+  const others = list.filter((x) => x.t !== t && x.drivers >= REC_MIN);
+  const body = `<p class="m"><a href="${LANDL[l].path}">Le Mans Ultimate</a> · <a href="${LT_IDX[l]}">${esc(W.h)}</a></p>
+<h1>${esc(W.tT(name))}</h1><p class="lead">${esc(W.tL(full, k))}</p>
+<div class="st">${stats.map(([a, b]) => `<div><span class="m">${esc(a)}</span><b>${esc(b)}</b></div>`).join("")}</div>
+${cls.length > 1 ? `<div class="cats">${cls.map((c) => `<a href="#${slug(c)}">${esc(c)}</a>`).join("")}</div>` : ""}
+${cls.map(board).join("\n")}
+<div class="c" style="margin-top:26px"><h2>${esc(W.q(name))}</h2><p>${esc(W.a(name))}</p><div class="cta" style="margin-bottom:0"><a class="btn p" href="/dl/PitlaneHQ-Setup.exe">${esc(LANDL[l].dl)}</a><a class="btn" href="${TOPIC_BY["lmu-coach"][l].path}">${esc(TOPIC_BY["lmu-coach"][l].h1)}</a></div></div>
+${cars.length ? `<h2>${esc(W.carsT(name))}</h2><div class="tw"><table><thead><tr><th>${esc(W.car)}</th><th>${esc(W.cls)}</th><th>${esc(W.rec)}</th><th>${esc(W.drivers)}</th></tr></thead><tbody>${cars.map((x) => { const nm = fix(x.car).replace(/\.+$/, ""); return `<tr><td>${x.drivers >= REC_MIN ? `<a href="${recPath(l, { t, c: x.c, track: tr.track, car: x.car }, "lmu")}">${esc(nm)}</a>` : esc(nm)}</td><td class="m">${esc(x.cls || "")}</td><td class="t">${fmt(x.best)}</td><td class="m">${x.drivers}</td></tr>`; }).join("")}</tbody></table></div>` : ""}
+${corners.length ? `<h2>${esc(W.cornT(name))}</h2><p class="m">${esc(W.cornL)}</p><div class="tw"><table class="nt"><thead><tr><th class="n">${esc(W.turn)}</th><th>${esc(W.name)}</th><th>${esc(W.dir)}</th><th>${esc(W.at)}</th></tr></thead><tbody>${corners.map(([n, nm, d, m]) => `<tr><td class="n">T${n}</td><td>${esc(nm)}</td><td class="m">${esc(d)}</td><td class="m">${m} m</td></tr>`).join("")}</tbody></table></div>` : ""}
+<h2>${esc(LAND[l].faqT)}</h2>${faq.map(([q, a]) => `<details open><summary>${esc(q)}</summary><p>${esc(a)}</p></details>`).join("")}
+${others.length ? `<h2>${esc(W.others)}</h2><div class="cats">${others.map((x) => `<a href="${ltPath(l, x)}">${esc(ltName(x))}</a>`).join("")}</div>` : ""}${cross(l, "lmu")}`;
+  const ld = [crumbs([["Pitlane HQ", LAND[l].path], ["Le Mans Ultimate", LANDL[l].path], [W.h, LT_IDX[l]], [name, canon]]), faqLd(faq)];
+  return html(page(l, { title: ltTitle(W, name), desc, path: canon, alts: ltAlts(tr), body, ld, game: "lmu", noindex: k < REC_MIN, mod: later(SEO_DATE, day(newest)) }), 1800);
 }
 
 // an address of the public pages that does not exist: a real 404 (never the app), so it is not indexed
@@ -816,6 +1001,7 @@ const PAGES = [
   { alts: LEAGL_ALTS, draw: (env, l) => leaguesPage(env, l, "", "lmu"), alias: { en: ["/lmu-leagues"], es: ["/es/ligas-lmu"], pt: ["/pt/ligas-lmu"] } },
   { alts: REC_IDX.iracing, draw: (env, l, cat) => recordsIndex(env, l, cat, "iracing"), alias: {} },
   { alts: REC_IDX.lmu, draw: (env, l, cat) => recordsIndex(env, l, cat, "lmu"), alias: { en: ["/lmu-records"], es: ["/es/records-lmu"], pt: ["/pt/recordes-lmu"] } },
+  { alts: LT_IDX, draw: (env, l) => lapTimesIndex(env, l), alias: { en: ["/lmu-lap-times", "/le-mans-ultimate-tracks", "/lmu-tracks"], es: ["/es/tiempos-lmu", "/es/circuitos-le-mans-ultimate"], pt: ["/pt/tempos-lmu", "/pt/pistas-le-mans-ultimate"] } },
   { alts: PRICE_ALTS, draw: (env, l) => pricingPage(l), alias: { en: ["/prices", "/pro"], es: ["/es/pricing", "/es/pro"], pt: ["/pt/precos-pro", "/pt/pro", "/pt/pricing"] } },
   ...TOPICS.map((x) => ({ alts: topicAlts(x), draw: (env, l) => topicPage(x, l), alias: x.id === "lmu-coach" ? { en: ["/lmu-coach"], es: ["/es/coach-lmu"], pt: ["/pt/coach-lmu"] } : {} })),
 ];
@@ -825,7 +1011,7 @@ for (const pg of PAGES) for (const l of LANGS) { AT.set(pg.alts[l], [pg, l, pg.a
 const STATIC_ALTS = [LAND_ALTS, LANDL_ALTS, OVL_ALTS, OVLL_ALTS, PRICE_ALTS, ...TOPICS.map(topicAlts)];
 
 async function sitemap(env) {
-  const [combos, lmuCombos, D, DL] = await Promise.all([topCombos(env, 2000), topCombos(env, 2000, "lmu"), leaguesData(env), leaguesData(env, "lmu")]);
+  const [combos, lmuCombos, D, DL, lmuTr] = await Promise.all([topCombos(env, 2000), topCombos(env, 2000, "lmu"), leaguesData(env), leaguesData(env, "lmu"), lmuTracks(env)]);
   // every page with its two other languages (xhtml:link), as search engines like them
   const u = (p, f, pr, alts, mod) => `<url><loc>${SITE}${p}</loc>${mod ? `<lastmod>${mod}</lastmod>` : ""}<changefreq>${f}</changefreq><priority>${pr}</priority>${alts ? LANGS.map((k) => `<xhtml:link rel="alternate" hreflang="${HLANG[k]}" href="${SITE}${alts[k]}"/>`).join("") + `<xhtml:link rel="alternate" hreflang="x-default" href="${SITE}${alts.en}"/>` : ""}</url>`;
   const newest = (cs) => later(SEO_DATE, day(Math.max(0, ...cs.map((x) => x.upd || 0))));
@@ -844,6 +1030,9 @@ async function sitemap(env) {
   if (DL.posted.length + DL.found.length) all(LEAGL_ALTS, "daily", 0.8, lgDay(DL));
   all(REC_IDX.iracing, "daily", 0.8, newest(combos));
   if (lmuCombos.length) all(REC_IDX.lmu, "daily", 0.8, newest(lmuCombos));
+  // Le Mans Ultimate's lap times: the index and each track worth finding
+  if (lmuTr.length) all(LT_IDX, "daily", 0.9, later(SEO_DATE, day(Math.max(0, ...lmuTr.map((x) => +x.upd || 0)))));
+  for (const x of lmuTr) if (x.drivers >= REC_MIN) all(ltAlts(x), "daily", 0.8, later(SEO_DATE, day(x.upd)));
   s.push(u("/downloads", "weekly", "0.7", null, SEO_DATE), u("/changelog", "weekly", "0.4", null, SEO_DATE));
   for (const [game, cs] of [["iracing", combos], ["lmu", lmuCombos]]) for (const x of cs) if (x.drivers >= REC_MIN) all(recAlts(x, game), "daily", 0.6, day(x.upd) || SEO_DATE);
   return new Response(`<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">\n${s.join("\n")}\n</urlset>\n`, { headers: { "content-type": "application/xml; charset=utf-8", "cache-control": "public, max-age=3600" } });
@@ -874,8 +1063,14 @@ export async function indexNow(env) {
     const n = catCounts(D);
     urls.push("/", ...STATIC_ALTS.flatMap((a) => Object.values(a)), ...Object.values(LEAG_ALTS), ...Object.values(REC_IDX.iracing), "/downloads", "/changelog",
       ...Object.keys(CAT.en).filter((c) => (n[c] || 0) >= LG_MIN).flatMap((c) => Object.values(lgAlts(c))),
-      ...(DL.posted.length + DL.found.length ? Object.values(LEAGL_ALTS) : []), ...(lmuCombos.length ? Object.values(REC_IDX.lmu) : []));
-  } else for (const g of ["iracing", "lmu"]) if (rows.some((x) => (x.game || "iracing") === g)) urls.push(...Object.values(REC_IDX[g]));
+      ...(DL.posted.length + DL.found.length ? Object.values(LEAGL_ALTS) : []), ...(lmuCombos.length ? [...Object.values(REC_IDX.lmu), ...Object.values(LT_IDX)] : []));
+    if (lmuCombos.length) for (const x of await lmuTracks(env)) if (x.drivers >= REC_MIN) urls.push(...Object.values(ltAlts(x)));
+  } else {
+    for (const g of ["iracing", "lmu"]) if (rows.some((x) => (x.game || "iracing") === g)) urls.push(...Object.values(REC_IDX[g]));
+    // a Le Mans Ultimate track with new laps: its lap times page and the index change too
+    const lt = new Set(rows.filter((x) => x.game === "lmu").map((x) => x.t));
+    if (lt.size) { urls.push(...Object.values(LT_IDX)); for (const x of await lmuTracks(env)) if (lt.has(x.t) && x.drivers >= REC_MIN) urls.push(...Object.values(ltAlts(x))); }
+  }
   for (const x of rows) { const g = x.game === "lmu" ? "lmu" : "iracing"; urls.push(...Object.values(recAlts({ ...x, car: famName(g, x.c, x.car) }, g))); }
   if (urls.length) {
     const r = await fetch("https://api.indexnow.org/indexnow", { method: "POST", headers: { "content-type": "application/json; charset=utf-8" },
@@ -898,7 +1093,8 @@ const about = () => WHAT.en.p.join(" ") + " ACC and Assetto Corsa are in develop
 // the facts an assistant needs to describe Pitlane HQ whole, one line each (the pages say each of them too)
 const FACTS = [
   ["Price", "Free. Everything in Pitlane HQ is free while it is in beta, with no card asked for. Sync and the whole lap history are part of the free account. After the beta Pro will cost $6 a month or $59 a year, and drivers who support Pitlane HQ during the beta keep Pro at half price."],
-  ["Games", "iRacing, and Le Mans Ultimate. ACC and Assetto Corsa are in development."],
+  ["Games", "Le Mans Ultimate, with every class (Hypercar, LMP2, LMP3, LMGTE and LMGT3), and iRacing. ACC and Assetto Corsa are in development."],
+  ["Le Mans Ultimate", "Nothing to install in the game beyond turning on Enable Plugins. Laps with the official sectors, fuel and virtual energy per lap, a multiclass relative and standings with class colours and a traffic warning, and public lap times of every track by class, one lap per driver."],
   ["Devices", "Pitlane HQ Agent on Windows records the laps and draws the overlays. It downloads from pitlanehq.app or the Microsoft Store, and a Steam version is coming. The web app at pitlanehq.app works on any computer or phone browser, and there is an Android app. One account on every device, with sign-up by email, Steam or Discord."],
   ["Telemetry", "Speed, throttle, brake, gear and steering of every lap, saved by itself with nothing to set up. Live telemetry on a phone or a browser while you drive, and a code to share it with a friend."],
   ["Overlays", "Relative, standings, radar, delta bar, fuel, tyres, track map, flags, braking markers, a live coach, weather and more, drawn natively over the game, in six looks, also in VR through SteamVR. In the Overlays tab you place them on a picture of your screen. Each overlay has a settings window with a live preview and its own frame rate, and can open by itself in every game it works with."],
@@ -910,15 +1106,17 @@ const FACTS = [
   ["Languages", "English, Spanish and Portuguese (Brazil)."],
 ];
 const factsMd = () => FACTS.map(([k, v]) => `- **${k}.** ${v}`).join("\n");
-function llmsTxt() {
+function llmsTxt(tracks = []) {
   const l = "en", g = (x) => [x.path, x.h1, x.desc];
   const ir = [g(LAND.en), g(OVL.en), ...TOPICS.filter((x) => x.game !== "lmu").map((x) => g(x.en)), g(LEAG.en), [REC_IDX.iracing.en, S.en.recH("iRacing"), S.en.recD("iRacing")]];
   const lm = [g(LANDL.en), g(OVLL.en), ...TOPICS.filter((x) => x.game === "lmu").map((x) => g(x.en)),
-    ...(HAS.lmuLeagues ? [g(LEAGL.en)] : []), ...(HAS.lmuRecords ? [[REC_IDX.lmu.en, S.en.recH("Le Mans Ultimate"), S.en.recD("Le Mans Ultimate")]] : [])];
+    ...(HAS.lmuLeagues ? [g(LEAGL.en)] : []), ...(HAS.lmuRecords ? [[LT_IDX.en, LTW.en.h, LTW.en.desc], [REC_IDX.lmu.en, S.en.recH("Le Mans Ultimate"), S.en.recD("Le Mans Ultimate")]] : [])];
+  // each Le Mans Ultimate track worth finding, with the record of each class that has drivers enough
+  const lt = tracks.filter((x) => x.drivers >= REC_MIN).map((x) => [ltPath("en", x), LTW.en.tT(ltName(x)), LT_CLS.filter((k) => x.cls[k] && x.cls[k].drivers >= REC_MIN).map((k) => `${k} ${fmt(x.cls[k].best)}`).join(", ") + ` (${x.drivers} drivers)`]);
   const other = LANGS.filter((k) => k !== l).flatMap((k) => [[LAND[k].path, LAND[k].h1 + " (" + NAME[k] + ")"], [LANDL[k].path, LANDL[k].h1 + " (" + NAME[k] + ")"]]);
   return `# Pitlane HQ
 
-> Sim racing telemetry for iRacing and Le Mans Ultimate, all free during the beta, with a coach that learns from real laps, a lap analyzer, live overlays, sync with the whole lap history, leaderboards, friends, leagues and a Discord bot, on Windows (also on the Microsoft Store), the web and Android.
+> Sim racing telemetry for Le Mans Ultimate and iRacing, all free during the beta, with a coach that learns from real laps, a lap analyzer, live overlays, sync with the whole lap history, leaderboards, friends, leagues and a Discord bot, on Windows (also on the Microsoft Store), the web and Android.
 
 ${about()}
 
@@ -932,13 +1130,13 @@ ${factsMd()}
 - Download ${SITE}/downloads
 - Support support@pitlanehq.app
 
-## iRacing
-
-${ir.map(mdLink).join("\n")}
-
 ## Le Mans Ultimate
 
 ${lm.map(mdLink).join("\n")}
+${lt.length ? `\n## Le Mans Ultimate lap times by track\n\n${lt.map(mdLink).join("\n")}\n` : ""}
+## iRacing
+
+${ir.map(mdLink).join("\n")}
 
 ## Download
 
@@ -954,8 +1152,9 @@ function llmsFull() {
   const sec = (path, h1, lead, parts, faq) => `# ${h1}\n\n${SITE}${path}\n\n${lead}\n\n${parts.map(([h, p]) => `## ${h}\n\n${p}`).join("\n\n")}${faq && faq.length ? "\n\n## " + LAND[l].faqT + "\n\n" + qa(faq) : ""}`;
   const land = (L, gn) => sec(L.path, L.h1, L.lead, [...L.cards, [START[l].t, START[l].steps(gn).map((x, i) => `${i + 1}. ${x}`).join("\n")]], L.faq);
   const W = OVW[l], ov = (O) => sec(O.path, O.h1, O.lead, [...O.items, [W.expT, W.exp], [W.vrT, W.vr], [W.howT, W.how.map((x) => "- " + x).join("\n")]], O.faq);
-  return [`# Pitlane HQ\n\n${about()}\n\n## Key facts\n\n${factsMd()}`, land(LAND[l], "iRacing"), ov(OVL[l]), ...TOPICS.filter((x) => x.game !== "lmu").map((x) => sec(x[l].path, x[l].h1, x[l].lead, x[l].secs, x[l].faq)),
-    land(LANDL[l], "Le Mans Ultimate"), ov(OVLL[l]), ...TOPICS.filter((x) => x.game === "lmu").map((x) => sec(x[l].path, x[l].h1, x[l].lead, x[l].secs, x[l].faq)),
+  return [`# Pitlane HQ\n\n${about()}\n\n## Key facts\n\n${factsMd()}`, land(LANDL[l], "Le Mans Ultimate"), ov(OVLL[l]), ...TOPICS.filter((x) => x.game === "lmu").map((x) => sec(x[l].path, x[l].h1, x[l].lead, x[l].secs, x[l].faq)),
+    ...(HAS.lmuRecords ? [sec(LT_IDX[l], LTW[l].h, LTW[l].lead, [[LTW[l].howT, LTW[l].how]], LTW[l].faq)] : []),
+    land(LAND[l], "iRacing"), ov(OVL[l]), ...TOPICS.filter((x) => x.game !== "lmu").map((x) => sec(x[l].path, x[l].h1, x[l].lead, x[l].secs, x[l].faq)),
     sec(LEAG[l].path, LEAG[l].h1, LEAG[l].lead, [], LEAG[l].faq), sec(REC_IDX.iracing[l], S[l].recH("iRacing"), S[l].recD("iRacing"), [[S[l].howT, S[l].how("iRacing")]], S[l].faq("iRacing"))].join("\n\n---\n\n") + "\n";
 }
 const LLMS = { "/llms.txt": llmsTxt, "/llms-full.txt": llmsFull };
@@ -974,7 +1173,8 @@ async function noteBot(req, env, p) {
 // the addresses of the public pages, before anything is read (the rest of the server's addresses pass straight on)
 const RECORD_RE = /^(?:\/(es|pt))?\/records\/(?:(lmu)\/)?(\d+)-(\d+)(?:\/[a-z0-9-]*)?$/;
 const LEAGUE_CAT_RE = /^(?:\/(es|pt))?\/(?:iracing-leagues|ligas-iracing)\/([a-z-]+)$/;
-const isPublic = (p) => p === "/sitemap.xml" || AT.has(p) || RECORD_RE.test(p) || LEAGUE_CAT_RE.test(p) || /^(\/(es|pt))?\/records\//.test(p);
+const LT_RE = /^(?:\/(es|pt))?\/(?:le-mans-ultimate-lap-times|tiempos-le-mans-ultimate|tempos-le-mans-ultimate)\/(\d+)(?:-[a-z0-9-]*)?$/;
+const isPublic = (p) => p === "/sitemap.xml" || AT.has(p) || RECORD_RE.test(p) || LEAGUE_CAT_RE.test(p) || LT_RE.test(p) || /^(\/(es|pt))?\/records\//.test(p);
 
 async function draw(req, env, url, p) {
   if (p === "/sitemap.xml") return sitemap(env);
@@ -985,6 +1185,8 @@ async function draw(req, env, url, p) {
   { const lm = LEAGUE_CAT_RE.exec(p);
     if (lm) { const l = lm[1] || "en", cat = Object.keys(LG_CAT[l]).find((k) => LG_CAT[l][k] === lm[2]);
       if (cat && LEAG[l].path === p.slice(0, p.lastIndexOf("/"))) return at(p, () => leaguesPage(env, l, cat)); return notFound(l); } }
+  { const lt = LT_RE.exec(p);
+    if (lt) { const l = lt[1] || "en"; if (!p.startsWith(LT_IDX[l] + "/")) return notFound(l); return (await lapTimesTrack(env, l, +lt[2], url.pathname)) || notFound(l); } }
   const m = RECORD_RE.exec(p);
   if (m) return (await recordsCombo(env, m[1] || "en", +m[3], +m[4], url.pathname, m[2] ? "lmu" : "iracing")) || notFound(m[1] || "en");
   return notFound(p.startsWith("/es") ? "es" : p.startsWith("/pt") ? "pt" : "en");
@@ -996,7 +1198,7 @@ export async function seoPage(req, env, url, ctx) {
   const p = url.pathname.replace(/\/+$/, "") || "/";
   await noteBot(req, env, p);
   if (p === "/" + INDEXNOW_KEY + ".txt") return new Response(INDEXNOW_KEY, { headers: { "content-type": "text/plain; charset=utf-8" } });
-  if (LLMS[p]) { await readHas(env); const t = LLMS[p]();
+  if (LLMS[p]) { await readHas(env); const t = LLMS[p](HAS.lmuRecords ? await lmuTracks(watchDb(env)[0]).catch(() => []) : []);
     return new Response(req.method === "HEAD" ? null : t, { headers: { "content-type": "text/plain; charset=utf-8", "cache-control": "public, max-age=3600", "x-robots-tag": "noindex", etag: etagOf(t) } }); }
   if (!isPublic(p)) return null;
   // the page as the server's edge keeps it for a few minutes (the database is read once for many visits); a local

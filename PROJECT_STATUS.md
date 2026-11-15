@@ -18,6 +18,7 @@ web (0.9.19); a full-app bug sweep follows.
 - Telemetry's Engineer view, the Team screen's Engineer and the full-screen track map: on the beta channel from `claude/project-thread-om4yc5` (2026-11-15), not on master (`docs/status/releases.md`).
 - Trying the PC app without an account for 3 sessions: on the beta channel from `claude/project-thread-v307wb` (2026-11-15), not on master (`docs/status/releases.md`).
 - 0.9.24 on the beta channel (PC and web): the fix for Telemetry's Full freezing the PC app in a session. Promote once it passes.
+- SEO refocused on Le Mans Ultimate (lap times by track and class, two LMU guides, LMU first everywhere): on its branch, waits for the owner's push (`docs/status/server-and-ops.md`).
 - Team mode (beta, every tester and admin): in production code since 0.9.19 behind its beta gate (PC, web, Android beta). Not run on real hardware yet.
 
 ## Live now

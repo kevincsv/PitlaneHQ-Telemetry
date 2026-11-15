@@ -24,6 +24,7 @@ Status as of 2026-11-07. Server layout is in CLAUDE.md ("Where things are").
 - SEO pass 2026-11-15 (live): a crawl of all 1,377 public addresses went from 36-54% clean to 97.7% (99.9% with no errors);
   record and league pages no longer answer 404 when D1 is busy (retries, then 503). Lighthouse "/" performance is still
   52-66 (the 2 MB app page draws the landing); a light standalone landing is offered to the owner as a follow-up.
+- LMU-first SEO (2026-11-15, branch claude/project-thread-dbjmh4, waits for the owner's push and a cloud deploy): LMU lap times by track and class (an index and 20 track pages from real laps), a "Garage 61 for LMU?" guide and a multiclass guide, "/" and llms.txt lead with Le Mans Ultimate (SEO_VER 19).
 
 ## Never run on real hardware
 

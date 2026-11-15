@@ -76,6 +76,24 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   own head, JSON-LD and <noscript>, and the web app is at /app (canonical "/"); "/" loads Google Fonts without holding up the first paint (`media="print"`, swapped on load).
   Every file in `web/dist` (the landing's screenshots and laps, the drivers' flags) is one the worker serves (`isAppFile`;
   `seo.test.mjs` checks it), and the landing's header links keep their names on a phone, where only their icons show.
+- Le Mans Ultimate first (the owner's choice, Nov 15 2026: more drivers race it, and it is the market to win). "/"'s title,
+  description, JSON-LD and <noscript>, `WHAT`, llms.txt and llms-full.txt name Le Mans Ultimate before iRacing; the LMU
+  landing's title says "(LMU)" and its FAQ answers lap times by track, an app like Garage 61 (the other app named only in
+  the question, the answer only about Pitlane HQ) and setups ("not for now"). Two more LMU guides (`seo-topics.js`): "Is
+  there a Garage 61 for Le Mans Ultimate?" (/garage-61-for-le-mans-ultimate, /es/garage-61-para-le-mans-ultimate,
+  /pt/garage-61-para-le-mans-ultimate) and multiclass traffic (/le-mans-ultimate-multiclass, /es/multiclase-le-mans-ultimate,
+  /pt/multiclasse-le-mans-ultimate).
+- Le Mans Ultimate lap times (`lapTimesIndex`, `lapTimesTrack` in seo.js): /le-mans-ultimate-lap-times,
+  /es/tiempos-le-mans-ultimate, /pt/tempos-le-mans-ultimate (aliases /lmu-lap-times, /le-mans-ultimate-tracks, /lmu-tracks…)
+  list every track with the record of each class (Hypercar, LMP2, LMP3, LMGTE, LMGT3) and its drivers (ItemList, FAQPage);
+  each track has `<index>/<track id>-<name>` under the name people search it by (`LT_NAME`: Le Mans, Spa-Francorchamps,
+  Portimão…, a second layout of one name keeps the game's name), with each class's top 10 (one lap per driver, race rivals
+  Anonymous), the gap to P10, every car (linked to its record page when it has 3 drivers), its corners from the turns
+  reference the coach uses (`refFor`, T1… with name, direction and metres from the line) and a FAQ built from the data
+  that names only the classes with `REC_MIN` drivers (the record of each, a good lap as P10, how to get your own laps).
+  A track with fewer than `REC_MIN` drivers is shown but noindex and left out of the sitemap; the pages exist and are
+  linked (footer, the LMU landing's "lap times" table, llms.txt with each track's class records) only while Le Mans
+  Ultimate has laps, like its records. IndexNow sends the index and the tracks with new laps.
 - `/privacy` (the privacy policy), `/terms` (the terms of service, linked from Google's sign-in screen) and `/delete-account` (how to delete an account, from the app, the web or by email),
   `cloud/src/legal.js`, the addresses Google Play and the App Store ask for: English, Spanish or Portuguese by `?lang=` or
   the browser's language, each with its meta description (its first lines); what is kept, why and for how long, never how it is stored or protected

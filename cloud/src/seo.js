@@ -636,7 +636,7 @@ ${combos.length ? `<h2>${esc(L.recs)}</h2><p class="m">${esc(L.recsLead)}</p><di
 }
 
 async function recordsIndex(env, l, cat, game = "iracing") {
-  const all = await topCombos(env, 1000, game), cm = game === "lmu" ? { tc: {}, c: {} } : await catMap(env).catch(() => ({ tc: {}, c: {} }));
+  const all = await topCombos(env, 1000, game), cm = game === "lmu" ? { tc: {}, c: {} } : await catMap(env.RAW || env).catch(() => ({ tc: {}, c: {} }));
   if (game === "lmu" && !all.length) return notFound(l);
   const gn = GNAME[game], rows = all.map((x) => ({ ...x, cat: catFor(cm, game, x, x.hint, x.track, x.car) }));
   const cats = Object.keys(CAT.en).filter((k) => rows.some((x) => x.cat === k));
@@ -671,13 +671,13 @@ async function recordsCombo(env, l, t, c, asked, game = "iracing") {
   const seen = new Set(), laps = [];
   for (const x of r.results || []) { if (seen.has(x.uid)) continue; seen.add(x.uid); laps.push(x); if (laps.length >= 50) break; }
   if (!laps.length) return null;
-  const gn = GNAME[game], track = fix(nm.track), car = fix(nm.car), cm = game === "lmu" ? { tc: {}, c: {} } : await catMap(env).catch(() => ({ tc: {}, c: {} }));
+  const gn = GNAME[game], track = fix(nm.track), car = fix(nm.car), cm = game === "lmu" ? { tc: {}, c: {} } : await catMap(env.RAW || env).catch(() => ({ tc: {}, c: {} }));
   const x = { t, c, track, car }, cat = catFor(cm, game, x, laps[0].cat, laps[0].track, laps[0].car);
   const W = S[l], rec = fmt(laps[0].time), idx = REC_IDX[game][l];
   const title = recTitle(W, car, track, game), cd = W.cD(car, track, rec, laps.length, gn), desc = cd.length <= 160 ? cd : cd.slice(0, cd.indexOf(". ") + 1), L = (game === "lmu" ? LANDL : LAND)[l];
   const thin = laps.length < REC_MIN, newest = Math.max(0, ...laps.map((v) => +v.created || 0));
   // the other cars driven at this track (the game, track and car index), the most driven first, those worth finding only
-  const oth = await env.DB.prepare(
+  const oth = await (env.RAW || env).DB.prepare(
     "SELECT car_id AS c, MAX(car) AS car, COUNT(DISTINCT user_id) AS drivers, MIN(time) AS best FROM community_laps WHERE game=?1 AND track_id=?2 AND car_id>0 AND car_id<>?3 AND COALESCE(shown,'')<>'model' GROUP BY car_id HAVING COUNT(DISTINCT user_id)>=?4 ORDER BY drivers DESC, best LIMIT 12"
   ).bind(game, t, c, REC_MIN).all().catch(() => ({ results: [] }));
   const others = (oth.results || []).map((o) => ({ t, c: o.c, track: nm.track, car: famName(game, o.c, o.car), best: o.best }));
@@ -704,10 +704,11 @@ const busy = (l) => new Response(`<!doctype html><html lang="${HLANG[l]}"><head>
 function watchDb(env) {
   const db = { failed: false };
   if (!env || !env.DB) return [env, db];
-  const twice = async (f) => { try { return await f(); } catch (e) { await new Promise((r) => setTimeout(r, 120)); try { return await f(); } catch (e2) { db.failed = true; throw e2; } } };
-  const wrap = (st) => ({ bind: (...a) => wrap(st.bind(...a)), first: (...a) => twice(() => st.first(...a)), all: () => twice(() => st.all()), run: () => twice(() => st.run()), raw: (...a) => twice(() => st.raw(...a)) });
-  const DB = new Proxy(env.DB, { get: (t, k) => (k === "prepare" ? (q) => wrap(t.prepare(q)) : typeof t[k] === "function" ? t[k].bind(t) : t[k]) });
-  return [new Proxy(env, { get: (t, k) => (k === "DB" ? DB : t[k]) }), db];
+  const twice = async (q, f) => { try { return await f(); } catch (e) { await new Promise((r) => setTimeout(r, 250)); try { return await f(); } catch (e2) { db.failed = true; db.why = String(q).replace(/\s+/g, " ").slice(0, 40) + " | " + String((e2 && e2.message) || e2).slice(0, 80); throw e2; } } };
+  const wrap = (q, st) => ({ bind: (...a) => wrap(q, st.bind(...a)), first: (...a) => twice(q, () => st.first(...a)), all: () => twice(q, () => st.all()), run: () => twice(q, () => st.run()), raw: (...a) => twice(q, () => st.raw(...a)) });
+  const DB = new Proxy(env.DB, { get: (t, k) => (k === "prepare" ? (q) => wrap(q, t.prepare(q)) : typeof t[k] === "function" ? t[k].bind(t) : t[k]) });
+  // env.RAW: the database unwatched, for the reads a page can do without (a discipline, the other cars at the track)
+  return [new Proxy(env, { get: (t, k) => (k === "DB" ? DB : k === "RAW" ? t : t[k]) }), db];
 }
 const noIndex = (r) => { r.headers.set("x-robots-tag", "noindex"); r.headers.set("cache-control", "public, max-age=60"); return r; };
 
@@ -996,7 +997,7 @@ export async function seoPage(req, env, url, ctx) {
     // drawn without its data is a 503 to come back to, never a 404 or a page cached with half its data
     const [denv, db] = watchDb(env);
     res = await draw(req, denv, url, p);
-    if (db.failed) res = busy(p.startsWith("/es") ? "es" : p.startsWith("/pt") ? "pt" : "en");
+    if (db.failed) { res = busy(p.startsWith("/es") ? "es" : p.startsWith("/pt") ? "pt" : "en"); res.headers.set("x-busy", db.why || ""); }
     if (cache && res.status === 200) { const put = cache.put(key, res.clone()).catch(() => {}); if (ctx && ctx.waitUntil) ctx.waitUntil(put); else await put; }
   }
   // the browser or the robot already has this version

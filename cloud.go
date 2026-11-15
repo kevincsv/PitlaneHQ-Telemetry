@@ -1336,6 +1336,7 @@ func finishLap(r *lapRec, s cloudSession, fuelNow, lt float64) {
 		go notePitLap(s.TrackID, l.Trace.X, l.Trace.Y, r.pitB, best)
 	}
 	queueLap(s, l)
+	tryNote(s.ID) // without an account: one of the sessions it may drive (tryout.go)
 }
 
 // markHoles: lost connection, a hole in the lap's telemetry longer than 40 m, or a lap that did not go round the whole

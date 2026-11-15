@@ -24,6 +24,10 @@ Status as of 2026-11-14. Rules for releasing are in CLAUDE.md and `docs/spec/pc-
   `claude/project-thread-mewaaa`): the full-screen track map of the lap comparison (a user's review), Telemetry's
   Engineer view and the Team screen's Engineer (fuel tracker, field with tyres and PIT/OUT/OFF, map, share code,
   Customize), and the 0.9.24 fixes. Not on master. Waits for testing and the owner's "sube". Phones not done (no phone work).
+- Trying it without an account for 3 sessions (2026-11-15, branch `claude/project-thread-v307wb`, on top of
+  `claude/project-thread-om4yc5`): the PC app works with nobody signed in until 3 driven sessions, then the sign-in
+  wall; the count survives reinstalls through the server (migration 0106). On the beta channel at the owner's word,
+  not on master. The cloud deploy with migration 0106 goes with the production push.
 
 - Watch in replay and the pedal and wheel check stay testers-only, also in production.
 - Version 1.0 waits for the Steam version to be approved by Valve. Stay on 0.9.x.

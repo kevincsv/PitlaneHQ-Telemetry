@@ -81,6 +81,9 @@ func overlayURL(name string) string {
 
 // openNamedOverlay opens a widget at its saved position, or a default one.
 func openNamedOverlay(name string) error {
+	if tryLocked() { // the sessions without an account are used up (tryout.go)
+		return errTryOver
+	}
 	c, _ := settingsSnapshot()
 	sz, ok := overlaySizes[name]
 	if !ok {

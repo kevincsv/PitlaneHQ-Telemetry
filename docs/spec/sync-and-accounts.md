@@ -76,6 +76,21 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   and the coach's tips on them become the account's. Laps no account claimed are deleted after 180 days (`anonPrune`,
   daily); what the model learnt stays. An account waiting for its email confirmation uploads nothing either way. The
   privacy policy says all of this (`legal.js`, and the short notice the installer ships, `docs/legal/PRIVACY.md`).
+- Trying it without an account (the owner's choice, Nov 15 2026; `tryout.go`, `cloud/src/tryout.js`): the PC app works
+  with nobody signed in for 3 sessions (`tryLimit`), then asks for a free account. A session counts once a lap of it is
+  finished on that PC (`tryNote` in `finishLap`; an imported .ibt never counts, the same session counts once). The
+  third session goes on while its laps come: the app asks once it has had no lap for 20 minutes (`tryGrace`), or at
+  once when a lap of a fourth session comes (that one is not counted). Then the PC app shows the sign-in wall with one
+  line saying the sessions are used (`signWall`, the Create an account form first) and no overlay opens
+  (`openNamedOverlay` answers `errTryOver`; the ones open close). Before that, Home has a line with the sessions left
+  and Create a free account (`tryingOn`, `homeHealth`), and the leaderboards question (`askShare`) waits until someone
+  signs in. The PC keeps its count in the data folder (`tryout.json`) and tells the server (POST
+  /community/tryout {pc, session}, no account, the PC's `pcID()` hash of Windows' own machine id, 10 rows a PC at
+  most, table `tryout_pcs`, migration 0106); the agent reads the server's count when it starts (GET
+  /community/tryout?pc=), so reinstalling does not start it again. `plStatus` says `tryUsed`, `tryLimit` and
+  `tryLocked`; an agent without them keeps the wall from the first moment. An admin signed in on a PC starts its count
+  again, there and on the server (/account/me with that ?pc=), to try it as a new driver would. Signing out after the
+  sessions are used shows the wall again. The web and the phones need an account as before.
 - Deleting your own account never deletes what the leaderboard shows or what the model learns from:
   those laps stay as an anonymous driver (`deleteAccount` in `cloud/src/accounts.js`); everything
   else of the account goes (its alerts, notification settings and phone tokens too). Its team memberships and its stints in the

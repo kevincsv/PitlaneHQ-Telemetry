@@ -20,16 +20,6 @@ Status as of 2026-11-14. Rules for releasing are in CLAUDE.md and `docs/spec/pc-
 
 ## Held until the owner says
 
-- Growth and sales batch (2026-11-15, branch `claude/project-thread-gh6hsr`, four commits on top of 0.9.22, pushed to
-  the branch only). It goes to master in one push when the owner says "sube", and 0.9.22 is promoted with it, not
-  before (the owner's choice). In it: Pro offers switched off (migration 0103, prices $6 and $59, 14-day trial,
-  launch month, founding from $3); a PC without an account uploads its laps for the coach with no name and they
-  join the account at sign-in (privacy policy updated); the race summary opens by itself after a race with the
-  leaderboard place and "Compare with" the next driver up; "Time to beat" and "Last week" on Home; "Invite a friend"
-  after a good result or a personal best; the Le Mans Ultimate telemetry help comes back while the game is unread;
-  the agent's daily counters; two new public guides. Start with Windows comes ticked in
-  the installer and the app asks once where it is off (the owner said yes, Nov 15). Needs
-  a cloud deploy with migration 0103 and a Windows build. None of it ran on a real PC. Not for the phones.
 
 - Watch in replay and the pedal and wheel check stay testers-only, also in production.
 - Version 1.0 waits for the Steam version to be approved by Valve. Stay on 0.9.x.

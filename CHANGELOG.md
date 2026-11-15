@@ -6,6 +6,11 @@ improvements". 1.0.0 comes when the beta ends. Newest first.
 
 ## 0.9.22 beta
 
+- After a race its summary opens by itself, with your place on the leaderboard and a button to compare with the driver just ahead.
+- Home shows the time to beat at your last car and track, and last week's numbers until you drive again.
+- Track maps show the real turns of each circuit with their names.
+- Laps you drive before creating an account join it when you sign up.
+- Pitlane HQ can open when Windows starts, and asks you once.
 - Uninstalling Pitlane HQ always asks why you are leaving.
 - Fixes and improvements.
 

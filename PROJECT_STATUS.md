@@ -19,7 +19,7 @@ web (0.9.19); a full-app bug sweep follows.
 
 ## Live now
 
-PC and web 0.9.21, with 0.9.22 on the test channel waiting to be promoted (uninstalling always asks why) (2026-11-15: invite code at sign-up, light landing, web app inside phone screens, overlay usage in admin Analytics; 0.9.19 brought the Workspace look), phones 0.9.14, Microsoft Store 0.9.14. The phones have not had any of it (the owner said no phone work for now). Stay on 0.9.x until Steam is approved.
+PC and web 0.9.22 (2026-11-15: the race summary opens after a race, time to beat and last week on Home, real track turns, a PC without an account teaches the coach, Start with Windows by default, the admin Analytics revamp, Pro offers built and switched off, lap telemetry storage ready for its own bucket and not switched on; 0.9.19 brought the Workspace look), phones 0.9.14, Microsoft Store 0.9.14. The phones have not had any of it (the owner said no phone work for now). Stay on 0.9.x until Steam is approved.
 
 ## Areas
 

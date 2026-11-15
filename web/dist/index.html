@@ -819,6 +819,7 @@ label.btn{display:inline-flex;align-items:center;cursor:pointer}
 .wetb svg{width:9px;height:11px;fill:currentColor}.wetb.rain{color:color-mix(in srgb,var(--blue) 55%,var(--fg));background:color-mix(in srgb,var(--blue) 8%,transparent)}.wetb.rain svg{fill:none;stroke:currentColor;stroke-width:1.4;stroke-linecap:round}.wetb.damp{color:color-mix(in srgb,var(--blue) 55%,var(--muted));background:color-mix(in srgb,var(--blue) 6%,transparent)}.wetb.damp svg{fill:none;stroke:currentColor;stroke-width:1.4}
 .cl-clsw button{padding:6px 10px;font-size:11px}
 .cl-map{display:flex;flex-direction:column;gap:10px;padding-top:6px}.cl-mh{display:flex;justify-content:space-between;align-items:baseline;gap:10px}.cl-mh b{font-size:15px}
+.cl-mapbox.fs{position:relative;cursor:zoom-in;border-radius:8px}.cl-mapbox.fs:hover,.cl-mapbox.fs:focus-visible{background:var(--surface2)}.cl-mapbox.fs.busy{opacity:.6;cursor:progress}.cl-mapbox .cl-fs{position:absolute;right:8px;top:6px;font-size:15px;color:var(--muted);pointer-events:none}.cl-mapbox.fs:hover .cl-fs{color:var(--accent)}
 .cl-mapsvg{display:block;width:100%;height:auto}.cl-mapsvg polyline{fill:none;stroke-linejoin:round;stroke-linecap:round;stroke-width:6}.cl-mapsvg .road{stroke:var(--surface2);stroke-width:16}
 .cl-mapsvg .sf{stroke:var(--fg);stroke-width:3}.cl-mapsvg .dirarr line{stroke:var(--fg);stroke-width:2.2;stroke-linecap:round}.cl-mapsvg .dirarr polygon{fill:var(--fg)}
 .cl-mapsvg rect{fill:var(--bg);stroke-width:1}.cl-mapsvg text{font:10px var(--f-body);fill:var(--muted);text-anchor:middle}.cl-mapsvg text.d{font:500 12px var(--f-data)}
@@ -9165,7 +9166,23 @@ async function drawCommMap(s,laps){const box=$("#cmMap");if(!box)return;if(!laps
     ${f.hasTrace?`<button type="button" class="btn primary cl-cta" data-cmp="${esc(f.id)}">${esc(f.mine?Tx("Analyse my lap","Analizar mi vuelta","Meine Runde analysieren","Analisar minha volta"):Tx(`Compare with ${nm}`,`Comparar con ${nm}`,`Mit ${nm} vergleichen`,`Comparar com ${nm}`))}</button>`:`<p class="note">${esc(NO_TRACE())}</p>`}`;
   const cb=box.querySelector("[data-cmp]");if(cb)cb.onclick=()=>loadCommLap(cb.dataset.cmp,cb);
   const g=await commMapGeo(s,laps),mb=box.querySelector(".cl-mapbox");if(!mb||COMMSEL!==s)return;
-  mb.innerHTML=g.x?commMapSvg(g,secs):`<p class="note">${esc(Tx("No map of this track yet","Aún no hay mapa de este circuito","Noch keine Karte dieser Strecke","Ainda não há mapa desta pista"))}</p>`}
+  mb.innerHTML=g.x?commMapSvg(g,secs):`<p class="note">${esc(Tx("No map of this track yet","Aún no hay mapa de este circuito","Noch keine Karte dieser Strecke","Ainda não há mapa desta pista"))}</p>`;
+  // a press on the map opens it in full screen: the driver chosen (A) against your lap or the record (B)
+  if(g.x&&window.PW_FULLMAP&&laps.some(l=>l.hasTrace)){turnsFor(s.trackId,aGame());const fs=Tx("Full screen","Pantalla completa",null,"Tela cheia");mb.classList.add("fs");mb.setAttribute("role","button");mb.tabIndex=0;mb.title=fs;mb.setAttribute("aria-label",fs);mb.insertAdjacentHTML("beforeend",`<span class="cl-fs" aria-hidden="true">⛶</span>`);
+    const go=()=>commFullMap(s,laps,f,ref,mb);mb.onclick=go;mb.onkeydown=e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();go()}}}}
+const COMM_FSLAP={};
+async function commFsLap(l){if(COMM_FSLAP[l.id])return COMM_FSLAP[l.id];const r=await cget(`/api/community/laps?id=${encodeURIComponent(l.id)}`),tr=r&&r.trace;if(!tr||!tr.d||!tr.d.length)return null;
+  const bins=tr.d.map(x=>[x[0],x[5],x[1],x[2],x[3],x[4],null]),nm=l.mine?Tx("You","Tú",null,"Você"):l.alias==="Anonymous"?Tx("Anonymous","Anónimo",null,"Anônimo"):unMojibake(l.alias||"");
+  return COMM_FSLAP[l.id]={n:"COM",alias:nm,name:nm,time:r.time||l.time,bins,maxBin:bins.length-1,xy:traceXY(tr),cid:l.id,game:aGame(),sectors:l.sectors||null}}
+async function commFullMap(s,laps,f,ref,mb){if(mb._busy)return;mb._busy=true;mb.classList.add("busy");
+  try{const tr=laps.filter(l=>l.hasTrace),a=f.hasTrace?f:ref.hasTrace?ref:tr[0],b=ref!==a&&ref.hasTrace?ref:tr.find(l=>l!==a)||a,g=aGame();
+    const [A,B,map]=await Promise.all([commFsLap(a),commFsLap(b),trackMapFor(s.trackId,g)]);if(!A||!B)throw new Error(NO_TRACE());if(!map||!map.x||map.x.length<=10)return;
+    const sa=lapSeries(A),sb=lapSeries(B),n=Math.min(sa.end,sb.end);if(n<8)return;
+    for(let i=0;i<15&&!turnsFor(s.trackId,g);i++)await new Promise(r=>setTimeout(r,100));
+    const L=n*BIN,cs=officialCorners(s.trackId,g,map.x.length,L)||trackCorners(map,L),names=turnNamesFor(s.trackId,g),cnt=Math.max(A.sectors?.length||0,B.sectors?.length||0)||3,zones=l=>brakeZones(serOf(l));
+    PW_FULLMAP.open({map,n,A:{name:A.name+" "+fmtT(A.time),ser:sa.arr,xy:A.xy},B:{name:B.name+" "+fmtT(B.time),ser:sb.arr,xy:B.xy},bColor:"--blue",
+      corners:cs.map(c=>({n:c.n,d:c.d,name:names&&names[c.n-1]||""})),brA:zones(A),brB:zones(B),sectors:cnt,start:0,T:(en,es,pt)=>Tx(en,es,null,pt),spd,spdU,fmtT})}
+  catch(e){uiNotice(e.message)}finally{mb._busy=false;mb.classList.remove("busy")}}
 let COMM_ALL=[];
 /* Recent records: the fastest lap of every car and track, the newest first, with the lap it beat; filtered by the
    discipline chosen above, a Compare (lap B in the analyzer), its leaderboard and its track page */

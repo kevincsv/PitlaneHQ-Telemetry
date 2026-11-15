@@ -33,9 +33,10 @@ const altsOf = (o) => ({ en: o.en.path, es: o.es.path, pt: o.pt.path });
 const GNAME = { iracing: "iRacing", lmu: "Le Mans Ultimate" }, GSHORT = { iracing: "iRacing", lmu: "LMU" };
 // a record page's title: the whole game's name while it fits about 60 characters, else the short one, else none
 // (the car and the description say the game)
-const recTitle = (W, car, track, game) => [W.cT(car, track, GNAME[game]), W.cT(car, track, GSHORT[game]), W.cT(car, track, GSHORT[game], true)].find((x) => x.length <= 60) || [W.cTs(car, track), `${car} · ${track}`, `${car} · ${shortTrack(track)}`].find((x) => x.length <= 70) || `${car} · ${shortTrack(track)}`;
-// a track's name without its common words (its layout after " · " stays, so two layouts never share a title)
-const shortTrack = (track) => { const [n, ...lay] = String(track).split(" · "); const s = n.replace(/\b(International|Internacional|Raceway|Circuit|Circuito|Motorsport|Speedway|Park|Autodromo|Autódromo|Racing|Ring)\b/g, "").replace(/\s+/g, " ").trim() || n; return [s, ...lay].join(" · "); };
+const recTitle = (W, car, track, game) => [W.cT(car, track, GNAME[game]), W.cT(car, track, GSHORT[game]), W.cT(car, track, GSHORT[game], true)].find((x) => x.length <= 60) || [W.cTs(car, track), W.cTs(car, shortTrack(track))].find((x) => x.length <= 70) || W.cTs(car, shortTrack(track));
+// a track's name without its common words (its layout after " · " stays, so two layouts never share a title); the title keeps its
+// language's words, so the three languages of a page never share one
+const shortTrack = (track) => { const [n, ...lay] = String(track).split(" · "); const s = n.replace(/\b(International|Internacional|Raceway|Circuit|Circuito|Motorsport|Speedway|Park|Autodromo|Autódromo|Racing|Ring|Motorsports)\b/g, "").replace("Baden-Württemberg", "").replace(/\s+/g, " ").trim() || n; return [s, ...lay].join(" · "); };
 const CAT = {
   en: { oval: "Oval", sports_car: "Sports Car", formula_car: "Formula Car", dirt_oval: "Dirt Oval", dirt_road: "Dirt Road" },
   es: { oval: "Óvalo", sports_car: "Sports Car", formula_car: "Fórmula", dirt_oval: "Óvalo de tierra", dirt_road: "Tierra" },
@@ -642,7 +643,7 @@ async function recordsIndex(env, l, cat, game = "iracing") {
   const cats = Object.keys(CAT.en).filter((k) => rows.some((x) => x.cat === k));
   const list = cat ? rows.filter((x) => x.cat === cat) : rows;
   const W = S[l], A = REC_IDX[game], base = A[l], q = cat ? "?d=" + cat : "", path = base + q;
-  const title = `${W.recH(gn)}${cat ? " · " + CAT[l][cat] : ""} · Pitlane HQ`, desc = (cat ? CAT[l][cat] + ". " : "") + W.recD(gn);
+  const title = `${W.recH(gn)}${cat ? " · " + CAT[l][cat] : ""} · Pitlane HQ`, rd = (cat ? CAT[l][cat] + ". " : "") + W.recD(gn), desc = rd.length <= 160 ? rd : rd.slice(0, rd.indexOf("Pitlane HQ.") + 11);
   const body = `<h1>${esc(W.recH(gn))}</h1><p class="lead">${esc(desc)}</p>
 ${cats.length > 1 ? `<div class="cats"><a href="${base}"${cat ? "" : ' class="on"'}>${esc(W.all)}</a>${cats.map((k) => `<a href="${base}?d=${k}"${k === cat ? ' class="on"' : ""}>${esc(CAT[l][k])}</a>`).join("")}</div>` : ""}
 ${list.length ? `<div class="tw"><table><thead><tr><th>${esc(W.track)}</th><th>${esc(W.car)}</th><th>${esc(W.record)}</th><th>${esc(W.drivers)}</th></tr></thead><tbody>${list.map((x) => `<tr><td><a href="${recPath(l, x, game)}">${esc(fix(x.track))}</a></td><td class="m">${esc(fix(x.car))}</td><td class="t">${fmt(x.best)}</td><td class="m">${x.drivers}</td></tr>`).join("")}</tbody></table></div>` : `<p class="m">${esc(W.none)}</p>`}
@@ -671,10 +672,10 @@ async function recordsCombo(env, l, t, c, asked, game = "iracing") {
   const seen = new Set(), laps = [];
   for (const x of r.results || []) { if (seen.has(x.uid)) continue; seen.add(x.uid); laps.push(x); if (laps.length >= 50) break; }
   if (!laps.length) return null;
-  const gn = GNAME[game], track = fix(nm.track), car = fix(nm.car), cm = game === "lmu" ? { tc: {}, c: {} } : await catMap(env.RAW || env).catch(() => ({ tc: {}, c: {} }));
+  const gn = GNAME[game], track = fix(nm.track), car = fix(nm.car).replace(/\.+$/, ""), cm = game === "lmu" ? { tc: {}, c: {} } : await catMap(env.RAW || env).catch(() => ({ tc: {}, c: {} }));
   const x = { t, c, track, car }, cat = catFor(cm, game, x, laps[0].cat, laps[0].track, laps[0].car);
   const W = S[l], rec = fmt(laps[0].time), idx = REC_IDX[game][l];
-  const title = recTitle(W, car, track, game), cd = W.cD(car, track, rec, laps.length, gn), desc = cd.length <= 160 ? cd : cd.slice(0, cd.indexOf(". ") + 1), L = (game === "lmu" ? LANDL : LAND)[l];
+  const title = recTitle(W, car, track, game), cd = W.cD(car, track, rec, laps.length, gn), desc = cd.length <= 160 ? cd : cd.slice(0, cd.indexOf(rec) + rec.length + 1), L = (game === "lmu" ? LANDL : LAND)[l];
   const thin = laps.length < REC_MIN, newest = Math.max(0, ...laps.map((v) => +v.created || 0));
   // the other cars driven at this track (the game, track and car index), the most driven first, those worth finding only
   const oth = await (env.RAW || env).DB.prepare(

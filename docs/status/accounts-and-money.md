@@ -25,6 +25,10 @@ Status as of 2026-11-07. Behaviour is in `docs/spec/sync-and-accounts.md`, `admi
   sign-in (2026-11-15, working branch, waiting for "sube"; needs the cloud deploy and a Windows build; privacy policy
   updated).
 - The phones show no donation link (store rules).
+- 2026-11-15: the first real donation came in ($2.13, one-time). Admin donations are now tests (not counted, no badge). Live on
+  the server: admin Analytics > Sales opens with Payments (every payment, totals by month and week, supporters), a
+  thank-you email after each donation, and the donation bar thanks supporters instead of hiding (the PC app gets the
+  bar change with its next build).
 - Invite a friend (2026-11-14, on master, live after the next cloud and Windows build): a friend's week of use gives both a month of
   Pro, counted from now and saved until Pro is switched on. Needs migration 0100 and a Windows build for the agent to
   pass the code box through (older agents show the card without it).

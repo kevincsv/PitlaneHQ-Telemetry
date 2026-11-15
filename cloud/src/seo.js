@@ -151,6 +151,12 @@ const lmuLinks = (l) => [[LANDL[l].path, LANDL[l].h1], [OVLL[l].path, OVLL[l].h1
   ...(HAS.lmuLeagues ? [[LEAGL[l].path, LEAGL[l].h1]] : []), ...(HAS.lmuRecords ? [[REC_IDX.lmu[l], S[l].recH(GNAME.lmu)]] : [])];
 const iracingLinks = (l) => [...TOPICS.filter((x) => x.game !== "lmu").map((x) => [x[l].path, x[l].h1]), [OVL[l].path, OVL[l].h1], [LEAG[l].path, LEAG[l].h1], [REC_IDX.iracing[l], S[l].recH(GNAME.iracing)]];
 
+// each JSON-LD item is its own script, an object that starts with @context: Safari and some extensions read the page's
+// structured data with a script of their own that fails on a list (r["@context"].toLowerCase of undefined), and that
+// error reached the app's error report
+const ldTags = (ld) => (Array.isArray(ld) ? ld : ld ? [ld] : []).filter(Boolean)
+  .map((x) => `<script type="application/ld+json">${JSON.stringify(x["@context"] ? x : { "@context": "https://schema.org", ...x }).replace(/</g, "\\u003c")}</script>`).join("");
+
 function page(l, { title, desc, path, alts, body, ld, noindex, game = "iracing", mod }) {
   const t = T[l], other = game === "lmu" ? "iracing" : "lmu";
   // every indexed page says what it is and when its text last changed (search engines and AI assistants read it)
@@ -166,7 +172,7 @@ ${hl}
 <meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="${esc(title)}"><meta name="twitter:description" content="${esc(desc)}"><meta name="twitter:image" content="${og}">
 <meta name="theme-color" content="#11151b"><link rel="icon" href="/favicon.ico" sizes="any"><link rel="icon" href="/logo.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="/icon-180.png">
 <style>${CSS}</style><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="${FONTS}" media="print" onload="this.media='all'"><noscript><link rel="stylesheet" href="${FONTS}"></noscript>
-${ld ? `<script type="application/ld+json">${JSON.stringify(ld).replace(/</g, "\\u003c")}</script>` : ""}</head><body>
+${ldTags(ld)}</head><body>
 <header><div class="w"><a class="b" href="/">${LOGO}Pitlane HQ</a><nav><a href="${(game === "lmu" ? LANDL : LAND)[l].path}">${esc(t.tel[game])}</a><a href="${(game === "lmu" ? OVLL : OVL)[l].path}">${esc(t.ov)}</a><a href="${lg}">${esc(t.lgs)}</a><a href="${rc}">${esc(t.rec)}</a><a href="${(other === "lmu" ? LANDL : LAND)[l].path}">${esc(GNAME[other])}</a><a href="/downloads">${esc(t.dl)}</a><a href="/">${esc(t.app)}</a>${others}</nav></div></header>
 <main class="w">${body}${path && !noindex ? whatIs(l) : ""}</main>
 <footer><div class="w"><p class="m">${esc(GUIDES[l])} · iRacing · ${iracingLinks(l).map(([p, h]) => `<a href="${p}">${esc(h)}</a>`).join(" · ")}</p><p class="m">${esc(t.lmuH)} · ${lmuLinks(l).map(([p, h]) => `<a href="${p}">${esc(h)}</a>`).join(" · ")}</p>© ${new Date().getUTCFullYear()} Pitlane HQ · ${esc(t.free)} · <a href="/downloads">${esc(t.dl)}</a> · <a href="${MS_STORE}" rel="noopener">Microsoft Store</a> · <a href="${PRICE[l].path}">${esc(PRICE[l].h1)}</a> · <a href="mailto:support@pitlanehq.app">support@pitlanehq.app</a> · ${LANGS.map((k) => `<a href="${LAND[k].path}" hreflang="${HLANG[k]}">${NAME[k]}</a>`).join(" · ")}</div></footer>${VISIT_JS}</body></html>`;

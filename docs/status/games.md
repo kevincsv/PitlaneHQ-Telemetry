@@ -25,10 +25,18 @@ Status as of 2026-11-14. Behaviour is in `docs/spec/lmu.md` and `docs/spec/asset
 
 ## Track maps (every game)
 
-- 2026-11-15: the turns of 93 of the server's 117 track layouts come from a reference of the real turns (numbers and
-  names), placed by the server; the phones get them with no change. Not checked against an official map (`sure: false`
-  in `tools/turns-ref/src.mjs`): Le Mans, Daytona road, Bathurst, Oulton International, Okayama, Phillip Island, Zolder,
-  Hockenheim, Miami, Mexico, St Petersburg, Algarve, Bahrain Outer, Tsukuba, Summit Point, the Silverstone
-  International and Nürburgring sprint layouts. 24 layouts have no reference yet (listed in
-  `docs/spec/tracks-and-maps.md`). ACC and AC have no layouts on the server yet; they will take a circuit's reference
-  by its name.
+- 2026-11-15: the turns of 95 of the server's 117 track layouts come from a reference of the real turns (numbers and
+  names), placed by the server; the phones get them with no change. Every list was compared turn by turn with the
+  circuit's map on Wikipedia (61 maps, the file per layout is in `SOURCES` of `tools/turns-ref/src.mjs`); that changed
+  Daytona road (12 turns), Bathurst, Oulton, Okayama, Zolder, Hockenheim, Miami, Mexico, St Petersburg, Algarve,
+  Tsukuba, Interlagos, Sebring's Fangio turns, Mosport (10), Donington (11), Brands Indy (6) and many names. On the
+  test channel, production waits for the 0.9.22 promotion.
+- No map with numbers found, so the numbering is not checked (`sure: false`): Le Mans (names only), Motegi, Zolder's
+  T6 to T9, Snetterton 200, Okayama short, the Silverstone International and Nürburgring sprint layouts, the historic
+  Spa, Barcelona and Mexico. Spa keeps the 19 turns in use since 2022 (Wikipedia's drawing counts 20 with two kinks).
+  Watkins Glen's short circuit is numbered 1 to 7 (its map keeps the long circuit's 10 and 11).
+- 22 layouts keep the geometry's corners: VIR (its own numbering skips 13 and has 5a, 6a, 14a, 17a), Charlotte Roval
+  (Wikipedia shows the 2024 layout, the game has 2019), Oschersleben, Navarra, Lédenon (maps with names only), Rudskogen
+  (no map), Oran Park, Winton Club, Oulton Island, Nordschleife, Lime Rock's other layouts, Hockenheim Outer, Fuji
+  without chicane, the dirt and rallycross tracks. ACC and AC have no layouts on the server yet; they will take a
+  circuit's reference by its name.

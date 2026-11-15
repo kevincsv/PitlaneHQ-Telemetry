@@ -57,8 +57,9 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
 - The geometry cannot know that a flat kink has no number (Spa's Kemmel kink took T5 and every turn after it was one
   late) or that a long corner counts twice (Pouhon is T10 and T11). So the circuits people know have their real turns
   written down: `tools/turns-ref/src.mjs` holds, per circuit layout, T1 … Tn in order with the way each one turns, the
-  turns that share one bend, the numbered turns with no bend at all and the names (from the circuits' and the series'
-  own maps and Wikipedia's track pages; `sure: false` where the numbering could not be checked). `node
+  turns that share one bend, the numbered turns with no bend at all and the names. Every list is checked turn by turn
+  against the circuit's map on Wikipedia (a Wikimedia Commons file, named per layout in `SOURCES` of the same file), and
+  only the names that map shows are used; `sure: false` where no map with the turns' numbers was found. `node
   tools/turns-ref/build.mjs` places them on the first layout listed (fetched from the server) and writes
   `cloud/src/turnsref-data.js`: per layout its length, the games' track ids, the words of its name and each turn's
   metres from the line, direction, whether it is a clear corner or a light one, and its name. Change `src.mjs` and build
@@ -76,9 +77,9 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   400 m from the line: not that layout, and the track keeps the geometry's corners.
 - A track takes its reference by the game's own id (`ids`), else by the circuit's name in the track's name together
   with the lap's length (`match`: how an ACC or AC track, or a new id, finds it; `NOT` lists the layouts of a known
-  circuit that are another layout). A track of no reference (24 of the 117 the server had on 2026-11-15: the
-  Nordschleife, VIR, the Charlotte Roval, Oschersleben, Navarra, Ledenon, Rudskogen, Winton, Oran Park, the smaller
-  Oulton, Lime Rock, Hockenheim and Fuji layouts and the dirt tracks) stays as before; Admin → Tools → "Turns to check"
+  circuit that are another layout). A track of no reference (22 of the 117 the server had on 2026-11-15: the
+  Nordschleife, VIR, the Charlotte Roval, Oschersleben, Navarra, Ledenon, Rudskogen, Winton Club, Oran Park, Oulton
+  Island, the smaller Lime Rock, Hockenheim and Fuji layouts and the dirt tracks, none with a numbered map to check against) stays as before; Admin → Tools → "Turns to check"
   says `ref` for the ones that have it. `cloud/test/turnsref.test.mjs` checks the data and the placing on real layouts.
 
 ## Corners from how drivers drive, edges and the wrong layout

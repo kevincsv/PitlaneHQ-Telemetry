@@ -20,7 +20,9 @@ assert.equal(a.kind, "uninstall");
 assert.equal(a.device, "pc");
 assert.equal(a.v, "0.9.9x");
 assert.equal(cleanUninstall({ text: "only words" }).text, "only words");
-assert.equal(cleanUninstall({ reasons: ["other"] }).text, "Something else");
+assert.ok(cleanUninstall({ reasons: ["other"] }).error, "Something else needs what it was");
+assert.ok(cleanUninstall({ reasons: ["other", "bugs"] }).error, "even with another reason");
+assert.equal(cleanUninstall({ reasons: ["other"], text: "My wheel" }).text, "Something else\n\nMy wheel");
 
 // the page
 const get = (path, al = "") => { const req = new Request("https://pitlanehq.app" + path, { headers: { "accept-language": al } }); return [req, new URL(req.url)]; };

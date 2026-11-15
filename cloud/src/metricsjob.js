@@ -32,7 +32,7 @@ export async function weeklyMetrics(env, { all = false, now = Date.now(), staff 
   const [accounts, usage, sessions, anon, visits, pc, orders, referrals, events, badge] = await Promise.all([
     q(env, SQL_M_ACCOUNTS), q(env, SQL_M_USAGE, from), q(env, SQL_M_SESSIONS, ms), soft(q(env, SQL_M_ANON, ms)), soft(q(env, SQL_M_VISITS, from)),
     soft(q(env, "SELECT day, kind, SUM(n) AS n FROM pc_days WHERE day>=?1 AND v<>'beta' GROUP BY day, kind LIMIT 5000", from)),
-    soft(q(env, "SELECT at, amount, currency FROM pro_orders WHERE kind='supporter' AND status<>'refunded' AND at>=?1 LIMIT 5000", ms)),
+    soft(q(env, "SELECT at, amount, currency FROM pro_orders WHERE kind='supporter' AND status='on' AND at>=?1 LIMIT 5000", ms)),
     soft(q(env, "SELECT created, state, done FROM referrals WHERE created>=?1 OR done>=?1 LIMIT 20000", ms)),
     soft(q(env, "SELECT at, name FROM events WHERE at>=?1 LIMIT 50000", ms)),
     soft(q(env, "SELECT COUNT(*) AS n FROM accounts WHERE supporter=1")),

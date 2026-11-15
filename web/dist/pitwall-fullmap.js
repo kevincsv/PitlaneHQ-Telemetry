@@ -101,6 +101,8 @@
 .fm-x{appearance:none;border:1px solid var(--line2,#2a3140);background:transparent;color:var(--fg,#e6e9ef);width:34px;height:34px;border-radius:8px;font-size:20px;line-height:1;cursor:pointer}
 .fm-m{position:relative;flex:1;min-height:200px;overflow:hidden;touch-action:none;cursor:grab;background:radial-gradient(ellipse at 50% 40%,color-mix(in srgb,var(--surface,#10141c) 70%,transparent),transparent 70%)}
 .fm-m.drag{cursor:grabbing}
+.fm-cc{position:absolute;inset:0;width:100%;height:100%;display:none}.fm-m.chase .fm-cc{display:block}.fm-m.chase svg,.fm-m.chase .fm-sc{visibility:hidden}.fm-m.chase{cursor:default}
+.fm-z button.wide{width:auto;padding:0 10px;font-size:13px}
 .fm-m svg{position:absolute;inset:0;width:100%;height:100%;display:block;user-select:none;-webkit-user-select:none}
 .fm .grass{fill:none;stroke:color-mix(in srgb,var(--good,#3ddc84) 7%,transparent);stroke-linejoin:round}
 .fm .road{fill:color-mix(in srgb,var(--surface2,#151a24) 55%,#2a3140 45%);fill-rule:evenodd;stroke:color-mix(in srgb,var(--fg,#e6e9ef) 55%,transparent);stroke-linejoin:round}
@@ -159,13 +161,13 @@
       <span class="fm-lg a"><i></i>A · ${esc(A.name)}</span><span class="fm-lg b"><i></i>B · ${esc(B.name)}</span>
       <div class="fm-ch">${chip("lines", T("Racing lines", "Trazadas", "Traçados"), !lineA && !lineB)}${chip("brk", T("Braking", "Frenadas", "Freadas"))}${chip("mins", T("Slowest points", "Puntos más lentos", "Pontos mais lentos"))}${chip("turns", T("Turns", "Curvas", "Curvas"))}${chip("delta", T("A vs B time", "Tiempo A vs B", "Tempo A vs B"))}</div>
       <button type="button" class="fm-x" aria-label="${esc(T("Close", "Cerrar", "Fechar"))}">×</button></div>
-      <div class="fm-m"><svg aria-label="${esc(T("Track map", "Mapa del circuito", "Mapa da pista"))}" role="img"></svg><div class="fm-rd"></div>
+      <div class="fm-m"><canvas class="fm-cc" aria-hidden="true"></canvas><svg aria-label="${esc(T("Track map", "Mapa del circuito", "Mapa da pista"))}" role="img"></svg><div class="fm-rd"></div>
         <div class="fm-sc"><i></i><span></span></div>
-        <div class="fm-z"><button type="button" data-z="in" aria-label="${esc(T("Zoom in", "Acercar", "Aproximar"))}">+</button><button type="button" data-z="out" aria-label="${esc(T("Zoom out", "Alejar", "Afastar"))}">−</button><button type="button" data-z="fit" aria-label="${esc(T("Whole track", "Circuito entero", "Pista inteira"))}">⤢</button><button type="button" data-z="follow" aria-pressed="${!!ST.follow}" aria-label="${esc(T("Follow lap A", "Seguir la vuelta A", "Seguir a volta A"))}" title="${esc(T("Follow lap A", "Seguir la vuelta A", "Seguir a volta A"))}">◎</button></div></div>
+        <div class="fm-z"><button type="button" data-z="in" aria-label="${esc(T("Zoom in", "Acercar", "Aproximar"))}">+</button><button type="button" data-z="out" aria-label="${esc(T("Zoom out", "Alejar", "Afastar"))}">−</button><button type="button" data-z="fit" aria-label="${esc(T("Whole track", "Circuito entero", "Pista inteira"))}">⤢</button><button type="button" data-z="chase" class="wide" aria-pressed="false" title="${esc(T("Chase view", "Vista de persecución", "Visão de perseguição"))}">${esc(T("Chase", "Cámara", "Câmera"))}</button><button type="button" data-z="follow" aria-pressed="${!!ST.follow}" aria-label="${esc(T("Follow lap A", "Seguir la vuelta A", "Seguir a volta A"))}" title="${esc(T("Follow lap A", "Seguir la vuelta A", "Seguir a volta A"))}">◎</button></div></div>
       <div class="fm-t"><div class="fm-rp"><button type="button" class="go" aria-label="${esc(T("Replay", "Repetición", "Replay"))}">▶</button><input type="range" min="0" max="1000" value="0" aria-label="${esc(T("Replay", "Repetición", "Replay"))}"><span class="sp">${[1, 2, 4, 8].map((k) => `<button type="button" data-sp="${k}" aria-pressed="${k === 2}">${k}×</button>`).join("")}</span><span class="tm"></span></div><canvas></canvas></div>`;
     document.body.appendChild(root);
     const prevOv = document.documentElement.style.overflow; document.documentElement.style.overflow = "hidden";
-    const box = root.querySelector(".fm-m"), svg = box.querySelector("svg"), rd = root.querySelector(".fm-rd"), cv = root.querySelector("canvas"), sc = root.querySelector(".fm-sc"), scI = sc.querySelector("i"), scS = sc.querySelector("span");
+    const box = root.querySelector(".fm-m"), svg = box.querySelector("svg"), rd = root.querySelector(".fm-rd"), cv = root.querySelector(".fm-t canvas"), sc = root.querySelector(".fm-sc"), scI = sc.querySelector("i"), scS = sc.querySelector("span");
 
     // the world: the road's frame turned so the circuit fills the screen (y down for the screen)
     let rot = 0;
@@ -201,10 +203,10 @@
     const secT = []; for (let j = 0; j < cnt; j++) { const d = (j + .5) / cnt * L, ow = outward(d); secT.push({ el: el("text", { class: "sec" }, gMarks), ow, inner: true, txt: "S" + (j + 1) }); secT[j].el.textContent = "S" + (j + 1); }
     // where A gains (green) or loses (red) against B, every 25 m
     const tA = (i) => { const r = sa[i]; return r && r[1] != null ? r[1] : null; }, tB = (i) => { const r = sb[i]; return r && r[1] != null ? r[1] : null; };
-    const dSegs = []; { const st = 5; let mx = .004; const raw = []; for (let i = 0; i + st < n; i += st) { const a0 = tA(i), a1 = tA(i + st), b0 = tB(i), b1 = tB(i + st); if (a0 == null || a1 == null || b0 == null || b1 == null) continue; const v = (a1 - b1) - (a0 - b0); raw.push([i, v]); mx = Math.max(mx, Math.abs(v)); }
+    const dSegs = [], dRaw = []; let dMx = .004; { const st = 5; let mx = .004; const raw = dRaw; for (let i = 0; i + st < n; i += st) { const a0 = tA(i), a1 = tA(i + st), b0 = tB(i), b1 = tB(i + st); if (a0 == null || a1 == null || b0 == null || b1 == null) continue; const v = (a1 - b1) - (a0 - b0); raw.push([i, v]); mx = Math.max(mx, Math.abs(v)); }
       // drawn as the road's kerbs on both sides, so the lines stay readable on the asphalt
       const edgeAt = (d, side, inset) => { const p = roadAt(R, mod(d / L * R.N, R.N)), w = (side > 0 ? p.l : p.r) - side * inset; return Wp(p.x + p.nx * w, p.y + p.ny * w); };
-      raw.forEach(([i, v]) => { if (Math.abs(v) < mx * .08) return; const col = v > 0 ? "var(--bad,#ff5c5c)" : "var(--good,#3ddc84)", op = (.35 + .65 * Math.min(1, Math.abs(v) / mx)).toFixed(2);
+      dMx = mx; raw.forEach(([i, v]) => { if (Math.abs(v) < mx * .08) return; const col = v > 0 ? "var(--bad,#ff5c5c)" : "var(--good,#3ddc84)", op = (.35 + .65 * Math.min(1, Math.abs(v) / mx)).toFixed(2);
         [1, -1].forEach((side) => { const pts = []; for (let k = i; k <= i + st; k++) pts.push(edgeAt(k * BIN, side, 0)); dSegs.push(el("polyline", { class: "dseg", points: ptsStr(pts), stroke: col, "stroke-opacity": op }, gDelta)); }); }); }
     // the racing lines
     const lnB = LB ? el("polyline", { class: "ln b", points: ptsStr(LB) }, gLines) : null, lnA = LA ? el("polyline", { class: "ln a", points: ptsStr(LA) }, gLines) : null;
@@ -213,8 +215,8 @@
     const brk = (zs, k, ser) => (zs || []).forEach((z) => {
       const g = el("g", { class: "bk " + k }, gPts); el("circle", { r: 5.5 }, g); const t = el("text", k === "a" ? { x: 9, y: 0 } : { x: -9, y: 0, "text-anchor": "end" }, g); t.textContent = `${k.toUpperCase()} ${Math.round(spd(z.v))}→${Math.round(spd(z.vmin))}`;
       el("title", {}, g).textContent = `${k.toUpperCase()} · ${T("brakes at", "frena en", "freia em")} ${Math.round(z.i * BIN)} m · ${Math.round(spd(z.v))} → ${Math.round(spd(z.vmin))} ${spdU()}`;
-      PX.push({ g, d: z.i * BIN, lap: k, kind: "brk", t });
-      if (z.imin != null) { const m = el("g", { class: "mn " + k }, gPts); el("path", { d: "M0 -5L5 0L0 5L-5 0Z" }, m); const tt = el("text", k === "a" ? { x: 8, y: 0 } : { x: -8, y: 0, "text-anchor": "end" }, m); tt.textContent = String(Math.round(spd(z.vmin))); el("title", {}, m).textContent = `${k.toUpperCase()} · ${T("slowest", "más lento", "mais lento")} ${Math.round(spd(z.vmin))} ${spdU()} · ${Math.round(z.imin * BIN)} m`; PX.push({ g: m, d: z.imin * BIN, lap: k, kind: "min", t: tt }); }
+      PX.push({ g, d: z.i * BIN, lap: k, kind: "brk", t, lab: t.textContent });
+      if (z.imin != null) { const m = el("g", { class: "mn " + k }, gPts); el("path", { d: "M0 -5L5 0L0 5L-5 0Z" }, m); const tt = el("text", k === "a" ? { x: 8, y: 0 } : { x: -8, y: 0, "text-anchor": "end" }, m); tt.textContent = String(Math.round(spd(z.vmin))); el("title", {}, m).textContent = `${k.toUpperCase()} · ${T("slowest", "más lento", "mais lento")} ${Math.round(spd(z.vmin))} ${spdU()} · ${Math.round(z.imin * BIN)} m`; PX.push({ g: m, d: z.imin * BIN, lap: k, kind: "min", t: tt, lab: tt.textContent }); }
     });
     brk(o.brB, "b"); brk(o.brA, "a");
     // the turns: T5 and its name outside the bend; a press zooms on it
@@ -275,9 +277,10 @@
     const dAt = (ts, t) => { if (t <= ts[0]) return 0; if (t >= ts[n - 1]) return (n - 1) * BIN; let lo = 0, hi = n - 1; while (hi - lo > 1) { const m = (lo + hi) >> 1; if (ts[m] <= t) lo = m; else hi = m; } return (lo + (t - ts[lo]) / ((ts[hi] - ts[lo]) || 1)) * BIN; };
     let cur = clamp(Math.round(o.start || 0), 0, n - 1), curD = cur * BIN;
     const corner = (d) => { let b = null, bd = 181; (o.corners || []).forEach((c) => { let dd = Math.abs(c.d - d); dd = Math.min(dd, L - dd); if (dd < bd) { bd = dd; b = c; } }); return b; };
-    let rdT = 0;
+    let rdT = 0, lastQB = null, lastDB = 0;
     function placeCur() {
       const qa = atLine(LA, curD), fi = clamp(curD / BIN, 0, n - 1), i0 = Math.floor(fi), i1 = Math.min(n - 1, i0 + 1), tAt = ta[i0] + (ta[i1] - ta[i0]) * (fi - i0), dbb = dAt(tb, tAt), qb = atLine(LB, Math.min(dbb, L - 1));
+      lastQB = qb; lastDB = dbb; if (chase) drawChase();
       cA.setAttribute("transform", `translate(${f1(qa[0])} ${f1(qa[1])}) scale(${u.toFixed(4)})`); cB.setAttribute("transform", `translate(${f1(qb[0])} ${f1(qb[1])}) scale(${u.toFixed(4)})`);
       const now = performance.now(); if (playing && now - rdT < 80) return; rdT = now;
       const i = clamp(Math.round(curD / BIN), 0, n - 1), a = sa[i], b = sb[i], c = corner(curD), dl = a && b && a[1] != null && b[1] != null ? a[1] - b[1] : null, ah = Math.round(dbb - curD);
@@ -290,8 +293,9 @@
     }
     function setCur(i, fromReplay) {
       cur = clamp(i, 0, n - 1); curD = cur * BIN; if (!fromReplay && !playing) t = ta[clamp(Math.round(cur), 0, n - 1)];
+      if (chase) { placeCur(); drawT(); }
       // following lap A: the camera stays on the car (the replay locks it there, a jump glides to it)
-      if (ST.follow) { const q = atLine(LA, curD); if (fromReplay && playing) { cx = q[0]; cy = q[1]; view(); } else if (Math.abs(q[0] - cx) > BW * u * .18 || Math.abs(q[1] - cy) > BH * u * .18) glide(q[0], q[1], u, 250); else { placeCur(); drawT(); } }
+      else if (ST.follow) { const q = atLine(LA, curD); if (fromReplay && playing) { cx = q[0]; cy = q[1]; view(); } else if (Math.abs(q[0] - cx) > BW * u * .18 || Math.abs(q[1] - cy) > BH * u * .18) glide(q[0], q[1], u, 250); else { placeCur(); drawT(); } }
       else { placeCur(); drawT(); }
       rg.value = String(Math.round(t / (tEnd || 1) * 1000)); tm.innerHTML = tEnd ? `${fmtT(t)} / ${fmtT(tEnd)}` : "";
       if (o.onCursor) try { o.onCursor(Math.round(cur)); } catch (e) { }
@@ -300,7 +304,7 @@
     /* the telemetry under the map: speed of both laps, the gap and the pedals, the part of the lap on screen shaded */
     const tx = cv.getContext("2d"), layer = document.createElement("canvas");
     let CW = cv.clientWidth, CH = cv.clientHeight, COL = null, layerKey = "";
-    const colors = () => ({ a: css(root, "--accent", "#f5b43c"), b: css(root, "--fm-b", "#4f9cff"), mu: css(root, "--muted", "#8a93a3"), ln: css(root, "--line", "#1c222d"), fg: css(root, "--fg", "#e6e9ef"), good: css(root, "--good", "#3ddc84"), bad: css(root, "--bad", "#ff5c5c"), font: css(root, "--f-data", "monospace"), s2: css(root, "--surface2", "#151a24") });
+    const colors = () => ({ a: css(root, "--accent", "#f5b43c"), b: css(root, "--fm-b", "#4f9cff"), mu: css(root, "--muted", "#8a93a3"), ln: css(root, "--line", "#1c222d"), fg: css(root, "--fg", "#e6e9ef"), good: css(root, "--good", "#3ddc84"), bad: css(root, "--bad", "#ff5c5c"), font: css(root, "--f-data", "monospace"), s2: css(root, "--surface2", "#151a24"), s1: css(root, "--surface", "#10141c"), bg: css(root, "--bg", "#0b0e14"), line2: css(root, "--line2", "#2a3140"), road: getComputedStyle(roadP).fill || "#2a3140", edge: css(root, "--fg", "#e6e9ef") });
     const VP = []; for (let i = 0; i < n; i++) VP.push(atRoad(i * BIN)); // the road under every 5 m, for the shade of what is on screen
     let vmax = 1; for (let i = 0; i < n; i++) { if (sa[i]) vmax = Math.max(vmax, sa[i][0]); if (sb[i]) vmax = Math.max(vmax, sb[i][0]); }
     let gmx = .2; for (let i = 0; i < n; i++) { const a = tA(i), b = tB(i); if (a != null && b != null) gmx = Math.max(gmx, Math.abs(a - b)); }
@@ -313,7 +317,7 @@
       const key = w + "x" + h + "@" + dpr; if (key !== layerKey) { layerKey = key; drawLayer(w, h, dpr, pl, pr, X, hS, hD, hP, yS, yD, yP, top, YS); }
       const x = tx; x.setTransform(dpr, 0, 0, dpr, 0, 0); x.clearRect(0, 0, w, h);
       // the part of the lap on screen
-      { const vx0 = cx - BW / 2 * u, vx1 = cx + BW / 2 * u, vy0 = cy - BH / 2 * u, vy1 = cy + BH / 2 * u; if (u < uFit * .9) { x.fillStyle = COL.s2; let run = -1; for (let i = 0; i <= n; i++) { const q = i < n ? VP[i] : null, inn = q && q[0] >= vx0 && q[0] <= vx1 && q[1] >= vy0 && q[1] <= vy1; if (inn && run < 0) run = i; if (!inn && run >= 0) { x.fillRect(X(run * BIN), 0, X(i * BIN) - X(run * BIN), h); run = -1; } } } }
+      { const vx0 = cx - BW / 2 * u, vx1 = cx + BW / 2 * u, vy0 = cy - BH / 2 * u, vy1 = cy + BH / 2 * u; if (u < uFit * .9 && !chase) { x.fillStyle = COL.s2; let run = -1; for (let i = 0; i <= n; i++) { const q = i < n ? VP[i] : null, inn = q && q[0] >= vx0 && q[0] <= vx1 && q[1] >= vy0 && q[1] <= vy1; if (inn && run < 0) run = i; if (!inn && run >= 0) { x.fillRect(X(run * BIN), 0, X(i * BIN) - X(run * BIN), h); run = -1; } } } }
       x.setTransform(1, 0, 0, 1, 0, 0); x.drawImage(layer, 0, 0); x.setTransform(dpr, 0, 0, dpr, 0, 0);
       // the cursor
       const cxp = X(curD), ci = clamp(Math.round(curD / BIN), 0, n - 1); x.strokeStyle = COL.fg; x.lineWidth = 1; x.globalAlpha = .7; x.setLineDash([3, 3]); x.beginPath(); x.moveTo(cxp, yS); x.lineTo(cxp, h); x.stroke(); x.setLineDash([]); x.globalAlpha = 1;
@@ -338,6 +342,60 @@
       x.globalAlpha = .9; trace(sb, cB_, 2, YP, 1); trace(sa, cA_, 2, YP, 1); trace(sb, cB_, 3, YB, 1); trace(sa, cA_, 3, YB, 1); x.globalAlpha = 1;
       x.fillStyle = good; x.fillText(T("thr", "gas", "acel"), 4, yP + 8); x.fillStyle = bad; x.fillText(T("brk", "fren", "freio"), 4, yP + hP - 2);
     }
+    /* ---------- the chase view: from behind lap A's car, a little above it, the road ahead in perspective ----------
+       Drawn on its own canvas from the same road, lines and points as the map (no 3D model, no heights). */
+    const cc = root.querySelector(".fm-cc"), cx2 = cc.getContext("2d");
+    let chase = false, hd = null, camK = 1;
+    function drawChase() {
+      const dpr = window.devicePixelRatio || 1, W = BW, H = BH; if (!W || !H) return;
+      if (cc.width !== Math.round(W * dpr) || cc.height !== Math.round(H * dpr)) { cc.width = Math.round(W * dpr); cc.height = Math.round(H * dpr); }
+      if (!COL) COL = colors();
+      const x = cx2; x.setTransform(dpr, 0, 0, dpr, 0, 0);
+      // the car and where it points (smoothed so the camera turns, never jerks)
+      const q = atLine(LA, curD), p1 = atLine(LA, Math.max(0, curD - 8)), p2 = atLine(LA, Math.min(L - 1, curD + 22)); let a = Math.atan2(p2[1] - p1[1], p2[0] - p1[0]);
+      if (hd == null || !playing) hd = a; else { let df = a - hd; while (df > Math.PI) df -= 2 * Math.PI; while (df < -Math.PI) df += 2 * Math.PI; hd += df * .14; }
+      const hx = Math.cos(hd), hy = Math.sin(hd), rx = -hy, ry = hx; // forward and right, in the world (y down)
+      const back = 22 * camK, up = 8 * camK, hz = H * .2, f = (H * .74 - hz) * back / up, near = 1.5;
+      const P = (pt) => { const dx = pt[0] - q[0], dy = pt[1] - q[1], Z = dx * hx + dy * hy + back, X = dx * rx + dy * ry; return Z > near ? [W / 2 + f * X / Z, hz + f * up / Z, Z] : null; };
+      // sky and ground
+      let g = x.createLinearGradient(0, 0, 0, H); g.addColorStop(0, COL.s2); g.addColorStop(hz / H, COL.bg); g.addColorStop(hz / H + .001, COL.bg); g.addColorStop(1, COL.s1); x.fillStyle = g; x.fillRect(0, 0, W, H);
+      x.fillStyle = COL.good; x.globalAlpha = .06; x.fillRect(0, hz, W, H - hz); x.globalAlpha = 1;
+      // the stretch of road from just behind the car to 600 m ahead
+      const N = R.N, s0 = Math.round(curD / L * N), from = s0 - Math.round(12 / (L / N)), to = s0 + Math.round(600 * camK / (L / N));
+      const pts = []; for (let k = from; k <= to; k++) { const i = mod(k, N), l = P(EL[i]), r = P(ER[i]), c = P(C[i]); pts.push({ i, l, r, c, k }); }
+      // the asphalt, drawn far to near so a crest of the road is painted over by what is nearer
+      x.fillStyle = COL.road; for (let j = pts.length - 2; j >= 0; j--) { const A = pts[j], B = pts[j + 1]; if (!A.l || !A.r || !B.l || !B.r) continue; x.beginPath(); x.moveTo(A.l[0], A.l[1]); x.lineTo(B.l[0], B.l[1]); x.lineTo(B.r[0], B.r[1]); x.lineTo(A.r[0], A.r[1]); x.closePath(); x.fill(); x.strokeStyle = COL.road; x.lineWidth = 1; x.stroke(); }
+      // the edges, coloured where A gains or loses
+      const dAtI = (i) => { const k = Math.floor(i / N * n / 5) * 5; const hit = dRaw.find((r) => r[0] === k); return hit && Math.abs(hit[1]) >= dMx * .08 ? hit[1] : 0; };
+      for (const side of ["l", "r"]) for (let j = 0; j < pts.length - 1; j++) { const A = pts[j][side], B = pts[j + 1][side]; if (!A || !B) continue; const v = ST.delta ? dAtI(pts[j].i) : 0; x.strokeStyle = v > 0 ? COL.bad : v < 0 ? COL.good : COL.mu; x.globalAlpha = 1; x.lineCap = "butt"; x.lineWidth = Math.max(1, Math.min(10, (v ? 1.2 : .35) * f / ((A[2] + B[2]) / 2))); x.beginPath(); x.moveTo(A[0], A[1]); x.lineTo(B[0], B[1]); x.stroke(); }
+      x.globalAlpha = 1;
+      // start/finish and sector cuts
+      const cutAt = (d, col, w) => { const i = mod(Math.round(d / L * N), N); if (!pts.some((p) => p.i === i)) return; const l = P(EL[i]), r = P(ER[i]); if (!l || !r) return; x.strokeStyle = col; x.lineWidth = Math.max(1.5, w * f / l[2]); x.beginPath(); x.moveTo(l[0], l[1]); x.lineTo(r[0], r[1]); x.stroke(); };
+      cutAt(0, "#fff", .8); for (let j = 1; j < cnt; j++) cutAt(j / cnt * L, COL.mu, .4);
+      // the racing lines, B under A
+      const lineAt = (ln, col) => { if (!ln || !ST.lines) return; const i0 = Math.max(0, Math.floor((curD - 12) / BIN)), i1 = Math.min(ln.length - 1, Math.ceil((curD + 600 * camK) / BIN)); x.strokeStyle = col; x.lineCap = "round"; let prev = null; for (let i = i0; i <= i1; i++) { const pp = P(ln[i]); if (pp && prev) { x.lineWidth = clamp(.35 * f / pp[2], 1.2, 7); x.beginPath(); x.moveTo(prev[0], prev[1]); x.lineTo(pp[0], pp[1]); x.stroke(); } prev = pp; } };
+      lineAt(LB, COL.b); lineAt(LA, COL.a);
+      // braking and slowest points ahead, with their speeds
+      x.font = "600 12px " + COL.font; x.textBaseline = "middle";
+      PX.forEach((p) => { if ((p.kind === "brk" && !ST.brk) || (p.kind === "min" && !ST.mins)) return; let dd = p.d - curD; if (dd < -10 || dd > 600 * camK) return; const pp = P(atLine(p.lap === "a" ? LA : LB, p.d)); if (!pp) return; const rr = clamp(.9 * f / pp[2], 2.5, 9), col = p.lap === "a" ? COL.a : COL.b;
+        x.fillStyle = col; x.strokeStyle = COL.bg; x.lineWidth = 1.5; x.beginPath(); if (p.kind === "brk") x.arc(pp[0], pp[1], rr, 0, 7); else { x.moveTo(pp[0], pp[1] - rr); x.lineTo(pp[0] + rr, pp[1]); x.lineTo(pp[0], pp[1] + rr); x.lineTo(pp[0] - rr, pp[1]); x.closePath(); } x.fill(); x.stroke();
+        if (pp[2] < 260 * camK) { x.textAlign = p.lap === "a" ? "left" : "right"; x.lineWidth = 3; x.strokeText(p.lab, pp[0] + (p.lap === "a" ? rr + 4 : -rr - 4), pp[1]); x.fillText(p.lab, pp[0] + (p.lap === "a" ? rr + 4 : -rr - 4), pp[1]); } });
+      // the turns ahead: a sign beside the road
+      if (ST.turns) TN.forEach((t) => { let dd = t.c.d - curD; if (dd < 0) dd += L; if (dd > 600 * camK) return; const w = t.ow, pt = [w.a[0] + w.nx * (w.w + 4), w.a[1] + w.ny * (w.w + 4)], pp = P(pt); if (!pp) return; const txt = "T" + t.c.n + (t.c.name && pp[2] < 300 * camK ? " " + t.c.name : ""); x.font = "700 13px " + COL.font; x.textAlign = "center"; const tw = x.measureText(txt).width + 14, ty = pp[1] - 22;
+        x.strokeStyle = COL.mu; x.lineWidth = 1; x.beginPath(); x.moveTo(pp[0], pp[1]); x.lineTo(pp[0], ty + 11); x.stroke(); x.fillStyle = COL.s1; x.strokeStyle = COL.line2; x.beginPath(); x.rect(pp[0] - tw / 2, ty - 11, tw, 22); x.fill(); x.stroke(); x.fillStyle = COL.fg; x.fillText(txt, pp[0], ty); });
+      // lap B where it was at this moment, then lap A's car
+      if (lastQB) { const pb = P(lastQB); if (pb) { x.strokeStyle = COL.b; x.lineWidth = 3; x.beginPath(); x.ellipse(pb[0], pb[1], clamp(1.4 * f / pb[2], 4, 26), clamp(.7 * f / pb[2], 2, 13), 0, 0, 7); x.stroke(); } }
+      // lap A's car: an arrow on the road, its nose 2.5 m ahead
+      const nose = P([q[0] + hx * 2.5, q[1] + hy * 2.5]), tail = P([q[0] - hx * 2, q[1] - hy * 2]), tl = P([q[0] - hx * 2 - rx * 1, q[1] - hy * 2 - ry * 1]), tr = P([q[0] - hx * 2 + rx * 1, q[1] - hy * 2 + ry * 1]);
+      if (nose && tail && tl && tr) { x.fillStyle = "rgba(0,0,0,.35)"; x.beginPath(); x.moveTo(nose[0], nose[1] + 3); x.lineTo(tr[0], tr[1] + 3); x.lineTo(tail[0], tail[1] + 3); x.lineTo(tl[0], tl[1] + 3); x.closePath(); x.fill();
+        x.fillStyle = COL.a; x.strokeStyle = COL.bg; x.lineWidth = 2; x.lineJoin = "round"; x.beginPath(); x.moveTo(nose[0], nose[1]); x.lineTo(tr[0], tr[1]); x.lineTo(tail[0], tail[1] - (tail[1] - nose[1]) * .25); x.lineTo(tl[0], tl[1]); x.closePath(); x.fill(); x.stroke(); }
+    }
+    function setChase(on) {
+      chase = on; zb.chase.setAttribute("aria-pressed", String(on)); box.classList.toggle("chase", on); hd = null; COL = null;
+      if (on) drawChase(); else view();
+      drawT();
+    }
+
     // pointer on the telemetry: the cursor follows (a finger drags it)
     const dOfX = (e) => { const r = cv.getBoundingClientRect(), pl = 44, pr = 8; return clamp((e.clientX - r.left - pl) / (r.width - pl - pr), 0, 1) * L; };
     let tDown = false;
@@ -353,9 +411,10 @@
       // between the nearest point and the next or the one before
       let s = bi, best = 1e18; for (const a of [mod(bi - 1, R.N), bi]) { const b = mod(a + 1, R.N), sx = C[b][0] - C[a][0], sy = C[b][1] - C[a][1], m2 = sx * sx + sy * sy || 1, f = clamp(((wx - C[a][0]) * sx + (wy - C[a][1]) * sy) / m2, 0, 1), qx = C[a][0] + sx * f - wx, qy = C[a][1] + sy * f - wy, d2 = qx * qx + qy * qy; if (d2 < best) { best = d2; s = a + f; } }
       return mod(s, R.N) / R.N * L; };
-    box.addEventListener("pointerdown", (e) => { if (e.target.closest && e.target.closest(".fm-z,.tn")) return; box.setPointerCapture(e.pointerId); ptrs.set(e.pointerId, local(e)); cancelAnimationFrame(anim);
+    box.addEventListener("pointerdown", (e) => { if (chase || (e.target.closest && e.target.closest(".fm-z,.tn"))) return; box.setPointerCapture(e.pointerId); ptrs.set(e.pointerId, local(e)); cancelAnimationFrame(anim);
       if (ptrs.size === 1) drag = { p: local(e), cx, cy, moved: false }; else if (ptrs.size === 2) { const [p1, p2] = [...ptrs.values()]; pinch = { d: Math.hypot(p1[0] - p2[0], p1[1] - p2[1]), u, m: [(p1[0] + p2[0]) / 2, (p1[1] + p2[1]) / 2], cx, cy }; drag = null; } });
     box.addEventListener("pointermove", (e) => {
+      if (chase) return;
       if (ptrs.has(e.pointerId)) ptrs.set(e.pointerId, local(e));
       if (pinch && ptrs.size === 2) { const [p1, p2] = [...ptrs.values()], d = Math.hypot(p1[0] - p2[0], p1[1] - p2[1]), m = [(p1[0] + p2[0]) / 2, (p1[1] + p2[1]) / 2], W = box.clientWidth, H = box.clientHeight; const nu = clamp(pinch.u * pinch.d / (d || 1), U_MIN, uFit * 1.6), wx = pinch.cx + (pinch.m[0] - W / 2) * pinch.u, wy = pinch.cy + (pinch.m[1] - H / 2) * pinch.u; u = nu; cx = wx - (m[0] - W / 2) * nu; cy = wy - (m[1] - H / 2) * nu; view(); return; }
       if (drag) { const p = local(e), dx = p[0] - drag.p[0], dy = p[1] - drag.p[1]; if (!drag.moved && Math.hypot(dx, dy) < 4) return; drag.moved = true; box.classList.add("drag"); if (ST.follow) { ST.follow = false; save(); zb.follow.setAttribute("aria-pressed", "false"); } cx = drag.cx - dx * u; cy = drag.cy - dy * u; view(); return; }
@@ -363,11 +422,14 @@
     });
     const up = (e) => { const was = drag; ptrs.delete(e.pointerId); if (ptrs.size < 2) pinch = null; if (ptrs.size === 0) { box.classList.remove("drag"); if (was && !was.moved) { const p = local(e), d = nearestD(p[0], p[1], e.pointerType === "mouse" ? 40 : 90); if (d != null) { stop(); setCur(d / BIN); } } drag = null; } };
     box.addEventListener("pointerup", up); box.addEventListener("pointercancel", up);
-    box.addEventListener("wheel", (e) => { e.preventDefault(); const p = local(e); zoomAt(Math.exp(clamp(e.deltaY, -120, 120) * (e.ctrlKey ? .01 : .0025)), p[0], p[1]); }, { passive: false });
-    box.addEventListener("dblclick", (e) => { if (e.target.closest && e.target.closest(".fm-z")) return; const p = local(e); glideAt(.4, p); });
+    box.addEventListener("wheel", (e) => { e.preventDefault(); if (chase) { camK = clamp(camK * Math.exp(clamp(e.deltaY, -120, 120) * .002), .4, 3); drawChase(); return; } const p = local(e); zoomAt(Math.exp(clamp(e.deltaY, -120, 120) * (e.ctrlKey ? .01 : .0025)), p[0], p[1]); }, { passive: false });
+    box.addEventListener("dblclick", (e) => { if (chase) return; if (e.target.closest && e.target.closest(".fm-z")) return; const p = local(e); glideAt(.4, p); });
     const glideAt = (k, p) => { const W = box.clientWidth, H = box.clientHeight, wx = cx + (p[0] - W / 2) * u, wy = cy + (p[1] - H / 2) * u, nu = clamp(u * k, U_MIN, uFit * 1.6); glide(wx - (p[0] - W / 2) * nu, wy - (p[1] - H / 2) * nu, nu, 300); };
     const zb = {}; root.querySelectorAll("[data-z]").forEach((b) => { zb[b.dataset.z] = b; b.addEventListener("click", () => {
       const W = box.clientWidth, H = box.clientHeight;
+      if (b.dataset.z === "chase") { setChase(!chase); return; }
+      if (chase && (b.dataset.z === "in" || b.dataset.z === "out")) { camK = clamp(camK * (b.dataset.z === "in" ? .75 : 1 / .75), .4, 3); drawChase(); return; }
+      if (chase) setChase(false);
       if (b.dataset.z === "in") glideAt(.6, [W / 2, H / 2]); else if (b.dataset.z === "out") glideAt(1 / .6, [W / 2, H / 2]); else if (b.dataset.z === "fit") { uFit = fitU(); glide((bx0 + bx1) / 2, (by0 + by1) / 2, uFit, 400); }
       else { ST.follow = !ST.follow; save(); b.setAttribute("aria-pressed", String(ST.follow)); if (ST.follow) { const q = atLine(LA, curD); glide(q[0], q[1], Math.min(u, uFit * .22), 450); } }
     }); });
@@ -394,10 +456,10 @@
       else if (e.key === "ArrowRight" || e.key === "ArrowLeft") { e.preventDefault(); stop(); setCur(cur + (e.key === "ArrowRight" ? 1 : -1) * (e.shiftKey ? 10 : 1)); }
     };
     document.addEventListener("keydown", onKey, true);
-    const onResize = () => { BW = box.clientWidth || BW; BH = box.clientHeight || BH; CW = cv.clientWidth; CH = cv.clientHeight; COL = null; layerKey = ""; const k = u / uFit; uFit = fitU(); u = uFit * k; lastU = 0; view(); };
+    const onResize = () => { BW = box.clientWidth || BW; BH = box.clientHeight || BH; CW = cv.clientWidth; CH = cv.clientHeight; COL = null; layerKey = ""; const k = u / uFit; uFit = fitU(); u = uFit * k; lastU = 0; view(); if (chase) drawChase(); };
     window.addEventListener("resize", onResize);
     const ro = window.ResizeObserver ? new ResizeObserver(onResize) : null; if (ro) { ro.observe(box); ro.observe(cv); }
-    const mq = window.matchMedia ? matchMedia("(prefers-color-scheme: dark)") : null, onTheme = () => { COL = null; layerKey = ""; drawT(); }; if (mq && mq.addEventListener) mq.addEventListener("change", onTheme);
+    const mq = window.matchMedia ? matchMedia("(prefers-color-scheme: dark)") : null, onTheme = () => { COL = null; layerKey = ""; drawT(); if (chase) drawChase(); }; if (mq && mq.addEventListener) mq.addEventListener("change", onTheme);
     function close() { stop(); cancelAnimationFrame(anim); document.removeEventListener("keydown", onKey, true); window.removeEventListener("resize", onResize); if (ro) ro.disconnect(); if (mq && mq.removeEventListener) mq.removeEventListener("change", onTheme); document.documentElement.style.overflow = prevOv; root.remove(); if (o.onClose) try { o.onClose(Math.round(cur)); } catch (e) { } }
     root.querySelector(".fm-x").addEventListener("click", close);
 

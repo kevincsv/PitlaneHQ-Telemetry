@@ -224,7 +224,9 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   Under it the speed of both laps, the gap and the pedals share one cursor with the map (hover or tap either), the part
   of the lap on screen shaded; ▶ plays both laps on the same clock at 1×, 2×, 4× or 8×. Keys: Esc closes, + − 0, the
   space bar plays, ← → move the cursor 5 m (Shift 50 m). The chips (Racing lines, Braking, Slowest points, Turns, A vs B
-  time) are kept on the device (`pw.fmap`). Closing it leaves the analyzer's cursor where the map's was. The phones do
+  time) are kept on the device (`pw.fmap`). "Chase" (beside the zoom buttons) puts the camera a little behind and
+  above lap A's car (an arrow on the road), turned with it, so the road, both lines, kerbs and turns ahead are seen in
+  perspective as the replay runs; the wheel and + − move the camera closer or further. Closing it leaves the analyzer's cursor where the map's was. The phones do
   not have it yet (no phone work for now, the owner's choice).
 - The race summary has "Race pace" against the cars around you (coach-and-model.md, `racePace`).
 - The race summary opens by itself on the PC about three seconds after a race is saved (`onRaceReport`), so it is

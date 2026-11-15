@@ -3653,7 +3653,10 @@ async function profGet0(q){const path="/community/profile?"+(q.me?"me=1":q.id?"i
 async function openProfile(q){let m=$("#profDlg");if(!m){m=document.createElement("div");m.id="profDlg";m.className="uidlg";document.body.appendChild(m)}
   const close=()=>{m.hidden=true;m.innerHTML=""};m.hidden=false;
   m.innerHTML=`<div class="bg"></div><div class="pn" role="dialog" aria-modal="true"><p class="note">${esc(Tx("Loading…","Cargando…","Lädt…","Carregando…"))}</p></div>`;m.querySelector(".bg").onclick=close;
-  let P;try{P=await profGet(q)}catch(e){m.querySelector(".pn").innerHTML=`<p class="note">${esc(/anonymous/i.test(e.message)?Tx("This driver is anonymous: their profile is private.","Este piloto es anónimo: su perfil es privado.","Dieser Fahrer ist anonym: sein Profil ist privat.","Este piloto é anônimo: o perfil é privado."):e.message)}</p><div class="uidlg-b"><button type="button" class="btn" id="profX">${esc(Tx("Close","Cerrar","Schließen","Fechar"))}</button></div>`;m.querySelector("#profX").onclick=close;return}
+  /* the window can be closed, or another profile opened, while this one loads: then this answer is not drawn */
+  const tok=m._tok=(m._tok||0)+1,gone=()=>m._tok!==tok||m.hidden||!m.querySelector(".pn");
+  let P;try{P=await profGet(q)}catch(e){if(gone())return;m.querySelector(".pn").innerHTML=`<p class="note">${esc(/anonymous/i.test(e.message)?Tx("This driver is anonymous: their profile is private.","Este piloto es anónimo: su perfil es privado.","Dieser Fahrer ist anonym: sein Profil ist privat.","Este piloto é anônimo: o perfil é privado."):e.message)}</p><div class="uidlg-b"><button type="button" class="btn" id="profX">${esc(Tx("Close","Cerrar","Schließen","Fechar"))}</button></div>`;m.querySelector("#profX").onclick=close;return}
+  if(gone())return;
   if(P.blocked){m.querySelector(".pn").innerHTML=`<div class="prof-h"><h2>${esc(P.name)}</h2></div><p class="note">${esc(Tx("You blocked this driver.","Has bloqueado a este piloto.",null,"Você bloqueou este piloto."))}</p><div class="uidlg-b" style="margin-top:14px"><button type="button" class="btn small" id="profUnb">${esc(Tx("Unblock","Desbloquear",null,"Desbloquear"))}</button><button type="button" class="btn" id="profX">${esc(Tx("Close","Cerrar","Schließen","Fechar"))}</button></div>`;
     m.querySelector("#profX").onclick=close;m.querySelector("#profUnb").onclick=async()=>{if(await modBlock({id:P.id},P.name,false)){LEAG.list=null;openProfile(q)}};return}
   const loc=locale(),day=t=>new Date(t).toLocaleDateString(loc,{day:"numeric",month:"short",year:"numeric"}),L=P.lics||{},um=v=>unMojibake(v||"");
@@ -9196,8 +9199,9 @@ async function openTrackPage(tid,name){let m=$("#trkDlg");if(!m){m=document.crea
   const close=()=>{m.hidden=true;m.innerHTML=""},X=`<div class="uidlg-b"><button type="button" class="btn" id="trkX">${esc(Tx("Close","Cerrar","Schließen","Fechar"))}</button></div>`,wire=()=>{m.querySelector(".bg").onclick=close;const x=m.querySelector("#trkX");if(x)x.onclick=close};
   m.hidden=false;const title=esc(unMojibake(name||"")||Tx("Track","Circuito","Strecke","Pista"));
   m.innerHTML=`<div class="bg"></div><div class="pn trkpg" role="dialog" aria-modal="true"><p class="note">${esc(Tx("Loading…","Cargando…","Lädt…","Carregando…"))}</p></div>`;wire();
-  let P;try{P=await cget(`/api/community/track?trackId=${tid}`)}catch(e){m.querySelector(".pn").innerHTML=`<p class="note err">${esc(e.message)}</p>${X}`;wire();return}
-  if(m.hidden)return;const lay=P.layout,tname=esc(unMojibake(P.track||name||"")),tg=gameChip(P.game||aGame());let map="";
+  const tok=m._tok=(m._tok||0)+1,gone=()=>m._tok!==tok||m.hidden||!m.querySelector(".pn");
+  let P;try{P=await cget(`/api/community/track?trackId=${tid}`)}catch(e){if(gone())return;m.querySelector(".pn").innerHTML=`<p class="note err">${esc(e.message)}</p>${X}`;wire();return}
+  if(gone())return;const lay=P.layout,tname=esc(unMojibake(P.track||name||"")),tg=gameChip(P.game||aGame());let map="";
   if(lay&&lay.x&&lay.x.length>10){const xs=lay.x,ys=lay.y,N=xs.length,W=600,H=360,pad=26,minx=Math.min(...xs),maxx=Math.max(...xs),miny=Math.min(...ys),maxy=Math.max(...ys),k=Math.min((W-2*pad)/(maxx-minx||1),(H-2*pad)/(maxy-miny||1)),f=q=>q.map(z=>z.toFixed(1)).join(",");
     const Q=i=>{i=((i%N)+N)%N;return[pad+(xs[i]-minx)*k+(W-2*pad-(maxx-minx)*k)/2,H-pad-(ys[i]-miny)*k-(H-2*pad-(maxy-miny)*k)/2]},out=(q,r)=>{const dx=q[0]-W/2,dy=q[1]-H/2,mm=Math.hypot(dx,dy)||1;return[q[0]+dx/mm*r,q[1]+dy/mm*r+4]};
     const pl=`${xs.map((_,i)=>f(Q(i))).join(" ")} ${f(Q(0))}`,turns=(P.turns||[]).filter(v=>v>=0&&v<1);

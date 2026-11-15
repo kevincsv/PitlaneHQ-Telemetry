@@ -32,7 +32,9 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   experimental ones too (not on a PC without Pro), and the lap's traces of speed, throttle/brake, delta and gear, `drawLiveTraces`)
   and Compare laps, live (`renderLiveCmp`/`tickLiveCmp`: the lap now against B, "My best" in purple, the last lap, other
   laps, and "▲ Next level" / "★ Record" only when the model has a full-telemetry lap of someone else, corner by corner by
-  the official turns). Its chart and Full mode's traces (`drawLapRows`, the owner's design A) draw four rows, Delta (one
+  the official turns). A panel, Full's traces or Compare's chart scrolled out of sight is not drawn until it comes back
+  (`LIVE_OFF`, `liveWatch`), and the charts read their size from a ResizeObserver (`cvSize`), never by laying the page out
+  on each redraw: with every panel on, Full made the PC app freeze in a race (fixed in 0.9.24). Its chart and Full mode's traces (`drawLapRows`, the owner's design A) draw four rows, Delta (one
   line over its zero), Speed, Throttle · brake (throttle up and brake down from one axis) and Gear, B dashed, the corners
   as bands named T1… under the chart; on a wide screen a column on the left gives each row's name and its values at the
   cursor (A / B). A hole in B's telemetry (a lap may miss up to a tenth) is crossed in a straight line for the deltas

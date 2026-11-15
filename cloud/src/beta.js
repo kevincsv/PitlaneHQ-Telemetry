@@ -16,7 +16,7 @@ export async function betaGate(req, env, url) {
   if (p === "/robots.txt") return new Response("User-agent: *\nDisallow: /\n", { headers: { "content-type": "text/plain; charset=utf-8" } });
   // the app served here talks to this server, never to pitlanehq.app's
   if (p === "/server.json") return new Response(JSON.stringify({ url: url.origin }), { headers: { "content-type": "application/json", "cache-control": "no-cache" } });
-  if (p === "/" || APP_FILE.test(p) || p === "/live" || p === "/voice/ice" || p.startsWith("/dl/")) return null;
+  if (p === "/" || p === "/app" || APP_FILE.test(p) || p === "/live" || p === "/voice/ice" || p.startsWith("/dl/")) return null;
   // /api/ is the laps and sessions (My laps, Analysis, the coach): the same accounts' data as on pitlanehq.app
   if (p.startsWith("/account/") || p.startsWith("/community/") || p.startsWith("/api/") || p === "/team" || p.startsWith("/team/")) {
     let a = null;

@@ -215,7 +215,9 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   clock, four times as fast, with the gap in metres and seconds and a bar to scrub (`cmpReplay`; the phones' TrackMap).
 - "⛶ Full screen" beside "▶ Replay" on the lap compare map (Analysis → Laps and the Coach, the PC app and the web;
   `openFullMap` in index.html, `web/dist/pitwall-fullmap.js`) opens the map over the whole window. The road is drawn at
-  its real width (the edges the drivers' laps give, `/community/trackmaps` `edges`, else 13 m), with both laps' racing
+  its real width, the same way up as the small map it was opened from (`pickRot`, the rule and angle of `fitTurn`; `frame`
+  for a small map of another size), with lap B's line wider under lap A's so both show where they are on top of each
+  other (the edges the drivers' laps give, `/community/trackmaps` `edges`, else 13 m), with both laps' racing
   lines on it (each lap's path put on the road: from the game's position as it is, a path by dead reckoning fitted onto
   the layout; a lap without a path or one that does not fit has no line), A's and B's braking points ("A 182→96" beside
   them when zoomed in) and slowest points, the turns with their names (a press zooms on the turn), the sectors, the

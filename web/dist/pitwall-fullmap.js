@@ -200,7 +200,11 @@
 
     // the world: the road's frame turned so the circuit fills the screen (y down for the screen)
     let rot = 0;
-    const pickRot = () => { const W = box.clientWidth || 800, H = box.clientHeight || 500; let best = 0, bk = 0; for (let d = 0; d < 180; d += 3) { const a = d * Math.PI / 180, c = Math.cos(a), s = Math.sin(a); let x0 = 1e9, x1 = -1e9, y0 = 1e9, y1 = -1e9; for (let i = 0; i < R.N; i += 4) { const u = R.x[i] * c - R.y[i] * s, v = R.x[i] * s + R.y[i] * c; x0 = Math.min(x0, u); x1 = Math.max(x1, u); y0 = Math.min(y0, v); y1 = Math.max(y1, v); } const k = Math.min(W / (x1 - x0 || 1), H / (y1 - y0 || 1)); if (k > bk * 1.0001) { bk = k; best = a; } } return best; };
+    // the same way up as the small map the driver opened it from: north up, turned only when that makes the track at
+    // least 15 % bigger in the small map's frame (fitTurn in index.html, the same rule and the same angle)
+    const pickRot = () => { const x = o.map.x, y = o.map.y, n = x.length, F = o.frame || [600, 400, 26], W = F[0], H = F[1], pad = F[2];
+      const size = (a) => { const c = Math.cos(a), sn = Math.sin(a); let x0 = 1e9, x1 = -1e9, y0 = 1e9, y1 = -1e9; for (let i = 0; i < n; i += Math.max(1, n >> 8)) { const u = x[i] * c - y[i] * sn, v = x[i] * sn + y[i] * c; if (u < x0) x0 = u; if (u > x1) x1 = u; if (v < y0) y0 = v; if (v > y1) y1 = v; } return Math.min((W - 2 * pad) / (x1 - x0 || 1), (H - 2 * pad) / (y1 - y0 || 1)); };
+      let best = 0, bk = size(0); const k0 = bk; for (let d = 3; d < 180; d += 3) { const a = d * Math.PI / 180, k = size(a); if (k > bk) { bk = k; best = a; } } return bk > k0 * 1.15 ? best : 0; };
     rot = pickRot();
     const rc = Math.cos(rot), rs = Math.sin(rot);
     const Wp = (x, y) => [x * rc - y * rs, -(x * rs + y * rc)];
@@ -279,8 +283,9 @@
       // widths in metres: the real road when it is big enough, never thinner than a few pixels
       grass.setAttribute("stroke-width", f1(Math.max(34, 26 * u)));
       casing.setAttribute("stroke-width", f1(10 * u)); roadP.setAttribute("stroke-width", f1(1.4 * u));
-      dSegs.forEach((s) => s.setAttribute("stroke-width", f1(Math.max(2.2, 4 * u))));
-      [lnA, lnB].forEach((l) => l && l.setAttribute("stroke-width", f1(clamp(2.6 * u, .5, 6 * u))));
+      dSegs.forEach((s) => s.setAttribute("stroke-width", f1(Math.max(2.2, 7 * u))));
+      // lap B is drawn wider under lap A, so it shows on both sides of it where the two lines are on top of each other
+      if (lnB) lnB.setAttribute("stroke-width", f1(clamp(5.6 * u, .6, 9 * u))); if (lnA) lnA.setAttribute("stroke-width", f1(clamp(2.2 * u, .5, 6 * u)));
       sfL.setAttribute("stroke-width", f1(Math.max(2.2, 3.5 * u))); secL.forEach((s) => s.setAttribute("stroke-width", f1(Math.max(1.2, 2 * u))));
       secT.forEach((s) => { const w = s.ow, k = -(w.w + 18 * u); s.el.setAttribute("x", f1(w.a[0] + w.nx * k)); s.el.setAttribute("y", f1(w.a[1] + w.ny * k)); s.el.setAttribute("font-size", f1(11 * u)); });
       const near = u < uFit * .45; // close enough for the numbers beside each point
@@ -417,10 +422,10 @@
       const cutAt = (d, col, w) => { let dd = d - curD; if (dd < -back) dd += L; if (dd < -back || dd > far) return; const i = mod(Math.round(d / step), N), l = P(EL[i]), r = P(ER[i]); if (!l || !r) return; x.strokeStyle = col; x.lineWidth = Math.max(1.5, w * f / l[2]); x.beginPath(); x.moveTo(l[0], l[1]); x.lineTo(r[0], r[1]); x.stroke(); };
       cutAt(0, "#fff", .8); for (let j = 1; j < cnt; j++) cutAt(j / cnt * L, COL.mu, .4);
       // the racing lines, B under A, each as a few paths of one width
-      const lineAt = (ln, col) => { if (!ln || !ST.lines) return; const d0 = Math.max(0, curD - back - 10), d1 = Math.min((ln.length - 1) * BIN, curD + far), byW = new Map(); let prev = null;
-        for (let d = d0; d <= d1; d += d - curD < 150 ? 2.5 : 5) { const pp = P(atLine(ln, d)); if (pp && prev) { const w = Math.round(clamp(.35 * f / pp[2], 1.2, 7) * 2) / 2; let p = byW.get(w); if (!p) { p = new Path2D(); byW.set(w, p); } p.moveTo(prev[0], prev[1]); p.lineTo(pp[0], pp[1]); } prev = pp; }
+      const lineAt = (ln, col, wk) => { if (!ln || !ST.lines) return; const d0 = Math.max(0, curD - back - 10), d1 = Math.min((ln.length - 1) * BIN, curD + far), byW = new Map(); let prev = null;
+        for (let d = d0; d <= d1; d += d - curD < 150 ? 2.5 : 5) { const pp = P(atLine(ln, d)); if (pp && prev) { const w = Math.round(clamp(.35 * wk * f / pp[2], 1.2 * wk, 7 * wk) * 2) / 2; let p = byW.get(w); if (!p) { p = new Path2D(); byW.set(w, p); } p.moveTo(prev[0], prev[1]); p.lineTo(pp[0], pp[1]); } prev = pp; }
         x.strokeStyle = col; x.lineCap = "round"; byW.forEach((p, w) => { x.lineWidth = w; x.stroke(p); }); };
-      lineAt(LB, COL.b); lineAt(LA, COL.a);
+      lineAt(LB, COL.b, 1.9); lineAt(LA, COL.a, 1);
       // braking and slowest points ahead, with their speeds
       x.font = "600 12px " + COL.font; x.textBaseline = "middle";
       PX.forEach((p) => { if ((p.kind === "brk" && !ST.brk) || (p.kind === "min" && !ST.mins)) return; const dd = p.d - curD; if (dd < -back || dd > far) return; const pp = P(atLine(p.lap === "a" ? LA : LB, p.d)); if (!pp) return; const rr = clamp(.9 * f / pp[2], 2.5, 9), col = p.lap === "a" ? COL.a : COL.b;

@@ -9251,7 +9251,7 @@ async function commFullMap(s,laps,f,ref,mb){if(mb._busy)return;mb._busy=true;mb.
     for(let i=0;i<15&&!turnsFor(s.trackId,g);i++)await new Promise(r=>setTimeout(r,100));
     const L=n*BIN,cs=officialCorners(s.trackId,g,map.x.length,L)||trackCorners(map,L),names=turnNamesFor(s.trackId,g),cnt=Math.max(A.sectors?.length||0,B.sectors?.length||0)||3,zones=l=>brakeZones(serOf(l));
     PW_FULLMAP.open({map,n,A:{name:A.name+" "+fmtT(A.time),ser:sa.arr,xy:A.xy},B:{name:B.name+" "+fmtT(B.time),ser:sb.arr,xy:B.xy},bColor:"--blue",
-      corners:cs.map(c=>({n:c.n,d:c.d,name:names&&names[c.n-1]||""})),brA:zones(A),brB:zones(B),sectors:cnt,start:0,T:(en,es,pt)=>Tx(en,es,null,pt),spd,spdU,fmtT})}
+      frame:[360,250,22],corners:cs.map(c=>({n:c.n,d:c.d,name:names&&names[c.n-1]||""})),brA:zones(A),brB:zones(B),sectors:cnt,start:0,T:(en,es,pt)=>Tx(en,es,null,pt),spd,spdU,fmtT})}
   catch(e){uiNotice(e.message)}finally{mb._busy=false;mb.classList.remove("busy")}}
 let COMM_ALL=[];
 /* Recent records: the fastest lap of every car and track, the newest first, with the lap it beat; filtered by the

@@ -62,7 +62,16 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   Telemetry also counts, once a day each and after 20 seconds on the screen, the panels it shows (`live:<panel>`) and its
   mode (`live:mode.basic|full|cmp`) for Layout's "Most used by the community" (telemetry.md); those keys stay out of
   the admin page's features and users.
-  The server keeps keys matching `^(view|act|game|live):[a-z0-9_.-]{1,40}$` only, 100 a batch, 1000 per key, added into one row
+  Which overlays are used: the agent (`ovusage.go`) counts, once a minute while the driver is in the car in a real
+  session, each native overlay open (`ov:<overlay>`, minutes) and sends them with the same POST `/community/usage`
+  (device pc) every ten minutes, never in demo data, never for an admin, dropped when signed out. The race report the PC
+  already sends for the overlay feedback window (POST `/community/feedback/ovrace`, iRacing and LMU races) also adds
+  `ovrace:<overlay>` for each overlay open in it, once per race (a session told again counts once); a batch can never
+  bring `ovrace:` keys. Both stay out of the features, devices and users and make the Analytics' Overlays card
+  (`overlays` in the answer, `overlaysOf` in usagelib.js, `admOverlaysHTML` in pitwall-admin.js): drivers, time open and
+  races per overlay, the most drivers first. Counting began with the server and agent of 2026-11-15 (before it only "an
+  overlay was opened from the app" was counted, without which one). The phones' admin panel does not show it yet.
+  The server keeps keys matching `^(view|act|game|live|ov):[a-z0-9_.-]{1,40}$` only, 100 a batch, 1000 per key, added into one row
   per day, account, device and key (rows over 400 days go, hourly). `ms` (how long the page was on the screen, 10 minutes
   a batch at most) adds to the account's use for the feedback window. One use of the same action with the same thing within a
   minute counts once (a screen that opens itself again when a setting changes in it, like the overlay settings, is one use).
@@ -115,7 +124,7 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   nobody drove greyed: drivers and sessions with their change, new to the game, races, laps, hours, sessions a driver;
   then a chooser of the game (`admGameHTML`, `ADM.game`, no new request) with its tiles (drivers and new to it, sessions
   and races, time driven and laps, counted by the apps), its drivers per day and the tracks and cars driven most), What drivers use (by area, the share of the active drivers and the
-  uses, what each counts on hover), Devices (drivers) and Up to date (devices on each app's newest version, the older ones
+  uses, what each counts on hover), Overlays (each overlay's drivers, time open while driving and races), Devices (drivers) and Up to date (devices on each app's newest version, the older ones
   on hover). Users merges the answer into every account.
 - The admin page's look (Nov 2026): the sections as a dark well with the chosen one raised, every part a card with its
   title in the display font, the key numbers as tiles, the rows as cards (`#v-admin` rules and `.an-*` in index.html).

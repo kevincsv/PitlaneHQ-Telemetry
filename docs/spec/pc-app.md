@@ -6,7 +6,7 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   (`msix/AppxManifest.xml`, `msix/Assets/`) of the same app folder, built by `windows.yml` as the run's
   `PitlaneHQ-Store` artifact when the secrets `STORE_IDENTITY_NAME`, `STORE_PUBLISHER` and `STORE_PUBLISHER_NAME`
   (Partner Center → Product identity) are set, version `appVersion` + ".0", uploaded to Partner Center by hand (the
-  Store signs it); never on the downloads page or the release. Installed from there (`storeApp()` in store_windows.go,
+  Store signs it); a test build also puts it unlisted at `/dl/beta/PitlaneHQ-Store-<version>.msix` (the run's artifact can fail when GitHub's artifact storage is full); never on the downloads page or the release. Installed from there (`storeApp()` in store_windows.go,
   `Store.IsPackaged` in Store.cs: the process has a package), the app's updater is off (no checks, no banner, no
   Update now; Settings says "The Microsoft Store keeps Pitlane HQ up to date" and the window hides its Updates card),
   and Start with Windows is the package's startup task (`PitlaneHQStartup`, off until turned on): the agent writes no

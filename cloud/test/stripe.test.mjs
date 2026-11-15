@@ -149,5 +149,12 @@ console.log("stripe.test: ok");
   assert.equal(proOf({ trial_until: Date.now() - 1 }).pro, false, "the trial ended");
   assert.equal(proOf({ pro: 1, pro_src: "subscription", pro_until: 0, trial_until: until }).proSrc, "subscription", "a purchase wins");
   db.prepare("UPDATE app_state SET v='0' WHERE k='pro_gate'").run(); proGateReset();
+  // an admin's donation is a test: kept as 'test', no badge, no offer, never counted
+  acct("acctadmin1", "a1@x.io");
+  const body = JSON.stringify({ id: "evt_adm", type: "checkout.session.completed", data: { object: { id: "cs_adm", mode: "payment", payment_status: "paid", payment_intent: "pi_adm", payment_link: "plink_x", amount_total: 500, currency: "usd", client_reference_id: "support-acctadmin1" } } });
+  const r = await (await stripeWebhook(new Request("https://x/stripe/webhook", { method: "POST", body, headers: { "stripe-signature": sign(body) } }), env, emailHash, { supportLink: "plink_x", founding: foundingCheck, isAdmin: (e, id) => id === "acctadmin1" })).json();
+  assert.equal(r.test, true);
+  assert.equal(db.prepare("SELECT status FROM pro_orders WHERE id='stripe:don:cs_adm'").get().status, "test");
+  assert.deepEqual([row("acctadmin1").supporter, row("acctadmin1").founder], [0, 0], "no badge for a test");
 }
 console.log("founding, trial and launch month ok");

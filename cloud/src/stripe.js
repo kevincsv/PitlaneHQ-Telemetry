@@ -69,7 +69,10 @@ export async function stripeWebhook(req, env, emailHash, opts = {}) {
       const pi = typeof o.payment_intent === "string" ? o.payment_intent : (o.payment_intent && o.payment_intent.id) || null;
       const amount = Number.isFinite(+o.amount_total) && o.amount_total !== null ? Math.round(+o.amount_total) : null;
       const cur = /^[a-z]{3}$/i.test(String(o.currency || "")) ? String(o.currency).toLowerCase() : null;
-      await env.DB.prepare("INSERT INTO pro_orders (id, account_id, email_hash, kind, status, until, at, amount, currency, ref) VALUES (?1,?2,?3,'supporter','on',0,?4,?5,?6,?7) ON CONFLICT(id) DO NOTHING").bind(donOrder(o.id), accountId, eh, now, amount, cur, pi).run();
+      // an admin's donation is a test of the link: kept as 'test', never counted, no badge and no founding offer
+      const test = !!(accountId && opts.isAdmin && opts.isAdmin(env, accountId));
+      await env.DB.prepare("INSERT INTO pro_orders (id, account_id, email_hash, kind, status, until, at, amount, currency, ref) VALUES (?1,?2,?3,'supporter',?8,0,?4,?5,?6,?7) ON CONFLICT(id) DO NOTHING").bind(donOrder(o.id), accountId, eh, now, amount, cur, pi, test ? "test" : "on").run();
+      if (test) return json({ ok: true, test: true });
       if (accountId) await env.DB.prepare("UPDATE accounts SET supporter=1, supporter_src=COALESCE(supporter_src,'stripe') WHERE id=?1").bind(accountId).run();
       // the founding supporter offer needs founding.min dollars or more in all (smaller gifts keep the badge alone)
       const founder = opts.founding ? await opts.founding(env, accountId, eh).catch(() => false) : false;

@@ -12,7 +12,8 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   a thin amber outline. On computers the main tabs are a 208 px sidebar with the logo and each tab's icon and word; on
   phones and narrow windows the bottom bar, and the header on one line (the version moves to Settings → About).
   The lap analyzer (Pit Wall Workspace, `pw3-laps` in index.html): Lap A vs lap B across the top, then four numbers
-  (A vs B, Costs the most, Furthest behind, Corners vs straights, and Gains most when A gains somewhere), then three
+  (A vs B, Costs the most, Furthest behind, Corners vs straights, and Gains most when A gains somewhere; on phones and
+  narrow windows two per row, an odd last one across the whole width, so every value reads in full), then three
   columns. Left: Laps (My laps and Community with its PRO badge) and Sectors (a table, A, B and the gap). Middle: the
   charts in one panel, its Show chips (filled amber when on) and then one titled chart per channel on one distance axis
   (Speed, Gap to lap B, Throttle, Brake, Gear, Steering, Line), each with its legend and, on the right, the values at

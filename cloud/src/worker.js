@@ -25,7 +25,7 @@ import { noteCar } from "./carfamily.js";
 import VIEWER from "./viewer.html";
 import { community } from "./community.js";
 import { fillSectors } from "./lapsectors.js";
-import { accounts, sessionAccount, emailHash } from "./accounts.js";
+import { accounts, sessionAccount, emailHash, isAdmin } from "./accounts.js";
 import { live } from "./live.js";
 import { teamRoute } from "./team.js";
 import { seoPage, indexNow, notFound } from "./seo.js";
@@ -753,7 +753,7 @@ async function handle(req, env, ctx) {
     // Lemon Squeezy tells the server about purchases: Pitlane HQ Pro on the account
     if (url.pathname === "/lemonsqueezy/webhook" && req.method === "POST") return lemonWebhook(req, env);
     // Stripe tells the server about Pro purchases (stripe.js)
-    if (url.pathname === "/stripe/webhook" && req.method === "POST") return stripeWebhook(req, env, emailHash, { supportLink: (PLANS.donate && PLANS.donate.link) || "", founding: foundingCheck });
+    if (url.pathname === "/stripe/webhook" && req.method === "POST") return stripeWebhook(req, env, emailHash, { supportLink: (PLANS.donate && PLANS.donate.link) || "", founding: foundingCheck, isAdmin });
     if (url.pathname === "/voice/ice" && req.method === "GET") return voiceIce(env);
     // the admin page: the app opened on it (only the admins see anything there)
     if (url.pathname === "/admin" && req.method === "GET") return Response.redirect(url.origin + "/app#admin", 302);

@@ -9,7 +9,7 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   minutes, never in the car (the PC while the car is on track), in demo data, from an overlay window, over another window
   or to an admin in admin mode; shown, it is marked at once (POST `/community/feedback/seen`), so Not now waits six more
   hours of use or two races. "Send feedback" is always in Settings → About and the inbox, and a round floating
-  button with a square speech bubble sits at the bottom right of every screen (its menu: "Send feedback", the stars and the text as often as they like, "Chat with support", or "Donate" (the Stripe link from `donateUrl()`, PC and web only, hidden when there is none such as the Steam build; the phones have no donation link), `fbMenu`; an admin in admin mode goes straight to the support inbox) ("Support", `fbFab` in index.html, counted
+  button with a square speech bubble sits at the bottom right of every screen (its menu: "Send feedback", the stars and the text as often as they like, "Chat with support", "Invite a friend" (Community → Friends), or "Donate" (the Stripe link from `donateUrl()`, PC and web only, hidden when there is none such as the Steam build; the phones have no donation link), `fbMenu`; an admin in admin mode gets the same menu with "Support inbox" in place of "Chat with support") ("Support", `fbFab` in index.html, counted
   `act:feedback_button`; PC app, web and phones): signed in only, never for a visitor, in an overlay window or in demo
   data, hidden while the car is on the track and under any open window, a toast or the voice call's bar, above the
   phone-width tab bar. It opens the support chat (`supportOpen`/`SUP` in index.html, `cloud/src/support.js`, the routes
@@ -23,7 +23,7 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   `/community/support/unread` {n, last?, at?} is one row by key, polled every 2 minutes while the page is on the screen
   (and the phones the same). The button carries the count of Support's replies not read ("1"… "9+", amber like the
   inbox's), and a reply not read is an inbox notice "Support replied" with its first line, both cleared when the chat
-  opens. For an admin with admin mode on the button opens the support inbox and counts the conversations with messages
+  opens. For an admin with admin mode on the menu's "Support inbox" opens the support inbox and the button counts the conversations with messages
   not read (GET `/community/admin/support` {items [{accountId, nick, last, lastAt, lastSupport, unread}], unread}, GET
   `/community/admin/support/unread` {n}): a conversation (GET `/community/admin/support/:id` {accountId, nick, gone,
   msgs [{id, support, text, created, read, rating, device, v, view, kind, style}]}, marking the driver's read) with the

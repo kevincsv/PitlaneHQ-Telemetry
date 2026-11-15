@@ -163,7 +163,9 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   it was, its source with a link to it in Stripe, the donate button the account pressed that day, what it unlocked (the ♥
   Supporter badge with the first donation, the founding offer with the one that reached `founding.min`) and its status;
   totals in all, in 30 and 7 days, people who paid and supporters; totals by month and by week; the supporters with their
-  badge's source, the founding offer, what they gave, their payments and when they were last in the app; admin test
+  badge's source, the founding offer, what they gave, their payments and when they were last in the app; Send the thank-you on a paid
+  donation sends the thank-you email by hand once the admin types the donor's email, which must match the donation's or
+  its account's (`POST /community/admin/metrics/payments/thanks`); admin test
   donations are never part of it; `GET /community/admin/metrics/payments`, `paymentslib.js`; then PRO badge
   presses by feature, the PRO window, pricing, the donation bar shown, pressed and refused, donations and what they
   raised, invites, the PCs with no account) and Data (is every counter arriving, the job with Add up now and Add up

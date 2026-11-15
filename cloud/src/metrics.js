@@ -13,7 +13,8 @@
 //   job's last run and the database rows the Analytics cost in the last 7 days
 // GET  /community/admin/metrics/account?id=  one account's steps with their days and where it came from
 // GET  /community/admin/links, POST {name, place, tag?}, DELETE /community/admin/links/<tag>  the tagged links
-import { sessionAccount, isAdmin, testersSet } from "./accounts.js";
+import { sessionAccount, isAdmin, testersSet, emailHash } from "./accounts.js";
+import { sendThanks, langOf } from "./email.js";
 import { metricsAnswer, healthOf, timelineOf, cleanTag, weekOf, addDays, weeksBetween, dayOf, TARGETS, DAY } from "./metricslib.js";
 import { weeklyMetrics as runWeekly } from "./metricsjob.js";
 import { SRC_RE } from "./sourceslib.js";
@@ -80,6 +81,20 @@ export async function metricsRoute(req, env, url) {
     ]);
     const staff = (id) => isAdmin({ ...env, LOCAL: "0" }, id) || testersSet(env, id);
     return json(paymentsOf({ orders, accounts, clicks, seen, patrons: (patrons[0] || {}).n || 0, staff, min: FOUNDING.min, now }));
+  }
+  // the thank-you email by hand for one donation (a donation from before the email existed): the admin types the donor's
+  // email, which must be the one the donation or its account was made with (the server keeps only its hash)
+  if (p === "/community/admin/metrics/payments/thanks" && m === "POST") {
+    const b = await req.json().catch(() => null), id = String((b && b.id) || ""), to = String((b && b.email) || "").trim().toLowerCase();
+    if (!id || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(to)) return err("an order and an email are needed", 400);
+    const o = await env.DB.prepare("SELECT o.account_id, o.email_hash, o.status, a.email_hash AS acc_eh, a.founder FROM pro_orders o LEFT JOIN accounts a ON a.id=o.account_id WHERE o.id=?1 AND o.kind='supporter'").bind(id).first();
+    if (!o || o.status !== "on") return err("no paid donation with that id", 404);
+    const eh = await emailHash(env, to);
+    if (eh !== o.email_hash && eh !== o.acc_eh) return err("that is not the email of this donation or its account", 400);
+    const sl = o.account_id ? await env.DB.prepare("SELECT lang FROM support_msgs WHERE account_id=?1 AND from_support=0 AND lang IS NOT NULL ORDER BY created DESC LIMIT 1").bind(o.account_id).first().catch(() => null) : null;
+    const l = ["en", "es", "pt"].includes(b && b.lang) ? b.lang : langOf(sl && sl.lang, "");
+    const ok = await sendThanks(env, to, { l, founder: !!o.founder, account: !!o.account_id, f: FOUNDING });
+    return ok ? json({ ok: true, lang: l }) : err("the email could not be sent", 502);
   }
   if (p === "/community/admin/metrics/run" && m === "POST") {
     const b = await req.json().catch(() => null);

@@ -22,7 +22,9 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   `rec` and `trend` on /profile?me=1; the latest records; you in the community), Leaderboards (the table with the
   sectors, 20 drivers in view and the rest scrolling inside under its header, and the track map coloured by sector against your lap, or the record when you have none: the shape and
   where each sector ends from a lap of the board with its telemetry, `commMapGeo`) and Recent records. The discipline
-  cards sit above Leaderboards and Recent records and filter both; Leaderboards has no "Only mine" switch.
+  cards sit above Leaderboards and Recent records and filter both; Leaderboards has no "Only mine" switch. On a phone
+  (520 px or less) the cards are one per line with the count on the right, the track and car pickers stack, and the table
+  is Pos, Driver, Time and Gap (the sectors are on wider screens), the name cut short with "…" when it does not fit.
   A Le Mans Ultimate leaderboard has "This car / Whole class" (`CMF.whole`, `COMM_CLS` in index.html; the phones the
   same): every LMU class mixes many car models, so the class view is each driver's best lap of any car of that class on
   the track, one per driver, with their car (`community_laps.cls`, migration 0071, `cloud/src/lmuclass.js`: GET

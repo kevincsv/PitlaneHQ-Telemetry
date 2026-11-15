@@ -171,6 +171,9 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
     newest first; a card opens that session) and My sessions and Race summaries side by side. The session pills
     (Race, Practice…) are all one width with the word centred, a star sits beside the fastest lap of each car and track,
     and every race summary row ends in an amber "Summary ›" and opens that race's report.
+    On a phone of 420 px or less the sessions table leaves out Laps so the best lap stays on the screen.
+  - On phones (820 px or less) the game switch and the sub-tabs take the whole width in equal parts, and a screen's own
+    tabs (Community's Summary, Leaderboards…) stay on one line and scroll sideways when they do not fit.
   - My sessions ends with Driver notes (your marks on other drivers, with its search), in the design's panel.
   - Statistics (`renderStatsView`; `renderStats` is the live Stats widget's): the period (4 weeks, 3 months, 12 months,
     All) at the top right, then six numbers of the period with the change on the period before: Laps, Time on track,

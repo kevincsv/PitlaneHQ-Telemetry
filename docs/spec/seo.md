@@ -72,7 +72,8 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   record page shows its drivers, the gap from the record to P10 (or the last place) and its newest lap, and links the
   other cars driven at that track (those with 3 drivers or more). The web's landing shows its screenshots as WebP
   (`landing/<lang>/<name>-1440.webp` and the full size by srcset; the overlays' `ov-*.webp` with their sizes), and
-  "/" loads Google Fonts without holding up the first paint (`media="print"`, swapped on load).
+  "/" is the light landing for a visitor (`cloud/src/landing.js`, `docs/spec/landing-and-demo.md`), with index.html's
+  own head, JSON-LD and <noscript>, and the web app is at /app (canonical "/"); "/" loads Google Fonts without holding up the first paint (`media="print"`, swapped on load).
   Every file in `web/dist` (the landing's screenshots and laps, the drivers' flags) is one the worker serves (`isAppFile`;
   `seo.test.mjs` checks it), and the landing's header links keep their names on a phone, where only their icons show.
 - `/privacy` (the privacy policy), `/terms` (the terms of service, linked from Google's sign-in screen) and `/delete-account` (how to delete an account, from the app, the web or by email),

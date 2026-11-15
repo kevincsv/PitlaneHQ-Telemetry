@@ -26,3 +26,16 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   steps"; the footer. No community numbers on it (too few yet, the owner's choice). The screenshots are the app with
   its demo data, without the demo badge and with plausible names (never the owner's). "Create account" scrolls to the
   form at the top; a visitor never enters the app on invented data (`sampleOn()` is always false). Never on the PC app.
+- The light landing (2026-11-15): a visitor's "/" (no query, or only utm_*, ref, fbclid, gclid, msclkid) is not the
+  2 MB app but the same landing made light by the server (`cloud/src/landing.js`): `web/dist/landing.html` (made by
+  `node tools/landing-build.js` from the app as a visitor sees it: the html/body attributes, the header, the donation
+  bar's place and the sign-in panel in the three languages) filled with index.html's head, every style of the app and
+  its <noscript>, `pitwall-landing.js` and `pitwall-tour.js`, so it always looks like the app it opens. Run the build
+  again when the header or the sign-in panel change (the styles, head and tour follow by themselves).
+  `pitwall-landing.js` gives the tour what it reads from the app (COMPANION, LANG, `donateUrl()`, the language window
+  the first time and from the header) and draws the donation bar as the app does (pw.donHide). Anything that needs the
+  app opens it at `/app` (index.html, the web app's address): a click or tap in the sign-in panel (its field or button
+  then opens there, `pw.landAuth`, read by pitwall-tour.js), "Create account", "Post your league", "Send feedback".
+  Someone signed in on that browser (pw.sec.account) or an address with a #section goes to `/app` before anything
+  shows. "/" with the app's own parameters (a sign-in coming back, a league, ?embed) is still the app, and the
+  service worker keeps the landing and the app apart (`sw.js`). Lighthouse on a phone, 62 → 98.

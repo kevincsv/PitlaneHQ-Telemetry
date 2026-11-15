@@ -1,0 +1,29 @@
+<html lang="en" class="companion webapp phone signwall" data-theme="dark">
+<!-- The light landing of "/" (tools/landing-build.js). The server (cloud/src/landing.js) puts index.html's head, styles and
+     noscript, pitwall-landing.js and pitwall-tour.js, where the markers are. -->
+<!--INDEX-HEAD-->
+<body>
+<!--INDEX-NOSCRIPT-->
+<div class="wrap"><header class="top"><div class="brand"><i aria-hidden="true"></i>Pitlane HQ</div><span class="version-badge" id="appVersion" aria-label="Pitlane HQ version"><!--VERSION--></span></header><div class="donbar" id="donBar" role="note" hidden=""></div><section class="view" id="v-me"><div id="meBody"><!--AUTH--></div></section></div>
+<template id="lpAuth-en"><div class="panel me-auth"><h2>Sign in</h2><form class="me-form" id="meLog" autocomplete="on">
+      <label><span class="label">Email</span><input type="email" id="mlE" required="" autocomplete="username"></label>
+      <label><span class="label">Password</span><input type="password" id="mlP" required="" autocomplete="current-password"></label>
+      <button class="btn primary" type="submit">Sign in</button><p class="note err" id="mlErr" style="margin:0"></p><p class="note" style="margin:0"><a href="#" class="acc" id="mlForgot">Forgot your password?</a></p>
+      <p class="note" style="margin:0">You stay signed in on this device.</p></form><div class="me-steam pair"><div class="me-oab"><button type="button" class="btn" id="mlSteam">Continue with Steam</button><button type="button" class="btn dc" id="mlDisc"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="currentColor"><path d="M19.6 5.4A17 17 0 0 0 15.4 4l-.5 1a15.6 15.6 0 0 0-5.8 0l-.5-1a17 17 0 0 0-4.2 1.4C1.7 9.4 1 13.3 1.3 17.1a17 17 0 0 0 5.2 2.6l1.1-1.8c-.6-.2-1.2-.5-1.7-.8l.4-.3a12.1 12.1 0 0 0 11.4 0l.4.3c-.5.3-1.1.6-1.7.8l1.1 1.8a17 17 0 0 0 5.2-2.6c.4-4.4-.7-8.3-3.1-11.7ZM8.5 14.8c-1 0-1.9-1-1.9-2.1s.8-2.1 1.9-2.1 1.9 1 1.9 2.1-.8 2.1-1.9 2.1Zm7 0c-1 0-1.9-1-1.9-2.1s.8-2.1 1.9-2.1 1.9 1 1.9 2.1-.8 2.1-1.9 2.1Z"></path></svg>Continue with Discord</button></div><p class="note" id="mlSteamW" style="margin:0"></p></div>
+      <div class="me-switch"><span>No account yet?</span><button type="button" class="btn" id="meToReg">Create account</button></div></div></template>
+<template id="lpAuth-es"><div class="panel me-auth"><h2>Iniciar sesión</h2><form class="me-form" id="meLog" autocomplete="on">
+      <label><span class="label">Email</span><input type="email" id="mlE" required="" autocomplete="username"></label>
+      <label><span class="label">Contraseña</span><input type="password" id="mlP" required="" autocomplete="current-password"></label>
+      <button class="btn primary" type="submit">Entrar</button><p class="note err" id="mlErr" style="margin:0"></p><p class="note" style="margin:0"><a href="#" class="acc" id="mlForgot">¿Olvidaste tu contraseña?</a></p>
+      <p class="note" style="margin:0">Seguirás con la sesión iniciada en este dispositivo.</p></form><div class="me-steam pair"><div class="me-oab"><button type="button" class="btn" id="mlSteam">Continuar con Steam</button><button type="button" class="btn dc" id="mlDisc"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="currentColor"><path d="M19.6 5.4A17 17 0 0 0 15.4 4l-.5 1a15.6 15.6 0 0 0-5.8 0l-.5-1a17 17 0 0 0-4.2 1.4C1.7 9.4 1 13.3 1.3 17.1a17 17 0 0 0 5.2 2.6l1.1-1.8c-.6-.2-1.2-.5-1.7-.8l.4-.3a12.1 12.1 0 0 0 11.4 0l.4.3c-.5.3-1.1.6-1.7.8l1.1 1.8a17 17 0 0 0 5.2-2.6c.4-4.4-.7-8.3-3.1-11.7ZM8.5 14.8c-1 0-1.9-1-1.9-2.1s.8-2.1 1.9-2.1 1.9 1 1.9 2.1-.8 2.1-1.9 2.1Zm7 0c-1 0-1.9-1-1.9-2.1s.8-2.1 1.9-2.1 1.9 1 1.9 2.1-.8 2.1-1.9 2.1Z"></path></svg>Continuar con Discord</button></div><p class="note" id="mlSteamW" style="margin:0"></p></div>
+      <div class="me-switch"><span>¿No tienes cuenta?</span><button type="button" class="btn" id="meToReg">Crear cuenta</button></div></div></template>
+<template id="lpAuth-pt"><div class="panel me-auth"><h2>Entrar</h2><form class="me-form" id="meLog" autocomplete="on">
+      <label><span class="label">Email</span><input type="email" id="mlE" required="" autocomplete="username"></label>
+      <label><span class="label">Senha</span><input type="password" id="mlP" required="" autocomplete="current-password"></label>
+      <button class="btn primary" type="submit">Entrar</button><p class="note err" id="mlErr" style="margin:0"></p><p class="note" style="margin:0"><a href="#" class="acc" id="mlForgot">Esqueceu a senha?</a></p>
+      <p class="note" style="margin:0">Você continua conectado neste dispositivo.</p></form><div class="me-steam pair"><div class="me-oab"><button type="button" class="btn" id="mlSteam">Continuar com a Steam</button><button type="button" class="btn dc" id="mlDisc"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="currentColor"><path d="M19.6 5.4A17 17 0 0 0 15.4 4l-.5 1a15.6 15.6 0 0 0-5.8 0l-.5-1a17 17 0 0 0-4.2 1.4C1.7 9.4 1 13.3 1.3 17.1a17 17 0 0 0 5.2 2.6l1.1-1.8c-.6-.2-1.2-.5-1.7-.8l.4-.3a12.1 12.1 0 0 0 11.4 0l.4.3c-.5.3-1.1.6-1.7.8l1.1 1.8a17 17 0 0 0 5.2-2.6c.4-4.4-.7-8.3-3.1-11.7ZM8.5 14.8c-1 0-1.9-1-1.9-2.1s.8-2.1 1.9-2.1 1.9 1 1.9 2.1-.8 2.1-1.9 2.1Zm7 0c-1 0-1.9-1-1.9-2.1s.8-2.1 1.9-2.1 1.9 1 1.9 2.1-.8 2.1-1.9 2.1Z"></path></svg>Continuar com o Discord</button></div><p class="note" id="mlSteamW" style="margin:0"></p></div>
+      <div class="me-switch"><span>Ainda não tem conta?</span><button type="button" class="btn" id="meToReg">Criar conta</button></div></div></template>
+<script><!--LANDING-JS--></script>
+<script><!--TOUR-JS--></script>
+</body>
+</html>

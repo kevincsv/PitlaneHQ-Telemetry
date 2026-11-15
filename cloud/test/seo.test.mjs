@@ -217,12 +217,13 @@ for (const [path, p] of pages) for (const href of new Set(p.links)) {
   for (const href of hrefs) { if (OUTSIDE.test(href)) continue; const r = await get(env, href); assert.ok(r && r.status === 200, `<noscript> links ${href}`); }
 }
 // every file of the app (web/dist: the landing's screenshots and laps, the drivers' flags…) is one the worker serves, or
-// the web shows an empty window (index.html is "/", the flags' licence stays in the folder)
+// the web shows an empty window (index.html is "/", landing.html is the frame landing.js fills for "/", the flags'
+// licence stays in the folder)
 {
   const src = readFileSync(fileURLToPath(new URL("../src/worker.js", import.meta.url)), "utf8");
   const re = new RegExp(pick(src, /const isAppFile = \/(.+)\/\.test\(url\.pathname\);/));
   const walk = (d, pre) => readdirSync(d, { withFileTypes: true }).flatMap((e) => e.isDirectory() ? walk(d + e.name + "/", pre + e.name + "/") : [pre + e.name]);
-  for (const f of walk(DIST, "/")) if (!/^\/(index\.html|flags\/LICENSE[^/]*)$/.test(f)) assert.ok(re.test(f), `the worker serves ${f}`);
+  for (const f of walk(DIST, "/")) if (!/^\/(index\.html|landing\.html|flags\/LICENSE[^/]*)$/.test(f)) assert.ok(re.test(f), `the worker serves ${f}`);
 }
 // every indexed page names itself (WebPage) with the day its text last changed; the landings carry their steps as HowTo
 for (const [path, p] of pages) {

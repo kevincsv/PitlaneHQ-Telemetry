@@ -40,6 +40,7 @@ import { FUEL_SUMS, fuelSince } from "./fuel.js";
 import { SQL_PBS, pbsOf } from "./alertslib.js";
 import { pruneSeen } from "./seasonseen.js";
 import { legal } from "./legal.js";
+import { isLanding, landingPage } from "./landing.js";
 import { uninstallRoute } from "./uninstall.js";
 import { sendFeedback } from "./email.js";
 import { alertsRoute, weeklyAlerts, pruneAlerts, prunePushTokens } from "./alerts.js";
@@ -652,22 +653,28 @@ async function handle(req, env, ctx) {
         return err("server error: " + (e && e.message), 500);
       }
     }
-    // the full Pitlane HQ app (analysis, community, account, live from your PC), same as the phone app, at the
-    // address itself: https://pitlanehq.app/ (the old /app/?companion=1 addresses still land here)
-    if (url.pathname === "/app" || url.pathname.startsWith("/app/")) {
+    // the full Pitlane HQ app (analysis, community, account, live from your PC), same as the phone app: at /app, and at
+    // "/" itself with the app's own parameters (a sign-in coming back, a league); a visitor's "/" is the light landing
+    // (landing.js), which opens /app for whatever needs the app. The old /app/... addresses land on /app
+    if (url.pathname.startsWith("/app/") && url.pathname !== "/app/") {
       const to = new URL(req.url);
-      to.pathname = url.pathname.slice(4) || "/";
+      to.pathname = "/app";
       to.searchParams.delete("companion");
       return Response.redirect(to.href, 301);
+    }
+    if (url.pathname === "/" && isLanding(url) && (req.method === "GET" || req.method === "HEAD")) {
+      const lp = await landingPage(env, req, url).catch(() => null);
+      if (lp) return lp;
     }
     // one address for the app: /index.html is "/"
     if (url.pathname === "/index.html") { const to = new URL(req.url); to.pathname = "/"; return Response.redirect(to.href, 301); }
     const isAppFile = /^\/(sw\.js|fonts\.css|pitwall-[a-z0-9-]+\.js|app-news\.json|whats-new\.json|server\.json|manifest\.webmanifest|favicon\.ico|favicon-32\.png|icon-\d+\.png|logo\.svg|bimi\.svg|og(?:-es|-pt)?\.png|robots\.txt|landing\/(?:en\/|es\/|pt\/)?[a-z0-9-]+\.(?:jpg|png|webp)|landing\/live-lap\.json|flags\/flags\.(?:json|png))$/.test(url.pathname);
-    if ((url.pathname === "/" && url.searchParams.get("embed") !== "1") || isAppFile) {
+    const isApp = (url.pathname === "/" && url.searchParams.get("embed") !== "1") || url.pathname === "/app" || url.pathname === "/app/";
+    if (isApp || isAppFile) {
       if (!env.ASSETS) return err("the app is not published on this server", 404);
       // a local server (wrangler dev --var LOCAL:1, tools/local.cmd): the app served by it uses it, not pitlanehq.app
       if (url.pathname === "/server.json" && env.LOCAL === "1") return new Response(JSON.stringify({ url: url.origin }), { headers: { "content-type": "application/json", "cache-control": "no-cache" } });
-      const r = await env.ASSETS.fetch(new Request(new URL(url.pathname, url.origin), req));
+      const r = await env.ASSETS.fetch(new Request(new URL(isApp ? "/" : url.pathname, url.origin), req));
       const h = new Headers(r.headers);
       h.set("referrer-policy", "no-referrer");
       h.set("x-frame-options", "DENY");

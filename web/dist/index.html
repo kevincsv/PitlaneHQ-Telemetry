@@ -13143,3 +13143,46 @@ html:not(.ov) .ls-board{max-height:400px;overflow-y:auto;scrollbar-width:thin;di
 .view.gd-page{animation:gdPage .45s ease-out}@keyframes gdPage{from{opacity:0;transform:translateY(8px)}}
 @media (prefers-reduced-motion:reduce){#apptour .gd-card.gd-in,#apptour.gd-going .gd-ring,.view.gd-page{animation:none}}
 </style>
+<style id="phone-fit">
+/* phones: everything stays inside the screen and lines up. The leaderboards' discipline cards keep their text inside
+   the card (an older rule gave it the card's whole width beside the icon), the game switch and the sub-tabs take the
+   whole width with equal parts, the screen tabs stay on one line and scroll, the filters stack */
+html:not(.ov) #commBody#commBody .pw3-discs .lb-t{flex:1 1 auto;width:auto;min-width:0}
+html:not(.ov) #commBody#commBody .pw3-discs .lb-t b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+html:not(.ov) #commBody#commBody .pw3-discs .lb-t small{white-space:normal;overflow-wrap:anywhere}
+@media (max-width:820px){
+  html:not(.ov,.ovwin,.signwall) .subbar{flex-direction:column!important;align-items:stretch!important;flex-wrap:nowrap!important;gap:8px!important}
+  html:not(.ov,.ovwin,.signwall) #gameView.gseg:not([hidden]){display:grid!important;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);align-self:stretch!important;width:100%;max-width:100%;margin:0!important;order:-1}
+  html:not(.ov,.ovwin,.signwall) #gameView.gseg button{justify-content:center;min-width:0;padding:7px 4px!important}
+  html:not(.ov,.ovwin,.signwall) nav#subtabs:not([hidden]):has(button+button){display:flex!important;flex-wrap:nowrap!important;width:100%;max-width:100%;box-sizing:border-box;overflow-x:auto;scrollbar-width:none}
+  html:not(.ov,.ovwin,.signwall) nav#subtabs button{flex:1 0 auto;text-align:center;justify-content:center}
+  html:not(.ov) .cl-head{flex-wrap:wrap;min-width:0}
+  html:not(.ov) .cl-tabs{flex-wrap:nowrap!important;overflow-x:auto;scrollbar-width:none;max-width:100%;min-width:0}
+  html:not(.ov) .cl-tabs::-webkit-scrollbar{display:none}
+  html:not(.ov) .cl-tabs button{flex:none;white-space:nowrap}
+}
+@media (max-width:520px){
+  html:not(.ov) .cmfilt{grid-template-columns:minmax(0,1fr)!important}html:not(.ov) .cmfilt input{grid-column:auto}
+  html:not(.ov) #commBody#commBody .pw3-discs .lb-cats{grid-template-columns:minmax(0,1fr)!important;gap:6px}
+  html:not(.ov) #commBody#commBody .pw3-discs .lb-cat{padding:9px 12px}
+  html:not(.ov) #commBody#commBody .pw3-discs .lb-t{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
+  html:not(.ov) #commBody#commBody .pw3-discs .lb-t small{margin:0;text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+  html:not(.ov) .cl-tabs button{padding-inline:9px!important;font-size:13px!important}
+  /* the leaderboard: position, driver, time and gap fit the screen (the sectors are on the PC and wider screens) */
+  html:not(.ov) .cl-table th.r:nth-child(n+5),html:not(.ov) .cl-table td.r:nth-child(n+5){display:none}
+  html:not(.ov) .cl-table td.cl-drv{width:100%;max-width:0;overflow:hidden;text-overflow:ellipsis}
+  html:not(.ov) .cl-table td.cl-drv .lb-name{text-align:left;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;vertical-align:bottom}
+  html:not(.ov) .cl-table td.cl-drv small{display:block;margin-top:2px}
+  html:not(.ov) .cl-table th,html:not(.ov) .cl-table td{padding-inline:8px}
+  /* the live relative fits the screen with its gap column */
+  html:not(.ov) #v-live #relBox .wtable :is(th,td){padding-left:5px!important;padding-right:5px!important}
+  html:not(.ov) #v-live #relBox .wtable td.col-name{max-width:130px;overflow:hidden;text-overflow:ellipsis}
+  /* My sessions: the session pill is narrower so the best lap stays on the screen */
+  html:not(.ov) #v-cloudlaps .pw3s .mr-kind .kind{min-width:62px!important;padding:2px 5px!important;font-size:10px!important;letter-spacing:.02em!important}
+  html:not(.ov) #v-cloudlaps .pw3s .mr-t :is(th,td){padding-left:4px!important;padding-right:4px!important}
+}
+@media (max-width:420px){
+  html:not(.ov) #v-cloudlaps .pw3s .mr-t :is(th,td):nth-child(5){display:none}
+  html:not(.ov) header.top #conn{min-width:0;flex:0 1 auto;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+}
+</style>

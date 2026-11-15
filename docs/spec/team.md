@@ -102,6 +102,14 @@ there are several):
   and Watch live (the Telemetry screens follow that driver, as with a share code, "Watching · Team" with Disconnect).
 - Stints: who drove, from which lap to which, how many laps, best and average.
 - Lap times: one column per driver side by side (laps, best, average, the last laps), for the session chosen.
+- Engineer (PC and web, the owner's ask 2026-11-15; the phones later): a fuel tracker (fuel, per lap, laps of fuel,
+  next stop, laps to the end, fuel to the end, fuel to add and stops, with a bar and one line saying whether the fuel
+  reaches the end; `teamFuel`: the car's own telemetry when the page has it and is on track, else the teammate in the
+  car from the `team` event), the Relative and the Standings with the Engineer's columns (tyres, PIT/OUT/OFF, laps up
+  or down, gaps; `data-eng` on their boxes) and the track map (`drawMap(canvas)`), from the telemetry this page has
+  (the game's on the PC, the teammate's while watching), redrawn twice a second (`teamPaintEng`). Under them the share
+  code: on the PC the code for others (`renderCodeShare(box)`, without the voice chat), on the web Watch another driver
+  (a code opens Telemetry watching it).
 
 The PC streams to the active team; Settings is not needed (the team picker on the Team screen sets it).
 

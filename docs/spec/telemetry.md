@@ -28,7 +28,7 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   points come from the model (the next level for your best lap of the session; your own best lap while the model has
   none or you are its fastest), each marker moves with your speed against that lap and with a car close ahead or
   alongside, and they name their corners by the official turns (`turnNo`, `turnName`), like the coach: "T7", never "C7".
-- Telemetry has three modes (`LIVE_MODE`, `liveModeBar`): Basic (the essentials below), Full (every basic widget, the
+- Telemetry has four modes (`LIVE_MODE`, `liveModeBar`): Basic (the essentials below), Engineer (below), Full (every basic widget, the
   experimental ones too (not on a PC without Pro), and the lap's traces of speed, throttle/brake, delta and gear, `drawLiveTraces`)
   and Compare laps, live (`renderLiveCmp`/`tickLiveCmp`: the lap now against B, "My best" in purple, the last lap, other
   laps, and "▲ Next level" / "★ Record" only when the model has a full-telemetry lap of someone else, corner by corner by
@@ -73,6 +73,18 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   in one row (session, laps left, SOF, position, iRating, incidents), the table, then Positions lap by lap. Tyres
   (`#v-tyres`) has Tyres beside Setup hints, then Balance and Brake pressure (as cards) beside each other and the pit
   readings under them, two thirds wide.
+- Engineer (`"eng"`, between Basic and Full, the owner's ask 2026-11-15) shows what a race engineer watches: by default
+  flags, the car strip, the lap times, the delta bar, mini-sectors, the relative, the standings, the gap graph, fuel, the
+  pit stop calculator, tyres, engine & track, braking markers, the map, the track position bar, weather, the incident log
+  and driving stats (`LIVE_ENG`). Its panels are its own, chosen in Layout like Basic's ("Layout · Engineer", its
+  "★ Engineer's panels" puts the default back), kept as the panels it shows (`pw.engShown`, so a new panel stays out
+  until added); order, widths and the desk's columns are shared with Basic. While it is on, `HIDDEN` is its set and
+  `HID_BASIC` keeps Basic's (`liveHidSync`, `hidSave`; the swap waits for the start's layout updates, `LIVE_HID_OK`).
+  In Engineer the Relative and the Standings add, after the name, each car's tyre compound (`tyre`) and its state
+  (`state`, `carState`: PIT on the pit lane, OUT on the lap it left the pits on (`OUTL`), OFF off the track), and the
+  gap (and the Standings' interval) when the driver's columns leave them out (`engCols`); the PIT tag beside the name
+  is dropped there, the laps up or down (+1L) stay. Their Configure has "Tyres and pit in Engineer" (`engCols`, on) to
+  keep the driver's own columns instead. `state` is never offered among the columns (the native overlays do not draw it).
 - In Basic, the Telemetry screen shows only the essentials (`LIVE_ESSENTIAL`: flags, the car strip, the lap times, the
   delta bar, the relative, inputs, fuel, engine & track, tyres, the map and the track position bar); every other widget
   is one click away in Layout ("Essentials" puts them back). A Basic still on the old essentials moves to these once

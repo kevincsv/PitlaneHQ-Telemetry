@@ -144,6 +144,7 @@ tr.ahead td.nm{color:var(--bad)}tr.behind td.nm{color:var(--blue)}
 .lic{--lc:var(--lic-p);display:inline-flex;align-items:center;justify-content:center;min-width:1.75em;height:1.75em;font:800 11px/1 var(--f-data);padding:0 5px;border-radius:4px;color:#fff;letter-spacing:.02em;vertical-align:middle;white-space:nowrap;
   background:color-mix(in srgb,var(--lc) 62%,#0b0d10);box-shadow:inset 0 0 0 1.5px var(--lc)}
 .lic.R{--lc:var(--lic-r)}.lic.D{--lc:var(--lic-d)}.lic.C{--lc:var(--lic-c)}.lic.B{--lc:var(--lic-b)}.lic.A{--lc:var(--lic-a)}.lic.P{--lc:var(--lic-p)}
+.pill.st-pit{color:#ffb02e;border-color:#ffb02e66}.pill.st-out{color:var(--good);border-color:color-mix(in srgb,var(--good) 40%,transparent)}.pill.st-off{color:var(--bad);border-color:color-mix(in srgb,var(--bad) 40%,transparent)}
 .pill{display:inline-block;font:600 11px/1 var(--f-data);letter-spacing:.05em;padding:4px 7px;border-radius:999px;border:1px solid var(--line);color:var(--muted);white-space:nowrap}
 .pill.acc{border-color:var(--accent);color:var(--accent)}.pill.pro-b{cursor:pointer;border-color:var(--accent);background:var(--accent);color:#0d1116;font-size:9px;padding:2px 5px;margin-left:6px;vertical-align:middle;letter-spacing:.08em}.pill.good{border-color:var(--good);color:var(--good)}.pill.bad{border-color:var(--bad);color:var(--bad)}
 .meter{height:8px;border-radius:4px;background:var(--surface2);border:1px solid var(--line);overflow:hidden;margin-top:10px}
@@ -4134,7 +4135,7 @@ function renderVarTable(){const q=($("#varSearch").value||"").toLowerCase();cons
   const list=SCHEMA.filter(v=>!q||v.name.toLowerCase().includes(q)||(v.desc||"").toLowerCase().includes(q)||telName(v.name).toLowerCase().includes(q));
   $("#dataSub").textContent=SCHEMA.length+" "+Tx("variables","variables")+(STATUS.tickRate?" · "+STATUS.tickRate+" Hz":"");
   const tv=ui("tel").vars;tb.innerHTML=list.map(v=>`<tr class="vrow${openRows.has(v.name)?" open":""}" data-n="${esc(v.name)}"><td><div style="display:flex;gap:4px;align-items:flex-start"><button type="button" class="pinvar" data-pv="${esc(v.name)}" aria-pressed="${tv.includes(v.name)}" title="${esc(Tx("Show in the Telemetry widget","Mostrar en el widget Telemetría"))}">★</button><div><div class="vn">${esc(telName(v.name))}</div><div class="mono muted" style="font-size:11px">${esc(v.name)}</div></div></div>${v.count>1?`<span class="muted">[${v.count}]</span>`:""}</td><td class="mono val">–</td><td class="muted">${esc(v.unit)}</td><td class="wrap muted">${esc(v.desc)}</td></tr>`).join("")||`<tr><td colspan="4" class="empty">${Lp("No variables yet. Start iRacing and get in the car.","Aún no hay variables. Abre iRacing y súbete al coche.")}</td></tr>`;
-  tb.querySelectorAll("[data-pv]").forEach(b=>b.onclick=e=>{e.stopPropagation();toggleTelVar(b.dataset.pv);b.setAttribute("aria-pressed",ui("tel").vars.includes(b.dataset.pv));if(HIDDEN.has("telemetry")){HIDDEN.delete("telemetry");store.set("pw.hiddenW",[...HIDDEN]);applyLayout()}});
+  tb.querySelectorAll("[data-pv]").forEach(b=>b.onclick=e=>{e.stopPropagation();toggleTelVar(b.dataset.pv);b.setAttribute("aria-pressed",ui("tel").vars.includes(b.dataset.pv));if(HIDDEN.has("telemetry")){HIDDEN.delete("telemetry");hidSave();applyLayout()}});
   tb.querySelectorAll("tr.vrow").forEach(tr=>{varRows.set(tr.dataset.n,tr.children[1]);tr.onclick=()=>{const n=tr.dataset.n;openRows.has(n)?openRows.delete(n):openRows.add(n);tr.classList.toggle("open")}});updateVarValues()}
 function fmtVal(v,open){if(v==null)return"–";if(Array.isArray(v)){const s=v.map(x=>typeof x==="number"?+x.toFixed(3):x);return open?s.join(", "):s.slice(0,8).join(", ")+(s.length>8?" …":"")}if(typeof v==="number")return Number.isInteger(v)?String(v):(+v.toFixed(4)).toString();return String(v)}
 function updateVarValues(){if(DATA_TAB!=="data:vars")return;varRows.forEach((td,n)=>{const v=T[n];td.textContent=fmtVal(v,openRows.has(n))})}
@@ -4737,8 +4738,8 @@ function mapSmooth(d){let c=MAP_SM.get(d);if(c&&c.u===d.updated&&c.x.length===d.
   c={x:sx,y:sy,u:d.updated,src:d.x};MAP_SM.set(d,c);return c}
 let mapRaf=0;function drawMapSoon(){if(!mapRaf)mapRaf=requestAnimationFrame(()=>{mapRaf=0;drawMap()})}
 function mapXY(d){const r=MAPL.rot||0,mi=MAPL.mirror?-1:1;return(x,y)=>{x*=mi;for(let k=0;k<r;k++){const t=x;x=-y;y=t}return[x,y]}}
-function drawMap(){const cv=$("#mapC");if(!cv||!cvSize(cv)[0])return;if(!OV.on){const hh=Math.round(Math.min(380,Math.max(220,cvSize(cv)[0]*.8)));if(+cv.getAttribute("height")!==hh)cv.setAttribute("height",hh)}const[x,w,h]=fitCanvas(cv);if(!x)return;x.clearRect(0,0,w,h);
-  const d=MAP.data,c=MAP.cur,tf=mapXY(d);const note=$("#mapNote");
+function drawMap(cvArg){const cv=cvArg||$("#mapC");if(!cv||!cvSize(cv)[0])return;if(!OV.on&&!cvArg){const hh=Math.round(Math.min(380,Math.max(220,cvSize(cv)[0]*.8)));if(+cv.getAttribute("height")!==hh)cv.setAttribute("height",hh)}const[x,w,h]=fitCanvas(cv);if(!x)return;x.clearRect(0,0,w,h);
+  const d=MAP.data,c=MAP.cur,tf=mapXY(d);const note=cvArg?{}:$("#mapNote")||{};
   let src=d?d.x.map((v,i)=>tf(v,d.y[i])):(c&&c.pts.length>2?c.pts.map(p=>tf(p[1],p[2])):null);
   if(!src){x.fillStyle=css("--muted");x.font="13px "+css("--f-body");x.textAlign="center";x.fillText(Tx("Waiting for telemetry…","Esperando telemetría…"),w/2,h/2);note.textContent="";return}
   let mnx=1e9,mny=1e9,mxx=-1e9,mxy=-1e9;src.forEach(([a,b])=>{mnx=Math.min(mnx,a);mxx=Math.max(mxx,a);mny=Math.min(mny,b);mxy=Math.max(mxy,b)});
@@ -4817,8 +4818,8 @@ function markBrakeRow(){const pin=CMP_HOVER&&CMP_HOVER.pin?CMP_HOVER.i:null;docu
 
 /* ===================== shared settings (overlays read them too) ===================== */
 const UI_DEFAULTS={
-  rel:{cols:["pos","num","name","lic","ir","irc","last","gap"],head:["session","timeleft","sof"],foot:["irc","inc","fuel"],ahead:3,behind:3,classHead:false,dimLapped:false,rowSize:"m",notes:true},
-  std:{cols:["pos","num","name","lic","ir","irc","laps","last","best","gap","int","pit","pgain"],head:["session","lapsleft","sof"],foot:["pos","irc","inc"],top:5,around:3,myClass:true,classHead:false,irShort:true,fastMark:true,pitTag:true},
+  rel:{cols:["pos","num","name","lic","ir","irc","last","gap"],head:["session","timeleft","sof"],foot:["irc","inc","fuel"],ahead:3,behind:3,classHead:false,dimLapped:false,rowSize:"m",notes:true,engCols:true},
+  std:{cols:["pos","num","name","lic","ir","irc","laps","last","best","gap","int","pit","pgain"],head:["session","lapsleft","sof"],foot:["pos","irc","inc"],top:5,around:3,myClass:true,classHead:false,irShort:true,fastMark:true,pitTag:true,engCols:true},
   radar:{range:20,autohide:true,carSize:1,trails:true,dist:true},boost:{autohide:true},
   delta:{src:"best",range:1,predict:true},inp:{gear:true,speed:true,wheel:true,wheelDeg:false,bars:["clu","brk","thr"],values:true,barDir:"v",abs:true,trace:true,traceSecs:12,traceH:110,traceCh:["thr","brk"],lineW:1},pit:{loss:25,margin:.3,limTol:.4,pitOnly:false},gaps:{mins:5,cars:2,numbers:false},
   tel:{vars:["LatAccel","LongAccel","YawRate","SteeringWheelAngle","FuelUsePerHour","OilTemp","WaterTemp","Voltage"]}};
@@ -4859,9 +4860,10 @@ function irChanges(){if(performance.now()-IRC_AT<1000)return IRC;IRC_AT=performa
 function lapsLeft(){const r=T.SessionLapsRemainEx;if(r!=null&&r>=0&&r<32000)return{v:r,est:false};const tr=T.SessionTimeRemain;if(!(tr>0&&tr<600000))return null;
   const pos=T.CarIdxPosition||[],lead=pos.indexOf(1),lastT=T.CarIdxLastLapTime||[],best=T.CarIdxBestLapTime||[];const lt=lead>=0&&lastT[lead]>0?lastT[lead]:lead>=0&&best[lead]>0?best[lead]:estLap();
   const pct=lead>=0?((T.CarIdxLapDistPct||[])[lead]||0):(T.LapDistPct||0);const first=(1-pct)*lt;return{v:1+Math.max(0,Math.ceil((tr-first)/lt)),est:true}}
-const PITS={},PITPREV={},START={};let PIT_SESSION=null;
-function trackPits(){const sn=T.SessionNum;if(sn!==PIT_SESSION){PIT_SESSION=sn;for(const k in PITS)delete PITS[k];for(const k in START)delete START[k]}
-  const pit=T.CarIdxOnPitRoad||[];for(let i=0;i<pit.length;i++){if(pit[i]&&!PITPREV[i])PITS[i]=(PITS[i]||0)+1;PITPREV[i]=pit[i]}
+const PITS={},PITPREV={},START={},OUTL={};let PIT_SESSION=null;
+function trackPits(){const sn=T.SessionNum;if(sn!==PIT_SESSION){PIT_SESSION=sn;for(const o of [PITS,START,OUTL])for(const k in o)delete o[k]}
+  // OUTL: the lap a car left the pit lane on (its out lap, the Engineer's OUT tag)
+  const pit=T.CarIdxOnPitRoad||[],lp=T.CarIdxLap||[];for(let i=0;i<pit.length;i++){if(pit[i]&&!PITPREV[i])PITS[i]=(PITS[i]||0)+1;if(!pit[i]&&PITPREV[i])OUTL[i]=lp[i];PITPREV[i]=pit[i]}
   if(T.SessionState===4&&!Object.keys(START).length){const p=T.CarIdxPosition||[];p.forEach((v,i)=>{if(v>0)START[i]=v})}}
 function gridPos(i){const q=((S.QualifyResultsInfo||{}).Results||[]).find(r=>r.CarIdx===i);if(q&&q.Position!=null)return q.Position+1;return START[i]||null}
 function wrapPct(x){return x>.5?x-1:x<-.5?x+1:x}
@@ -4929,6 +4931,7 @@ const COLS={
   int:{n:["Interval to car ahead","Intervalo con el de delante"],h:"Int",c:"r mono",f:c=>c.int},
   pit:{n:["Pit stops","Paradas"],h:"Pit",c:"r mono",f:c=>c.pits?c.pits:"–"},
   pgain:{n:["Places gained","Posiciones ganadas"],h:"+/−",c:"r mono",f:c=>c.pgain==null?"–":c.pgain===0?"=":`<span class="${c.pgain>0?"good":"bad"}">${c.pgain>0?"▲":"▼"}${Math.abs(c.pgain)}</span>`},
+  state:{n:["Pit, out lap or off track","Boxes, vuelta de salida o fuera de pista"],h:["State","Estado"],c:"mono",f:c=>{const s=carState(c.i);return s?`<span class="pill st-${s.toLowerCase()}">${s}</span>`:""}},
   tyre:{n:["Tyre compound","Compuesto"],h:["Tyre","Neum."],c:"mono",f:c=>c.tyre==null||c.tyre<0?"–":tyreBadge(c.tyre)},
   inc:{n:["Incidents","Incidentes"],h:"Inc",c:"r mono",f:c=>c.d.CurDriverIncidentCount!=null?c.d.CurDriverIncidentCount+"x":"–"},
   pace:{n:["Pace (their last lap vs yours)","Ritmo (su última vuelta vs la tuya)"],h:["Pace","Ritmo"],c:"r mono",f:c=>{const L=T.CarIdxLastLapTime||[],me=T.PlayerCarIdx,a=L[c.i],b=L[me];if(!(a>0&&b>0)||c.i===me)return"–";const d=a-b;return`<span class="${d<-.1?"bad":d>.1?"good":"muted"}">${sgn(d,1)}</span>`}},
@@ -4937,19 +4940,26 @@ Object.entries(COLS).forEach(([k,v])=>I18N["col."+k]=v.n);
 function colHead(k){const h=COLS[k].h;return Array.isArray(h)?esc(Tx(h[0],h[1]).split(" / ")[0]):esc(h)}
 function rowCtx(i,extra){const d=driverBy(i)||{};const pos=T.CarIdxPosition||[],cpos=T.CarIdxClassPosition||[],last=T.CarIdxLastLapTime||[],best=T.CarIdxBestLapTime||[],laps=T.CarIdxLapCompleted||[],pit=T.CarIdxOnPitRoad||[],tyre=T.CarIdxTireCompound||[];
   const g=gridPos(i);return Object.assign({i,d,pos:pos[i],cpos:cpos[i],last:last[i],best:best[i],laps:laps[i],pit:pit[i],pits:PITS[i]||0,tyre:tyre[i],irc:irChanges().get(i),pgain:g&&pos[i]>0?g-pos[i]:null,lastBest:last[i]>0&&last[i]===best[i]},extra||{})}
+/* a car's state for the Engineer: PIT on the pit lane, OUT on the lap it left the pits on, OFF off the track */
+function carState(i){if((T.CarIdxOnPitRoad||[])[i])return"PIT";if((T.CarIdxTrackSurface||[])[i]===0)return"OFF";const o=OUTL[i];return o!=null&&(T.CarIdxLap||[])[i]===o?"OUT":""}
+/* the Engineer's columns in the Relative and the Standings: each car's tyres and state after the name, the gap (and the
+   Standings' interval) at the end when the driver's own columns leave them out; "engCols" off keeps the driver's own */
+function engCols(cols,std,on){if(!on)return cols;const out=cols.filter(k=>k!=="tyre"&&k!=="state"),at=Math.max(0,out.indexOf("name")+1);out.splice(at,0,"tyre","state");
+  (std?["gap","int"]:["gap"]).forEach(k=>{if(!out.includes(k))out.push(k)});return out}
+const engOn=(cfg,target)=>cfg.engCols!==false&&(target?target.dataset.eng==="1":LIVE_MODE==="eng"&&!OV.on);
 function tableHTML(cols,rows,me){return `<div class="tscroll"><table class="wtable"><thead><tr>${cols.map(k=>{const nd=colLacks(k);return `<th class="col-${k} ${COLS[k].c.includes("r")?"r":""}${nd?" nd":""}"${nd?` title="${esc(nd)}"`:""}>${colHead(k)}</th>`}).join("")}</tr></thead><tbody>${rows.map(r=>r.head?`<tr class="clsh"><td colspan="${cols.length}"><i style="background:${r.head.col}"></i>${esc(r.head.name+" · "+r.head.n+Tx(" cars"," coches",null," carros")+(r.head.sof?" · SOF "+r.head.sof:""))}</td></tr>`:r.blank?`<tr class="blank"><td colspan="${cols.length}">&nbsp;</td></tr>`:r.sep?`<tr class="sep"><td colspan="${cols.length}">⋯</td></tr>`:`<tr class="${[r.i===me?"me":"",r.cls||"",r.pit?"pit":"",r.dim?"dim":""].join(" ")}">${cols.map(k=>`<td class="col-${k} ${COLS[k].c}">${COLS[k].f(r)}</td>`).join("")}</tr>`).join("")}</tbody></table></div>`}
 
 /* relative */
-function renderRelative(target){const box=target||$("#relBox");if(!box)return;const cfg=ui("rel"),all=relList(),me=T.PlayerCarIdx;
+function renderRelative(target){const box=target||$("#relBox");if(!box)return;const cfg=ui("rel"),all=relList(),me=T.PlayerCarIdx,eng=engOn(cfg,target);
   if(!all.length){box.innerHTML=strip(cfg.head)+`<p class="empty">${Lp("Waiting for cars on track","Esperando coches en pista")}</p>`;return}
   const ahead=all.filter(r=>r.g>0&&r.i!==me).sort((a,b)=>a.g-b.g).slice(0,cfg.ahead).reverse(),behind=all.filter(r=>r.g<=0&&r.i!==me).sort((a,b)=>b.g-a.g).slice(0,cfg.behind),mine=all.find(r=>r.i===me);
   const race=isRace(),ctx=r=>rowCtx(r.i,{tbl:"rel",gap:r.i===me?"—":(r.g>0?"−":"+")+Math.abs(r.g).toFixed(1),cls:r.lapDiff>.5?"ahead":r.lapDiff<-.5?"behind":"",int:"–",lapUp:race&&r.i!==me?Math.round(r.lapDiff):0,
-    noNote:cfg.notes===false,dim:cfg.dimLapped&&r.i!==me&&Math.abs(r.lapDiff)>.5}),blank=n=>Array.from({length:Math.max(0,n)},()=>({blank:true}));
+    noNote:cfg.notes===false,noPit:eng,dim:cfg.dimLapped&&r.i!==me&&Math.abs(r.lapDiff)>.5}),blank=n=>Array.from({length:Math.max(0,n)},()=>({blank:true}));
   const rows=[...blank(cfg.ahead-ahead.length),...ahead.map(ctx),...(mine?[ctx(mine)]:[]),...behind.map(ctx),...blank(cfg.behind-behind.length)];
   // its own settings: the classes' band with their SOF (several classes) and the rows' size
   const cls=cfg.classHead?classInfos():[],band=cls.length>1?`<div class="hstrip clsband">${cls.map(k=>`<div><i style="background:${k.col}"></i><span class="v">${esc(k.name)}${k.sof?" · SOF "+k.sof:""}</span></div>`).join("")}</div>`:"";
   box.classList.toggle("rs-s",cfg.rowSize==="s");box.classList.toggle("rs-l",cfg.rowSize==="l");
-  box.innerHTML=(cfg.head.length?strip(cfg.head):"")+band+tableHTML(cfg.cols,rows,me)+(cfg.foot.length?strip(cfg.foot):"");
+  box.innerHTML=(cfg.head.length?strip(cfg.head):"")+band+tableHTML(engCols(cfg.cols,false,eng),rows,me)+(cfg.foot.length?strip(cfg.foot):"");
   const st=target?null:$("#trackStrip");if(st&&!st.hidden){let html='<div class="sf"></div>';const pct=T.CarIdxLapDistPct||[];all.forEach(r=>{const cls=r.i===me?"me":r.lapDiff>.5?"ahead":r.lapDiff<-.5?"behind":"";html+=`<div class="car ${cls}" style="left:${(pct[r.i]*100).toFixed(2)}%"></div>`});st.innerHTML=html}}
 /* standings (widget and tab) */
 function standingsRows(full){const cfg=ui("std"),me=T.PlayerCarIdx,meD=driverBy(me),pos=T.CarIdxPosition||[],cpos=T.CarIdxClassPosition||[],f2=T.CarIdxF2Time||[],best=T.CarIdxBestLapTime||[];
@@ -4972,7 +4982,7 @@ function classInfos(){const pos=T.CarIdxPosition||[],m=new Map(),all=field(),ids
   all.forEach(d=>{const id=classOf(d);let k=m.get(id);if(!k){const cc=+d.CarClassColor;k={id,name:d.CarClassShortName||d.CarScreenNameShort||Tx("Class","Clase"),col:cc&&cc!==0xffffff?"#"+cc.toString(16).padStart(6,"0"):pal[ids.indexOf(id)%pal.length],list:[],best:999};m.set(id,k)}
     k.list.push(d);if(pos[d.CarIdx]>0)k.best=Math.min(k.best,pos[d.CarIdx])});
   return[...m.values()].map(k=>Object.assign(k,{n:k.list.length,sof:sofOf(k.list)})).sort((a,b)=>a.best-b.best||a.id-b.id)}
-function renderStandingsWidget(target){const box=target||$("#stdBox");if(!box||(!target&&box.closest("[hidden]")))return;const cfg=ui("std");box.innerHTML=(cfg.head.length?strip(cfg.head):"")+tableHTML(cfg.cols,standingsRows(false),T.PlayerCarIdx)+(cfg.foot.length?strip(cfg.foot):"")}
+function renderStandingsWidget(target){const box=target||$("#stdBox");if(!box||(!target&&box.closest("[hidden]")))return;const cfg=ui("std"),eng=engOn(cfg,target),rows=standingsRows(false);if(eng)rows.forEach(r=>{if(r&&r.d)r.noPit=true});box.innerHTML=(cfg.head.length?strip(cfg.head):"")+tableHTML(engCols(cfg.cols,true,eng),rows,T.PlayerCarIdx)+(cfg.foot.length?strip(cfg.foot):"")}
 /* the Standings tab: the session's own classes as a filter (only when several race: a single-class race has none) and
    the gap to the leader or to the car ahead; under it every car's position lap by lap */
 const STDV={cls:"all",gap:"leader"},POSHIST={key:"",laps:[]};
@@ -5079,7 +5089,17 @@ const LIVE_ESSENTIAL=["flag","dash","timing","deltabar","map","relative","fuel",
 const liveNonEssential=()=>[...new Set([...WIDGETS,...[...document.querySelectorAll("#v-live .wpanel[data-w]")].map(p=>p.dataset.w)])].filter(w=>!LIVE_ESSENTIAL.includes(w));
 let HIDDEN=new Set(store.get("pw.hiddenW",null)||liveNonEssential());
 // Telemetry's mode (liveModeBar) and the widgets it shows now
-let LIVE_MODE=store.get("pw.liveMode","basic");if(!["basic","full","cmp"].includes(LIVE_MODE))LIVE_MODE="basic";
+let LIVE_MODE=store.get("pw.liveMode","basic");if(!["basic","eng","full","cmp"].includes(LIVE_MODE))LIVE_MODE="basic";
+/* Engineer: what a race engineer watches (the car, the times, the field with each car's tyres, pit and laps, the gaps,
+   the fuel and its estimate, the tyres, the map, the weather), its own panels chosen in Layout apart from Basic's
+   ("pw.engShown", the panels it shows, so a new panel stays out until the driver adds it). While Engineer is on,
+   HIDDEN is its set and HID_BASIC keeps Basic's; the swap waits for the start's layout updates (LIVE_HID_OK) */
+const LIVE_ENG=["flag","dash","timing","deltabar","sectors","relative","standings","gaps","fuel","pit","tyres","engine","brakes","map","trackbar","weather","incidents","stats"];
+let HID_BASIC=null,LIVE_HID_OK=false;
+const liveAllW=()=>[...new Set([...WIDGETS,...[...document.querySelectorAll("#v-live .wpanel[data-w]")].map(p=>p.dataset.w)])];
+function engShown(){const s=store.get("pw.engShown",null);return Array.isArray(s)?s:LIVE_ENG}
+function liveHidSync(){if(!LIVE_HID_OK||OV.on)return;if(LIVE_MODE==="eng"){if(!HID_BASIC){HID_BASIC=HIDDEN;const s=engShown();HIDDEN=new Set(liveAllW().filter(w=>!s.includes(w)))}}else if(HID_BASIC){HIDDEN=HID_BASIC;HID_BASIC=null}}
+function hidSave(){if(HID_BASIC)store.set("pw.engShown",liveAllW().filter(w=>!HIDDEN.has(w)));else store.set("pw.hiddenW",[...HIDDEN])}
 /* the panels (and Full's traces, Lap compare's chart) scrolled out of sight: they are not drawn until they come back,
    so Full's every panel costs only what is on the screen */
 const LIVE_OFF=new Set();let LIVE_IO=null;
@@ -5108,7 +5128,7 @@ if(OV.on&&new URLSearchParams(location.search).get("fl")==="1"&&typeof window.pw
 
 /* once (also after the PC's profile brings an older layout): the Telemetry screen back to its essentials */
 function liveEssentialsOnce(){if(OV.on||+store.get("pw.liveV",0)>=2)return;HIDDEN=new Set(liveNonEssential());store.set("pw.hiddenW",[...HIDDEN]);store.set("pw.order",null);try{ORDER=null}catch(e){}store.set("pw.liveV",2)}
-function applyLayout(){liveEssentialsOnce();try{liveWatch()}catch(e){}setTimeout(markGameGaps,0);if(!OV.on)applyOrderAndSizes();setTimeout(packGrid,0);if(OV.on){document.querySelectorAll(".wpanel").forEach(p=>p.hidden=!OV.list.includes(p.dataset.w));$("#liveEmpty").hidden=true;return}
+function applyLayout(){liveEssentialsOnce();liveHidSync();try{liveWatch()}catch(e){}setTimeout(markGameGaps,0);if(!OV.on)applyOrderAndSizes();setTimeout(packGrid,0);if(OV.on){document.querySelectorAll(".wpanel").forEach(p=>p.hidden=!OV.list.includes(p.dataset.w));$("#liveEmpty").hidden=true;return}
   const full=LIVE_MODE==="full",cmp=LIVE_MODE==="cmp";LIVE_SHOWN.clear();
   document.querySelectorAll("#v-live .wpanel").forEach(p=>{const w=p.dataset.w;p.hidden=full?!(OV_BASIC.includes(w)||!proGated()):HIDDEN.has(w);if(!p.hidden&&!(cmp&&w!=="flag"))LIVE_SHOWN.add(w)});
   $("#liveGrid").hidden=cmp;$("#liveTraces").hidden=!full;$("#liveCmp").hidden=!cmp;if(cmp)renderLiveCmp();liveModeBar();
@@ -5116,7 +5136,7 @@ function applyLayout(){liveEssentialsOnce();try{liveWatch()}catch(e){}setTimeout
 function isPC(){return MODE==="bridge"&&INFO&&INFO.overlays&&/^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname)}
 function pcOverlays(){return MODE==="bridge"&&INFO&&INFO.overlays}
 async function openOverlayOnPC(w){const r=await fetch(`/api/overlay/open?w=${w}`,{method:"POST"}).catch(()=>null);if(!r||!r.ok){toast(Tx("Could not open the overlay window.","No se pudo abrir la ventana overlay."));return false}return true}
-async function popOut(w){if(pcOverlays()){if(!await openOverlayOnPC(w))return;OV_OPEN.add(w);markOvOpen();if(isPC()&&w!=="standings"){HIDDEN.add(w);store.set("pw.hiddenW",[...HIDDEN]);applyLayout()}toast(isPC()?Tx("Opened as an overlay. Bring it back here from Layout.","Abierto como overlay. Recupéralo aquí desde Diseño."):Tx("Opened on your PC.","Abierto en tu PC."))}
+async function popOut(w){if(pcOverlays()){if(!await openOverlayOnPC(w))return;OV_OPEN.add(w);markOvOpen();if(isPC()&&w!=="standings"){HIDDEN.add(w);hidSave();applyLayout()}toast(isPC()?Tx("Opened as an overlay. Bring it back here from Layout.","Abierto como overlay. Recupéralo aquí desde Diseño."):Tx("Opened on your PC.","Abierto en tu PC."))}
   else if(MODE==="bridge")window.open(`/?overlay=${w}`,"_blank")}
 /* a race report as saved: the incident total can be the 0 that iRacing's results still show at the
    flag while the laps counted them, and older PCs saved "AutÃ³dromo" for "Autódromo" */
@@ -5336,6 +5356,45 @@ setTimeout(()=>{if(TEAM.pend&&!OV.on&&teamSigned()&&teamOk()&&CUR_VIEW!=="team")
 let TEAM_PT=0;function teamPaintSoon(){if(CUR_VIEW!=="team"||TEAM_PT)return;TEAM_PT=setTimeout(()=>{TEAM_PT=0;teamPaintLive()},250)}
 /* the screen */
 const teamT=(en,es,pt)=>Tx(en,es,null,pt);
+/* the Team screen's Engineer: the fuel to the end, the relative and the standings with each car's tyres, PIT, OUT and
+   OFF and laps up or down, and the track map, from the telemetry this page has (the game's on the PC, the teammate's
+   while watching), and the share code (the PC's code for others, the web's Watch another driver) */
+function teamEngHTML(){const h=(t)=>`<div class="label">${esc(t)}</div>`;
+  return`<div class="frow tm-eng-h" style="margin-top:16px"><h2 style="margin:0">${esc(teamT("Engineer","Ingeniero","Engenheiro"))}</h2></div>
+  <div class="grid tm-eng" style="margin-top:8px">
+    <div class="panel s4" id="tmFuel"></div>
+    <div class="panel s8">${h(teamT("Relative","Relativo","Relativo"))}<div id="tmRel" data-eng="1"></div></div>
+    <div class="panel s7">${h(teamT("Standings","Clasificación","Classificação"))}<div id="tmStd" data-eng="1"></div></div>
+    <div class="panel s5">${h(teamT("Track map","Mapa del circuito","Mapa da pista"))}<canvas id="tmMap" height="320"></canvas></div>
+    <div class="panel s12" id="tmCode"></div></div>`}
+/* the fuel: the car's own telemetry when this page has it, else the teammate in the car (the team event) */
+function teamFuel(){const d=(teamInCar().map(a=>TEAM.ev[a].d)[0])||null,local=T.FuelLevel!=null&&T.FuelLevel>=0&&(T.IsOnTrack||T.IsOnTrackCar||!d);
+  const fuel=local?T.FuelLevel:d?d.fuel:null,per=local&&FUELPER>0?FUELPER:local&&T.FuelUsePerLap>0?T.FuelUsePerLap:d&&d.fuelPerLap>0?d.fuelPerLap:null;
+  const lt=local?(T.LapLastLapTime>0?T.LapLastLapTime:T.LapBestLapTime>0?T.LapBestLapTime:estLap()):d?(d.lastLap>0?d.lastLap:d.best>0?d.best:0):0;
+  let toEnd=null,est=true;if(local){const l=lapsLeft();if(l){toEnd=l.v;est=l.est}}else if(d&&d.sessionLeft>0&&lt>0)toEnd=Math.ceil(d.sessionLeft/lt)+1;
+  const tank=(S.DriverInfo||{}).DriverCarFuelMaxLtr*((S.DriverInfo||{}).DriverCarMaxFuelPct||1)||FUELMAX||null;
+  const lapsFuel=fuel!=null&&per?fuel/per:null,need=toEnd!=null&&per?toEnd*per:null,add=need!=null&&fuel!=null?Math.max(0,need-fuel):null;
+  return{fuel,per,lapsFuel,toEnd,est,need,add,stops:add==null?null:add<=0?0:tank?Math.ceil(add/tank):null,tank,pitLap:local&&lapsFuel!=null&&T.Lap!=null?Math.floor(T.Lap+lapsFuel):d&&d.pitLap>0?d.pitLap:null,driver:local?null:d&&d.driver}}
+function teamFuelHTML(){const f=teamFuel(),V=v=>v==null?"–":vol(v).toFixed(1)+" "+volU(),N=(v,k)=>v==null?"–":v.toFixed(k);
+  const ok=f.add!=null&&f.add<=0,pct=f.need>0&&f.fuel!=null?Math.min(100,f.fuel/f.need*100):0;
+  const st=[[teamT("Fuel","Combustible","Combustível"),V(f.fuel)],[teamT("Per lap","Por vuelta","Por volta"),V(f.per)],[teamT("Laps of fuel","Vueltas de combustible","Voltas de combustível"),N(f.lapsFuel,1)],
+    [teamT("Next stop","Próxima parada","Próxima parada"),f.pitLap!=null&&!ok?teamT("Lap ","Vuelta ","Volta ")+f.pitLap:"–"],[teamT("Laps to the end","Vueltas hasta el final","Voltas até o fim"),f.toEnd==null?"–":(f.est?"~":"")+f.toEnd],
+    [teamT("Fuel to the end","Combustible hasta el final","Combustível até o fim"),V(f.need)],[teamT("Fuel to add","Combustible a añadir","Combustível a adicionar"),f.add==null?"–":V(f.add)],[teamT("Stops","Paradas","Paradas"),f.stops==null?"–":String(f.stops)]];
+  return`<div class="label">${esc(teamT("Fuel tracker","Control de combustible","Controle de combustível"))}${f.driver?` <span class="muted">· ${esc(f.driver)}</span>`:""}</div>
+    <div class="tm-stats">${st.map(([k,v])=>`<div><div class="label">${esc(k)}</div><div class="tm-v mono">${esc(v)}</div></div>`).join("")}</div>
+    ${f.need>0&&f.fuel!=null?`<div class="meter" style="margin-top:10px"><b style="width:${pct.toFixed(1)}%;background:${ok?"var(--good)":"var(--accent)"}"></b></div><p class="note" style="margin:6px 0 0">${esc(ok?teamT("The fuel reaches the end.","El combustible llega al final.","O combustível chega ao fim."):teamT(`${vol(f.add).toFixed(1)} ${volU()} short of the end.`,`Faltan ${vol(f.add).toFixed(1)} ${volU()} para el final.`,`Faltam ${vol(f.add).toFixed(1)} ${volU()} para o fim.`))}</p>`:""}`}
+function teamPaintEng(){if(CUR_VIEW!=="team"||OV.on)return;const fb=$("#tmFuel");if(!fb)return;try{fb.innerHTML=teamFuelHTML()}catch(e){}
+  try{renderRelative($("#tmRel"))}catch(e){}try{renderStandingsWidget($("#tmStd"))}catch(e){}try{const c=$("#tmMap");if(c)drawMap(c)}catch(e){}}
+function teamEngWire(){const box=$("#tmCode");if(!box)return;
+  if(MODE==="bridge"&&!REMOTE&&!COMPANION){renderCodeShare(box);return}
+  // the web and the phones: watch another driver with the code they give
+  const T=Tx,cw=CPLIVE.mode==="code";box.innerHTML=`<h2>${esc(T("Watch another driver","Ver a otro piloto",null,"Ver outro piloto"))}</h2>
+    ${cw?`<p class="note"><span class="dot-${CPLIVE.on?"live":"wait"}"></span>${esc(CPLIVE.on?T("Watching","Viendo",null,"Vendo"):T("Waiting for their PC","Esperando a su PC",null,"Aguardando o PC"))} · <span class="mono">${esc(CPLIVE.code.replace(/^(.{4})(.{4})(.{2})$/,"$1-$2-$3"))}</span></p><button type="button" class="btn danger small" id="tmCodeStop">${esc(T("Disconnect","Desconectar",null,"Desconectar"))}</button>`
+    :`<form id="tmCodeForm" class="pc-form" style="max-width:440px"><input id="tmCodeIn" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="ABCD-EFGH-JK" maxlength="14" aria-label="${esc(T("Code","Código",null,"Código"))}"><button class="btn primary" type="submit">${esc(T("Watch","Ver",null,"Ver"))}</button></form><div id="tmCodeErr" class="note err"></div>`}`;
+  const st=$("#tmCodeStop");if(st)st.onclick=()=>{liveStop();teamEngWire()};
+  const f=$("#tmCodeForm");if(f)f.onsubmit=e=>{e.preventDefault();const c=liveCodeNorm($("#tmCodeIn").value);if(!liveCodeOk(c)){$("#tmCodeErr").textContent=T("The code has 10 letters and numbers, like ABCD-EFGH-JK.","El código tiene 10 letras y números, como ABCD-EFGH-JK.",null,"O código tem 10 letras e números, como ABCD-EFGH-JK.");return}
+    CPLIVE.wasOwn=CPLIVE.mode==="own";liveMode("code",c);show("live")}}
+setInterval(()=>{try{teamPaintEng()}catch(e){}},500);
 function teamDur(s){if(!(s>=0))return"–";s=Math.round(s);const h=Math.floor(s/3600),m=Math.floor(s%3600/60);return h?h+" h "+String(m).padStart(2,"0")+" min":m+" min"}
 function teamCarHTML(t){const inCar=teamInCar(),watching=teamWatching(t);
   const head=`<div class="frow" style="justify-content:space-between"><h2 style="margin:0">${esc(teamT("In the car","En el coche","No carro"))}</h2>${watching?`<button type="button" class="btn small danger" data-tmoff>${esc(teamT("Disconnect","Desconectar","Desconectar"))}</button>`:""}</div>`;
@@ -5394,8 +5453,9 @@ async function renderTeam(){const sec=$("#v-team"),box=$("#teamBox"),wb=$("#wipT
   const pick=L.length>1?`<div class="frow tm-pick" role="tablist">${L.map(x=>`<button type="button" class="chip" data-tmsel="${esc(x.id)}" aria-pressed="${x.id===t.id}">${esc(x.name)}</button>`).join("")}</div>`:"";
   box.innerHTML=`${TEAM.pend?teamFormsHTML(true):""}<div class="frow tm-head">${L.length>1?"":`<h2 style="margin:0">${esc(t.name)}</h2>`}${pick}</div>
     <div class="grid" style="margin-top:10px"><div class="panel s7" id="tmCar">${teamCarHTML(t)}</div><div class="panel s5" id="tmMem">${teamMembersHTML(t)}</div></div>
+    ${teamEngHTML()}
     <div id="tmTables" style="margin-top:10px">${teamTablesHTML(t)}</div>${TEAM.pend?"":`<div style="margin-top:14px">${teamFormsHTML(false)}</div>`}`;
-  teamWire(t);if(await teamLogLoad(t.id)&&CUR_VIEW==="team")teamPaintTables()}
+  teamWire(t);teamEngWire();teamPaintEng();if(await teamLogLoad(t.id)&&CUR_VIEW==="team")teamPaintTables()}
 // the server closed the team's room with 4003: this account is no longer in that team (left or removed)
 function teamGone(){toast(teamT("You are no longer in this team.","Ya no estás en este equipo.","Você não está mais nesta equipe."));TEAM.ev={};TEAM.pcs=[];TEAMWS.next=Date.now()+60000;teamLoad().then(()=>{if(CUR_VIEW==="team")renderTeam()})}
 function teamPendDone(){TEAM.pend="";try{sessionStorage.removeItem("pw.teamJoin")}catch(e){}}
@@ -5654,7 +5714,7 @@ function lyaHover(w,chip){let pop=$("#lyHover");if(!w||innerWidth<=820){if(LYA.h
   LYA.hover=w;pop.querySelector("b").textContent=lyaName(w);pop.hidden=false;const pool=$("#lyPool"),pr=(pool||chip).getBoundingClientRect(),cr=chip.getBoundingClientRect(),pw=300,ph=200;
   let x=pr.left-pw-12,y=cr.top+cr.height/2-ph/2;if(x<8){x=Math.min(innerWidth-pw-8,Math.max(8,cr.left));y=cr.top-ph-10;if(y<8)y=cr.bottom+10}
   pop.style.left=Math.round(x)+"px";pop.style.top=Math.round(Math.max(8,Math.min(innerHeight-ph-8,y)))+"px";lyaPeek([HIDDEN.has(LYA.sel)?LYA.sel:null,w]);lyaPreview(w,$("#lyHoverBox"))}
-function lyaSave(){store.set("pw.hiddenW",[...HIDDEN]);applyLayout()}
+function lyaSave(){hidSave();applyLayout()}
 function lyaSetCol(w,c){if(c===PW3_SLOT[w])delete PW3_COL[w];else PW3_COL[w]=c;store.set("pw.liveWsCol",PW3_COL);packGrid()}
 function lyaMoveBefore(w,before,after){const grid=$("#liveGrid");const seq=[...grid.querySelectorAll(":scope>.wpanel")].map(p=>p.dataset.w).filter(x=>x!==w);let i=before?seq.indexOf(before):-1;if(i>=0&&after)i++;
   seq.splice(i<0?seq.length:i,0,w);ORDER=seq;store.set("pw.order",ORDER);applyOrderAndSizes();packGrid();drawMapSoon()}
@@ -5683,11 +5743,11 @@ function openLayout(){floatDrawer(false);LAYOUT_VIEW=openLayout;CFG_BACK=null;ly
   let cur=WSIZE[w]||+((src&&src.dataset.def)||(src&&(src.className.match(/\bs(\d+)\b/)||[])[1])||12);
   if(!WSIZE[w]&&src&&!src.hidden&&!src.dataset.lypeek&&src.offsetWidth&&grid.clientWidth){const gp=lyaGap(grid);cur=Math.max(1,Math.min(12,Math.round((src.offsetWidth+gp)/(grid.clientWidth+gp)*12)))}
   const seg=(items,attr,isOn)=>`<span class="lyA-seg" role="group">${items.map(([v,t])=>`<button type="button" ${attr}="${v}" aria-pressed="${isOn(v)}">${esc(t)}</button>`).join("")}</span>`;
-  $("#dTitle").innerHTML=L("layout");$("#dSub").innerHTML=`<span class="mono">${shownN} / ${WIDGETS.length}</span> ${esc(Tx("shown","visibles",null,"visíveis"))}`;
+  $("#dTitle").innerHTML=L("layout")+(HID_BASIC?" · "+esc(Tx("Engineer","Ingeniero",null,"Engenheiro")):"");$("#dSub").innerHTML=`<span class="mono">${shownN} / ${WIDGETS.length}</span> ${esc(Tx("shown","visibles",null,"visíveis"))}`;
   const set=w==="flag"?"":ws?`<div class="lyA-lbl">${esc(Tx("Column","Columna",null,"Coluna"))}</div>`+seg([["L",Tx("Left","Izquierda",null,"Esquerda")],["M",Tx("Middle","Centro",null,"Centro")],["R",Tx("Right","Derecha",null,"Direita")]],"data-col",c=>pw3ColOf(w)===c)
     :`<div class="lyA-lbl">${esc(Tx("Width","Ancho",null,"Largura"))}${SIZES.includes(cur)?"":` <span class="mono">${cur}/12</span>`}</div>`+seg(SIZES.map(n=>[n,{3:"S",4:"M",6:"L",8:"XL",12:"Full"}[n]]),"data-wd",n=>+n===cur);
   const pool=WIDGETS.filter(x=>HIDDEN.has(x));
-  $("#dBody").innerHTML=`<div class="ly-top"><div class="frow"><button type="button" class="btn small" id="lyRec">★ ${esc(Tx("Essentials","Lo esencial","Das Wichtigste","O essencial"))}</button><button type="button" class="btn small" id="lyPop" disabled>${esc(Tx("Most used by the community","Lo más usado por la comunidad",null,"O mais usado pela comunidade"))}</button><button type="button" class="btn small" id="lyNone">${esc(Tx("Hide all","Desactivar todos","Alle ausblenden","Desativar todos"))}</button><button type="button" class="btn small" id="lyAll">${esc(Tx("Show all","Mostrar todos","Alle anzeigen","Mostrar todos"))}</button></div></div>
+  $("#dBody").innerHTML=`<div class="ly-top"><div class="frow"><button type="button" class="btn small" id="lyRec">★ ${esc(HID_BASIC?Tx("Engineer's panels","Paneles del ingeniero",null,"Painéis do engenheiro"):Tx("Essentials","Lo esencial","Das Wichtigste","O essencial"))}</button><button type="button" class="btn small" id="lyPop" disabled>${esc(Tx("Most used by the community","Lo más usado por la comunidad",null,"O mais usado pela comunidade"))}</button><button type="button" class="btn small" id="lyNone">${esc(Tx("Hide all","Desactivar todos","Alle ausblenden","Desativar todos"))}</button><button type="button" class="btn small" id="lyAll">${esc(Tx("Show all","Mostrar todos","Alle anzeigen","Mostrar todos"))}</button></div></div>
    <div class="lyA" id="lyList"><div class="lyA-main"><div class="lyA-cols" id="lyCols" hidden></div><div class="lyA-desk" id="lyDesk"><div class="lyA-scr" id="lyScr"></div><div class="lyA-hit" id="lyHit"></div></div></div>
     <aside class="lyA-side"><div class="lyA-card"><div class="lyA-pv" id="lyPrevBox"></div>
       <div class="lyA-nm"><h3>${esc(lyaName(w))}</h3><button type="button" class="lyA-sw" role="switch" id="lyShow" aria-checked="${on}" aria-label="${esc(lyaName(w))}"></button></div>
@@ -5699,7 +5759,7 @@ function openLayout(){floatDrawer(false);LAYOUT_VIEW=openLayout;CFG_BACK=null;ly
   $("#resetOrder").onclick=()=>{ORDER=null;WSIZE={};WHGT={};store.set("pw.order",null);store.set("pw.sizes",{});store.set("pw.heights",{});location.reload()};
   $("#toOverlays").onclick=()=>{closeDrawer();show("overlays")};
   const setShown=keep=>{const all=new Set([...WIDGETS,...[...document.querySelectorAll("#v-live .wpanel[data-w]")].map(p=>p.dataset.w)]);HIDDEN=new Set([...all].filter(w=>!keep.includes(w)));lyaSave();openLayout()};
-  $("#lyRec").onclick=()=>setShown(LIVE_REC);$("#lyNone").onclick=()=>setShown([]);if(typeof pw3LyPop==="function")pw3LyPop(setShown);$("#lyAll").onclick=()=>setShown(WIDGETS);
+  $("#lyRec").onclick=()=>setShown(HID_BASIC?LIVE_ENG:LIVE_REC);$("#lyNone").onclick=()=>setShown([]);if(typeof pw3LyPop==="function")pw3LyPop(setShown);$("#lyAll").onclick=()=>setShown(WIDGETS);
   $("#lyShow").onclick=()=>{HIDDEN.has(w)?HIDDEN.delete(w):HIDDEN.add(w);lyaSave();openLayout()};
   document.querySelectorAll("#dBody [data-col]").forEach(b=>b.onclick=()=>{lyaSetCol(w,b.dataset.col);HIDDEN.delete(w);lyaSave();openLayout()});
   document.querySelectorAll("#dBody [data-wd]").forEach(b=>b.onclick=()=>{lyaSetWidth(w,+b.dataset.wd);openLayout()});
@@ -5724,9 +5784,9 @@ Object.assign(UI_DEFAULTS,{deltabar:{barOnly:false,trend:true},timing:{sectors:t
   stats:{rows:["full","brk","coast","shifts","top","slip"],slipNow:true},gg:{trail:"m",peaks:true},system:{show:["fps","graph","gpu","cpu","net"]}});
 const OV_OPTS={
   relative:{k:"rel",o:[["classHead","b",["Class headers with their SOF","Cabeceras por clase con su SOF","Cabeçalhos por classe com o SOF"]],["dimLapped","b",["Dim the cars a lap or more away","Atenuar los coches a una vuelta o más","Escurecer os carros a uma volta ou mais"]],
-    ["notes","b",["Driver notes","Notas de pilotos","Notas de pilotos"]],["rowSize","c",["Row size","Tamaño de fila","Tamanho da linha"],OV_SIZES]]},
+    ["notes","b",["Driver notes","Notas de pilotos","Notas de pilotos"]],["engCols","b",["Tyres and pit in Engineer","Neumáticos y boxes en Ingeniero","Pneus e box no Engenheiro"]],["rowSize","c",["Row size","Tamaño de fila","Tamanho da linha"],OV_SIZES]]},
   standings:{k:"std",o:[["classHead","b",["Class headers with cars and SOF","Cabeceras por clase con coches y SOF","Cabeçalhos por classe com carros e SOF"]],["irShort","b",["Short iRating (1.8k)","iRating corto (1.8k)","iRating curto (1.8k)"]],
-    ["fastMark","b",["Fastest lap mark","Marca de vuelta rápida","Marca da volta mais rápida"]],["pitTag","b",["PIT tag","Etiqueta PIT","Etiqueta PIT"]]]},
+    ["fastMark","b",["Fastest lap mark","Marca de vuelta rápida","Marca da volta mais rápida"]],["pitTag","b",["PIT tag","Etiqueta PIT","Etiqueta PIT"]],["engCols","b",["Tyres and pit in Engineer","Neumáticos y boxes en Ingeniero","Pneus e box no Engenheiro"]]]},
   deltabar:{k:"deltabar",o:[["barOnly","b",["Bar only, no number","Solo la barra, sin número","Só a barra, sem número"]],["trend","b",["Trend arrow","Flecha de tendencia","Seta de tendência"]]]},
   timing:{k:"timing",o:[["sectors","b",["Sectors","Sectores","Setores"]],["lastBest","b",["Last and best lap","Última y mejor vuelta","Última e melhor volta"]],["flash","b",["Flash when a lap ends","Destello al cerrar vuelta","Destaque ao fechar a volta"]]]},
   inputs:{k:"inp",o:[["lineW","c",["Line thickness","Grosor de las líneas","Espessura das linhas"],[[.6,"Thin","Finas","Finas"],[1,"Normal","Normal","Normal"],[1.6,"Thick","Gruesas","Grossas"]]]]},
@@ -5781,8 +5841,8 @@ function ovOwnApply(){if(!OV.on)return;document.querySelectorAll(".wpanel[data-w
   const h=g.hide,hid=!OV.preview&&!CFG.edit&&(h==="car"||h==="pits")&&(!T.IsOnTrack||(h==="pits"&&!!T.OnPitRoad));p.style.visibility=hid?"hidden":""})}
 function openWidgetCfg(w,ov){floatDrawer(true);const k=CONFIGURABLE[w];LAYOUT_VIEW=()=>openWidgetCfg(w,ov);const c=ui(k);$("#dTitle").innerHTML=L("w."+w);$("#dSub").innerHTML=L("configure");
   // a column or item one game does not send says the games it works in, and is not offered while that game is chosen
-  const listEd=(field,catalog,prefix)=>{const sel=c[field],kind=catalog===COLS?"columns":"items",g=aGame(),gb=x=>gamesOf(kind,x).length<VIEW_GAMES.length?gameBadges(kind,x):"";
-    const rest=Object.keys(catalog).filter(x=>!sel.includes(x)&&gameHas(g,kind,x));
+  const listEd=(field,catalog,prefix)=>{const sel=c[field],kind=catalog===COLS?"columns":"items",noState=catalog===COLS,g=aGame(),gb=x=>gamesOf(kind,x).length<VIEW_GAMES.length?gameBadges(kind,x):"";
+    const rest=Object.keys(catalog).filter(x=>!sel.includes(x)&&gameHas(g,kind,x)&&!(noState&&x==="state"));
     return `<div class="cfglist">${sel.map((x,i)=>`<div class="cfgitem on${gameHas(g,kind,x)?"":" nd"}"${gameHas(g,kind,x)?"":` title="${esc(gameLacks(g,kind,x))}"`}><span>${L(prefix+x,true)}${gb(x)}</span><span><button type="button" class="pin" data-mv="${field}:${i}:-1" aria-label="Up">↑</button><button type="button" class="pin" data-mv="${field}:${i}:1" aria-label="Down">↓</button><button type="button" class="pin" data-rm="${field}:${x}">✕</button></span></div>`).join("")}
       ${rest.map(x=>`<div class="cfgitem"><span class="muted">${L(prefix+x,true)}${gb(x)}</span><button type="button" class="pin" data-add="${field}:${x}">+</button></div>`).join("")}</div>`};
   const num=(f,label,min,max)=>`<label class="frow"><span class="label" style="min-width:150px">${L(label,true)}</span><input type="number" class="num" data-num="${f}" min="${min}" max="${max}" value="${c[f]}"></label>`;
@@ -6349,9 +6409,9 @@ function startPreview(w){clearInterval(PREVIEW_TIMER);const pv=$("#cfgPreview");
    live, against the lap you pick: your best in purple, your last or another of your laps, and the next level and the record
    only when the model knows another driver's lap with its whole telemetry, never a rival's estimated pedals) ---------- */
 function liveModeBar(){const b=$("#liveMode");if(!b)return;
-  b.innerHTML=[["basic",Tx("Basic","Básico","Basis","Básico")],["full",Tx("Full","Completo","Komplett","Completo")],["cmp",Tx("Lap compare","Comparar vueltas","Rundenvergleich","Comparar voltas")]].map(([k,l])=>`<button type="button" data-lm="${k}" aria-pressed="${LIVE_MODE===k}">${esc(l)}</button>`).join("");
+  b.innerHTML=[["basic",Tx("Basic","Básico","Basis","Básico")],["eng",Tx("Engineer","Ingeniero",null,"Engenheiro")],["full",Tx("Full","Completo","Komplett","Completo")],["cmp",Tx("Lap compare","Comparar vueltas","Rundenvergleich","Comparar voltas")]].map(([k,l])=>`<button type="button" data-lm="${k}" aria-pressed="${LIVE_MODE===k}">${esc(l)}</button>`).join("");
   b.querySelectorAll("[data-lm]").forEach(x=>x.onclick=()=>{LIVE_MODE=x.dataset.lm;store.set("pw.liveMode",LIVE_MODE);applyLayout()});
-  $("#layoutBtn").hidden=LIVE_MODE!=="basic"}
+  $("#layoutBtn").hidden=LIVE_MODE!=="basic"&&LIVE_MODE!=="eng"}
 /* the model's next level and record for this car and track, only when they are another driver's lap with its whole
    telemetry (a race rival's lap has its pedals estimated from its speed: never a reference here) */
 function lcmpModel(){const PM=window.PW_MODEL,tid=S.WeekendInfo&&S.WeekendInfo.TrackID,cid=myDriver().CarID;if(!PM||!tid||!cid)return;
@@ -6515,7 +6575,8 @@ function renderPhoneHow(){const box=$("#phoneHow");if(!box)return;const T=Tx,app
     <li>${esc(T("Telemetry → Connect. This PC asks you to accept the phone, by its name; once accepted, it shows your live telemetry from anywhere, on Wi-Fi or mobile data.","Telemetría → Conectar. Este PC te pide aceptar el móvil, por su nombre; una vez aceptado, ve tu telemetría en vivo desde cualquier sitio, con Wi-Fi o datos.","Telemetrie → Verbinden. Dieser PC fragt dich, ob du das Handy (mit seinem Namen) annimmst; danach zeigt es deine Live-Telemetrie von überall, im WLAN oder mit mobilen Daten.","Telemetria → Conectar. Este PC pede para você aceitar o celular, pelo nome; depois de aceito, ele mostra sua telemetria ao vivo de qualquer lugar, no Wi-Fi ou nos dados móveis."))}</li></ol>
     <div class="frow" style="margin-top:8px"><a class="btn" href="${DL_BASE}PitlaneHQ-Android.apk">${esc(T("Download the Android app","Descargar la app de Android","Android-App herunterladen","Baixar o app Android"))}</a></div>
     <p class="note" style="margin:10px 0 0">${esc(T("Set the phone's screen lock to Never while you race.","Pon el bloqueo de pantalla del móvil en Nunca mientras corres.","Stell die Bildschirmsperre des Handys beim Fahren auf Nie.","Coloque o bloqueio de tela do celular em Nunca enquanto corre."))}</p></div></div>`}
-async function renderCodeShare(){const box=$("#codePanel");if(!box)return;if(MODE!=="bridge"||REMOTE||COMPANION){box.hidden=true;return}box.hidden=false;
+/* also on the Team screen (box #tmCode): the code without the voice chat */
+async function renderCodeShare(where){const box=where||$("#codePanel");if(!box)return;const team=box.id!=="codePanel";if(MODE!=="bridge"||REMOTE||COMPANION){box.hidden=true;return}box.hidden=false;
   let st={};try{st=await jget("/api/live/share")}catch(e){}const T=Tx,signed=!!(ME&&ME.signedIn);
   box.innerHTML=`<h2>${esc(T("Share your live telemetry with a code","Compartir tu telemetría en vivo con un código","Deine Live-Telemetrie mit einem Code teilen","Compartilhar sua telemetria ao vivo com um código"))}</h2>
     <p class="note">${esc(T("Give the code to a friend: in Pitlane HQ (web or phone) → Telemetry → Watch another driver, they see your telemetry from anywhere. They only watch. A new code stops the old one.","Dale el código a un amigo: en Pitlane HQ (web o móvil) → Telemetría → Ver a otro piloto, ve tu telemetría desde cualquier sitio. Solo mira. Un código nuevo anula el anterior.","Gib den Code einem Freund: in Pitlane HQ (Web oder Handy) → Telemetrie → Einen anderen Fahrer ansehen sieht er deine Telemetrie von überall. Er sieht nur zu. Ein neuer Code beendet den alten.","Dê o código a um amigo: no Pitlane HQ (web ou celular) → Telemetria → Ver outro piloto, ele vê sua telemetria de qualquer lugar. Só olha. Um código novo anula o anterior."))}</p>
@@ -6523,13 +6584,13 @@ async function renderCodeShare(){const box=$("#codePanel");if(!box)return;if(MOD
     :st.shareCode?`<div class="pc-code mono" style="margin:6px 0">${esc(st.shareCode)}</div><p class="note" style="margin:0 0 8px">${esc(st.shareOn?T(`${st.shareViewers||0} watching now`,`${st.shareViewers||0} viendo ahora`,`${st.shareViewers||0} sehen gerade zu`,`${st.shareViewers||0} vendo agora`):T("Connecting…","Conectando…","Verbinde…","Conectando…"))}</p>
       <div class="frow" style="gap:8px"><button type="button" class="btn small" id="codeNew">${esc(T("New code","Código nuevo","Neuer Code","Novo código"))}</button><button type="button" class="btn small danger" id="codeOff">${esc(T("Stop sharing","Dejar de compartir","Teilen beenden","Parar de compartilhar"))}</button></div>`
     :`<button type="button" class="btn primary" id="codeOn">${esc(T("Get a code","Crear un código","Code erstellen","Criar um código"))}</button>`}`;
-  if(signed)box.insertAdjacentHTML("beforeend",`<h2 style="margin-top:18px">${esc(T("Voice chat","Chat de voz","Voice chat","Chat de voz"))}</h2>
+  if(signed&&!team)box.insertAdjacentHTML("beforeend",`<h2 style="margin-top:18px">${esc(T("Voice chat","Chat de voz","Voice chat","Chat de voz"))}</h2>
     <p class="note">${esc(T("Whoever watches you live (your devices, or with the code) can talk to you. This PC answers by itself. Test the microphone before you race.","Quien te vea en directo (tus dispositivos, o con el código) puede hablarte. Este PC contesta solo. Prueba el micrófono antes de correr.","Whoever watches you live (your devices, or with the code) can talk to you. This PC answers by itself. Test the microphone before you race.","Quem assiste você ao vivo (seus dispositivos, ou com o código) pode falar com você. Este PC atende sozinho. Teste o microfone antes de correr."))}</p>
     <button type="button" class="btn small" id="vcTest">${esc(T("Test the microphone","Probar el micrófono","Test the microphone","Testar o microfone"))}</button><div id="vcTestOut" style="margin-top:8px"></div><div style="margin-top:12px;max-width:420px">${voiceVolHTML()}</div>`);
-  {const b=$("#vcTest");if(b)b.onclick=()=>voiceTestMic($("#vcTestOut"))}voiceVolBind(box);
-  const post=b=>jpost("/api/live/share",b).then(renderCodeShare).catch(e=>toast(e.message));
-  {const b=$("#codeOn");if(b)b.onclick=()=>post({on:true})}{const b=$("#codeNew");if(b)b.onclick=()=>post({on:true,new:true})}{const b=$("#codeOff");if(b)b.onclick=()=>post({on:false})}
-  clearTimeout(renderCodeShare.t);if(st.shareCode)renderCodeShare.t=setTimeout(()=>{if(CUR_VIEW==="settings"||CUR_VIEW==="share")renderCodeShare()},5000)}
+  if(!team){const b=$("#vcTest");if(b)b.onclick=()=>voiceTestMic($("#vcTestOut"));voiceVolBind(box)}
+  const again=()=>renderCodeShare(where),post=b=>jpost("/api/live/share",b).then(again).catch(e=>toast(e.message)),q=k=>box.querySelector("#"+k);
+  {const b=q("codeOn");if(b)b.onclick=()=>post({on:true})}{const b=q("codeNew");if(b)b.onclick=()=>post({on:true,new:true})}{const b=q("codeOff");if(b)b.onclick=()=>post({on:false})}
+  const tk=team?"t2":"t";clearTimeout(renderCodeShare[tk]);if(st.shareCode)renderCodeShare[tk]=setTimeout(()=>{if(team?CUR_VIEW==="team"&&box.isConnected:CUR_VIEW==="settings"||CUR_VIEW==="share")again()},5000)}
 async function renderShare(){const box=$("#sharePanel");if(!box)return;if(MODE!=="bridge"||REMOTE){box.hidden=true;return}box.hidden=false;
   let st={};try{st=await (await fetch("/api/share")).json()}catch(e){}const urls=(INFO&&INFO.urls)||[];
   box.innerHTML=`<h2>${L("share")}</h2><p class="note">${Lp("Let someone follow your session live from another computer, tablet or phone: telemetry, map, relative, laps and tyres. They can look but cannot change anything.","Deja que alguien siga tu sesión en vivo desde otro ordenador, tablet o móvil: telemetría, mapa, relative, vueltas y neumáticos. Puede mirar pero no cambiar nada.")}</p>
@@ -12593,6 +12654,7 @@ function pw3DragHook(grid){grid.addEventListener("pointerdown",e=>{const h=e.tar
   // once: a Basic still on the old essentials (never changed by the driver) moves to the new ones
   if(+store.get("pw.liveV",0)<3){const old=["flag","dash","timing","deltabar","map","relative","fuel","incidents"],was=store.get("pw.hiddenW",null),oldH=liveNonEssential().concat(LIVE_ESSENTIAL).filter((w,i,a)=>a.indexOf(w)===i&&!old.includes(w));
     const seen=["gaps","incidents","coach","weather","trackbar","system","spotter"];if(was==null||(oldH.every(w=>was.includes(w))&&was.every(w=>oldH.includes(w)||seen.includes(w)))){HIDDEN=new Set(liveNonEssential());store.set("pw.hiddenW",[...HIDDEN])}store.set("pw.liveV",3)}
+  LIVE_HID_OK=true;
   // the desk is the default: a driver with a layout of their own keeps it until Layout's reset
   PW3_WS=store.get("pw.liveWs",null);if(!pw3HasOwnLayout()){PW3_WS=1;store.set("pw.liveWs",1)}else if(PW3_WS==null){PW3_WS=0;store.set("pw.liveWs",0)}
   PW3_COL=store.get("pw.liveWsCol",{})||{};if(!pw3HasOwnLayout()&&Object.keys(PW3_COL).length){PW3_COL={};store.set("pw.liveWsCol",{})}

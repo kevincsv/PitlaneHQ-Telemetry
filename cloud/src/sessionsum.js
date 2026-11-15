@@ -3,6 +3,7 @@
 // the device happened to load (GET /api/sessions/summary)
 //   from: ms, the device's local start of the month (else this month in tz)
 //   tz:   the device's offset in minutes east of UTC (-Date.getTimezoneOffset()), for the days driven
+//   to:   ms, the end of the period (none: until now), for Home's "Last week"
 //   game: iracing | lmu (none: every game)
 // → { laps, secs, sessions, days, races, top5, best: {pos, field, cls, track, track_config, car, started} | null, from, at }
 
@@ -10,14 +11,14 @@
 // counts its laps at its best's pace (as the page did).
 // The filters go into the SQL only when given (never "?2 IS NULL OR game=?2"), so an account's sessions of the month are
 // read from its own index (sessions_uploader_started, migration 0078), not every driver's: every open app asks once a minute
-function base(game, uploader, secs) {
+function base(game, uploader, secs, to) {
   return `SELECT started, kind, pos, field, pos_cls, track, track_config, car, laps, best,
     ${secs ? "secs" : "NULL"} AS secs,
     CASE WHEN LOWER(COALESCE(kind,'')) LIKE '%race%' THEN 1 ELSE 0 END AS race
-  FROM sessions WHERE ${uploader ? "uploader=?3 AND " : ""}started>=?1 AND laps>0${game ? " AND game=?2" : ""}`;
+  FROM sessions WHERE ${uploader ? "uploader=?3 AND " : ""}started>=?1${to ? " AND started<?5" : ""} AND laps>0${game ? " AND game=?2" : ""}`;
 }
 
-export const summarySql = (game, uploader) => `WITH s AS (${base(game, uploader, true)})
+export const summarySql = (game, uploader, to) => `WITH s AS (${base(game, uploader, true, to)})
   SELECT COUNT(*) AS sessions, COALESCE(SUM(laps),0) AS laps,
     COALESCE(SUM(CASE WHEN secs>0 THEN secs WHEN best>0 AND best<3600 THEN laps*best*1.03 ELSE 0 END),0) AS secs,
     COUNT(DISTINCT CAST((started+?4)/86400000 AS INTEGER)) AS days,
@@ -25,7 +26,7 @@ export const summarySql = (game, uploader) => `WITH s AS (${base(game, uploader,
     COALESCE(SUM(CASE WHEN race=1 AND pos BETWEEN 1 AND 5 THEN 1 ELSE 0 END),0) AS top5
   FROM s`;
 // the best race place: the lowest, the newest of a tie (no lap is read for it)
-export const bestSql = (game, uploader) => `WITH s AS (${base(game, uploader, false)}) SELECT pos, field, pos_cls, track, track_config, car, started FROM s
+export const bestSql = (game, uploader, to) => `WITH s AS (${base(game, uploader, false, to)}) SELECT pos, field, pos_cls, track, track_config, car, started FROM s
   WHERE race=1 AND pos>0 ORDER BY pos, started DESC LIMIT 1`;
 
 // a session's lap count, its best (the account's own laps only: a friend's lap in DRINKS mode is never yours), its time
@@ -52,17 +53,18 @@ export function monthStart(now, tz) {
   return Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), 1) - tz * 60000;
 }
 
-export async function sessionSummary(DB, { from, tz, game, uploader, now }) {
+export async function sessionSummary(DB, { from, to, tz, game, uploader, now }) {
   now = now || Date.now();
   tz = Number.isFinite(+tz) ? Math.max(-TZ_MAX, Math.min(TZ_MAX, Math.round(+tz))) : 0;
   from = Number.isFinite(+from) && +from > 0 ? Math.round(+from) : monthStart(now, tz);
   game = game || null; uploader = uploader || null;
+  to = Number.isFinite(+to) && +to > from ? Math.round(+to) : null;
   // ?1 from, ?2 game, ?3 uploader, ?4 the offset: the ones the SQL leaves out are bound as null (a numbered parameter
   // that is not used is fine; the highest one used sets how many are bound)
-  const args = [from, game, uploader, tz * 60000];
+  const args = [from, game, uploader, tz * 60000, to];
   const upTo = (n) => args.slice(0, n);
   const used = (sql) => upTo(Math.max(...[...sql.matchAll(/\?(\d)/g)].map((m) => +m[1])));
-  const sq = summarySql(game, uploader), bq = bestSql(game, uploader);
+  const sq = summarySql(game, uploader, to), bq = bestSql(game, uploader, to);
   const [r, b] = await Promise.all([DB.prepare(sq).bind(...used(sq)).first(), DB.prepare(bq).bind(...used(bq)).first()]);
   const n = (v) => +v || 0;
   return {

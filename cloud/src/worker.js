@@ -236,7 +236,7 @@ async function api(req, env, url, ctx) {
   // Home's four numbers over every session of the account since the device's start of the month (sessionsum.js)
   if (p === "/api/sessions/summary" && m === "GET") {
     const q = url.searchParams;
-    const sum = await sessionSummary(env.DB, { from: q.get("from"), tz: q.get("tz"), game: q.get("game") ? gameOf(q.get("game")) : null, uploader: own || q.get("who") || null });
+    const sum = await sessionSummary(env.DB, { from: q.get("from"), to: q.get("to"), tz: q.get("tz"), game: q.get("game") ? gameOf(q.get("game")) : null, uploader: own || q.get("who") || null });
     // ?pbs=1 (Home's "Your week", own account only): the cars and tracks whose best this period beats every one before
     if (q.get("pbs") === "1" && own) sum.pbs = pbsOf(((await env.DB.prepare(SQL_PBS).bind(own, sum.from).all().catch(() => ({ results: [] }))).results) || []).map((r) => ({ track: r.track, track_config: r.track_config || null, car: r.car, best: r.b, before: r.before }));
     return json(sum);

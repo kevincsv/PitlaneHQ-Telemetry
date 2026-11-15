@@ -23,3 +23,16 @@ func TestOverlayUsageMinutes(t *testing.T) {
 		t.Fatalf("counts: %v", c)
 	}
 }
+
+func TestAgentUsageOnceADay(t *testing.T) {
+	if agentUseBody("2026-11-15", "2026-11-15", true) != nil || agentUseBody("", "", true) != nil {
+		t.Fatal("a day that went already sends nothing")
+	}
+	b := agentUseBody("2026-11-16", "2026-11-15", true)
+	if c := b["counts"].(map[string]int); !reflect.DeepEqual(c, map[string]int{"run:agent": 1, "set:autostart.on": 1}) || b["device"] != "pc" {
+		t.Fatalf("counts: %v", b)
+	}
+	if c := agentUseBody("2026-11-16", "", false)["counts"].(map[string]int); c["set:autostart.off"] != 1 || c["set:autostart.on"] != 0 {
+		t.Fatalf("off: %v", c)
+	}
+}

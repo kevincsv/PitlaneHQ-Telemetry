@@ -49,7 +49,13 @@ pt.StartGroup=Início:
 
 [Tasks]
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"
+; "Open Pitlane HQ when Windows starts" is unticked until the owner says yes to ticking it by default: then the build
+; passes /DStartupTicked (or it is defined here) and nothing else changes
+#ifdef StartupTicked
+Name: "startup"; Description: "{cm:StartWithWindows}"; GroupDescription: "{cm:StartGroup}"
+#else
 Name: "startup"; Description: "{cm:StartWithWindows}"; GroupDescription: "{cm:StartGroup}"; Flags: unchecked
+#endif
 
 [Files]
 ; the window (self-contained .NET publish) and the agent next to it

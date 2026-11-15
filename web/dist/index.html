@@ -10934,7 +10934,8 @@ html:not(.ov) #v-laps .lws-go{width:100%;min-height:44px;font:700 13px var(--f-b
 html:not(.ov) #v-laps .lm-more .chip .pro,html:not(.ov) #v-laps .lm-p>.label .pill{margin-left:4px}
 @media (max-width:820px){
   html:not(.ov) #v-laps #lapCompareHeads{grid-template-columns:1fr!important}#v-laps #lapCompareHeads .lh.b{text-align:left}
-  html:not(.ov) #v-laps #lapAnalyzer .la-row.lws-kpis{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  html:not(.ov) #v-laps #lapAnalyzer .la-row.lws-kpis,html:not(.ov) #v-laps #lapAnalyzer .la-row.lws-kpis:has(>.kcard:nth-child(5)){grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  html:not(.ov) #v-laps #lapAnalyzer .lws-kpis>.kcard:last-child:nth-child(odd){grid-column:1/-1}
   #v-laps .lws-cc{height:auto}html:not(.ov) #v-laps #lapCorners .la-c{height:120px}
   #v-laps .lws-dl{grid-template-columns:repeat(2,minmax(0,1fr))}}
 /* Select sessions (the design's window): one or several sessions of the same car and track */

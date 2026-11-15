@@ -6,8 +6,8 @@ Status as of 2026-11-14. Rules for releasing are in CLAUDE.md and `docs/spec/pc-
 
 | Where | Version | Notes |
 | --- | --- | --- |
-| PC agent + web (production) | 0.9.20 | 2026-11-15: the bug sweep's fixes (one look for both game questions, a close button on every window) and the donation bar every day, on top of 0.9.19 (the Workspace batch). |
-| Beta (beta.pitlanehq.app, PC Test builds) | 0.9.20 | Same commit as production, 2026-11-15. |
+| PC agent + web (production) | 0.9.21 | 2026-11-15: the invite code on the sign-up form, the light landing, the web app inside the screen on phones, and the minutes each overlay is open (admin Analytics), on top of 0.9.20. |
+| Beta (beta.pitlanehq.app, PC Test builds) | 0.9.21 | Same commit as production, 2026-11-15. |
 | Android | 0.9.14 | Production APK from /dl. Google Play: internal testing build 1291 (see `stores.md`). |
 | iOS | 0.9.14 | TestFlight build 392. App Store review not passed yet (see `stores.md`). |
 | Microsoft Store | 0.9.14 | 0.9.15 submission prepared, the owner submits it in Partner Center (see `stores.md`). |
@@ -22,9 +22,6 @@ Status as of 2026-11-14. Rules for releasing are in CLAUDE.md and `docs/spec/pc-
 
 - Watch in replay and the pedal and wheel check stay testers-only, also in production.
 - Version 1.0 waits for the Steam version to be approved by Valve. Stay on 0.9.x.
-- Which overlays are used (2026-11-15): the server part (each race report's overlays, the admin Analytics' Overlays
-  card) is on master and deployed. The agent's minutes per overlay (`ovusage.go`) is on `claude/project-thread-vql2gc`
-  only and waits on "sube" and a Windows build. The phones' admin panel does not show it yet.
 
 ## Version history (short)
 

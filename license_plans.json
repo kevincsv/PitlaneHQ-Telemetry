@@ -1,11 +1,26 @@
 {
-  "_help": "Pitlane HQ Pro. The admin page switches Pro on when the beta ends (until then everything is free). The lifetime offer: its price during the beta and after, and the checkout link of its product (buy: a Stripe Payment Link, https://buy.stripe.com/...). Stripe charges (Managed Payments); the server hears of each purchase through POST /stripe/webhook (secret STRIPE_WEBHOOK_SECRET). Lemon Squeezy (LEMONSQUEEZY_WEBHOOK_SECRET) still works for what was bought there.",
+  "_help": "Pitlane HQ Pro. The admin page switches Pro on when the beta ends, with 1.0 (until then everything is free). Prices are the owner's (Nov 1 2026): $6 a month, $59 a year. `trialDays`: every account made once Pro is on has Pro for that many days. `launch.thanksMonths`: the months of Pro everyone who had an account during the beta gets the day Pro is switched on. `founding`: whoever supported Pitlane HQ during the beta with `min` dollars or more in all keeps Pro at `off` percent less, and may buy Pro for life (`lifetime`) in the first `months` months after the beta. Stripe charges (Managed Payments); the server hears of each purchase through POST /stripe/webhook (secret STRIPE_WEBHOOK_SECRET). The checkout links (`buy`) are empty until the store opens.",
   "enforce": false,
   "provider": "stripe",
   "customUrl": "",
-  "storeUrl": "https://pitlanehq.lemonsqueezy.com",
+  "storeUrl": "https://pitlanehq.app/pricing",
   "trialDays": 14,
   "graceDays": 0,
+  "prices": {
+    "currency": "USD",
+    "monthly": 6,
+    "yearly": 59
+  },
+  "launch": {
+    "thanksMonths": 1
+  },
+  "founding": {
+    "min": 10,
+    "off": 50,
+    "lifetime": 29.99,
+    "months": 2,
+    "graceMonths": 2
+  },
   "plans": [
     {
       "id": "free",
@@ -14,51 +29,21 @@
         "Gratis"
       ],
       "price": [
-        "€0",
-        "0 €"
+        "$0",
+        "$0"
       ],
       "features": [
         [
-          "Live dashboard and overlays",
-          "Panel en vivo y overlays"
+          "Every lap saved, with your whole history",
+          "Todas tus vueltas guardadas, con todo tu historial"
         ],
         [
-          "Calendar and series",
-          "Calendario y series"
+          "The coach report, the overlays and live telemetry",
+          "El informe del coach, los overlays y la telemetría en vivo"
         ],
         [
-          "Phone as a second screen",
-          "Móvil como segunda pantalla"
-        ]
-      ]
-    },
-    {
-      "id": "monthly",
-      "name": [
-        "Pro monthly",
-        "Pro mensual"
-      ],
-      "price": [
-        "€4.99 / month",
-        "4,99 € / mes"
-      ],
-      "buy": "https://pitlanehq.lemonsqueezy.com/checkout/buy/MONTHLY",
-      "features": [
-        [
-          "Everything in Free",
-          "Todo lo de Gratis"
-        ],
-        [
-          "Race analysis and braking coach",
-          "Análisis de carrera y coach de frenada"
-        ],
-        [
-          "Your laps on the web and the phone",
-          "Tus vueltas en la web y el móvil"
-        ],
-        [
-          "Discord bot: coach, compare, your server's ranking and alerts",
-          "Bot de Discord: coach, comparar, ranking de tu servidor y alertas"
+          "Leaderboards, friends, leagues and the Discord bot",
+          "Clasificaciones, amigos, ligas y el bot de Discord"
         ]
       ]
     },
@@ -69,40 +54,52 @@
         "Pro anual"
       ],
       "price": [
-        "€39.99 / year",
-        "39,99 € / año"
+        "$59 / year",
+        "$59 / año"
       ],
-      "buy": "https://pitlanehq.lemonsqueezy.com/checkout/buy/YEARLY",
+      "note": [
+        "$4.92 a month",
+        "$4,92 al mes"
+      ],
+      "buy": "",
       "features": [
         [
-          "Everything in Pro",
-          "Todo lo de Pro"
+          "Everything in Free",
+          "Todo lo de Gratis"
         ],
         [
-          "2 months free",
-          "2 meses gratis"
+          "The coach's plan on the map and on the overlay",
+          "El plan del coach en el mapa y en el overlay"
+        ],
+        [
+          "Compare with any lap of the community",
+          "Compara con cualquier vuelta de la comunidad"
+        ],
+        [
+          "Race fuel, corner consistency and more charts",
+          "Combustible de carrera, consistencia por curva y más gráficas"
+        ],
+        [
+          "Experimental overlays",
+          "Overlays experimentales"
         ]
       ]
     },
     {
-      "id": "lifetime",
+      "id": "monthly",
       "name": [
-        "Lifetime",
-        "De por vida"
+        "Pro monthly",
+        "Pro mensual"
       ],
       "price": [
-        "€99 once",
-        "99 € una vez"
+        "$6 / month",
+        "$6 / mes"
       ],
-      "buy": "https://pitlanehq.lemonsqueezy.com/checkout/buy/LIFETIME",
+      "buy": "",
       "features": [
         [
-          "Everything in Pro, forever",
-          "Todo lo de Pro, para siempre"
-        ],
-        [
-          "All future updates",
-          "Todas las actualizaciones futuras"
+          "Everything in Pro",
+          "Todo lo de Pro"
         ]
       ]
     }
@@ -127,14 +124,16 @@
   ],
   "discordPro": [],
   "lifetime": {
-    "beta": 12,
-    "full": 24,
-    "currency": "EUR",
-    "buy": ""
+    "_help": "Pro for life, for founding supporters only, in the first two months after the beta.",
+    "beta": 29.99,
+    "full": 29.99,
+    "currency": "USD",
+    "buy": "",
+    "founders": true
   },
   "freeApps": 3,
   "donate": {
-    "_help": "The Support button beside Patreon: buy is the Stripe Payment Link (customer chooses the amount), link its id (plink_...). A donation gives the Supporter badge, never Pro.",
+    "_help": "The Support button: buy is the Stripe Payment Link (the customer chooses the amount), link its id (plink_...). A donation gives the Supporter badge, never Pro; donations of founding.min dollars or more in all also give the founding supporter offer.",
     "buy": "https://buy.stripe.com/fZu00beDP64g0fK5LKcwg01",
     "link": "plink_1UX1wZ0v1vN4NxKYN7Dn0YeK"
   },

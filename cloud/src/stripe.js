@@ -9,7 +9,8 @@
 // - charge.refunded: a fully refunded lifetime payment takes the lifetime away; a refunded donation is marked refunded
 // - a donation (the Support link: client_reference_id "support-<account id>", or the session's payment_link is
 //   donate.link of license_plans.json) gives the ♥ Supporter badge, like Patreon, never Pro; a donor without an account
-//   gets it when they sign up with that email (pro_orders kind 'supporter')
+//   gets it when they sign up with that email (pro_orders kind 'supporter'). Donations of founding.min dollars or more
+//   in all also give the founding supporter offer (accounts.founder, foundingCheck in lemon.js)
 // The account comes from client_reference_id; without it the buyer's email is matched by its hash, now or when they
 // sign up (pro_orders, proOnRegister in lemon.js). A subscription's events find their account through its order.
 import { setPro } from "./prostore.js";
@@ -70,7 +71,9 @@ export async function stripeWebhook(req, env, emailHash, opts = {}) {
       const cur = /^[a-z]{3}$/i.test(String(o.currency || "")) ? String(o.currency).toLowerCase() : null;
       await env.DB.prepare("INSERT INTO pro_orders (id, account_id, email_hash, kind, status, until, at, amount, currency, ref) VALUES (?1,?2,?3,'supporter','on',0,?4,?5,?6,?7) ON CONFLICT(id) DO NOTHING").bind(donOrder(o.id), accountId, eh, now, amount, cur, pi).run();
       if (accountId) await env.DB.prepare("UPDATE accounts SET supporter=1, supporter_src=COALESCE(supporter_src,'stripe') WHERE id=?1").bind(accountId).run();
-      return json({ ok: true, supporter: !!accountId });
+      // the founding supporter offer needs founding.min dollars or more in all (smaller gifts keep the badge alone)
+      const founder = opts.founding ? await opts.founding(env, accountId, eh).catch(() => false) : false;
+      return json({ ok: true, supporter: !!accountId, founder });
     }
     if (o.mode === "subscription" && o.subscription) {
       const id = subOrder(typeof o.subscription === "string" ? o.subscription : o.subscription.id);

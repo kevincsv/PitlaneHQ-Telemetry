@@ -22,9 +22,9 @@ Status as of 2026-11-14. Rules for releasing are in CLAUDE.md and `docs/spec/pc-
 
 - Watch in replay and the pedal and wheel check stay testers-only, also in production.
 - Version 1.0 waits for the Steam version to be approved by Valve. Stay on 0.9.x.
-- Which overlays are used (2026-11-15, branch `claude/project-thread-vql2gc`, not on master): the agent's minutes per
-  overlay, the server keeping each race report's overlays, the admin Analytics' Overlays card. Waits on "sube" (server)
-  and a Windows build (agent). The phones' admin panel does not show it yet.
+- Which overlays are used (2026-11-15): the server part (each race report's overlays, the admin Analytics' Overlays
+  card) is on master and deployed. The agent's minutes per overlay (`ovusage.go`) is on `claude/project-thread-vql2gc`
+  only and waits on "sube" and a Windows build. The phones' admin panel does not show it yet.
 
 ## Version history (short)
 

@@ -14,14 +14,35 @@
   // the layout's points (x east, y north, metres; point 0 on the start/finish line), its direction and left normal at every
   // point, and how far each edge is to the left (+) and to the right (−) of it
   function roadOf(map) {
-    const x = map.x, y = map.y, N = x.length, tx = new Float64Array(N), ty = new Float64Array(N);
+    const X = map.x, Y = map.y, N0 = X.length;
+    const e = map.edges && Array.isArray(map.edges.l) && map.edges.l.length === N0 && Array.isArray(map.edges.r) && map.edges.r.length === N0 ? map.edges : null;
+    // A game that gives its position less often than the lap is recorded leaves the layout with points on top of each
+    // other and gaps of 15 m: the road is drawn again through the points that really moved, as a smooth curve with a
+    // point every 3 m of road, so a distance along the lap is the same share of the road everywhere.
+    const px = [], py = [], el = [], er = [], num = (v) => (v != null && isFinite(v) ? +v : null);
+    for (let i = 0; i < N0; i++) { const k = px.length; if (k && Math.hypot(X[i] - px[k - 1], Y[i] - py[k - 1]) < 1.5) continue; px.push(+X[i]); py.push(+Y[i]); el.push(e ? num(e.l[i]) : null); er.push(e ? num(e.r[i]) : null); }
+    while (px.length > 8 && Math.hypot(px[px.length - 1] - px[0], py[py.length - 1] - py[0]) < 1.5) { px.pop(); py.pop(); el.pop(); er.pop(); }
+    const n = px.length, t = new Float64Array(n + 1); for (let i = 0; i < n; i++) { const j = (i + 1) % n; t[i + 1] = t[i] + Math.hypot(px[j] - px[i], py[j] - py[i]); }
+    const T = t[n], N = clamp(Math.round(T / 3), 120, 8000), x = new Float64Array(N), y = new Float64Array(N), l0 = new Array(N), r0 = new Array(N), ch = (i) => t[mod(i, n) + 1] - t[mod(i, n)];
+    const mix = (a, b, u) => (a == null ? b : b == null ? a : a + (b - a) * u);
+    for (let k = 0, i = 0; k < N; k++) {
+      const sK = k * T / N; while (i < n - 1 && t[i + 1] <= sK) i++;
+      const h = ch(i) || 1, u = clamp((sK - t[i]) / h, 0, 1), i0 = mod(i - 1, n), i2 = mod(i + 1, n), i3 = mod(i + 2, n), ha = ch(i - 1) + h || 1, hb = h + ch(i + 1) || 1;
+      const u2 = u * u, u3 = u2 * u, h00 = 2 * u3 - 3 * u2 + 1, h10 = u3 - 2 * u2 + u, h01 = -2 * u3 + 3 * u2, h11 = u3 - u2;
+      x[k] = h00 * px[i] + h10 * h * (px[i2] - px[i0]) / ha + h01 * px[i2] + h11 * h * (px[i3] - px[i]) / hb;
+      y[k] = h00 * py[i] + h10 * h * (py[i2] - py[i0]) / ha + h01 * py[i2] + h11 * h * (py[i3] - py[i]) / hb;
+      l0[k] = mix(el[i], el[i2], u); r0[k] = mix(er[i], er[i2], u);
+    }
+    // where the layout was put together from two laps the road steps a few metres to the side: rounded off over
+    // about 15 m each way (a hairpin moves by less than a metre)
+    for (let pass = 0; pass < 8; pass++) { const ax = Float64Array.from(x), ay = Float64Array.from(y); for (let i = 0; i < N; i++) { const a = mod(i - 1, N), b = mod(i + 1, N); x[i] = (ax[a] + 2 * ax[i] + ax[b]) / 4; y[i] = (ay[a] + 2 * ay[i] + ay[b]) / 4; } }
+    const tx = new Float64Array(N), ty = new Float64Array(N);
     for (let i = 0; i < N; i++) { const a = mod(i - 3, N), b = mod(i + 3, N); let dx = x[b] - x[a], dy = y[b] - y[a]; const m = Math.hypot(dx, dy) || 1; tx[i] = dx / m; ty[i] = dy / m; }
-    const e = map.edges && Array.isArray(map.edges.l) && map.edges.l.length === N && Array.isArray(map.edges.r) && map.edges.r.length === N ? map.edges : null;
     const sm = (a, w) => a.map((_, i) => { let s = 0, c = 0; for (let k = -w; k <= w; k++) { const v = a[mod(i + k, N)]; if (v != null && isFinite(v)) { s += v; c++; } } return c ? s / c : null; });
     // the drivers' outermost positions are the car's centre: the road goes a car's half width further
-    const l = e ? sm(e.l, 4).map((v) => clamp(v == null ? 6.5 : v + 1.3, 4.5, 16)) : new Array(N).fill(6.5);
-    const r = e ? sm(e.r, 4).map((v) => clamp(v == null ? -6.5 : v - 1.3, -16, -4.5)) : new Array(N).fill(-6.5);
-    return { x, y, N, tx, ty, l, r, g: map.g || null, measured: !!e };
+    const l = e ? sm(l0, 7).map((v) => clamp(v == null ? 6.5 : v + 1.3, 4.5, 16)) : new Array(N).fill(6.5);
+    const r = e ? sm(r0, 7).map((v) => clamp(v == null ? -6.5 : v - 1.3, -16, -4.5)) : new Array(N).fill(-6.5);
+    return { x, y, N, tx, ty, l, r, g: map.g || null, measured: !!e, q: 5 / (T / N) }; // q: points of the road in 5 m
   }
   // a point of the road at a fractional index, and its left normal
   function roadAt(R, s) {
@@ -51,16 +72,16 @@
     if (!xy || !Array.isArray(xy.x) || xy.x.length < 60 || xy.y.length !== xy.x.length) return null;
     let px = xy.x, py = xy.y; const NB = px.length, N = R.N; let geo = false;
     if (R.g && xy.g) { geo = true; if (R.g[0] !== xy.g[0] || R.g[1] !== xy.g[1]) { const dx = (xy.g[1] - R.g[1]) * 111320 * Math.cos(R.g[0] * Math.PI / 180), dy = (xy.g[0] - R.g[0]) * 110540; px = px.map((v) => v + dx); py = py.map((v) => v + dy); } }
-    const jOf = (i) => Math.round(i / NB * N) % N, st = Math.max(1, Math.round(NB / 400));
+    const jOf = (i) => Math.round(i / NB * N) % N, st = Math.max(1, Math.round(NB / 400)); const near0 = nearest; { } const nearestQ = (R_, x_, y_, j0, win) => near0(R_, x_, y_, j0, Math.round(win * R.q));
     let t = { a: 1, b: 0, tx: 0, ty: 0 };
-    const med = () => { const ds = []; for (let i = 0; i < NB; i += st) { const q = apply(t, px[i], py[i]); ds.push(nearest(R, q[0], q[1], jOf(i), 40)[1]); } ds.sort((a, b) => a - b); return Math.sqrt(ds[ds.length >> 1]); };
+    const med = () => { const ds = []; for (let i = 0; i < NB; i += st) { const q = apply(t, px[i], py[i]); ds.push(nearestQ(R, q[0], q[1], jOf(i), 40)[1]); } ds.sort((a, b) => a - b); return Math.sqrt(ds[ds.length >> 1]); };
     if (!geo || med() > 10) {
       // first by the share of the lap (both start on the line), then a few times by the nearest point of the road
       const P = [], Q = []; for (let i = 0; i < NB; i += st) { P.push([px[i], py[i]]); const j = jOf(i); Q.push([R.x[j], R.y[j]]); }
       const t0 = simil(P, Q); if (!t0) return null; t = t0;
       for (let it = 0; it < 5; it++) {
         const P2 = [], Q2 = [], ds = [];
-        for (let i = 0; i < NB; i += st) { const q = apply(t, px[i], py[i]), [j, d2] = nearest(R, q[0], q[1], jOf(i), 60); ds.push(d2); P2.push(q); Q2.push([R.x[j], R.y[j]]); }
+        for (let i = 0; i < NB; i += st) { const q = apply(t, px[i], py[i]), [j, d2] = nearestQ(R, q[0], q[1], jOf(i), 60); ds.push(d2); P2.push(q); Q2.push([R.x[j], R.y[j]]); }
         const lim = Math.max(15 * 15, [...ds].sort((a, b) => a - b)[ds.length >> 1] * 9), P3 = [], Q3 = [];
         P2.forEach((p, k) => { if (ds[k] <= lim) { P3.push(p); Q3.push(Q2[k]); } });
         const t2 = simil(P3, Q3); if (!t2) break; t = compose(t2, t);
@@ -72,7 +93,7 @@
     const s = new Float64Array(NB), lat = new Float64Array(NB); let last = -1;
     for (let i = 0; i < NB; i++) {
       const q = apply(t, px[i], py[i]), j0 = last < 0 ? jOf(i) : mod(last + Math.round(N / NB), N);
-      let [j] = nearest(R, q[0], q[1], j0, last < 0 ? 60 : 12); if (last >= 0) { const [jj, dd] = nearest(R, q[0], q[1], jOf(i), 40); const [, dj] = nearest(R, q[0], q[1], j, 0); if (dd < dj - 25) j = jj; }
+      let [j] = nearestQ(R, q[0], q[1], j0, last < 0 ? 60 : 12); if (last >= 0) { const [jj, dd] = nearestQ(R, q[0], q[1], jOf(i), 40); const [, dj] = nearestQ(R, q[0], q[1], j, 0); if (dd < dj - 25) j = jj; }
       // onto the segment before or after the nearest point
       let bs = j, bl = 0, bd = 1e18;
       for (const a of [mod(j - 1, N), j]) { const b = mod(a + 1, N), sx = R.x[b] - R.x[a], sy = R.y[b] - R.y[a], m2 = sx * sx + sy * sy || 1, f = clamp(((q[0] - R.x[a]) * sx + (q[1] - R.y[a]) * sy) / m2, 0, 1), cx = R.x[a] + sx * f, cy = R.y[a] + sy * f, d2 = (q[0] - cx) ** 2 + (q[1] - cy) ** 2; if (d2 < bd) { bd = d2; bs = a + f; const m = Math.sqrt(m2); bl = (-sy * (q[0] - cx) + sx * (q[1] - cy)) / m; } }
@@ -81,8 +102,16 @@
     // a path by dead reckoning drifts slowly: its average over ±400 m is the road's line
     let L2 = Array.from(lat);
     if (!geo) { const W = 80, pre = [0]; L2.forEach((v, i) => pre.push(pre[i] + v)); L2 = L2.map((v, i) => { const lo = Math.max(0, i - W), hi = Math.min(NB - 1, i + W); return v - (pre[hi + 1] - pre[lo]) / (hi - lo + 1); }); }
-    const out = { x: new Float64Array(NB), y: new Float64Array(NB), N: NB };
-    for (let i = 0; i < NB; i++) { let v = 0, c = 0; for (let k = -1; k <= 1; k++) { const ii = i + k; if (ii >= 0 && ii < NB) { v += L2[ii]; c++; } } v /= c; const p = roadAt(R, s[i]); v = clamp(v, p.r - 2, p.l + 2); out.x[i] = p.x + p.nx * v; out.y[i] = p.y + p.ny * v; }
+    // The line is the side of the road as a function of where on the road the car was, read again at even steps: a
+    // path whose points are bunched or far apart (a game's slow position) gives the same line, evenly spaced, and
+    // the side is averaged over about 12 m of road so the line has no kinks (well under a car's width of change).
+    const su = new Float64Array(NB); for (let i = 0; i < NB; i++) su[i] = s[i] + N * Math.round((i / NB * N - s[i]) / N);
+    const out = { x: new Float64Array(NB), y: new Float64Array(NB), N: NB }, rad = 12 / 5 * R.q, vv = new Float64Array(NB);
+    for (let k = 0; k < NB; k++) { const Tk = k / NB * N; let w = 0, v = 0, bd = 1e18, bv = 0;
+      for (let j = Math.max(0, k - 14); j <= Math.min(NB - 1, k + 14); j++) { const d = Math.abs(su[j] - Tk); if (d < bd) { bd = d; bv = L2[j]; } if (d < rad) { const g = 1 - d / rad; w += g; v += g * L2[j]; } }
+      vv[k] = w > 0 ? v / w : bv; }
+    for (let pass = 0; pass < 4; pass++) { const c = Float64Array.from(vv); for (let k = 0; k < NB; k++) vv[k] = (c[Math.max(0, k - 1)] + 2 * c[k] + c[Math.min(NB - 1, k + 1)]) / 4; }
+    for (let k = 0; k < NB; k++) { const p = roadAt(R, k / NB * N), v = clamp(vv[k], p.r - 2, p.l + 2); out.x[k] = p.x + p.nx * v; out.y[k] = p.y + p.ny * v; }
     return out;
   }
 
@@ -185,9 +214,10 @@
     const LA = lineW(lineA), LB = lineW(lineB);
     // where a lap's car was at d metres: on its line when it has one, else on the road's line
     const atRoad = (d) => { const p = roadAt(R, mod(d / L * R.N, R.N)); return Wp(p.x, p.y); };
-    const atLine = (ln, d) => { if (!ln || !ST.lines) return atRoad(d); const s = clamp(d / BIN, 0, ln.length - 1), i = Math.floor(s), f = s - i, a = ln[i], b = ln[Math.min(ln.length - 1, i + 1)]; return [a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f]; };
+    const atLine = (ln, d) => { if (!ln || !ST.lines) return atRoad(d); const m = ln.length - 1, sI = clamp(d / BIN, 0, m), i = Math.min(m - 1, Math.floor(sI)), u = sI - i, p0 = ln[Math.max(0, i - 1)], p1 = ln[i], p2 = ln[i + 1], p3 = ln[Math.min(m, i + 2)], u2 = u * u, u3 = u2 * u;
+      const c0 = -.5 * u3 + u2 - .5 * u, c1 = 1.5 * u3 - 2.5 * u2 + 1, c2 = -1.5 * u3 + 2 * u2 + .5 * u, c3 = .5 * u3 - .5 * u2; return [c0 * p0[0] + c1 * p1[0] + c2 * p2[0] + c3 * p3[0], c0 * p0[1] + c1 * p1[1] + c2 * p2[1] + c3 * p3[1]]; };
     const outward = (d) => { // the outside of the bend at d, in world coordinates
-      const s = d / L * R.N, p = roadAt(R, s), p1 = roadAt(R, s - 6), p2 = roadAt(R, s + 6), cr = (p.x - p1.x) * (p2.y - p.y) - (p.y - p1.y) * (p2.x - p.x), side = cr > 0 ? -1 : 1, w = side > 0 ? p.l : -p.r;
+      const s = d / L * R.N, p = roadAt(R, s), p1 = roadAt(R, s - 6 * R.q), p2 = roadAt(R, s + 6 * R.q), cr = (p.x - p1.x) * (p2.y - p.y) - (p.y - p1.y) * (p2.x - p.x), side = cr > 0 ? -1 : 1, w = side > 0 ? p.l : -p.r;
       const a = Wp(p.x, p.y), b = Wp(p.x + p.nx * side, p.y + p.ny * side); return { a, nx: b[0] - a[0], ny: b[1] - a[1], w };
     };
 
@@ -209,7 +239,8 @@
       dMx = mx; raw.forEach(([i, v]) => { if (Math.abs(v) < mx * .08) return; const col = v > 0 ? "var(--bad,#ff5c5c)" : "var(--good,#3ddc84)", op = (.35 + .65 * Math.min(1, Math.abs(v) / mx)).toFixed(2);
         [1, -1].forEach((side) => { const pts = []; for (let k = i; k <= i + st; k++) pts.push(edgeAt(k * BIN, side, 0)); dSegs.push(el("polyline", { class: "dseg", points: ptsStr(pts), stroke: col, "stroke-opacity": op }, gDelta)); }); }); }
     // the racing lines
-    const lnB = LB ? el("polyline", { class: "ln b", points: ptsStr(LB) }, gLines) : null, lnA = LA ? el("polyline", { class: "ln a", points: ptsStr(LA) }, gLines) : null;
+    const fine = (ln) => { const r = [], keep = ST.lines; ST.lines = true; for (let d = 0, m = (ln.length - 1) * BIN; d <= m; d += 1.25) r.push(atLine(ln, d)); ST.lines = keep; return r; };
+    const lnB = LB ? el("polyline", { class: "ln b", points: ptsStr(fine(LB)) }, gLines) : null, lnA = LA ? el("polyline", { class: "ln a", points: ptsStr(fine(LA)) }, gLines) : null;
     // the braking points and the slowest points of both laps, the same size on screen at any zoom
     const PX = []; // {g, d, lap, kind}
     const brk = (zs, k, ser) => (zs || []).forEach((z) => {
@@ -386,8 +417,8 @@
       const cutAt = (d, col, w) => { let dd = d - curD; if (dd < -back) dd += L; if (dd < -back || dd > far) return; const i = mod(Math.round(d / step), N), l = P(EL[i]), r = P(ER[i]); if (!l || !r) return; x.strokeStyle = col; x.lineWidth = Math.max(1.5, w * f / l[2]); x.beginPath(); x.moveTo(l[0], l[1]); x.lineTo(r[0], r[1]); x.stroke(); };
       cutAt(0, "#fff", .8); for (let j = 1; j < cnt; j++) cutAt(j / cnt * L, COL.mu, .4);
       // the racing lines, B under A, each as a few paths of one width
-      const lineAt = (ln, col) => { if (!ln || !ST.lines) return; const i0 = Math.max(0, Math.floor((curD - back - 10) / BIN)), i1 = Math.min(ln.length - 1, Math.ceil((curD + far) / BIN)), byW = new Map(); let prev = null;
-        for (let i = i0; i <= i1; i++) { const pp = P(ln[i]); if (pp && prev) { const w = Math.round(clamp(.35 * f / pp[2], 1.2, 7) * 2) / 2; let p = byW.get(w); if (!p) { p = new Path2D(); byW.set(w, p); } p.moveTo(prev[0], prev[1]); p.lineTo(pp[0], pp[1]); } prev = pp; }
+      const lineAt = (ln, col) => { if (!ln || !ST.lines) return; const d0 = Math.max(0, curD - back - 10), d1 = Math.min((ln.length - 1) * BIN, curD + far), byW = new Map(); let prev = null;
+        for (let d = d0; d <= d1; d += d - curD < 150 ? 2.5 : 5) { const pp = P(atLine(ln, d)); if (pp && prev) { const w = Math.round(clamp(.35 * f / pp[2], 1.2, 7) * 2) / 2; let p = byW.get(w); if (!p) { p = new Path2D(); byW.set(w, p); } p.moveTo(prev[0], prev[1]); p.lineTo(pp[0], pp[1]); } prev = pp; }
         x.strokeStyle = col; x.lineCap = "round"; byW.forEach((p, w) => { x.lineWidth = w; x.stroke(p); }); };
       lineAt(LB, COL.b); lineAt(LA, COL.a);
       // braking and slowest points ahead, with their speeds

@@ -230,7 +230,11 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   replay runs; the wheel and + − move the camera closer or further. The replay keeps the screen's refresh rate: the
   chase view is a canvas drawn in a few paths that lowers its own resolution when frames come late, the telemetry's
   cursor is moved without redrawing the traces. The same map opens from the Coach's track map (the same button) and
-  from a press on the Leaderboards' track map (community.md). Closing it leaves the analyzer's cursor where the map's was. The phones do
+  from a press on the Leaderboards' track map (community.md). What is drawn is corrected so it moves evenly (the
+  owner's choice, 2026-11-15, corrections nobody can see): the layout is drawn again as a smooth curve with a point every
+  3 m of road (`roadOf`: a game that gives its position slowly leaves points on top of each other, gaps of 15 m and a
+  step to the side where two laps were joined), and a lap's line is its side of the road read at even steps and averaged
+  over about 12 m (`lineOf`), followed as a curve (`atLine`). Closing it leaves the analyzer's cursor where the map's was. The phones do
   not have it yet (no phone work for now, the owner's choice).
 - The race summary has "Race pace" against the cars around you (coach-and-model.md, `racePace`).
 - The race summary opens by itself on the PC about three seconds after a race is saved (`onRaceReport`), so it is

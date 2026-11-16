@@ -245,7 +245,8 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   drivers known there, and the three corners that cost the most against the next level (else the record) with what to
   do (`tipTodo`) and on how many laps (`repText`). "Open the coach" opens that session in the Coach with that lap and no
   game or session question (`SESS_SKIP`), a corner opens the Coach's full-screen map from behind the car 120 m before
-  it, "Full summary" the race summary below (`openRace`).
+  it, "Full summary" the race summary below (`openRace`), which opens in the middle of the screen with its title and close
+  button fixed while it scrolls (`.drawer.center`).
 - The race report opens by itself on the PC about three seconds after a race is saved (`onRaceReport`), so it is
   there when the driver looks at the app: never over an open window, and not when the driver touched the app in the
   last minute. Under the result it shows "Leaderboard" (`raceBoard`, `boardStand`): the place of the driver's best lap

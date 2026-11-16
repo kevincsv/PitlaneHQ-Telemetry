@@ -1988,6 +1988,10 @@ nav.subtabs button[aria-selected="true"] .pill{color:inherit;border-color:curren
 #crp .crp-c>b{font:700 20px var(--f-display);color:var(--accent)}
 #crp .crp-acts{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
 @media (max-width:520px){#crp .crp-res{grid-template-columns:1fr 1fr}}
+
+/* the race summary in the middle of the screen (openRace): its title and close button stay while it scrolls */
+.drawer.center .drawer-panel{top:50%;left:50%;right:auto;bottom:auto;transform:translate(-50%,-50%);width:min(1000px,calc(100% - 32px))!important;max-height:calc(100% - 64px);border:1px solid var(--line2);border-radius:14px;box-shadow:0 22px 60px rgba(0,0,0,.6);padding-top:0}
+.drawer.center .drawer-panel>.vhead{position:sticky;top:0;z-index:3;background:var(--bg);margin:0 -16px 10px!important;padding:12px 16px;border-bottom:1px solid var(--line)}
 </style>
 
 </head>
@@ -4585,7 +4589,7 @@ function floatDrawer(on){const d=$("#drawer");d.classList.toggle("float",on);if(
     const up=()=>{h.removeEventListener("pointermove",mv);h.removeEventListener("pointerup",up);store.set("pw.cfgPos",[parseInt(p.style.left)||0,parseInt(p.style.top)||0])};
     h.addEventListener("pointermove",mv);h.addEventListener("pointerup",up)})}}
 function closeOpenPanels(){if(!$("#drawer").hidden)closeDrawer();document.querySelectorAll(".uidlg:not([data-sticky]) > .bg").forEach(b=>b.click())}
-function closeDrawer(){$("#drawer").hidden=true;$("#drawer").classList.remove("float");LAYOUT_VIEW=null;clearInterval(PREVIEW_TIMER);if(CUR_VIEW==="series")renderSeries()}
+function closeDrawer(){$("#drawer").hidden=true;$("#drawer").classList.remove("float","center");LAYOUT_VIEW=null;clearInterval(PREVIEW_TIMER);if(CUR_VIEW==="series")renderSeries()}
 $("#dClose").onclick=closeDrawer;$("#drawerBg").onclick=closeDrawer;document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!$("#drawer").hidden)closeDrawer()});
 function renderAgenda(){const now=Date.now();PLAN=PLAN.filter(p=>p.t>now-3*3600e3);
   $("#planList").innerHTML=PLAN.length?PLAN.map(p=>`<div class="agrow"><span class="t">${hm(p.t)}</span><span class="s"><div>${esc(p.name)}</div><div class="muted" style="font-size:13px">${esc(new Date(p.t).toLocaleDateString(locale(),{weekday:"short",day:"numeric",month:"short"}))} · ${esc(p.track)} · ${esc(until(p.t))}</div></span><button type="button" class="pin" aria-pressed="true" data-rm="${p.sid}@${p.t}">✕</button></div>`).join(""):`<p class="note">${Lp("Add sessions from the list to build your plan.","Añade sesiones de la lista para montar tu plan.")}</p>`;
@@ -8516,7 +8520,7 @@ async function openRace(id){await loadDrivers();const r0=(RACES||[]).find(x=>x.i
   $("#rDel").onclick=async()=>{if(!await uiConfirm(Tx("Delete this race report?","¿Borrar este informe de carrera?")))return;if(MODE==="bridge"){try{RACES=(await jpost("/api/races",{action:"delete",id})).races}catch(e){toast(e.message);return}}else RACES=RACES.filter(x=>x.id!==id);closeDrawer();renderRaces()};
   $("#dBody").querySelectorAll("[data-lapdrv]").forEach(b=>b.onclick=()=>setLapDriver(r,+b.dataset.lapdrv));
   $("#dBody").querySelectorAll("[data-drkon]").forEach(b=>b.onclick=()=>{DRK_EDIT[b.dataset.drkon]=1;openRace(b.dataset.drkon)}); // friends drove laps of a race recorded without their names
-  if($("#drawer").hidden)$("#drawer").hidden=false;renderRaceBrakes(r);raceBoard(r);
+  /* the race summary opens in the middle of the screen, like a race's window, with its title bar fixed while it scrolls */$("#drawer").classList.add("center");if($("#drawer").hidden)$("#drawer").hidden=false;renderRaceBrakes(r);raceBoard(r);
   /* the official change, when signed in to iRacing */
   if(MODE==="bridge"&&typeof ACC!=="undefined"&&ACC.loggedIn&&r.subsession){try{const j=await api("stats/member_recent_races");const x=(j.races||[]).find(z=>z.subsession_id===r.subsession);const o=$("#irOff");
     if(x&&o){const d=x.newi_rating-x.oldi_rating,sr=(x.new_sub_level-x.old_sub_level)/100;o.innerHTML=`${esc(Tx("official","oficial"))}: <b class="${d>=0?"good":"bad"}">${irTxt(d)}</b> · SR ${sr>=0?"+":""}${sr.toFixed(2)}`}}catch(e){}}}

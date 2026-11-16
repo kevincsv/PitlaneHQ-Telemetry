@@ -125,17 +125,20 @@ const shot = (l, f) => `<figure class="shot">${img(l, f, SHOT_ALT[l][f] || "Pitl
 const phones = (l, list) => `<div class="phs">${list.map((f) => `<figure>${img(l, f, SHOT_ALT[l][f] || "Pitlane HQ")}<figcaption>${esc(SHOT_ALT[l][f] || "")}</figcaption></figure>`).join("")}</div>`;
 
 // what is there of Le Mans Ultimate (its leagues, its records): its pages and links exist only then. Read once per
-// request, kept a few minutes per server
+// request, kept a few minutes per server. The memo is kept by the server's own env (env.ROOT, worker.js): the env a
+// request gets is a new object every time, so a memo kept by it never held and every page read the leaderboards again
 let HAS = { lmuLeagues: false, lmuRecords: false };
 const HAS_MEMO = new WeakMap();
 async function readHas(env) {
-  const m = HAS_MEMO.get(env);
+  const root = (env && env.ROOT) || env, m = HAS_MEMO.get(root);
   if (m && Date.now() - m.at < 5 * 60e3) return (HAS = m.has);
   const [denv, db] = watchDb(env);
-  const [lg, rc] = await Promise.all([leaguesData(denv, "lmu").then((D) => D.posted.length + D.found.length).catch(() => 0), topCombos(denv, 1, "lmu").then((x) => x.length).catch(() => 0)]);
+  // one lap of the game is enough to know its records exist (never every lap of it, as topCombos reads)
+  const [lg, rc] = await Promise.all([leaguesData(denv, "lmu").then((D) => D.posted.length + D.found.length).catch(() => 0),
+    denv.DB.prepare("SELECT 1 AS n FROM community_laps WHERE game='lmu' AND track_id>0 AND car_id>0 AND COALESCE(shown,'')<>'model' LIMIT 1").first().then((x) => (x ? 1 : 0)).catch(() => 0)]);
   const has = { lmuLeagues: lg > 0, lmuRecords: rc > 0 };
   if (db.failed) return (HAS = m ? m.has : has); // a read that failed says nothing: keep what was known
-  HAS_MEMO.set(env, { at: Date.now(), has });
+  HAS_MEMO.set(root, { at: Date.now(), has });
   return (HAS = has);
 }
 

@@ -108,10 +108,10 @@
   /* the advice of the line in one corner, [en, es, kind, pt], or null when it is like the reference's */
   function lineTip(c, sameBrake) {
     if (!c) return null; const f = (v) => Math.abs(v).toFixed(1), o = [];
-    if (c.entry >= 1.5) o.push([c.entry, sameBrake ? `You brake where the reference does but ${f(c.entry)} m more to the inside. Turn in from the outside` : `You turn in ${f(c.entry)} m more to the inside. Start the corner from the outside`, sameBrake ? `Frenas donde la referencia pero ${f(c.entry)} m más por dentro. Entra a la curva desde fuera` : `Entras ${f(c.entry)} m más por dentro. Empieza la curva desde fuera`, sameBrake ? "line_same_brake" : "line_turnin",
-      sameBrake ? `Você freia onde a referência freia, mas ${f(c.entry)} m mais por dentro. Entre na curva por fora` : `Você entra na curva ${f(c.entry)} m mais por dentro. Comece a curva por fora`]);
-    if (c.apex <= -1.5) o.push([-c.apex, `You pass ${f(c.apex)} m away from the apex. Get closer to the inside`, `Pasas a ${f(c.apex)} m del vértice. Acércate más por dentro`, "line_apex", `Você passa a ${f(c.apex)} m do ápice. Chegue mais perto da parte de dentro`]);
-    if (c.exit >= 1.5) o.push([c.exit, `You use ${f(c.exit)} m less track on exit. Let the car run out to the outside`, `Usas ${f(c.exit)} m menos de pista a la salida. Deja correr el coche hacia fuera`, "line_exit", `Você usa ${f(c.exit)} m a menos de pista na saída. Deixe o carro abrir até a parte de fora`]);
+    if (c.entry >= 1.5) o.push([c.entry, sameBrake ? `You brake where the reference does but ${f(c.entry)} m further inside. Start from the outside so the corner opens up` : `You turn in ${f(c.entry)} m further inside. Start the corner from the outside edge`, sameBrake ? `Frenas donde la referencia pero ${f(c.entry)} m más por dentro. Empieza desde fuera para abrir la curva` : `Giras ${f(c.entry)} m más por dentro. Empieza la curva desde el borde exterior`, sameBrake ? "line_same_brake" : "line_turnin",
+      sameBrake ? `Você freia onde a referência freia, mas ${f(c.entry)} m mais por dentro. Comece por fora para abrir a curva` : `Você entra ${f(c.entry)} m mais por dentro. Comece a curva pela borda de fora`]);
+    if (c.apex <= -1.5) o.push([-c.apex, `You miss the apex by ${f(c.apex)} m. Get closer to the inside edge`, `Te quedas a ${f(c.apex)} m del vértice. Acércate más al borde interior`, "line_apex", `Você fica a ${f(c.apex)} m do ápice. Chegue mais perto da borda de dentro`]);
+    if (c.exit >= 1.5) o.push([c.exit, `You use ${f(c.exit)} m less track on the exit. Let the car run out to the outside edge and you can open the throttle sooner`, `Usas ${f(c.exit)} m menos de pista a la salida. Deja que el coche se abra hasta el borde exterior y podrás acelerar antes`, "line_exit", `Você usa ${f(c.exit)} m a menos de pista na saída. Deixe o carro abrir até a borda de fora e você acelera mais cedo`]);
     if (!o.length) return null; o.sort((p, q) => q[0] - p[0]); return [o[0][1], o[0][2], o[0][3], o[0][4]];
   }
 
@@ -141,7 +141,17 @@
   /* the group the coach learns in (categories.js groupOf on the server): oval, dirt_oval, dirt_road or road, from the session's
      category (ctx.track.cat or the laps' cat), else the kind of oval the laps show; what /community/coach/weights and /coach/me
      take as ?cat= */
+  /* Le Mans Ultimate's classes drive apart: the prototypes (Hypercar, LMP2, LMP3: no ABS, more downforce) and the GTs
+     (LMGT3, LMGTE). From the class the game gave the lap, else the car's name; "" when neither says */
+  function lmuGroup(A) {
+    const c = String((A && (A.cls || A.carClass || A.class)) || "").toUpperCase(), n = String((A && A.car) || "");
+    if (/HYPER|LMH|LMDH|LMP/.test(c)) return "proto"; if (/GT/.test(c)) return "gt";
+    if (/gt3|gte|rsr|c8\.r|vantage amr/i.test(n)) return "gt";
+    if (/499p|963|gr010|9x8|v-series\.r|m hybrid|a424|sc63|scg ?007|vanwall|vandervell|isotta|tipo ?6|valkyrie|hypercar|lmdh|lmh|oreca|lmp|ligier|ginetta|duqueine/i.test(n)) return "proto";
+    return "";
+  }
   function catGroup(A, B, ctx) {
+    if (ctx && ctx.game === "lmu") return lmuGroup(A) || lmuGroup(B) || "road";
     const T = (ctx && ctx.track) || {}, c = String(T.cat || (A && A.cat) || (B && B.cat) || "").toLowerCase().replace(/[^a-z]/g, "");
     if (c === "oval") return "oval"; if (c === "dirtoval") return "dirt_oval"; if (c === "dirtroad") return "dirt_road";
     if (c) return "road";
@@ -236,38 +246,38 @@
         // the metres a braking tip asks for: what the drivers who gained really moved their braking by (tipAsk), never more than the gap seen
         const askA = tipAsk("brake_late_apex", cls), askE = tipAsk("brake_earlier", cls), askL = tipAsk("brake_later", cls);
         // braking later than the reference and arriving slower at the apex is one mistake, whatever phase pays for it
-        if (m && dd != null && dd > 6 && dmin != null && dmin < -2) say("brake_late_apex", `You brake ${r(dd)} m later than the reference and lose ${r(-dmin)} ${spdU()} at the apex. Brake ${askA && askA < r(dd) ? askA + " m" : "a little"} earlier and carry the speed`, `Frenas ${r(dd)} m más tarde que la referencia y pierdes ${r(-dmin)} ${spdU()} en el vértice. Frena ${askA && askA < r(dd) ? askA + " m" : "un poco"} antes y conserva la velocidad`, `Você freia ${r(dd)} m depois da referência e perde ${r(-dmin)} ${spdU()} no ápice. Freie ${askA && askA < r(dd) ? askA + " m" : "um pouco"} antes e leve a velocidade`);
+        if (m && dd != null && dd > 6 && dmin != null && dmin < -2) say("brake_late_apex", `You brake ${r(dd)} m later than the reference and reach the apex ${r(-dmin)} ${spdU()} slower. The late braking costs more than it gains. Brake ${askA && askA < r(dd) ? askA + " m" : "a little"} earlier and let the car roll through the apex`, `Frenas ${r(dd)} m más tarde que la referencia y llegas al vértice ${r(-dmin)} ${spdU()} más lento. Esa frenada tardía te cuesta más de lo que ganas. Frena ${askA && askA < r(dd) ? askA + " m" : "un poco"} antes y deja que el coche ruede por el vértice`, `Você freia ${r(dd)} m depois da referência e chega ao ápice ${r(-dmin)} ${spdU()} mais lento. Essa frenagem tardia custa mais do que ganha. Freie ${askA && askA < r(dd) ? askA + " m" : "um pouco"} antes e deixe o carro rolar pelo ápice`);
         else if (phase === "brake") {
-          if (dd != null && dd < -6) { const mv = askL && askL < r(-dd) ? askL : r(-dd); say("brake_later", `Brake ${mv} m later`, `Frena ${mv} m más tarde`, `Freie ${mv} m depois`); }
-          else if (!est && m && pa < pb - .05) say("brake_harder", `Brake harder at first (${r(pa * 100)} % vs ${r(pb * 100)} %)`, `Pisa más fuerte al empezar a frenar (${r(pa * 100)} % frente a ${r(pb * 100)} %)`, `Freie mais forte no início (${r(pa * 100)} % contra ${r(pb * 100)} %)`);
-          else if (dd != null && dd > 6) say("brake_earlier", `You braked ${r(dd)} m too late and lost the corner. Brake ${askE && askE < r(dd) ? askE + " m" : ""} earlier`.replace("  ", " "), `Frenaste ${r(dd)} m demasiado tarde y perdiste la curva. Frena ${askE && askE < r(dd) ? askE + " m " : ""}antes`, `Você freou ${r(dd)} m tarde demais e perdeu a curva. Freie ${askE && askE < r(dd) ? askE + " m " : ""}antes`);
-          else if (!est && trailA != null && trailB - trailA >= 15) say("trail", `Release the brake more gradually into the turn (trail braking ${r(trailA)} m vs ${r(trailB)} m)`, `Suelta el freno más progresivamente al entrar (trail braking ${r(trailA)} m frente a ${r(trailB)} m)`, `Solte o freio de forma mais gradual ao entrar na curva (trail braking ${r(trailA)} m contra ${r(trailB)} m)`);
+          if (dd != null && dd < -6) { const mv = askL && askL < r(-dd) ? askL : r(-dd); say("brake_later", `You brake ${r(-dd)} m before the reference, earlier than you need to. Brake ${mv} m later`, `Frenas ${r(-dd)} m antes que la referencia, antes de lo necesario. Frena ${mv} m más tarde`, `Você freia ${r(-dd)} m antes da referência, antes do necessário. Freie ${mv} m depois`); }
+          else if (!est && m && pa < pb - .05) say("brake_harder", `Hit the brake harder at the start. You peak at ${r(pa * 100)} % and the reference at ${r(pb * 100)} %. Press hard first and ease off as the car slows`, `Pisa el freno más fuerte al principio. Tú llegas al ${r(pa * 100)} % y la referencia al ${r(pb * 100)} %. Pisa fuerte primero y ve soltando según baja la velocidad`, `Pise o freio mais forte no começo. Você chega a ${r(pa * 100)} % e a referência a ${r(pb * 100)} %. Pise forte primeiro e vá soltando conforme a velocidade cai`);
+          else if (dd != null && dd > 6) say("brake_earlier", `You braked ${r(dd)} m too late and overshot the corner. Brake ${askE && askE < r(dd) ? askE + " m" : ""} earlier so you can turn in on time`.replace("  ", " "), `Frenaste ${r(dd)} m demasiado tarde y te pasaste en la curva. Frena ${askE && askE < r(dd) ? askE + " m " : ""}antes para poder girar a tiempo`, `Você freou ${r(dd)} m tarde demais e passou do ponto na curva. Freie ${askE && askE < r(dd) ? askE + " m " : ""}antes para conseguir virar a tempo`);
+          else if (!est && trailA != null && trailB - trailA >= 15) say("trail", `The reference keeps some brake on for ${r(trailB)} m into the turn and you let go after ${r(trailA)} m. A little brake keeps weight on the front so the car turns. Ease off the brake more slowly as you turn in`, `La referencia mantiene algo de freno durante ${r(trailB)} m al entrar y tú lo sueltas a los ${r(trailA)} m. Un poco de freno deja peso delante y el coche gira mejor. Suelta el freno más despacio al girar`, `A referência mantém um pouco de freio por ${r(trailB)} m na entrada e você solta depois de ${r(trailA)} m. Um pouco de freio deixa peso na frente e o carro vira melhor. Solte o freio mais devagar ao virar`);
           // against a reference whose pedals are estimated, the same braking point says what its speed shows, never how to press
-          else if (est && dd != null) say("brake_speed", "You brake where the reference does but it carries more speed through the braking zone. Brake a touch less and roll more speed in", "Frenas donde la referencia pero ella lleva más velocidad en la frenada. Frena un poco menos y deja correr más velocidad", "Você freia onde a referência freia, mas ela leva mais velocidade na zona de frenagem. Freie um pouco menos e leve mais velocidade para dentro");
-          else if (dd != null) say("brake_same", "Same braking point but slower through the braking zone. Brake hard at once, then release progressively", "Mismo punto de frenada pero más lento en la frenada. Pisa fuerte de golpe y suelta progresivamente", "Mesmo ponto de frenagem, mas mais lento na zona de frenagem. Freie forte de uma vez e depois solte aos poucos");
-          else say("brake_generic", "Brake a little later and harder", "Frena un poco más tarde y más fuerte", "Freie um pouco depois e mais forte");
+          else if (est && dd != null) say("brake_speed", "You brake at the same spot as the reference, but it keeps more speed through the braking zone. Brake a bit lighter and let more speed roll in", "Frenas en el mismo sitio que la referencia, pero ella mantiene más velocidad en la frenada. Frena un poco menos fuerte y deja entrar más velocidad", "Você freia no mesmo ponto da referência, mas ela mantém mais velocidade na frenagem. Freie um pouco mais leve e deixe mais velocidade entrar");
+          else if (dd != null) say("brake_same", "You brake at the same spot but lose time while slowing down. Hit the brake hard straight away, then ease off as you turn in", "Frenas en el mismo sitio pero pierdes tiempo mientras frenas. Pisa fuerte desde el primer momento y ve soltando al girar", "Você freia no mesmo ponto, mas perde tempo enquanto freia. Pise forte logo de cara e vá soltando ao virar");
+          else say("brake_generic", "The time goes in the braking zone. Brake a bit later and harder", "El tiempo se pierde en la frenada. Frena un poco más tarde y más fuerte", "O tempo se perde na frenagem. Freie um pouco depois e mais forte");
         }
         else if (phase === "entry") {
-          if (!est && trailA != null && trailB - trailA >= 15) say("trail", `Release the brake more gradually into the turn (trail braking ${r(trailA)} m vs ${r(trailB)} m)`, `Suelta el freno más progresivamente al entrar (trail braking ${r(trailA)} m frente a ${r(trailB)} m)`, `Solte o freio de forma mais gradual ao entrar na curva (trail braking ${r(trailA)} m contra ${r(trailB)} m)`);
-          else if (!est && coastA - coastB >= 10) say("coast", `Do not coast before the apex. ${r(coastA)} m without throttle or brake (reference ${r(coastB)} m)`, `No vayas sin gas ni freno antes del vértice. ${r(coastA)} m (referencia ${r(coastB)} m)`, `Não vá no embalo antes do ápice. ${r(coastA)} m sem acelerador nem freio (referência ${r(coastB)} m)`);
-          else if (dmin != null && dmin >= 0) say("entry_before", "You reach the apex as fast as the reference, so the time goes before it. Release the brake more gradually as you turn in", "Llegas al vértice tan rápido como la referencia, así que el tiempo se va antes. Suelta el freno más progresivamente al girar", "Você chega ao ápice tão rápido quanto a referência, então o tempo se perde antes. Solte o freio de forma mais gradual ao entrar na curva");
-          else say("entry_speed", "Carry more speed into the turn", "Entra con más velocidad en la curva", "Leve mais velocidade para dentro da curva");
+          if (!est && trailA != null && trailB - trailA >= 15) say("trail", `The reference keeps some brake on for ${r(trailB)} m into the turn and you let go after ${r(trailA)} m. A little brake keeps weight on the front so the car turns. Ease off the brake more slowly as you turn in`, `La referencia mantiene algo de freno durante ${r(trailB)} m al entrar y tú lo sueltas a los ${r(trailA)} m. Un poco de freno deja peso delante y el coche gira mejor. Suelta el freno más despacio al girar`, `A referência mantém um pouco de freio por ${r(trailB)} m na entrada e você solta depois de ${r(trailA)} m. Um pouco de freio deixa peso na frente e o carro vira melhor. Solte o freio mais devagar ao virar`);
+          else if (!est && coastA - coastB >= 10) say("coast", `Don't coast into the apex. You spend ${r(coastA)} m on neither pedal and the reference ${r(coastB)} m. Stay on the brake until you can pick up the throttle`, `No vayas a vela hacia el vértice. Pasas ${r(coastA)} m sin pisar ningún pedal y la referencia ${r(coastB)} m. Sigue en el freno hasta que puedas volver al gas`, `Não vá no embalo até o ápice. Você passa ${r(coastA)} m sem pedal nenhum e a referência ${r(coastB)} m. Fique no freio até poder voltar ao acelerador`);
+          else if (dmin != null && dmin >= 0) say("entry_before", "You reach the apex as fast as the reference, so the time goes on the way in. Ease off the brake more gradually as you turn in", "Llegas al vértice igual de rápido que la referencia, así que el tiempo se pierde al entrar. Suelta el freno más poco a poco al girar", "Você chega ao ápice tão rápido quanto a referência, então o tempo se perde na entrada. Solte o freio mais aos poucos ao virar");
+          else say("entry_speed", "Carry more speed into the turn. Release the brake a bit earlier and let the car roll in", "Entra con más velocidad. Suelta el freno un poco antes y deja que el coche ruede hacia dentro", "Entre com mais velocidade. Solte o freio um pouco antes e deixe o carro rolar para dentro");
         }
-        else if (phase === "apex") { if (dmin != null && dmin < -2) say("apex_speed", `Carry ${r(-dmin)} ${spdU()} more through the apex`, `Pasa ${r(-dmin)} ${spdU()} más rápido por el vértice`, `Passe pelo ápice com ${r(-dmin)} ${spdU()} a mais`); else if (dmin != null && dmin >= 0) say("apex_longer", "As fast at the slowest point but slow for longer. Shorten the slow part of the corner (turn in later, later apex)", "Igual de rápido en el punto más lento, pero lento durante más metros. Acorta la parte lenta de la curva (gira más tarde, vértice más tardío)", "Tão rápido no ponto mais lento, mas lento por mais tempo. Encurte a parte lenta da curva (entre mais tarde, ápice mais tardio)"); else say("apex_line", "A rounder, faster line through the apex", "Una trazada más redonda y rápida por el vértice", "Uma linha mais redonda e rápida pelo ápice"); }
+        else if (phase === "apex") { if (dmin != null && dmin < -2) say("apex_speed", `You are ${r(-dmin)} ${spdU()} slower than the reference at the apex. Brake a little less and trust the grip, the speed you carry here lasts down the next straight`, `Vas ${r(-dmin)} ${spdU()} más lento que la referencia en el vértice. Frena un poco menos y confía en el agarre, la velocidad que llevas aquí te dura toda la recta siguiente`, `Você está ${r(-dmin)} ${spdU()} mais lento que a referência no ápice. Freie um pouco menos e confie na aderência, a velocidade que você leva aqui dura até a próxima reta`); else if (dmin != null && dmin >= 0) say("apex_longer", "You match the reference's slowest speed but stay slow for longer. Turn in a bit later and aim for a later apex, so you straighten the car and get on the throttle sooner", "Igualas la velocidad mínima de la referencia pero estás lento durante más metros. Gira un poco más tarde y busca un vértice más tardío para enderezar el coche y acelerar antes", "Você iguala a velocidade mínima da referência, mas fica lento por mais metros. Vire um pouco mais tarde e busque um ápice mais tardio para endireitar o carro e acelerar antes"); else say("apex_line", "Take a rounder line through the apex so you keep more speed", "Haz una trazada más redonda por el vértice para llevar más velocidad", "Faça uma linha mais redonda pelo ápice para levar mais velocidade"); }
         else {
-          if (late != null && late >= 8) say("throttle", `Get on the throttle ${r(late)} m earlier`, `Acelera ${r(late)} m antes`, `Acelere ${r(late)} m antes`);
-          else if (!est && rampA != null && rampB != null && rampB - rampA >= 15 && ((lA >= 1 && lA > lB) || (hasA && hasB && rA > rB + 1))) say("throttle_rough", `You open the throttle faster than the reference and then have to correct. Open it more progressively (${Math.round(rampA)} m to full vs ${Math.round(rampB)} m)`, `Abres el gas más rápido que la referencia y luego tienes que corregir. Ábrelo más progresivo (${Math.round(rampA)} m hasta el fondo frente a ${Math.round(rampB)} m)`, `Você abre o acelerador mais rápido que a referência e depois precisa corrigir. Abra de forma mais progressiva (${Math.round(rampA)} m até o fundo contra ${Math.round(rampB)} m)`);
-          else if (!est && rampA != null && rampB != null && rampA - rampB >= 15) say("throttle_slow", `You take ${Math.round(rampA)} m to reach full throttle (reference ${Math.round(rampB)} m). Squeeze it to full sooner`, `Tardas ${Math.round(rampA)} m en llegar a fondo (referencia ${Math.round(rampB)} m). Llega al 100 % antes`, `Você leva ${Math.round(rampA)} m para chegar ao acelerador a fundo (referência ${Math.round(rampB)} m). Pise até o fundo mais cedo`);
-          else if (!est && coastA - coastB >= 10) say("no_wait", "Do not wait between the brake and the throttle", "No esperes entre el freno y el acelerador", "Não espere entre o freio e o acelerador");
-          else if (late != null && late <= -8 && dmin != null && dmin < -1) say("exit_speed", `You pick up the throttle ${r(-late)} m earlier but leave the apex ${r(-dmin)} ${spdU()} slower. Carry the speed through the apex and the exit follows`, `Aceleras ${r(-late)} m antes pero sales del vértice ${r(-dmin)} ${spdU()} más lento. Conserva la velocidad en el vértice y la salida vendrá sola`, `Você acelera ${r(-late)} m antes, mas sai do ápice ${r(-dmin)} ${spdU()} mais lento. Leve a velocidade pelo ápice e a saída vem junto`);
-          else say("full_throttle", "Full throttle sooner on exit", "Acelerador a fondo antes en la salida", "Acelerador a fundo mais cedo na saída");
+          if (late != null && late >= 8) say("throttle", `Get back on the throttle ${r(late)} m earlier, the reference is already accelerating there`, `Vuelve al gas ${r(late)} m antes, la referencia ya está acelerando ahí`, `Volte ao acelerador ${r(late)} m antes, a referência já está acelerando ali`);
+          else if (!est && rampA != null && rampB != null && rampB - rampA >= 15 && ((lA >= 1 && lA > lB) || (hasA && hasB && rA > rB + 1))) say("throttle_rough", `You go to full throttle in ${Math.round(rampA)} m and then have to correct. Squeeze the throttle on over ${Math.round(rampB)} m like the reference`, `Llegas a fondo en ${Math.round(rampA)} m y luego tienes que corregir. Ábrelo poco a poco en ${Math.round(rampB)} m como la referencia`, `Você chega ao fundo em ${Math.round(rampA)} m e depois precisa corrigir. Abra aos poucos em ${Math.round(rampB)} m como a referência`);
+          else if (!est && rampA != null && rampB != null && rampA - rampB >= 15) say("throttle_slow", `You take ${Math.round(rampA)} m to reach full throttle and the reference ${Math.round(rampB)} m. Once the car is straight, go to full throttle sooner`, `Tardas ${Math.round(rampA)} m en llegar a fondo y la referencia ${Math.round(rampB)} m. En cuanto el coche esté recto, pisa a fondo antes`, `Você leva ${Math.round(rampA)} m para chegar ao fundo e a referência ${Math.round(rampB)} m. Assim que o carro estiver reto, pise até o fundo mais cedo`);
+          else if (!est && coastA - coastB >= 10) say("no_wait", "Don't wait between the brake and the throttle. Go straight from one pedal to the other", "No esperes entre el freno y el gas. Pasa directamente de un pedal al otro", "Não espere entre o freio e o acelerador. Passe direto de um pedal para o outro");
+          else if (late != null && late <= -8 && dmin != null && dmin < -1) say("exit_speed", `You get on the throttle ${r(-late)} m earlier but leave the apex ${r(-dmin)} ${spdU()} slower. Keep more speed through the apex and the exit comes by itself`, `Aceleras ${r(-late)} m antes pero sales del vértice ${r(-dmin)} ${spdU()} más lento. Lleva más velocidad por el vértice y la salida vendrá sola`, `Você acelera ${r(-late)} m antes, mas sai do ápice ${r(-dmin)} ${spdU()} mais lento. Leve mais velocidade pelo ápice e a saída vem sozinha`);
+          else say("full_throttle", "Get to full throttle sooner on the exit", "Pisa a fondo antes en la salida", "Pise até o fundo mais cedo na saída");
         }
         if (COACH_GEN.includes(kind)) {
           if (est) { /* the reference's gears and throttle are estimated: no gear or lift tip against them */ }
-          else if (gA >= 1 && gB >= 1 && gB > gA) say("gear_up", `Take this corner in gear ${gB} like the reference (you use gear ${gA})`, `Toma esta curva en ${gB}ª como la referencia (tú vas en ${gA}ª)`, `Faça esta curva em ${gB}ª marcha como a referência (você usa a ${gA}ª)`);
-          else if (gA >= 1 && gB >= 1 && gB < gA) say("gear_down", `Drop to gear ${gB} for the apex like the reference (you stay in gear ${gA})`, `Baja a ${gB}ª en el vértice como la referencia (tú te quedas en ${gA}ª)`, `Reduza para a ${gB}ª marcha no ápice como a referência (você fica na ${gA}ª)`);
-          else if (phase === "exit" && lA >= 2 && lA > lB + 1) say("lifts", `Smoother throttle on exit. You lifted ${lA} times after the apex (reference ${lB})`, `Acelera más progresivo a la salida. Levantaste ${lA} veces tras el vértice (referencia ${lB})`, `Acelerador mais suave na saída. Você aliviou ${lA} vezes depois do ápice (referência ${lB})`);
-          else if (oval !== "dirt" && hasA && hasB && rA >= 3 && rA > rB + 2) say("steer", `${rA} steering corrections in this corner (reference ${rB}). Turn in once, smoothly`, `${rA} correcciones de volante en esta curva (referencia ${rB}). Gira una vez, suave`, `${rA} correções de volante nesta curva (referência ${rB}). Gire uma vez, com suavidade`);
+          else if (gA >= 1 && gB >= 1 && gB > gA) say("gear_up", `You take this corner in gear ${gA} and the reference in gear ${gB}. Use gear ${gB}`, `Tomas esta curva en ${gA}ª y la referencia en ${gB}ª. Usa la ${gB}ª`, `Você faz esta curva em ${gA}ª e a referência em ${gB}ª. Use a ${gB}ª`);
+          else if (gA >= 1 && gB >= 1 && gB < gA) say("gear_down", `You stay in gear ${gA} at the apex and the car pulls less on the way out. Shift down to gear ${gB} like the reference`, `Te quedas en ${gA}ª en el vértice y el coche tira menos a la salida. Baja a ${gB}ª como la referencia`, `Você fica na ${gA}ª no ápice e o carro puxa menos na saída. Reduza para a ${gB}ª como a referência`);
+          else if (phase === "exit" && lA >= 2 && lA > lB + 1) say("lifts", `Be smoother on the throttle on exit. You lifted ${lA} times after the apex and the reference ${lB}. Open the throttle once and keep it open`, `Acelera más suave a la salida. Levantaste ${lA} veces después del vértice y la referencia ${lB}. Abre el gas una vez y mantenlo`, `Acelere mais suave na saída. Você aliviou ${lA} vezes depois do ápice e a referência ${lB}. Abra uma vez e mantenha`);
+          else if (oval !== "dirt" && hasA && hasB && rA >= 3 && rA > rB + 2) say("steer", `You correct the wheel ${rA} times in this corner and the reference ${rB}. Turn in once, smoothly, and hold it`, `Corriges el volante ${rA} veces en esta curva y la referencia ${rB}. Gira una vez, suave, y mantenlo`, `Você corrige o volante ${rA} vezes nesta curva e a referência ${rB}. Vire uma vez, com suavidade, e segure`);
         }
         // on an oval, a corner the reference takes with a lift hears about the lift (where, how deep, how long) and the
         // speed through the middle of the corner, never about a brake it does not use
@@ -276,14 +286,14 @@
           const thrMin = (s) => { let t = 1; for (let q = x0; q <= i1 && q < s.length; q++) if (s[q] && s[q][2] < t) t = s[q][2]; return t; };
           const offFull = (s) => { let c = 0; for (let q = x0; q <= i1 && q < s.length; q++) if (s[q] && s[q][2] < .9) c++; return c * BIN; };
           const mA = thrMin(sa), mB = thrMin(sb), oA = offFull(sa), oB = offFull(sb), bA = peak(sa, x0, i1)[0], bB = peak(sb, x0, i1)[0];
-          if (z.flatB) say("oval_flat", `The reference stays flat out here and you lift for ${r(oA)} m (down to ${pc(mA)}). Stay flat out`, `La referencia va a fondo aquí y tú levantas durante ${r(oA)} m (hasta el ${pc(mA)}). Mantén el pie a fondo`, `A referência vai de pé no fundo aqui e você alivia por ${r(oA)} m (até ${pc(mA)}). Mantenha o pé no fundo`);
-          else if (!est && bA > .12 && bB <= .12) say("oval_no_brake", `The reference only lifts here (down to ${pc(mB)}) and you brake. Lift instead and roll the speed into the corner`, `La referencia solo levanta aquí (hasta el ${pc(mB)}) y tú frenas. Levanta en vez de frenar y deja correr la velocidad en la curva`, `A referência só alivia aqui (até ${pc(mB)}) e você freia. Alivie em vez de frear e leve a velocidade para dentro da curva`);
-          else if (m && dd != null && dd < -8) say("oval_lift_later", `You lift ${r(-dd)} m before the reference. Lift later`, `Levantas ${r(-dd)} m antes que la referencia. Levanta más tarde`, `Você alivia ${r(-dd)} m antes da referência. Alivie mais tarde`);
-          else if (m && dd != null && dd > 8 && dmin != null && dmin < -2) say("oval_lift_early", `You lift ${r(dd)} m later than the reference and lose ${r(-dmin)} ${u} in the middle of the corner. Lift a touch earlier and carry the speed through the center`, `Levantas ${r(dd)} m más tarde que la referencia y pierdes ${r(-dmin)} ${u} en mitad de la curva. Levanta un poco antes y conserva la velocidad en el centro`, `Você alivia ${r(dd)} m depois da referência e perde ${r(-dmin)} ${u} no meio da curva. Alivie um pouco antes e leve a velocidade pelo centro`);
-          else if (!est && mA < mB - .15) say("oval_lift_less", `You lift to ${pc(mA)} (reference ${pc(mB)}). A lighter lift is enough here`, `Levantas hasta el ${pc(mA)} (referencia ${pc(mB)}). Aquí basta con levantar menos`, `Você alivia até ${pc(mA)} (referência ${pc(mB)}). Aqui basta aliviar menos`);
-          else if (!est && oA - oB >= 15) say("oval_back_flat", `You stay off full throttle for ${r(oA)} m (reference ${r(oB)} m). Back to flat out sooner`, `Vas sin el gas a fondo durante ${r(oA)} m (referencia ${r(oB)} m). Vuelve a fondo antes`, `Você fica sem o acelerador a fundo por ${r(oA)} m (referência ${r(oB)} m). Volte ao fundo mais cedo`);
-          else if (dmin != null && dmin < -2) say("oval_center", `Carry ${r(-dmin)} ${u} more through the middle of the corner`, `Pasa ${r(-dmin)} ${u} más rápido por el centro de la curva`, `Passe pelo meio da curva com ${r(-dmin)} ${u} a mais`);
-          else if (/^(brake|trail|entry_|apex_)/.test(kind)) say("oval_roll", "Roll more speed into the corner with one smooth, lighter lift", "Deja correr más velocidad en la curva con un solo levantón suave y más corto", "Leve mais velocidade para dentro da curva com um só alívio, suave e mais leve");
+          if (z.flatB) say("oval_flat", `The reference stays flat out here. You lift for ${r(oA)} m, down to ${pc(mA)}. Keep your foot in`, `La referencia va a fondo aquí. Tú levantas durante ${r(oA)} m, hasta el ${pc(mA)}. Mantén el pie abajo`, `A referência passa de pé embaixo aqui. Você alivia por ${r(oA)} m, até ${pc(mA)}. Mantenha o pé embaixo`);
+          else if (!est && bA > .12 && bB <= .12) say("oval_no_brake", `The reference doesn't brake here, it only lifts to ${pc(mB)}. Lift instead of braking and let the speed roll into the corner`, `La referencia no frena aquí, solo levanta hasta el ${pc(mB)}. Levanta en vez de frenar y deja que la velocidad entre en la curva`, `A referência não freia aqui, só alivia até ${pc(mB)}. Alivie em vez de frear e deixe a velocidade entrar na curva`);
+          else if (m && dd != null && dd < -8) say("oval_lift_later", `You lift ${r(-dd)} m before the reference. Stay in it longer and lift later`, `Levantas ${r(-dd)} m antes que la referencia. Aguanta más y levanta más tarde`, `Você alivia ${r(-dd)} m antes da referência. Segure mais e alivie mais tarde`);
+          else if (m && dd != null && dd > 8 && dmin != null && dmin < -2) say("oval_lift_early", `You lift ${r(dd)} m later than the reference and lose ${r(-dmin)} ${u} in the middle of the corner. Lift a touch earlier and carry the speed through the center`, `Levantas ${r(dd)} m más tarde que la referencia y pierdes ${r(-dmin)} ${u} en mitad de la curva. Levanta un poco antes y conserva la velocidad por el centro`, `Você alivia ${r(dd)} m depois da referência e perde ${r(-dmin)} ${u} no meio da curva. Alivie um pouco antes e leve a velocidade pelo centro`);
+          else if (!est && mA < mB - .15) say("oval_lift_less", `You lift to ${pc(mA)} and the reference only to ${pc(mB)}. A lighter lift is enough here`, `Levantas hasta el ${pc(mA)} y la referencia solo hasta el ${pc(mB)}. Aquí basta con levantar menos`, `Você alivia até ${pc(mA)} e a referência só até ${pc(mB)}. Aqui basta aliviar menos`);
+          else if (!est && oA - oB >= 15) say("oval_back_flat", `You are off full throttle for ${r(oA)} m and the reference ${r(oB)} m. Get back to flat out sooner`, `Vas sin gas a fondo durante ${r(oA)} m y la referencia ${r(oB)} m. Vuelve a fondo antes`, `Você fica fora do fundo por ${r(oA)} m e a referência ${r(oB)} m. Volte ao fundo mais cedo`);
+          else if (dmin != null && dmin < -2) say("oval_center", `Carry ${r(-dmin)} ${u} more through the middle of the corner, with a smaller lift or less brake`, `Pasa ${r(-dmin)} ${u} más rápido por el centro de la curva, levantando menos o frenando menos`, `Passe pelo meio da curva com ${r(-dmin)} ${u} a mais, aliviando menos ou freando menos`);
+          else if (/^(brake|trail|entry_|apex_)/.test(kind)) say("oval_roll", "Roll more speed into the corner. One smooth, short lift is enough", "Deja correr más velocidad en la curva. Basta con un solo levantón suave y corto", "Leve mais velocidade para dentro da curva. Basta um só alívio suave e curto");
         }
         };
         decide(worst[0]);
@@ -295,7 +305,7 @@
           if (!alt) decide(worst[0]);
         }
         // a tip an admin turned off for corners of this speed gives way to the phase's plain tip
-        if (tipOff(kind, cls)) { const G = { brake: ["brake_generic", "Brake a little later and harder", "Frena un poco más tarde y más fuerte", "Freie um pouco depois e mais forte"], entry: ["entry_speed", "Carry more speed into the turn", "Entra con más velocidad en la curva", "Leve mais velocidade para dentro da curva"], apex: ["apex_line", "A rounder, faster line through the apex", "Una trazada más redonda y rápida por el vértice", "Uma linha mais redonda e rápida pelo ápice"], exit: ["full_throttle", "Full throttle sooner on exit", "Acelerador a fondo antes en la salida", "Acelerador a fundo mais cedo na saída"] }; say(...(G[phase] || G.brake)); }
+        if (tipOff(kind, cls)) { const G = { brake: ["brake_generic", "The time goes in the braking zone. Brake a bit later and harder", "El tiempo se pierde en la frenada. Frena un poco más tarde y más fuerte", "O tempo se perde na frenagem. Freie um pouco depois e mais forte"], entry: ["entry_speed", "Carry more speed into the turn. Release the brake a bit earlier and let the car roll in", "Entra con más velocidad. Suelta el freno un poco antes y deja que el coche ruede hacia dentro", "Entre com mais velocidade. Solte o freio um pouco antes e deixe o carro rolar para dentro"], apex: ["apex_line", "Take a rounder line through the apex so you keep more speed", "Haz una trazada más redonda por el vértice para llevar más velocidad", "Faça uma linha mais redonda pelo ápice para levar mais velocidade"], exit: ["full_throttle", "Get to full throttle sooner on the exit", "Pisa a fondo antes en la salida", "Pise até o fundo mais cedo na saída"] }; say(...(G[phase] || G.brake)); }
       }
       // the line: where the car was across the track. Braking at the reference's point but on the wrong part of the
       // track is said first; a generic tip gives way to it; otherwise it goes after the tip of the phase
@@ -317,6 +327,132 @@
     const per = zb.map((z) => { const ts = laps.map((L) => { const s = serOf(L), i0 = Math.max(0, z.i - 10), i1 = Math.min(s.length - 1, z.imin + 30); return s[i0] && s[i1] ? s[i1][1] - s[i0][1] : null; }).filter((x) => x != null); if (ts.length < 3) return null; const mu = ts.reduce((a, b) => a + b, 0) / ts.length; return Math.sqrt(ts.reduce((a, b) => a + (b - mu) * (b - mu), 0) / ts.length); });
     return per.map((sd, i) => ({ n: zb[i].turn != null ? zb[i].turn + 1 : i + 1, sd })).filter((x) => x.sd != null).sort((a, b) => b.sd - a.sd);
   }
+  /* ---------- the whole session, corner by corner ---------- */
+  /* every clean lap of lap A's session against the same reference (coachCompare over each), so a tip says whether its
+     mistake repeats over the session or happened on one lap: the laps of A's session that are valid, have their points
+     and are within 5 % of the session's best (out laps, slow laps and a lap in the pits left out), lap A always among
+     them. Null with fewer than three laps */
+  function sessionLaps(A, LP, R) {
+    if (!A || !Array.isArray(A.bins)) return null;
+    // a lap is known by itself, or (the phones send copies) by its number, time and session
+    const is = (x, y) => x === y || !!(x && y && x.time === y.time && x.n === y.n && (x.sessionId || "") === (y.sessionId || ""));
+    const same = cleanLaps(LP).filter((l) => !is(l, A) && !is(l, R) && (!A.sessionId || !l.sessionId || l.sessionId === A.sessionId));
+    const all = [A, ...same], best = Math.min(...all.map((l) => l.time > 0 ? l.time : Infinity));
+    const out = isFinite(best) ? all.filter((l) => l === A || l.time <= best * 1.05) : all;
+    return out.length >= 3 ? out : null;
+  }
+  /* each corner of cs (lap A against R) gets rep: the session's laps (of), how many of them lose time there with the same
+     kind of tip as lap A (same, lap A counted), the median time lost there over the session (med), the spread of that loss
+     (sd), the kind of tip most laps get there (top, topN, and that lap's corner as typ: its numbers say what the usual lap
+     does). Corners stay as they are without three laps */
+  function sessionRepeat(cs, A, R, LP, ctx) {
+    const laps = sessionLaps(A, LP, R); if (!laps || !Array.isArray(cs) || !cs.length) return null;
+    const cx = { ...ctx, progress: null }, per = laps.map((l) => l === A ? cs : coachCompare(l, R, cx)), r3 = (v) => Math.round(v * 1000) / 1000;
+    const fam = (k) => familyOf(k) || k;
+    cs.forEach((c) => {
+      const hits = per.map((list, i) => { const x = list.filter((q) => Math.abs(q.apex - c.apex) <= 10)[0]; return x ? (x === c ? x : { ...x, lapN: laps[i].n }) : null; }).filter(Boolean);
+      if (hits.length < 3) return;
+      const ls = hits.map((x) => x.lost), med = medianOf(ls), mu = ls.reduce((p, v) => p + v, 0) / ls.length, sd = Math.sqrt(ls.reduce((p, v) => p + (v - mu) * (v - mu), 0) / ls.length);
+      const bad = hits.filter((x) => x.lost > .03 && x.kind), by = {};
+      bad.forEach((x) => { const f = fam(x.kind); (by[f] = by[f] || []).push(x); });
+      const topE = Object.entries(by).sort((p, q) => q[1].length - p[1].length || medianOf(q[1].map((x) => x.lost)) - medianOf(p[1].map((x) => x.lost)))[0];
+      const same = c.lost > .03 && c.kind ? bad.filter((x) => fam(x.kind) === fam(c.kind)).length : 0;
+      let typ = null; if (topE) { const g = topE[1].slice().sort((p, q) => p.lost - q.lost); typ = g[g.length >> 1]; }
+      c.rep = { of: hits.length, same, lose: bad.length, med: r3(med), sd: r3(sd), top: topE ? topE[1][0].kind : null, topN: topE ? topE[1].length : 0 };
+      if (typ && typ !== c) Object.defineProperty(c.rep, "typ", { value: typ, enumerable: false }); // never in the JSON the phones get
+    });
+    return laps.length;
+  }
+  /* how often lap A's mistake in a corner happens over the session, in a few words ("On 7 of 9 laps"), [en, es, pt] or null */
+  function repText(c) {
+    const r = c && c.rep; if (!r || !(r.of >= 3) || !(c.lost > .03) || !c.kind || c.kind === "cons") return null;
+    return r.same <= 1 ? [`Only on this lap of ${r.of}`, `Solo en esta vuelta de ${r.of}`, `Só nesta volta de ${r.of}`] : [`On ${r.same} of ${r.of} laps`, `En ${r.same} de ${r.of} vueltas`, `Em ${r.same} de ${r.of} voltas`];
+  }
+  /* how much a corner weighs in the plan for being the session's habit (0.6 when lap A's mistake there happened once, up
+     to 1.4 when every lap makes it) */
+  const repWeight = (c) => { const r = c && c.rep; return r && r.of >= 3 && c.lost > .03 ? 0.6 + 0.8 * Math.max(r.same, 1) / r.of : 1; };
+
+  /* ---------- multiclass traffic and the hybrid (Le Mans Ultimate first, any game with the data) ---------- */
+  /* what traffic costs over lap A's session: its valid laps not through the pits within 8 % of the best, the ones the
+     recorder tagged "traffic" (a car within a second ahead for a fifth of the lap) against the others, the lap times'
+     medians and the corners where the traffic laps lose the most (each corner's time on the fastest clean lap's corners).
+     {n, of, cost, corners: [{n, d, apex, cost}]} or null without 2 traffic laps and 3 clean ones */
+  function trafficCost(A, LP, ctx) {
+    const all = (LP || []).filter((l) => l && l.valid !== false && !l.pit && !l.drv && l.time > 0 && Array.isArray(l.bins) && l.bins.length > 20 && (!A || !A.sessionId || !l.sessionId || l.sessionId === A.sessionId));
+    if (all.length < 5) return null;
+    const best = Math.min(...all.map((l) => l.time)), laps = all.filter((l) => l.time <= best * 1.08), isT = (l) => (l.flags || []).includes("traffic");
+    const tl = laps.filter(isT), cl = laps.filter((l) => !isT(l)); if (tl.length < 2 || cl.length < 3) return null;
+    const cost = medianOf(tl.map((l) => l.time)) - medianOf(cl.map((l) => l.time));
+    const ref = cl.reduce((a, l) => (l.time < a.time ? l : a)), sb = serOf(ref), n = sb.length, turns = turnsOf(ctx), zs = cornerZones(sb, n, turns, ctx && ctx.oval);
+    const tOf = (l, z) => { const s = serOf(l), i0 = Math.max(0, z.i - 10), i1 = Math.min(s.length - 1, z.imin + 30); return s[i0] && s[i1] ? s[i1][1] - s[i0][1] : null; };
+    const corners = zs.map((z, k) => { const a = tl.map((l) => tOf(l, z)).filter((x) => x > 0), b = cl.map((l) => tOf(l, z)).filter((x) => x > 0); if (a.length < 2 || b.length < 3) return null;
+      return { n: z.turn != null ? z.turn + 1 : turnNo(turns, z.imin * BIN, n * BIN, k + 1), d: z.i * BIN, apex: z.imin * BIN, cost: Math.round((medianOf(a) - medianOf(b)) * 1000) / 1000 }; })
+      .filter((c) => c && c.cost >= .1).sort((a, b) => b.cost - a.cost).slice(0, 3);
+    return { n: tl.length, of: laps.length, cost: Math.round(cost * 1000) / 1000, corners };
+  }
+  /* how the hybrid battery is used over lap A against lap B (the trace's bat, the charge in % every 50 m, a car with a
+     battery): the charge each lap ends with, what each deploys over the lap, and the stretch of up to 400 m where lap B
+     deploys the most more than lap A. Null without both traces */
+  const BATBIN = 50;
+  function hybridUse(A, B) {
+    const a = A && Array.isArray(A.bat) ? A.bat : null, b = B && Array.isArray(B.bat) ? B.bat : null; if (!a || !b || a.length < 10 || b.length < 10) return null;
+    const n = Math.min(a.length, b.length), ok = (v) => typeof v === "number" && isFinite(v), dep = (s) => { let d = 0; for (let i = 1; i < n; i++) if (ok(s[i]) && ok(s[i - 1]) && s[i] < s[i - 1]) d += s[i - 1] - s[i]; return d; };
+    const W = 8; let best = null;
+    for (let i = 0; i + W < n; i++) { if (![a[i], a[i + W], b[i], b[i + W]].every(ok)) continue; const x = (b[i] - b[i + W]) - (a[i] - a[i + W]); if (!best || x > best.x) best = { x, i }; }
+    const last = (s) => { for (let i = n - 1; i >= 0; i--) if (ok(s[i])) return s[i]; return null; };
+    return { endA: last(a), endB: last(b), depA: dep(a), depB: dep(b), more: best && best.x >= 3 ? { d0: best.i * BATBIN, d1: (best.i + W) * BATBIN, pct: best.x } : null };
+  }
+  /* the plan's steps about traffic and the hybrid */
+  function raceSteps(A, R, LP, cs, ov, sa, sb, n, Tx, ctx) {
+    const P = [], r = Math.round, r2 = (v) => Math.round(v * 100) / 100;
+    // on an oval a car ahead is a draft or dirty air, not a pass to plan: the road only
+    const tc = ov ? null : trafficCost(A, LP, ctx), multi = !!(ctx && (ctx.game === "lmu" || ctx.multiclass));
+    if (tc && tc.cost > .3) {
+      const nm = tc.corners.map((c) => turnLab(ctx, c.n)).join(", ");
+      P.push({ k: "traffic", id: "traffic", turns: tc.corners.map((c) => c.n), gain: tc.cost * tc.n / tc.of * .6,
+        t: Tx(`Traffic costs you ${r2(tc.cost)} s a lap`, `El tráfico te cuesta ${r2(tc.cost)} s por vuelta`, `O tráfego custa ${r2(tc.cost)} s por volta`),
+        what: Tx(`On ${tc.n} of ${tc.of} laps a car was close ahead. Those laps are ${r2(tc.cost)} s slower than your clean ones${nm ? `, most of it in ${nm}` : ""}.`, `En ${tc.n} de ${tc.of} vueltas había un coche cerca delante. Esas vueltas son ${r2(tc.cost)} s más lentas que las limpias${nm ? `, sobre todo en ${nm}` : ""}.`, `Em ${tc.n} de ${tc.of} voltas havia um carro perto à frente. Essas voltas são ${r2(tc.cost)} s mais lentas que as limpas${nm ? `, principalmente em ${nm}` : ""}.`),
+        cost: multi ? Tx("In a multiclass race you meet traffic every few laps, so the time lost behind a slower car or letting a faster one by adds up like a slow corner.", "En una carrera multiclase te encuentras tráfico cada pocas vueltas, así que el tiempo perdido detrás de un coche lento o dejando pasar a uno rápido suma como una curva lenta.", "Numa corrida multiclasse você encontra tráfego a cada poucas voltas, então o tempo perdido atrás de um carro lento ou deixando passar um rápido soma como uma curva lenta.")
+          : Tx("Time lost stuck behind a car adds up over a race like a slow corner.", "El tiempo perdido atascado detrás de un coche suma en una carrera como una curva lenta.", "O tempo perdido preso atrás de um carro soma numa corrida como uma curva lenta."),
+        how: multi ? Tx("Plan the pass a corner ahead and make it on the exit or the straight, never in the braking zone. When a faster class closes in, stay on your line and let it by where the track is straight.", "Prepara el adelantamiento una curva antes y hazlo a la salida o en la recta, nunca en la frenada. Cuando se acerque una clase más rápida, mantén tu trazada y déjala pasar donde la pista es recta.", "Prepare a ultrapassagem uma curva antes e faça na saída ou na reta, nunca na frenagem. Quando uma classe mais rápida se aproximar, mantenha sua linha e deixe passar onde a pista é reta.")
+          : Tx("Plan the pass a corner ahead and make it on the exit or the straight, never in the braking zone. If you cannot pass, drop back a little so the car ahead does not spoil your braking and your exit.", "Prepara el adelantamiento una curva antes y hazlo a la salida o en la recta, nunca en la frenada. Si no puedes pasar, déjate un poco de hueco para que el coche de delante no te estropee la frenada ni la salida.", "Prepare a ultrapassagem uma curva antes e faça na saída ou na reta, nunca na frenagem. Se não der para passar, deixe um pouco de espaço para o carro da frente não estragar sua frenagem e sua saída."),
+        marks: tc.corners.map((c) => ({ d: c.apex, k: "apex", n: c.n })), spans: tc.corners.map((c) => [Math.max(0, c.d - 50), c.apex + 150]) });
+    }
+    const hy = hybridUse(A, R);
+    if (hy && (hy.more || (hy.endA != null && hy.endB != null && hy.endA - hy.endB >= 8))) {
+      const tAt = (s, d) => { for (let k = Math.max(0, Math.min(n - 1, Math.round(d / BIN))); k >= 0; k--) if (s[k]) return s[k][1]; return null; };
+      const lostIn = hy.more ? (() => { const x = [tAt(sa, hy.more.d0), tAt(sa, hy.more.d1), tAt(sb, hy.more.d0), tAt(sb, hy.more.d1)]; return x.some((v) => v == null) ? 0 : (x[1] - x[0]) - (x[3] - x[2]); })() : 0;
+      const after = hy.more ? cs.filter((c) => c.apex <= hy.more.d0 + 100).sort((p, q) => q.apex - p.apex)[0] : null, where = hy.more ? (after ? Tx(` Most of the difference is after ${turnLab(ctx, after.n)}.`, ` La mayor diferencia está después de ${turnLab(ctx, after.n)}.`, ` A maior diferença está depois de ${turnLab(ctx, after.n)}.`) : Tx(` Most of the difference is between ${r(hy.more.d0)} and ${r(hy.more.d1)} m.`, ` La mayor diferencia está entre ${r(hy.more.d0)} y ${r(hy.more.d1)} m.`, ` A maior diferença está entre ${r(hy.more.d0)} e ${r(hy.more.d1)} m.`)) : "";
+      const unused = hy.endA - hy.endB >= 8;
+      P.push({ k: "hybrid", id: "hybrid", turns: after ? [after.n] : [], gain: Math.max(.05, lostIn),
+        t: unused ? Tx(`You end the lap with ${r(hy.endA - hy.endB)} % more battery than the reference`, `Acabas la vuelta con un ${r(hy.endA - hy.endB)} % más de batería que la referencia`, `Você termina a volta com ${r(hy.endA - hy.endB)} % a mais de bateria que a referência`)
+          : Tx("The reference deploys more of the hybrid", "La referencia usa más el híbrido", "A referência usa mais o híbrido"),
+        what: Tx(`Over the lap the reference deploys ${r(hy.depB)} % of the battery and you ${r(hy.depA)} %.`, `En la vuelta la referencia gasta el ${r(hy.depB)} % de la batería y tú el ${r(hy.depA)} %.`, `Na volta a referência gasta ${r(hy.depB)} % da bateria e você ${r(hy.depA)} %.`) + where,
+        cost: Tx("Charge left in the battery at the line is speed you never used, and the hybrid gives the most where the car accelerates out of the slow corners.", "La carga que queda en la batería en la línea es velocidad que no usaste, y el híbrido rinde más donde el coche acelera al salir de las curvas lentas.", "A carga que sobra na bateria na linha é velocidade que você não usou, e o híbrido rende mais onde o carro acelera na saída das curvas lentas."),
+        how: Tx("Use the same hybrid map as the reference and get to full throttle early out of the slow corners, where the battery deploys. Let it recharge under braking, not on the straights.", "Usa el mismo mapa de híbrido que la referencia y llega pronto a fondo al salir de las curvas lentas, donde se gasta la batería. Deja que se recargue frenando, no en las rectas.", "Use o mesmo mapa de híbrido da referência e chegue cedo ao acelerador a fundo na saída das curvas lentas, onde a bateria é gasta. Deixe recarregar freando, não nas retas."),
+        marks: hy.more ? [{ d: (hy.more.d0 + hy.more.d1) / 2, k: "str" }] : [], spans: hy.more ? [[hy.more.d0, hy.more.d1]] : [] });
+    }
+    return P;
+  }
+
+  /* ---------- turn by turn ---------- */
+  /* one row per turn in track order, everything the coach knows about it: lap A against lap B (where each brakes, Δ m, the
+     apex speeds, the gears, the time lost and what to do), the session (the typical lap's loss there, how many laps make
+     the same mistake, how much the corner changes lap to lap and what it costs a lap against your best there) and where
+     lap A stands among every driver known here (top, from ctx.model). cs are the corners of coachPlan (with rep) */
+  function turnByTurn(A, B, cs, LP, ctx) {
+    if (!Array.isArray(cs) || !cs.length) return [];
+    const near = (list, apex) => (list || []).filter((x) => Math.abs(x.apex - apex) <= 60).sort((x, y) => Math.abs(x.apex - apex) - Math.abs(y.apex - apex))[0] || null;
+    const sp = cornerSpread(sessionLaps(A, LP) || [], ctx), rk = ctx && ctx.model ? cornerRanks(A, ctx.model, ctx) : [], Tx = txOf(ctx), r3 = (v) => v == null ? null : Math.round(v * 1000) / 1000;
+    return cs.slice().sort((a, b) => a.d - b.d).map((c) => {
+      const s = sp ? near(sp.rows, c.apex) : null, k = near(rk, c.apex), rt = repText(c);
+      return { n: c.n, lab: turnLab(ctx, c.n), d: Math.round(c.d), apex: Math.round(c.apex), lift: !!c.lift, bA: c.dd != null && !c.flatB ? Math.round(c.d + c.dd) : null, bB: c.flatB ? null : Math.round(c.d), dd: c.lift ? null : c.dd != null ? Math.round(c.dd) : null,
+        vA: c.vmin != null ? Math.round(c.vmin) : null, vB: c.vminr != null ? Math.round(c.vminr) : null, gA: c.gA, gB: c.gB, lost: r3(c.lost), kind: c.kind || "", todo: tipTodo(c, ctx),
+        med: c.rep ? c.rep.med : null, same: c.rep ? c.rep.same : null, of: c.rep ? c.rep.of : null, rep: rt ? Tx(rt[0], rt[1], rt[2]) : "",
+        sd: s ? s.sd : null, cost: s ? s.cost : null, top: k ? k.top : null, drivers: k ? k.drivers : null };
+    });
+  }
+
   /* the sector times of two laps, the same in the analyzer and in the coach: the ones the game gave for each lap when both
      laps have them; otherwise thirds of the lap from the traces, counted from the start of the lap */
   function pairSecs(A, B, sa, sb, n) {
@@ -455,8 +591,10 @@
   const cornerSpan = (c) => [Math.max(0, c.d - 50), c.apex + 150];
   /* a corner's step of the plan: the tip, what happened, why it costs time and what to do instead, and its points on the map */
   function cornerStep(c, Tx, u, L, w, ctx) {
-    const f = familyOf(c.kind), what = whatOf(c, Tx, u), cf = c.oval && c.lift && COST[f + "_lift"] ? f + "_lift" : f, cost = Tx(...(COST[cf] || COST.speed)), how = howOf(f, c, Tx, u);
-    return { k: "corner", id: "corner:" + (c.kind || ""), kind: c.kind, turns: [c.n], gain: c.lost, w, t: `${turnLab(ctx, c.n)} · ${Tx(c.tip[0], c.tip[1], c.tip[2])}`, what, cost, why: what + " " + cost, how, marks: cornerMarks(c, L), spans: [cornerSpan(c)] };
+    const rt = repText(c), lapN = c.lapN != null ? c.lapN : "";
+    const what = [c.usual ? Tx(`Your usual lap here, lap ${lapN} shown.`, `Tu vuelta habitual aquí, se muestra la vuelta ${lapN}.`, `Sua volta habitual aqui, mostrada a volta ${lapN}.`) : "", whatOf(c, Tx, u), rt ? Tx(rt[0], rt[1], rt[2]) + "." : ""].filter(Boolean).join(" ");
+    const f = familyOf(c.kind), cf = c.oval && c.lift && COST[f + "_lift"] ? f + "_lift" : f, cost = Tx(...(COST[cf] || COST.speed)), how = howOf(f, c, Tx, u);
+    return { k: "corner", id: "corner:" + (c.kind || ""), kind: c.kind, turns: [c.n], gain: c.lost, w, ...(c.rep && c.rep.of >= 3 && rt ? { rep: [c.rep.same, c.rep.of] } : {}), ...(c.usual ? { usual: true } : {}), t: `${turnLab(ctx, c.n)} · ${Tx(c.tip[0], c.tip[1], c.tip[2])}`, what, cost, why: what + " " + cost, how, marks: cornerMarks(c, L), spans: [cornerSpan(c)] };
   }
   // the corners a step is about, as marks at their slowest points and their stretches
   const turnMarks = (list) => list.map((c) => ({ d: c.apex, k: "apex", n: c.n }));
@@ -550,6 +688,7 @@
     const Tx = txOf(ctx), { spdU } = unitsOf(ctx), C = coachOf(ctx), tipWeight = C.weight, turns = turnsOf(ctx), cornerHint = hintOf(ctx), pn = (k) => phaseName(k, ctx);
     const ov = ovalOf(A, R, ctx), est = estOf(R, ctx), cx = ov || est ? { ...ctx, ...(ov ? { oval: ov } : {}), ...(est ? { estB: true } : {}) } : ctx; // the oval is found once, from the laps and ctx.track
     const cs = coachCompare(A, R, cx), sa = lapSeries(A), sb = lapSeries(R), n = Math.min(sa.end, sb.end), lapD = A.time - R.time;
+    const sesN = sessionRepeat(cs, A, R, LP, cx); // every lap of the session in every corner: a mistake that repeats weighs more than one made once
     const lost = cs.reduce((s, c) => s + Math.max(0, c.lost), 0), gained = cs.reduce((s, c) => s + Math.min(0, c.lost), 0), inCorners = cs.reduce((s, c) => s + c.lost, 0), straight = lapD - inCorners;
     // a corner whose phases swing more than a second each way is not the same corner on both laps: its phases are not counted
     const ph = { brake: 0, entry: 0, apex: 0, exit: 0 }, phN = { brake: 0, entry: 0, apex: 0, exit: 0 }; cs.forEach((c) => { if (Object.values(c.ph).some((v) => Math.abs(v) > 1)) return; Object.keys(ph).forEach((k) => { const v = c.ph[k] || 0; if (v > 0) { ph[k] += v; if (v > .02) phN[k]++; } }); });
@@ -560,7 +699,12 @@
     const dif = (c) => { const h = cornerHint(c.apex); return h && h.spread > 0 && h.spreadMax > 0 ? 0.9 + 0.3 * Math.min(1, h.spread / h.spreadMax) : 1; };
     cs.forEach((c) => { const cz = cons.find((x) => x.n === c.n); if (cz && cz.sd > .08 && cz.sd > 2 * c.lost && /^brake/.test(c.kind || "")) { c.kind = "cons"; c.tip = ["Same braking point every lap, before anything else", "El mismo punto de frenada cada vuelta, antes que nada", "O mesmo ponto de frenagem em toda volta, antes de qualquer outra coisa"]; } });
     const P = [], r2 = (v) => Math.round(v * 100) / 100, L = n * BIN, T3 = (a) => Tx(a[0], a[1], a[2]);
-    cs.filter((c) => c.lost > .05).sort((a, b) => b.lost * tipWeight(b) * dif(b) - a.lost * tipWeight(a) * dif(a)).slice(0, 3).forEach((c) => P.push(cornerStep(c, Tx, spdU(), L, tipWeight(c) * dif(c), ctx)));
+    // the corners that cost the most, weighed by how often the mistake repeats over the session; a corner lap A drove well
+    // but most laps of the session lose time in the same way is a step too, with the numbers of the usual lap there
+    const usual = cs.filter((c) => !(c.lost > .05) && c.rep && c.rep.typ && c.rep.topN >= 3 && c.rep.topN / c.rep.of >= .5 && c.rep.med > .08)
+      .map((c) => ({ ...c.rep.typ, rep: { ...c.rep, same: c.rep.topN }, usual: true, lost: c.rep.med }));
+    const score = (c) => c.lost * tipWeight(c) * dif(c) * (c.usual ? 0.6 + 0.8 * c.rep.same / c.rep.of : repWeight(c));
+    cs.filter((c) => c.lost > .05).concat(usual).sort((a, b) => score(b) - score(a)).slice(0, 3).forEach((c) => P.push(cornerStep(c, Tx, spdU(), L, score(c) / Math.max(.001, c.lost), ctx)));
     const worst = Object.entries(ph).sort((a, b) => b[1] - a[1])[0];
     // the habit's advice follows the data: where you brake against the reference on average, how fast you reach the apex and when you pick up the throttle
     const avg = (a) => a.length ? a.reduce((q, v) => q + v, 0) / a.length : null, mdd = avg(cs.filter((c) => c.dd != null).map((c) => c.dd)), mdmin = avg(cs.filter((c) => c.vmin != null).map((c) => c.vmin - c.vminr)), mlate = avg(cs.filter((c) => c.late != null).map((c) => c.late));
@@ -588,6 +732,7 @@
     const wob = cons.filter((x) => x.sd > .08).slice(0, 2); wob.forEach((x) => P.push({ k: "cons", turns: [x.n], gain: x.sd * .6, t: Tx(`T${x.n} changes ±${r2(x.sd)} s from lap to lap`, `T${x.n} cambia ±${r2(x.sd)} s de una vuelta a otra`, `T${x.n} muda ±${r2(x.sd)} s de uma volta para outra`), why: Tx("Over the session you take this corner differently every lap. The time spread is the gap between your best and your usual lap.", "A lo largo de la sesión tomas esta curva distinto cada vuelta. La dispersión es la diferencia entre tu mejor vuelta y la habitual.", "Ao longo da sessão você faz esta curva de um jeito diferente a cada volta. A dispersão é a diferença entre sua melhor volta e a volta habitual."), how: Tx("Same braking marker, same turn-in point, same line, every lap. Consistency first, speed after.", "La misma referencia de frenada, el mismo punto de giro, la misma trazada, cada vuelta. Primero regularidad, luego velocidad.", "A mesma referência de frenagem, o mesmo ponto de entrada, a mesma linha, em toda volta. Primeiro regularidade, depois velocidade.") }));
     driving.forEach((d) => P.push({ k: "style", gain: 0, t: d.replace(/^\S+\s/, ""), why: "", how: "" }));
     lapSteps(cs, ov, A, LP, Tx, spdU()).forEach((x) => P.push(x));
+    raceSteps(A, R, LP, cs, ov, sa.arr, sb.arr, n, Tx, cx).forEach((x) => P.push(x)); // multiclass traffic and the hybrid battery
     // a track with few laps: what the fast drivers of this car do in corners like these on other tracks (likeOf)
     likeSteps(likeOf(A, cx, cs), Tx).forEach((x) => P.push(x));
     // every step says what happened and where (marks and spans on the map), why it costs time and what to do instead
@@ -732,6 +877,24 @@
         : Tx(`No faster in your last ${k} sessions`, `Sin mejorar en tus últimas ${k} sesiones`, `Sem melhorar nas suas últimas ${k} sessões`);
       return { n, apex: c.apex, trend: c.trend, gain: c.gain, sessions: k, t: `T${n}`, text, tone: c.trend === "better" ? "good" : "bad" };
     }).sort((a, b) => rank[a.trend] - rank[b.trend] || Math.abs(b.gain) - Math.abs(a.gain)).slice(0, 6);
+  }
+
+  /* ---------- this session against the last one ---------- */
+  /* the coach's first lines: the corners faster than the last session's best lap where its plan asked for something
+     (followUp), the ones slower, and the ones no faster over the driver's last sessions (progressLines), each as T numbers.
+     {better, worse, stuck, lines: [{tone, text}]} or null when there is no earlier session here */
+  function sinceLast(prev, prog, cs, ctx) {
+    const fu = followUp(prev, cs, ctx), pg = progressLines(prog, cs, ctx), Tx = txOf(ctx);
+    if (!fu.length && !pg.length) return null;
+    const names = (l) => l.map((x) => turnLab(ctx, x.n)).join(", "), seen = new Set();
+    const better = fu.filter((x) => x.ok > 0).concat(pg.filter((x) => x.trend === "better")).filter((x) => !seen.has(x.n) && seen.add(x.n));
+    const worse = fu.filter((x) => x.ok < 0).filter((x) => !seen.has(x.n) && seen.add(x.n));
+    const stuck = pg.filter((x) => x.trend === "stuck" || x.trend === "worse").filter((x) => !seen.has(x.n) && seen.add(x.n));
+    const lines = [];
+    if (better.length) lines.push({ tone: "good", text: Tx(`Faster than last time in ${names(better)}`, `Más rápido que la última vez en ${names(better)}`, `Mais rápido que da última vez em ${names(better)}`) });
+    if (worse.length) lines.push({ tone: "bad", text: Tx(`Slower than last time in ${names(worse)}`, `Más lento que la última vez en ${names(worse)}`, `Mais lento que da última vez em ${names(worse)}`) });
+    if (stuck.length) lines.push({ tone: "bad", text: Tx(`No faster for several sessions in ${names(stuck)}`, `Sin mejorar desde hace varias sesiones en ${names(stuck)}`, `Sem melhorar há várias sessões em ${names(stuck)}`) });
+    return lines.length ? { better: better.map((x) => x.n), worse: worse.map((x) => x.n), stuck: stuck.map((x) => x.n), lines } : null;
   }
 
   /* ---------- the track left unused ---------- */
@@ -926,15 +1089,17 @@
     ctx = ctx || {};
     // a lap missing (no reference yet, a lap not loaded) is compared with the other one: every answer keeps its shape, with nothing to say
     if (!A && !B) A = B = { bins: [], time: 0 }; else if (!B) B = A; else if (!A) A = B;
-    const Tx = txOf(ctx), withText = (c) => ({ ...c, text: c.tip[0] ? Tx(c.tip[0], c.tip[1], c.tip[2]) : "", todo: tipTodo(c, ctx) });
+    const Tx = txOf(ctx), withText = (c) => { const rt = repText(c), o = { ...c, text: c.tip[0] ? Tx(c.tip[0], c.tip[1], c.tip[2]) : "", todo: tipTodo(c, ctx), ...(rt ? { repText: Tx(rt[0], rt[1], rt[2]) } : {}) }; return o; };
     const facts = analyzerFacts(A, B, ctx), plan = coachPlan(A, B, Array.isArray(ctx.laps) ? ctx.laps : [], ctx);
     const out = { v: VERSION, gap: A.time - B.time, corners: facts.corners.map(withText), facts: { ad: facts.ad, items: facts.items }, coach: { ...plan, cs: plan.cs.map(withText) } };
+    { const tt = turnByTurn(A, B, plan.cs, Array.isArray(ctx.laps) ? ctx.laps : [], ctx); if (tt.length) out.turns = tt; } // turn by turn, the lap and the session
     if (Array.isArray(ctx.step)) out.step = stepText(ctx.step, A, ctx); // the next level's step, when lap B is the next level
     if (Array.isArray(ctx.prev)) out.followup = followUp(ctx.prev, plan.cs, ctx); // how this lap does where the last session's plan asked for something
     if (ctx.model) { const g = trackGuide(ctx.model, ctx), rk = cornerRanks(A, ctx.model, ctx); if (g) out.guide = g; if (rk.length) out.ranks = rk; } // the track guide and where lap A stands in every corner
     if (Array.isArray(ctx.byCls)) out.cls = clsLines(ctx.byCls, ctx); // the corner types across the driver's tracks
     if (ctx.like) { const lk = likeOf(A, ctx, plan.cs); if (lk) out.like = lk; } // what the fast drivers of this car do on other tracks, where this track has no corner card
     if (ctx.progress) { const pg = progressLines(ctx.progress, plan.cs, ctx); if (pg.length) out.progress = pg; } // the corners over the driver's last sessions
+    { const sl = sinceLast(ctx.prev, ctx.progress, plan.cs, ctx); if (sl) out.since = sl; } // this session against the last one, the coach's first lines
     if (ctx.map && ctx.map.edges) { const eu = edgeUse(A, ctx.map, ctx); if (eu.length) out.edges = eu; } // the track left unused on the exits
     out.notes = notesOf(out, ctx);
     return opts && opts.json ? JSON.stringify(out) : out;
@@ -1268,8 +1433,8 @@
 
   const api = { VERSION, BIN, lapSeries, serOf, lapShape, sameFrame, lineOffsets, cornerLine, lineTip, brakeZones, PHASES, phaseName, turnNo, COACH_GEN, cornerClass, cornerZones,
     OVAL_KINDS, ovalOf, liftZones, ovalZones, dirtLineTip, coachCompare, cornerConsistency, pairSecs, lapDriving, kindName, stepName, tipMain, tipShort, tipTodo, coachPlan, stepText, analyzerFacts, analyse,
-    estOf, failedOf, progressLines, followUp, trackGuide, cornerRanks, clsLines, racePace, edgeUse, notesOf, guideItems, likeOf, likeSteps, catGroup,
-    turnLab, lapSpread, cornerSpread, offsExplained, ggOf, steerOf, understeer, tyreLaps, fuelUse, fuelPlan, insights, pedalCheck, slopeOf, sessionGoals, raceStory };
+    estOf, failedOf, lmuGroup, progressLines, followUp, trackGuide, cornerRanks, clsLines, racePace, edgeUse, notesOf, guideItems, likeOf, likeSteps, catGroup,
+    turnLab, trafficCost, hybridUse, raceSteps, sessionLaps, sessionRepeat, repText, turnByTurn, sinceLast, lapSpread, cornerSpread, offsExplained, ggOf, steerOf, understeer, tyreLaps, fuelUse, fuelPlan, insights, pedalCheck, slopeOf, sessionGoals, raceStory };
   root.PW_ANALYSIS = api;
   if (typeof module !== "undefined" && module.exports) module.exports = api;
 })(typeof window !== "undefined" ? window : typeof globalThis !== "undefined" ? globalThis : this);

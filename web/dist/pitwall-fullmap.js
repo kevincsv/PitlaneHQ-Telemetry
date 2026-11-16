@@ -519,7 +519,7 @@
     function close() { stop(); cancelAnimationFrame(anim); document.removeEventListener("keydown", onKey, true); window.removeEventListener("resize", onResize); if (ro) ro.disconnect(); if (mq && mq.removeEventListener) mq.removeEventListener("change", onTheme); document.documentElement.style.overflow = prevOv; root.remove(); if (o.onClose) try { o.onClose(Math.round(cur)); } catch (e) { } }
     root.querySelector(".fm-x").addEventListener("click", close);
 
-    fit(); setCur(cur);
+    fit(); setCur(cur); if (o.chase) setChase(true); // "Watch it" from a coach tip opens behind lap A's car just before the corner
     root.tabIndex = -1; root.focus({ preventScroll: true });
     return { close, setCursor: (i) => setCur(i), lines: { a: !!lineA, b: !!lineB } };
   }

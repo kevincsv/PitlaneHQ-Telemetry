@@ -40,7 +40,7 @@ const pt = "Você freia 12 m mais tarde que a referência e perde 5 km/h no ápi
 assert.equal(tipMain({ ...c, tip: [...c.tip, pt + ". " + lt[3]] })[2], pt);
 // a line tip that replaced a generic one is the corner's tip
 const lc = { tip: [lt[0], lt[1]], kind: lt[2], line, dd: 12, lost: .2 };
-assert.equal(tipShort(tipMain(lc)[0]), "Start the corner from the outside");
+assert.equal(tipShort(tipMain(lc)[0]), "Start the corner from the outside edge");
 // a tip without a line tip, and the measurement before the instruction
 assert.equal(tipShort(tipMain({ tip: ["Brake 12 m later", "Frena 12 m más tarde"], kind: "brake_later", line: null, dd: -12 })[0]), "Brake 12 m later");
 assert.equal(tipShort("Do not coast before the apex. 30 m without throttle or brake (reference 10 m)"), "Do not coast before the apex");

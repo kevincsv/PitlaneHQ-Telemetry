@@ -72,6 +72,10 @@ owner), update that detail file and the index in the same commit, and keep the i
 - People see the PC program as "Pitlane HQ Agent" (or "the agent"), never "PitlaneHQ.exe" (the file keeps its name).
   Away from the PC (the web, the phones) a text never says "this PC": it is "your PC" (`PC_WORDS`/`devWords` in
   index.html, which also still rewrites the German "diesem PC" of old settings).
+- The coach (the owner's rule, 2026-11-16): every coach change works in every game (iRacing, Le Mans Ultimate, ACC,
+  Assetto Corsa) and on every device. Where driving differs, its tips and what it learns are kept apart (`catGroup` in
+  pitwall-analysis.js, `groupFor` in categories.js): iRacing's road, oval, dirt oval and dirt road, Le Mans Ultimate's
+  prototypes and GTs. Where it does not differ, it stays as one. Check a new tip or step on an oval and on dirt before it ships.
 - Pitlane HQ never shows Windows notifications: what it has to say shows inside the app.
 - The subscription stays off (`license_plans.json` → `enforce: false`); everything is free during the beta
   (`docs/spec/pro.md`).

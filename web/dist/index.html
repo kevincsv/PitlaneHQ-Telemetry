@@ -1689,6 +1689,8 @@ html .hl-sec{padding:0 0 12px;border-radius:var(--radius);display:flex;flex-dire
 .co-hero .co-top .big{font:600 30px/1.15 var(--f-data)}
 .co-hero .co-top .sub{font-size:12px;color:var(--muted)}
 .co-hero .co-focus{background:var(--surface2);border-color:var(--line2);border-radius:var(--radius)}
+.co-since{display:flex;flex-wrap:wrap;gap:6px;padding:0 14px 12px}.co-since .pill{white-space:normal}.co-rep{white-space:nowrap;display:inline-block;margin:0 0 6px}.rb-tipx .co-rep+.coachtip{display:block}
+.bt-num{font-variant-numeric:tabular-nums}
 .co-hero .co-focus b{font:600 18px/1.2 var(--f-display);letter-spacing:.06em;text-transform:uppercase}
 .co-cols{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr) minmax(0,.9fr);gap:12px;align-items:start}
 .co-ai{margin:0 0 12px}.co-ai .pnl-h{display:flex;align-items:center;gap:8px}.co-ai .sp{flex:1}
@@ -1968,6 +1970,24 @@ html .hl-sec{padding:0 0 12px;border-radius:var(--radius);display:flex;flex-dire
 nav.subtabs button[aria-selected="true"] .pill{color:inherit;border-color:currentColor;background:none}
 .tm-more summary{cursor:pointer;padding:6px 0;margin-bottom:8px}
 .tm-laps th:first-child{position:sticky;left:0;background:var(--surface);z-index:1}
+
+/* the coach report (openCoachReport) */
+#crp .pn.crp{width:min(560px,calc(100% - 32px));max-height:calc(100% - 32px);overflow:auto;display:flex;flex-direction:column;gap:12px}
+#crp .pn.crp h2{margin:0!important;font:700 26px/1.1 var(--f-display)!important;text-transform:uppercase!important;letter-spacing:.02em!important;color:var(--fg)}
+#crp .pn.crp>.uidlg-x{z-index:2}
+#crp .crp-flag{height:8px;border-radius:4px;background:repeating-conic-gradient(var(--fg) 0 25%,var(--surface) 0 50%) 0 0/16px 16px;opacity:.85;margin-right:12px}
+#crp .crp-res{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+#crp .crp-res div{background:var(--surface2);border-radius:8px;padding:8px 10px;min-width:0}
+#crp .crp-res small{display:block;color:var(--muted);font-size:12px}
+#crp .crp-res b{font-size:18px}
+#crp .crp-sec{display:flex;flex-direction:column;gap:6px}
+#crp .crp-vs>div{display:flex;justify-content:space-between;gap:10px;font-size:13px;border-bottom:1px dashed var(--line);padding:4px 0}
+#crp .crp-top{display:flex;flex-direction:column;gap:6px}
+#crp .crp-c{all:unset;box-sizing:border-box;cursor:pointer;display:grid;grid-template-columns:44px minmax(0,1fr) auto;gap:10px;align-items:start;padding:8px;border-radius:8px;border:1px solid var(--line)}
+#crp .crp-c:hover,#crp .crp-c:focus-visible{border-color:var(--accent)}
+#crp .crp-c>b{font:700 20px var(--f-display);color:var(--accent)}
+#crp .crp-acts{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
+@media (max-width:520px){#crp .crp-res{grid-template-columns:1fr 1fr}}
 </style>
 
 </head>
@@ -3578,7 +3598,7 @@ function markAnalysisBest(LP){const best=analysisBest(LP);LP.forEach(l=>{if(l)l.
 /* one lap in a selector: ★ the fastest, ✂ not valid, ⚠ incidents, then its name and time */
 function lapOptText(l,best){if(!l)return"";const mine=l._sessionBest&&!(l.comm||l.cid)&&!l.drv&&l.who==null,n=String(l.n??"").replace(/^⟡ /,"");return`${mine?Tx("Lap","Vuelta","Runde","Volta")+" "+n:lapName(l)} · ${fmtT(l.time)}${mine?" · "+Tx("MY BEST","MI MEJOR","MEINE BESTE","MINHA MELHOR"):""}${l.valid===false?" · "+Tx("invalid","inválida","ungültig","inválida"):""}${(l.flags||[]).includes("traffic")?" · "+Tx("traffic","tráfico","Verkehr","tráfego"):""}${(l.flags||[]).includes("cold")?" · "+Tx("cold tyres","neumáticos fríos","kalte Reifen","pneus frios"):""}${(l.flags||[]).includes("wet")?" · "+Tx("wet track","pista mojada","nasse Strecke","pista molhada"):(l.flags||[]).includes("damp")?" · "+Tx("damp track","pista húmeda","feuchte Strecke","pista úmida"):""}${(l.flags||[]).includes("rain")?" · "+Tx("rain","lluvia","Regen","chuva"):""}${l.inc?` · ${l.inc}x`:""}${l===best&&!l._sessionBest?" · "+Tx("best","mejor","beste","melhor"):""}`}
 function analysisLapText(l,best){if(!l)return"";const n=String(l.n??"").replace(/^⟡ /,"");if(l.comm||l.cid)return l.alias||l.name||n;if(l.who!=null){const w=l.who?" · "+l.who:"";return (l._sessionBest||l===best?Tx("BEST · Lap","MEJOR VUELTA · Vuelta","BESTE · Runde","MELHOR · Volta"):Tx("Lap","Vuelta","Runde","Volta"))+" "+n+w}if(l.drv)return Tx("Lap","Vuelta","Runde","Volta")+" "+n+" · "+l.drv;if(l._sessionBest||l===best)return Tx("MY BEST · Lap","MI MEJOR VUELTA · Vuelta","MEINE BESTE · Runde","MINHA MELHOR · Volta")+" "+n;return Tx("Lap","Vuelta","Runde","Volta")+" "+n}
-let LAPF={q:"",track:"",extra:false,cat:"",car:"",kind:"",day:""},SESS_ASK="";/* the session bar (A, ＋ session, B): the same in the lap analyzer ("lap") and in the Coach ("coach"), one shared state */
+let LAPF={q:"",track:"",extra:false,cat:"",car:"",kind:"",day:""},SESS_ASK="",SESS_SKIP=false;/* SESS_SKIP: the next show() opens a session already chosen (a race's own window), with no game or session question. The session bar (A, ＋ session, B): the same in the lap analyzer ("lap") and in the Coach ("coach"), one shared state */
 /* with many cars, tracks and sessions the list gets long: a window chooses what to analyse (the discipline, the kind
    of session, the car and track, a day you drove, then the session). The bar only shows what is chosen. */
 // the car and the track are two filters: with many of each, one list of every pair gets long
@@ -4058,18 +4078,23 @@ async function renderCmpMap(A,B,box,opt){if(!box)return;box._plan=opt&&opt.plan&
     <p class="note" style="margin:6px 0 0">${esc(Tx("Touch or hover the map to read that point; the charts follow it.","Toca o pasa por el mapa para leer ese punto; las gráficas lo siguen.","Berühre die Karte oder fahre darüber, um den Punkt zu lesen; die Diagramme folgen.","Toque ou passe pelo mapa para ler esse ponto; os gráficos acompanham."))}</p>`;
   box.querySelectorAll("[data-lv]").forEach(b=>b.onclick=()=>{LAPV[b.dataset.lv]=!LAPV[b.dataset.lv];store.set("pw.lapv",LAPV);renderCmpMap(A,B,box,opt)});
   {const fb=box.querySelector("[data-fsmap]");if(fb)fb.onclick=()=>openFullMap(box,A,B,map,sa,sb,n,cs,cnt)}
+  // the coach's "Watch it" opens the same full-screen map in the chase view just before a corner
+  box._fsOpen=window.PW_FULLMAP&&map&&map.x?o=>openFullMap(box,A,B,map,sa,sb,n,cs,cnt,o):null;if(box.id==="coachMap")coachWatchWire()
   box._at=at;box._L=L;drawPlanLayer(box);cmpMapWire(box,A,B,sa,sb,n,L,N,P,cs,incs,brA,brB);cmpReplay(box,sa,sb,n,L,at);replayWire(box,k=>sesLapsOf(A).find(l=>l.n===k))}
 /* the lap compare's map in full screen (pitwall-fullmap.js): the road at its real width, both laps' racing lines on it (the
    one map that draws them, the owner's choice 2026-11-15), their braking and slowest points, the turns with their names,
    zoom and drag, and the telemetry under it on one cursor with the replay. Closing it leaves the analyzer's cursor
    where the map's was. */
-function openFullMap(box,A,B,map,sa,sb,n,cs,cnt){if(!window.PW_FULLMAP||!map||!map.x)return;
+function openFullMap(box,A,B,map,sa,sb,n,cs,cnt,go){if(!window.PW_FULLMAP||!map||!map.x)return;
   const names=TURN_TID?turnNamesFor(TURN_TID,A.game||B.game):null,L=n*BIN,zones=l=>brakeZones(serOf(l)),lap=box.id==="lapMap";
-  const start=CMP_HOVER?CMP_HOVER.i:lap&&typeof PW3L!=="undefined"&&PW3L.idx?PW3L.idx:0;
+  const start=go&&go.start!=null?go.start:CMP_HOVER?CMP_HOVER.i:lap&&typeof PW3L!=="undefined"&&PW3L.idx?PW3L.idx:0;
   const sync=i=>{if(!lap)return;CMP_HOVER={i,quiet:true,pin:true};try{drawCmp(true)}catch(e){}};
   PW_FULLMAP.open({map,n,A:{name:lapName(A),ser:sa.arr,xy:A.xy||null},B:{name:lapName(B),ser:sb.arr,xy:B.xy||null},bColor:bVar(B),
     corners:cs.map(c=>({n:c.n,d:c.d,name:names&&names[c.n-1]||""})),brA:zones(A),brB:zones(B),sectors:cnt,start,
-    T:(en,es,pt)=>Tx(en,es,null,pt),spd,spdU,fmtT,onClose:sync})}
+    T:(en,es,pt)=>Tx(en,es,null,pt),spd,spdU,fmtT,onClose:sync,chase:!!(go&&go.chase)})}
+/* "Watch it" on a coach tip: the full-screen map in the chase view, 120 m before the corner's braking point (the coach's
+   map has to be drawn first; without a track path the buttons go) */
+function coachWatchWire(){const cm=$("#coachMap"),box=$("#coachBody");if(!cm||!box)return;box.querySelectorAll("[data-watch]").forEach(b=>{b.hidden=!cm._fsOpen;b.onclick=e=>{e.stopPropagation();if(cm._fsOpen)cm._fsOpen({start:Math.max(0,Math.round((+b.dataset.watch-120)/BIN)),chase:true})}})}
 /* the lap compare as a replay: A and B drive the map together on the same clock (four times as fast), with the gap in
    metres and seconds; the bar scrubs it */
 function cmpReplay(box,sa,sb,n,L,at){const b=box.querySelector("[data-rp]"),bar=box.querySelector(".rp-bar"),svg=box.querySelector("svg.rbmap");if(!b||!bar||!svg)return;
@@ -4681,9 +4706,9 @@ function renderLicences(m){const box=$("#licCards");if(!box)return;const order=[
 Object.assign(I18N,{
  trackMap:["Track map","Mapa del circuito"],layers:["Layers","Capas"],layout:["Layout","Diseño"],editLayout:["Edit layout","Editar diseño",null,"Editar layout"],
  "ly.ideal":["Ideal line (estimated)","Línea ideal (estimada)"],"ly.best":["Best lap line","Línea de la mejor vuelta"],"ly.line":["My line this lap","Mi trazada esta vuelta"],
- "ly.brakes":["Braking points","Puntos de frenada"],"ly.tel":["Speed & braking","Velocidad y frenada"],"ly.cars":["Other cars","Otros coches"],"ly.nums":["Positions","Posiciones"],
+ "ly.brakes":["Turn by turn","Curva por curva"],"ly.tel":["Speed & braking","Velocidad y frenada"],"ly.cars":["Other cars","Otros coches"],"ly.nums":["Positions","Posiciones"],
  "ly.rot":["Rotate","Girar"],"ly.mirror":["Mirror","Espejo"],"ly.reset":["Redraw map","Volver a dibujar"],
- brakeTitle:["Braking points","Puntos de frenada"],
+ brakeTitle:["Turn by turn","Curva por curva"],
  "w.flag":["Flags","Banderas"],"w.dash":["Gear, speed & RPM","Marcha, velocidad y RPM"],"w.timing":["Lap timing","Tiempos de vuelta"],"w.map":["Track map","Mapa del circuito"],
  "w.relative":["Relative","Relative"],"w.fuel":["Fuel","Combustible"],"w.engine":["Engine & track","Motor y pista"],"w.tyres":["Tyres","Neumáticos"],"w.inputs":["Inputs","Pedales"],"w.standings":["Standings","Posiciones"],
 });
@@ -4819,12 +4844,20 @@ $("#mapLayersBtn").onclick=()=>{const o=$("#mapLayers").hidden;$("#mapLayers").h
 /* ===================== braking table (laps tab) ===================== */
 /* the braking points of lap A against lap B as the coach reads them: every corner of B (named by the official turns),
    where each lap brakes, the slowest point of each, the gear at the apex, the time lost there and the corner's tip */
+/* Turn by turn (the lap analyzer's table, once "Braking points"): one row per turn in track order with lap A against lap B
+   (where each brakes, Δ m, the apex speeds, the gears, the loss), the session (the loss on a typical lap, on how many laps
+   the same mistake shows, how much the turn changes lap to lap) and where lap A stands among the drivers known here, then
+   what to do (turnByTurn in pitwall-analysis.js, the phones the same through analyse's turns) */
 function renderBrakeTable(A,B){const tb=$("#brakeTable tbody"),th=$("#brakeTable thead");if(!tb)return;
-  if(th)th.innerHTML=`<tr><th>${esc(Tx("Turn","Curva","Kurve","Curva"))}</th><th class="r">${esc(Tx("Brake A","Frena A","Bremst A","Freia A"))}</th><th class="r">${esc(Tx("Brake B","Frena B","Bremst B","Freia B"))}</th><th class="r">Δ m</th><th class="r">${esc(Tx("Apex A","Vértice A","Scheitel A","Ápice A"))}</th><th class="r">${esc(Tx("Apex B","Vértice B","Scheitel B","Ápice B"))}</th><th class="r">${esc(Tx("Gear","Marcha","Gang","Marcha"))}</th><th class="r">${esc(Tx("Loss","Pérdida","Verlust","Perda"))}</th><th class="bt-tip">${esc(Tx("What to do","Qué hacer","Was tun","O que fazer"))}</th></tr>`;
-  const cs=A&&B?coachCompare(A,B):[],pin=CMP_HOVER&&CMP_HOVER.pin?CMP_HOVER.i:null,m=v=>v==null?"–":Math.round(v)+" m",v=x=>x==null?"–":Math.round(x);
+  const PM=window.PW_MODEL,md=PM&&A&&!A.comm&&PM.current?PM.current(A):null,cx={...anaCtx(A,B),...(md?{model:md}:{})},LP=A?sesLapsOf(A):[];
+  let cs=[],tt=[];try{cs=A&&B?coachCompare(A,B):[];if(cs.length&&PWA.sessionRepeat){PWA.sessionRepeat(cs,A,B,LP,cx);tt=PWA.turnByTurn(A,B,cs,LP,cx)}}catch(e){}
+  const ses=tt.some(x=>x.of>=3),spr=tt.some(x=>x.sd!=null),rk=tt.some(x=>x.top!=null),byA=new Map(tt.map(x=>[x.apex,x]));
+  if(th)th.innerHTML=`<tr><th>${esc(Tx("Turn","Curva","Kurve","Curva"))}</th><th class="r">${esc(Tx("Brake A","Frena A","Bremst A","Freia A"))}</th><th class="r">${esc(Tx("Brake B","Frena B","Bremst B","Freia B"))}</th><th class="r">Δ m</th><th class="r">${esc(Tx("Apex A","Vértice A","Scheitel A","Ápice A"))}</th><th class="r">${esc(Tx("Apex B","Vértice B","Scheitel B","Ápice B"))}</th><th class="r">${esc(Tx("Gear","Marcha","Gang","Marcha"))}</th><th class="r">${esc(Tx("Loss","Pérdida","Verlust","Perda"))}</th>${ses?`<th class="r">${esc(Tx("Typical lap","Vuelta típica",null,"Volta típica"))}</th><th class="r">${esc(Tx("Laps","Vueltas","Runden","Voltas"))}</th>`:""}${spr?`<th class="r">± s</th>`:""}${rk?`<th class="r">${esc(Tx("Rank","Puesto",null,"Posição"))}</th>`:""}<th class="bt-tip">${esc(Tx("What to do","Qué hacer","Was tun","O que fazer"))}</th></tr>`;
+  const pin=CMP_HOVER&&CMP_HOVER.pin?CMP_HOVER.i:null,m=v=>v==null?"–":Math.round(v)+" m",v=x=>x==null?"–":Math.round(x),lc=x=>x>.02?"bad":x<-.02?"good":"muted";
   const short=c=>{if(!(c.lost>.03)||!c.tip[0])return"";const t=tipMain(c);return tipShort(Tx(t[0],t[1],undefined,t[2]))};
-  tb.innerHTML=cs.length?cs.map(c=>{const i=Math.round(c.d/BIN),dd=c.lift?null:c.dd,gear=c.gA>=1&&c.gB>=1&&c.gA!==c.gB?`${c.gA} / ${c.gB}`:c.gA>=1?String(c.gA):c.gB>=1?String(c.gB):"–",t=short(c);
-    return `<tr data-bd="${Math.round(c.d)}" class="${pin===i?"on":""}"><td class="mono"><b>T${c.n}</b></td><td class="r mono">${c.dd==null?"–":m(c.d+c.dd)}</td><td class="r mono">${c.lift?`<span class="muted">${esc(Tx("lift","sin freno","kein Bremsen","sem freio"))}</span>`:m(c.d)}</td><td class="r mono ${dd!=null&&dd<=-3?"bad":"muted"}">${dd==null?"–":Math.abs(dd)<3?"≈ 0":(dd>0?"+":"−")+Math.abs(Math.round(dd))}</td><td class="r mono">${v(c.vmin)}</td><td class="r mono">${v(c.vminr)}</td><td class="r mono">${gear}</td><td class="r mono ${c.lost>.02?"bad":c.lost<-.02?"good":"muted"}">${sgn(c.lost,3)}</td><td class="bt-tip">${t?esc(t):`<span class="muted">–</span>`}</td></tr>`}).join(""):`<tr><td colspan="9" class="empty">–</td></tr>`;
+  tb.innerHTML=cs.length?cs.map(c=>{const i=Math.round(c.d/BIN),dd=c.lift?null:c.dd,gear=c.gA>=1&&c.gB>=1&&c.gA!==c.gB?`${c.gA} / ${c.gB}`:c.gA>=1?String(c.gA):c.gB>=1?String(c.gB):"–",t=short(c),x=byA.get(Math.round(c.apex))||{};
+    return `<tr data-bd="${Math.round(c.d)}" class="${pin===i?"on":""}"><td class="mono"><b>${esc(x.lab||"T"+c.n)}</b></td><td class="r mono">${c.dd==null?"–":m(c.d+c.dd)}</td><td class="r mono">${c.lift?`<span class="muted">${esc(Tx("lift","sin freno","kein Bremsen","sem freio"))}</span>`:m(c.d)}</td><td class="r mono ${dd!=null&&dd<=-3?"bad":"muted"}">${dd==null?"–":Math.abs(dd)<3?"≈ 0":(dd>0?"+":"−")+Math.abs(Math.round(dd))}</td><td class="r mono">${v(c.vmin)}</td><td class="r mono">${v(c.vminr)}</td><td class="r mono">${gear}</td><td class="r mono ${lc(c.lost)}">${sgn(c.lost,3)}</td>${ses?`<td class="r mono ${x.med!=null?lc(x.med):"muted"}">${x.med!=null?sgn(x.med,3):"–"}</td><td class="r mono ${x.same>1&&x.of&&x.same/x.of>=.5?"bad":"muted"}" title="${esc(x.rep||"")}">${x.of>=3&&c.lost>.03&&x.same?`${x.same}/${x.of}`:"–"}</td>`:""}${spr?`<td class="r mono ${x.sd>.08?"bad":"muted"}">${x.sd!=null?"±"+x.sd.toFixed(2):"–"}</td>`:""}${rk?`<td class="r mono ${x.top!=null&&x.top<=20?"good":x.top!=null&&x.top>=70?"bad":"muted"}" title="${x.drivers?esc(Tx(`among ${x.drivers} drivers`,`entre ${x.drivers} pilotos`,null,`entre ${x.drivers} pilotos`)):""}">${x.top!=null?Tx(`top ${x.top} %`,`top ${x.top} %`,null,`top ${x.top} %`):"–"}</td>`:""}<td class="bt-tip">${t?esc(t):`<span class="muted">–</span>`}</td></tr>`
+  }).join(""):`<tr><td colspan="${9+(ses?2:0)+(spr?1:0)+(rk?1:0)}" class="empty">–</td></tr>`;
   // a row pins the charts and the map at that corner, like the corner bars above
   tb.querySelectorAll("[data-bd]").forEach(r=>r.onclick=()=>{const b=$(`#v-laps .la-c[data-cd="${r.dataset.bd}"]`);if(b)b.click();else{const i=Math.round(+r.dataset.bd/BIN),same=CMP_HOVER&&CMP_HOVER.pin&&CMP_HOVER.i===i;CMP_HOVER=same?null:{i,quiet:true,pin:true};markBrakeRow();drawCmp(true)}})}
 /* the corner's own tip without the line's, and a tip in a few words (pitwall-analysis.js, where the phones read them too) */
@@ -5550,13 +5583,51 @@ async function openRaceChoice(rid){const r=(RACES||[]).find(q=>q.id===rid);if(CL
 /* open a session of your account: in the lap analyzer or in the braking coach */
 function openAccountSession(id,rid){let m=$("#sesPick");if(!m){m=document.createElement("div");m.id="sesPick";m.className="uidlg";document.body.appendChild(m)}const x=(CLOUD.sessions||[]).find(s=>s.id===id)||{};
   m.innerHTML=`<div class="bg"></div><div class="pn" role="dialog" aria-modal="true"><div class="uidlg-t">${esc(x.track||"")}${sesPosTxt(x)?` <span class="mono" style="color:var(--accent)">${esc(sesPosTxt(x))}</span>`:""}${sessDrkPill(x)}${sessIsAI(x)?aiBadge({ai:1}):""}${gameBadge(x)}</div><p class="note" style="margin:4px 0 12px">${esc(Tx("What do you want to see?","¿Qué quieres ver?","Was möchtest du sehen?","O que você quer ver?"))}</p>
-    <div class="devlist">${rid||raceForSession(x)?`<button type="button" class="devrow linkrow" data-race="${esc(rid||raceForSession(x).id)}"><b>${esc(Tx("Race summary","Resumen de la carrera","Rennzusammenfassung","Resumo da corrida"))}</b><small class="muted">${esc(Tx("Result, lap times, incidents, braking and the coach's reading","Resultado, tiempos, incidentes, frenadas y la lectura del coach","Ergebnis, Rundenzeiten, Zwischenfälle, Bremsen und der Coach","Resultado, tempos, incidentes, freadas e a leitura do coach"))}</small><span class="pkgo">›</span></button>`:""}
+    <div class="devlist">${rid||raceForSession(x)?`<button type="button" class="devrow linkrow" data-race="${esc(rid||raceForSession(x).id)}"><b>${esc(Tx("Race report","Informe de la carrera","Rennbericht","Relatório da corrida"))}</b><small class="muted">${esc(Tx("Your result, what cost you time and what to change","Tu resultado, qué te costó tiempo y qué cambiar","Dein Ergebnis, was dich Zeit gekostet hat und was du ändern kannst","Seu resultado, o que te custou tempo e o que mudar"))}</small><span class="pkgo">›</span></button>`:""}
     <button type="button" class="devrow linkrow" data-go="laps"><b>${esc(Tx("Lap analyzer","Analizador de vueltas","Rundenanalyse","Analisador de voltas"))}</b><small class="muted">${esc(Tx("Speed, pedals, gears, steering and time, lap against lap","Velocidad, pedales, marchas, volante y tiempo, vuelta contra vuelta","Tempo, Pedale, Gänge, Lenkung und Zeit, Runde gegen Runde","Velocidade, pedais, marchas, volante e tempo, volta contra volta"))}</small><span class="pkgo">›</span></button>
-    <button type="button" class="devrow linkrow" data-go="coach"><b>${esc(Tx("Braking coach","Coach de frenada","Brems-Coach","Coach de frenagem"))}</b><small class="muted">${esc(Tx("Corner by corner: where you lose time and what to change","Curva a curva: dónde pierdes tiempo y qué cambiar","Kurve für Kurve: wo du Zeit verlierst und was du ändern kannst","Curva a curva: onde você perde tempo e o que mudar"))}</small><span class="pkgo">›</span></button></div>
+    <button type="button" class="devrow linkrow" data-go="coach"><b>${esc(Tx("Coach","Coach","Coach","Coach"))}</b><small class="muted">${esc(Tx("Where you lose time in each corner and what to change","Dónde pierdes tiempo en cada curva y qué cambiar","Wo du in jeder Kurve Zeit verlierst und was du ändern kannst","Onde você perde tempo em cada curva e o que mudar"))}</small><span class="pkgo">›</span></button></div>
     <div class="uidlg-b" style="margin-top:12px"><button type="button" class="btn" id="spX">${esc(Tx("Close","Cerrar","Schließen","Fechar"))}</button></div></div>`;
   const close=()=>m.remove();m.querySelector(".bg").onclick=close;$("#spX").onclick=close;
-  m.querySelectorAll("[data-race]").forEach(b=>b.onclick=()=>{close();openRace(b.dataset.race)});
-  m.querySelectorAll("[data-go]").forEach(b=>b.onclick=()=>{close();if(pcPick())setPcSrc("acct");CLOUD.bid="";CLOUD.lapsB=[];const same=CLOUD.sid===id&&CLOUD.laps.length;CLOUD.sid=id;show(b.dataset.go);if(!same)cloudLoadSession(id)})}
+  m.querySelectorAll("[data-race]").forEach(b=>b.onclick=()=>{close();openCoachReport(b.dataset.race)});
+  m.querySelectorAll("[data-go]").forEach(b=>b.onclick=()=>{close();if(pcPick())setPcSrc("acct");CLOUD.bid="";CLOUD.lapsB=[];const same=CLOUD.sid===id&&CLOUD.laps.length;CLOUD.sid=id;SESS_SKIP=true;show(b.dataset.go);if(!same)cloudLoadSession(id)})}
+/* ---------- The coach report (Nov 2026): what opens after a race and from a race's window in place of the race summary.
+   The race (place, best lap, incidents), the session's best lap against your last session here, the next level and the
+   record of the drivers known on this car and track, and the three corners that cost the most with what to do and on how
+   many laps it happened. "Open the coach" opens that session's lap and reference in the Coach, a corner opens it in the
+   full-screen map from behind the car, "Full summary" the race summary as it was (openRace). ---------- */
+const CRP_T=(en,es,pt)=>Tx(en,es,null,pt);
+async function openCoachReport(rid){const r0=(RACES||[]).find(q=>q.id===rid);if(!r0)return openRace(rid);const r=fixRace(r0);
+  if(CLOUD.sessions===null)await cloudLoadSessions(true,true).catch(()=>{});const x=sessionForRace(r);if(!x)return openRace(rid);
+  let m=$("#crp");if(!m){m=document.createElement("div");m.id="crp";m.className="uidlg";document.body.appendChild(m)}
+  const key=e=>{if(e.key==="Escape"){e.preventDefault();close()}},close=()=>{document.removeEventListener("keydown",key,true);m.remove()};document.addEventListener("keydown",key,true);
+  const T=CRP_T,laps=(r.laps||[]).filter(l=>l.t>0&&l.n!==1&&!l.pit),rb=laps.length?Math.min(...laps.map(l=>l.t)):x.best||null,field=(r.results||[]).length||x.field||0;
+  const head=`<div class="crp-flag" aria-hidden="true"></div><div class="label">${esc(r.track||x.track||"")} · ${esc(r.car||x.car||"")}</div><h2 id="crpH">${esc(T("Race finished","Carrera terminada","Corrida terminada"))}</h2>
+    <div class="crp-res"><div><small>${esc(T("Position","Posición","Posição"))}</small><b class="mono">${r.finish?"P"+esc(r.finish)+(field?" / "+field:""):"–"}</b></div><div><small>${esc(T("Best lap","Mejor vuelta","Melhor volta"))}</small><b class="mono">${rb?fmtT(rb):"–"}</b></div><div><small>${esc(T("Incidents","Incidentes","Incidentes"))}</small><b class="mono">${r.inc!=null?r.inc+"x":"–"}</b></div></div>`;
+  const foot=`<div class="crp-acts"><button type="button" class="btn" id="crpFull">${esc(T("Full summary","Resumen completo","Resumo completo"))}</button><button type="button" class="btn primary" id="crpGo">${esc(T("Open the coach","Abrir el coach","Abrir o coach"))}</button></div>`;
+  const paint=body=>{m.innerHTML=`<div class="bg"></div><div class="pn crp" role="dialog" aria-modal="true" aria-labelledby="crpH"><button type="button" class="uidlg-x" id="crpX" aria-label="${esc(T("Close","Cerrar","Fechar"))}">×</button>${head}${body}${foot}</div>`;
+    m.querySelector(".bg").onclick=close;$("#crpX").onclick=close;$("#crpFull").onclick=()=>{close();openRace(rid)};$("#crpGo").onclick=()=>{close();go(null)};
+    m.querySelectorAll("[data-crpc]").forEach(b=>b.onclick=()=>{close();go(+b.dataset.crpc)})};
+  let A=null;
+  // the coach on this session's lap and reference; with a corner, the full-screen map from behind the car 120 m before it
+  const go=d=>{if(pcPick())setPcSrc("acct");CLOUD.bid="";CLOUD.lapsB=[];const same=CLOUD.sid===x.id&&CLOUD.laps.length;CLOUD.sid=x.id;if(A)ANASEL.a=lapKey(A);SESS_SKIP=true;show("coach");if(!same)cloudLoadSession(x.id);
+    if(d!=null){let n=0;const t=setInterval(()=>{const cm=$("#coachMap");if(cm&&cm._fsOpen){clearInterval(t);cm._fsOpen({start:Math.max(0,Math.round((d-120)/BIN)),chase:true})}else if(++n>40)clearInterval(t)},250)}};
+  paint(`<p class="note crp-wait">${esc(T("Reading your laps…","Leyendo tus vueltas…","Lendo suas voltas…"))}</p>`);
+  try{
+    if(!(CLOUD.sid===x.id&&CLOUD.laps.length&&!CLOUD.busy))await cloudLoadSession(x.id);if(!m.isConnected)return;
+    const LP=CLOUD.laps||[];A=analysisBest(LP);if(!A)throw 0;const PM=window.PW_MODEL;let md=null,MR={rec:null,level:null};
+    if(PM){try{md=await PM.modelFor(A)}catch(e){}if(md)MR=PM.refsFor(md,A)||MR}
+    if(!m.isConnected)return;
+    // compared with: your best of the last session on this car and track, the next level and the record
+    const k=comboKey(x),prev=(CLOUD.sessions||[]).filter(s=>s.id!==x.id&&comboKey(s)===k&&s.started<x.started&&s.best>0).sort((a,b)=>b.started-a.started)[0];
+    const row=(lbl,t)=>{const d=A.time-t;return`<div><span>${esc(lbl)} <span class="mono muted">${fmtT(t)}</span></span><b class="mono ${d<=0?"good":"bad"}">${sgn(d,3)}</b></div>`};
+    const vs=[prev?row(T("Your best last session","Tu mejor de la sesión anterior","Sua melhor da sessão anterior"),prev.best):"",MR.level?row(T("The next level in this car","El nivel siguiente en este coche","O próximo nível neste carro"),MR.level.time):"",md&&md.idealTime?row(T("The record of the drivers known here","El récord de los pilotos conocidos aquí","O recorde dos pilotos conhecidos aqui"),md.idealTime):""].join("");
+    // where the time went: the reference is the next level, else the record (the coach's own default)
+    const R=MR.level||MR.rec||LP.reduce((p,q)=>q!==A&&q.valid!==false&&(!p||q.time<p.time)?q:p,null);let top="";
+    if(R&&R!==A){const c=coachPlan(A,R,LP),cx=anaCtx(A,R);const cs=c.cs.filter(q=>q.lost>.03).sort((p,q)=>q.lost-p.lost).slice(0,3);
+      top=cs.map(q=>{const rt=PWA.repText?PWA.repText(q):null,todo=PWA.tipTodo(q,cx);return`<button type="button" class="crp-c" data-crpc="${Math.round(q.d)}"><b>T${q.n}</b><span>${esc(todo)}${rt?`<br><span class="co-rep">${esc(Tx(rt[0],rt[1],null,rt[2]))}</span>`:""}</span><span class="mono bad">+${q.lost.toFixed(2)} s</span></button>`}).join("")}
+    paint(`${vs?`<div class="crp-sec"><div class="label">${esc(T("Your best lap compared with","Tu mejor vuelta comparada con","Sua melhor volta comparada com"))} <span class="mono">${fmtT(A.time)}</span></div><div class="crp-vs">${vs}</div></div>`:""}
+      ${top?`<div class="crp-sec"><div class="label">${esc(T("Where the time went","Donde se fue el tiempo","Onde o tempo foi"))}</div><div class="crp-top">${top}</div></div>`:""}`);
+  }catch(e){if(m.isConnected)paint("")}}
 /* the PC window: the header works as the title bar (drag, double-click, buttons) */
 function ownFrame(){const H=document.documentElement,hd=$("header.top");H.classList.add("ownframe");$("#winCtl").hidden=false;$("#winEdge").hidden=false;
   const pad=()=>H.style.setProperty("--padx",getComputedStyle(document.body).paddingLeft);pad();addEventListener("resize",pad);
@@ -7595,7 +7666,7 @@ function notesFor(id){return NOTES[String(id)]||null}
    phases (braking, entry, apex, exit), the tip about the phase where the time goes, the plan, the sectors, the line. The
    app hands it what it needs (anaCtx) and draws what it answers. */
 function anaCtx(A,B){const tid=A||B?(A&&A.trackId)||(B&&B.trackId)||TURN_TID:null,PM=window.PW_MODEL;
-  return{lang:LANG,units:UNITS,turns:tid?turnsFor(tid):null,turnNames:tid&&typeof turnNamesFor==="function"?turnNamesFor(tid):null,weights:COACH_W,me:COACH_ME,hint:A&&PM&&PM.cornerHint?apex=>PM.cornerHint(A,apex):null,post:devWords,track:anaTrack(A,B),estB:!!(B&&(B.est||B.field)),like:A&&PM&&PM.like?PM.like(A):null,progress:A&&!A.comm&&typeof coachProgress==="function"?coachProgress(A):null}}
+  return{lang:LANG,units:UNITS,game:typeof aGame==="function"?aGame():"",turns:tid?turnsFor(tid):null,turnNames:tid&&typeof turnNamesFor==="function"?turnNamesFor(tid):null,weights:COACH_W,me:COACH_ME,hint:A&&PM&&PM.cornerHint?apex=>PM.cornerHint(A,apex):null,post:devWords,track:anaTrack(A,B),estB:!!(B&&(B.est||B.field)),like:A&&PM&&PM.like?PM.like(A):null,progress:A&&!A.comm&&typeof coachProgress==="function"?coachProgress(A):null}}
 /* the track and car of the laps for the oval coach (ovalOf in the module): a session's laps carry them, a lap recorded
    live takes the session the agent reads now */
 function anaTrack(A,B){const L=[A,B].find(l=>l&&l.track);if(L)return{cat:L.cat||"",track:L.track||"",track_config:L.track_config||"",car:L.car||""};
@@ -7770,7 +7841,7 @@ function coachPlan(A,R,LP){return PWA.coachPlan(A,R,LP,anaCtx(A,R))}
    that car and track says whether each corner got faster. From COACH_W.min cases of a tip's kind on corners of that speed,
    the share of drivers who gained reorders the plan (coachOf in pitwall-analysis.js); the texts never change. The driver sees none of it, only
    the 👍/👎 on each tip; the admin panel (Coach) shows the counts. */
-/* The coach learns apart by discipline (road, oval, dirt oval, dirt road: catGroup in the module, ?cat= on the server): a
+/* The coach learns apart by discipline (road, oval, dirt oval, dirt road, and Le Mans Ultimate's prototypes and GTs: catGroup in the module, ?cat= on the server): a
    group's weights where it learnt enough, else everyone's. g is the group of the laps in the coach (undefined keeps the last) */
 let COACH_W={at:0,w:{},b:{},off:new Set(),conf:false,min:30,p:null,cat:""},COACH_ME={at:0,habits:[],w:{},p:null,cat:""};
 const coachCatQ=g=>g?"?cat="+encodeURIComponent(g):"";
@@ -7789,7 +7860,7 @@ async function coachReport(A,R,c,best){try{if(!A||!R||A.comm||demoOn()||!c||!c.c
   const corners=c.cs.slice(0,40).map(x=>{const b=near(x);return{n:x.n,d:Math.round(x.d),apex:Math.round(x.apex),kind:x.lost>.03?x.kind:"",cls:x.cls,lost:+x.lost.toFixed(3),ta:+x.ta.toFixed(3),tb:+x.tb.toFixed(3),tbest:b?+b.ta.toFixed(3):null,dd:x.dd!=null?Math.round(x.dd):null}});
   await cloudPost("/community/coach/tips",{game:aGame(),trackId:co.trackId,carId:co.carId,sid:w.sid,started:w.started,ref,lap:+A.time.toFixed(3),flags:A.flags||[],corners,cat:coachCat(A,R)})}catch(e){}}
 /* the discipline of the laps in the coach, what its tips and votes are kept under (catGroup in the module) */
-function coachCat(A,R){try{return PWA.catGroup(A,R||null,{track:anaTrack(A,R||null)})||""}catch(e){return""}}
+function coachCat(A,R){try{return PWA.catGroup(A,R||null,{track:anaTrack(A,R||null),game:aGame()})||""}catch(e){return""}}
 async function coachRate(A,c,up){const PM=window.PW_MODEL,w=coachWhere(A);if(!PM||!w||!c)return;const k=w.sid+":"+Math.round(c.apex),was=TIPRATE[k]||0,now=was===up?0:up;if(now)TIPRATE[k]=now;else delete TIPRATE[k];store.set("pw.tiprate",TIPRATE);
   try{const co=await PM.comboOf(A);if(!co)return;await cloudPost("/community/coach/rate",{game:aGame(),trackId:co.trackId,carId:co.carId,sid:w.sid,started:w.started,n:c.n,apex:Math.round(c.apex),kind:c.kind,cls:c.cls,up:now,cat:coachCat(A)})}catch(e){}}
 /* the step to the next level: the corners where the drivers at your pace lose to the driver just ahead (the model's levelStep) */
@@ -7800,6 +7871,11 @@ const areaName=k=>k==="straight"?Tx("Straights","Rectas","Geraden","Retas"):phas
    earlier downhill and can brake later uphill */
 function slopePill(A,c){const ap=c.apex>c.d?c.apex:c.d+80,g=A&&PWA.slopeOf?PWA.slopeOf(A,Math.max(0,c.d-30),ap):null;if(g==null||Math.abs(g)<3)return"";const dn=g<0;
   return`<span class="pill ${dn?"warn":"acc"}" title="${esc(dn?Tx("Braking downhill. The car needs more distance to stop than it looks","Frenada cuesta abajo. El coche necesita más distancia para parar de lo que parece",null,"Frenagem em descida. O carro precisa de mais distância para parar do que parece"):Tx("Braking uphill. The car stops sooner than it looks","Frenada cuesta arriba. El coche para antes de lo que parece",null,"Frenagem em subida. O carro para antes do que parece"))}">${dn?"↘":"↗"} ${Math.abs(g).toFixed(0)} %</span>`}
+/* this session against the last one, the coach's first lines (sinceLast in the module): the turns faster than last time,
+   the ones slower and the ones no faster for several sessions */
+function sinceHTML(sl){if(!sl||!sl.lines||!sl.lines.length)return"";return`<div class="co-since">${sl.lines.map(l=>`<span class="pill ${l.tone==="good"?"good":"bad"}">${esc(l.text)}</span>`).join("")}</div>`}
+/* how often lap A's mistake in a corner happens over the session ("On 7 of 9 laps"), from the module's repText */
+function repPill(c){const t=PWA.repText?PWA.repText(c):null;if(!t)return"";const once=c.rep.same<=1;return`<span class="pill ${once?"muted":"bad"} co-rep" title="${esc(Tx(`The time lost here over the session ${c.rep.med>=0?"+":""}${c.rep.med.toFixed(2)} s on a typical lap`,`Lo que pierdes aquí en la sesión ${c.rep.med>=0?"+":""}${c.rep.med.toFixed(2)} s en una vuelta típica`,null,`O que você perde aqui na sessão ${c.rep.med>=0?"+":""}${c.rep.med.toFixed(2)} s numa volta típica`))}">${esc(Tx(t[0],t[1],null,t[2]))}</span>`}
 function coachCornersHTML(cs,limit){const list=limit?cs.slice().sort((a,b)=>b.lost-a.lost).slice(0,limit):cs;const A=window.COACH_A,PM=window.PW_MODEL,w=coachWhere(A);
   // 👍/👎 on a tip (kept with the account, coachtips.js) and the corner card: where the fastest drivers here brake and how fast they take the corner (a range of real laps, never a lap to compare with)
   const rate=c=>{if(!w||!c.kind)return"";const v=TIPRATE[w.sid+":"+Math.round(c.apex)]||0;return`<span class="tiprate" data-tiprate="${Math.round(c.apex)}"><button type="button" data-up="1"${v===1?' class="on"':""} title="${esc(Tx("This tip helps","Este consejo ayuda","Dieser Tipp hilft","Esta dica ajuda"))}">👍</button><button type="button" data-up="-1"${v===-1?' class="on"':""} title="${esc(Tx("This tip does not help","Este consejo no ayuda","Dieser Tipp hilft nicht","Esta dica não ajuda"))}">👎</button></span>`};
@@ -7809,8 +7885,8 @@ function coachCornersHTML(cs,limit){const list=limit?cs.slice().sort((a,b)=>b.lo
     return`<div class="rb-hint">${esc(Tx(`The fast drivers here brake between ${m(h.b0)} and ${m(h.b1)} m and pass the apex at ${v(h.v0)}–${v(h.v1)} ${spdU()} (${h.n} drivers${when})`,`Los rápidos aquí frenan entre ${m(h.b0)} y ${m(h.b1)} m y pasan el vértice a ${v(h.v0)}–${v(h.v1)} ${spdU()} (${h.n} pilotos${when})`,`Die Schnellen bremsen hier zwischen ${m(h.b0)} und ${m(h.b1)} m und nehmen den Scheitel mit ${v(h.v0)}–${v(h.v1)} ${spdU()} (${h.n} Fahrer${when})`,`Os rápidos aqui freiam entre ${m(h.b0)} e ${m(h.b1)} m e passam o vértice a ${v(h.v0)}–${v(h.v1)} ${spdU()} (${h.n} pilotos${when})`)+ln)}</div>`};
   // how many drivers this tip helped on corners like this, when the admin lets the tips say it (coach_confidence)
   const conf=c=>{const b=c.kind&&c.lost>.03?tipConf(c.kind,c.cls):null;return b?`<div class="rb-hint">${esc(Tx(`This tip helped ${b.win} of ${b.n} drivers on corners like this`,`Este consejo ayudó a ${b.win} de ${b.n} pilotos en curvas así`,`Dieser Tipp half ${b.win} von ${b.n} Fahrern in solchen Kurven`,`Esta dica ajudou ${b.win} de ${b.n} pilotos em curvas assim`))}</div>`:""};if(!list.length)return`<p class="note">${esc(Tx("No corner loses more than 0.03 s against the reference. Nice lap.","Ninguna curva pierde más de 0,03 s frente a la referencia. Buena vuelta.","Keine Kurve verliert mehr als 0,03 s. Gute Runde.","Nenhuma curva perde mais de 0,03 s. Boa volta."))}</p>`;
-  const tipX=c=>c.phase?`<div class="rb-tipx"><span class="coachtip">${esc(tipTx(c))}</span></div>`:`<div class="rb-tipx"><span class="good">${esc(Tx("Nothing to fix here","Nada que corregir aquí","Hier nichts zu tun","Nada a corrigir aqui"))}</span></div>`,phC={brake:"bad",entry:"blue",apex:"acc",exit:"good"};
-  return`<div class="rb-cards co-tips">${list.map(c=>`<div class="rb-c co-tip${c.lost>.03?" tip":""}"><div class="rb-h"><b class="mono co-tn">T${c.n}</b>${c.phase?`<span class="pill ${phC[c.phase]||"acc"}">${esc(phaseName(c.phase))}</span>`:""}<small class="muted mono">${Math.round(c.d)} m</small>${slopePill(A,c)}<span class="sp"></span>${replayBtn(A,Math.max(0,c.d-40))}<button type="button" class="btn small co-prac" data-practise="${c.n}" title="${esc(Tx("Practise this corner on the coach overlay","Practicar esta curva en el overlay del coach",null,"Praticar esta curva no overlay do coach"))}">${esc(Tx("Practise","Practicar",null,"Praticar"))}</button><span class="mono ${c.lost>.02?"bad":c.lost<-.02?"good":"muted"}">${sgn(c.lost,2)} s</span></div>${tipX(c)}<div class="co-facts">
+  const tipX=c=>c.phase?`<div class="rb-tipx">${repPill(c)}<span class="coachtip">${esc(tipTx(c))}</span></div>`:`<div class="rb-tipx"><span class="good">${esc(Tx("Nothing to fix here","Nada que corregir aquí","Hier nichts zu tun","Nada a corrigir aqui"))}</span></div>`,phC={brake:"bad",entry:"blue",apex:"acc",exit:"good"};
+  return`<div class="rb-cards co-tips">${list.map(c=>`<div class="rb-c co-tip${c.lost>.03?" tip":""}"><div class="rb-h"><b class="mono co-tn">T${c.n}</b>${c.phase?`<span class="pill ${phC[c.phase]||"acc"}">${esc(phaseName(c.phase))}</span>`:""}<small class="muted mono">${Math.round(c.d)} m</small>${slopePill(A,c)}<span class="sp"></span>${replayBtn(A,Math.max(0,c.d-40))}<button type="button" class="btn small co-watch" data-watch="${Math.round(c.d)}" hidden title="${esc(Tx("Watch lap A and lap B through this corner from behind the car","Ver la vuelta A y la B en esta curva desde detrás del coche",null,"Ver a volta A e a B nesta curva por trás do carro"))}">▶ ${esc(Tx("Watch it","Verlo",null,"Ver"))}</button><button type="button" class="btn small co-prac" data-practise="${c.n}" title="${esc(Tx("Practise this corner on the coach overlay","Practicar esta curva en el overlay del coach",null,"Praticar esta curva no overlay do coach"))}">${esc(Tx("Practise","Practicar",null,"Praticar"))}</button><span class="mono ${c.lost>.02?"bad":c.lost<-.02?"good":"muted"}">${sgn(c.lost,2)} s</span></div>${tipX(c)}<div class="co-facts">
     <div class="rb-k"><span>${esc(Tx("Braking","Frenada","Bremsen","Frenagem"))}</span><b class="mono ${c.dd==null||Math.abs(c.dd)<5?"":c.dd>0?"good":"bad"}">${c.dd==null?"–":Math.abs(c.dd)<5?Tx("same point","mismo punto","gleicher Punkt","mesmo ponto"):(c.dd>0?Tx("later","más tarde","später","mais tarde"):Tx("earlier","antes","früher","antes"))+" "+Math.abs(Math.round(c.dd))+" m"}</b></div>
     <div class="rb-k"><span>${esc(Tx("Slowest","Más lento","Langsamster","Mais lento"))}</span><b class="mono">${c.vmin==null?"–":Math.round(c.vmin)} ${spdU()}</b><small class="muted mono">B ${Math.round(c.vminr)}</small></div>
     ${c.trailA!=null?`<div class="rb-k"><span>${esc(Tx("Trail / coast","Trail / inercia","Trail / Rollen","Trail / inércia"))}</span><b class="mono">${Math.round(c.trailA)} m · ${Math.round(c.coastA)} m</b><small class="muted mono">B ${Math.round(c.trailB)} · ${Math.round(c.coastB)}</small></div>`:""}
@@ -7983,7 +8059,7 @@ function renderCoach(){coachWeights();coachMe();const LP=coachLaps(),best=markAn
   box.innerHTML=`<div class="co-wrap">
     <div class="pnl co-hero"><div class="co-top"><div><div class="label">${esc(Tx("This lap vs the reference","Esta vuelta frente a la referencia","Diese Runde gegen die Referenz","Esta volta contra a referência"))}</div><div class="big mono ${c.lapD>0?"bad":"good"}">${sgn(c.lapD,3)} s</div>
         <div class="sub">${esc(Tx(`${r2(c.lost)} s lost in ${c.cs.length} corners · ${r2(-c.gained)} s gained · ${r2(Math.abs(c.straight))} s ${c.straight>0?"lost":"gained"} on the straights`,`${r2(c.lost)} s perdidos en ${c.cs.length} curvas · ${r2(-c.gained)} s ganados · ${r2(Math.abs(c.straight))} s ${c.straight>0?"perdidos":"ganados"} en las rectas`))}</div></div>
-      <div class="co-focus"><div class="label">${esc(Tx("Work on this first","Trabaja esto primero","Zuerst daran arbeiten","Trabalhe nisto primeiro"))}</div><b>${esc(focusT)}</b><small class="muted">${esc(focusS)}</small></div></div></div>
+      <div class="co-focus"><div class="label">${esc(Tx("Work on this first","Trabaja esto primero","Zuerst daran arbeiten","Trabalhe nisto primeiro"))}</div><b>${esc(focusT)}</b><small class="muted">${esc(focusS)}</small></div></div>${sinceHTML(PWA.sinceLast?PWA.sinceLast(coachLast(A),cx.progress,c.cs,cx):null)}</div>
     ${aiChatHTML(A,R,c)}<div class="co-cols"><div class="co-c3"><section class="pnl co-pace"><div class="pnl-h">${esc(Tx("Your pace among the drivers known here","Tu ritmo entre los pilotos conocidos aquí","Dein Tempo unter den hier bekannten Fahrern","Seu ritmo entre os pilotos conhecidos aqui"))}</div><div class="pnl-b">${comm}${carBox}</div></section>
     <section class="pnl co-planp"><div class="pnl-h">${esc(Tx("Your plan for the next session","Tu plan para la próxima sesión","Dein Plan für die nächste Sitzung","Seu plano para a próxima sessão"))}</div><div class="pnl-b">
       ${c.plan.length?`<ol class="co-plan nums">${planStepsHTML(c.plan,A)}</ol>${planVoteHTML(A)}${planTurns(c.plan).length?`<div class="co-planb"><button type="button" class="btn small" id="coachPlanOv">${esc(Tx("Take the plan to the coach overlay","Llevar el plan al overlay del coach","Den Plan ins Coach-Overlay übernehmen","Levar o plano ao overlay do coach"))}</button></div>`:""}`:`<p class="note">${esc(Tx("Nothing stands out: this lap is as good as the reference everywhere.","Nada destaca: esta vuelta es tan buena como la referencia en todas partes.","Nichts fällt auf: diese Runde ist überall so gut wie die Referenz.","Nada se destaca: esta volta é tão boa quanto a referência em toda parte."))}</p>`}</div></section>${followHTML(fu)}${progHTML(PWA.progressLines(cx.progress,c.cs,cx))}</div>
@@ -7995,7 +8071,7 @@ function renderCoach(){coachWeights();coachMe();const LP=coachLaps(),best=markAn
   const cmap=$("#coachMap");cmap._planSel=Math.max(0,c.plan.slice(0,PLAN_SHOW).findIndex(p=>p.marks&&p.marks.length));renderCmpMap(A,R,cmap,{plan:c.plan.slice(0,PLAN_SHOW)});coachReport(A,R,c,best);coachEdges(A,R,cx);aiChatWire(A,R,c,best,LP);coachBalance(box);
   // a step of the plan pressed (or its number on the map) is the one the map shows: its stretch, its points A and B, the apex and the throttle
   const planSel=i=>{cmap._planSel=i;drawPlanLayer(cmap);box.querySelectorAll(".co-plan [data-ps]").forEach(li=>li.classList.toggle("sel",+li.dataset.ps===i))};cmap._onPlanSel=planSel;
-  box.querySelectorAll(".co-plan [data-ps]").forEach(li=>li.onclick=e=>{if(e.target.closest(".tiprate"))return;planSel(+li.dataset.ps);if(e.target.closest("[data-psmap]")&&window.innerWidth<900)cmap.scrollIntoView({behavior:"smooth",block:"center"})});
+  box.querySelectorAll(".co-plan [data-ps]").forEach(li=>li.onclick=e=>{if(e.target.closest(".tiprate"))return;planSel(+li.dataset.ps);if(!e.target.closest("[data-psmap]"))return;/* "Show on the map" opens the map in full screen at the step's first mark (the map on the page where there is no full-screen map) */const st=c.plan[+li.dataset.ps],mk=st&&st.marks&&st.marks.length?Math.min(...st.marks.map(m=>+m.d||0)):null;if(cmap._fsOpen&&mk!=null)cmap._fsOpen({start:Math.max(0,Math.round((mk-120)/BIN))});else if(window.innerWidth<900)cmap.scrollIntoView({behavior:"smooth",block:"center"})});
   box.querySelectorAll("[data-planrate] button").forEach(b=>b.onclick=()=>{const ix=b.parentNode.dataset.planrate,st=ix==="all"?null:c.plan[+ix];const on=planRate(A,st,+b.dataset.up);b.parentNode.querySelectorAll("button").forEach(x=>(x.classList.toggle("on",+x.dataset.up===on),x.setAttribute("aria-pressed",String(+x.dataset.up===on))))});
   box.querySelectorAll("[data-tiprate] button").forEach(b=>b.onclick=()=>{const apex=+b.parentNode.dataset.tiprate,k=c.cs.find(x=>Math.round(x.apex)===apex);if(!k)return;coachRate(A,k,+b.dataset.up);const on=(TIPRATE[(coachWhere(A)||{}).sid+":"+apex]||0);b.parentNode.querySelectorAll("button").forEach(x=>(x.classList.toggle("on",+x.dataset.up===on),x.setAttribute("aria-pressed",String(+x.dataset.up===on))))});
   box.querySelectorAll("[data-cref]").forEach(b=>b.onclick=()=>{rsel.value=b.dataset.cref;rsel.dataset.user="1";renderCoach()});
@@ -8487,7 +8563,7 @@ async function raceBoard(r){const box=$("#rsBoard");if(!box||r.shared||r.partial
   const cb=$("#rsCmp");if(cb)cb.onclick=()=>{usageCount("act:race_compare_next");raceCompareNext(r,st.next.id)}}
 /* the race's session in the lap analyzer with that community lap as lap B (the session not in the account: the board) */
 async function raceCompareNext(r,lapId){if(CLOUD.sessions===null)await cloudLoadSessions(true).catch(()=>{});const x=sessionForRace(r);closeDrawer();if(!x){commGoBoard(+r.trackId,+r.carId);return}
-  if(pcPick())setPcSrc("acct");CLOUD.bid="";CLOUD.lapsB=[];const same=CLOUD.sid===x.id&&CLOUD.laps.length;CLOUD.sid=x.id;PW3L.src="comm";show("laps");if(!same)cloudLoadSession(x.id);
+  if(pcPick())setPcSrc("acct");CLOUD.bid="";CLOUD.lapsB=[];const same=CLOUD.sid===x.id&&CLOUD.laps.length;CLOUD.sid=x.id;PW3L.src="comm";SESS_SKIP=true;show("laps");if(!same)cloudLoadSession(x.id);
   let n=0;const t=setInterval(()=>{const bd=PW3L.board;if(++n>60||CUR_VIEW!=="laps"||CLOUD.sid!==x.id){clearInterval(t);return}
     if(bd&&!bd.busy&&!CLOUD.busy&&CLOUD.laps.length&&$("#lapB")){clearInterval(t);const i=bd.laps.findIndex(l=>l.id===lapId);if(i>=0)pw3BoardPick(i)}},500)}
 /* the race in order (pitwall-analysis.js raceStory): the start, the places won and lost, the stops and the incidents */
@@ -8512,7 +8588,7 @@ function onRaceReport(r){fixRace(r);if(gameMatch(r))RACES=[r,...(RACES||[]).filt
   if(CUR_VIEW==="races")renderRaces();TB=null;
   // on the PC the summary opens by itself a moment after the flag, so it is there when the driver looks at the app:
   // never over a window that is open, nor when the driver touched the app in the last minute (they are doing something)
-  if(!PHONE&&MODE==="bridge"&&!COMPANION&&!demoOn()&&gameMatch(r)&&!r.partial)setTimeout(()=>{if(document.querySelector(".uidlg")||Date.now()-UI_AT<60e3)return;usageCount("act:race_auto");openRace(r.id)},3000);
+  if(!PHONE&&MODE==="bridge"&&!COMPANION&&!demoOn()&&gameMatch(r)&&!r.partial)setTimeout(()=>{if(document.querySelector(".uidlg")||Date.now()-UI_AT<60e3)return;usageCount("act:race_auto");openCoachReport(r.id)},3000);
   if(PHONE)setTimeout(()=>toast(Tx("Race summary ready: Analysis → My races","Resumen de la carrera listo: Análisis → Mis carreras","Rennzusammenfassung fertig: Analyse → Rennen","Resumo da corrida pronto: Análise → Corridas")),3400)}
 
 /* ---------- braking points of the race on the track map: you and the others ---------- */
@@ -9934,7 +10010,7 @@ async function openForgot(){const u=await acctServer();if(!u){toast(Tx("The Pitl
 /* when a screen fails to draw, say so on it (with the error) instead of leaving it blank */
 function pwReport(e,v){try{console.error(e);const sec=document.getElementById("v-"+(v||CUR_VIEW));if(!sec)return;let c=sec.querySelector(":scope>.pw-err");if(!c){c=document.createElement("div");c.className="callout pw-err";c.style.cssText="border-color:var(--bad);margin:10px 0";sec.prepend(c)}
   const at=String((e&&e.stack)||"").split("\n").slice(1,2).join("").trim();c.innerHTML=`<b class="bad">${esc(Tx("This screen could not be drawn","Esta pantalla no se pudo dibujar","Diese Ansicht konnte nicht gezeichnet werden","Esta tela não pôde ser desenhada"))}</b><div class="note mono" style="margin-top:4px;white-space:pre-wrap">${esc(String((e&&e.message)||e))}${at?"\n"+esc(at):""}</div><div class="note" style="margin-top:4px">${esc(Tx("Send us a screenshot of this from About → Feedback.","Envíanos una captura de esto desde Acerca de → Opinión.","Schick uns einen Screenshot davon über Info → Feedback.","Envie-nos uma captura disto em Sobre → Feedback."))} v${esc(WEB_VERSION)}</div>`}catch(x){}}
-{const s1=show;show=function(v){const was=typeof CUR_VIEW==="string"&&CUR_VIEW?groupOf(CUR_VIEW):"";if(GROUPS.analysis.includes(v)&&was!=="analysis"&&(v==="laps"||v==="coach"))SESS_ASK=v;return s1.apply(this,arguments)}}
+{const s1=show;show=function(v){const was=typeof CUR_VIEW==="string"&&CUR_VIEW?groupOf(CUR_VIEW):"";if(GROUPS.analysis.includes(v)&&was!=="analysis"&&(v==="laps"||v==="coach")&&!SESS_SKIP)SESS_ASK=v;SESS_SKIP=false;return s1.apply(this,arguments)}}
 {const s0=show;show=function(v){const sec=document.getElementById("v-"+v),old=sec&&sec.querySelector(":scope>.pw-err");if(old)old.remove();try{return s0.apply(this,arguments)}catch(e){pwReport(e,v)}}}
 const pwAdm=()=>{try{return isAdmin()}catch(e){return false}};
 /* the page's own errors go to the server for everyone (reports.js), once per kind and visit, never in demo data */
@@ -12126,7 +12202,8 @@ function renderStatsView(){const box=$("#statsBody");if(!box)return;const T=Tx;
     // each corner, the best lap of the first and the latest week against your best lap (the last 12 weeks at most)
     cornH=T(`Time per corner · ${C.track}`,`Tiempo por curva · ${C.track}`,null,`Tempo por curva · ${C.track}`);
     const ref=all.reduce((a,s)=>!a||s.best<a.best?s:a,null),use=wk.slice(-12),key=C.k+"|"+(ref?ref.id:"")+"|"+use.map(e=>e.s.id).join(",");
-    if(!ref||use.length<2)cornT=none(T("Drive this car and track in two different weeks to see each corner change.","Conduce este coche y circuito en dos semanas distintas para ver cómo cambia cada curva.",null,"Pilote este carro e pista em duas semanas diferentes para ver cada curva mudar."));
+    // a car and track with no timed lap (every session without a best lap) has nothing to compare: it used to stop the page
+    if(use.length<2||!ref)cornT=none(T("Drive this car and track in two different weeks to see each corner change.","Conduce este coche y circuito en dos semanas distintas para ver cómo cambia cada curva.",null,"Pilote este carro e pista em duas semanas diferentes para ver cada curva mudar."));
     else if(!STATS_CORN.has(key)){statsLoadCorners(key,ref,use);cornT=none(loadT)}
     else{const R=STATS_CORN.get(key);if(!R||!R.weeks.length||!R.ns.length)cornT=none(T("These laps have no telemetry to compare corners.","Estas vueltas no tienen telemetría para comparar las curvas.",null,"Estas voltas não têm telemetria para comparar as curvas."));
       else{const W=R.weeks,f=W[0],l=W[W.length-1],cls=d=>d<-.005?"good":d>.005?"bad":"";

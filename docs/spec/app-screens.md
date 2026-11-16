@@ -239,7 +239,14 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   over about 12 m (`lineOf`), followed as a curve (`atLine`). Closing it leaves the analyzer's cursor where the map's was. The phones do
   not have it yet (no phone work for now, the owner's choice).
 - The race summary has "Race pace" against the cars around you (coach-and-model.md, `racePace`).
-- The race summary opens by itself on the PC about three seconds after a race is saved (`onRaceReport`), so it is
+- The race report (`openCoachReport`, 2026-11-16, the owner's choice: it replaces the race summary where a race opens by
+  itself and in a race's "What do you want to see?" window, as "Race report"): the place, best lap and incidents, the
+  session's best lap against your best of the last session on that car and track, the next level and the record of the
+  drivers known there, and the three corners that cost the most against the next level (else the record) with what to
+  do (`tipTodo`) and on how many laps (`repText`). "Open the coach" opens that session in the Coach with that lap and no
+  game or session question (`SESS_SKIP`), a corner opens the Coach's full-screen map from behind the car 120 m before
+  it, "Full summary" the race summary below (`openRace`).
+- The race report opens by itself on the PC about three seconds after a race is saved (`onRaceReport`), so it is
   there when the driver looks at the app: never over an open window, and not when the driver touched the app in the
   last minute. Under the result it shows "Leaderboard" (`raceBoard`, `boardStand`): the place of the driver's best lap
   there on the community board of that car and track, the next driver up with the gap, "Compare with <name>" (the

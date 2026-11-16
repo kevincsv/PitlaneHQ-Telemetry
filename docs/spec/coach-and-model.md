@@ -41,6 +41,9 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   (`turns` on each step of `coachPlan`, `planTurns`), on the phones too when they run the module.
   The corner tips (`coachCompare` in pitwall-analysis.js wherever the app or the phones analyse a lap, `compareLaps` in
   ovnative4.go for the coach overlay; the phones' `corners` in LapMath/Models only as the fallback):
+  each tip reads like a coach talking (rewritten 2026-11-16): what the lap does against the reference with its numbers, why
+  it costs time when that is not plain, and what to do as the last sentence, which is what `tipShort` and the Turn by turn
+  table show. The overlay's `compareLaps` still has the older words until the next PC build.
   the phase that loses the most says the tip, and every tip follows the measured facts, never against them: braking
   later than the reference and arriving slower at the apex is one mistake whatever phase pays for it ("brake a little
   earlier and carry the speed"); with the same braking point the tip is about the brake (harder at first, trail, or

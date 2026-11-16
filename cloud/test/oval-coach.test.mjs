@@ -42,7 +42,7 @@ const A = lap(2414, [{ at: 560, len: 340, dv: 9, thr: .3 }, { at: 1800, len: 300
 const ctx = T("oval", "Charlotte Motor Speedway", "Oval");
 const out = PW.analyse(A, R, { lang: "en", ...ctx }), cs = out.corners.filter((c) => c.lost > .03);
 assert.deepEqual(cs.map((c) => c.kind), ["oval_lift_later", "oval_flat"]);
-assert.equal(cs[0].text, "You lift 40 m before the reference. Lift later");
+assert.equal(cs[0].text, "You lift 40 m before the reference. Stay in it longer and lift later");
 assert.ok(cs.every((c) => c.oval === "intermediate" && !/brak/i.test(c.text)), "no brake on a lift corner");
 assert.equal(cs[1].flatB, true);
 const plan = out.coach.plan;
@@ -51,8 +51,8 @@ assert.match(plan[0].t, /^Intermediate oval · lifts in 3 corners \(reference 2\
 assert.ok(plan.every((p) => !/[;]/.test(p.t + p.why + (p.how || ""))), "no semicolons");
 assert.match(plan.find((p) => p.k === "corner").why, /You lift 40 m earlier/);
 // Spanish and Portuguese too
-assert.equal(PW.analyse(A, R, { lang: "es", ...ctx }).corners[0].text, "Levantas 40 m antes que la referencia. Levanta más tarde");
-assert.equal(PW.analyse(A, R, { lang: "pt", ...ctx }).corners[0].text, "Você alivia 40 m antes da referência. Alivie mais tarde");
+assert.equal(PW.analyse(A, R, { lang: "es", ...ctx }).corners[0].text, "Levantas 40 m antes que la referencia. Aguanta más y levanta más tarde");
+assert.equal(PW.analyse(A, R, { lang: "pt", ...ctx }).corners[0].text, "Você alivia 40 m antes da referência. Segure mais e alivie mais tarde");
 // braking where the reference only lifts
 const AB = lap(2414, [{ at: 600, len: 300, dv: 9, thr: .1, brake: .4 }, { at: 1800, len: 300, dv: 6, thr: .6 }]);
 assert.equal(PW.analyse(AB, R, { lang: "en", ...ctx }).corners[0].kind, "oval_no_brake");

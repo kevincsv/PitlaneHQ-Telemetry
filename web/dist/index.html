@@ -8672,7 +8672,11 @@ async function renderRaceBrakes(r){const box=$("#rbBox");if(!box)return;const bs
         const d=bi/N*L,c=cornerAt(cs,d,L),row=c?rows.find(x=>x.c===c):null,near=incs.filter(x=>{let dd=Math.abs(x.d-d);if(L)dd=Math.min(dd,L-dd);return dd<60});
         mk.setAttribute("cx",pts[bi][0].toFixed(1));mk.setAttribute("cy",pts[bi][1].toFixed(1));mk.setAttribute("visibility","visible");
         tip.innerHTML=`<b>${Math.round(d)} m${c?` · T${c.n}`:` · ${esc(Tx("straight","recta","Gerade","reta"))}`}</b>${row&&row.d!=null?`<div><span class="muted">${esc(Tx("You brake at","Tú frenas en","Du bremst bei","Você freia em"))}</span> ${Math.round(row.d)} m · ${Math.round(spd(row.v))} ${spdU()} ${esc(Tx("min","mín","min","mín"))}${row.od!=null?` <span class="muted">· ${esc(cmpName(cmp))} ${Math.round(row.od)} m · ${Math.round(spd(row.ov))}</span>`:""}</div>`:""}${near.length?`<div class="bad">${esc(incGroup(near))} · ${esc(near.map(x=>Tx("L","V","R","V")+x.lap).join(", "))}</div>`:""}${row&&row.tip?`<div class="coachtip">${esc(row.tip)}</div>`:""}`;tip.hidden=false;
-        if(innerWidth>820){const tw=tip.offsetWidth||220,th=tip.offsetHeight||60;tip.style.left=Math.max(8,Math.min(e.clientX+14,innerWidth-tw-8))+"px";tip.style.top=(e.clientY+16+th>innerHeight?e.clientY-th-10:e.clientY+16)+"px"}};
+        if(innerWidth>820){const tw=tip.offsetWidth||220,th=tip.offsetHeight||60,pb=svg.closest(".drawer-panel"),B=pb?pb.getBoundingClientRect():{left:0,top:0,right:innerWidth,bottom:innerHeight};
+          // kept inside the window it opens in; a centered window moves "fixed" boxes with it, so measure where 0,0 lands first
+          tip.style.left="0px";tip.style.top="0px";const o=tip.getBoundingClientRect();
+          const x=Math.max(B.left+8,Math.min(e.clientX+14,B.right-tw-8)),y=e.clientY+16+th>B.bottom-8?Math.max(B.top+8,e.clientY-th-10):e.clientY+16;
+          tip.style.left=(x-o.left)+"px";tip.style.top=(y-o.top)+"px"}};
       svg.addEventListener("pointermove",move);svg.addEventListener("pointerdown",move);svg.addEventListener("pointerleave",e=>{if(e.pointerType==="mouse")leave()})}
     const sel=$("#rbCmp");if(sel)sel.onchange=()=>{cmp=others[+sel.value];draw()};
     const bi=$("#rbInc");if(bi)bi.onclick=()=>{RBV.inc=!RBV.inc;draw()};const bc=$("#rbCoach");if(bc)bc.onclick=()=>{RBV.coach=!RBV.coach;draw()}

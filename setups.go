@@ -18,9 +18,25 @@ import (
 )
 
 type setupMeta struct {
-	Notes string             `json:"notes,omitempty"`
-	Tags  []string           `json:"tags,omitempty"`
-	Bests map[string]float64 `json:"bests,omitempty"` // track → best valid lap (s)
+	Notes     string             `json:"notes,omitempty"`
+	Tags      []string           `json:"tags,omitempty"`
+	Bests     map[string]float64 `json:"bests,omitempty"`     // track → best valid lap (s)
+	Shared    bool               `json:"shared,omitempty"`    // shared with the other drivers from this PC
+	Dismissed bool               `json:"dismissed,omitempty"` // "Not now" on the offer to share it
+}
+
+// metaKey: iRacing's keys stay as they were ("car folder/file.sto"); the other games' have the game first.
+func metaKey(game, key string) string {
+	if game == "" || game == "iracing" {
+		return key
+	}
+	return game + ":" + key
+}
+
+func setupMetaInto(f *setupFile, m *setupMeta) {
+	if m != nil {
+		f.Notes, f.Tags, f.Bests, f.Shared, f.Dismissed = m.Notes, m.Tags, m.Bests, m.Shared, m.Dismissed
+	}
 }
 
 var (
@@ -65,14 +81,18 @@ func setupsRoot() string {
 }
 
 type setupFile struct {
-	Key     string             `json:"key"`
-	Name    string             `json:"name"`
-	Folder  string             `json:"folder,omitempty"` // sub-folder inside the car folder
-	Changed time.Time          `json:"changed"`
-	Size    int64              `json:"size"`
-	Notes   string             `json:"notes,omitempty"`
-	Tags    []string           `json:"tags,omitempty"`
-	Bests   map[string]float64 `json:"bests,omitempty"`
+	Key       string             `json:"key"`
+	Name      string             `json:"name"`
+	Folder    string             `json:"folder,omitempty"` // sub-folder inside the car folder
+	Changed   time.Time          `json:"changed"`
+	Size      int64              `json:"size"`
+	Notes     string             `json:"notes,omitempty"`
+	Tags      []string           `json:"tags,omitempty"`
+	Bests     map[string]float64 `json:"bests,omitempty"`
+	Track     string             `json:"track,omitempty"`   // LMU: the track folder it is in
+	Vehicle   string             `json:"vehicle,omitempty"` // LMU: the car written in the file
+	Shared    bool               `json:"shared,omitempty"`
+	Dismissed bool               `json:"dismissed,omitempty"`
 }
 
 type setupCar struct {
@@ -108,9 +128,7 @@ func listSetups(root string) []setupCar {
 			if fi != nil {
 				f.Changed, f.Size = fi.ModTime(), fi.Size()
 			}
-			if m := setupsMeta[f.Key]; m != nil {
-				f.Notes, f.Tags, f.Bests = m.Notes, m.Tags, m.Bests
-			}
+			setupMetaInto(&f, setupsMeta[f.Key])
 			car.Files = append(car.Files, f)
 			return nil
 		})
@@ -195,15 +213,79 @@ func safeSetupPath(root, key string) (string, bool) {
 	return p, true
 }
 
+// setupsRootFor: where the game keeps its setups ("" when the game is not on this PC).
+func setupsRootFor(game string) string {
+	if game == "lmu" {
+		return lmuSetupsRoot()
+	}
+	return setupsRoot()
+}
+
+func setupsExt(game string) string {
+	if game == "lmu" {
+		return ".svm"
+	}
+	return ".sto"
+}
+
+// setupsGame: the game a request is about (iRacing unless it says Le Mans Ultimate).
+func setupsGame(g string) string {
+	if g == "lmu" {
+		return "lmu"
+	}
+	return "iracing"
+}
+
+// markSetup keeps a flag of a setup file (shared, dismissed).
+func markSetup(game, key string, f func(m *setupMeta)) {
+	setupsMu.Lock()
+	defer setupsMu.Unlock()
+	k := metaKey(game, key)
+	m := setupsMeta[k]
+	if m == nil {
+		m = &setupMeta{}
+		setupsMeta[k] = m
+	}
+	f(m)
+	saveSetupsLocked()
+}
+
+// currentSetupsCar: the car and track the game has loaded now, for the game asked about.
+func currentSetupsCar(game, root string) map[string]string {
+	carPath, carName, setup, track := currentCarSetup()
+	if currentGame() != game {
+		return map[string]string{}
+	}
+	cur := map[string]string{"carPath": carPath, "car": carName, "setup": setup, "track": track}
+	if game == "lmu" {
+		cur["setup"] = ""
+		cur["trackFolder"] = lmuTrackFolder(root, track)
+	}
+	return cur
+}
+
 func registerSetupRoutes(mux *http.ServeMux) {
+	// the free setups library on the server (tools/setups-library.mjs), for the PC app's page
+	mux.HandleFunc("/api/setups-library", func(w http.ResponseWriter, r *http.Request) {
+		b, err := commRequest("GET", "/setups-library/index.json", nil, "")
+		if err != nil || !json.Valid(b) {
+			w.WriteHeader(502)
+			writeJSON(w, map[string]string{"error": "could not reach the Pitlane HQ server"})
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.Write(b)
+	})
 	mux.HandleFunc("/api/setups", func(w http.ResponseWriter, r *http.Request) {
-		root := setupsRoot()
+		game := setupsGame(r.URL.Query().Get("game"))
 		if r.Method == http.MethodPost {
 			var in struct {
-				Action, Key, Notes string
-				Tags               []string
+				Action, Key, Notes, Game string
+				Tags                     []string
 			}
 			json.NewDecoder(io.LimitReader(r.Body, 1<<16)).Decode(&in)
+			game = setupsGame(in.Game)
+			root := setupsRootFor(game)
 			var err error
 			switch in.Action {
 			case "note":
@@ -211,24 +293,24 @@ func registerSetupRoutes(mux *http.ServeMux) {
 					err = errors.New("unknown setup")
 					break
 				}
-				setupsMu.Lock()
-				m := setupsMeta[in.Key]
-				if m == nil {
-					m = &setupMeta{}
-					setupsMeta[in.Key] = m
-				}
 				if len(in.Notes) > 4000 {
 					in.Notes = in.Notes[:4000]
 				}
-				m.Notes = in.Notes
-				m.Tags = nil
-				for _, t := range in.Tags {
-					if t = strings.TrimSpace(t); t != "" && len(t) <= 30 && len(m.Tags) < 12 {
-						m.Tags = append(m.Tags, t)
+				markSetup(game, in.Key, func(m *setupMeta) {
+					m.Notes = in.Notes
+					m.Tags = nil
+					for _, t := range in.Tags {
+						if t = strings.TrimSpace(t); t != "" && len(t) <= 30 && len(m.Tags) < 12 {
+							m.Tags = append(m.Tags, t)
+						}
 					}
+				})
+			case "dismiss": // "Not now" on the offer to share a new setup
+				if _, ok := safeSetupPath(root, in.Key); !ok {
+					err = errors.New("unknown setup")
+					break
 				}
-				saveSetupsLocked()
-				setupsMu.Unlock()
+				markSetup(game, in.Key, func(m *setupMeta) { m.Dismissed = true })
 			case "show": // open the folder in Explorer with the file selected
 				p, ok := safeSetupPath(root, in.Key)
 				if !ok {
@@ -238,7 +320,7 @@ func registerSetupRoutes(mux *http.ServeMux) {
 				err = shellOpen(filepath.Dir(p), "", false)
 			case "folder":
 				if root == "" {
-					err = errors.New("iRacing setups folder not found")
+					err = errors.New("setups folder not found")
 				} else {
 					err = shellOpen(root, "", false)
 				}
@@ -251,8 +333,13 @@ func registerSetupRoutes(mux *http.ServeMux) {
 				return
 			}
 		}
-		carPath, carName, setup, track := currentCarSetup()
-		writeJSON(w, map[string]any{"root": root, "cars": listSetups(root),
-			"current": map[string]string{"carPath": carPath, "car": carName, "setup": setup, "track": track}})
+		root := setupsRootFor(game)
+		var list []setupCar
+		if game == "lmu" {
+			list = listLMUSetups(root)
+		} else {
+			list = listSetups(root)
+		}
+		writeJSON(w, map[string]any{"game": game, "root": root, "cars": list, "current": currentSetupsCar(game, root)})
 	})
 }

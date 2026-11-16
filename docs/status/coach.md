@@ -6,9 +6,8 @@ Status as of 2026-11-16. Behaviour is in `docs/spec/coach-and-model.md` and `doc
   discipline (0.9.7), oval coach (0.9.4), corner practise, height chart (0.9.13).
 - 2026-11-16, from what drivers ask for online (plan: Claude Doc "Coach improvements from driver feedback"): the coach
   judges every corner over the whole session ("On 7 of 9 laps", the usual lap's step), the lap analyzer's "Turn by turn"
-  table, "Watch it" (the chase view at a corner) and "This session against the last one". On the branch
-  `claude/project-thread-a1y2ch`, beta only until the owner says it goes live. Web only for now (the owner, 2026-11-16: no PC
-  build). Then for Le Mans Ultimate: what traffic costs a lap and where (`trafficCost`) and the hybrid battery against
+  table, "Watch it" (the chase view at a corner) and "This session against the last one". Live on PC and web in
+  0.10.1 (2026-11-16, build cc16c34). Then for Le Mans Ultimate: what traffic costs a lap and where (`trafficCost`) and the hybrid battery against
   the reference (`hybridUse`), both plan steps. Not done: virtual energy per lap in the coach (the agent does not keep it
   per lap yet, so it needs a PC build).
 - Real data (2026-11-16): every tip the server holds is the server's own coach (`src` auto, 2,769 rows, 48 drivers, LMU

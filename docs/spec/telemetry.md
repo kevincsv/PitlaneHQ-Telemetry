@@ -28,13 +28,17 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   points come from the model (the next level for your best lap of the session; your own best lap while the model has
   none or you are its fastest), each marker moves with your speed against that lap and with a car close ahead or
   alongside, and they name their corners by the official turns (`turnNo`, `turnName`), like the coach: "T7", never "C7".
-- Telemetry's sub-tabs (the owner's choice 2026-11-16, design A, `renderSubtabs`): Dashboard, Live lap compare (the owner's
-  name, 2026-11-16), Standings, Team (Beta), Tyres, then one "Car & tools" menu (`TOOLS_V`, `stMenuOpen`: Rev beep, Setups when it exists, Phone &
-  sharing on the PC) that names the tool open in it ("Car & tools · Rev beep"). Dashboard and Lap compare are both the
-  Telemetry screen: Lap compare is `LIVE_MODE` "cmp", Dashboard brings back the view the driver had (`pw.liveDash`,
-  `liveSetMode`). On the Dashboard the view switch is Essentials · Engineer · All panels (Basic, Engineer and Full in the
-  code) with "Edit layout" beside it; Lap compare hides both.
-- Telemetry has four modes (`LIVE_MODE`, `liveModeBar`): Basic (Essentials, below), Engineer (below), Full (All panels: every basic widget, the
+- Telemetry's sub-tabs (the owner's choice 2026-11-16, design A, `renderSubtabs`): Dashboard, Live lap compare,
+  Team (Beta), then one "Car & tools" menu (`TOOLS_V`, `stMenuOpen`: Rev beep, Setups when it exists, Phone & sharing
+  on the PC) that names the tool open in it ("Car & tools · Rev beep"). Dashboard and Live lap compare are both the
+  Telemetry screen: Live lap compare is `LIVE_MODE` "cmp", Dashboard brings back the view the driver had
+  (`pw.liveDash`, `liveSetMode`). On the Dashboard the view switch is Essentials · Engineer · Standings · All panels
+  (Basic, Engineer, "std" and Full in the code) with "Edit layout" beside Essentials and Engineer; Live lap compare
+  hides both. Standings is no longer a sub-tab: its panels moved into the Telemetry screen (`#liveStd`, under the
+  status strip) and show as the Standings view; the old `field` view opens it. The Tyres sub-tab is gone (the owner's
+  choice): the Dashboard's Tyres panel shows the tyres, and its Details button went with the tab; an old `tyres`
+  link opens the Dashboard.
+- Telemetry has five modes (`LIVE_MODE`, `liveModeBar`): Standings ("std", above), Basic (Essentials, below), Engineer (below), Full (All panels: every basic widget, the
   experimental ones too (not on a PC without Pro), and the lap's traces of speed, throttle/brake, delta and gear, `drawLiveTraces`)
   and Compare laps, live (`renderLiveCmp`/`tickLiveCmp`: the lap now against B, "My best" in purple, the last lap, other
   laps, and "▲ Next level" / "★ Record" only when the model has a full-telemetry lap of someone else, corner by corner by
@@ -75,10 +79,9 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   Engine & track, the pit calculator and the weather show their values as cards. Tyres shows the four tyre cards
   (the three edges coloured by the working window, the wear and the pressures, `pw3TyreCards`). Lap comparison sits
   after the braking markers, and in Full the traces come under the desk.
-- Standings (`#v-field`) is one panel: its title with To the leader / Interval at its right, the session's six cards
-  in one row (session, laps left, SOF, position, iRating, incidents), the table, then Positions lap by lap. Tyres
-  (`#v-tyres`) has Tyres beside Setup hints, then Balance and Brake pressure (as cards) beside each other and the pit
-  readings under them, two thirds wide.
+- The Standings view (its panels moved from `#v-field` into `#liveStd`) is one panel: its title with To the leader /
+  Interval at its right, the session's six cards in one row (session, laps left, SOF, position, iRating, incidents),
+  the table, then Positions lap by lap. The Tyres page (`#v-tyres`) is no longer reachable (2026-11-16).
 - Engineer (`"eng"`, between Basic and Full, the owner's ask 2026-11-15) shows what a race engineer watches: by default
   flags, the car strip, the lap times, the delta bar, mini-sectors, the relative, the standings, the gap graph, fuel, the
   pit stop calculator, tyres, engine & track, braking markers, the map, the track position bar, weather, the incident log

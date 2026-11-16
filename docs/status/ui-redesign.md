@@ -35,6 +35,6 @@ Status as of 2026-11-07. The look is described in `docs/spec/app-screens.md` ("T
 ## Telemetry menu, simpler (2026-11-16)
 
 - The owner found Telemetry's menu confusing. Options A/B/C in https://claude.ai/artifact/FM1Ls6piCSNCwbjngUQ6PF; the
-  owner picked A: sub-tabs Dashboard · Live lap compare · Standings · Team · Tyres plus one "Car & tools" menu (Rev beep,
-  Setups when it lands, Phone & sharing), views Essentials · Engineer · All panels, "Edit layout"
+  owner picked A: sub-tabs Dashboard · Live lap compare · Team plus one "Car & tools" menu (Rev beep,
+  Setups when it lands, Phone & sharing), views Essentials · Engineer · Standings · All panels (Standings moved into the Dashboard, the Tyres tab removed), "Edit layout"
   (`docs/spec/telemetry.md`). PC and web, on branch `claude/project-thread-znyloe`, not pushed. Phones not changed.

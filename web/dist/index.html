@@ -349,7 +349,7 @@ html.phone .fbfab{right:12px;bottom:calc(74px + env(safe-area-inset-bottom,0px))
 html.phone .fbmenu{right:12px;bottom:calc(136px + env(safe-area-inset-bottom,0px))}
 body:has(#toast.on) .fbfab,body:has(#voiceBar:not([hidden])) .fbfab,body:has(.uidlg:not([hidden])) .fbfab,body:has(#drawer:not([hidden])) .fbfab{opacity:0;pointer-events:none;visibility:hidden}
 html.ov body{padding:0}
-html.ov header.top,html.ov nav.tabs,html.ov .lhead,html.ov #v-field .vhead,html.ov .popbtn,html.ov .ovhide,html.ov #tyreMore{display:none!important}
+html.ov header.top,html.ov nav.tabs,html.ov .lhead,html.ov :is(#v-field,#liveStd) .vhead,html.ov .popbtn,html.ov .ovhide,html.ov #tyreMore{display:none!important}
 html.ov section.view{padding:6px}
 html.ov #mapNote,html.ov #mapLayers{display:none!important}
 html.ov #liveGrid{display:flex;flex-direction:column;gap:6px}
@@ -1833,19 +1833,19 @@ html .hl-sec{padding:0 0 12px;border-radius:var(--radius);display:flex;flex-dire
 :root:not(.ov) #v-live .wpanel:not(:has(>.label:first-child,>.vhead:first-child)){padding-top:12px}
 :root:not(.ov) #v-live .wpanel:not([data-w=deltabar])>.label:first-child,:root:not(.ov) #v-live .wpanel>.vhead:first-child,
 :root:not(.ov) #v-live #liveTraces>.trc-head,
-#v-tyres .panel>.label:first-child,#v-field #stdPos>.label:first-child{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin:0 -14px 10px!important;padding:10px 66px 10px 14px;border-bottom:1px solid var(--line);min-height:41px;box-sizing:border-box}
+#v-tyres .panel>.label:first-child,:is(#v-field,#liveStd) #stdPos>.label:first-child{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin:0 -14px 10px!important;padding:10px 66px 10px 14px;border-bottom:1px solid var(--line);min-height:41px;box-sizing:border-box}
 :root:not(.ov) #v-live .wpanel:not([data-w=deltabar])>.label:first-child,:root:not(.ov) #v-live .wpanel>.vhead:first-child>.label,:root:not(.ov) #v-live #trcTitle,
-#v-tyres .panel>.label:first-child,#v-field #stdPos>.label:first-child{font:600 14px/1.2 var(--f-display);letter-spacing:.12em;text-transform:uppercase;color:var(--fg)}
+#v-tyres .panel>.label:first-child,:is(#v-field,#liveStd) #stdPos>.label:first-child{font:600 14px/1.2 var(--f-display);letter-spacing:.12em;text-transform:uppercase;color:var(--fg)}
 :root:not(.ov) #v-live .wpanel:not([data-w=deltabar])>.label:first-child::before,:root:not(.ov) #v-live .wpanel>.vhead:first-child>.label::before,:root:not(.ov) #v-live #trcTitle::before,
-#v-tyres .panel>.label:first-child::before,#v-field #stdPos>.label:first-child::before{content:"";display:inline-block;flex:none;width:3px;height:14px;background:var(--accent);border-radius:2px}
+#v-tyres .panel>.label:first-child::before,:is(#v-field,#liveStd) #stdPos>.label:first-child::before{content:"";display:inline-block;flex:none;width:3px;height:14px;background:var(--accent);border-radius:2px}
 :root:not(.ov) #v-live .wpanel>.vhead:first-child>.label,:root:not(.ov) #v-live #trcTitle{display:flex;align-items:center;gap:8px}
 :root:not(.ov) #v-live .wpanel>.vhead:first-child{justify-content:space-between}
 :root:not(.ov) #v-live .wpanel>.grip,:root:not(.ov) #v-live .wpanel>.popbtn{top:8px;border-color:transparent;background:transparent}
 :root:not(.ov) #v-live .wpanel>.grip:hover,:root:not(.ov) #v-live .wpanel>.popbtn:hover{border-color:var(--line2);background:var(--surface2)}
 :root:not(.ov) #v-live .wpanel .legend{font:500 10px/1.3 var(--f-body);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
-:root:not(.ov) #v-live #liveTraces,#v-tyres .panel,#v-field .panel{padding:0 14px 12px;border-radius:var(--radius)}
+:root:not(.ov) #v-live #liveTraces,#v-tyres .panel,:is(#v-field,#liveStd) .panel{padding:0 14px 12px;border-radius:var(--radius)}
 :root:not(.ov) #v-live #liveTraces>.trc-head{padding-right:14px;justify-content:space-between}
-#v-tyres .panel:not(:has(>.label:first-child)),#v-field .panel:not(:has(>.label:first-child)){padding-top:12px}
+#v-tyres .panel:not(:has(>.label:first-child)),:is(#v-field,#liveStd) .panel:not(:has(>.label:first-child)){padding-top:12px}
 /* the numbers: the design's mono */
 :root:not(.ov) #v-live .wpanel .mid{font:500 22px/1.2 var(--f-data);font-variant-numeric:tabular-nums}
 :root:not(.ov) #v-live .wpanel .big{font:600 34px/1.05 var(--f-data);font-variant-numeric:tabular-nums}
@@ -1865,15 +1865,15 @@ html .hl-sec{padding:0 0 12px;border-radius:var(--radius);display:flex;flex-dire
 :root:not(.ov) #v-live [data-w=deltabar]>.grip,:root:not(.ov) #v-live [data-w=deltabar]>.popbtn{top:50%;transform:translateY(-50%)}
 @media (max-width:600px){:root:not(.ov) #v-live .wpanel[data-w=deltabar]{padding:10px 44px 10px 14px;gap:10px}:root:not(.ov) #v-live [data-w=deltabar] .dbar{gap:8px}:root:not(.ov) #v-live [data-w=deltabar] .dbar-val{min-width:52px}:root:not(.ov) #v-live [data-w=deltabar]>.grip{right:8px}}
 /* the tables (relative, standings, the pit readings) */
-:root:not(.ov) #v-live .wtable,#v-field .wtable,#tyreHist{border-collapse:collapse;font-size:12px}
-:root:not(.ov) #v-live .wtable th,#v-field .wtable th,#tyreHist th{font:500 10px/1.2 var(--f-body);letter-spacing:.1em;text-transform:uppercase;color:var(--muted);padding:7px 8px;border-bottom:1px solid var(--line)}
-:root:not(.ov) #v-live .wtable td,#v-field .wtable td,#tyreHist td{padding:6px 8px;border-bottom:1px solid var(--row)}
-:root:not(.ov) #v-live .wtable tbody tr:last-child td,#v-field .wtable tbody tr:last-child td,#tyreHist tbody tr:last-child td{border-bottom:0}
-:root:not(.ov) #v-live .wtable tr.me td,#v-field .wtable tr.me td{background:color-mix(in srgb,var(--accent) 9%,transparent);color:var(--accent)}
-:root:not(.ov) #v-live .wtable tr.me td:first-child,#v-field .wtable tr.me td:first-child{box-shadow:none}
-:root:not(.ov) #v-live .hstrip .k,#v-field .hstrip .k{font:500 10px/1.3 var(--f-body);letter-spacing:.1em}
+:root:not(.ov) #v-live .wtable,:is(#v-field,#liveStd) .wtable,#tyreHist{border-collapse:collapse;font-size:12px}
+:root:not(.ov) #v-live .wtable th,:is(#v-field,#liveStd) .wtable th,#tyreHist th{font:500 10px/1.2 var(--f-body);letter-spacing:.1em;text-transform:uppercase;color:var(--muted);padding:7px 8px;border-bottom:1px solid var(--line)}
+:root:not(.ov) #v-live .wtable td,:is(#v-field,#liveStd) .wtable td,#tyreHist td{padding:6px 8px;border-bottom:1px solid var(--row)}
+:root:not(.ov) #v-live .wtable tbody tr:last-child td,:is(#v-field,#liveStd) .wtable tbody tr:last-child td,#tyreHist tbody tr:last-child td{border-bottom:0}
+:root:not(.ov) #v-live .wtable tr.me td,:is(#v-field,#liveStd) .wtable tr.me td{background:color-mix(in srgb,var(--accent) 9%,transparent);color:var(--accent)}
+:root:not(.ov) #v-live .wtable tr.me td:first-child,:is(#v-field,#liveStd) .wtable tr.me td:first-child{box-shadow:none}
+:root:not(.ov) #v-live .hstrip .k,:is(#v-field,#liveStd) .hstrip .k{font:500 10px/1.3 var(--f-body);letter-spacing:.1em}
 /* Standings and Tyres: the same panels */
-#v-field .std-bar .seg,#v-field .std-bar .seg3{border-color:var(--line2);border-radius:6px}
+:is(#v-field,#liveStd) .std-bar .seg,:is(#v-field,#liveStd) .std-bar .seg3{border-color:var(--line2);border-radius:6px}
 #v-tyres .tcard{border-radius:var(--radius);border-color:var(--line);background:var(--surface2)}
 #v-revbeep .panel,#v-share .panel{border-radius:var(--radius)}
 .gm-bs .pill.gm{margin-left:4px}.ov-n .gm-bs{white-space:nowrap}
@@ -2036,6 +2036,7 @@ nav.subtabs button[aria-selected="true"] .pill{color:inherit;border-color:curren
   <div class="pw3-strip" id="pw3Strip" role="group"></div>
   <div class="panel" id="liveTraces" hidden><div class="trc-head"><span class="label" id="trcTitle"></span><span class="trc-leg" id="trcLeg"></span></div><canvas id="trcC" height="300" aria-label="Traces"></canvas></div>
   <div id="liveCmp" hidden></div>
+  <div id="liveStd" hidden></div>
   <div class="grid" id="liveGrid">
     <div class="panel s7 wpanel" data-w="dash">
       <div class="gearbox">
@@ -3331,7 +3332,7 @@ function frameTick(){
   if(now-lastPit>500){lastPit=now;ovOwnApply();if(lv("pit"))renderPit();if(lv("sectors"))renderSectors();if(lv("incidents"))renderIncidents();if(lv("gaps"))drawGaps();if(lv("coach"))renderCoachWidget();if(lv("weather"))renderWeather();if(lv("system"))renderSystem();if(view==="strategy"&&now-(window._stT||0)>5000){window._stT=now;renderStrategy()}}
   if(now-lastMap>66&&lv("map")||now-lastMap>66&&OV.on&&OV.list.includes("map")){lastMap=now;drawMap()}
   if(now-lastTy>500){lastTy=now;trackTyreHistory();trackPositions();if(view==="tyres")renderTyres()}
-  if(view==="live"&&LIVE_MODE!=="basic"&&!LIVE_OFF.has(LIVE_MODE)&&now-(window._trcT||0)>100){window._trcT=now;if(LIVE_MODE==="full")drawLiveTraces();else tickLiveCmp()}
+  if(view==="live"&&LIVE_MODE!=="basic"&&LIVE_MODE!=="std"&&!LIVE_OFF.has(LIVE_MODE)&&now-(window._trcT||0)>100){window._trcT=now;if(LIVE_MODE==="full")drawLiveTraces();else tickLiveCmp()}
   if(view==="live"){
     // the dash's own settings: its speed's units and the shift lights
     const dsh=ui("dash"),su=dsh.spdUnit,kmh=su==="kmh"?(T.Speed||0)*3.6:su==="mph"?(T.Speed||0)*2.23694:spd(T.Speed||0);$("#spd").textContent=Math.round(kmh);$("#spdU").textContent=su==="kmh"?"km/h":su==="mph"?"mph":spdU();rpmEl.hidden=dsh.shift===false;
@@ -3347,7 +3348,8 @@ function frameTick(){
 
     if(now-lastDraw>66){lastDraw=now;drawTrace();liveSlow()}
     if(now-lastRel>(OV.on?100:250)){lastRel=now;renderRelative()}
-  }else if(view==="field"&&now-lastField>500){lastField=now;renderStandings()}
+    if(LIVE_MODE==="std"&&now-lastField>500){lastField=now;renderStandings()}
+  }
   else if(view==="data"&&now-lastField>200){lastField=now;updateVarValues()}
 }
 function liveSlow(){renderDC();
@@ -5103,7 +5105,7 @@ const LIVE_ESSENTIAL=["flag","dash","timing","deltabar","map","relative","fuel",
 const liveNonEssential=()=>[...new Set([...WIDGETS,...[...document.querySelectorAll("#v-live .wpanel[data-w]")].map(p=>p.dataset.w)])].filter(w=>!LIVE_ESSENTIAL.includes(w));
 let HIDDEN=new Set(store.get("pw.hiddenW",null)||liveNonEssential());
 // Telemetry's mode (liveModeBar) and the widgets it shows now
-let LIVE_MODE=store.get("pw.liveMode","basic");if(!["basic","eng","full","cmp"].includes(LIVE_MODE))LIVE_MODE="basic";
+let LIVE_MODE=store.get("pw.liveMode","basic");if(!["basic","eng","std","full","cmp"].includes(LIVE_MODE))LIVE_MODE="basic";
 /* Engineer: what a race engineer watches (the car, the times, the field with each car's tyres, pit and laps, the gaps,
    the fuel and its estimate, the tyres, the map, the weather), its own panels chosen in Layout apart from Basic's
    ("pw.engShown", the panels it shows, so a new panel stays out until the driver adds it). While Engineer is on,
@@ -5143,9 +5145,9 @@ if(OV.on&&new URLSearchParams(location.search).get("fl")==="1"&&typeof window.pw
 /* once (also after the PC's profile brings an older layout): the Telemetry screen back to its essentials */
 function liveEssentialsOnce(){if(OV.on||+store.get("pw.liveV",0)>=2)return;HIDDEN=new Set(liveNonEssential());store.set("pw.hiddenW",[...HIDDEN]);store.set("pw.order",null);try{ORDER=null}catch(e){}store.set("pw.liveV",2)}
 function applyLayout(){liveEssentialsOnce();liveHidSync();try{liveWatch()}catch(e){}setTimeout(markGameGaps,0);if(!OV.on)applyOrderAndSizes();setTimeout(packGrid,0);if(OV.on){document.querySelectorAll(".wpanel").forEach(p=>p.hidden=!OV.list.includes(p.dataset.w));$("#liveEmpty").hidden=true;return}
-  const full=LIVE_MODE==="full",cmp=LIVE_MODE==="cmp";LIVE_SHOWN.clear();
-  document.querySelectorAll("#v-live .wpanel").forEach(p=>{const w=p.dataset.w;p.hidden=full?!(OV_BASIC.includes(w)||!proGated()):HIDDEN.has(w);if(!p.hidden&&!(cmp&&w!=="flag"))LIVE_SHOWN.add(w)});
-  $("#liveGrid").hidden=cmp;$("#liveTraces").hidden=!full;$("#liveCmp").hidden=!cmp;if(cmp)renderLiveCmp();liveModeBar();
+  const full=LIVE_MODE==="full",cmp=LIVE_MODE==="cmp",std=LIVE_MODE==="std";LIVE_SHOWN.clear();
+  document.querySelectorAll("#v-live .wpanel").forEach(p=>{const w=p.dataset.w;p.hidden=full?!(OV_BASIC.includes(w)||!proGated()):HIDDEN.has(w);if(!p.hidden&&!((cmp||std)&&w!=="flag"))LIVE_SHOWN.add(w)});
+  $("#liveGrid").hidden=cmp||std;$("#liveStd").hidden=!std;if(std)renderStandings();$("#liveTraces").hidden=!full;$("#liveCmp").hidden=!cmp;if(cmp)renderLiveCmp();liveModeBar();
   const vis=WIDGETS.filter(w=>(full||!HIDDEN.has(w))&&w!=="flag");$("#liveEmpty").hidden=vis.length>0;$("#liveEmpty").innerHTML=Lp("Every widget is in an overlay or hidden. Use Layout to bring them back.","Todos los widgets están en overlays u ocultos. Usa Diseño para recuperarlos.")}
 function isPC(){return MODE==="bridge"&&INFO&&INFO.overlays&&/^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname)}
 function pcOverlays(){return MODE==="bridge"&&INFO&&INFO.overlays}
@@ -6432,13 +6434,13 @@ function startPreview(w){clearInterval(PREVIEW_TIMER);const pv=$("#cfgPreview");
    live, against the lap you pick: your best in purple, your last or another of your laps, and the next level and the record
    only when the model knows another driver's lap with its whole telemetry, never a rival's estimated pedals) ---------- */
 function liveModeBar(){const b=$("#liveMode");if(!b)return;
-  b.innerHTML=[["basic",Tx("Essentials","Esencial",null,"Essencial")],["eng",Tx("Engineer","Ingeniero",null,"Engenheiro")],["full",Tx("All panels","Todos los paneles",null,"Todos os painéis")]].map(([k,l])=>`<button type="button" data-lm="${k}" aria-pressed="${LIVE_MODE===k}">${esc(l)}</button>`).join("");
+  b.innerHTML=[["basic",Tx("Essentials","Esencial",null,"Essencial")],["eng",Tx("Engineer","Ingeniero",null,"Engenheiro")],["std",Tx("Standings","Posiciones",null,"Classificação")],["full",Tx("All panels","Todos los paneles",null,"Todos os painéis")]].map(([k,l])=>`<button type="button" data-lm="${k}" aria-pressed="${LIVE_MODE===k}">${esc(l)}</button>`).join("");
   b.hidden=LIVE_MODE==="cmp";
   b.querySelectorAll("[data-lm]").forEach(x=>x.onclick=()=>liveSetMode(x.dataset.lm));
   $("#layoutBtn").hidden=LIVE_MODE!=="basic"&&LIVE_MODE!=="eng"}
 /* Telemetry's Dashboard and Lap compare sub-tabs: Lap compare is LIVE_MODE "cmp", Dashboard brings back the view the
    driver had (pw.liveDash: Essentials, Engineer or All panels) */
-function liveSetMode(k){if(k==="cmp"&&LIVE_MODE!=="cmp")store.set("pw.liveDash",LIVE_MODE);if(k==="dash")k=store.get("pw.liveDash","basic");if(!["basic","eng","full","cmp"].includes(k))k="basic";if(k!=="cmp")store.set("pw.liveDash",k);
+function liveSetMode(k){if(k==="cmp"&&LIVE_MODE!=="cmp")store.set("pw.liveDash",LIVE_MODE);if(k==="dash")k=store.get("pw.liveDash","basic");if(!["basic","eng","std","full","cmp"].includes(k))k="basic";if(k!=="cmp")store.set("pw.liveDash",k);
   LIVE_MODE=k;store.set("pw.liveMode",k);applyLayout();if(CUR_VIEW==="live")renderSubtabs("live")}
 /* the model's next level and record for this car and track, only when they are another driver's lap with its whole
    telemetry (a race rival's lap has its pedals estimated from its speed: never a reference here) */
@@ -6794,7 +6796,7 @@ function applyTheme(){const th=store.get("pw.theme","dark");if(th==="system")doc
 document.querySelectorAll("#themeSeg button").forEach(b=>b.onclick=()=>{store.set("pw.theme",b.dataset.th);applyTheme();renderSettings();rerenderAll()});
 $("#changePC").onclick=()=>{if(NATIVE)NATIVE.postMessage({type:"reset"})};
 $("#demoBtn").onclick=async()=>{await fetch("/api/demo?on="+(STATUS.demo?"0":"1"),{method:"POST"}).catch(()=>{});LAPS.length=0;fuelLog.uses.length=0;rec=null};
-$("#conn").onclick=()=>show(COMPANION?"live":"settings");$("#tyreMore").onclick=()=>show("tyres");
+$("#conn").onclick=()=>show(COMPANION?"live":"settings");$("#tyreMore").remove();
 $("#fsBtn").onclick=()=>{const d=document;try{if(d.fullscreenElement)d.exitFullscreen();else d.documentElement.requestFullscreen().catch(()=>{})}catch(e){}};
 async function keepAwake(){try{if("wakeLock" in navigator&&document.visibilityState==="visible")await navigator.wakeLock.request("screen")}catch(e){}}
 document.addEventListener("visibilitychange",keepAwake);
@@ -6802,7 +6804,9 @@ document.addEventListener("visibilitychange",keepAwake);
 /* ===================== navigation ===================== */
 let CUR_VIEW="live";
 const tabs=[...document.querySelectorAll("nav.tabs button")];
-const GROUPS={home:["home"],race:["live","field","strategy","team","tyres","revbeep"],overlays:["overlays"],analysis:["laps","coach","cloudlaps","stats","data"],season:["calendar","series","news","goals"],rig:[],community:["community","leagues"],account:["me","account","plan"],settings:["settings"]};
+const GROUPS={home:["home"],race:["live","strategy","team","revbeep"],overlays:["overlays"],analysis:["laps","coach","cloudlaps","stats","data"],season:["calendar","series","news","goals"],rig:[],community:["community","leagues"],account:["me","account","plan"],settings:["settings"]};
+/* Standings is a view of the Dashboard (LIVE_MODE "std", the owner's choice 2026-11-16): its panels live in #liveStd */
+(()=>{const f=document.getElementById("v-field"),d=document.getElementById("liveStd");if(f&&d)while(f.firstChild)d.appendChild(f.firstChild)})();
 // the Data view: hidden from everyone for now (admins included); ADMIN_ANALYSIS would add a view back for admins
 const ADMIN_ANALYSIS=[];GROUPS.analysis=GROUPS.analysis.filter(v=>v!=="data"&&!ADMIN_ANALYSIS.includes(v));
 if(!FEATURES.goals)GROUPS.season=GROUPS.season.filter(v=>v!=="goals");
@@ -7052,7 +7056,7 @@ var VIEW_HIST=[];
     if(s0.edge&&dx>0){const v=VIEW_HIST.pop();if(v){show.back=true;show(v);scrollTo(0,0)}return}
     if(skip(s0.el))return;const list=(GROUPS[groupOf(CUR_VIEW)]||[]),i=list.indexOf(CUR_VIEW);if(i<0)return;
     const n=list[i+(dx<0?1:-1)];if(n){show(n);scrollTo(0,0)}},{passive:true})})();
-function show(v){if(v==="races")v="cloudlaps";document.querySelectorAll("nav.tabs button").forEach(b=>{const t=b.querySelector("span");if(t&&t.textContent)b.title=t.textContent});if(v==="rig")v="settings";if(v==="admin"&&!isAdmin()){ADMIN_WANT=true;v="me"}if(typeof CUR_VIEW==="undefined"||v!==CUR_VIEW)usageCount("view:"+v);if(typeof CUR_VIEW!=="undefined"&&CUR_VIEW&&v!==CUR_VIEW&&!OV.on)closeOpenPanels();if(v==="fulltelemetry")v="laps";if(typeof signWallOn==="function"&&signWallOn()&&v!=="me")v="me";if(v==="strategy"&&!FEATURES.strategy)v="live";if(PCAPP&&PC_OFF.includes(v))v="live";if(v==="haptics"&&!PHONE){SET_SEC="set-general";rawSet("pw.setSec","set-general");v="settings"}if(PHONE&&["haptics","rig","cars"].includes(v))v="settings";if(v==="goals"&&!FEATURES.goals)v="calendar";if(!show.back&&VIEW_HIST&&CUR_VIEW&&CUR_VIEW!==v){VIEW_HIST.push(CUR_VIEW);if(VIEW_HIST.length>30)VIEW_HIST.shift()}show.back=false;CUR_VIEW=v;try{donBar()}catch(e){}const g=groupOf(v);tabs.forEach(b=>b.setAttribute("aria-selected",b.dataset.g===g||(b.dataset.g==="more"&&MORE_G.includes(g))));renderSubtabs(v);renderGameBar(v);$("#setBtn").setAttribute("aria-pressed",v==="settings");
+function show(v){if(v==="races")v="cloudlaps";if(v==="field"||v==="tyres"){if(v==="field"&&LIVE_MODE!=="std")liveSetMode("std");v="live"}document.querySelectorAll("nav.tabs button").forEach(b=>{const t=b.querySelector("span");if(t&&t.textContent)b.title=t.textContent});if(v==="rig")v="settings";if(v==="admin"&&!isAdmin()){ADMIN_WANT=true;v="me"}if(typeof CUR_VIEW==="undefined"||v!==CUR_VIEW)usageCount("view:"+v);if(typeof CUR_VIEW!=="undefined"&&CUR_VIEW&&v!==CUR_VIEW&&!OV.on)closeOpenPanels();if(v==="fulltelemetry")v="laps";if(typeof signWallOn==="function"&&signWallOn()&&v!=="me")v="me";if(v==="strategy"&&!FEATURES.strategy)v="live";if(PCAPP&&PC_OFF.includes(v))v="live";if(v==="haptics"&&!PHONE){SET_SEC="set-general";rawSet("pw.setSec","set-general");v="settings"}if(PHONE&&["haptics","rig","cars"].includes(v))v="settings";if(v==="goals"&&!FEATURES.goals)v="calendar";if(!show.back&&VIEW_HIST&&CUR_VIEW&&CUR_VIEW!==v){VIEW_HIST.push(CUR_VIEW);if(VIEW_HIST.length>30)VIEW_HIST.shift()}show.back=false;CUR_VIEW=v;try{donBar()}catch(e){}const g=groupOf(v);tabs.forEach(b=>b.setAttribute("aria-selected",b.dataset.g===g||(b.dataset.g==="more"&&MORE_G.includes(g))));renderSubtabs(v);renderGameBar(v);$("#setBtn").setAttribute("aria-pressed",v==="settings");
   document.querySelectorAll("section.view").forEach(s=>s.hidden=s.id!=="v-"+v);if(COMPANION&&(g==="race"&&v!=="team"&&!CPLIVE.on&&!DEMOLIVE||["haptics","rig","cars"].includes(v))){document.querySelectorAll("section.view").forEach(s=>s.hidden=s.id!=="v-pc");$("#subtabs").hidden=true;renderPC();return}if(!OV.on)store.set("pw.tab",v);setWantAll(true);
   if(!FEATURES.planner&&(v==="calendar"||v==="series"))plannerWip(v);if(v==="laps"){const sec=$("#v-"+v);if(sec&&sec.querySelector(".wip-card")){sec.classList.remove("wip");sec.querySelector(".wip-card").remove()}}if(v==="home")renderHome();if(v==="me")renderMe();if(v==="settings"&&!COMPANION)setTimeout(()=>setSection(SET_SEC),0);if(COMPANION&&v==="settings"){cpTrimSettings();setTimeout(cpTrimSettings,0);setTimeout(cpTrimSettings,400)}if(v==="laps")renderLaps();if(v==="account")renderAccount();if(v==="settings"){renderCodeShare();renderShare();renderNotifPanel()}if(v==="overlays")renderOverlaysTab();if(v==="settings"&&!COMPANION)renderRig();if(v==="calendar")renderCalendar();if(v==="haptics")renderHaptics();if(v==="coach")renderCoach();if(v==="admin")renderAdminPage();if(v==="revbeep")renderShiftPanel();if(v==="strategy")renderStrategy();if(v==="goals")renderGoals();if(v==="cars"){renderShiftPanel();renderCars()}if(v==="races")renderRaces();if(v==="community")renderCommunity();if(v==="leagues")renderLeagues();if(v==="plan")renderPlan();if(typeof applyProGate==="function")applyProGate(v);if(v==="news")renderNews();if(v==="tracks")renderTracks();if(v==="setups")renderSetups();if(v==="tyres")renderTyres();if(v==="series")renderSeries();if(v==="field")renderStandings();if(v==="data")renderVarTable();if(v==="share"){renderSettings();renderCodeShare()}if(v==="cloudlaps")renderCloudLaps();if(v==="stats")renderStatsView();if(v==="races"||v==="share")renderWip();if(v==="settings"){renderSettings();renderAccount();renderG61Panel();renderCloudPanel();renderStartPanel();renderAbout();renderDiscordPanel();renderUpdatePanel();renderPairPanel()}if(v==="live"){liveSlow();renderRelative()}if(v==="team")renderTeam()}
 /* a main tab always opens on its first sub-tab (where you were last time is not kept) */
@@ -7095,7 +7099,7 @@ document.addEventListener("keydown",e=>{if(OV.on)return;const typing=/^(INPUT|TE
   if(e.altKey&&/^[1-5]$/.test(e.key)){const g=Object.keys(GROUPS)[+e.key-1];if(g){e.preventDefault();openGroup(g)}}});
 $("#qsBtn").onclick=openQuick;
 $("#racesQ").oninput=e=>{RQ=e.target.value;renderRaces()};$("#racesQ").placeholder=Tx("Search track, car or series","Buscar circuito, coche o serie");
-function rerenderAll(){renderConn();$("#spdU").textContent=spdU();if(CUR_VIEW==="stats"&&typeof renderStatsView==="function")renderStatsView();if(CUR_VIEW==="live"){liveSlow();renderRelative()}if(CUR_VIEW==="field")renderStandings();if(CUR_VIEW==="laps")renderLaps();if(CUR_VIEW==="data"){renderVarTable();if(DATA_TAB==="data:session")renderSession();if(DATA_TAB==="data:dev")renderDev()}if(CUR_VIEW==="account")renderAccount();if(CUR_VIEW==="tyres")renderTyres();if(CUR_VIEW==="overlays")renderOverlaysTab();if(CUR_VIEW==="settings"&&!COMPANION)renderRig();if(CUR_VIEW==="series")renderSeries();if(["home","me","calendar","races","tracks","coach","community","setups","haptics","cars","news","strategy","settings"].includes(CUR_VIEW))show(CUR_VIEW);renderProfBtn();sessionChanged()}
+function rerenderAll(){renderConn();$("#spdU").textContent=spdU();if(CUR_VIEW==="stats"&&typeof renderStatsView==="function")renderStatsView();if(CUR_VIEW==="live"){liveSlow();renderRelative()}if(CUR_VIEW==="live"&&LIVE_MODE==="std")renderStandings();if(CUR_VIEW==="laps")renderLaps();if(CUR_VIEW==="data"){renderVarTable();if(DATA_TAB==="data:session")renderSession();if(DATA_TAB==="data:dev")renderDev()}if(CUR_VIEW==="account")renderAccount();if(CUR_VIEW==="tyres")renderTyres();if(CUR_VIEW==="overlays")renderOverlaysTab();if(CUR_VIEW==="settings"&&!COMPANION)renderRig();if(CUR_VIEW==="series")renderSeries();if(["home","me","calendar","races","tracks","coach","community","setups","haptics","cars","news","strategy","settings"].includes(CUR_VIEW))show(CUR_VIEW);renderProfBtn();sessionChanged()}
 // phones fire "resize" while scrolling (the address bar comes and goes): redraw only when the width changes
 {let lastW=innerWidth,tm=0;window.addEventListener("resize",()=>{if(innerWidth===lastW)return;lastW=innerWidth;clearTimeout(tm);tm=setTimeout(()=>{if(CUR_VIEW==="laps")drawCmp();if(CUR_VIEW==="account")rerenderAll()},150)})}
 
@@ -10538,7 +10542,7 @@ html:not(.ov) :is(#leagBody .lg-filters .chip,#leagBody .lg-tabs .chip,#v-admin 
 html:not(.ov) :is(#leagBody .lg-filters .chip,#leagBody .lg-tabs .chip,#v-admin .adm-sub .chip,#liveMode button,.adm-view button,.an-seg button,.cl-dots button,.cl-tabs button,.seg3 button,.la-charts #cmpChips .chip,.lg-dayset .chip,.drawer.float .drawer-panel:has(.cfgsplit) #cfgForm .frow>.chip)[aria-pressed="true"],html:not(.ov) :is(.tabp.on,.tabp[aria-pressed="true"],.tabp[aria-selected="true"]),html:not(.ov) #setNav a[aria-current="true"]{background:var(--surface2)!important;color:var(--fg)!important;border-color:var(--line2)!important;box-shadow:inset 0 0 0 1px var(--line2)}
 html:not(.ov) :is(.cl-tabs,.seg3,#liveMode,.an-seg,.adm-view){gap:2px}
 html:not(.ov) :is(.cl-tabs button,.seg3 button,#liveMode button,.an-seg button,.adm-view button):not([aria-pressed="true"]){background:transparent!important;border-color:transparent!important;color:var(--muted)!important}
-html:not(.ov) :is(#liveCmp .panel>.label:first-child,#v-field #stdPos>.label:first-child,#v-tyres .panel>.label:first-child,.lap-more .lm-p>.label:first-child,#v-live .pw-cmd-track,.drawer.float .drawer-panel:has(.cfgsplit) #dTitle)::before{content:none!important;display:none!important}
+html:not(.ov) :is(#liveCmp .panel>.label:first-child,:is(#v-field,#liveStd) #stdPos>.label:first-child,#v-tyres .panel>.label:first-child,.lap-more .lm-p>.label:first-child,#v-live .pw-cmd-track,.drawer.float .drawer-panel:has(.cfgsplit) #dTitle)::before{content:none!important;display:none!important}
 html:not(.ov) #viewTg.adm-on{background:var(--surface2)!important;color:var(--accent)!important;border:0!important}
 
 
@@ -10565,7 +10569,7 @@ h2):first-child::before,
 :root:not(.ov) #v-live .wpanel > .vhead:first-child > .label::before,
 :root:not(.ov) #v-live #trcTitle::before,
 #v-tyres .panel > .label:first-child::before,
-#v-field #stdPos > .label:first-child::before,
+:is(#v-field,#liveStd) #stdPos > .label:first-child::before,
 #liveCmp .panel > .label:first-child::before,
 .drawer.float .drawer-panel:has(.cfgsplit) #dTitle::before,
 .lap-more .lm-p > .label:first-child::before{content:none!important;display:none!important}
@@ -12259,11 +12263,11 @@ html:not(.ov) #v-live>#pw3Strip{order:1;display:grid;grid-template-columns:repea
 #pw3Strip em{font:400 11.5px/1.3 var(--f-body);font-style:normal;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-height:1.3em}
 /* the panels: the title small, in capitals and muted, no rule under it */
 html:not(.ov) #v-live .wpanel:not([data-w=deltabar])>.label:first-child,html:not(.ov) #v-live .wpanel>.vhead:first-child,
-html:not(.ov) #v-tyres .panel>.label:first-child,html:not(.ov) #v-field .panel>.label:first-child{border-bottom:0!important;margin:0 -14px 4px!important;min-height:38px;padding-top:12px!important;padding-bottom:4px!important}
+html:not(.ov) #v-tyres .panel>.label:first-child,html:not(.ov) :is(#v-field,#liveStd) .panel>.label:first-child{border-bottom:0!important;margin:0 -14px 4px!important;min-height:38px;padding-top:12px!important;padding-bottom:4px!important}
 html:not(.ov) #v-live .wpanel:not([data-w=deltabar])>.label:first-child,html:not(.ov) #v-live .wpanel>.vhead:first-child>.label,
-html:not(.ov) #v-tyres .panel>.label:first-child,html:not(.ov) #v-field .panel>.label:first-child{font:700 13.5px/1.2 var(--f-display)!important;letter-spacing:.1em!important;text-transform:uppercase;color:var(--pw3-title,var(--muted))!important}
+html:not(.ov) #v-tyres .panel>.label:first-child,html:not(.ov) :is(#v-field,#liveStd) .panel>.label:first-child{font:700 13.5px/1.2 var(--f-display)!important;letter-spacing:.1em!important;text-transform:uppercase;color:var(--pw3-title,var(--muted))!important}
 html:not(.ov) #v-live .wpanel:not([data-w=deltabar])>.label:first-child::before,html:not(.ov) #v-live .wpanel>.vhead:first-child>.label::before,
-html:not(.ov) #v-tyres .panel>.label:first-child::before,html:not(.ov) #v-field .panel>.label:first-child::before{content:none!important;display:none!important}
+html:not(.ov) #v-tyres .panel>.label:first-child::before,html:not(.ov) :is(#v-field,#liveStd) .panel>.label:first-child::before{content:none!important;display:none!important}
 /* the car strip (the dash panel): gear, speed, rpm and the car's controls as cards */
 html:not(.ov) #v-live .wpanel[data-w=dash].pw-legacy-hide:not([hidden]){display:flex!important}html:not(.ov) #v-live .wpanel[data-w=timing].pw-legacy-hide:not([hidden]){display:grid!important}
 html:not(.ov) #v-live .wpanel[data-w=dash]{display:flex;flex-wrap:wrap;gap:6px;background:none!important;border:0!important;padding:0!important;box-shadow:none!important;overflow:visible}
@@ -12311,16 +12315,16 @@ html:not(.ov) #v-live .wpanel[data-w=engine] dl.kv{display:grid;grid-template-co
 #liveGrid.pw3ws>[data-w=relative] .legend{display:none}
 #liveGrid.pw3ws>[data-w=radar] canvas,#liveGrid.pw3ws>[data-w=gg] canvas{max-width:100%}
 /* Standings: one panel with its title, the filters at its right, the session as cards */
-html:not(.ov) #v-field .pw3-stdp{padding:0 14px 12px}
-html:not(.ov) #v-field .pw3-ph{display:flex!important;align-items:center;flex-wrap:wrap;gap:8px 12px}
-html:not(.ov) #v-field .pw3-ph .std-bar{margin:0 0 0 auto;font:inherit;letter-spacing:0;text-transform:none}
+html:not(.ov) :is(#v-field,#liveStd) .pw3-stdp{padding:0 14px 12px}
+html:not(.ov) :is(#v-field,#liveStd) .pw3-ph{display:flex!important;align-items:center;flex-wrap:wrap;gap:8px 12px}
+html:not(.ov) :is(#v-field,#liveStd) .pw3-ph .std-bar{margin:0 0 0 auto;font:inherit;letter-spacing:0;text-transform:none}
 .pw3-sub{font:500 12px/1.2 var(--f-body);letter-spacing:0;text-transform:none;color:var(--muted)}
-html:not(.ov) #v-field #stdFull>.hstrip:first-child{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px;padding:0 0 10px}
-html:not(.ov) #v-field #stdFull>.hstrip>div{display:flex;flex-direction:column;align-items:flex-start;gap:3px;background:var(--surface2);border-radius:6px;padding:8px 10px;min-width:0}
-html:not(.ov) #v-field #stdFull>.hstrip:first-child .k{font:400 12px/1.2 var(--f-body);letter-spacing:0;text-transform:none}
-html:not(.ov) #v-field #stdFull>.hstrip:first-child .v{font:500 16px/1.2 var(--f-data)}
-html:not(.ov) #v-field #stdFull .wtable td.col-pos,html:not(.ov) #v-field #stdFull .wtable td:first-child{font-weight:600}
-html:not(.ov) #v-field #stdPos{margin-top:10px}
+html:not(.ov) :is(#v-field,#liveStd) #stdFull>.hstrip:first-child{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px;padding:0 0 10px}
+html:not(.ov) :is(#v-field,#liveStd) #stdFull>.hstrip>div{display:flex;flex-direction:column;align-items:flex-start;gap:3px;background:var(--surface2);border-radius:6px;padding:8px 10px;min-width:0}
+html:not(.ov) :is(#v-field,#liveStd) #stdFull>.hstrip:first-child .k{font:400 12px/1.2 var(--f-body);letter-spacing:0;text-transform:none}
+html:not(.ov) :is(#v-field,#liveStd) #stdFull>.hstrip:first-child .v{font:500 16px/1.2 var(--f-data)}
+html:not(.ov) :is(#v-field,#liveStd) #stdFull .wtable td.col-pos,html:not(.ov) :is(#v-field,#liveStd) #stdFull .wtable td:first-child{font-weight:600}
+html:not(.ov) :is(#v-field,#liveStd) #stdPos{margin-top:10px}
 /* Tyres: the four tyres side by side in one panel, the working window in it, the balance as cards */
 html:not(.ov) #v-tyres>.grid{margin-top:0}
 html:not(.ov) #v-tyres .pw3-ph{display:flex!important;align-items:baseline;gap:10px;flex-wrap:wrap}
@@ -12353,7 +12357,7 @@ html:not(.ov) #v-tyres #brakeBars .bbar{background:var(--surface2);border-radius
   html:not(.ov) #v-live>#pw3Strip{grid-template-columns:repeat(3,minmax(0,1fr))}
   #pw3Strip>div{padding:8px 9px}#pw3Strip b{font-size:15px}
   html:not(.ov) #v-live .wpanel[data-w=timing]{grid-template-columns:repeat(2,minmax(0,1fr))}
-  html:not(.ov) #v-field .pw3-ph .std-bar{margin-left:0}
+  html:not(.ov) :is(#v-field,#liveStd) .pw3-ph .std-bar{margin-left:0}
 }
 @media (max-width:520px){html:not(.ov) #v-tyres .carbox{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}html:not(.ov) #v-tyres .tcard{padding:8px}}
 html:not(.ov) #v-live :is([data-w=dash],[data-w=timing])>:is(.grip,.popbtn){opacity:0;transition:opacity .15s;background:var(--surface)!important}
@@ -12371,9 +12375,9 @@ html:not(.ov) #v-live [data-w=dash]>.rpm{gap:2px}html:not(.ov) #v-live [data-w=d
 #liveGrid.pw3ws>[data-w=dash] .gearbox .big,#liveGrid.pw3ws>[data-w=dash] .gear,#liveGrid.pw3ws>[data-w=dash] #rpmV,#liveGrid.pw3ws>[data-w=dash] .dcrow b{font-size:clamp(14px,1.2vw,20px)!important}
 
 #liveGrid.pw3ws>[data-w=timing] .mid{font-size:clamp(16px,1.6vw,22px)!important;white-space:nowrap}
-html:not(.ov) #v-field .pw3-stdp>.pw3-ph{padding:12px 14px 6px!important;margin:0 -14px 6px!important}
-html:not(.ov) :is(#v-field,#v-tyres) .pw3-ph .pw3-sub,html:not(.ov) #v-field .pw3-ph .std-bar,html:not(.ov) #v-field .pw3-ph .std-bar button{text-transform:none!important;letter-spacing:0!important}
-html:not(.ov) #v-field .pw3-ph .std-bar button{font:500 12.5px/1 var(--f-body)!important}
+html:not(.ov) :is(#v-field,#liveStd) .pw3-stdp>.pw3-ph{padding:12px 14px 6px!important;margin:0 -14px 6px!important}
+html:not(.ov) :is(:is(#v-field,#liveStd),#v-tyres) .pw3-ph .pw3-sub,html:not(.ov) :is(#v-field,#liveStd) .pw3-ph .std-bar,html:not(.ov) :is(#v-field,#liveStd) .pw3-ph .std-bar button{text-transform:none!important;letter-spacing:0!important}
+html:not(.ov) :is(#v-field,#liveStd) .pw3-ph .std-bar button{font:500 12.5px/1 var(--f-body)!important}
 @media (max-width:1439px){#liveGrid.pw3ws>[data-w=relative] .wtable .col-last{display:none}}
 /* ---- round 2: the design's own rules (base.css, themes.css .d3), on the app's elements ---- */
 /* the head: the track's name, the session under it, the modes and Layout */
@@ -12399,10 +12403,10 @@ html:not(.ov) #v-field .pw3-ph .std-bar button{font:500 12.5px/1 var(--f-body)!i
 html[data-theme="dark"]:not(.ov,.ovwin){--pw3-title:#c3cad6}
 :root:not(.ov) #v-live .wpanel{padding:10px!important;border:1px solid var(--line2)!important;border-radius:8px!important;background:var(--surface)}
 :root:not(.ov) #v-live .wpanel:not([data-w=deltabar])>.label:first-child,:root:not(.ov) #v-live .wpanel>.vhead:first-child,
-:root:not(.ov) #v-tyres .panel>.label:first-child,:root:not(.ov) #v-field .panel>.label:first-child{margin:0 0 10px!important;padding:0!important;min-height:0!important}
+:root:not(.ov) #v-tyres .panel>.label:first-child,:root:not(.ov) :is(#v-field,#liveStd) .panel>.label:first-child{margin:0 0 10px!important;padding:0!important;min-height:0!important}
 :root:not(.ov) #v-live .wpanel>.vhead:first-child{padding-right:56px!important;min-height:22px!important;align-items:center}
 :root:not(.ov) #v-live .wpanel:not([data-w=deltabar])>.label:first-child,:root:not(.ov) #v-live .wpanel>.vhead:first-child>.label,
-:root:not(.ov) #v-tyres .panel>.label:first-child,:root:not(.ov) #v-tyres .panel>.label:first-child>span:first-child,:root:not(.ov) #v-field .panel>.label:first-child,:root:not(.ov) #v-field .panel>.label:first-child>span:first-child{font:700 14px/1.5 var(--f-display)!important;letter-spacing:.1em!important;text-transform:uppercase!important;color:var(--pw3-title,var(--muted))!important}
+:root:not(.ov) #v-tyres .panel>.label:first-child,:root:not(.ov) #v-tyres .panel>.label:first-child>span:first-child,:root:not(.ov) :is(#v-field,#liveStd) .panel>.label:first-child,:root:not(.ov) :is(#v-field,#liveStd) .panel>.label:first-child>span:first-child{font:700 14px/1.5 var(--f-display)!important;letter-spacing:.1em!important;text-transform:uppercase!important;color:var(--pw3-title,var(--muted))!important}
 /* the handles show on hover, as in the design's panels */
 :root:not(.ov) #v-live .wpanel>:is(.grip,.popbtn){opacity:0;transition:opacity .15s;top:6px!important}
 :root:not(.ov) #v-live .wpanel:hover>:is(.grip,.popbtn),:root:not(.ov) #v-live .wpanel>:is(.grip,.popbtn):focus-visible{opacity:1}
@@ -12435,18 +12439,18 @@ html[data-theme="dark"]:not(.ov,.ovwin){--pw3-title:#c3cad6}
 :root:not(.ov) #v-live #relBox>.hstrip:not(.clsband){display:contents}
 :root:not(.ov) #v-live #relBox>.hstrip:not(.clsband)>div{grid-column:auto;order:2;background:var(--surface2);border-radius:5px;padding:8px 10px;gap:0;display:flex;flex-direction:column;align-items:flex-start;min-width:0}
 :root:not(.ov) #v-live #relBox>.tscroll{order:1}:root:not(.ov) #v-live #relBox>.clsband{order:0}
-:root:not(.ov) :is(#v-live #relBox,#v-field #stdFull) .hstrip .k{font:400 12px/1.5 var(--f-body)!important;letter-spacing:0!important;text-transform:none!important;color:var(--muted)}
-:root:not(.ov) :is(#v-live #relBox,#v-field #stdFull) .hstrip .v{font:400 16px/1.5 var(--f-data)!important;text-transform:none}
+:root:not(.ov) :is(#v-live #relBox,:is(#v-field,#liveStd) #stdFull) .hstrip .k{font:400 12px/1.5 var(--f-body)!important;letter-spacing:0!important;text-transform:none!important;color:var(--muted)}
+:root:not(.ov) :is(#v-live #relBox,:is(#v-field,#liveStd) #stdFull) .hstrip .v{font:400 16px/1.5 var(--f-data)!important;text-transform:none}
 /* the tables: the design's .tb */
-:root:not(.ov) :is(#v-live,#v-field) .wtable{font-size:13px;border-collapse:collapse}
-:root:not(.ov) :is(#v-live,#v-field) .wtable th{font:600 11.5px/1.5 var(--f-body)!important;letter-spacing:.05em!important;text-transform:uppercase!important;color:var(--muted)!important;padding:6px 8px!important;border-bottom:1px solid var(--line)!important}
-:root:not(.ov) :is(#v-live,#v-field) .wtable td{padding:7px 8px!important;border-bottom:1px solid var(--line)!important}
+:root:not(.ov) :is(#v-live,:is(#v-field,#liveStd)) .wtable{font-size:13px;border-collapse:collapse}
+:root:not(.ov) :is(#v-live,:is(#v-field,#liveStd)) .wtable th{font:600 11.5px/1.5 var(--f-body)!important;letter-spacing:.05em!important;text-transform:uppercase!important;color:var(--muted)!important;padding:6px 8px!important;border-bottom:1px solid var(--line)!important}
+:root:not(.ov) :is(#v-live,:is(#v-field,#liveStd)) .wtable td{padding:7px 8px!important;border-bottom:1px solid var(--line)!important}
 :root:not(.ov) #v-live .wtable td{font-size:12.5px}
 #liveGrid.pw3ws>[data-w=relative] .wtable :is(th,td){padding:5px 4px!important}
 #liveGrid.pw3ws>[data-w=relative] .wtable{font-size:12.5px}
-:root:not(.ov) :is(#v-live,#v-field) .wtable tr.me td{background:color-mix(in srgb,var(--accent) 14%,transparent)!important;color:var(--fg)!important}
-:root:not(.ov) :is(#v-live,#v-field) .wtable .lic{font:600 11px/1.4 var(--f-data);height:auto;min-width:0;padding:1px 6px;border-radius:4px;border:0;box-shadow:none}
-:root:not(.ov) :is(#v-live,#v-field) .wtable td .note-ed,:root:not(.ov) :is(#v-live,#v-field) .wtable td [data-note]{opacity:.45}
+:root:not(.ov) :is(#v-live,:is(#v-field,#liveStd)) .wtable tr.me td{background:color-mix(in srgb,var(--accent) 14%,transparent)!important;color:var(--fg)!important}
+:root:not(.ov) :is(#v-live,:is(#v-field,#liveStd)) .wtable .lic{font:600 11px/1.4 var(--f-data);height:auto;min-width:0;padding:1px 6px;border-radius:4px;border:0;box-shadow:none}
+:root:not(.ov) :is(#v-live,:is(#v-field,#liveStd)) .wtable td .note-ed,:root:not(.ov) :is(#v-live,:is(#v-field,#liveStd)) .wtable td [data-note]{opacity:.45}
 /* the kv cards (.kv in the design): fuel, engine, pit stop, weather */
 :root:not(.ov) #v-live [data-w=fuel]>.row,:root:not(.ov) #v-live #pitBox>.row,:root:not(.ov) #v-live #wxBox>.row{display:grid!important;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px!important;margin:0!important}
 :root:not(.ov) #v-live [data-w=fuel]>.row>div,:root:not(.ov) #v-live #pitBox>.row>div,:root:not(.ov) #v-live #wxBox>.row>div{display:flex;flex-direction:column;background:var(--surface2);border-radius:5px;padding:8px 10px;min-width:0}
@@ -12498,21 +12502,21 @@ html[data-theme="dark"]:not(.ov,.ovwin){--pw3-title:#c3cad6}
 #liveGrid.pw3ws #ggStats .v{font:400 12px/1.4 var(--f-data)}
 
 /* Standings: the session's six cards in one row above the table, the table the design's */
-:root:not(.ov) #v-field .pw3-stdp{padding:10px!important;border:1px solid var(--line2)!important;border-radius:8px!important}
-:root:not(.ov) #v-field .pw3-stdp>.pw3-ph{padding:0!important;margin:0 0 10px!important;min-height:0!important}
-:root:not(.ov) #v-field #fieldSub{display:none}
-:root:not(.ov) #v-field #stdFull{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px}
-:root:not(.ov) #v-field #stdFull>*{grid-column:1/-1;order:3}
-:root:not(.ov) #v-field #stdFull>.hstrip{display:contents!important}
-:root:not(.ov) #v-field #stdFull>.hstrip>div{grid-column:auto;order:1;display:flex!important;flex-direction:column;align-items:flex-start;gap:0!important;background:var(--surface2);border-radius:5px;padding:8px 10px;min-width:0}
-:root:not(.ov) #v-field #stdFull>.hstrip:not(:first-child)>div{order:2}
-:root:not(.ov) #v-field #stdFull>.tscroll{margin-top:0}
-:root:not(.ov) #v-field #stdFull .wtable td.col-pos{font-weight:700}
-:root:not(.ov) #v-field #stdPos{margin-top:10px;padding:10px!important;border:1px solid var(--line2)!important;border-radius:8px!important}
-:root:not(.ov) #v-field #stdPos>.label{margin:0 0 10px!important;padding:0!important;font:700 14px/1.5 var(--f-display)!important;letter-spacing:.1em!important;text-transform:uppercase!important;color:var(--pw3-title,var(--muted))!important}
-:root:not(.ov) #v-field .std-bar{display:inline-flex;padding:3px;gap:2px;background:var(--bg);border:1px solid var(--line2);border-radius:8px}
-:root:not(.ov) #v-field .pw3-ph .std-bar button{min-height:30px;padding:6px 10px!important;border:0!important;border-radius:6px!important;font:600 12.5px/1 var(--f-body)!important;background:none!important;color:var(--muted)!important;box-shadow:none!important}
-:root:not(.ov) #v-field .pw3-ph .std-bar button[aria-pressed="true"]{background:var(--surface2)!important;color:var(--fg)!important;box-shadow:inset 0 0 0 1px var(--line2)!important}
+:root:not(.ov) :is(#v-field,#liveStd) .pw3-stdp{padding:10px!important;border:1px solid var(--line2)!important;border-radius:8px!important}
+:root:not(.ov) :is(#v-field,#liveStd) .pw3-stdp>.pw3-ph{padding:0!important;margin:0 0 10px!important;min-height:0!important}
+:root:not(.ov) :is(#v-field,#liveStd) #fieldSub{display:none}
+:root:not(.ov) :is(#v-field,#liveStd) #stdFull{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px}
+:root:not(.ov) :is(#v-field,#liveStd) #stdFull>*{grid-column:1/-1;order:3}
+:root:not(.ov) :is(#v-field,#liveStd) #stdFull>.hstrip{display:contents!important}
+:root:not(.ov) :is(#v-field,#liveStd) #stdFull>.hstrip>div{grid-column:auto;order:1;display:flex!important;flex-direction:column;align-items:flex-start;gap:0!important;background:var(--surface2);border-radius:5px;padding:8px 10px;min-width:0}
+:root:not(.ov) :is(#v-field,#liveStd) #stdFull>.hstrip:not(:first-child)>div{order:2}
+:root:not(.ov) :is(#v-field,#liveStd) #stdFull>.tscroll{margin-top:0}
+:root:not(.ov) :is(#v-field,#liveStd) #stdFull .wtable td.col-pos{font-weight:700}
+:root:not(.ov) :is(#v-field,#liveStd) #stdPos{margin-top:10px;padding:10px!important;border:1px solid var(--line2)!important;border-radius:8px!important}
+:root:not(.ov) :is(#v-field,#liveStd) #stdPos>.label{margin:0 0 10px!important;padding:0!important;font:700 14px/1.5 var(--f-display)!important;letter-spacing:.1em!important;text-transform:uppercase!important;color:var(--pw3-title,var(--muted))!important}
+:root:not(.ov) :is(#v-field,#liveStd) .std-bar{display:inline-flex;padding:3px;gap:2px;background:var(--bg);border:1px solid var(--line2);border-radius:8px}
+:root:not(.ov) :is(#v-field,#liveStd) .pw3-ph .std-bar button{min-height:30px;padding:6px 10px!important;border:0!important;border-radius:6px!important;font:600 12.5px/1 var(--f-body)!important;background:none!important;color:var(--muted)!important;box-shadow:none!important}
+:root:not(.ov) :is(#v-field,#liveStd) .pw3-ph .std-bar button[aria-pressed="true"]{background:var(--surface2)!important;color:var(--fg)!important;box-shadow:inset 0 0 0 1px var(--line2)!important}
 
 /* Tyres: Tyres and Setup hints side by side, then Balance, Brake pressure and Pit readings (two thirds) */
 :root:not(.ov) #v-tyres>.grid{grid-template-columns:repeat(6,minmax(0,1fr));gap:10px}
@@ -13417,4 +13421,5 @@ html:not(.ov) #commBody#commBody .pw3-discs .lb-t small{white-space:normal;overf
 #subtabs .st-car{margin-left:6px;font-size:10px}
 @media (min-width:821px){html:not(.ov) #subtabs .st-btn{margin-left:10px!important;position:relative}html:not(.ov) #subtabs .st-btn::before{content:"";position:absolute;left:-7px;top:6px;bottom:6px;width:1px;background:var(--line2)}}
 #v-live #liveMode[hidden]{display:none!important}
+html:not(.ov) #v-live>#liveStd{order:2;display:flex;flex-direction:column;gap:12px}html:not(.ov) #v-live>#liveStd[hidden]{display:none}
 </style>

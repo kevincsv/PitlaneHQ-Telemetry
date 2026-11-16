@@ -4,8 +4,27 @@ Pitlane HQ is in **beta**. Pitlane HQ Agent (the PC app), the web app and the ph
 number, `0.MINOR.PATCH`. A MINOR version brings a set of new features, and fixes go in as "Fixes and
 improvements". 1.0.0 comes when the beta ends. Newest first.
 
+## 0.10.0 beta
+
+- The track map opens in full screen from the lap comparison, the coach and the leaderboards, with zoom, both racing lines, braking points, turns and the replay in step with the telemetry. A chase view follows the car from behind.
+- Each overlay has a text size slider that makes the whole overlay smaller or larger, down to half its size.
+- Telemetry no longer freezes the app when you switch to Full during a session.
+- Telemetry has a new Engineer view between Basic and Full, with each car's tyres and pit stops in the relative and the standings. You choose its panels in Layout.
+- Closing a driver's profile or a track page before it loads no longer shows an error.
+- You can try Pitlane HQ Agent for three sessions before you create an account. Your laps go with you when you sign up.
+- Le Mans Ultimate lap times for every track and class on pitlanehq.app, and a new home page.
+
+## 0.9.23 beta
+
+- Fixes and improvements.
+
 ## 0.9.22 beta
 
+- After a race its summary opens by itself, with your place on the leaderboard and a button to compare with the driver just ahead.
+- Home shows the time to beat at your last car and track, and last week's numbers until you drive again.
+- Track maps show the real turns of each circuit with their names.
+- Laps you drive before creating an account join it when you sign up.
+- Pitlane HQ can open when Windows starts, and asks you once.
 - Uninstalling Pitlane HQ always asks why you are leaving.
 - Fixes and improvements.
 

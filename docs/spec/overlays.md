@@ -42,9 +42,9 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   There is one kind of overlay window, the frameless one (`Engine` is always "webview"; the Edge window was dropped),
   and clicks reach an overlay only while the overlays are being placed (Place on the screen); otherwise every click
   goes to the game (`Lock` is always on; the click-through switch was dropped). An overlay never leaves the desktop when
-  dragged, resized or placed (`keepOnScreen`, `clampMove`). Nor is it made smaller than it can be read: its default width
-  (`overlayMinSize`; the map, the radar and the g-force their default height too), when resized, moved or opened, and
-  not even while the corner is dragged (`WM_GETMINMAXINFO`, `OV_MINW` in the Overlays tab's screen). The
+  dragged, resized or placed (`keepOnScreen`, `clampMove`). Nor is it made smaller than it can be read: half its default width, the text size slider's 50 %
+  (`overlayMinSize`; the map, the radar and the g-force half their default height too), when resized, moved or opened,
+  and not even while the corner is dragged (`WM_GETMINMAXINFO`, `OV_MINW` in the Overlays tab's screen). The
   Overlays tab shows no OBS address. An overlay window draws only its own widget; only the
   radar's window hides itself when nobody is near. Every overlay is native UI drawn in Go, never WebView2 (its
   content is always opaque; a test checks every overlay in `overlayOrder`): `ovnative.go` (shapes, the app's own
@@ -102,8 +102,13 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   old setting for all of them, `CFG.alpha`, else opaque; VR too; the designs' panels are opaque themselves, fillA 1, so at 255 nothing of the game shows through, Frameless aside, `TestOverlayStylesOpaque`) and, for the overlays with a title (`OV_TITLED`),
   "Show the title" (`ui.<overlay>.title`, on by default, `titleOn`/`titleH`: off, the content moves up and the overlay
   is shorter; the engine's and the pit lane's badges keep their row while lit), set on each overlay only (the owner's
-  choice: no switch for all of them). Every overlay window's Configure also has its text size (`ui.<overlay>.textScale` 0.85/1/1.2,
-  scaling its whole drawing, `textScale`) and "Hide by itself" (`ui.<overlay>.hide`: "car" out of the car, garage or no
+  choice: no switch for all of them). Every overlay window's Configure also has its text size: a slider, 50 to 150 %, that
+  makes the overlay's window that share of its normal width (`ovDesign`, the relative's and the standings' for the
+  columns chosen), so the text and the box shrink or grow together and the window follows while it moves
+  (`/api/overlay/size`, `ovSizeRect`/`ovSizeOf` in overlay.go, `ovSizeHTML`/`ovSizeSet` in pitwall-overlays.js; the
+  saved place keeps it for an overlay not open; only on the PC the overlays are on). The old Small/Normal/Large
+  (`ui.<overlay>.textScale` 0.85/1/1.2, still scaling the drawing, `textScale`) counts in the slider's value and is
+  taken out the first time the slider is used and "Hide by itself" (`ui.<overlay>.hide`: "car" out of the car, garage or no
   game, "pits" that and on the pit road; nothing on the screen, like the radar with nobody near, never while moving the
   overlays; `autoHidden`, OnPitRoad asked only then; the web widget in an overlay window the same, `ovOwnApply`), and
   each overlay its own content options (`OV_OPTS` in index.html, the native overlays read the same keys, `ovsettings.go`;
@@ -196,8 +201,9 @@ overlay windows' code and the Telemetry tab's settings window (`openWidgetCfg`);
   in the accent): drag to move, the corner to resize, a click chooses it; the windows move as you drag
   (`/api/overlay/move`), never smaller than `OV_MINW`/`OV_MINH`, and the screen follows the windows dragged on the
   PC itself (`/api/overlay/list` every 1.5 s). It is drawn as the view from the car (the sky, the road and the
-  dashboard), the overlays dark boxes. An overlay never placed opens the first time at its home on the main screen
-  (`ovHome`/`ovHomeAt` in overlay.go, `OV_HOME` on the tab, a 2560×1440 layout scaled: the timing and standings on the
+  dashboard), the overlays dark boxes. An overlay never placed opens the first time at its home on the main screen, at its size for that
+  screen (the default sizes are for 1440 pixels high: a smaller screen opens them smaller by as much, never under 50 %,
+  `ovScreenK`) (`ovHome`/`ovHomeAt` in overlay.go, `OV_HOME` on the tab, a 2560×1440 layout scaled: the timing and standings on the
   left, the delta bar and flags at the top, the map top right, the radar in the middle, the relative bottom right, the
   dash and fuel along the bottom); the others still open one under the other.
 - The chosen overlay: its name, "Experimental" when it is, open or closed, its live preview (on the PC the overlay

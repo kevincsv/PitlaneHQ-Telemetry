@@ -9,7 +9,7 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   minutes, never in the car (the PC while the car is on track), in demo data, from an overlay window, over another window
   or to an admin in admin mode; shown, it is marked at once (POST `/community/feedback/seen`), so Not now waits six more
   hours of use or two races. "Send feedback" is always in Settings → About and the inbox, and a round floating
-  button with a square speech bubble sits at the bottom right of every screen (its menu: "Send feedback", the stars and the text as often as they like, "Chat with support", or "Donate" (the Stripe link from `donateUrl()`, PC and web only, hidden when there is none such as the Steam build; the phones have no donation link), `fbMenu`; an admin in admin mode goes straight to the support inbox) ("Support", `fbFab` in index.html, counted
+  button with a square speech bubble sits at the bottom right of every screen (its menu: "Send feedback", the stars and the text as often as they like, "Chat with support", "Invite a friend" (Community → Friends), or "Donate" (the Stripe link from `donateUrl()`, PC and web only, hidden when there is none such as the Steam build; the phones have no donation link), `fbMenu`; an admin in admin mode gets the same menu with "Support inbox" in place of "Chat with support") ("Support", `fbFab` in index.html, counted
   `act:feedback_button`; PC app, web and phones): signed in only, never for a visitor, in an overlay window or in demo
   data, hidden while the car is on the track and under any open window, a toast or the voice call's bar, above the
   phone-width tab bar. It opens the support chat (`supportOpen`/`SUP` in index.html, `cloud/src/support.js`, the routes
@@ -23,7 +23,7 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   `/community/support/unread` {n, last?, at?} is one row by key, polled every 2 minutes while the page is on the screen
   (and the phones the same). The button carries the count of Support's replies not read ("1"… "9+", amber like the
   inbox's), and a reply not read is an inbox notice "Support replied" with its first line, both cleared when the chat
-  opens. For an admin with admin mode on the button opens the support inbox and counts the conversations with messages
+  opens. For an admin with admin mode on the menu's "Support inbox" opens the support inbox and the button counts the conversations with messages
   not read (GET `/community/admin/support` {items [{accountId, nick, last, lastAt, lastSupport, unread}], unread}, GET
   `/community/admin/support/unread` {n}): a conversation (GET `/community/admin/support/:id` {accountId, nick, gone,
   msgs [{id, support, text, created, read, rating, device, v, view, kind, style}]}, marking the driver's read) with the
@@ -48,7 +48,7 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   count and the average stars; the Feedback tab tags the overlay answers ("Overlays · Classic") and filters All, General
   and Overlays. Deleting an
   account deletes its usage and its feedback.
-- The donation bar (`donBar` in index.html, `#donBar` under the sub-tabs): one line on every screen of the PC app and the web, "Enjoying Pitlane HQ? If it helps you drive faster, consider a donation to keep it growing." with Donate (the `donateUrl()` link, counted as `act:donate_bar`), Send feedback (the feedback window, `act:feedback_bar`) and Not now (`act:donate_bar_no`). It shows every day (the owner's choice, 2026-11-15), never to supporters, in the Steam app, the overlays, the admin page or with demo data, and never on the phones. Not now or Donate hides it until the next day (`pw.donHide`, local midnight).
+- The donation bar (`donBar` in index.html, `#donBar` under the sub-tabs): one line on every screen of the PC app and the web, "Enjoying Pitlane HQ? If it helps you drive faster, consider a donation to keep it growing." with Donate (the `donateUrl()` link, counted as `act:donate_bar`), Send feedback (the feedback window, `act:feedback_bar`) and Not now (`act:donate_bar_no`). It shows every day (the owner's choice, 2026-11-15). A supporter (the ♥ badge or the founding offer) sees it too, with its own text (the owner's choice, 2026-11-15), "Thank you for supporting Pitlane HQ. Your donation keeps it growing. If you want to help again, every bit counts." and Donate again. It never shows in the Steam app, the overlays, the admin page or with demo data, and never on the phones. Not now or Donate hides it until the next day (`pw.donHide`, local midnight).
 - "Send the agent's logs" (the PC app only, under the chat's box, `supLogsOk`): the agent sends the end of its log
   (400 KB, the older file first when the current one is short, with a line naming the agent's version, the game and
   whether Le Mans Ultimate runs; `logTail` in reports.go, local POST `/api/support/logs`) to POST
@@ -66,7 +66,7 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   installer/PitlaneHQ.iss when the installer's uninstaller is run by itself). The page (`cloud/src/uninstall.js`, English, Spanish or Portuguese by ?lang= or the
   browser's, noindex): the title, the reasons as chips to pick any of (`REASONS`: it does not work with my game, bugs
   or crashes, it slows down my PC or my game, it is missing something I need, hard to use, I use another app, I do not
-  race enough, I am going to install it again, something else), a text box under "Tell us what happened" (a hint of what to write inside it) and Send, then "Thank you. We
+  race enough, I am going to install it again, something else), a text box under "Tell us what happened" (a hint of what to write inside it) (choosing "Something else" turns its label into "What was it?" and focuses it, Send with it empty says "Tell us what it was.", and the server refuses "other" with no text) and Send, then "Thank you. We
   read every answer." with a link to download it again. POST `/community/feedback/uninstall` {reasons, text, v}, no
   sign-in (robots are ignored), at least one reason or some text: a `feedback` row of kind "uninstall" (device pc, view
   "uninstall", the reason codes in `style`, the text the reasons' English names on the first line then what they

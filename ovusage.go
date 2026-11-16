@@ -65,6 +65,9 @@ func ovUsageWatcher() {
 		if tick%10 == 0 {
 			ovUseFlush()
 		}
+		if tick%10 == 2 {
+			agentUseFlush() // two minutes after starting, then every ten: the day counts once (agentuse.go)
+		}
 	}
 }
 

@@ -9,6 +9,11 @@ workers_dev = true
 binding = "DL"
 bucket_name = "pitlanehq-downloads"
 
+# the laps' telemetry, gzipped and sealed, one object a lap (src/tracestore.js); the database keeps only where it is
+[[r2_buckets]]
+binding = "TRACES"
+bucket_name = "pitlanehq-telemetry"
+
 [[d1_databases]]
 binding = "DB"
 database_name = "pitlanehq"
@@ -65,6 +70,7 @@ type = "Text"
 globs = ["**/*.html"]
 fallthrough = false
 
-# the community model learns the cars and tracks that got new laps
+# every 10 minutes the community model learns the cars and tracks that got new laps (and the repairs, hourly and daily);
+# every minute the laps of before move to the telemetry bucket (src/tracestore.js), nothing else
 [triggers]
-crons = ["*/10 * * * *"]
+crons = ["*/10 * * * *", "* * * * *"]

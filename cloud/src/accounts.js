@@ -6,8 +6,10 @@
 // public name. Turned on with the variable COMMUNITY = "1".
 import { mailReady, sendVerify, sendReset, sendTest, lang } from "./email.js";
 import { pageLang, messagePage, badLinkPage, forgotPage, resetPage } from "./pages.js";
+import { ownTrace, dropTraces, lapTracePtrs } from "./tracestore.js";
 import { sealData, openData, newTotpSecret, totpOK, otpauthURL, newRecoveryCodes } from "./crypt.js";
 import { patreonOnRegister } from "./patreon.js";
+import { tryReset } from "./tryout.js";
 import { proOnRegister, proOf, proGate, proHere } from "./lemon.js";
 import { discordAccount, discordStart, useDiscordGrant, discordAccountId, discordLinkedAny, linkDiscordLogin, oauthReady as discordReady } from "./discord.js";
 import { steamAccount, steamStart, useSteamGrant, steamAccountId, linkSteam } from "./steam.js";
@@ -131,6 +133,7 @@ const accountRows = (env, id) => [
   env.DB.prepare("DELETE FROM steam_oauth WHERE account_id=?1").bind(id),
   env.DB.prepare("DELETE FROM steam_grants WHERE account_id=?1").bind(id),
   env.DB.prepare("DELETE FROM google_links WHERE account_id=?1").bind(id),
+  env.DB.prepare("DELETE FROM events WHERE account_id=?1").bind(id),
   env.DB.prepare("DELETE FROM usage_days WHERE account_id=?1").bind(id),
   env.DB.prepare("DELETE FROM feedback WHERE account_id=?1").bind(id),
   env.DB.prepare("DELETE FROM feedback_ask WHERE account_id=?1").bind(id),
@@ -164,6 +167,8 @@ const accountRows = (env, id) => [
 // account's laps) and the valid laps with telemetry of your account, which the model keeps learning from.
 export async function deleteAccount(env, id) {
   const up = "acct:" + id;
+  // the telemetry of the laps that go leaves the telemetry bucket with them (tracestore.js)
+  const gone = await lapTracePtrs(env, "l.session_id IN (SELECT id FROM sessions WHERE uploader=?1) AND (l.valid<>1 OR l.time<=10)", up);
   await env.DB.batch([
     // a shared lap without its own telemetry showed the same lap of the account: it keeps it now
     env.DB.prepare(`UPDATE community_laps SET trace=(SELECT a.trace FROM laps a JOIN sessions s ON s.id=a.session_id
@@ -183,10 +188,18 @@ export async function deleteAccount(env, id) {
     env.DB.prepare("DELETE FROM sessions WHERE uploader=?1 AND NOT EXISTS (SELECT 1 FROM laps WHERE session_id=sessions.id)").bind(up),
     ...accountRows(env, id),
   ]);
+  await dropTraces(env, gone);
+  // a shared lap that took its telemetry from the account's lap just now keeps its own copy of it, as every shared lap does
+  const took = (await env.DB.prepare("SELECT id, trace FROM community_laps WHERE user_id=?1 AND substr(trace,1,5)='r2:l/'").bind(id).all().catch(() => ({ results: [] }))).results || [];
+  for (const c of took) {
+    const own = await ownTrace(env, c.trace, "c").catch(() => null);
+    if (own) await env.DB.prepare("UPDATE community_laps SET trace=?2 WHERE id=?1 AND trace=?3").bind(c.id, own, c.trace).run().catch(() => {});
+  }
 }
 
 // an admin removes an account (abuse, spam): everything it uploaded and shared goes too
 export async function purgeAccount(env, id) {
+  const gone = await lapTracePtrs(env, "l.session_id IN (SELECT id FROM sessions WHERE uploader=?1)", "acct:" + id);
   await env.DB.batch([
     env.DB.prepare("DELETE FROM laps WHERE session_id IN (SELECT id FROM sessions WHERE uploader=?1)").bind("acct:" + id),
     env.DB.prepare("DELETE FROM sessions WHERE uploader=?1").bind("acct:" + id),
@@ -200,7 +213,7 @@ export async function purgeAccount(env, id) {
     env.DB.prepare("DELETE FROM community_setups WHERE user_id=?1").bind(id),
     env.DB.prepare("DELETE FROM community_users WHERE id=?1").bind(id),
     ...accountRows(env, id),
-  ]);
+  ]);  await dropTraces(env, gone); // the telemetry of its laps leaves the telemetry bucket too
 }
 
 // admins of this server: the account ids in ADMINS (or SEASON_UPLOADERS); they see the Connections settings in the app
@@ -506,6 +519,7 @@ export async function accounts(req, env, url) {
   if (m === "GET" && (p === "/me" || p === "/sync" || p === "/sync/meta")) await notePresence(env, req, a);
   // part of a waiting invite: the PCs and connections it is used on (a friend on the inviter's own PC is refused, referrals.js)
   if (m === "GET" && p === "/me" && a.ref_watch) await noteRef(env, req, a.id);
+  if (m === "GET" && p === "/me" && isAdmin(env, a.id)) await tryReset(env, url.searchParams.get("pc")); // an admin's PC tries it again as new
   const reauth = async () => noPassword(a) || (isKey(body.auth) && same(await authHash(a.auth_salt, body.auth), a.auth_hash));
   const SOCIAL_ONLY = () => json({ error: "this account signs in with Steam, Discord or Google", code: "social_only" }, 400);
   // a passwordless account never unlinks the last way it signs in with
@@ -547,7 +561,7 @@ export async function accounts(req, env, url) {
     return json({ ok: true, escrow: true });
   }
 
-  if (p === "/me" && m === "GET") return json({ id: a.id, display: a.display, nameKind: a.name_kind, anon: !!a.anon, created: a.created, admin: isAdmin(env, a.id), tester: isTester(env, a.id, a), supporter: !!a.supporter, supporterHidden: !!a.supporter_hidden, ...proOf(a), ...(await proHere(env, a, url.searchParams)), proGate: await proGate(env), verified: !!a.verified, mail: mailReady(env), twoFactor: !!a.totp_on, escrow: !!a.escrow, noPassword: noPassword(a) || undefined, gated: gated || undefined, google: !!(await env.DB.prepare("SELECT 1 FROM google_links WHERE account_id=?1").bind(a.id).first()), recoveryLeft: a.totp_on ? ((await env.DB.prepare("SELECT COUNT(*) AS n FROM recovery_codes WHERE account_id=?1").bind(a.id).first()) || {}).n || 0 : 0 });
+  if (p === "/me" && m === "GET") return json({ id: a.id, display: a.display, nameKind: a.name_kind, anon: !!a.anon, created: a.created, admin: isAdmin(env, a.id), tester: isTester(env, a.id, a), supporter: !!a.supporter, supporterHidden: !!a.supporter_hidden, founder: !!a.founder, ...proOf(a), ...(await proHere(env, a, url.searchParams)), proGate: await proGate(env), verified: !!a.verified, mail: mailReady(env), twoFactor: !!a.totp_on, escrow: !!a.escrow, noPassword: noPassword(a) || undefined, gated: gated || undefined, google: !!(await env.DB.prepare("SELECT 1 FROM google_links WHERE account_id=?1").bind(a.id).first()), recoveryLeft: a.totp_on ? ((await env.DB.prepare("SELECT COUNT(*) AS n FROM recovery_codes WHERE account_id=?1").bind(a.id).first()) || {}).n || 0 : 0 });
   // two-step sign-in with an authenticator app (Google Authenticator, Authy, 1Password…):
   // setup gives the secret (and the QR address), enable confirms it with a first code and hands
   // out the recovery codes once; disable needs the password and a code

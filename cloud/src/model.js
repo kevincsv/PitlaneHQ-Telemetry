@@ -113,13 +113,13 @@ async function adoptOldSessions(env, game, trackId, carId) {
 }
 
 // every valid lap with telemetry that is not in the memory yet goes in: account laps (shared or
-// not), shared laps of drivers without an account (DRINKS drivers, older PCs)
+// not), the laps of PCs without an account (anon.js), shared laps of drivers without an account (DRINKS drivers, older PCs)
 async function learnNewLaps(env, game, trackId, carId) {
   // k → its compound (null: a lap learnt before the memory kept it, read again below)
   const known = new Map(((await env.DB.prepare("SELECT k, cmp FROM model_laps WHERE game=?1 AND track_id=?2 AND car_id=?3").bind(game, trackId, carId).all()).results || []).map((x) => [x.k, x.cmp]));
   const a = await env.DB.prepare(
     `SELECT s.uploader AS up, a.time, a.trace, s.track_temp AS temp FROM laps a JOIN sessions s ON s.id=a.session_id
-     WHERE s.track_id=?1 AND (s.car_id=?2 OR s.car_id IN (${await famSql(env, game, carId)})) AND s.game=?3 AND s.uploader LIKE 'acct:%' AND a.valid=1 AND a.time>10 AND a.trace IS NOT NULL
+     WHERE s.track_id=?1 AND (s.car_id=?2 OR s.car_id IN (${await famSql(env, game, carId)})) AND s.game=?3 AND (s.uploader LIKE 'acct:%' OR s.uploader LIKE 'dev:%') AND a.valid=1 AND a.time>10 AND a.trace IS NOT NULL
        AND LOWER(COALESCE(s.kind,'')) NOT LIKE '%test%' AND (COALESCE(s.official,1)<>0 OR s.ai=1)
      ORDER BY a.time LIMIT 3000`).bind(trackId, carId, game).all();
   const c = await env.DB.prepare(
@@ -129,7 +129,7 @@ async function learnNewLaps(env, game, trackId, carId) {
   // whose people are real drivers) leaves its memory
   const out = await env.DB.prepare(
     `SELECT s.uploader AS up, a.time FROM laps a JOIN sessions s ON s.id=a.session_id
-     WHERE s.track_id=?1 AND (s.car_id=?2 OR s.car_id IN (${await famSql(env, game, carId)})) AND s.game=?3 AND s.uploader LIKE 'acct:%' AND a.valid=1 AND a.time>10 AND a.trace IS NOT NULL
+     WHERE s.track_id=?1 AND (s.car_id=?2 OR s.car_id IN (${await famSql(env, game, carId)})) AND s.game=?3 AND (s.uploader LIKE 'acct:%' OR s.uploader LIKE 'dev:%') AND a.valid=1 AND a.time>10 AND a.trace IS NOT NULL
        AND (LOWER(COALESCE(s.kind,'')) LIKE '%test%' OR (s.official=0 AND COALESCE(s.ai,0)=0)) LIMIT 3000`).bind(trackId, carId, game).all();
   for (const x of out.results || []) {
     const k = await sha(x.up + ":" + x.time.toFixed(3));
@@ -790,9 +790,12 @@ export async function reconcileIds(env, game, track, trackConfig, car, trackId, 
   if (!trackId || !carId || trackId >= PSEUDO_MIN || carId >= PSEUDO_MIN) return;
   const full = track + (trackConfig ? " · " + trackConfig : "");
   const pt = await pseudoId("t", game, full), pc = await pseudoId("c", game, car);
-  const hit = await env.DB.prepare("SELECT 1 FROM sessions WHERE game=?1 AND (track_id=?2 OR car_id=?3) LIMIT 1").bind(game, pt, pc).first()
-    || await env.DB.prepare("SELECT 1 FROM community_laps WHERE game=?1 AND (track_id=?2 OR car_id=?3) LIMIT 1").bind(game, pt, pc).first()
-    || await env.DB.prepare("SELECT 1 FROM community_reports WHERE game=?1 AND (track_id=?2 OR car_id=?3) LIMIT 1").bind(game, pt, pc).first();
+  // one indexed lookup per table and id (never "track_id=? OR car_id=?", which read every session and every shared lap
+  // on each upload): the track's from the indexes that start with it, the car's from the ones of migration 0107
+  const has = (sql, id) => env.DB.prepare(sql).bind(game, id).first();
+  const hit = await has("SELECT 1 FROM sessions WHERE track_id=?2 AND game=?1 LIMIT 1", pt) || await has("SELECT 1 FROM sessions WHERE car_id=?2 AND game=?1 LIMIT 1", pc)
+    || await has("SELECT 1 FROM community_laps WHERE game=?1 AND track_id=?2 LIMIT 1", pt) || await has("SELECT 1 FROM community_laps WHERE car_id=?2 AND game=?1 LIMIT 1", pc)
+    || await has("SELECT 1 FROM community_reports WHERE track_id=?2 AND game=?1 LIMIT 1", pt) || await has("SELECT 1 FROM community_reports WHERE car_id=?2 AND game=?1 LIMIT 1", pc);
   if (!hit) return;
   const fix = (t) => [
     env.DB.prepare(`UPDATE OR IGNORE ${t} SET track_id=CASE WHEN track_id=?1 THEN ?2 ELSE track_id END, car_id=CASE WHEN car_id=?3 THEN ?4 ELSE car_id END WHERE game=?5 AND (track_id=?1 OR car_id=?3)`).bind(pt, trackId, pc, carId, game),

@@ -9,10 +9,12 @@
 // - charge.refunded: a fully refunded lifetime payment takes the lifetime away; a refunded donation is marked refunded
 // - a donation (the Support link: client_reference_id "support-<account id>", or the session's payment_link is
 //   donate.link of license_plans.json) gives the ♥ Supporter badge, like Patreon, never Pro; a donor without an account
-//   gets it when they sign up with that email (pro_orders kind 'supporter')
+//   gets it when they sign up with that email (pro_orders kind 'supporter'). Donations of founding.min dollars or more
+//   in all also give the founding supporter offer (accounts.founder, foundingCheck in lemon.js)
 // The account comes from client_reference_id; without it the buyer's email is matched by its hash, now or when they
 // sign up (pro_orders, proOnRegister in lemon.js). A subscription's events find their account through its order.
 import { setPro } from "./prostore.js";
+import { langOf } from "./email.js";
 
 const JSONH = { "content-type": "application/json" };
 const json = (o, s = 200) => new Response(JSON.stringify(o), { status: s, headers: JSONH });
@@ -68,9 +70,21 @@ export async function stripeWebhook(req, env, emailHash, opts = {}) {
       const pi = typeof o.payment_intent === "string" ? o.payment_intent : (o.payment_intent && o.payment_intent.id) || null;
       const amount = Number.isFinite(+o.amount_total) && o.amount_total !== null ? Math.round(+o.amount_total) : null;
       const cur = /^[a-z]{3}$/i.test(String(o.currency || "")) ? String(o.currency).toLowerCase() : null;
-      await env.DB.prepare("INSERT INTO pro_orders (id, account_id, email_hash, kind, status, until, at, amount, currency, ref) VALUES (?1,?2,?3,'supporter','on',0,?4,?5,?6,?7) ON CONFLICT(id) DO NOTHING").bind(donOrder(o.id), accountId, eh, now, amount, cur, pi).run();
+      // an admin's donation is a test of the link: kept as 'test', never counted, no badge and no founding offer
+      const test = !!(accountId && opts.isAdmin && opts.isAdmin(env, accountId));
+      await env.DB.prepare("INSERT INTO pro_orders (id, account_id, email_hash, kind, status, until, at, amount, currency, ref) VALUES (?1,?2,?3,'supporter',?8,0,?4,?5,?6,?7) ON CONFLICT(id) DO NOTHING").bind(donOrder(o.id), accountId, eh, now, amount, cur, pi, test ? "test" : "on").run();
+      if (test) return json({ ok: true, test: true });
       if (accountId) await env.DB.prepare("UPDATE accounts SET supporter=1, supporter_src=COALESCE(supporter_src,'stripe') WHERE id=?1").bind(accountId).run();
-      return json({ ok: true, supporter: !!accountId });
+      // the founding supporter offer needs founding.min dollars or more in all (smaller gifts keep the badge alone)
+      let founder = opts.founding ? await opts.founding(env, accountId, eh).catch(() => false) : false;
+      // the thank-you email, saying what the donation gave (the founding offer may come from before, migration 0103)
+      if (email && opts.thanks) {
+        if (accountId && !founder) { const a = await env.DB.prepare("SELECT founder FROM accounts WHERE id=?1").bind(accountId).first().catch(() => null); founder = !!(a && a.founder); }
+        const sl = accountId ? await env.DB.prepare("SELECT lang FROM support_msgs WHERE account_id=?1 AND from_support=0 AND lang IS NOT NULL ORDER BY created DESC LIMIT 1").bind(accountId).first().catch(() => null) : null;
+        const country = (o.customer_details && o.customer_details.address && o.customer_details.address.country) || "";
+        await opts.thanks(env, email, { l: langOf(sl && sl.lang, country), founder, account: !!accountId }).catch(() => false);
+      }
+      return json({ ok: true, supporter: !!accountId, founder });
     }
     if (o.mode === "subscription" && o.subscription) {
       const id = subOrder(typeof o.subscription === "string" ? o.subscription : o.subscription.id);

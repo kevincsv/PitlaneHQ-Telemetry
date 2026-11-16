@@ -8,22 +8,24 @@ import { betaGate, betaHeaders, betaSignIn, isBeta } from "./beta.js";
 import { markModel, rebuildDirty, reconcileIds, buildOvalKinds } from "./model.js";
 import { fillCats } from "./coachtips.js";
 import { shadowRun, answerRun } from "./coachlearn.js";
-import { rebuildTrackMaps, rebuildEdges } from "./trackmaps.js";
+import { DEV, deviceOf, anonSession, anonCount, anonPrune } from "./anon.js";
+import { rebuildTrackMaps, rebuildEdges, evenTrackMaps } from "./trackmaps.js";
 import { autoShare, reshareSession, unshareInvalid } from "./community.js";
 import { catMap, catOf, licOf } from "./categories.js";
 import { patreonWebhook } from "./patreon.js";
-import { lemonWebhook } from "./lemon.js";
+import { lemonWebhook, foundingCheck, FOUNDING } from "./lemon.js";
 import { stripeWebhook } from "./stripe.js";
 import PLANS from "../../license_plans.json";
 import { news } from "./news.js";
-import { sealData, openData } from "./crypt.js";
+import { openData } from "./crypt.js";
+import { sealTrace, dropTraces, lapTracePtrs, moveTraces } from "./tracestore.js";
 import { traceHole } from "./laphealth.js";
 import { gameOf } from "./games.js";
 import { noteCar } from "./carfamily.js";
 import VIEWER from "./viewer.html";
 import { community } from "./community.js";
 import { fillSectors } from "./lapsectors.js";
-import { accounts, sessionAccount, emailHash } from "./accounts.js";
+import { accounts, sessionAccount, emailHash, isAdmin } from "./accounts.js";
 import { live } from "./live.js";
 import { teamRoute } from "./team.js";
 import { seoPage, indexNow, notFound } from "./seo.js";
@@ -34,6 +36,7 @@ import { scanLeagues } from "./leaguescan.js";
 import { onlineRoute, prunePresence } from "./presence.js";
 import { winbackRoute } from "./winback.js";
 import { usageRoute, pruneUsage } from "./usage.js";
+import { metricsRoute, weeklyMetrics } from "./metrics.js";
 import { supportRoute } from "./support.js";
 import { sessionSummary, SESSION_SUMS, ALL_SESSION_SUMS } from "./sessionsum.js";
 import { FUEL_SUMS, fuelSince } from "./fuel.js";
@@ -42,7 +45,7 @@ import { pruneSeen } from "./seasonseen.js";
 import { legal } from "./legal.js";
 import { isLanding, landingPage } from "./landing.js";
 import { uninstallRoute } from "./uninstall.js";
-import { sendFeedback } from "./email.js";
+import { sendFeedback, sendThanks } from "./email.js";
 import { alertsRoute, weeklyAlerts, pruneAlerts, prunePushTokens } from "./alerts.js";
 import { reportsRoute, pruneReports, countingDB, flushUsage, routeKey } from "./reports.js";
 export { LiveRoom } from "./live.js";
@@ -75,7 +78,11 @@ async function who(req, env) {
   if (env.PITLANE_KEY && same(key, env.PITLANE_KEY)) return { role: "owner", name: "owner" };
   if (env.VIEW_KEY && same(key, env.VIEW_KEY)) return { role: "viewer", name: "viewer" };
   const m = await env.DB.prepare("SELECT name FROM members WHERE key_hash=?1").bind(await sha256(key)).first().catch(() => null);
-  return m ? { role: "member", name: m.name } : null;
+  if (m) return { role: "member", name: m.name };
+  // a PC with no account (its own token, POST /community/register): its laps teach the coach under that install's
+  // random id, with no name, until someone signs in there and they move to the account (anon.js). Upload only
+  const d = key.length >= 20 ? await deviceOf(env, await sha256(key)) : null;
+  return d ? { role: "device", name: DEV + d.id, dev: d } : null;
 }
 
 const str = (v, max = 120) => (typeof v === "string" ? v.slice(0, max) : v == null ? null : String(v).slice(0, max));
@@ -136,7 +143,7 @@ async function addLap(env, sessionId, l) {
   if (!idOk(sessionId) || !idOk(l.id) || !num(l.n) || !num(l.time) || l.time <= 0 || l.time > 3600) return "lap needs id, n and time";
   const plain = l.trace ? JSON.stringify(l.trace) : null;
   if (plain && plain.length > 900000) return "lap trace too large";
-  const trace = await sealData(env, plain); // telemetry is sealed at rest
+  // telemetry is sealed at rest, in the telemetry bucket or in the row (tracestore.js): only once the lap is really kept
   // the same lap read again from the game's telemetry file (repair): it replaces the account's copy, not valid, only
   // when that copy has a hole the live recording left (never a lap the driver really drove off the track)
   if (l.repair === true) {
@@ -147,18 +154,28 @@ async function addLap(env, sessionId, l) {
     try { tr = old.trace ? JSON.parse(await openData(env, old.trace)) : null; } catch (e) { tr = null; }
     if (!traceHole(tr) || l.valid === false || !plain) return null;
     const sectors = Array.isArray(l.sectors) ? JSON.stringify(l.sectors.filter((x) => typeof x === "number").slice(0, 40)) : null;
+    const trace = await sealTrace(env, plain, "l");
     await env.DB.prepare("UPDATE laps SET trace=?2, valid=1, sectors=COALESCE(?3, sectors), inc=?4 WHERE id=?1").bind(old.id, trace, sectors, Math.max(0, Math.round(num(l.inc) || 0))).run();
+    await dropTraces(env, [old.trace]); // the copy with the hole
     await env.DB.prepare(SESSION_SUMS).bind(sessionId).run().catch(() => {});
     return null;
   }
   const sectors = Array.isArray(l.sectors) ? JSON.stringify(l.sectors.filter((x) => typeof x === "number").slice(0, 40)) : null;
-  await env.DB.batch([
+  // a lap the account has already (the PC sends one again when it did not hear the answer) is left as it is
+  if (await env.DB.prepare("SELECT 1 FROM laps WHERE id=?1").bind(l.id).first().catch(() => null)) {
+    await env.DB.prepare(SESSION_SUMS).bind(sessionId).run();
+    return null;
+  }
+  const trace = await sealTrace(env, plain, "l");
+  const done = await env.DB.batch([
     env.DB.prepare(
       `INSERT INTO laps (id, session_id, n, time, valid, fuel, vmax, sectors, trace, created, inc, drv) VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12)
        ON CONFLICT(id) DO NOTHING`
     ).bind(l.id, sessionId, Math.round(l.n), l.time, l.valid === false ? 0 : 1, num(l.fuel), num(l.vmax), sectors, trace, Date.now(), Math.max(0, Math.round(num(l.inc) || 0)), lapDrv(l)),
     env.DB.prepare(SESSION_SUMS).bind(sessionId),
   ]);
+  // the same lap came in twice at once: the row kept the first, this telemetry has no row
+  if (done && done[0] && done[0].meta && done[0].meta.changes === 0) await dropTraces(env, [trace]);
   return null;
 }
 
@@ -168,6 +185,8 @@ async function api(req, env, url, ctx) {
   const role = me.role;
   const p = url.pathname;
   const m = req.method;
+  // a PC without an account only uploads: it reads nothing here (its laps are on the PC)
+  if (role === "device" && !(p === "/api/upload" && m === "POST")) return err("sign in with your Pitlane HQ account", 401);
 
   if (p === "/api/me") return json({ role, name: me.name, display: me.display });
   // accounts only ever see their own laps; the admins of this server read anybody's (to check a lap)
@@ -181,7 +200,12 @@ async function api(req, env, url, ctx) {
     const body = await req.json().catch(() => null);
     if (!body || !body.session) return err("bad upload", 400);
     // a member's sessions are kept apart from the owner's even with the same iRacing session id
-    if ((role === "member" || role === "account") && body.session.id) body.session.id = (me.name.replace(/[^A-Za-z0-9_.-]/g, "_") + ":" + body.session.id).slice(0, 80);
+    if (role === "device") {
+      // no name goes with it, and each install has a daily limit like every driver
+      body.session = anonSession(body.session);
+      if (!(await anonCount(env, me.dev, (body.laps || []).length))) return err("too many uploads today", 429);
+    }
+    if ((role === "member" || role === "account" || role === "device") && body.session.id) body.session.id = (me.name.replace(/[^A-Za-z0-9_.-]/g, "_") + ":" + body.session.id).slice(0, 80);
     // a session read afterwards from a telemetry file on the PC: a lap the account has already (the same time on the same
     // track and car within 12 hours of it, under any session) never comes in twice, whatever the PC checked before
     if (body.session.imported === true && Array.isArray(body.laps) && body.laps.length) {
@@ -198,7 +222,7 @@ async function api(req, env, url, ctx) {
     if (!e && posInt(body.session.trackId) && posInt(body.session.carId)) await reconcileIds(env, gameOf(body.session.game), str(body.session.track), str(body.session.trackConfig), str(body.session.car), posInt(body.session.trackId), posInt(body.session.carId)).catch(() => {});
     // a badge of a car family (NASCAR's, the Supercars', the SF23's) joins it the first time it is seen
     if (!e && posInt(body.session.carId)) await noteCar(env, gameOf(body.session.game), posInt(body.session.carId), str(body.session.car)).catch(() => {});
-    if (role === "member" || role === "account") body.laps = (body.laps || []).map((l) => ({ ...l, id: (me.name.replace(/[^A-Za-z0-9_.-]/g, "_") + ":" + l.id).slice(0, 80) }));
+    if (role === "member" || role === "account" || role === "device") body.laps = (body.laps || []).map((l) => ({ ...l, id: (me.name.replace(/[^A-Za-z0-9_.-]/g, "_") + ":" + l.id).slice(0, 80) }));
     if (e) return err(e, 400);
     for (const l of (body.laps || []).slice(0, 50)) {
       e = await addLap(env, body.session.id, l);
@@ -224,7 +248,7 @@ async function api(req, env, url, ctx) {
   // Home's four numbers over every session of the account since the device's start of the month (sessionsum.js)
   if (p === "/api/sessions/summary" && m === "GET") {
     const q = url.searchParams;
-    const sum = await sessionSummary(env.DB, { from: q.get("from"), tz: q.get("tz"), game: q.get("game") ? gameOf(q.get("game")) : null, uploader: own || q.get("who") || null });
+    const sum = await sessionSummary(env.DB, { from: q.get("from"), to: q.get("to"), tz: q.get("tz"), game: q.get("game") ? gameOf(q.get("game")) : null, uploader: own || q.get("who") || null });
     // ?pbs=1 (Home's "Your week", own account only): the cars and tracks whose best this period beats every one before
     if (q.get("pbs") === "1" && own) sum.pbs = pbsOf(((await env.DB.prepare(SQL_PBS).bind(own, sum.from).all().catch(() => ({ results: [] }))).results) || []).map((r) => ({ track: r.track, track_config: r.track_config || null, car: r.car, best: r.b, before: r.before }));
     return json(sum);
@@ -340,7 +364,7 @@ async function api(req, env, url, ctx) {
     if (!s || role === "viewer" || (own && s.uploader !== own)) return err("not found", 404);
     const b = await req.json().catch(() => ({}));
     const laps = Array.isArray(b.laps) ? b.laps.slice(0, 200) : [];
-    const stmts = [];
+    const stmts = [], replaced = [];
     const have = (await env.DB.prepare("SELECT n, trace FROM laps WHERE session_id=?1 AND COALESCE(inc,0)=0").bind(sid).all()).results || [];
     const byN = new Map(have.map((r) => [r.n, r]));
     for (const l of laps) {
@@ -348,18 +372,23 @@ async function api(req, env, url, ctx) {
       const at = Array.isArray(l.at) ? l.at.filter((v) => typeof v === "number" && isFinite(v)).slice(0, 160) : [];
       if (!n || !byN.has(n)) continue;
       const ks = Array.isArray(l.k) ? l.k.filter((v) => ["off", "loss", "light", "contact"].includes(v)).slice(0, 80) : [];
-      let trace = byN.get(n).trace;
+      let trace = byN.get(n).trace, swap = null;
       if (trace) {
         try {
           const t = JSON.parse(await openData(env, trace));
           t.inc = at;
           t.incK = ks;
-          trace = await sealData(env, JSON.stringify(t));
+          const was = trace;
+          trace = await sealTrace(env, JSON.stringify(t), "l");
+          swap = [was, trace];
         } catch (e) { /* an unreadable trace keeps what it has */ }
       }
       stmts.push(env.DB.prepare("UPDATE laps SET inc=?3, trace=?4 WHERE session_id=?1 AND n=?2 AND COALESCE(inc,0)=0").bind(sid, n, inc, trace));
+      replaced.push(swap);
     }
-    if (stmts.length) await env.DB.batch(stmts);
+    const done = stmts.length ? await env.DB.batch(stmts) : [];
+    // the telemetry written again: the object of before leaves the bucket, or the new one when its row did not change
+    await dropTraces(env, replaced.map((sw, i) => sw && sw[done && done[i] && done[i].meta && done[i].meta.changes === 0 ? 1 : 0]));
     return json({ ok: true, laps: stmts.length });
   }
 
@@ -381,7 +410,9 @@ async function api(req, env, url, ctx) {
     if (m === "DELETE") {
       const own = await env.DB.prepare("SELECT uploader FROM sessions WHERE id=?1").bind(mm[1]).first();
       if (role === "viewer" || ((role === "member" || role === "account") && (!own || own.uploader !== me.name))) return err("you can only delete your own sessions", 403);
+      const gone = await lapTracePtrs(env, "l.session_id=?1", mm[1]);
       await env.DB.batch([env.DB.prepare("DELETE FROM laps WHERE session_id=?1").bind(mm[1]), env.DB.prepare("DELETE FROM sessions WHERE id=?1").bind(mm[1])]);
+      await dropTraces(env, gone); // its telemetry leaves the bucket with it
       return json({ ok: true });
     }
     const sid = decodeURIComponent(mm[1]);
@@ -390,8 +421,10 @@ async function api(req, env, url, ctx) {
     // ?traces=1: every lap with its telemetry in one answer (the app's analyzer), instead of one call per lap
     const withTraces = url.searchParams.get("traces") === "1";
     const { results } = await env.DB.prepare(`SELECT id, n, time, valid, fuel, vmax, sectors, inc, drv${withTraces ? ", trace" : ""} FROM laps WHERE session_id=?1 ORDER BY n`).bind(sid).all();
-    const laps = [];
-    for (const l of results) laps.push({ ...l, sectors: l.sectors ? JSON.parse(l.sectors) : null, ...(withTraces ? { trace: l.trace ? JSON.parse(await openData(env, l.trace)) : null } : {}) });
+    // the telemetry of the laps, six at a time (the bucket's reads run side by side)
+    const traces = new Array(results.length).fill(null);
+    if (withTraces) for (let i = 0; i < results.length; i += 6) await Promise.all(results.slice(i, i + 6).map(async (l, j) => { try { traces[i + j] = l.trace ? JSON.parse(await openData(env, l.trace)) : null; } catch (e) { traces[i + j] = null; } }));
+    const laps = results.map((l, i) => ({ ...l, sectors: l.sectors ? JSON.parse(l.sectors) : null, ...(withTraces ? { trace: traces[i] } : {}) }));
     // another driver's session (an admin opening it): who it is, so the analyzer never calls their laps "my best"
     let who;
     if (me && s.uploader !== me.name && String(s.uploader || "").startsWith("acct:")) {
@@ -539,10 +572,18 @@ function harden(r) {
   return new Response(r.body, { status: r.status, statusText: r.statusText, headers: h });
 }
 
+const MOVE_CRON = "* * * * *"; // wrangler.toml's second timed job
 export default {
   // every 10 minutes: the models of the cars and tracks that got new laps
   async scheduled(ev, env, ctx) {
     if (isBeta(env)) return; // the test version (beta.js): the production Worker runs the timed jobs, never twice
+    // every minute, by itself: the laps of before go to the telemetry bucket, once the database says so (tracestore.js).
+    // Nothing else runs then, so the move has the whole run; once every lap is over it reads one row and stops
+    if (ev.cron === MOVE_CRON) {
+      const db = env.DB;
+      await moveTraces({ ...env, DB: countingDB(db, "cron 1 min") }, { limit: 400, ms: 45000, daily: true }).catch(() => {});
+      return flushUsage(db, true);
+    }
     // the repairs of old data once an hour (the first run of each hour), the rest every ten minutes
     // the database's reads per day are limited: the repairs that read the whole laps table (and find nothing almost
     // always: the uploads repair their own laps) run once a day, at 03:00 UTC
@@ -565,14 +606,15 @@ export default {
     // the next sessions give to every tip (coachlearn.js)
     ctx.waitUntil(shadowRun(env).then(() => answerRun(env)).catch(() => {}));
     if (hourly) { ctx.waitUntil(fillCats(env).catch(() => {})); ctx.waitUntil(fillSectors(env).catch(() => {})); ctx.waitUntil(pruneUsage(env).catch(() => {})); ctx.waitUntil(pruneSeen(env).catch(() => {})); ctx.waitUntil(refCheck(env).catch(() => {})); }
-    if (daily) { ctx.waitUntil(buildOvalKinds(env).catch(() => {})); ctx.waitUntil(fixLapTimes(env).catch(() => {})); ctx.waitUntil(repairImpossibleShares(env).catch(() => {})); ctx.waitUntil(env.DB.prepare(ALL_SESSION_SUMS).run().catch(() => {})); ctx.waitUntil(env.DB.prepare(FUEL_SUMS).bind(fuelSince(at.getTime())).run().catch(() => {})); } ctx.waitUntil(resharePending(env).catch(() => {})); ctx.waitUntil(rebuildTrackMaps(env).catch(() => {})); ctx.waitUntil(rebuildEdges(env).catch(() => {})); ctx.waitUntil(scanLeagues(env).catch(() => {})); ctx.waitUntil(prunePresence(env).catch(() => {}));
+    if (daily) { ctx.waitUntil(weeklyMetrics(env).catch(() => {})); ctx.waitUntil(anonPrune(env).catch(() => {})); ctx.waitUntil(buildOvalKinds(env).catch(() => {})); ctx.waitUntil(fixLapTimes(env).catch(() => {})); ctx.waitUntil(repairImpossibleShares(env).catch(() => {})); ctx.waitUntil(env.DB.prepare(ALL_SESSION_SUMS).run().catch(() => {})); ctx.waitUntil(env.DB.prepare(FUEL_SUMS).bind(fuelSince(at.getTime())).run().catch(() => {})); } ctx.waitUntil(resharePending(env).catch(() => {})); ctx.waitUntil(rebuildTrackMaps(env).catch(() => {})); ctx.waitUntil(evenTrackMaps(env).catch(() => {})); ctx.waitUntil(rebuildEdges(env).catch(() => {})); ctx.waitUntil(scanLeagues(env).catch(() => {})); ctx.waitUntil(prunePresence(env).catch(() => {}));
     wait(Promise.allSettled(all).then(() => flushUsage(raw, true)));
   },
   async fetch(req, env, ctx) {
     // the rows each route reads and writes, for the admin page's Health (reports.js); about once a minute they are kept
     if (!env.DB) return betaHeaders(harden(await handle(req, env, ctx).catch(gatedAnswer)), env);
     const raw = env.DB, url = new URL(req.url);
-    try { return betaHeaders(harden(await handle(req, { ...env, DB: countingDB(raw, routeKey(req.method, url.pathname)) }, ctx).catch(gatedAnswer)), env); }
+    // ROOT: this env itself, the same object for every request of this server (what a memo is kept by, seo.js readHas)
+    try { return betaHeaders(harden(await handle(req, { ...env, ROOT: env, DB: countingDB(raw, routeKey(req.method, url.pathname)) }, ctx).catch(gatedAnswer)), env); }
     finally { ctx.waitUntil(flushUsage(raw)); }
   },
 };
@@ -613,6 +655,8 @@ async function handle(req, env, ctx) {
     // the admin page's Online tab: who is on the web, the PC or the phones now (presence.js)
     // the admin page's Activity part: when each account last used Pitlane HQ, and the "we miss you" email (winback.js)
     if (url.pathname === "/community/admin/activity" || url.pathname.startsWith("/community/admin/winback")) return winbackRoute(req, env, url).catch((e) => new Response(JSON.stringify({ error: "server error: " + (e && e.message) }), { status: 500, headers: { "content-type": "application/json" } }));
+    // the admin Analytics' weekly numbers, cohorts, counter health and tagged links (metrics.js)
+    if (url.pathname.startsWith("/community/admin/metrics") || url.pathname.startsWith("/community/admin/links")) return metricsRoute(req, env, url).catch((e) => new Response(JSON.stringify({ error: "server error: " + (e && e.message) }), { status: 500, headers: { "content-type": "application/json" } }));
     if (url.pathname === "/community/admin/online" && req.method === "GET") return onlineRoute(req, env).catch((e) => new Response(JSON.stringify({ error: "server error: " + (e && e.message) }), { status: 500, headers: { "content-type": "application/json" } }));
     // what the drivers use and what they tell us (usage.js): the usage batches, the feedback window, the visits, the admin's analytics
     if (url.pathname.startsWith("/community/usage") || url.pathname === "/community/live/popular" || url.pathname.startsWith("/community/feedback") || url.pathname === "/community/visit" || url.pathname === "/community/admin/analytics" || url.pathname.startsWith("/community/admin/feedback")) {
@@ -716,7 +760,7 @@ async function handle(req, env, ctx) {
     // Lemon Squeezy tells the server about purchases: Pitlane HQ Pro on the account
     if (url.pathname === "/lemonsqueezy/webhook" && req.method === "POST") return lemonWebhook(req, env);
     // Stripe tells the server about Pro purchases (stripe.js)
-    if (url.pathname === "/stripe/webhook" && req.method === "POST") return stripeWebhook(req, env, emailHash, { supportLink: (PLANS.donate && PLANS.donate.link) || "" });
+    if (url.pathname === "/stripe/webhook" && req.method === "POST") return stripeWebhook(req, env, emailHash, { supportLink: (PLANS.donate && PLANS.donate.link) || "", founding: foundingCheck, isAdmin, thanks: (e, to, o) => sendThanks(e, to, { ...o, f: FOUNDING }) });
     if (url.pathname === "/voice/ice" && req.method === "GET") return voiceIce(env);
     // the admin page: the app opened on it (only the admins see anything there)
     if (url.pathname === "/admin" && req.method === "GET") return Response.redirect(url.origin + "/app#admin", 302);

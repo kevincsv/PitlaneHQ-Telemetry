@@ -17,7 +17,7 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   it until then. A subscription or refund never takes away a lifetime or a Pro given by hand (`setPro` in prostore.js).
   Lemon Squeezy (`lemon.js`, POST `/lemonsqueezy/webhook`, LEMONSQUEEZY_WEBHOOK_SECRET) still works for what was bought
   there; `provider` in license_plans.json says which one the admin page checks. A buyer without an account gets Pro
-  when they sign up with that email (pro_orders). Pro can also be given by hand on the admin page. Donations: a Stripe Support link, $1 or more (`donate.buy` in license_plans.json, `DONATE_URL`/`donateUrl()` in index.html, on the About panel's Support box, the Account card, the leagues form and the inbox's Support item; PC and web only, since the phone stores do not allow outside payments, and never in the Steam app). Patreon is no longer linked anywhere (the owner's choice), but its webhook still gives the badge to anyone who joins there. A Stripe donation (client_reference_id `support-<account id>`, or the session's payment_link equal to `donate.link`) gives the ♥ Supporter badge (supporter_src 'stripe'), never Pro, and a donor without an account gets it when they sign up. No Pro, subscription or lifetime is sold while Pitlane HQ is in beta (the owner's choice). The Account card is hidden for now
+  when they sign up with that email (pro_orders). Pro can also be given by hand on the admin page. Donations: a Stripe Support link, $1 or more (`donate.buy` in license_plans.json, `DONATE_URL`/`donateUrl()` in index.html, on the About panel's Support box, the Account card, the leagues form and the inbox's Support item; PC and web only, since the phone stores do not allow outside payments, and never in the Steam app). Patreon is no longer linked anywhere (the owner's choice), but its webhook still gives the badge to anyone who joins there. A Stripe donation (client_reference_id `support-<account id>`, or the session's payment_link equal to `donate.link`) gives the ♥ Supporter badge (supporter_src 'stripe'), never Pro, and a donor without an account gets it when they sign up. A donation from an admin's account is a test of the link: kept with status 'test', no badge, no founding offer, and left out of every count and total in Analytics. No Pro, subscription or lifetime is sold while Pitlane HQ is in beta (the owner's choice). The Account card is hidden for now
   (`PRO_CARD_ON` false in index.html) until the owner says otherwise.
   Pro limits only the PC (its experimental overlays and the programs it starts); the web and the phones only receive and always have
   everything. Pro lives on one PC at a time (`pcid.go`: a hash of Windows' MachineGuid, sent as `?pc=` on `/community/pro`
@@ -27,7 +27,7 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   basic overlays; `proAppsAllowed`: the first 3 programs of the list), and the app asks for Pro on a fourth program.
 
 - PRO badges (`proB()` in index.html, `ProBadge` on the phones): a small amber PRO on what will be part of Pro when the
-  beta ends, while it is free for everyone: the coach plan chip on the map, "Compare with the community" (and the
+  beta ends, while it is free for everyone: the Statistics tab (the owner's choice, Nov 15 2026, the badge beside its period switch, also on the pricing lists), the coach plan chip on the map, "Compare with the community" (and the
   phones' next level, record and friend references), corner consistency, offs explained, race fuel, More charts, Ask
   the coach and the experimental overlays. Pressing one opens a small window (`proInfo()`) saying it is free during the beta and part of Pro after it ($6 a month or $59 a year), with See pricing (the public `/pricing` page) and, where donations are offered, the supporters' offer and Support Pitlane HQ (a supporter reads that their 50% is locked in instead). The phones keep their own note without the offer (store rules). The
   sign-up form, the Support box and its inbox item say Pitlane HQ is free while it is in beta; so does the Discord
@@ -39,6 +39,20 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   they keep it ($3 a month or $29.50 a year), still if they come back within two months of stopping, and can buy Pro for
   life for $29.99 within two months of the beta ending. A supporter's own profile says "You are a founding supporter. Your
   50% off Pro is locked in." (PC, web and phones). None of it is built into the payments yet.
+- The offers for the day Pro is switched on (the owner's choice, Nov 15 2026; `license_plans.json`, `cloud/src/lemon.js`,
+  migration 0103; all of it does nothing while the gate is off):
+  - Founding supporter needs $3 or more in donations in all (the owner's choice, Nov 15 2026) (`founding.min`, `foundingCheck` adds up the account's
+    `pro_orders` of kind 'supporter'; `accounts.founder`). A smaller gift keeps the ♥ Supporter badge without the
+    offer. Whoever was a supporter before migration 0103, and Patreon's patrons, are founders. The 50% and the Pro for
+    life offer are the founders' (`isFounder()` in index.html, `founder` on /account/me and the sign-in).
+  - A new account gets 14 days of Pro (`trialDays`, `trialOnRegister`, `accounts.trial_until`, `proSrc` "trial"), only
+    when it is made with Pro switched on, and once per PC (`trial_pcs`: the second account that reports the same PC
+    reads `trialUsed` and has no Pro from it). A purchase always wins over the trial. The PRO window says the days left.
+  - Switching Pro on gives every account made before that day one month of Pro (`launch.thanksMonths`, `proLaunch`,
+    once, app_state `pro_launch`): it goes to the account's banked months (`ref_months`), which start that hour like
+    the invites' months.
+  - The admin page's Pro panel shows the prices, the trial days, the thanks month, and counts founders and trials.
+  - Comparing with the next driver up stays free; the rest of "Compare with the community" is Pro.
 
 - Invite a friend (`cloud/src/referrals.js`, migration 0100, `invite` in license_plans.json, the card at the top of
   Community → Friends on every device, `inviteHTML()` in index.html). Every account has a short code (8 letters and

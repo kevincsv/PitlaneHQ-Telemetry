@@ -12,7 +12,8 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   a thin amber outline. On computers the main tabs are a 208 px sidebar with the logo and each tab's icon and word; on
   phones and narrow windows the bottom bar, and the header on one line (the version moves to Settings → About).
   The lap analyzer (Pit Wall Workspace, `pw3-laps` in index.html): Lap A vs lap B across the top, then four numbers
-  (A vs B, Costs the most, Furthest behind, Corners vs straights, and Gains most when A gains somewhere), then three
+  (A vs B, Costs the most, Furthest behind, Corners vs straights, and Gains most when A gains somewhere; on phones and
+  narrow windows two per row, an odd last one across the whole width, so every value reads in full), then three
   columns. Left: Laps (My laps and Community with its PRO badge) and Sectors (a table, A, B and the gap). Middle: the
   charts in one panel, its Show chips (filled amber when on) and then one titled chart per channel on one distance axis
   (Speed, Gap to lap B, Throttle, Brake, Gear, Steering, Line), each with its legend and, on the right, the values at
@@ -212,7 +213,43 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   car the model knows (`homeBriefHTML`); pressed, it opens the whole guide.
 - The lap compare map (Analysis and the coach, every device) has "▶ Replay": A and B drive the map together on the same
   clock, four times as fast, with the gap in metres and seconds and a bar to scrub (`cmpReplay`; the phones' TrackMap).
+- "⛶ Full screen" beside "▶ Replay" on the lap compare map (Analysis → Laps and the Coach, the PC app and the web;
+  `openFullMap` in index.html, `web/dist/pitwall-fullmap.js`) opens the map over the whole window. The road is drawn at
+  its real width, the same way up as the small map it was opened from (`pickRot`, the rule and angle of `fitTurn`; `frame`
+  for a small map of another size), with lap B's line wider under lap A's so both show where they are on top of each
+  other (the edges the drivers' laps give, `/community/trackmaps` `edges`, else 13 m), with both laps' racing
+  lines on it (each lap's path put on the road: from the game's position as it is, a path by dead reckoning fitted onto
+  the layout; a lap without a path or one that does not fit has no line), A's and B's braking points ("A 182→96" beside
+  them when zoomed in) and slowest points, the turns with their names (a press zooms on the turn), the sectors, the
+  start/finish line and where A gains or loses against B as green and red kerbs. The wheel, + and −, two fingers or a
+  double click zoom (down to the road filling the screen); a drag moves it; ⤢ shows the whole track; ◎ follows lap A.
+  Under it the speed of both laps, the gap and the pedals share one cursor with the map (hover or tap either), the part
+  of the lap on screen shaded; ▶ plays both laps on the same clock at 1×, 2×, 4× or 8×. Keys: Esc closes, + − 0, the
+  space bar plays, ← → move the cursor 5 m (Shift 50 m). The chips (Racing lines, Braking, Slowest points, Turns, A vs B
+  time) are kept on the device (`pw.fmap`). "Chase" (beside the zoom buttons) puts the camera behind and
+  above the car on the middle of the road, pointed along it (so it never shakes), with lap A's car as an arrow that moves
+  across the road, some track behind it in view and the road, both lines, kerbs and turns ahead in perspective as the
+  replay runs; the wheel and + − move the camera closer or further. The replay keeps the screen's refresh rate: the
+  chase view is a canvas drawn in a few paths that lowers its own resolution when frames come late, the telemetry's
+  cursor is moved without redrawing the traces. The same map opens from the Coach's track map (the same button) and
+  from a press on the Leaderboards' track map (community.md). What is drawn is corrected so it moves evenly (the
+  owner's choice, 2026-11-15, corrections nobody can see): the layout is drawn again as a smooth curve with a point every
+  3 m of road (`roadOf`: a game that gives its position slowly leaves points on top of each other, gaps of 15 m and a
+  step to the side where two laps were joined), and a lap's line is its side of the road read at even steps and averaged
+  over about 12 m (`lineOf`), followed as a curve (`atLine`). Closing it leaves the analyzer's cursor where the map's was. The phones do
+  not have it yet (no phone work for now, the owner's choice).
 - The race summary has "Race pace" against the cars around you (coach-and-model.md, `racePace`).
+- The race summary opens by itself on the PC about three seconds after a race is saved (`onRaceReport`), so it is
+  there when the driver looks at the app: never over an open window, and not when the driver touched the app in the
+  last minute. Under the result it shows "Leaderboard" (`raceBoard`, `boardStand`): the place of the driver's best lap
+  there on the community board of that car and track, the next driver up with the gap, "Compare with <name>" (the
+  race's session in the lap analyzer with that lap as lap B, `raceCompareNext`; comparing with the next driver up
+  stays free when Pro is on), the board, and after a top 3 or places gained "Invite a friend" (the invite card).
+- Home has "Time to beat" (`homeTargetHTML`): at the car and track of the newest session with a best lap, the place on
+  the community board, your best, the next time above it with its driver and the gap, and a button to the board.
+  Nothing shows without a board there. "Your week" becomes "Last week" (last Monday to this Monday, GET
+  /api/sessions/summary with `to`) until the first session of the new week, and with new personal bests it offers
+  "Invite a friend". Both cards are on the Workspace Home and the older Home, PC and web (the phones later).
 
 ## Beyond one lap: corner consistency, offs explained, race fuel, more charts
 

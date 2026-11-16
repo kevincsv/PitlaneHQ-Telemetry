@@ -13,6 +13,21 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   copy, a password change keeps it, deleting the account deletes it; the laps' telemetry is stored sealed on the
   server (DATA_KEY), which opens it to teach the model and share the fastest laps; live telemetry with a code is
   end-to-end. The analysis of your laps runs on your device.
+- Where a lap's telemetry is kept (`cloud/src/tracestore.js`, test `cloud/test/trace-store.test.mjs`): in its own R2
+  bucket (`pitlanehq-telemetry`, binding `TRACES`), gzipped and then sealed with DATA_KEY (`packData` in `crypt.js`,
+  about a quarter of what the database column took), and `laps.trace` / `community_laps.trace` keep `r2:` and the
+  object's key. `openData` opens that, a trace sealed in the column (`enc:`) and a plain one of before, so every reader
+  works with all three and `trace IS NOT NULL` still means "has telemetry". Writing to the bucket is off until the
+  database says so (`app_state` `trace_store` = `r2`): pitlanehq.app and the test version share the database, so both
+  run this code before the row is set; taking the row away puts new laps back in the column and breaks nothing. An
+  object belongs to one row and is never rewritten: a lap shared to the leaderboard gets its own copy (`ownTrace`, key
+  `c/…`), a lap's own (`l/…`) leaves the bucket when its session or account is deleted, when the lap is repaired and
+  when its incidents are written again (`dropTraces`); a leaderboard lap's object is never deleted (an undone driver
+  link puts rows back with their telemetry). The laps of before move over in a timed job of their own, every minute (`moveTraces`, up to
+  400 laps and 45 seconds a run, its place in `app_state` `trace_move`; sharing the 10-minute job with the model's
+  rebuild moved about 40 a run): each one is read back from the bucket and must be the same text
+  before its row changes, the row changes only if it still holds what was read, and one that does not open keeps what
+  it has. A server without the bucket keeps everything in the column as before.
 - Signing in with an email that has no account says so and offers to create it (`no_account`).
 - Steam, Discord and Google (the owner's choice, Oct 31): "Continue with …" on the sign-in screen of every device, and above the "Create an account" form of the web and the PC (the phones send "Create an account" to the web). When
   that Steam, Discord or Google account has no Pitlane HQ account yet, it is made at once with no form (`quick` on POST
@@ -52,6 +67,33 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   "Keep my laps in my account" switch is gone: a PC that had it off uploads again (its `noLaps` is ignored and the synced prefs always say
   `lapsToAccount: true`, so an older PC that reads them turns its switch back on). One
   public name per account: changing it anywhere changes it everywhere, shared laps included.
+- A PC without an account still teaches the coach (the owner's choice, Nov 15 2026; `cloud/src/anon.js`, `anonCloud()`
+  in cloud.go): with nobody signed in and no own site set up, the agent uploads its laps to POST /api/upload with the
+  PC's own token (the one POST /community/register gives it, asked for when missing), with no driver name and no
+  licence. The server keeps them as sessions of `dev:<the install's random id>`: they show nowhere (no leaderboard, no
+  profile, no list, and that token reads nothing from /api), the model (`learnNewLaps`) and the server's coach
+  (`shadowRun`) learn from them like from an account's, and each install has the daily limit of 1500 laps. When
+  someone creates an account or signs in on that PC (`plAdopt`, POST /community/adopt, `anonAdopt`) its sessions, laps
+  and the coach's tips on them become the account's. Laps no account claimed are deleted after 180 days (`anonPrune`,
+  daily); what the model learnt stays. An account waiting for its email confirmation uploads nothing either way. The
+  privacy policy says all of this (`legal.js`, and the short notice the installer ships, `docs/legal/PRIVACY.md`).
+- Trying it without an account (the owner's choice, Nov 15 2026; `tryout.go`, `cloud/src/tryout.js`): the PC app works
+  with nobody signed in for 3 sessions (`tryLimit`), then asks for a free account. A session counts once a lap of it is
+  finished on that PC (`tryNote` in `finishLap`; an imported .ibt never counts, the same session counts once). The
+  third session goes on while its laps come: the app asks once it has had no lap for 20 minutes (`tryGrace`), or at
+  once when a lap of a fourth session comes (that one is not counted). Then the PC app shows the sign-in wall with one
+  line saying the sessions are used (`signWall`, the Create an account form first) and no overlay opens
+  (`openNamedOverlay` answers `errTryOver`; the ones open close). Before that, the first open says it once (`tryTell`,
+  pw.tryTold: the 3 trial sessions, then sign in or create a free account to keep using every feature, everything
+  driven is saved and goes to the account), Home has the same line with the trial sessions left and Create a free
+  account (`tryingOn`, `homeHealth`), and the leaderboards question (`askShare`) waits until someone
+  signs in. The PC keeps its count in the data folder (`tryout.json`) and tells the server (POST
+  /community/tryout {pc, session}, no account, the PC's `pcID()` hash of Windows' own machine id, 10 rows a PC at
+  most, table `tryout_pcs`, migration 0106); the agent reads the server's count when it starts (GET
+  /community/tryout?pc=), so reinstalling does not start it again. `plStatus` says `tryUsed`, `tryLimit` and
+  `tryLocked`; an agent without them keeps the wall from the first moment. An admin signed in on a PC starts its count
+  again, there and on the server (/account/me with that ?pc=), to try it as a new driver would. Signing out after the
+  sessions are used shows the wall again. The web and the phones need an account as before.
 - Deleting your own account never deletes what the leaderboard shows or what the model learns from:
   those laps stay as an anonymous driver (`deleteAccount` in `cloud/src/accounts.js`); everything
   else of the account goes (its alerts, notification settings and phone tokens too). Its team memberships and its stints in the

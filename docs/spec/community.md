@@ -21,7 +21,9 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   (your numbers, your leaderboards with the record of each and how your best came down over your last sessions:
   `rec` and `trend` on /profile?me=1; the latest records; you in the community), Leaderboards (the table with the
   sectors, 20 drivers in view and the rest scrolling inside under its header, and the track map coloured by sector against your lap, or the record when you have none: the shape and
-  where each sector ends from a lap of the board with its telemetry, `commMapGeo`) and Recent records. The discipline
+  where each sector ends from a lap of the board with its telemetry, `commMapGeo`; a press on it opens the full-screen
+  map of app-screens.md with the driver chosen as lap A against your lap, or the record, as lap B, when the board has a
+  lap with its telemetry, `commFullMap`) and Recent records. The discipline
   cards sit above Leaderboards and Recent records and filter both; Leaderboards has no "Only mine" switch. On a phone
   (520 px or less) the cards are one per line with the count on the right, the track and car pickers stack, and the table
   is Pos, Driver, Time and Gap (the sectors are on wider screens), the name cut short with "…" when it does not fit.

@@ -5,6 +5,8 @@
 import { sessionAccount, isAdmin, isTester, nameTaken, purgeAccount, emailHash, cleanName } from "./accounts.js";
 import { mailReady, mailLog, mailDomain } from "./email.js";
 import { sealData, openData } from "./crypt.js";
+import { ownTrace } from "./tracestore.js";
+import { tryoutRoutes } from "./tryout.js";
 import { getModel, forCompound, getCarCard, likeFor, markModel, forgetLap, pseudoId, PSEUDO_MIN, moveDriver, slowsOf } from "./model.js";
 import { linkDriver, unlinkDriver } from "./driverlinks.js";
 import { recordSeen, seenSummary } from "./seasonseen.js";
@@ -61,10 +63,11 @@ import { famId, famIds, famName, famGroups, noteCar } from "./carfamily.js";
 import { proRoutes } from "./lemon.js";
 import { referralRoutes } from "./referrals.js";
 import { coachTipRoutes } from "./coachtips.js";
+import { anonAdopt, anonForget } from "./anon.js";
 import { lmuApiRoutes } from "./lmuapi.js";
 import { turnsFromPath } from "./trackgeo.js";
 import { refTurns, refNames } from "./turnsref.js";
-import { turnCount, noteTurnCount, rebuildTrackMaps, traceLen, fitsLayout, layoutN } from "./trackmaps.js";
+import { turnCount, noteTurnCount, rebuildTrackMaps, traceLen, fitsLayout, layoutN, evenPath } from "./trackmaps.js";
 import { estimateTrace } from "./pedals.js";
 import { discordLapAlert } from "./discord.js";
 import { recordBeaten, testerAlert, testAskAlert } from "./alerts.js";
@@ -129,15 +132,18 @@ export async function keepBestLap(env, uid, x) {
   const wet = x.wet !== undefined ? x.wet : await sealedWet(env, x.trace);
   // a lap without its sectors takes them from its trace (a race rival's lap the PC did not time by thirds)
   const sectors = x.sectors && x.sectors !== "[]" ? x.sectors : (await sealedSectors(env, x.trace, x.time)) || x.sectors || null;
+  // the lap's telemetry as this row keeps it: its own object in the telemetry bucket, never the one of the account's
+  // lap it came from (tracestore.js), so a session deleted later leaves the leaderboard's lap whole
+  const trace = await ownTrace(env, x.trace || null, "c");
   await env.DB.prepare(
     `INSERT INTO community_laps (id, user_id, car_id, car, track_id, track, time, sectors, trace, created, anon, game, shown, lic, cat, official, ai, cls, wet) VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14,?15,?16,?17,?18,?19)
      ON CONFLICT(user_id, car_id, track_id) DO UPDATE SET time=excluded.time, sectors=excluded.sectors, trace=excluded.trace, created=excluded.created, car=excluded.car, track=excluded.track, anon=excluded.anon, game=excluded.game, shown=excluded.shown,
        lic=COALESCE(excluded.lic, community_laps.lic), cat=COALESCE(excluded.cat, community_laps.cat), official=excluded.official, ai=excluded.ai, cls=COALESCE(excluded.cls, community_laps.cls), wet=excluded.wet`
-  ).bind(rid(), uid, x.carId, str(x.car), x.trackId, str(x.track), x.time, sectors, x.trace || null, Date.now(), x.anon ? 1 : 0, x.game, x.shown || "nick", licOf(x.lic), str(x.cat, 20), officialOf(x.official), x.ai ? 1 : null, cls, wet ?? null).run();
+  ).bind(rid(), uid, x.carId, str(x.car), x.trackId, str(x.track), x.time, sectors, trace, Date.now(), x.anon ? 1 : 0, x.game, x.shown || "nick", licOf(x.lic), str(x.cat, 20), officialOf(x.official), x.ai ? 1 : null, cls, wet ?? null).run();
   await markModel(env, x.game, x.trackId, x.carId);
   // improved: a faster lap than the one shared before (the Discord alerts), not only its telemetry added
   const improved = !old || old.game !== x.game || x.time < old.time;
-  const res = { shared: true, traced: !!x.trace, improved, prev: old && old.game === x.game ? old.time : null, game: x.game, trackId: x.trackId, carId: x.carId, track: x.track, car: x.car, time: x.time, anon: !!x.anon, ai: !!x.ai, shown: x.shown };
+  const res = { shared: true, traced: !!trace, improved, prev: old && old.game === x.game ? old.time : null, game: x.game, trackId: x.trackId, carId: x.carId, track: x.track, car: x.car, time: x.time, anon: !!x.anon, ai: !!x.ai, shown: x.shown };
   // a new best lap: the Discord servers of its driver hear about it (x.ctx only where a lap was just driven)
   if (improved && x.ctx) x.ctx.waitUntil(discordLapAlert(env, uid, res).catch(() => {}));
   return res;
@@ -297,6 +303,7 @@ export async function community(req, env, url, ctx) {
   { const la = await lmuApiRoutes(req, env, p, m, url); if (la) return la; } // admins: what LMU's own API answered (lmuapi.js; its body is gzipped)
   const body = m === "POST" ? await req.json().catch(() => ({})) : {};
 
+  { const tr = await tryoutRoutes(env, p, m, body, url); if (tr) return tr; } // trying it without an account: tryout.js
   if (p === "/register" && m === "POST") {
     const id = rid(), token = rid() + rid();
     await env.DB.prepare("INSERT INTO community_users (id, token_hash, alias, created) VALUES (?1,?2,?3,?4)").bind(id, await sha256(token), cleanAlias(body.alias), Date.now()).run();
@@ -1236,8 +1243,11 @@ export async function community(req, env, url, ctx) {
     );
     await env.DB.batch(q);
     await moveDriver(env, "acct:" + d.id, "acct:" + u.id);
+    // what that PC uploaded before anyone signed in on it (anon.js): its sessions and laps are the account's now
+    const anon = await anonAdopt(env, d.id, u.id).catch(() => 0);
+    if (anon) await moveDriver(env, "dev:" + d.id, "acct:" + u.id);
     for (const c of combos) { const [g, tr, ca] = c.split("|"); await markModel(env, g, +tr, +ca); }
-    return json({ adopted: laps.length });
+    return json({ adopted: laps.length, sessions: anon });
   }
   // the names of the race rivals this account's PC shared before their names went up (they stayed "Anonymous"): the
   // PC's race history knows each rival's name, car, track and best lap, and the rival whose lap is that one takes
@@ -1296,6 +1306,7 @@ export async function community(req, env, url, ctx) {
       env.DB.prepare("DELETE FROM community_setups WHERE user_id=?1").bind(u.id),
       ...(u.account ? [] : [env.DB.prepare("DELETE FROM community_users WHERE id=?1").bind(u.id)]),
     ]);
+    if (!u.account) await anonForget(env, u.id); // and what the PC uploaded without an account
     return json({ deleted: true });
   }
   // a lap from your account to the community: the one you chose, or the session's fastest valid lap
@@ -1390,7 +1401,7 @@ export async function community(req, env, url, ctx) {
     await env.DB.prepare(
       `INSERT INTO track_maps (game, track_id, track, n, len, pts, time, user_id, created, geo) VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10)
        ON CONFLICT(game, track_id) DO UPDATE SET track=excluded.track, n=excluded.n, len=excluded.len, pts=excluded.pts, time=excluded.time, user_id=excluded.user_id, created=excluded.created, geo=excluded.geo`
-    ).bind(game, trackId, str(body.track), n, num(body.len), JSON.stringify({ x: x.map(r2), y: y.map(r2) }), time, u.id, Date.now(), g ? JSON.stringify(g) : null).run();
+    ).bind(game, trackId, str(body.track), n, num(body.len), JSON.stringify(evenPath(x, y) || { x: x.map(r2), y: y.map(r2) }), time, u.id, Date.now(), g ? JSON.stringify(g) : null).run();
     return json({ shared: true });
   }
   if (p === "/pitlane" && m === "POST") {

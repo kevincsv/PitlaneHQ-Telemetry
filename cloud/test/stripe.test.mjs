@@ -107,3 +107,60 @@ const sec = (ms) => Math.floor(ms / 1000), DAY = 86400e3;
   assert.deepEqual({ ...o }, { kind: "supporter", account_id: null }, "kept for a later account, not as Pro");
 }
 console.log("stripe.test: ok");
+
+// the founding supporter offer: donations of $3 or more in all; smaller gifts keep the badge alone. The new account's
+// days of Pro and the launch's thank-you month start only once Pro is on
+{
+  const { register } = await import("node:module");
+  // the Worker imports JSON without import attributes (wrangler bundles it): node reads it as a module here
+  register("data:text/javascript," + encodeURIComponent(`import {readFile} from "node:fs/promises";export async function load(u,c,n){if(u.endsWith(".json"))return {format:"module",source:"export default "+await readFile(new URL(u),"utf8"),shortCircuit:true};return n(u,c)}`));
+  const { foundingCheck, proOf, trialOnRegister, proLaunch, proGateReset, TRIAL_DAYS, FOUNDING } = await import("../src/lemon.js");
+  assert.equal(FOUNDING.min, 3); assert.equal(TRIAL_DAYS, 14);
+  const give = async (acc, cents, id, email) => {
+    const body = JSON.stringify({ id: "evt_f" + id, type: "checkout.session.completed", data: { object: { id: "cs_f" + id, mode: "payment", payment_status: "paid", payment_intent: "pi_f" + id, payment_link: "plink_x", amount_total: cents, currency: "usd", ...(acc ? { client_reference_id: "support-" + acc } : {}), ...(email ? { customer_details: { email } } : {}) } } });
+    const r = await stripeWebhook(new Request("https://x/stripe/webhook", { method: "POST", body, headers: { "stripe-signature": sign(body) } }), env, emailHash, { supportLink: "plink_x", founding: foundingCheck });
+    return r.json();
+  };
+  const row = (id) => db.prepare("SELECT supporter, founder, trial_until, ref_months FROM accounts WHERE id=?").get(id);
+  acct("acctfound1", "f1@x.io"); acct("acctfound2", "f2@x.io");
+  assert.equal((await give("acctfound1", 150, 1)).founder, false);
+  assert.deepEqual([row("acctfound1").supporter, row("acctfound1").founder], [1, 0], "$1.50: the badge, not the offer");
+  assert.equal((await give("acctfound1", 150, 2)).founder, true, "$1.50 + $1.50 reaches the floor");
+  assert.equal(row("acctfound1").founder, 1);
+  assert.equal((await give("acctfound2", 300, 3)).founder, true, "$3 at once");
+  // a donor without an account: the offer waits for their sign-up
+  assert.equal((await give(null, 2500, 4, "later@x.io")).founder, true);
+  // trial and launch month: nothing while Pro is off
+  acct("accttrial1", "t1@x.io");
+  proGateReset();
+  assert.equal(await trialOnRegister(env, "accttrial1"), 0, "no trial during the beta");
+  assert.equal(proOf(row("accttrial1")).pro, false);
+  db.prepare("INSERT INTO app_state (k, v, at) VALUES ('pro_gate','1',1) ON CONFLICT(k) DO UPDATE SET v='1'").run();
+  proGateReset();
+  const before = row("acctfound1").ref_months;
+  db.prepare("UPDATE accounts SET created=1").run();
+  assert.equal((await proLaunch(env)).launched, true);
+  assert.equal(row("acctfound1").ref_months, before + 1, "the thank-you month for the beta's accounts");
+  assert.equal((await proLaunch(env)).launched, false, "only once");
+  assert.equal(row("acctfound1").ref_months, before + 1);
+  const until = await trialOnRegister(env, "accttrial1");
+  assert.ok(until > Date.now() + 13 * DAY && until < Date.now() + 15 * DAY);
+  assert.deepEqual(proOf(row("accttrial1")), { pro: true, proSrc: "trial", proUntil: until });
+  assert.equal(proOf({ trial_until: Date.now() - 1 }).pro, false, "the trial ended");
+  assert.equal(proOf({ pro: 1, pro_src: "subscription", pro_until: 0, trial_until: until }).proSrc, "subscription", "a purchase wins");
+  db.prepare("UPDATE app_state SET v='0' WHERE k='pro_gate'").run(); proGateReset();
+  // an admin's donation is a test: kept as 'test', no badge, no offer, never counted
+  acct("acctadmin1", "a1@x.io");
+  const body = JSON.stringify({ id: "evt_adm", type: "checkout.session.completed", data: { object: { id: "cs_adm", mode: "payment", payment_status: "paid", payment_intent: "pi_adm", payment_link: "plink_x", amount_total: 500, currency: "usd", client_reference_id: "support-acctadmin1" } } });
+  const r = await (await stripeWebhook(new Request("https://x/stripe/webhook", { method: "POST", body, headers: { "stripe-signature": sign(body) } }), env, emailHash, { supportLink: "plink_x", founding: foundingCheck, isAdmin: (e, id) => id === "acctadmin1" })).json();
+  assert.equal(r.test, true);
+  assert.equal(db.prepare("SELECT status FROM pro_orders WHERE id='stripe:don:cs_adm'").get().status, "test");
+  assert.deepEqual([row("acctadmin1").supporter, row("acctadmin1").founder], [0, 0], "no badge for a test");
+  // the thank-you email goes to the donor, with the founding offer when they have it (not for a test)
+  const sent = [], th = async (e, to, o) => { sent.push({ to, ...o }); return true; };
+  acct("acctthanks", "th@x.io");
+  const tb = JSON.stringify({ id: "evt_th", type: "checkout.session.completed", data: { object: { id: "cs_th", mode: "payment", payment_status: "paid", payment_intent: "pi_th", payment_link: "plink_x", amount_total: 213, currency: "usd", client_reference_id: "support-acctthanks", customer_details: { email: "th@x.io", address: { country: "ES" } } } } });
+  await stripeWebhook(new Request("https://x/stripe/webhook", { method: "POST", body: tb, headers: { "stripe-signature": sign(tb) } }), env, emailHash, { supportLink: "plink_x", founding: foundingCheck, isAdmin: (e, id) => id === "acctadmin1", thanks: th });
+  assert.deepEqual(sent, [{ to: "th@x.io", l: "es", founder: false, account: true }]);
+}
+console.log("founding, trial and launch month ok");

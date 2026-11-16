@@ -62,6 +62,8 @@ type plAccount struct {
 	TwoFactor    bool      `json:"twoFactor,omitempty"` // signs in with an authenticator app too
 	Anon         bool      `json:"anon,omitempty"`      // what you share goes as "Anonymous" (kept with the account)
 	Supporter    bool      `json:"supporter,omitempty"` // has the supporter badge (donates)
+	Founder      bool      `json:"founder,omitempty"`   // has the founding supporter offer ($3 or more in all)
+	ProUntil     int64     `json:"proUntil,omitempty"`  // when this Pro ends (a trial, an invite month, a subscription), ms; 0 for good
 	SupHidden    bool      `json:"supHidden,omitempty"` // and chose to hide it
 	Pro          bool      `json:"pro,omitempty"`       // has Pitlane HQ Pro (lifetime, a subscription or given by hand)
 	ProSrc       string    `json:"proSrc,omitempty"`
@@ -1059,15 +1061,22 @@ func plStatus() map[string]any {
 	defer plMu.Unlock()
 	a := plAcc
 	out := map[string]any{"ready": commBase() != "", "signedIn": a.Token != "", "id": a.ID, "email": a.Email, "display": a.Display, "nameKind": a.NameKind,
-		"admin": a.Admin, "tester": a.Tester, "supporter": a.Supporter, "supporterHidden": a.SupHidden, "pro": a.Pro, "proSrc": a.ProSrc, "proGate": a.ProGate, "proElsewhere": a.ProElsewhere, "verified": a.Verified, "mail": a.Mail, "twoFactor": a.TwoFactor, "gated": a.Gated, "noPassword": a.NoPassword, "recoveryLeft": plRecovery, "version": a.Version, "error": a.SyncErr, "ended": a.Ended}
+		"admin": a.Admin, "tester": a.Tester, "supporter": a.Supporter, "supporterHidden": a.SupHidden, "founder": a.Founder, "pro": a.Pro, "proSrc": a.ProSrc, "proUntil": a.ProUntil, "proGate": a.ProGate, "proElsewhere": a.ProElsewhere, "verified": a.Verified, "mail": a.Mail, "twoFactor": a.TwoFactor, "gated": a.Gated, "noPassword": a.NoPassword, "recoveryLeft": plRecovery, "version": a.Version, "error": a.SyncErr, "ended": a.Ended}
 	if !a.LastSync.IsZero() {
 		out["lastSync"] = a.LastSync.UnixMilli()
+	}
+	if a.Token == "" { // trying it without an account (tryout.go)
+		used, limit, locked := tryStatusSigned(false)
+		out["tryUsed"], out["tryLimit"], out["tryLocked"] = used, limit, locked
+	} else if a.Admin {
+		go tryReset() // an admin's PC tries it again as new once signed out
 	}
 	return out
 }
 
 func registerPLRoutes(mux *http.ServeMux) {
-	go syncWatcher() // also keeps the profile (public name, admin…) up to date
+	go syncWatcher()   // also keeps the profile (public name, admin…) up to date
+	go tryServerRead() // what this PC already used without an account, from an install before this one (tryout.go)
 	go companionRefresher()
 	// the PC reads your laps in your account through here (the server does not answer other origins);
 	// only reading, only the lap and community lists, and closed to remote viewers like /api/sync
@@ -1733,8 +1742,10 @@ func plRefreshMe() {
 		Tester       bool   `json:"tester"`
 		Supporter    bool   `json:"supporter"`
 		SupHidden    bool   `json:"supporterHidden"`
+		Founder      bool   `json:"founder"`
 		Pro          bool   `json:"pro"`
 		ProSrc       string `json:"proSrc"`
+		ProUntil     int64  `json:"proUntil"`
 		ProGate      bool   `json:"proGate"`
 		PcOk         *bool  `json:"pcOk"`
 		Verified     bool   `json:"verified"`
@@ -1757,8 +1768,8 @@ func plRefreshMe() {
 		plMu.Unlock()
 		return
 	}
-	if plAcc.Admin != me.Admin || plAcc.Tester != me.Tester || plAcc.Verified != me.Verified || plAcc.Mail != me.Mail || plAcc.TwoFactor != me.TwoFactor || plAcc.Display != me.Display || plAcc.NameKind != me.NameKind || plAcc.Anon != me.Anon || plAcc.Supporter != me.Supporter || plAcc.SupHidden != me.SupHidden || plAcc.Pro != me.Pro || plAcc.ProSrc != me.ProSrc || plAcc.ProGate != me.ProGate || plAcc.ProElsewhere != elsewhere {
-		plAcc.Supporter, plAcc.SupHidden = me.Supporter, me.SupHidden
+	if plAcc.Admin != me.Admin || plAcc.Tester != me.Tester || plAcc.Verified != me.Verified || plAcc.Mail != me.Mail || plAcc.TwoFactor != me.TwoFactor || plAcc.Display != me.Display || plAcc.NameKind != me.NameKind || plAcc.Anon != me.Anon || plAcc.Supporter != me.Supporter || plAcc.SupHidden != me.SupHidden || plAcc.Founder != me.Founder || plAcc.ProUntil != me.ProUntil || plAcc.Pro != me.Pro || plAcc.ProSrc != me.ProSrc || plAcc.ProGate != me.ProGate || plAcc.ProElsewhere != elsewhere {
+		plAcc.Supporter, plAcc.SupHidden, plAcc.Founder, plAcc.ProUntil = me.Supporter, me.SupHidden, me.Founder, me.ProUntil
 		plAcc.Pro, plAcc.ProSrc, plAcc.ProGate, plAcc.ProElsewhere = me.Pro, me.ProSrc, me.ProGate, elsewhere
 		plAcc.Admin, plAcc.Tester, plAcc.Verified, plAcc.Mail, plAcc.TwoFactor = me.Admin, me.Tester, me.Verified, me.Mail, me.TwoFactor
 		plAcc.Display, plAcc.NameKind, plAcc.Anon = me.Display, me.NameKind, me.Anon

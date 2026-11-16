@@ -49,7 +49,14 @@ pt.StartGroup=Início:
 
 [Tasks]
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"
+; "Open Pitlane HQ when Windows starts" comes ticked (the owner's choice, Nov 15 2026): a driver who forgets to open
+; the agent has no sessions. Removing the define below leaves it unticked again
+#define StartupTicked
+#ifdef StartupTicked
+Name: "startup"; Description: "{cm:StartWithWindows}"; GroupDescription: "{cm:StartGroup}"
+#else
 Name: "startup"; Description: "{cm:StartWithWindows}"; GroupDescription: "{cm:StartGroup}"; Flags: unchecked
+#endif
 
 [Files]
 ; the window (self-contained .NET publish) and the agent next to it

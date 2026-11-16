@@ -28,6 +28,7 @@ type cloudConfig struct {
 	URL     string `json:"url"`
 	Key     string `json:"key"`
 	Enabled bool   `json:"enabled"`
+	anon    bool   // a PC without an account: its laps go up under this install's own token, with no name (anonCloud)
 }
 
 type cloudSession struct {
@@ -211,17 +212,25 @@ func cloudUploader() {
 
 // uploadNext sends the item at the head of the outbox; true when the next one may go at once
 func uploadNext() bool {
-	acct := accountCloud()
+	acct := uploadCloud()
 	cloudMu.Lock()
 	c := cloudCfg
 	if !c.Enabled || c.URL == "" || c.Key == "" {
 		c = acct // no own site set up: the laps go to your Pitlane HQ account
+	}
+	if c.anon && c.Key == "" && len(cloudQueue) > 0 {
+		// no account and no token of its own yet: the PC gets one (the next minute when the server cannot be reached)
+		cloudMu.Unlock()
+		return ensureRegistered() == nil && anonCloud().Key != ""
 	}
 	if !c.Enabled || c.URL == "" || c.Key == "" || len(cloudQueue) == 0 {
 		cloudMu.Unlock()
 		return false
 	}
 	item := cloudQueue[0]
+	if c.anon {
+		item.Session.Driver, item.Session.Lic = "", "" // nothing that names the driver goes with it
+	}
 	cloudSending = true
 	cloudMu.Unlock()
 	_, err := cloudCall(c, "POST", "/api/upload", item)
@@ -264,7 +273,7 @@ func kickCloud() {
 // queueLap: every lap goes to the account as soon as it is done (a friend's in DRINKS mode too, with their name:
 // the session and its race summary keep every lap, and the server never takes a friend's lap for yours)
 func queueLap(s cloudSession, l cloudLap) {
-	acct := accountCloud()
+	acct := uploadCloud()
 	cloudMu.Lock()
 	defer cloudMu.Unlock()
 	if !cloudCfg.Enabled && !acct.Enabled {
@@ -322,7 +331,7 @@ func notePlace(s cloudSession) {
 // moment after the line): the session goes again without laps, or rides with laps still waiting. Only for a session
 // that has laps in the account.
 func queueSession(s cloudSession) {
-	acct := accountCloud()
+	acct := uploadCloud()
 	cloudMu.Lock()
 	defer cloudMu.Unlock()
 	if (!cloudCfg.Enabled && !acct.Enabled) || s.Pos <= 0 {
@@ -1327,6 +1336,7 @@ func finishLap(r *lapRec, s cloudSession, fuelNow, lt float64) {
 		go notePitLap(s.TrackID, l.Trace.X, l.Trace.Y, r.pitB, best)
 	}
 	queueLap(s, l)
+	tryNote(s.ID) // without an account: one of the sessions it may drive (tryout.go)
 }
 
 // markHoles: lost connection, a hole in the lap's telemetry longer than 40 m, or a lap that did not go round the whole
@@ -1718,6 +1728,35 @@ func registerCloudRoutes(mux *http.ServeMux) {
 
 // accountCloud: with a Pitlane HQ account your laps are kept on the Pitlane HQ
 // server under your account, with nothing to set up (no key to create).
+// anonCloud: a PC nobody is signed in on still teaches the coach (the owner's choice): its laps go up with the PC's own
+// token (ensureRegistered), under a random id of this install and with no driver name. Nothing of them shows anywhere,
+// and they move to the account when someone signs in here (plAdopt). Never while an account waits for its email.
+func anonCloud() cloudConfig {
+	loadPL()
+	plMu.Lock()
+	tok := plAcc.Token
+	plMu.Unlock()
+	if tok != "" {
+		return cloudConfig{}
+	}
+	base := commBase()
+	if base == "" {
+		return cloudConfig{}
+	}
+	commMu.Lock()
+	dev := commCfg.Token
+	commMu.Unlock()
+	return cloudConfig{URL: base, Key: dev, Enabled: true, anon: true}
+}
+
+// uploadCloud: where the laps go when no own site is set up: the account, or without one the PC's own token
+func uploadCloud() cloudConfig {
+	if c := accountCloud(); c.Enabled {
+		return c
+	}
+	return anonCloud()
+}
+
 func accountCloud() cloudConfig {
 	loadPL()
 	plMu.Lock()

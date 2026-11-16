@@ -1,16 +1,16 @@
 # Releases and versions
 
-Status as of 2026-11-14. Rules for releasing are in CLAUDE.md and `docs/spec/pc-app.md` ("Test builds").
+Status as of 2026-11-15. Rules for releasing are in CLAUDE.md and `docs/spec/pc-app.md` ("Test builds").
 
 ## What is live
 
 | Where | Version | Notes |
 | --- | --- | --- |
-| PC agent + web (production) | 0.9.21 | 2026-11-15: the invite code on the sign-up form, the light landing, the web app inside the screen on phones, and the minutes each overlay is open (admin Analytics), on top of 0.9.20. |
-| Beta (beta.pitlanehq.app, PC Test builds) | 0.9.22 | 2026-11-15: uninstalling always asks why (the agent runs the uninstall, so PCs installed before the page existed show it too). On master, test build started, not promoted yet. |
+| PC agent + web (production) | 0.10.0 | 2026-11-15 22:12 UTC (PC) and 23:36 UTC (web and server), build ddfe657, one release of everything that was on the beta channel, and every PC must update to it (`appMinVersion` and `PC_MIN` 0.10.0, the owner's choice). It brings the full-screen track map (lap comparison, coach and leaderboards, with the chase view), Telemetry's Engineer view and the Team screen's Engineer, the overlays' text size slider, the fix for Telemetry's Full freezing the PC app, the profile crash fix, trying the PC app without an account for 3 sessions, the Le Mans Ultimate lap times pages and the new landing, uneven track maps evened on the server, the uninstall page's "Something else" box and the telemetry move on its own every-minute job. Before it: 0.9.23 (15:50 UTC, build c9439cc). |
+| Beta (beta.pitlanehq.app, PC Test builds) | 0.10.0 | 2026-11-15: the same build as production (ddfe657). |
 | Android | 0.9.14 | Production APK from /dl. Google Play: internal testing build 1291 (see `stores.md`). |
 | iOS | 0.9.14 | TestFlight build 392. App Store review not passed yet (see `stores.md`). |
-| Microsoft Store | 0.9.14 | 0.9.15 submission prepared, the owner submits it in Partner Center (see `stores.md`). |
+| Microsoft Store | 0.9.15 | 0.9.23 submitted 2026-11-15, in certification (see `stores.md`). |
 
 ## Branches (2026-11-14)
 
@@ -20,11 +20,16 @@ Status as of 2026-11-14. Rules for releasing are in CLAUDE.md and `docs/spec/pc-
 
 ## Held until the owner says
 
+- The track map inside Telemetry's Lap compare template (beside the traces, this lap's gain and loss against lap B,
+  pressing it opens the full-screen map): built and shown to the owner on 2026-11-15, not committed (the patch is in
+  the project files, `fullscreen-map/telemetry-lap-compare-map.patch`). Goes in the next version when the owner says.
 - Watch in replay and the pedal and wheel check stay testers-only, also in production.
 - Version 1.0 waits for the Steam version to be approved by Valve. Stay on 0.9.x.
 
 ## Version history (short)
 
+- 0.10.0 (Nov 15): the full-screen track map with the chase view, the Engineer view, the overlays' text size
+  slider, the three-session trial without an account, the LMU lap times pages. Every PC must update to it.
 - 0.9.19 (Nov 14): Pit Wall Workspace look on PC and web, Statistics, Which game?, short tour, community race fuel,
   public name in My account, the engine rework (0.9.17), invite a friend, LMU without "Beta", sign-up sources. Team
   mode stays beta-gated.

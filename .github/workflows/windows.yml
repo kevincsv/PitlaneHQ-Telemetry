@@ -192,6 +192,8 @@ jobs:
           put() { npx --yes wrangler@4 r2 object put "pitlanehq-downloads/beta/$2" --file "$1" --remote --content-type "$3"; }
           put dist-installer/PitlaneHQ-Setup.exe PitlaneHQ-Setup.exe application/vnd.microsoft.portable-executable
           put PitlaneHQ-windows.zip PitlaneHQ-windows.zip application/zip
+          # the Store package too (unlisted, for the Partner Center upload), in case the run's artifact could not be kept
+          for f in dist-store/*.msix; do [ -f "$f" ] && put "$f" "PitlaneHQ-Store-$ver.msix" application/msix; done
           # version.json goes last: the testers' PCs only see the build once its files are there
           put version.json version.json application/json
       - name: Publish to everyone (urgent fix without a test build)

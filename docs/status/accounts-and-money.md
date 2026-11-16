@@ -18,7 +18,17 @@ Status as of 2026-11-07. Behaviour is in `docs/spec/sync-and-accounts.md`, `admi
 - Prices after the beta: Pro $6 a month or $59 a year. Beta supporters get 50% off forever (kept if they come back
   within 2 months of stopping), plus a $29.99 lifetime offer in the first 2 months after release. The discount is not
   built yet. RevenueCat for the phones later.
+- Pro offers (2026-11-15, on the working branch, waiting for "sube", all switched off with the gate): founding
+  supporter from $3 in donations, 14 days of Pro for a new account once per PC, a month of Pro for every beta account
+  the day Pro is switched on. Needs migration 0103. The Stripe prices and the checkout are not set up yet.
+- A PC without an account uploads its laps for the coach to learn from, with no name, and they join the account at
+  sign-in (2026-11-15, working branch, waiting for "sube"; needs the cloud deploy and a Windows build; privacy policy
+  updated).
 - The phones show no donation link (store rules).
+- 2026-11-15: the first real donation came in ($2.13, one-time). Admin donations are now tests (not counted, no badge). Live on
+  the server: admin Analytics > Sales opens with Payments (every payment, totals by month and week, supporters), a
+  thank-you email after each donation, and the donation bar thanks supporters instead of hiding (the PC app gets the
+  bar change with its next build).
 - Invite a friend (2026-11-14, on master, live after the next cloud and Windows build): a friend's week of use gives both a month of
   Pro, counted from now and saved until Pro is switched on. Needs migration 0100 and a Windows build for the agent to
   pass the code box through (older agents show the card without it).

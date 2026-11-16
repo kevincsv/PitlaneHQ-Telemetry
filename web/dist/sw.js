@@ -2,7 +2,7 @@
    seen at once, as before); when the network is slow (over 3 s) or gone, the last copy kept here answers instead. Only
    the app's own files are kept: never the account, sync or live answers. */
 const CACHE = "pitlanehq-app-2";
-const SHELL = ["/app", "/fonts.css", "/pitwall-games.js", "/pitwall-analysis.js", "/pitwall-aicoach.js", "/pitwall-i18n.js",
+const SHELL = ["/app", "/fonts.css", "/pitwall-games.js", "/pitwall-analysis.js", "/pitwall-fullmap.js", "/pitwall-aicoach.js", "/pitwall-i18n.js",
   "/pitwall-overlays.js", "/pitwall-overlays-settings.js", "/pitwall-ui-v1.js", "/pitwall-my-laps-v2.js", "/pitwall-model.js",
   "/pitwall-demo.js", "/pitwall-tour.js", "/manifest.webmanifest", "/icon-192.png", "/logo.svg"];
 const APP_FILE = /^\/(|fonts\.css|pitwall-[a-z0-9-]+\.js|manifest\.webmanifest|favicon\.ico|favicon-32\.png|icon-\d+\.png|logo\.svg|whats-new\.json|app-news\.json)$/;

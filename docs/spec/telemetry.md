@@ -2,7 +2,7 @@
 
 How this part of Pitlane HQ behaves. Read it before changing this area; keep it up to date when the behaviour changes.
 
-- The rev beep (Telemetry → Rev beep, its own sub-tab after Tyres, `v-revbeep`, `renderShiftPanel`/`shiftTick`, `pw.shift`;
+- The rev beep (Telemetry → Car & tools → Rev beep, `v-revbeep`, `renderShiftPanel`/`shiftTick`, `pw.shift`;
   on Pitlane HQ Desktop the "REV BEEP" card at the top of Telemetry opens it): a beep to change up at the revs the driver chooses, kept per car: "Every gear
   at" one RPM, or one for each gear ("My RPM"), or iRacing's shift lights, or the estimate from their own flat-out laps;
   a moment early for the reaction time, pitch and volume, "Beeps in this screen" (the PC by default). No braking beeps
@@ -28,7 +28,13 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   points come from the model (the next level for your best lap of the session; your own best lap while the model has
   none or you are its fastest), each marker moves with your speed against that lap and with a car close ahead or
   alongside, and they name their corners by the official turns (`turnNo`, `turnName`), like the coach: "T7", never "C7".
-- Telemetry has four modes (`LIVE_MODE`, `liveModeBar`): Basic (the essentials below), Engineer (below), Full (every basic widget, the
+- Telemetry's sub-tabs (the owner's choice 2026-11-16, design A, `renderSubtabs`): Dashboard, Lap compare, Standings,
+  Team (Beta), Tyres, then one "Car & tools" menu (`TOOLS_V`, `stMenuOpen`: Rev beep, Setups when it exists, Phone &
+  sharing on the PC) that names the tool open in it ("Car & tools · Rev beep"). Dashboard and Lap compare are both the
+  Telemetry screen: Lap compare is `LIVE_MODE` "cmp", Dashboard brings back the view the driver had (`pw.liveDash`,
+  `liveSetMode`). On the Dashboard the view switch is Essentials · Engineer · All panels (Basic, Engineer and Full in the
+  code) with "Edit layout" beside it; Lap compare hides both.
+- Telemetry has four modes (`LIVE_MODE`, `liveModeBar`): Basic (Essentials, below), Engineer (below), Full (All panels: every basic widget, the
   experimental ones too (not on a PC without Pro), and the lap's traces of speed, throttle/brake, delta and gear, `drawLiveTraces`)
   and Compare laps, live (`renderLiveCmp`/`tickLiveCmp`: the lap now against B, "My best" in purple, the last lap, other
   laps, and "▲ Next level" / "★ Record" only when the model has a full-telemetry lap of someone else, corner by corner by

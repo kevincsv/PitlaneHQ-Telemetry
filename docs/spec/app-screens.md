@@ -107,7 +107,7 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   A main tab always opens on its first sub-tab. The main menu: Home, Analysis, Telemetry (was Live; the
   same name in the phone apps), Overlays (its own tab, only on the PC), Community (just before Account), Account and, on the web and the phone browser at any width or orientation (not the PC), the
   Planner last. No text calls the section
-  "Live" any more ("Telemetry → …"). Telemetry → Phone & sharing on the PC: your phone or tablet (pitlanehq.app or
+  "Live" any more ("Telemetry → …"). Telemetry → Car & tools → Phone & sharing on the PC: your phone or tablet (pitlanehq.app or
   the app, same account, Telemetry → Connect, accept on the PC; a QR to the web app and the Android download) and
   sharing with a code; no Wi-Fi addresses, PIN or local links (`renderPhoneHow`).
 - The welcome window of a new account (the downloads) stays until the driver closes it (`uiPanel` sticky).

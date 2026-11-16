@@ -16,6 +16,7 @@ web (0.9.19); a full-app bug sweep follows.
 - Phone repo: merge the App Store and Report/Block work with master's Google Play commits before the next release.
 - Lap telemetry out of the database into R2, compressed: built on its branch, waits for the owner's push, then the switch (`docs/status/server-and-ops.md`).
 - The track map inside Telemetry's Lap compare template: built and shown, waits for the owner's word for the next version (`docs/status/releases.md`).
+- Telemetry menu redesign (option A, Car & tools menu): built on its branch, waits for the owner's push (`docs/status/ui-redesign.md`).
 - Team mode (beta, every tester and admin): in production code since 0.9.19 behind its beta gate (PC, web, Android beta). Not run on real hardware yet.
 
 ## Live now

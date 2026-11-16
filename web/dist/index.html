@@ -2030,7 +2030,7 @@ nav.subtabs button[aria-selected="true"] .pill{color:inherit;border-color:curren
       <div><div class="label" data-i18n="pos"></div><div class="mid mono"><span id="pos">–</span><span class="unit" id="posOf"></span></div></div>
       <div><div class="label" data-i18n="lap"></div><div class="mid mono"><span id="lapNo">–</span><span class="unit" id="lapOf"></span></div></div>
       <span class="seg3" id="liveMode"></span>
-      <button class="btn" type="button" id="layoutBtn" data-i18n="layout"></button>
+      <button class="btn" type="button" id="layoutBtn" data-i18n="editLayout"></button>
     </div>
   </div>
   <div class="pw3-strip" id="pw3Strip" role="group"></div>
@@ -4677,7 +4677,7 @@ function renderLicences(m){const box=$("#licCards");if(!box)return;const order=[
 
 /* ===================== track map ===================== */
 Object.assign(I18N,{
- trackMap:["Track map","Mapa del circuito"],layers:["Layers","Capas"],layout:["Layout","Diseño"],
+ trackMap:["Track map","Mapa del circuito"],layers:["Layers","Capas"],layout:["Layout","Diseño"],editLayout:["Edit layout","Editar diseño",null,"Editar layout"],
  "ly.ideal":["Ideal line (estimated)","Línea ideal (estimada)"],"ly.best":["Best lap line","Línea de la mejor vuelta"],"ly.line":["My line this lap","Mi trazada esta vuelta"],
  "ly.brakes":["Braking points","Puntos de frenada"],"ly.tel":["Speed & braking","Velocidad y frenada"],"ly.cars":["Other cars","Otros coches"],"ly.nums":["Positions","Posiciones"],
  "ly.rot":["Rotate","Girar"],"ly.mirror":["Mirror","Espejo"],"ly.reset":["Redraw map","Volver a dibujar"],
@@ -6432,9 +6432,14 @@ function startPreview(w){clearInterval(PREVIEW_TIMER);const pv=$("#cfgPreview");
    live, against the lap you pick: your best in purple, your last or another of your laps, and the next level and the record
    only when the model knows another driver's lap with its whole telemetry, never a rival's estimated pedals) ---------- */
 function liveModeBar(){const b=$("#liveMode");if(!b)return;
-  b.innerHTML=[["basic",Tx("Basic","Básico","Basis","Básico")],["eng",Tx("Engineer","Ingeniero",null,"Engenheiro")],["full",Tx("Full","Completo","Komplett","Completo")],["cmp",Tx("Lap compare","Comparar vueltas","Rundenvergleich","Comparar voltas")]].map(([k,l])=>`<button type="button" data-lm="${k}" aria-pressed="${LIVE_MODE===k}">${esc(l)}</button>`).join("");
-  b.querySelectorAll("[data-lm]").forEach(x=>x.onclick=()=>{LIVE_MODE=x.dataset.lm;store.set("pw.liveMode",LIVE_MODE);applyLayout()});
+  b.innerHTML=[["basic",Tx("Essentials","Esencial",null,"Essencial")],["eng",Tx("Engineer","Ingeniero",null,"Engenheiro")],["full",Tx("All panels","Todos los paneles",null,"Todos os painéis")]].map(([k,l])=>`<button type="button" data-lm="${k}" aria-pressed="${LIVE_MODE===k}">${esc(l)}</button>`).join("");
+  b.hidden=LIVE_MODE==="cmp";
+  b.querySelectorAll("[data-lm]").forEach(x=>x.onclick=()=>liveSetMode(x.dataset.lm));
   $("#layoutBtn").hidden=LIVE_MODE!=="basic"&&LIVE_MODE!=="eng"}
+/* Telemetry's Dashboard and Lap compare sub-tabs: Lap compare is LIVE_MODE "cmp", Dashboard brings back the view the
+   driver had (pw.liveDash: Essentials, Engineer or All panels) */
+function liveSetMode(k){if(k==="cmp"&&LIVE_MODE!=="cmp")store.set("pw.liveDash",LIVE_MODE);if(k==="dash")k=store.get("pw.liveDash","basic");if(!["basic","eng","full","cmp"].includes(k))k="basic";if(k!=="cmp")store.set("pw.liveDash",k);
+  LIVE_MODE=k;store.set("pw.liveMode",k);applyLayout();if(CUR_VIEW==="live")renderSubtabs("live")}
 /* the model's next level and record for this car and track, only when they are another driver's lap with its whole
    telemetry (a race rival's lap has its pedals estimated from its speed: never a reference here) */
 function lcmpModel(){const PM=window.PW_MODEL,tid=S.WeekendInfo&&S.WeekendInfo.TrackID,cid=myDriver().CarID;if(!PM||!tid||!cid)return;
@@ -7009,10 +7014,29 @@ function applyAdmin(){setTimeout(adminWanted);demoBanner();renderViewToggle();{c
   if(typeof CUR_VIEW!=="undefined"&&CUR_VIEW){if(!on&&CUR_VIEW==="account")show("me");else if(groupOf(CUR_VIEW)==="account")renderSubtabs(CUR_VIEW);if(CUR_VIEW==="settings"&&!on&&SET_SEC==="set-conn")setSection("set-general")}}
 const groupOf=v=>Object.keys(GROUPS).find(g=>GROUPS[g].includes(v))||"race";
 const VIEW_LABEL={team:"tab.team",leagues:"tab.leagues",fulltelemetry:"tab.fulltelemetry",cloudlaps:"tab.cloudlaps",stats:"tab.stats",share:"tab.share",me:"tab.me",home:"tab.home",live:"tab.live",community:"tab.community",plan:"tab.plan",news:"tab.news",races:"tab.races",tracks:"tab.tracks",revbeep:"tab.revbeep",field:"tab.field",laps:"tab.analyzer",tyres:"tab.tyres",data:"tab.data",calendar:"tab.calendar",series:"tab.series",rig:"tab.rigGear",haptics:"tab.haptics",coach:"tab.coach",strategy:"tab.strategy",goals:"tab.goals",cars:"tab.cars",setups:"tab.setups",account:"tab.account",settings:"settings",overlays:"tab.overlays"};
-function renderSubtabs(v){const g=groupOf(v),box=$("#subtabs"),list=GROUPS[g];box.hidden=list.length<2||OV.on;
+/* Telemetry's tools (rev beep, setups, phone and sharing) sit in one "Car & tools" menu at the end of its sub-tabs */
+const TOOLS_V=["revbeep","setups","share"];
+function renderSubtabs(v){const g=groupOf(v),box=$("#subtabs"),list=GROUPS[g];box.hidden=list.length<2||OV.on;stMenuClose();
   const short=matchMedia("(max-width:820px)").matches,SH={laps:["Laps","Vueltas","Runden","Voltas"],coach:["Coach","Coach","Coach","Coach"],cloudlaps:["My sessions","Mis sesiones","Meine Sitzungen","Minhas sessões"],tyres:["Tyres","Neumáticos","Reifen","Pneus"]}; /* the phone's sub-tabs keep the PC's names (Standings, never "Field") */
-  box.innerHTML=list.map(x=>`<button type="button" role="tab" data-v="${x}" aria-selected="${x===v}">${short&&SH[x]?esc(Tx(...SH[x])):L(VIEW_LABEL[x],true)}${x==="team"?`<span class="pill acc" style="font-size:9px;padding:1px 5px;margin-left:4px">Beta</span>`:""}</button>`).join("");
+  const lab=x=>short&&SH[x]?esc(Tx(...SH[x])):L(VIEW_LABEL[x],true),beta=x=>x==="team"?`<span class="pill acc" style="font-size:9px;padding:1px 5px;margin-left:4px">Beta</span>`:"";
+  if(g==="race"){const cmp=v==="live"&&LIVE_MODE==="cmp",tools=list.filter(x=>TOOLS_V.includes(x)),tb=(x,on,l,lm)=>`<button type="button" role="tab" data-v="${x}"${lm?` data-lm="${lm}"`:""} aria-selected="${on}">${l}</button>`;
+    let h="";list.filter(x=>!TOOLS_V.includes(x)).forEach(x=>{h+=x==="live"?tb("live",v==="live"&&!cmp,esc(Tx("Dashboard","Panel",null,"Painel")),"dash")+tb("live",cmp,esc(Tx("Lap compare","Comparar vueltas",null,"Comparar voltas")),"cmp"):tb(x,x===v,lab(x)+beta(x))});
+    if(tools.length){const on=tools.includes(v);h+=`<button type="button" class="st-btn" aria-haspopup="menu" aria-expanded="false" aria-selected="${on}">${esc(Tx("Car & tools","Coche y herramientas",null,"Carro e ferramentas"))}${on?" · "+lab(v):""}<span class="st-car" aria-hidden="true">▾</span></button>`}
+    box.innerHTML=h;
+    box.querySelectorAll("button[data-v]").forEach(b=>b.onclick=()=>{if(b.dataset.lm&&(b.dataset.lm==="cmp")!==(LIVE_MODE==="cmp"))liveSetMode(b.dataset.lm);show("live"===b.dataset.v?"live":b.dataset.v)});
+    const t=box.querySelector(".st-btn");if(t)t.onclick=e=>{e.stopPropagation();stMenuOpen(t,tools.map(x=>[x,lab(x)]),v)};
+    liveOffUI();return}
+  box.innerHTML=list.map(x=>`<button type="button" role="tab" data-v="${x}" aria-selected="${x===v}">${lab(x)}${beta(x)}</button>`).join("");
   box.querySelectorAll("button").forEach(b=>b.onclick=()=>show(b.dataset.v));liveOffUI()}
+/* the Car & tools menu: a small list under its button, closed by a pick, a click elsewhere, Escape or scrolling */
+function stMenuClose(){const m=document.getElementById("stMenu");if(m&&!m.hidden){m.hidden=true;const b=document.querySelector("#subtabs .st-btn");if(b)b.setAttribute("aria-expanded","false")}}
+function stMenuOpen(btn,items,v){let m=document.getElementById("stMenu");if(m&&!m.hidden){stMenuClose();return}
+  if(!m){m=document.createElement("div");m.id="stMenu";m.className="st-menu";m.setAttribute("role","menu");document.body.appendChild(m);
+    document.addEventListener("click",e=>{if(!e.target.closest("#stMenu,.st-btn"))stMenuClose()});document.addEventListener("keydown",e=>{if(e.key==="Escape")stMenuClose()});addEventListener("resize",stMenuClose);addEventListener("scroll",stMenuClose,{passive:true})}
+  m.innerHTML=items.map(([x,l])=>`<button type="button" role="menuitem" data-v="${x}" aria-current="${x===v}">${l}</button>`).join("");
+  m.querySelectorAll("button").forEach(b=>b.onclick=()=>{stMenuClose();show(b.dataset.v)});
+  const r=btn.getBoundingClientRect();m.hidden=false;const w=m.offsetWidth;m.style.top=Math.round(r.bottom+6)+"px";m.style.left=Math.round(Math.max(8,Math.min(r.left,innerWidth-w-8)))+"px";
+  btn.setAttribute("aria-expanded","true");const f=m.querySelector('[aria-current="true"]')||m.querySelector("button");if(f)f.focus()}
 /* watching a PC live (yours or a code): Disconnect stays above Telemetry, Standings and the rest of the race tabs */
 function liveOffUI(){const b=$("#liveOff");if(!b)return;const on=COMPANION&&!OV.on&&CPLIVE.on&&CPLIVE.mode!=="idle"&&typeof CUR_VIEW==="string"&&!!CUR_VIEW&&groupOf(CUR_VIEW)==="race";b.hidden=!on;if(!on)return;const T=Tx;
   b.querySelector(".lo-who").textContent=CPLIVE.mode==="team"?T("Watching","Viendo",null,"Vendo")+" · "+T("Team","Equipo",null,"Equipe")+(teamFollowName()?" · "+teamFollowName():""):CPLIVE.mode==="code"?T("Watching","Viendo","Du siehst","Vendo")+" · "+CPLIVE.code.replace(/^(.{4})(.{4})(.{2})$/,"$1-$2-$3"):T("Watching your PC","Viendo tu PC","Du siehst deinen PC","Vendo seu PC");
@@ -13383,4 +13407,14 @@ html:not(.ov) #commBody#commBody .pw3-discs .lb-t small{white-space:normal;overf
   html:not(.ov) #v-cloudlaps .pw3s .mr-t :is(th,td):nth-child(5){display:none}
   html:not(.ov) header.top #conn{min-width:0;flex:0 1 auto;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 }
+
+/* Telemetry's "Car & tools" menu (renderSubtabs, stMenuOpen) */
+.st-menu{position:fixed;z-index:9000;min-width:210px;background:var(--surface);border:1px solid var(--line2);border-radius:10px;padding:5px;box-shadow:0 14px 34px rgba(0,0,0,.45);display:flex;flex-direction:column;gap:2px}
+.st-menu[hidden]{display:none}
+.st-menu button{text-align:left;min-height:40px;padding:0 12px;border:0;border-radius:6px;background:transparent;color:var(--fg);font:500 14px/1 var(--f-body);cursor:pointer;white-space:nowrap}
+.st-menu button:hover,.st-menu button:focus-visible{background:var(--surface2);outline:none}
+.st-menu button[aria-current="true"]{color:var(--accent);background:var(--surface2)}
+#subtabs .st-car{margin-left:6px;font-size:10px}
+@media (min-width:821px){html:not(.ov) #subtabs .st-btn{margin-left:10px!important;position:relative}html:not(.ov) #subtabs .st-btn::before{content:"";position:absolute;left:-7px;top:6px;bottom:6px;width:1px;background:var(--line2)}}
+#v-live #liveMode[hidden]{display:none!important}
 </style>

@@ -31,3 +31,10 @@ Status as of 2026-11-07. The look is described in `docs/spec/app-screens.md` ("T
   the next PC and web beta build. Not on the phones (the owner's choice).
 - 2026-11-14 23:40: promoted to production as 0.9.19 (master 7ea9ccb), PC and web. The other designs are dropped. Phones
   unchanged until the owner says.
+
+## Telemetry menu, simpler (2026-11-16)
+
+- The owner found Telemetry's menu confusing. Options A/B/C in https://claude.ai/artifact/FM1Ls6piCSNCwbjngUQ6PF; the
+  owner picked A: sub-tabs Dashboard · Lap compare · Standings · Team · Tyres plus one "Car & tools" menu (Rev beep,
+  Setups when it lands, Phone & sharing), views Essentials · Engineer · All panels, "Edit layout"
+  (`docs/spec/telemetry.md`). PC and web, on branch `claude/project-thread-znyloe`, not pushed. Phones not changed.

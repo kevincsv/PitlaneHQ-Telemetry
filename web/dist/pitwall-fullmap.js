@@ -452,11 +452,11 @@
       drawT();
     }
 
-    // pointer on the telemetry: the cursor follows (a finger drags it)
+    // pointer on the telemetry: a click or a drag moves the cursor, the mouse passing over it does not
     const dOfX = (e) => { const r = cv.getBoundingClientRect(), pl = 44, pr = 8; return clamp((e.clientX - r.left - pl) / (r.width - pl - pr), 0, 1) * L; };
     let tDown = false;
     cv.addEventListener("pointerdown", (e) => { tDown = true; cv.setPointerCapture(e.pointerId); stop(); setCur(dOfX(e) / BIN); });
-    cv.addEventListener("pointermove", (e) => { if (tDown || e.pointerType === "mouse") { if (!tDown && playing) return; setCur(dOfX(e) / BIN); } });
+    cv.addEventListener("pointermove", (e) => { if (tDown) setCur(dOfX(e) / BIN); });
     cv.addEventListener("pointerup", () => { tDown = false; }); cv.addEventListener("pointercancel", () => { tDown = false; });
     cv.addEventListener("dblclick", (e) => zoomTo(dOfX(e), 220));
 
@@ -474,7 +474,6 @@
       if (ptrs.has(e.pointerId)) ptrs.set(e.pointerId, local(e));
       if (pinch && ptrs.size === 2) { const [p1, p2] = [...ptrs.values()], d = Math.hypot(p1[0] - p2[0], p1[1] - p2[1]), m = [(p1[0] + p2[0]) / 2, (p1[1] + p2[1]) / 2], W = box.clientWidth, H = box.clientHeight; const nu = clamp(pinch.u * pinch.d / (d || 1), U_MIN, uFit * 1.6), wx = pinch.cx + (pinch.m[0] - W / 2) * pinch.u, wy = pinch.cy + (pinch.m[1] - H / 2) * pinch.u; u = nu; cx = wx - (m[0] - W / 2) * nu; cy = wy - (m[1] - H / 2) * nu; view(); return; }
       if (drag) { const p = local(e), dx = p[0] - drag.p[0], dy = p[1] - drag.p[1]; if (!drag.moved && Math.hypot(dx, dy) < 4) return; drag.moved = true; box.classList.add("drag"); if (ST.follow) { ST.follow = false; save(); zb.follow.setAttribute("aria-pressed", "false"); } cx = drag.cx - dx * u; cy = drag.cy - dy * u; view(); return; }
-      if (e.pointerType === "mouse" && !playing) { const p = local(e), d = nearestD(p[0], p[1], 40); if (d != null) setCur(d / BIN); }
     });
     const up = (e) => { const was = drag; ptrs.delete(e.pointerId); if (ptrs.size < 2) pinch = null; if (ptrs.size === 0) { box.classList.remove("drag"); if (was && !was.moved) { const p = local(e), d = nearestD(p[0], p[1], e.pointerType === "mouse" ? 40 : 90); if (d != null) { stop(); setCur(d / BIN); } } drag = null; } };
     box.addEventListener("pointerup", up); box.addEventListener("pointercancel", up);

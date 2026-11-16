@@ -223,7 +223,7 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   them when zoomed in) and slowest points, the turns with their names (a press zooms on the turn), the sectors, the
   start/finish line and where A gains or loses against B as green and red kerbs. The wheel, + and −, two fingers or a
   double click zoom (down to the road filling the screen); a drag moves it; ⤢ shows the whole track; ◎ follows lap A.
-  Under it the speed of both laps, the gap and the pedals share one cursor with the map (hover or tap either), the part
+  Under it the speed of both laps, the gap and the pedals share one cursor with the map (a click, a tap or a drag on either moves it, the mouse passing over does not), the part
   of the lap on screen shaded; ▶ plays both laps on the same clock at 1×, 2×, 4× or 8×. Keys: Esc closes, + − 0, the
   space bar plays, ← → move the cursor 5 m (Shift 50 m). The chips (Racing lines, Braking, Slowest points, Turns, A vs B
   time) are kept on the device (`pw.fmap`). "Chase" (beside the zoom buttons) puts the camera behind and

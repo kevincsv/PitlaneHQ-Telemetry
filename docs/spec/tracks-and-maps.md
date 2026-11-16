@@ -69,6 +69,9 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   `cloud/src/turnsref-data.js`: per layout its length, the games' track ids, the words of its name and each turn's
   metres from the line, direction, whether it is a clear corner or a light one, and its name. Change `src.mjs` and build
   again, never the data file; `--show` prints every layout placed again.
+- A circuit that two games have is one entry with both games' ids (Le Mans Ultimate and iRacing share 15 layouts), so
+  its turns have the same numbers, names and places in every game; never a second entry per game. The test names the
+  pairs. Barcelona is the one exception, since Le Mans Ultimate drives it without the last chicane (another layout).
 - `/community/turns` (`refTurns` in `cloud/src/turnsref.js`): turns an admin placed by hand win; else the reference's,
   placed on the track's own layout (`placeRef`), served with `auto: false`, their `names` and `ref` (the reference's
   key), so every device shows the numbers and the names with no change in the apps; else the geometry's (`auto: true`).

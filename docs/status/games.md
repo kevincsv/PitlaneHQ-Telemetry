@@ -31,6 +31,9 @@ Status as of 2026-11-14. Behaviour is in `docs/spec/lmu.md` and `docs/spec/asset
   Daytona road (12 turns), Bathurst, Oulton, Okayama, Zolder, Hockenheim, Miami, Mexico, St Petersburg, Algarve,
   Tsukuba, Interlagos, Sebring's Fangio turns, Mosport (10), Donington (11), Brands Indy (6) and many names. On the
   test channel, production waits for the 0.9.22 promotion.
+- 2026-11-16: the 15 layouts Le Mans Ultimate and iRacing share are one list each (same numbers, names and places in
+  both games). Daytona road, Algarve and Silverstone International had a list per game and now use Le Mans Ultimate's;
+  Daytona's banking turns were 230 m apart between the games.
 - No map with numbers found, so the numbering is not checked (`sure: false`): Le Mans (names only), Motegi, Zolder's
   T6 to T9, Snetterton 200, Okayama short, the Silverstone International and Nürburgring sprint layouts, the historic
   Spa, Barcelona and Mexico. Spa keeps the 19 turns in use since 2022 (Wikipedia's drawing counts 20 with two kinks).

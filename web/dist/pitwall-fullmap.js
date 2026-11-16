@@ -122,6 +122,7 @@
 .fm-h{display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px;padding:10px 14px;border-bottom:1px solid var(--line,#1c222d);background:var(--surface,#10141c)}
 .fm .fm-h h2{margin:0 6px 0 0;font:700 18px var(--f-display,"Barlow Condensed",system-ui);letter-spacing:.04em;text-transform:uppercase}
 .fm-lg{display:inline-flex;align-items:center;gap:6px;font-size:13px;max-width:28ch;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.fm-lg{max-width:46ch}.fm-nl{font-style:normal;font-size:11px;color:var(--muted,#8b97a8);border:1px solid var(--line,#263140);border-radius:999px;padding:1px 7px}
 .fm-lg i{width:18px;height:3px;border-radius:2px;flex:none}.fm-lg.a i{background:var(--accent,#f5b43c)}.fm-lg.b i{background:var(--fm-b)}
 .fm-ch{display:flex;flex-wrap:wrap;gap:6px;margin-left:auto}
 .fm-c{appearance:none;border:1px solid var(--line2,#2a3140);background:transparent;color:var(--muted,#8a93a3);border-radius:999px;padding:5px 11px;font:600 12px var(--f-body,system-ui);cursor:pointer;white-space:nowrap}
@@ -185,9 +186,11 @@
 
     const root = document.createElement("div"); root.className = "fm"; root.setAttribute("role", "dialog"); root.setAttribute("aria-modal", "true");
     root.style.setProperty("--fm-b", `var(${o.bColor || "--blue"})`);
+    // a lap with no path of its own (one taken from the standings, or recorded before paths were kept) has no line to draw: its name says so
+    const noLn = ` <em class="fm-nl">${esc(T("no racing line recorded", "sin trazada grabada", "sem traçado gravado"))}</em>`;
     const chip = (k, label, dis) => `<button type="button" class="fm-c" data-k="${k}" aria-pressed="${!!ST[k] && !dis}"${dis ? " disabled" : ""}>${esc(label)}</button>`;
     root.innerHTML = `<div class="fm-h"><h2>${esc(T("Track map", "Mapa del circuito", "Mapa da pista"))}</h2>
-      <span class="fm-lg a"><i></i>A · ${esc(A.name)}</span><span class="fm-lg b"><i></i>B · ${esc(B.name)}</span>
+      <span class="fm-lg a"><i></i>A · ${esc(A.name)}${lineA ? "" : noLn}</span><span class="fm-lg b"><i></i>B · ${esc(B.name)}${lineB ? "" : noLn}</span>
       <div class="fm-ch">${chip("lines", T("Racing lines", "Trazadas", "Traçados"), !lineA && !lineB)}${chip("brk", T("Braking", "Frenadas", "Freadas"))}${chip("mins", T("Slowest points", "Puntos más lentos", "Pontos mais lentos"))}${chip("turns", T("Turns", "Curvas", "Curvas"))}${chip("delta", T("A vs B time", "Tiempo A vs B", "Tempo A vs B"))}</div>
       <button type="button" class="fm-x" aria-label="${esc(T("Close", "Cerrar", "Fechar"))}">×</button></div>
       <div class="fm-m"><canvas class="fm-cc" aria-hidden="true"></canvas><svg aria-label="${esc(T("Track map", "Mapa del circuito", "Mapa da pista"))}" role="img"></svg><div class="fm-rd"></div>

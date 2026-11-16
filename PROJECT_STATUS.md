@@ -1,6 +1,6 @@
 # Project status
 
-Short index, updated 2026-11-15. Open a detail file in `docs/status/` only when the task touches that area. When the
+Short index, updated 2026-11-16. Open a detail file in `docs/status/` only when the task touches that area. When the
 status changes, update the detail file and this index in the same commit. How features behave is in `docs/spec/`.
 
 ## Current goal
@@ -12,7 +12,7 @@ web (0.9.19); a full-app bug sweep follows.
 
 - iOS App Store: answer Apple's 2.1 request (review video, resubmit). Waiting on the owner.
 - Google Play: closed test needs 12 testers for 14 days. Waiting on the owner's tester list.
-- Microsoft Store 0.9.23: submitted 2026-11-15, in certification.
+- Microsoft Store 0.10.0: submitted 2026-11-16, in certification (the 0.9.23 submission was cancelled for it).
 - Phone repo: merge the App Store and Report/Block work with master's Google Play commits before the next release.
 - Lap telemetry out of the database into R2, compressed: built on its branch, waits for the owner's push, then the switch (`docs/status/server-and-ops.md`).
 - The track map inside Telemetry's Lap compare template: built and shown, waits for the owner's word for the next version (`docs/status/releases.md`).
@@ -21,7 +21,7 @@ web (0.9.19); a full-app bug sweep follows.
 
 ## Live now
 
-PC and web 0.10.0 (2026-11-15, every PC must update to it: the full-screen track map with the chase view, Telemetry's Engineer view, the overlays' text size slider, trying the PC app without an account for 3 sessions, the fix for Telemetry's Full freezing, the Le Mans Ultimate lap times pages and the new landing), phones 0.9.14, Microsoft Store 0.9.15 (0.9.23 in certification, 0.10.0 to follow). The phones have not had any of it (the owner said no phone work for now). Stay on 0.x until Steam is approved.
+PC and web 0.10.0 (2026-11-15, every PC must update to it: the full-screen track map with the chase view, Telemetry's Engineer view, the overlays' text size slider, trying the PC app without an account for 3 sessions, the fix for Telemetry's Full freezing, the Le Mans Ultimate lap times pages and the new landing), phones 0.9.14, Microsoft Store 0.9.15 (0.10.0 in certification). The phones have not had any of it (the owner said no phone work for now). Stay on 0.x until Steam is approved.
 
 ## Areas
 

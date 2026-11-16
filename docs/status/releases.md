@@ -10,7 +10,7 @@ Status as of 2026-11-15. Rules for releasing are in CLAUDE.md and `docs/spec/pc-
 | Beta (beta.pitlanehq.app, PC Test builds) | 0.10.0 | 2026-11-15: the same build as production (ddfe657). |
 | Android | 0.9.14 | Production APK from /dl. Google Play: internal testing build 1291 (see `stores.md`). |
 | iOS | 0.9.14 | TestFlight build 392. App Store review not passed yet (see `stores.md`). |
-| Microsoft Store | 0.9.15 | 0.9.23 submitted 2026-11-15, in certification (see `stores.md`). |
+| Microsoft Store | 0.9.15 | 0.10.0 submitted 2026-11-16, in certification (see `stores.md`). |
 
 ## Branches (2026-11-14)
 

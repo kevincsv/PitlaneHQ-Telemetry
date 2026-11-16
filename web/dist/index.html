@@ -12170,8 +12170,9 @@ function renderStatsView(){const box=$("#statsBody");if(!box)return;const T=Tx;
     consCh=cl.length?statsChart({h:130,series:[{color:"var(--pb)",pts:cl.map(({s,c})=>({x:s.started,y:c,tip:`${dd(s.started)}${kindT(s)} · ± ${c.toFixed(3)} s`}))}],fmtY:v=>"± "+v.toFixed(2)+" s",fmtX:dd,floor:0,idle:cl.length>1?`${T("Latest","Última",null,"Última")} ± ${cl[cl.length-1].c.toFixed(2)} s · ${T("first","primera",null,"primeira")} ± ${cl[0].c.toFixed(2)} s`:`± ${cl[0].c.toFixed(2)} s`}):none(STATS_BUSY?loadT:T("Not enough clean laps in this period.","No hay suficientes vueltas limpias en este periodo.",null,"Não há voltas limpas suficientes neste período."));
     // each corner, the best lap of the first and the latest week against your best lap (the last 12 weeks at most)
     cornH=T(`Time per corner · ${C.track}`,`Tiempo por curva · ${C.track}`,null,`Tempo por curva · ${C.track}`);
-    const ref=all.reduce((a,s)=>!a||s.best<a.best?s:a,null),use=wk.slice(-12),key=C.k+"|"+ref.id+"|"+use.map(e=>e.s.id).join(",");
-    if(use.length<2)cornT=none(T("Drive this car and track in two different weeks to see each corner change.","Conduce este coche y circuito en dos semanas distintas para ver cómo cambia cada curva.",null,"Pilote este carro e pista em duas semanas diferentes para ver cada curva mudar."));
+    const ref=all.reduce((a,s)=>!a||s.best<a.best?s:a,null),use=wk.slice(-12),key=C.k+"|"+(ref?ref.id:"")+"|"+use.map(e=>e.s.id).join(",");
+    // a car and track with no timed lap (every session without a best lap) has nothing to compare: it used to stop the page
+    if(use.length<2||!ref)cornT=none(T("Drive this car and track in two different weeks to see each corner change.","Conduce este coche y circuito en dos semanas distintas para ver cómo cambia cada curva.",null,"Pilote este carro e pista em duas semanas diferentes para ver cada curva mudar."));
     else if(!STATS_CORN.has(key)){statsLoadCorners(key,ref,use);cornT=none(loadT)}
     else{const R=STATS_CORN.get(key);if(!R||!R.weeks.length||!R.ns.length)cornT=none(T("These laps have no telemetry to compare corners.","Estas vueltas no tienen telemetría para comparar las curvas.",null,"Estas voltas não têm telemetria para comparar as curvas."));
       else{const W=R.weeks,f=W[0],l=W[W.length-1],cls=d=>d<-.005?"good":d>.005?"bad":"";

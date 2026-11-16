@@ -7579,7 +7579,7 @@ function notesFor(id){return NOTES[String(id)]||null}
    phases (braking, entry, apex, exit), the tip about the phase where the time goes, the plan, the sectors, the line. The
    app hands it what it needs (anaCtx) and draws what it answers. */
 function anaCtx(A,B){const tid=A||B?(A&&A.trackId)||(B&&B.trackId)||TURN_TID:null,PM=window.PW_MODEL;
-  return{lang:LANG,units:UNITS,turns:tid?turnsFor(tid):null,turnNames:tid&&typeof turnNamesFor==="function"?turnNamesFor(tid):null,weights:COACH_W,me:COACH_ME,hint:A&&PM&&PM.cornerHint?apex=>PM.cornerHint(A,apex):null,post:devWords,track:anaTrack(A,B),estB:!!(B&&(B.est||B.field)),like:A&&PM&&PM.like?PM.like(A):null,progress:A&&!A.comm&&typeof coachProgress==="function"?coachProgress(A):null}}
+  return{lang:LANG,units:UNITS,game:typeof aGame==="function"?aGame():"",turns:tid?turnsFor(tid):null,turnNames:tid&&typeof turnNamesFor==="function"?turnNamesFor(tid):null,weights:COACH_W,me:COACH_ME,hint:A&&PM&&PM.cornerHint?apex=>PM.cornerHint(A,apex):null,post:devWords,track:anaTrack(A,B),estB:!!(B&&(B.est||B.field)),like:A&&PM&&PM.like?PM.like(A):null,progress:A&&!A.comm&&typeof coachProgress==="function"?coachProgress(A):null}}
 /* the track and car of the laps for the oval coach (ovalOf in the module): a session's laps carry them, a lap recorded
    live takes the session the agent reads now */
 function anaTrack(A,B){const L=[A,B].find(l=>l&&l.track);if(L)return{cat:L.cat||"",track:L.track||"",track_config:L.track_config||"",car:L.car||""};
@@ -7754,7 +7754,7 @@ function coachPlan(A,R,LP){return PWA.coachPlan(A,R,LP,anaCtx(A,R))}
    that car and track says whether each corner got faster. From COACH_W.min cases of a tip's kind on corners of that speed,
    the share of drivers who gained reorders the plan (coachOf in pitwall-analysis.js); the texts never change. The driver sees none of it, only
    the 👍/👎 on each tip; the admin panel (Coach) shows the counts. */
-/* The coach learns apart by discipline (road, oval, dirt oval, dirt road: catGroup in the module, ?cat= on the server): a
+/* The coach learns apart by discipline (road, oval, dirt oval, dirt road, and Le Mans Ultimate's prototypes and GTs: catGroup in the module, ?cat= on the server): a
    group's weights where it learnt enough, else everyone's. g is the group of the laps in the coach (undefined keeps the last) */
 let COACH_W={at:0,w:{},b:{},off:new Set(),conf:false,min:30,p:null,cat:""},COACH_ME={at:0,habits:[],w:{},p:null,cat:""};
 const coachCatQ=g=>g?"?cat="+encodeURIComponent(g):"";
@@ -7773,7 +7773,7 @@ async function coachReport(A,R,c,best){try{if(!A||!R||A.comm||demoOn()||!c||!c.c
   const corners=c.cs.slice(0,40).map(x=>{const b=near(x);return{n:x.n,d:Math.round(x.d),apex:Math.round(x.apex),kind:x.lost>.03?x.kind:"",cls:x.cls,lost:+x.lost.toFixed(3),ta:+x.ta.toFixed(3),tb:+x.tb.toFixed(3),tbest:b?+b.ta.toFixed(3):null,dd:x.dd!=null?Math.round(x.dd):null}});
   await cloudPost("/community/coach/tips",{game:aGame(),trackId:co.trackId,carId:co.carId,sid:w.sid,started:w.started,ref,lap:+A.time.toFixed(3),flags:A.flags||[],corners,cat:coachCat(A,R)})}catch(e){}}
 /* the discipline of the laps in the coach, what its tips and votes are kept under (catGroup in the module) */
-function coachCat(A,R){try{return PWA.catGroup(A,R||null,{track:anaTrack(A,R||null)})||""}catch(e){return""}}
+function coachCat(A,R){try{return PWA.catGroup(A,R||null,{track:anaTrack(A,R||null),game:aGame()})||""}catch(e){return""}}
 async function coachRate(A,c,up){const PM=window.PW_MODEL,w=coachWhere(A);if(!PM||!w||!c)return;const k=w.sid+":"+Math.round(c.apex),was=TIPRATE[k]||0,now=was===up?0:up;if(now)TIPRATE[k]=now;else delete TIPRATE[k];store.set("pw.tiprate",TIPRATE);
   try{const co=await PM.comboOf(A);if(!co)return;await cloudPost("/community/coach/rate",{game:aGame(),trackId:co.trackId,carId:co.carId,sid:w.sid,started:w.started,n:c.n,apex:Math.round(c.apex),kind:c.kind,cls:c.cls,up:now,cat:coachCat(A)})}catch(e){}}
 /* the step to the next level: the corners where the drivers at your pace lose to the driver just ahead (the model's levelStep) */

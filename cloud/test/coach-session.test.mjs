@@ -55,6 +55,18 @@ assert.equal(tc.n, 3); assert.equal(tc.of, 8); assert.ok(tc.cost > 1 && tc.corne
 const tp = PW.coachPlan(tl[0], R, tl, { lang: "es" }).plan.find((p) => p.k === "traffic");
 assert.ok(tp && /^El tráfico te cuesta/.test(tp.t) && /En 3 de 8 vueltas/.test(tp.what), "the traffic step");
 assert.equal(PW.trafficCost(laps[0], laps, {}), null, "no traffic laps, no step");
+// the multiclass words only where classes share the track; never on an oval (a car ahead there is a draft)
+assert.ok(!/multiclase/.test(tp.cost), "one class: no multiclass words");
+const tm = PW.coachPlan(tl[0], R, tl, { lang: "es", game: "lmu" }).plan.find((p) => p.k === "traffic");
+assert.ok(tm && /multiclase/.test(tm.cost), "Le Mans Ultimate: the multiclass words");
+assert.ok(!PW.coachPlan(tl[0], R, tl, { lang: "es", oval: "mile" }).plan.some((p) => p.k === "traffic"), "no traffic step on an oval");
+// the groups the coach learns in: Le Mans Ultimate's prototypes and GTs apart, iRacing by discipline as before
+assert.equal(PW.catGroup({ cls: "Hyper" }, null, { game: "lmu" }), "proto");
+assert.equal(PW.catGroup({ car: "Oreca 07" }, null, { game: "lmu" }), "proto");
+assert.equal(PW.catGroup({ cls: "GT3", car: "Ferrari 296" }, null, { game: "lmu" }), "gt");
+assert.equal(PW.catGroup({ car: "Unknown" }, null, { game: "lmu" }), "road");
+assert.equal(PW.catGroup({ cat: "Oval" }, null, { game: "iracing" }), "oval");
+assert.equal(PW.catGroup({ cat: "DirtRoad" }, null, {}), "dirt_road");
 
 // the hybrid: the reference deploys more, after T1
 const batA = Array.from({ length: 80 }, (_, i) => 80 - i * 0.2), batB = Array.from({ length: 80 }, (_, i) => (i > 20 && i < 40 ? 80 - (i - 20) * 1.5 : i >= 40 ? 50 : 80));

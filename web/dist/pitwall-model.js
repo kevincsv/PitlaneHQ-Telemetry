@@ -113,7 +113,7 @@ function carCard(A){if(!A||!Array.isArray(A.bins))return null;const id=carIdSync
 /* the car's corners and ovals on its other tracks and every car's ovals by kind: the coach's hints for the corners this
    track has no card of yet, the first driver on an oval included */
 const likeKey=(c,g)=>game()+":"+c.trackId+":"+c.carId+":"+(g||"");
-const catOfLap=lap=>{try{return window.PW_ANALYSIS&&typeof anaTrack==="function"?window.PW_ANALYSIS.catGroup(lap,null,{track:anaTrack(lap,null)})||"":""}catch(e){return""}}; // anaTrack, never anaCtx (which asks like())
+const catOfLap=lap=>{try{return window.PW_ANALYSIS&&typeof anaTrack==="function"?window.PW_ANALYSIS.catGroup(lap,null,{track:anaTrack(lap,null),game:game()})||"":""}catch(e){return""}}; // anaTrack, never anaCtx (which asks like())
 function loadLike(c,g){const key=likeKey(c,g);if(LIKE.key===key&&(LIKE.data||LIKE.busy)&&Date.now()-(LIKE.at||0)<600000)return LIKE.busy?LIKE.p:Promise.resolve(LIKE.data);
   LIKE.key=key;LIKE.busy=true;LIKE.data=null;LIKE.at=Date.now();
   LIKE.p=cget(url(`/api/community/like?trackId=${c.trackId}&carId=${c.carId}${g?"&cat="+g:""}`)).then(r=>r&&(r.cz||r.kinds)?r:null).catch(()=>null).then(k=>{if(LIKE.key===key){LIKE.data=k;LIKE.busy=false}return k});return LIKE.p}

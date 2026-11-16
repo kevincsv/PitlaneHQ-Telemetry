@@ -40,4 +40,11 @@ assert.equal(db.prepare("SELECT COUNT(*) AS n FROM coach_plan_votes").get().n, 1
 
 [st] = await call("/coach/tips", { ...at, started: 1.5, corners: [] });
 assert.equal(st, 400, "a start that is not a whole number");
+// Le Mans Ultimate's tips are kept apart by class: the prototypes and the GTs
+const { groupFor } = await import("../src/categories.js");
+assert.equal(await groupFor(env, "lmu", 1, 2, "proto"), "proto");
+assert.equal(await groupFor(env, "lmu", 1, 2, "", "Spa", "Porsche 911 GT3 R LMGT3"), "gt");
+assert.equal(await groupFor(env, "lmu", 1, 2, "", "Spa", "Ferrari 499P"), "proto");
+assert.equal(await groupFor(env, "lmu", 1, 2, "road"), "road", "an app of before: everything together as it was");
+assert.equal(await groupFor(env, "acc", 1, 2, "gt"), "road", "the other games as before");
 console.log("coach tips: ok");

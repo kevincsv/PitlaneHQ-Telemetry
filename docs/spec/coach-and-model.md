@@ -170,7 +170,9 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
 
 - **By discipline.** What the coach learns across tracks is kept apart by discipline (`groupOf`/`groupFor` in
   categories.js, `catGroup` in pitwall-analysis.js, migration 0087 `cat` on `coach_tips` and `coach_plan_votes`): oval,
-  dirt oval, dirt road, and road (sports and formula cars together, every other game road). The apps send the group of
+  dirt oval, dirt road, and road (sports and formula cars together); Le Mans Ultimate's prototypes (`proto`: Hypercar,
+  LMP2, LMP3) and GTs (`gt`: LMGT3, LMGTE) apart, from the lap's class or the car's name (`lmuGroup`, `lmuGroupOf`);
+  every other game road. The apps send the group of
   their laps (`cat` on POST `/coach/tips`, `/coach/rate`, `/coach/planrate`; the web's `coachCat`, the phones' `coachCat`
   from the session's category) and ask for it (`?cat=` on GET `/coach/weights` and `/coach/me`). A tip's bucket weighs by
   the group's own cases once it has `MIN_CASES` (its thumbs from `MIN_RATINGS`, a braking tip's metres from `MIN_ASK`
@@ -252,9 +254,11 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
 - **Traffic** (`trafficCost`, the plan's `traffic` step, `raceSteps`): lap A's session's valid laps not through the pits
   within 8 % of the best, the ones tagged `traffic` against the others (2 and 3 at least); when the traffic laps' median
   is over 0.3 s slower the plan says what traffic costs a lap, on how many laps, and the corners where the traffic laps
-  lose 0.1 s or more (three at most), with how to pass and be passed in a multiclass race. Never on a superspeedway.
-- **The hybrid** (`hybridUse`, the plan's `hybrid` step): with both laps' battery traces (`bat`, every 50 m, Le Mans
-  Ultimate's hybrids) the charge each lap ends with, what each deploys over the lap and the 400 m where the reference
+  lose 0.1 s or more (three at most), with how to pass. Le Mans Ultimate's (a multiclass game, `ctx.game` or
+  `ctx.multiclass`) also says how to be passed by a faster class; elsewhere how to drop back when there is no pass. Never on
+  an oval of any kind (a car ahead there is a draft or dirty air).
+- **The hybrid** (`hybridUse`, the plan's `hybrid` step): with both laps' battery traces (`bat`, every 50 m, any car whose game gives
+  `EnergyERSBatteryPct`: Le Mans Ultimate's hybrids, iRacing's GTPs) the charge each lap ends with, what each deploys over the lap and the 400 m where the reference
   deploys 3 % or more over lap A; a step when lap A ends 8 % or more fuller or deploys less there, marked on the map.
 - **Watch it**: every corner card of the coach opens the full-screen track map (pitwall-fullmap.js, `chase` in `open`) in
   the chase view 120 m before the corner's braking point, lap A and lap B driving it (`coachWatchWire`); without a track

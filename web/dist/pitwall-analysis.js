@@ -141,7 +141,17 @@
   /* the group the coach learns in (categories.js groupOf on the server): oval, dirt_oval, dirt_road or road, from the session's
      category (ctx.track.cat or the laps' cat), else the kind of oval the laps show; what /community/coach/weights and /coach/me
      take as ?cat= */
+  /* Le Mans Ultimate's classes drive apart: the prototypes (Hypercar, LMP2, LMP3: no ABS, more downforce) and the GTs
+     (LMGT3, LMGTE). From the class the game gave the lap, else the car's name; "" when neither says */
+  function lmuGroup(A) {
+    const c = String((A && (A.cls || A.carClass || A.class)) || "").toUpperCase(), n = String((A && A.car) || "");
+    if (/HYPER|LMH|LMDH|LMP/.test(c)) return "proto"; if (/GT/.test(c)) return "gt";
+    if (/gt3|gte|rsr|c8\.r|vantage amr/i.test(n)) return "gt";
+    if (/499p|963|gr010|9x8|v-series\.r|m hybrid|a424|sc63|scg ?007|vanwall|vandervell|isotta|tipo ?6|valkyrie|hypercar|lmdh|lmh|oreca|lmp|ligier|ginetta|duqueine/i.test(n)) return "proto";
+    return "";
+  }
   function catGroup(A, B, ctx) {
+    if (ctx && ctx.game === "lmu") return lmuGroup(A) || lmuGroup(B) || "road";
     const T = (ctx && ctx.track) || {}, c = String(T.cat || (A && A.cat) || (B && B.cat) || "").toLowerCase().replace(/[^a-z]/g, "");
     if (c === "oval") return "oval"; if (c === "dirtoval") return "dirt_oval"; if (c === "dirtroad") return "dirt_road";
     if (c) return "road";
@@ -395,14 +405,17 @@
   /* the plan's steps about traffic and the hybrid */
   function raceSteps(A, R, LP, cs, ov, sa, sb, n, Tx, ctx) {
     const P = [], r = Math.round, r2 = (v) => Math.round(v * 100) / 100;
-    const tc = ov === "superspeedway" ? null : trafficCost(A, LP, ctx);
+    // on an oval a car ahead is a draft or dirty air, not a pass to plan: the road only
+    const tc = ov ? null : trafficCost(A, LP, ctx), multi = !!(ctx && (ctx.game === "lmu" || ctx.multiclass));
     if (tc && tc.cost > .3) {
       const nm = tc.corners.map((c) => turnLab(ctx, c.n)).join(", ");
       P.push({ k: "traffic", id: "traffic", turns: tc.corners.map((c) => c.n), gain: tc.cost * tc.n / tc.of * .6,
         t: Tx(`Traffic costs you ${r2(tc.cost)} s a lap`, `El tráfico te cuesta ${r2(tc.cost)} s por vuelta`, `O tráfego custa ${r2(tc.cost)} s por volta`),
         what: Tx(`On ${tc.n} of ${tc.of} laps a car was close ahead. Those laps are ${r2(tc.cost)} s slower than your clean ones${nm ? `, most of it in ${nm}` : ""}.`, `En ${tc.n} de ${tc.of} vueltas había un coche cerca delante. Esas vueltas son ${r2(tc.cost)} s más lentas que las limpias${nm ? `, sobre todo en ${nm}` : ""}.`, `Em ${tc.n} de ${tc.of} voltas havia um carro perto à frente. Essas voltas são ${r2(tc.cost)} s mais lentas que as limpas${nm ? `, principalmente em ${nm}` : ""}.`),
-        cost: Tx("In a multiclass race you meet traffic every few laps, so the time lost behind a slower car or letting a faster one by adds up like a slow corner.", "En una carrera multiclase te encuentras tráfico cada pocas vueltas, así que el tiempo perdido detrás de un coche lento o dejando pasar a uno rápido suma como una curva lenta.", "Numa corrida multiclasse você encontra tráfego a cada poucas voltas, então o tempo perdido atrás de um carro lento ou deixando passar um rápido soma como uma curva lenta."),
-        how: Tx("Plan the pass a corner ahead and make it on the exit or the straight, never in the braking zone. When a faster class closes in, stay on your line and let it by where the track is straight.", "Prepara el adelantamiento una curva antes y hazlo a la salida o en la recta, nunca en la frenada. Cuando se acerque una clase más rápida, mantén tu trazada y déjala pasar donde la pista es recta.", "Prepare a ultrapassagem uma curva antes e faça na saída ou na reta, nunca na frenagem. Quando uma classe mais rápida se aproximar, mantenha sua linha e deixe passar onde a pista é reta."),
+        cost: multi ? Tx("In a multiclass race you meet traffic every few laps, so the time lost behind a slower car or letting a faster one by adds up like a slow corner.", "En una carrera multiclase te encuentras tráfico cada pocas vueltas, así que el tiempo perdido detrás de un coche lento o dejando pasar a uno rápido suma como una curva lenta.", "Numa corrida multiclasse você encontra tráfego a cada poucas voltas, então o tempo perdido atrás de um carro lento ou deixando passar um rápido soma como uma curva lenta.")
+          : Tx("Time lost stuck behind a car adds up over a race like a slow corner.", "El tiempo perdido atascado detrás de un coche suma en una carrera como una curva lenta.", "O tempo perdido preso atrás de um carro soma numa corrida como uma curva lenta."),
+        how: multi ? Tx("Plan the pass a corner ahead and make it on the exit or the straight, never in the braking zone. When a faster class closes in, stay on your line and let it by where the track is straight.", "Prepara el adelantamiento una curva antes y hazlo a la salida o en la recta, nunca en la frenada. Cuando se acerque una clase más rápida, mantén tu trazada y déjala pasar donde la pista es recta.", "Prepare a ultrapassagem uma curva antes e faça na saída ou na reta, nunca na frenagem. Quando uma classe mais rápida se aproximar, mantenha sua linha e deixe passar onde a pista é reta.")
+          : Tx("Plan the pass a corner ahead and make it on the exit or the straight, never in the braking zone. If you cannot pass, drop back a little so the car ahead does not spoil your braking and your exit.", "Prepara el adelantamiento una curva antes y hazlo a la salida o en la recta, nunca en la frenada. Si no puedes pasar, déjate un poco de hueco para que el coche de delante no te estropee la frenada ni la salida.", "Prepare a ultrapassagem uma curva antes e faça na saída ou na reta, nunca na frenagem. Se não der para passar, deixe um pouco de espaço para o carro da frente não estragar sua frenagem e sua saída."),
         marks: tc.corners.map((c) => ({ d: c.apex, k: "apex", n: c.n })), spans: tc.corners.map((c) => [Math.max(0, c.d - 50), c.apex + 150]) });
     }
     const hy = hybridUse(A, R);
@@ -1420,7 +1433,7 @@
 
   const api = { VERSION, BIN, lapSeries, serOf, lapShape, sameFrame, lineOffsets, cornerLine, lineTip, brakeZones, PHASES, phaseName, turnNo, COACH_GEN, cornerClass, cornerZones,
     OVAL_KINDS, ovalOf, liftZones, ovalZones, dirtLineTip, coachCompare, cornerConsistency, pairSecs, lapDriving, kindName, stepName, tipMain, tipShort, tipTodo, coachPlan, stepText, analyzerFacts, analyse,
-    estOf, failedOf, progressLines, followUp, trackGuide, cornerRanks, clsLines, racePace, edgeUse, notesOf, guideItems, likeOf, likeSteps, catGroup,
+    estOf, failedOf, lmuGroup, progressLines, followUp, trackGuide, cornerRanks, clsLines, racePace, edgeUse, notesOf, guideItems, likeOf, likeSteps, catGroup,
     turnLab, trafficCost, hybridUse, raceSteps, sessionLaps, sessionRepeat, repText, turnByTurn, sinceLast, lapSpread, cornerSpread, offsExplained, ggOf, steerOf, understeer, tyreLaps, fuelUse, fuelPlan, insights, pedalCheck, slopeOf, sessionGoals, raceStory };
   root.PW_ANALYSIS = api;
   if (typeof module !== "undefined" && module.exports) module.exports = api;

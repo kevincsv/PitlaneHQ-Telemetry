@@ -6,6 +6,10 @@ improvements". 1.0.0 comes when the beta ends. Newest first.
 
 ## 0.10.1 beta
 
+- Telemetry's menu is simpler. Dashboard, Live lap compare and Team, with Rev beep and Phone & sharing under Car & tools.
+- Standings is now a view of the Dashboard next to Engineer, and Customize changes its columns and rows like the Standings overlay.
+- After a race the race report opens with your result and the three corners that cost you the most. Open the coach goes straight to that session.
+- The coach judges every corner over the whole session, with Turn by turn in the lap analyzer, Watch it for the chase view of a corner and this session against the last one.
 - Fixes and improvements.
 
 ## 0.10.0 beta

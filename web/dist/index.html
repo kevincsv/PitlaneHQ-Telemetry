@@ -7101,13 +7101,13 @@ const VIEW_LABEL={team:"tab.team",leagues:"tab.leagues",fulltelemetry:"tab.fullt
 const TOOLS_V=["revbeep","setups","share"];
 function renderSubtabs(v){const g=groupOf(v),box=$("#subtabs"),list=GROUPS[g].filter(x=>x!=="setups"||setupsOk());box.hidden=list.length<2||OV.on;stMenuClose();
   const short=matchMedia("(max-width:820px)").matches,SH={laps:["Laps","Vueltas","Runden","Voltas"],coach:["Coach","Coach","Coach","Coach"],cloudlaps:["My sessions","Mis sesiones","Meine Sitzungen","Minhas sessões"],tyres:["Tyres","Neumáticos","Reifen","Pneus"]}; /* the phone's sub-tabs keep the PC's names (Standings, never "Field") */
-  const lab=x=>short&&SH[x]?esc(Tx(...SH[x])):L(VIEW_LABEL[x],true),beta=x=>x==="team"?`<span class="pill acc" style="font-size:9px;padding:1px 5px;margin-left:4px">Beta</span>`:"";
+  const lab=x=>short&&SH[x]?esc(Tx(...SH[x])):L(VIEW_LABEL[x],true),beta=x=>x==="team"||x==="setups"?`<span class="pill acc" style="font-size:9px;padding:1px 5px;margin-left:4px">Beta</span>`:"";
   if(g==="race"){const cmp=v==="live"&&LIVE_MODE==="cmp",tools=list.filter(x=>TOOLS_V.includes(x)),tb=(x,on,l,lm)=>`<button type="button" role="tab" data-v="${x}"${lm?` data-lm="${lm}"`:""} aria-selected="${on}">${l}</button>`;
     let h="";list.filter(x=>!TOOLS_V.includes(x)).forEach(x=>{h+=x==="live"?tb("live",v==="live"&&!cmp,esc(Tx("Dashboard","Panel",null,"Painel")),"dash")+tb("live",cmp,esc(Tx("Live lap compare","Comparar vueltas en vivo",null,"Comparar voltas ao vivo")),"cmp"):tb(x,x===v,lab(x)+beta(x))});
     if(tools.length){const on=tools.includes(v);h+=`<button type="button" class="st-btn" aria-haspopup="menu" aria-expanded="false" aria-selected="${on}">${esc(Tx("Car & tools","Coche y herramientas",null,"Carro e ferramentas"))}${on?" · "+lab(v):""}<span class="st-car" aria-hidden="true">▾</span></button>`}
     box.innerHTML=h;
     box.querySelectorAll("button[data-v]").forEach(b=>b.onclick=()=>{if(b.dataset.lm&&(b.dataset.lm==="cmp")!==(LIVE_MODE==="cmp"))liveSetMode(b.dataset.lm);show("live"===b.dataset.v?"live":b.dataset.v)});
-    const t=box.querySelector(".st-btn");if(t)t.onclick=e=>{e.stopPropagation();stMenuOpen(t,tools.map(x=>[x,lab(x)]),v)};
+    const t=box.querySelector(".st-btn");if(t)t.onclick=e=>{e.stopPropagation();stMenuOpen(t,tools.map(x=>[x,lab(x)+beta(x)]),v)};
     liveOffUI();return}
   box.innerHTML=list.map(x=>`<button type="button" role="tab" data-v="${x}" aria-selected="${x===v}">${lab(x)}${beta(x)}</button>`).join("");
   box.querySelectorAll("button").forEach(b=>b.onclick=()=>show(b.dataset.v));liveOffUI()}

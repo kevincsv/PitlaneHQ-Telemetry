@@ -22,7 +22,8 @@ const JSONH = { "content-type": "application/json; charset=utf-8", "cache-contro
 const json = (v, status = 200, h = {}) => new Response(JSON.stringify(v), { status, headers: { ...JSONH, ...h } });
 const err = (msg, status) => json({ error: msg }, status);
 const num = (v) => (typeof v === "number" && isFinite(v) ? v : null);
-const int = (v) => (Number.isInteger(v) && v > 0 && v < 1e12 ? v : null);
+// a whole number above 0; a session's start in milliseconds (1.8e12 in 2026) fits too
+const int = (v) => (Number.isSafeInteger(v) && v > 0 ? v : null);
 const str = (v, max = 40) => (typeof v === "string" ? v.slice(0, max) : "");
 const KIND = /^[a-z_]{1,32}$/, CLS = { slow: 1, medium: 1, fast: 1 }, REF = { level: 1, record: 1, own: 1, comm: 1 };
 const r3 = (v) => Math.round(v * 1000) / 1000;

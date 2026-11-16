@@ -13,7 +13,9 @@ Status as of 2026-11-16. Behaviour is in `docs/spec/coach-and-model.md` and `doc
   per lap yet, so it needs a PC build).
 - Real data (2026-11-16): every tip the server holds is the server's own coach (`src` auto, 2,769 rows, 48 drivers, LMU
   33 of them); none came from the apps' coach (`src` app 0, no 👍/👎, no plan votes), so "what a tip is worth" has no
-  baseline yet. Why the apps' POST /coach/tips never lands is open. About 2 in 3 answered tips gained time next session
+  baseline yet. The cause, fixed on the branch (coach-tips.test.mjs): the server refused every start above 1e12, and a
+  start in milliseconds is 1.8e12, so every tip, thumb and plan vote got a 400 (1,043 coach reports since Oct 28). It
+  reaches the apps once the server fix is in production. About 2 in 3 answered tips gained time next session
   for every kind, so no threshold stands out to retune yet.
 - Ask the coach (AI chat with the driver's own Claude, OpenAI or Gemini key): testers and admins only (`wipOk`).
   The key is sealed on every device (DPAPI, WebCrypto non-extractable key, Keystore, Keychain).

@@ -654,6 +654,17 @@ async function handle(req, env, ctx) {
     }
     // one address for the app: /index.html is "/"
     if (url.pathname === "/index.html") { const to = new URL(req.url); to.pathname = "/"; return Response.redirect(to.href, 301); }
+    // the free setups library (tools/setups-library.mjs): web/dist/_setups, kept out of the PC app's own files
+    const lib = url.pathname.match(/^\/setups-library\/(index\.json|[0-9a-f]{16}\.(?:sto|svm)|licenses\/[A-Za-z0-9_.-]{1,80}\.txt)$/);
+    if (lib && (req.method === "GET" || req.method === "HEAD")) {
+      if (!env.ASSETS) return err("the app is not published on this server", 404);
+      const r = await env.ASSETS.fetch(new Request(new URL("/_setups/" + lib[1], url.origin), req));
+      const h = new Headers(r.headers);
+      h.set("x-content-type-options", "nosniff");
+      h.set("cache-control", lib[1] === "index.json" ? "no-cache" : "public, max-age=86400");
+      if (!lib[1].endsWith(".json")) h.set("content-type", lib[1].endsWith(".txt") ? "text/plain; charset=utf-8" : "application/octet-stream");
+      return new Response(r.body, { status: r.status, headers: h });
+    }
     const isAppFile = /^\/(sw\.js|fonts\.css|pitwall-[a-z0-9-]+\.js|app-news\.json|whats-new\.json|server\.json|manifest\.webmanifest|favicon\.ico|favicon-32\.png|icon-\d+\.png|logo\.svg|bimi\.svg|og(?:-es|-pt)?\.png|robots\.txt|landing\/(?:en\/|es\/|pt\/)?[a-z0-9-]+\.(?:jpg|png)|landing\/live-lap\.json)$/.test(url.pathname);
     if ((url.pathname === "/" && url.searchParams.get("embed") !== "1") || isAppFile) {
       if (!env.ASSETS) return err("the app is not published on this server", 404);

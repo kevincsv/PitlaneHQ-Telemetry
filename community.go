@@ -1086,7 +1086,6 @@ func handleCommSetups(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(code)
 		writeJSON(w, map[string]string{"error": err.Error()})
 	}
-	root := setupsRoot()
 	if r.Method != http.MethodPost {
 		q := r.URL.Query()
 		v := url.Values{}
@@ -1112,14 +1111,16 @@ func handleCommSetups(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var in struct {
-		Action, Key, ID, Notes, Track, Name string
+		Action, Key, ID, Notes, Track, Name, Game string
 	}
 	json.NewDecoder(io.LimitReader(r.Body, 8192)).Decode(&in)
 	idOK := in.ID != "" && len(in.ID) <= 64 && !strings.ContainsAny(in.ID, "/?#.")
 	switch in.Action {
 	case "share":
+		game := setupsGame(in.Game)
+		root := setupsRootFor(game)
 		p, ok := safeSetupPath(root, in.Key)
-		if !ok || !strings.EqualFold(filepath.Ext(p), ".sto") {
+		if !ok || !strings.EqualFold(filepath.Ext(p), setupsExt(game)) {
 			fail(400, errors.New("unknown setup"))
 			return
 		}
@@ -1128,13 +1129,25 @@ func handleCommSetups(w http.ResponseWriter, r *http.Request) {
 			fail(400, errors.New("could not read the setup (max 400 KB)"))
 			return
 		}
-		car := strings.SplitN(in.Key, "/", 2)[0]
-		carName := car
-		carsMu.Lock()
-		if n := cars.Seen[car]; n != "" {
-			carName = n
+		folder := strings.SplitN(in.Key, "/", 2)[0]
+		car, carName, track := folder, folder, cleanText(in.Track, 80)
+		if game == "lmu" { // the car is in the file; the track is the folder it goes back into
+			car, track = svmCar(data), folder
+			if car == "" || !setupCarRe.MatchString(car) {
+				fail(400, errors.New("not a Le Mans Ultimate setup"))
+				return
+			}
+			carName = car
+			if cur := currentSetupsCar("lmu", root); normWord(cur["carPath"]) == normWord(car) && cur["car"] != "" {
+				carName = cur["car"]
+			}
+		} else {
+			carsMu.Lock()
+			if n := cars.Seen[car]; n != "" {
+				carName = n
+			}
+			carsMu.Unlock()
 		}
-		carsMu.Unlock()
 		name := in.Name
 		if name == "" {
 			name = strings.TrimSuffix(filepath.Base(p), filepath.Ext(p))
@@ -1144,46 +1157,86 @@ func handleCommSetups(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		sum := sha256.Sum256(data)
-		b, err := commCall("POST", "/setups", map[string]any{"carPath": car, "car": carName, "track": cleanText(in.Track, 80), "name": cleanSetupName(name),
+		b, err := commCall("POST", "/setups?game="+game, map[string]any{"carPath": car, "car": carName, "track": track, "name": strings.TrimSuffix(cleanSetupName(name), ".svm"),
 			"notes": cleanText(in.Notes, 1000), "data": base64.StdEncoding.EncodeToString(data), "sha": hex.EncodeToString(sum[:])}, true)
 		if err != nil {
 			fail(400, err)
 			return
 		}
+		markSetup(game, in.Key, func(m *setupMeta) { m.Shared = true })
 		w.Header().Set("Content-Type", "application/json")
 		w.Write(b)
-	case "install":
+	case "install", "library":
 		if !idOK {
 			fail(400, errors.New("bad id"))
 			return
 		}
-		b, err := commCall("GET", "/setups/"+in.ID, nil, false)
-		if err != nil {
-			fail(502, err)
-			return
-		}
 		var s struct {
-			CarPath, Name, Alias, Data, Sha string
+			Game, CarPath, Track, Name, Alias, Data, Sha string
 		}
-		json.Unmarshal(b, &s)
-		data, err := base64.StdEncoding.DecodeString(s.Data)
-		if err != nil {
-			fail(400, errors.New("damaged setup"))
-			return
+		var data []byte
+		if in.Action == "library" { // the free setups library: the file, checked against the checksum the index gives
+			b, err := commRequest("GET", "/setups-library/index.json", nil, "")
+			if err != nil {
+				fail(502, err)
+				return
+			}
+			var idx struct {
+				Sources []struct{ ID, Credit string }
+				Setups  []struct{ ID, Game, Ext, Sha, CarPath, Track, Name, Source string }
+			}
+			json.Unmarshal(b, &idx)
+			for _, x := range idx.Setups {
+				if x.ID == in.ID && (x.Ext == "sto" || x.Ext == "svm") {
+					s.Game, s.CarPath, s.Track, s.Name, s.Sha = x.Game, x.CarPath, x.Track, x.Name, x.Sha
+					for _, src := range idx.Sources {
+						if src.ID == x.Source {
+							s.Alias = src.Credit
+						}
+					}
+					if data, err = commRequest("GET", "/setups-library/"+x.ID+"."+x.Ext, nil, ""); err != nil {
+						fail(502, err)
+						return
+					}
+				}
+			}
+			if s.Sha == "" {
+				fail(404, errors.New("this setup is no longer in the library"))
+				return
+			}
+		} else {
+			b, err := commCall("GET", "/setups/"+in.ID, nil, false)
+			if err != nil {
+				fail(502, err)
+				return
+			}
+			json.Unmarshal(b, &s)
+			if data, err = base64.StdEncoding.DecodeString(s.Data); err != nil {
+				fail(400, errors.New("damaged setup"))
+				return
+			}
 		}
-		if s.Sha != "" {
+		if s.Sha != "" || in.Action == "library" {
 			if sum := sha256.Sum256(data); hex.EncodeToString(sum[:]) != s.Sha {
 				fail(400, errors.New("the download does not match its checksum"))
 				return
 			}
 		}
-		p, err := installSetup(root, s.CarPath, s.Name, s.Alias, data)
+		game := setupsGame(s.Game)
+		root := setupsRootFor(game)
+		var p string
+		var err error
+		if game == "lmu" {
+			p, err = installLMUSetup(root, s.Track, s.Name, s.Alias, data)
+		} else {
+			p, err = installSetup(root, s.CarPath, s.Name, s.Alias, data)
+		}
 		if err != nil {
 			fail(400, err)
 			return
 		}
 		rel, _ := filepath.Rel(root, p)
-		writeJSON(w, map[string]string{"installed": filepath.ToSlash(rel)})
+		writeJSON(w, map[string]string{"installed": filepath.ToSlash(rel), "game": game})
 	case "delete":
 		if !idOK {
 			fail(400, errors.New("bad id"))

@@ -2253,9 +2253,8 @@ html .hl-sec{padding:0 0 12px;border-radius:var(--radius);display:flex;flex-dire
 
 <!-- SETUP LIBRARY -->
 <section class="view" id="v-setups" hidden>
-  <div class="vhead"><div><h1 data-i18n="tab.setups"></h1><div class="sub" id="setupsSub"></div></div>
-    <div class="controls"><input type="search" id="setupQ" aria-label="Search"><button class="btn" type="button" id="setupFolder"></button></div></div>
-  <div class="seg" id="setupSeg" style="margin-bottom:12px"><button type="button" data-s="mine" aria-pressed="true"></button><button type="button" data-s="comm" aria-pressed="false"></button></div>
+  <div class="vhead"><div><h1><span data-i18n="tab.setups"></span><span id="setupsPill"></span></h1></div>
+    <div class="controls"><button class="btn" type="button" id="setupFolder" hidden></button></div></div>
   <div id="setupsBody"></div>
 </section>
 
@@ -6161,6 +6160,8 @@ const GAME_WIP=new Set(["acc","ac"]);
 const isTester=()=>!!(typeof ME!=="undefined"&&ME&&ME.tester);
 const wipOk=()=>{try{return isAdmin()||isTester()}catch(e){return false}};
 const gameLocked=k=>GAME_WIP.has(k)&&!wipOk();
+/* Setups (beta): the testers and the admins (admin mode on) only, until it is out for everyone (pitwall-setups.js) */
+const setupsOk=()=>wipOk();
 const wipTitle=()=>Tx("In development","En desarrollo","In Entwicklung","Em desenvolvimento");
 const wipPill=()=>`<span class="pill acc" style="font-size:9px;padding:1px 5px;margin-left:4px">${esc(wipTitle())}</span>`;
 const betaPill=()=>`<span class="pill acc" style="font-size:9px;padding:1px 5px;margin-left:4px">Beta</span>`;
@@ -6301,7 +6302,7 @@ document.addEventListener("visibilitychange",keepAwake);
 /* ===================== navigation ===================== */
 let CUR_VIEW="live";
 const tabs=[...document.querySelectorAll("nav.tabs button")];
-const GROUPS={home:["home"],race:["live","field","strategy","tyres","revbeep"],overlays:["overlays"],analysis:["laps","coach","cloudlaps","races","data"],season:["calendar","series","news","goals"],rig:[],community:["community","leagues"],account:["me","account","plan"],settings:["settings"]};
+const GROUPS={home:["home"],race:["live","field","strategy","tyres","revbeep","setups"],overlays:["overlays"],analysis:["laps","coach","cloudlaps","races","data"],season:["calendar","series","news","goals"],rig:[],community:["community","leagues"],account:["me","account","plan"],settings:["settings"]};
 // the Data view: hidden from everyone for now (admins included); ADMIN_ANALYSIS would add a view back for admins
 const ADMIN_ANALYSIS=[];GROUPS.analysis=GROUPS.analysis.filter(v=>v!=="data"&&!ADMIN_ANALYSIS.includes(v));
 if(!FEATURES.goals)GROUPS.season=GROUPS.season.filter(v=>v!=="goals");
@@ -6504,7 +6505,7 @@ function applyAdmin(){setTimeout(adminWanted);demoBanner();renderViewToggle();{c
   if(typeof CUR_VIEW!=="undefined"&&CUR_VIEW){if(!on&&CUR_VIEW==="account")show("me");else if(groupOf(CUR_VIEW)==="account")renderSubtabs(CUR_VIEW);if(CUR_VIEW==="settings"&&!on&&SET_SEC==="set-conn")setSection("set-general")}}
 const groupOf=v=>Object.keys(GROUPS).find(g=>GROUPS[g].includes(v))||"race";
 const VIEW_LABEL={leagues:"tab.leagues",fulltelemetry:"tab.fulltelemetry",cloudlaps:"tab.cloudlaps",share:"tab.share",me:"tab.me",home:"tab.home",live:"tab.live",community:"tab.community",plan:"tab.plan",news:"tab.news",races:"tab.races",tracks:"tab.tracks",revbeep:"tab.revbeep",field:"tab.field",laps:"tab.analyzer",tyres:"tab.tyres",data:"tab.data",calendar:"tab.calendar",series:"tab.series",rig:"tab.rigGear",haptics:"tab.haptics",coach:"tab.coach",strategy:"tab.strategy",goals:"tab.goals",cars:"tab.cars",setups:"tab.setups",account:"tab.account",settings:"settings",overlays:"tab.overlays"};
-function renderSubtabs(v){const g=groupOf(v),box=$("#subtabs"),list=GROUPS[g];box.hidden=list.length<2||OV.on;
+function renderSubtabs(v){const g=groupOf(v),box=$("#subtabs"),list=GROUPS[g].filter(x=>x!=="setups"||setupsOk());box.hidden=list.length<2||OV.on;
   const short=matchMedia("(max-width:820px)").matches,SH={laps:["Laps","Vueltas","Runden","Voltas"],coach:["Coach","Coach","Coach","Coach"],cloudlaps:["My sessions","Mis sesiones","Meine Sitzungen","Minhas sessões"],tyres:["Tyres","Neumáticos","Reifen","Pneus"]}; /* the phone's sub-tabs keep the PC's names (Standings, never "Field") */
   box.innerHTML=list.map(x=>`<button type="button" role="tab" data-v="${x}" aria-selected="${x===v}">${short&&SH[x]?esc(Tx(...SH[x])):L(VIEW_LABEL[x],true)}</button>`).join("");
   box.querySelectorAll("button").forEach(b=>b.onclick=()=>show(b.dataset.v));liveOffUI()}
@@ -6523,7 +6524,7 @@ var VIEW_HIST=[];
     if(s0.edge&&dx>0){const v=VIEW_HIST.pop();if(v){show.back=true;show(v);scrollTo(0,0)}return}
     if(skip(s0.el))return;const list=(GROUPS[groupOf(CUR_VIEW)]||[]),i=list.indexOf(CUR_VIEW);if(i<0)return;
     const n=list[i+(dx<0?1:-1)];if(n){show(n);scrollTo(0,0)}},{passive:true})})();
-function show(v){document.querySelectorAll("nav.tabs button").forEach(b=>{const t=b.querySelector("span");if(t&&t.textContent)b.title=t.textContent});if(v==="rig")v="settings";if(v==="admin"&&!isAdmin()){ADMIN_WANT=true;v="me"}if(typeof CUR_VIEW==="undefined"||v!==CUR_VIEW)usageCount("view:"+v);if(typeof CUR_VIEW!=="undefined"&&CUR_VIEW&&v!==CUR_VIEW&&!OV.on)closeOpenPanels();if(v==="fulltelemetry")v="laps";if(typeof signWallOn==="function"&&signWallOn()&&v!=="me")v="me";if(v==="strategy"&&!FEATURES.strategy)v="live";if(PCAPP&&PC_OFF.includes(v))v="live";if(v==="haptics"&&!PHONE){SET_SEC="set-general";rawSet("pw.setSec","set-general");v="settings"}if(PHONE&&["haptics","rig","cars"].includes(v))v="settings";if(v==="goals"&&!FEATURES.goals)v="calendar";if(!show.back&&VIEW_HIST&&CUR_VIEW&&CUR_VIEW!==v){VIEW_HIST.push(CUR_VIEW);if(VIEW_HIST.length>30)VIEW_HIST.shift()}show.back=false;CUR_VIEW=v;const g=groupOf(v);tabs.forEach(b=>b.setAttribute("aria-selected",b.dataset.g===g||(b.dataset.g==="more"&&MORE_G.includes(g))));renderSubtabs(v);renderGameBar(v);$("#setBtn").setAttribute("aria-pressed",v==="settings");
+function show(v){document.querySelectorAll("nav.tabs button").forEach(b=>{const t=b.querySelector("span");if(t&&t.textContent)b.title=t.textContent});if(v==="rig")v="settings";if(v==="admin"&&!isAdmin()){ADMIN_WANT=true;v="me"}if(typeof CUR_VIEW==="undefined"||v!==CUR_VIEW)usageCount("view:"+v);if(typeof CUR_VIEW!=="undefined"&&CUR_VIEW&&v!==CUR_VIEW&&!OV.on)closeOpenPanels();if(v==="fulltelemetry")v="laps";if(typeof signWallOn==="function"&&signWallOn()&&v!=="me")v="me";if(v==="strategy"&&!FEATURES.strategy)v="live";if(v==="setups"&&!setupsOk())v="live";if(PCAPP&&PC_OFF.includes(v))v="live";if(v==="haptics"&&!PHONE){SET_SEC="set-general";rawSet("pw.setSec","set-general");v="settings"}if(PHONE&&["haptics","rig","cars"].includes(v))v="settings";if(v==="goals"&&!FEATURES.goals)v="calendar";if(!show.back&&VIEW_HIST&&CUR_VIEW&&CUR_VIEW!==v){VIEW_HIST.push(CUR_VIEW);if(VIEW_HIST.length>30)VIEW_HIST.shift()}show.back=false;CUR_VIEW=v;const g=groupOf(v);tabs.forEach(b=>b.setAttribute("aria-selected",b.dataset.g===g||(b.dataset.g==="more"&&MORE_G.includes(g))));renderSubtabs(v);renderGameBar(v);$("#setBtn").setAttribute("aria-pressed",v==="settings");
   document.querySelectorAll("section.view").forEach(s=>s.hidden=s.id!=="v-"+v);if(COMPANION&&(g==="race"&&!CPLIVE.on&&!DEMOLIVE||["haptics","rig","cars"].includes(v))){document.querySelectorAll("section.view").forEach(s=>s.hidden=s.id!=="v-pc");$("#subtabs").hidden=true;renderPC();return}if(!OV.on)store.set("pw.tab",v);setWantAll(true);
   if(!FEATURES.planner&&(v==="calendar"||v==="series"))plannerWip(v);if(v==="laps"){const sec=$("#v-"+v);if(sec&&sec.querySelector(".wip-card")){sec.classList.remove("wip");sec.querySelector(".wip-card").remove()}}if(v==="home")renderHome();if(v==="me")renderMe();if(v==="settings"&&!COMPANION)setTimeout(()=>setSection(SET_SEC),0);if(COMPANION&&v==="settings"){cpTrimSettings();setTimeout(cpTrimSettings,0);setTimeout(cpTrimSettings,400)}if(v==="laps")renderLaps();if(v==="account")renderAccount();if(v==="settings"){renderCodeShare();renderShare();renderNotifPanel()}if(v==="overlays")renderOverlaysTab();if(v==="settings"&&!COMPANION)renderRig();if(v==="calendar")renderCalendar();if(v==="haptics")renderHaptics();if(v==="coach")renderCoach();if(v==="admin")renderAdminPage();if(v==="revbeep")renderShiftPanel();if(v==="strategy")renderStrategy();if(v==="goals")renderGoals();if(v==="cars"){renderShiftPanel();renderCars()}if(v==="races")renderRaces();if(v==="community")renderCommunity();if(v==="leagues")renderLeagues();if(v==="plan")renderPlan();if(typeof applyProGate==="function")applyProGate(v);if(v==="news")renderNews();if(v==="tracks")renderTracks();if(v==="setups")renderSetups();if(v==="tyres")renderTyres();if(v==="series")renderSeries();if(v==="field")renderStandings();if(v==="data")renderVarTable();if(v==="share"){renderSettings();renderCodeShare()}if(v==="cloudlaps")renderCloudLaps();if(v==="races"||v==="share")renderWip();if(v==="settings"){renderSettings();renderAccount();renderG61Panel();renderCloudPanel();renderStartPanel();renderAbout();renderDiscordPanel();renderUpdatePanel();renderPairPanel()}if(v==="live"){liveSlow();renderRelative()}}
 /* a main tab always opens on its first sub-tab (where you were last time is not kept) */
@@ -7673,33 +7674,6 @@ async function renderCars(){const box=$("#carsBody");if(!box)return;$("#carsSub"
   $("#csForget").onclick=()=>forget(sel());box.querySelectorAll("[data-cforget]").forEach(b=>b.onclick=()=>forget([b.dataset.cforget]));
   box.querySelectorAll("[data-cdel]").forEach(b=>b.onclick=()=>post({action:"delete",key:b.dataset.cdel}))}
 
-/* ===================== setup library ===================== */
-const SETUPS_DEMO={root:"C:\\Users\\you\\Documents\\iRacing\\setups",current:{car:"Global Mazda MX-5 Cup",setup:"Laguna race.sto",track:"WeatherTech Raceway Laguna Seca"},cars:[{car:"mx5 mx52016",files:[{key:"mx5 mx52016/Laguna race.sto",name:"Laguna race",changed:new Date(Date.now()-864e5).toISOString(),size:4100,notes:"More rear wing, softer front ARB. Good on old tyres.",tags:["race","stable"],bests:{"WeatherTech Raceway Laguna Seca":82.913}},{key:"mx5 mx52016/Laguna quali.sto",name:"Laguna quali",changed:new Date(Date.now()-2*864e5).toISOString(),size:4100,tags:["quali"],bests:{"WeatherTech Raceway Laguna Seca":82.511}},{key:"mx5 mx52016/baseline.sto",name:"baseline",changed:new Date(Date.now()-30*864e5).toISOString(),size:4000}]},{key:"gr86",car:"toyotagr86",files:[{key:"toyotagr86/Okayama.sto",name:"Okayama",changed:new Date(Date.now()-9*864e5).toISOString(),size:3900,bests:{"Okayama International Circuit · Full Course":92.334}}]}]};
-async function renderSetups(){const box=$("#setupsBody");if(!box)return;
-  document.querySelectorAll("#setupSeg button").forEach(b=>{b.textContent=b.dataset.s==="mine"?Tx("My setups","Mis setups"):Tx("Community setups","Setups de la comunidad");b.setAttribute("aria-pressed",b.dataset.s===SETUP_TAB);b.onclick=()=>{SETUP_TAB=b.dataset.s;renderSetups()}});
-  $("#setupQ").hidden=$("#setupFolder").hidden=SETUP_TAB==="comm";if(SETUP_TAB==="comm")return renderCommSetups();$("#setupQ").placeholder=Tx("Search setups, notes or tags","Buscar setups, notas o etiquetas");$("#setupFolder").textContent=Tx("Open folder","Abrir carpeta");
-  const d=MODE==="local"?SETUPS_DEMO:await rigGet("/api/setups");if(!d){box.innerHTML="";return}SETUPS_DATA=d;
-  $("#setupsSub").innerHTML=d.root?esc(d.root):Lp("iRacing's setups folder was not found on this PC.","No se encontró la carpeta de setups de iRacing en este PC.");
-  const q=($("#setupQ").value||"").toLowerCase(),cur=d.current||{};
-  const cars=(d.cars||[]).map(c=>({...c,files:c.files.filter(f=>!q||(c.car+" "+f.name+" "+(f.notes||"")+" "+(f.tags||[]).join(" ")).toLowerCase().includes(q))})).filter(c=>c.files.length);
-  box.innerHTML=(MODE==="local"?`<div class="callout">${Lp("Demo: example setups. In the app you see the real ones from Documents\\iRacing\\setups.","Demo: setups de ejemplo. En la app ves los reales de Documentos\\iRacing\\setups.")}</div>`:"")+
-    (cur.setup?`<div class="panel" style="margin-bottom:10px"><div class="label">${esc(Tx("Loaded now","Cargado ahora"))}</div><div class="mid">${esc(cur.setup)}</div><div class="sub">${esc(cur.car||"")} · ${esc(cur.track||"")}</div></div>`:"")+
-    (cars.length?cars.map(c=>`<div class="panel" style="margin-bottom:10px"><h2>${esc(c.car)}</h2><div class="tscroll"><table><thead><tr><th>Setup</th><th>${esc(Tx("Best laps with it","Mejores vueltas con él"))}</th><th>${esc(Tx("Notes","Notas"))}</th><th class="r">${esc(Tx("Changed","Modificado"))}</th><th></th></tr></thead><tbody>${c.files.map(f=>`<tr><td><b>${esc(f.name)}</b>${f.folder?`<br><span class="muted" style="font-size:12px">${esc(f.folder)}</span>`:""}${(f.tags||[]).map(t=>` <span class="pill">${esc(t)}</span>`).join("")}</td>
-      <td>${Object.entries(f.bests||{}).map(([t,v])=>`<div><span class="mono pb">${fmtT(v)}</span> <span class="muted" style="font-size:12px">${esc(t)}</span></div>`).join("")||`<span class="muted">–</span>`}</td>
-      <td style="max-width:320px">${esc(f.notes||"")}</td><td class="r mono">${esc(new Date(f.changed).toLocaleDateString(locale()))}</td>
-      <td><button type="button" class="pin" data-snote="${esc(f.key)}">${esc(Tx("Notes","Notas"))}</button>${MODE==="bridge"?`<button type="button" class="pin" data-sshow="${esc(f.key)}">${esc(Tx("Show","Mostrar"))}</button>`:""}<button type="button" class="pin" data-sshare="${esc(f.key)}">${esc(Tx("Share","Compartir"))}</button></td></tr>`).join("")}</tbody></table></div></div>`).join(""):`<div class="panel empty">${Lp("No setups found.","No se encontraron setups.")}</div>`)+
-    `<p class="note">${Lp("Pitlane HQ remembers the best valid lap you drive with each setup at each track. Setups stay where iRacing keeps them; notes and tags are saved in your profile.","Pitlane HQ recuerda la mejor vuelta válida que haces con cada setup en cada circuito. Los setups siguen donde los guarda iRacing; las notas y etiquetas se guardan en tu perfil.")}</p>`;
-  box.querySelectorAll("[data-sshow]").forEach(b=>b.onclick=()=>rigPost("/api/setups",{action:"show",key:b.dataset.sshow}));
-  box.querySelectorAll("[data-snote]").forEach(b=>b.onclick=()=>openSetupNote(b.dataset.snote));
-  box.querySelectorAll("[data-sshare]").forEach(b=>b.onclick=()=>openSetupShare(b.dataset.sshare))}
-let SETUPS_DATA=null;
-function openSetupNote(key){const f=(SETUPS_DATA.cars||[]).flatMap(c=>c.files).find(x=>x.key===key);if(!f)return;LAYOUT_VIEW=null;$("#dTitle").textContent=f.name;$("#dSub").textContent=key;
-  $("#dBody").innerHTML=`<form class="form" id="snForm"><label><span class="label">${esc(Tx("Notes","Notas"))}</span><textarea id="snNotes" rows="6" maxlength="4000" style="width:100%;font:14px var(--f-body);background:var(--surface);color:var(--fg);border:1px solid var(--line);border-radius:4px;padding:8px">${esc(f.notes||"")}</textarea></label>
-    <label><span class="label">${esc(Tx("Tags, separated by commas","Etiquetas, separadas por comas"))}</span><input type="text" id="snTags" value="${esc((f.tags||[]).join(", "))}" placeholder="race, quali, wet"></label><div><button class="btn primary" type="submit">${esc(Tx("Save","Guardar"))}</button></div></form>`;
-  $("#snForm").onsubmit=async e=>{e.preventDefault();const notes=$("#snNotes").value,tags=$("#snTags").value.split(",").map(x=>x.trim()).filter(Boolean);
-    if(MODE==="local"){f.notes=notes;f.tags=tags;closeDrawer();renderSetups();return}if(await rigPost("/api/setups",{action:"note",key,notes,tags})){closeDrawer();renderSetups()}};
-  if($("#drawer").hidden)$("#drawer").hidden=false}
-$("#setupQ").oninput=()=>renderSetups();$("#setupFolder").onclick=()=>MODE==="bridge"?rigPost("/api/setups",{action:"folder"}):toast(Tx("In the app this opens the setups folder.","En la app se abre la carpeta de setups."));
 
 /* ===================== boot ===================== */
 (async function boot(){
@@ -9642,35 +9616,6 @@ async function loadSessions(){const b=$("#meSess");if(!b)return;try{const r=awai
   b.querySelectorAll("[data-rv]").forEach(x=>x.onclick=async()=>{try{await jpost("/api/sync",{action:"revoke",id:x.dataset.rv})}catch(e){toast(e.message)}loadSessions()})}catch(e){b.innerHTML=`<p class="note err">${esc(e.message)}</p>`}}
 if(!OV.on&&MODE!=="local")setTimeout(loadMe,2500);
 
-/* ===================== community setups: share yours, install others' with one click ===================== */
-let CSET={car:"",q:"",mine:false};
-async function renderCommSetups(){const box=$("#setupsBody");$("#setupsSub").innerHTML=Lp("Setups drivers share for free. Install puts the file straight into iRacing's setups folder for that car (in “Pitlane Community”).","Setups que los pilotos comparten gratis. Instalar pone el archivo directamente en la carpeta de setups de iRacing de ese coche (en “Pitlane Community”).");
-  const d=MODE==="local"?null:SETUPS_DATA||await rigGet("/api/setups");const myCars=((d&&d.cars)||[]).map(c=>c.car),cur=(d&&d.current&&d.current.carPath)||"";if(!CSET.car&&cur)CSET.car=cur;
-  let list=[],err="";if(MODE==="local")list=[].filter(x=>(!CSET.car||x.carPath===CSET.car)&&(!CSET.q||(x.name+x.track+x.car).toLowerCase().includes(CSET.q.toLowerCase())));
-  else try{const qs=new URLSearchParams();if(CSET.car)qs.set("car",CSET.car);if(CSET.q)qs.set("q",CSET.q);if(CSET.mine)qs.set("mine","1");qs.set("game",aGame());const r=await fetch("/api/community/setups?"+qs);const j=await r.json();if(!r.ok)throw new Error(j.error||"HTTP "+r.status);list=j.setups||[]}catch(e){err=e.message}
-  const carOpts=[...new Set([cur,...myCars,].filter(Boolean))];
-  box.innerHTML=`${MODE==="local"?`<div class="callout">${esc(Tx("Demo: example setups, nothing is installed.","Demo: setups de ejemplo, no se instala nada."))}</div>`:""}
-    <div class="controls" style="margin-bottom:10px;flex-wrap:wrap"><select id="csCar"><option value="">${esc(Tx("All cars","Todos los coches"))}</option>${carOpts.map(c=>`<option value="${esc(c)}"${c===CSET.car?" selected":""}>${esc(c)}${c===cur?" · "+esc(Tx("now","ahora")):""}</option>`).join("")}</select>
-      <input type="search" id="csQ" value="${esc(CSET.q)}" placeholder="${esc(Tx("Track or name","Circuito o nombre"))}">${chk("csMine",CSET.mine,Lp("Mine","Míos",true))}</div>
-    ${err?`<p class="err">${esc(err)}</p>`:""}
-    ${list.length?`<div class="sgrid">${list.map(x=>`<div class="scard"><h3>${esc(x.name)}</h3><div class="meta">${esc(x.car||x.carPath)}${x.track?" · "+esc(x.track):""}</div><div class="meta">${esc(Tx("by","por"))} <b>${esc(x.alias||"")}</b> · ${esc(new Date(x.created).toLocaleDateString(locale()))} · ⬇ ${x.downloads||0}</div>${x.notes?`<p>${esc(x.notes)}</p>`:""}
-      <div class="me-row" style="margin-top:4px">${x.mine?`<button type="button" class="btn small danger" data-csdel="${esc(x.id)}">${esc(Tx("Remove","Quitar"))}</button>`:`<button type="button" class="btn small primary" data-csin="${esc(x.id)}">${esc(Tx("Install","Instalar"))}</button>`}${x.mine?"":admDel("setups",x.id)}</div></div>`).join("")}</div>`
-      :err?"":`<div class="panel empty">${esc(Tx("No shared setups for this car yet. Share one of yours from “My setups”.","Aún no hay setups compartidos de este coche. Comparte uno tuyo desde “Mis setups”."))}</div>`}
-    <p class="note">${esc(Tx("A setup is just a .sto file. Pitlane HQ only writes .sto files inside iRacing's setups folder and checks each download against its checksum; it never runs anything. Setups for fixed series are ignored by iRacing.","Un setup es solo un archivo .sto. Pitlane HQ solo escribe archivos .sto dentro de la carpeta de setups de iRacing y comprueba cada descarga con su suma de control; nunca ejecuta nada. En series fixed iRacing los ignora."))}</p>`;
-  $("#csCar").onchange=e=>{CSET.car=e.target.value;renderCommSetups()};let t;$("#csQ").oninput=e=>{clearTimeout(t);t=setTimeout(()=>{CSET.q=e.target.value;renderCommSetups().then(()=>{const q=$("#csQ");if(q){q.focus();q.setSelectionRange(q.value.length,q.value.length)}})},350)};
-  $("#csMine").onclick=()=>{CSET.mine=!CSET.mine;renderCommSetups()};
-  box.querySelectorAll("[data-csin]").forEach(b=>b.onclick=async()=>{if(MODE==="local"){toast(Tx("Demo: installed (nothing written)","Demo: instalado (no se escribe nada)"));return}b.disabled=true;b.textContent="…";try{const r=await jpost("/api/community/setups",{action:"install",id:b.dataset.csin});toast(Tx("Installed: ","Instalado: ")+r.installed);b.textContent="✓ "+Tx("Installed","Instalado");SETUPS_DATA=null}catch(e){toast(e.message);b.disabled=false;b.textContent=Tx("Install","Instalar")}});
-  wireAdmDel(box,renderCommSetups);
-  box.querySelectorAll("[data-csdel]").forEach(b=>b.onclick=async()=>{if(!await uiConfirm(Tx("Remove this setup from the community?","¿Quitar este setup de la comunidad?")))return;try{await jpost("/api/community/setups",{action:"delete",id:b.dataset.csdel})}catch(e){toast(e.message)}renderCommSetups()})}
-function openSetupShare(key){const f=((SETUPS_DATA||{}).cars||[]).flatMap(c=>c.files).find(x=>x.key===key);if(!f)return;LAYOUT_VIEW=null;$("#dTitle").textContent=Tx("Share setup","Compartir setup");$("#dSub").textContent=key;
-  const tracks=Object.keys(f.bests||{});
-  $("#dBody").innerHTML=`<form class="me-form" id="ssForm"><label><span class="label">${esc(Tx("Name","Nombre"))}</span><input type="text" id="ssN" maxlength="60" value="${esc(f.name)}"></label>
-    <label><span class="label">${esc(Tx("Track","Circuito"))}</span><input type="text" id="ssT" maxlength="80" value="${esc(tracks[0]||"")}" list="ssTl"><datalist id="ssTl">${tracks.map(t=>`<option value="${esc(t)}">`).join("")}</datalist></label>
-    <label><span class="label">${esc(Tx("Notes for other drivers","Notas para otros pilotos"))}</span><textarea id="ssNo" rows="4" maxlength="1000" style="width:100%;font:14px var(--f-body);background:var(--surface);color:var(--fg);border:1px solid var(--line);border-radius:4px;padding:8px"></textarea></label>
-    <p class="note" style="margin:0">${esc(Tx("It is shared for free under your public name. You can remove it at any time.","Se comparte gratis con tu nombre público. Puedes quitarlo cuando quieras."))}</p>
-    <button class="btn primary" type="submit">${esc(Tx("Share","Compartir"))}</button></form>`;
-  $("#drawer").hidden=false;$("#ssForm").onsubmit=async e=>{e.preventDefault();if(MODE==="local"){toast(Tx("Demo: nothing is sent","Demo: no se envía nada"));closeDrawer();return}
-    try{const r=await jpost("/api/community/setups",{action:"share",key,name:$("#ssN").value,track:$("#ssT").value,notes:$("#ssNo").value});toast(r.kept?Tx("Already shared","Ya estaba compartido"):Tx("Shared, thank you!","¡Compartido, gracias!"));closeDrawer()}catch(x){toast(x.message)}}}
 
 /* ===================== language picker: shown the first time the app opens ===================== */
 function chooseLanguage(first){let m=$("#langPick");if(!m){m=document.createElement("div");m.id="langPick";m.className="langpick";document.body.appendChild(m)}
@@ -9708,6 +9653,7 @@ async function askShare(){if(MODE!=="bridge"||REMOTE||COMPANION||OV.on||$("#shar
 <script src="pitwall-model.js"></script>
 <script src="pitwall-demo.js"></script>
 <script src="pitwall-tour.js"></script>
+<script src="pitwall-setups.js"></script>
 <style id="look">
 /* The look (Nov 2026 redesign): one quiet layer over every older rule. Neutral graphite, one sans in sentence case,
    numbers in tabular figures, flat panels without accent bars, and the amber only for what is chosen or must be done. */

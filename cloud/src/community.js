@@ -1067,7 +1067,7 @@ export async function community(req, env, url, ctx) {
     const s = await env.DB.prepare("SELECT s.*, u.alias FROM community_setups s JOIN community_users u ON u.id=s.user_id WHERE s.id=?1").bind(id).first();
     if (!s) return err("not found", 404);
     await env.DB.prepare("UPDATE community_setups SET downloads=downloads+1 WHERE id=?1").bind(id).run();
-    return json({ id: s.id, alias: s.alias, carPath: s.car_path, car: s.car, track: s.track, name: s.name, notes: s.notes, sha: s.sha, data: s.data });
+    return json({ id: s.id, alias: s.alias, game: s.game || "iracing", carPath: s.car_path, car: s.car, track: s.track, name: s.name, notes: s.notes, sha: s.sha, data: s.data });
   }
 
   // the overlay previews' sample from another driver, with nobody's name in it (previewsample.js)

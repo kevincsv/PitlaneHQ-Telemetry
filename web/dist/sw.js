@@ -4,7 +4,7 @@
 const CACHE = "pitlanehq-app-1";
 const SHELL = ["/", "/fonts.css", "/pitwall-games.js", "/pitwall-analysis.js", "/pitwall-aicoach.js", "/pitwall-i18n.js",
   "/pitwall-overlays.js", "/pitwall-overlays-settings.js", "/pitwall-ui-v1.js", "/pitwall-my-laps-v2.js", "/pitwall-model.js",
-  "/pitwall-demo.js", "/pitwall-tour.js", "/manifest.webmanifest", "/icon-192.png", "/logo.svg"];
+  "/pitwall-demo.js", "/pitwall-tour.js", "/pitwall-setups.js", "/manifest.webmanifest", "/icon-192.png", "/logo.svg"];
 const APP_FILE = /^\/(|fonts\.css|pitwall-[a-z0-9-]+\.js|manifest\.webmanifest|favicon\.ico|favicon-32\.png|icon-\d+\.png|logo\.svg|whats-new\.json|app-news\.json)$/;
 
 self.addEventListener("install", (e) => {

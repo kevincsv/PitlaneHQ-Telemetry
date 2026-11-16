@@ -74,7 +74,8 @@ area you are changing before you change it, and update it in the same commit whe
 - In development (shown with "In development", usable only by admins with admin mode on and by testers, every device; `wipOk()`/
   `wipView()` in index.html, `wipAllowed()` in Go): the Planner (until iRacing switches its data API back on), ACC,
   Assetto Corsa, NASCAR 26, team mode, Ask the coach (the AI coach with the driver's own API key), Watch in replay and the pedal and wheel check.
-- Switched off for now: setups, per-car settings (`carProfilesOn` in carprofiles.go), the Data view and sharing race
+- In the beta (the testers and the admins with admin mode on, a "Beta" pill): Setups (`setupsOk()`, `docs/spec/setups.md`).
+- Switched off for now: per-car settings (`carProfilesOn` in carprofiles.go), the Data view and sharing race
   analyses. Hidden from everyone on the PC (admins too) until the owner says otherwise: profiles and Settings →
   Connections (`CONN_ON` in index.html). Full telemetry is gone everywhere.
 - Released to everyone: the overlays, the leagues hub. Le Mans Ultimate is labelled "Beta" wherever it is offered, and so are ACC and Assetto Corsa where they are offered (still in development).
@@ -131,3 +132,4 @@ must keep this server's protocol.
 | `leagues.md` | The leagues hub and the Reddit/Discord scan |
 | `discord.md` | The Discord bot |
 | `email-and-branding.md` | Emails through Resend, the logo |
+| `setups.md` | The Setups tab, the free setups library, sharing and installing setups (iRacing, LMU) |

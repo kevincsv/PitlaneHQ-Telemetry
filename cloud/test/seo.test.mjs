@@ -48,6 +48,8 @@ function world({ lmu = true } = {}) {
   };
   const first = (sql, a) => {
     if (/SELECT MAX\(track\) AS track, MAX\(car\) AS car FROM community_laps/.test(sql)) { const x = combos[a[2]].find((y) => y.t === a[0] && y.c === a[1]); return x ? { track: x.track, car: x.car } : null; }
+    // is there one lap of Le Mans Ultimate (readHas)
+    if (/SELECT 1 AS n FROM community_laps WHERE game='lmu'/.test(sql)) return combos.lmu.length ? { n: 1 } : null;
     return null;
   };
   return { DB: { prepare(sql) { let a = []; const o = { bind(...x) { a = x; return o; }, all: async () => ({ results: all(sql, a) }), first: async () => first(sql, a), run: async () => ({ meta: { changes: 0 } }) }; return o; } } };

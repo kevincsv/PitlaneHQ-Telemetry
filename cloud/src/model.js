@@ -790,9 +790,12 @@ export async function reconcileIds(env, game, track, trackConfig, car, trackId, 
   if (!trackId || !carId || trackId >= PSEUDO_MIN || carId >= PSEUDO_MIN) return;
   const full = track + (trackConfig ? " · " + trackConfig : "");
   const pt = await pseudoId("t", game, full), pc = await pseudoId("c", game, car);
-  const hit = await env.DB.prepare("SELECT 1 FROM sessions WHERE game=?1 AND (track_id=?2 OR car_id=?3) LIMIT 1").bind(game, pt, pc).first()
-    || await env.DB.prepare("SELECT 1 FROM community_laps WHERE game=?1 AND (track_id=?2 OR car_id=?3) LIMIT 1").bind(game, pt, pc).first()
-    || await env.DB.prepare("SELECT 1 FROM community_reports WHERE game=?1 AND (track_id=?2 OR car_id=?3) LIMIT 1").bind(game, pt, pc).first();
+  // one indexed lookup per table and id (never "track_id=? OR car_id=?", which read every session and every shared lap
+  // on each upload): the track's from the indexes that start with it, the car's from the ones of migration 0107
+  const has = (sql, id) => env.DB.prepare(sql).bind(game, id).first();
+  const hit = await has("SELECT 1 FROM sessions WHERE track_id=?2 AND game=?1 LIMIT 1", pt) || await has("SELECT 1 FROM sessions WHERE car_id=?2 AND game=?1 LIMIT 1", pc)
+    || await has("SELECT 1 FROM community_laps WHERE game=?1 AND track_id=?2 LIMIT 1", pt) || await has("SELECT 1 FROM community_laps WHERE car_id=?2 AND game=?1 LIMIT 1", pc)
+    || await has("SELECT 1 FROM community_reports WHERE track_id=?2 AND game=?1 LIMIT 1", pt) || await has("SELECT 1 FROM community_reports WHERE car_id=?2 AND game=?1 LIMIT 1", pc);
   if (!hit) return;
   const fix = (t) => [
     env.DB.prepare(`UPDATE OR IGNORE ${t} SET track_id=CASE WHEN track_id=?1 THEN ?2 ELSE track_id END, car_id=CASE WHEN car_id=?3 THEN ?4 ELSE car_id END WHERE game=?5 AND (track_id=?1 OR car_id=?3)`).bind(pt, trackId, pc, carId, game),

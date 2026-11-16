@@ -613,7 +613,8 @@ export default {
     // the rows each route reads and writes, for the admin page's Health (reports.js); about once a minute they are kept
     if (!env.DB) return betaHeaders(harden(await handle(req, env, ctx).catch(gatedAnswer)), env);
     const raw = env.DB, url = new URL(req.url);
-    try { return betaHeaders(harden(await handle(req, { ...env, DB: countingDB(raw, routeKey(req.method, url.pathname)) }, ctx).catch(gatedAnswer)), env); }
+    // ROOT: this env itself, the same object for every request of this server (what a memo is kept by, seo.js readHas)
+    try { return betaHeaders(harden(await handle(req, { ...env, ROOT: env, DB: countingDB(raw, routeKey(req.method, url.pathname)) }, ctx).catch(gatedAnswer)), env); }
     finally { ctx.waitUntil(flushUsage(raw)); }
   },
 };

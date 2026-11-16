@@ -16,6 +16,14 @@ Status as of 2026-11-07. Server layout is in CLAUDE.md ("Where things are").
   `pitlanehq-telemetry`, gzipped (`docs/spec/sync-and-accounts.md`). After it is live on the test version and on
   pitlanehq.app, the owner's yes sets `app_state` `trace_store` = `r2` (new laps go to the bucket and the old ones
   move over in about two days). The database's file may keep its size until Cloudflare gives the freed pages back.
+- Server audit (2026-11-15, report https://claude.ai/artifact/VJM2eT1boSnpkwYPR4SomF): the $5 a month is the Workers
+  Paid plan, used at about 3% of its database reads (22 million rows a day of 25 billion a month). Fixed 2026-11-16
+  (migration 0107, `cloud/test/read-less-uploads.test.mjs`): a lap upload read every session and shared lap
+  (`reconcileIds`), every public page read every LMU leaderboard lap (`readHas`'s memo never held), the admin's Users
+  list read every community user per account. Still open from the report: the coach learning jobs reread every session
+  and tip each 10 minutes, a model is rebuilt per uploaded lap, the coach's weights add up all of `coach_tips` per call,
+  and `candidates` and `buildCarCard` load every lap of the memory before picking (fine until about 3,000 laps a pair).
+  Never filter on `laps.trace` over the whole table by hand while laps keep telemetry in the row: it holds the database.
 - Both repositories are private. Pitwall-test is named kevincsv/PitlaneHQ-Telemetry on GitHub (the old name redirects).
 - `windows.yml` builds the agent in the desktop job and uploads artifacts with continue-on-error (GitHub artifact
   storage was full).

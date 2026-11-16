@@ -26,6 +26,15 @@ const near = (got, want, tol, what) => assert.ok(Math.abs(got - want) <= tol, `$
     });
     for (const w of r.match || []) assert.equal(w, w.toLowerCase().replace(/[^a-z0-9 ]/g, ""), r.key + ": match words are plain lower case");
   }
+  // the counts the circuits' own maps give (checked turn by turn against the maps named in tools/turns-ref/src.mjs)
+  const count = { spa: 19, "daytona-road": 12, bathurst: 23, "donington-gp": 11, mosport: 10, sebring: 17, miami: 19, mexico: 17, "hockenheim-gp": 16, "oulton-international": 17, okayama: 11, interlagos: 15, suzuka: 18, "tsukuba-2000": 12 };
+  for (const [key, n] of Object.entries(count)) assert.equal(REF.find((r) => r.key === key).t.length, n, key + " has " + n + " turns");
+  // a circuit two games have is one list: the same numbers, names and places in Le Mans Ultimate and iRacing
+  const same = [["lmu:467877", "iracing:523"], ["lmu:439921", "iracing:239"], ["lmu:839867", "iracing:244"], ["lmu:670461", "iracing:266"], ["lmu:538501", "iracing:212"], ["lmu:260871", "iracing:268"], ["lmu:204094", "iracing:192"], ["lmu:812589", "iracing:444"], ["lmu:842658", "iracing:179"], ["lmu:376235", "iracing:127"], ["lmu:548615", "iracing:95"], ["lmu:262182", "iracing:342"], ["lmu:810461", "iracing:47"], ["lmu:347068", "iracing:509"], ["lmu:762724", "iracing:525"]];
+  for (const [a, b] of same) { const r = REF.find((r) => r.ids.includes(a)); assert.ok(r && r.ids.includes(b), `${a} and ${b} share one list of turns`); }
+  const name = (key, i) => REF.find((r) => r.key === key).t[i - 1][3];
+  assert.deepEqual([name("silverstone-gp", 10), name("silverstone-gp", 11), name("silverstone-gp", 12)], ["Maggotts", "Maggotts", "Becketts"]);
+  assert.equal(name("daytona-road", 9), "Le Mans Chicane");
 }
 
 // ---- Spa: the Kemmel kink has no number, Pouhon counts twice ----

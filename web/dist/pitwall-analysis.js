@@ -362,6 +362,66 @@
      to 1.4 when every lap makes it) */
   const repWeight = (c) => { const r = c && c.rep; return r && r.of >= 3 && c.lost > .03 ? 0.6 + 0.8 * Math.max(r.same, 1) / r.of : 1; };
 
+  /* ---------- multiclass traffic and the hybrid (Le Mans Ultimate first, any game with the data) ---------- */
+  /* what traffic costs over lap A's session: its valid laps not through the pits within 8 % of the best, the ones the
+     recorder tagged "traffic" (a car within a second ahead for a fifth of the lap) against the others, the lap times'
+     medians and the corners where the traffic laps lose the most (each corner's time on the fastest clean lap's corners).
+     {n, of, cost, corners: [{n, d, apex, cost}]} or null without 2 traffic laps and 3 clean ones */
+  function trafficCost(A, LP, ctx) {
+    const all = (LP || []).filter((l) => l && l.valid !== false && !l.pit && !l.drv && l.time > 0 && Array.isArray(l.bins) && l.bins.length > 20 && (!A || !A.sessionId || !l.sessionId || l.sessionId === A.sessionId));
+    if (all.length < 5) return null;
+    const best = Math.min(...all.map((l) => l.time)), laps = all.filter((l) => l.time <= best * 1.08), isT = (l) => (l.flags || []).includes("traffic");
+    const tl = laps.filter(isT), cl = laps.filter((l) => !isT(l)); if (tl.length < 2 || cl.length < 3) return null;
+    const cost = medianOf(tl.map((l) => l.time)) - medianOf(cl.map((l) => l.time));
+    const ref = cl.reduce((a, l) => (l.time < a.time ? l : a)), sb = serOf(ref), n = sb.length, turns = turnsOf(ctx), zs = cornerZones(sb, n, turns, ctx && ctx.oval);
+    const tOf = (l, z) => { const s = serOf(l), i0 = Math.max(0, z.i - 10), i1 = Math.min(s.length - 1, z.imin + 30); return s[i0] && s[i1] ? s[i1][1] - s[i0][1] : null; };
+    const corners = zs.map((z, k) => { const a = tl.map((l) => tOf(l, z)).filter((x) => x > 0), b = cl.map((l) => tOf(l, z)).filter((x) => x > 0); if (a.length < 2 || b.length < 3) return null;
+      return { n: z.turn != null ? z.turn + 1 : turnNo(turns, z.imin * BIN, n * BIN, k + 1), d: z.i * BIN, apex: z.imin * BIN, cost: Math.round((medianOf(a) - medianOf(b)) * 1000) / 1000 }; })
+      .filter((c) => c && c.cost >= .1).sort((a, b) => b.cost - a.cost).slice(0, 3);
+    return { n: tl.length, of: laps.length, cost: Math.round(cost * 1000) / 1000, corners };
+  }
+  /* how the hybrid battery is used over lap A against lap B (the trace's bat, the charge in % every 50 m, a car with a
+     battery): the charge each lap ends with, what each deploys over the lap, and the stretch of up to 400 m where lap B
+     deploys the most more than lap A. Null without both traces */
+  const BATBIN = 50;
+  function hybridUse(A, B) {
+    const a = A && Array.isArray(A.bat) ? A.bat : null, b = B && Array.isArray(B.bat) ? B.bat : null; if (!a || !b || a.length < 10 || b.length < 10) return null;
+    const n = Math.min(a.length, b.length), ok = (v) => typeof v === "number" && isFinite(v), dep = (s) => { let d = 0; for (let i = 1; i < n; i++) if (ok(s[i]) && ok(s[i - 1]) && s[i] < s[i - 1]) d += s[i - 1] - s[i]; return d; };
+    const W = 8; let best = null;
+    for (let i = 0; i + W < n; i++) { if (![a[i], a[i + W], b[i], b[i + W]].every(ok)) continue; const x = (b[i] - b[i + W]) - (a[i] - a[i + W]); if (!best || x > best.x) best = { x, i }; }
+    const last = (s) => { for (let i = n - 1; i >= 0; i--) if (ok(s[i])) return s[i]; return null; };
+    return { endA: last(a), endB: last(b), depA: dep(a), depB: dep(b), more: best && best.x >= 3 ? { d0: best.i * BATBIN, d1: (best.i + W) * BATBIN, pct: best.x } : null };
+  }
+  /* the plan's steps about traffic and the hybrid */
+  function raceSteps(A, R, LP, cs, ov, sa, sb, n, Tx, ctx) {
+    const P = [], r = Math.round, r2 = (v) => Math.round(v * 100) / 100;
+    const tc = ov === "superspeedway" ? null : trafficCost(A, LP, ctx);
+    if (tc && tc.cost > .3) {
+      const nm = tc.corners.map((c) => turnLab(ctx, c.n)).join(", ");
+      P.push({ k: "traffic", id: "traffic", turns: tc.corners.map((c) => c.n), gain: tc.cost * tc.n / tc.of * .6,
+        t: Tx(`Traffic costs you ${r2(tc.cost)} s a lap`, `El tráfico te cuesta ${r2(tc.cost)} s por vuelta`, `O tráfego custa ${r2(tc.cost)} s por volta`),
+        what: Tx(`On ${tc.n} of ${tc.of} laps a car was close ahead. Those laps are ${r2(tc.cost)} s slower than your clean ones${nm ? `, most of it in ${nm}` : ""}.`, `En ${tc.n} de ${tc.of} vueltas había un coche cerca delante. Esas vueltas son ${r2(tc.cost)} s más lentas que las limpias${nm ? `, sobre todo en ${nm}` : ""}.`, `Em ${tc.n} de ${tc.of} voltas havia um carro perto à frente. Essas voltas são ${r2(tc.cost)} s mais lentas que as limpas${nm ? `, principalmente em ${nm}` : ""}.`),
+        cost: Tx("In a multiclass race you meet traffic every few laps, so the time lost behind a slower car or letting a faster one by adds up like a slow corner.", "En una carrera multiclase te encuentras tráfico cada pocas vueltas, así que el tiempo perdido detrás de un coche lento o dejando pasar a uno rápido suma como una curva lenta.", "Numa corrida multiclasse você encontra tráfego a cada poucas voltas, então o tempo perdido atrás de um carro lento ou deixando passar um rápido soma como uma curva lenta."),
+        how: Tx("Plan the pass a corner ahead and make it on the exit or the straight, never in the braking zone. When a faster class closes in, stay on your line and let it by where the track is straight.", "Prepara el adelantamiento una curva antes y hazlo a la salida o en la recta, nunca en la frenada. Cuando se acerque una clase más rápida, mantén tu trazada y déjala pasar donde la pista es recta.", "Prepare a ultrapassagem uma curva antes e faça na saída ou na reta, nunca na frenagem. Quando uma classe mais rápida se aproximar, mantenha sua linha e deixe passar onde a pista é reta."),
+        marks: tc.corners.map((c) => ({ d: c.apex, k: "apex", n: c.n })), spans: tc.corners.map((c) => [Math.max(0, c.d - 50), c.apex + 150]) });
+    }
+    const hy = hybridUse(A, R);
+    if (hy && (hy.more || (hy.endA != null && hy.endB != null && hy.endA - hy.endB >= 8))) {
+      const tAt = (s, d) => { for (let k = Math.max(0, Math.min(n - 1, Math.round(d / BIN))); k >= 0; k--) if (s[k]) return s[k][1]; return null; };
+      const lostIn = hy.more ? (() => { const x = [tAt(sa, hy.more.d0), tAt(sa, hy.more.d1), tAt(sb, hy.more.d0), tAt(sb, hy.more.d1)]; return x.some((v) => v == null) ? 0 : (x[1] - x[0]) - (x[3] - x[2]); })() : 0;
+      const after = hy.more ? cs.filter((c) => c.apex <= hy.more.d0 + 100).sort((p, q) => q.apex - p.apex)[0] : null, where = hy.more ? (after ? Tx(` Most of the difference is after ${turnLab(ctx, after.n)}.`, ` La mayor diferencia está después de ${turnLab(ctx, after.n)}.`, ` A maior diferença está depois de ${turnLab(ctx, after.n)}.`) : Tx(` Most of the difference is between ${r(hy.more.d0)} and ${r(hy.more.d1)} m.`, ` La mayor diferencia está entre ${r(hy.more.d0)} y ${r(hy.more.d1)} m.`, ` A maior diferença está entre ${r(hy.more.d0)} e ${r(hy.more.d1)} m.`)) : "";
+      const unused = hy.endA - hy.endB >= 8;
+      P.push({ k: "hybrid", id: "hybrid", turns: after ? [after.n] : [], gain: Math.max(.05, lostIn),
+        t: unused ? Tx(`You end the lap with ${r(hy.endA - hy.endB)} % more battery than the reference`, `Acabas la vuelta con un ${r(hy.endA - hy.endB)} % más de batería que la referencia`, `Você termina a volta com ${r(hy.endA - hy.endB)} % a mais de bateria que a referência`)
+          : Tx("The reference deploys more of the hybrid", "La referencia usa más el híbrido", "A referência usa mais o híbrido"),
+        what: Tx(`Over the lap the reference deploys ${r(hy.depB)} % of the battery and you ${r(hy.depA)} %.`, `En la vuelta la referencia gasta el ${r(hy.depB)} % de la batería y tú el ${r(hy.depA)} %.`, `Na volta a referência gasta ${r(hy.depB)} % da bateria e você ${r(hy.depA)} %.`) + where,
+        cost: Tx("Charge left in the battery at the line is speed you never used, and the hybrid gives the most where the car accelerates out of the slow corners.", "La carga que queda en la batería en la línea es velocidad que no usaste, y el híbrido rinde más donde el coche acelera al salir de las curvas lentas.", "A carga que sobra na bateria na linha é velocidade que você não usou, e o híbrido rende mais onde o carro acelera na saída das curvas lentas."),
+        how: Tx("Use the same hybrid map as the reference and get to full throttle early out of the slow corners, where the battery deploys. Let it recharge under braking, not on the straights.", "Usa el mismo mapa de híbrido que la referencia y llega pronto a fondo al salir de las curvas lentas, donde se gasta la batería. Deja que se recargue frenando, no en las rectas.", "Use o mesmo mapa de híbrido da referência e chegue cedo ao acelerador a fundo na saída das curvas lentas, onde a bateria é gasta. Deixe recarregar freando, não nas retas."),
+        marks: hy.more ? [{ d: (hy.more.d0 + hy.more.d1) / 2, k: "str" }] : [], spans: hy.more ? [[hy.more.d0, hy.more.d1]] : [] });
+    }
+    return P;
+  }
+
   /* ---------- turn by turn ---------- */
   /* one row per turn in track order, everything the coach knows about it: lap A against lap B (where each brakes, Δ m, the
      apex speeds, the gears, the time lost and what to do), the session (the typical lap's loss there, how many laps make
@@ -659,6 +719,7 @@
     const wob = cons.filter((x) => x.sd > .08).slice(0, 2); wob.forEach((x) => P.push({ k: "cons", turns: [x.n], gain: x.sd * .6, t: Tx(`T${x.n} changes ±${r2(x.sd)} s from lap to lap`, `T${x.n} cambia ±${r2(x.sd)} s de una vuelta a otra`, `T${x.n} muda ±${r2(x.sd)} s de uma volta para outra`), why: Tx("Over the session you take this corner differently every lap. The time spread is the gap between your best and your usual lap.", "A lo largo de la sesión tomas esta curva distinto cada vuelta. La dispersión es la diferencia entre tu mejor vuelta y la habitual.", "Ao longo da sessão você faz esta curva de um jeito diferente a cada volta. A dispersão é a diferença entre sua melhor volta e a volta habitual."), how: Tx("Same braking marker, same turn-in point, same line, every lap. Consistency first, speed after.", "La misma referencia de frenada, el mismo punto de giro, la misma trazada, cada vuelta. Primero regularidad, luego velocidad.", "A mesma referência de frenagem, o mesmo ponto de entrada, a mesma linha, em toda volta. Primeiro regularidade, depois velocidade.") }));
     driving.forEach((d) => P.push({ k: "style", gain: 0, t: d.replace(/^\S+\s/, ""), why: "", how: "" }));
     lapSteps(cs, ov, A, LP, Tx, spdU()).forEach((x) => P.push(x));
+    raceSteps(A, R, LP, cs, ov, sa.arr, sb.arr, n, Tx, cx).forEach((x) => P.push(x)); // multiclass traffic and the hybrid battery
     // a track with few laps: what the fast drivers of this car do in corners like these on other tracks (likeOf)
     likeSteps(likeOf(A, cx, cs), Tx).forEach((x) => P.push(x));
     // every step says what happened and where (marks and spans on the map), why it costs time and what to do instead
@@ -1360,7 +1421,7 @@
   const api = { VERSION, BIN, lapSeries, serOf, lapShape, sameFrame, lineOffsets, cornerLine, lineTip, brakeZones, PHASES, phaseName, turnNo, COACH_GEN, cornerClass, cornerZones,
     OVAL_KINDS, ovalOf, liftZones, ovalZones, dirtLineTip, coachCompare, cornerConsistency, pairSecs, lapDriving, kindName, stepName, tipMain, tipShort, tipTodo, coachPlan, stepText, analyzerFacts, analyse,
     estOf, failedOf, progressLines, followUp, trackGuide, cornerRanks, clsLines, racePace, edgeUse, notesOf, guideItems, likeOf, likeSteps, catGroup,
-    turnLab, sessionLaps, sessionRepeat, repText, turnByTurn, sinceLast, lapSpread, cornerSpread, offsExplained, ggOf, steerOf, understeer, tyreLaps, fuelUse, fuelPlan, insights, pedalCheck, slopeOf, sessionGoals, raceStory };
+    turnLab, trafficCost, hybridUse, raceSteps, sessionLaps, sessionRepeat, repText, turnByTurn, sinceLast, lapSpread, cornerSpread, offsExplained, ggOf, steerOf, understeer, tyreLaps, fuelUse, fuelPlan, insights, pedalCheck, slopeOf, sessionGoals, raceStory };
   root.PW_ANALYSIS = api;
   if (typeof module !== "undefined" && module.exports) module.exports = api;
 })(typeof window !== "undefined" ? window : typeof globalThis !== "undefined" ? globalThis : this);

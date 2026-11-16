@@ -249,6 +249,13 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
 - **This session against the last one** (`sinceLast`, `since` in `analyse`): the coach's first lines, the turns faster
   than the last session's best lap where its plan asked for something (and the ones `progressLines` finds better), the
   ones slower, and the ones no faster for several sessions, each as T numbers (`sinceHTML` under the gap on the web and the PC).
+- **Traffic** (`trafficCost`, the plan's `traffic` step, `raceSteps`): lap A's session's valid laps not through the pits
+  within 8 % of the best, the ones tagged `traffic` against the others (2 and 3 at least); when the traffic laps' median
+  is over 0.3 s slower the plan says what traffic costs a lap, on how many laps, and the corners where the traffic laps
+  lose 0.1 s or more (three at most), with how to pass and be passed in a multiclass race. Never on a superspeedway.
+- **The hybrid** (`hybridUse`, the plan's `hybrid` step): with both laps' battery traces (`bat`, every 50 m, Le Mans
+  Ultimate's hybrids) the charge each lap ends with, what each deploys over the lap and the 400 m where the reference
+  deploys 3 % or more over lap A; a step when lap A ends 8 % or more fuller or deploys less there, marked on the map.
 - **Watch it**: every corner card of the coach opens the full-screen track map (pitwall-fullmap.js, `chase` in `open`) in
   the chase view 120 m before the corner's braking point, lap A and lap B driving it (`coachWatchWire`); without a track
   path the button is not shown.

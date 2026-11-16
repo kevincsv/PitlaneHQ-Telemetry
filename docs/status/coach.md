@@ -7,8 +7,10 @@ Status as of 2026-11-16. Behaviour is in `docs/spec/coach-and-model.md` and `doc
 - 2026-11-16, from what drivers ask for online (plan: Claude Doc "Coach improvements from driver feedback"): the coach
   judges every corner over the whole session ("On 7 of 9 laps", the usual lap's step), the lap analyzer's "Turn by turn"
   table, "Watch it" (the chase view at a corner) and "This session against the last one". On the branch
-  `claude/project-thread-a1y2ch`, beta only until the owner says it goes live. Next: a coach for Le Mans Ultimate
-  (multiclass traffic, virtual energy, tyre drop per stint).
+  `claude/project-thread-a1y2ch`, beta only until the owner says it goes live. Web only for now (the owner, 2026-11-16: no PC
+  build). Then for Le Mans Ultimate: what traffic costs a lap and where (`trafficCost`) and the hybrid battery against
+  the reference (`hybridUse`), both plan steps. Not done: virtual energy per lap in the coach (the agent does not keep it
+  per lap yet, so it needs a PC build).
 - Real data (2026-11-16): every tip the server holds is the server's own coach (`src` auto, 2,769 rows, 48 drivers, LMU
   33 of them); none came from the apps' coach (`src` app 0, no 👍/👎, no plan votes), so "what a tip is worth" has no
   baseline yet. Why the apps' POST /coach/tips never lands is open. About 2 in 3 answered tips gained time next session

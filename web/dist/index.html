@@ -5008,6 +5008,9 @@ function renderStandings(){const box=$("#stdFull");if(!box)return;trackPositions
   const multi=cls.length>1;if(!multi)STDV.cls="all";const rows=all.filter(r=>STDV.cls==="all"||String(classOf(r.d))===STDV.cls);$("#fieldSub").textContent=rows.length+" "+Tx("drivers","pilotos");
   const seg=(k,v,l)=>`<button type="button" data-${k}="${esc(v)}" aria-pressed="${STDV[k]===v}">${esc(l)}</button>`;
   const bar=$("#stdBar");if(bar){bar.innerHTML=(multi?`<span class="seg3">${seg("cls","all",Tx("All","Todas"))}${cls.map(([k,n])=>seg("cls",String(k),n||"?")).join("")}</span>`:"")+`<span class="seg3">${seg("gap","leader",Tx("To the leader","Al líder"))}${seg("gap","int",Tx("Interval","Intervalo"))}</span>`;
+    /* Customize: the Standings overlay's own settings window (its columns, rows and look, the same settings as the overlay) */
+    if(!$("#stdCfg"))bar.insertAdjacentHTML("afterend",`<button type="button" class="btn small std-cfg" id="stdCfg">${esc(Tx("Customize","Personalizar",null,"Personalizar"))}</button>`);
+    $("#stdCfg").onclick=()=>typeof ovtSettings==="function"?ovtSettings("standings"):openWidgetCfg("standings");
     bar.querySelectorAll("[data-cls]").forEach(b=>b.onclick=()=>{STDV.cls=b.dataset.cls;renderStandings()});bar.querySelectorAll("[data-gap]").forEach(b=>b.onclick=()=>{STDV.gap=b.dataset.gap;renderStandings()})}
   const cols=cfg.cols.map(c=>c==="gap"&&STDV.gap==="int"?"int":c).filter((c,i,a)=>a.indexOf(c)===i);
   box.innerHTML=strip(cfg.head)+(rows.length?tableHTML(cols,rows,T.PlayerCarIdx):`<p class="empty">${Lp("No drivers yet","Aún no hay pilotos")}</p>`)+strip(cfg.foot);drawPosHistory(rows)}
@@ -13421,5 +13424,6 @@ html:not(.ov) #commBody#commBody .pw3-discs .lb-t small{white-space:normal;overf
 #subtabs .st-car{margin-left:6px;font-size:10px}
 @media (min-width:821px){html:not(.ov) #subtabs .st-btn{margin-left:10px!important;position:relative}html:not(.ov) #subtabs .st-btn::before{content:"";position:absolute;left:-7px;top:6px;bottom:6px;width:1px;background:var(--line2)}}
 #v-live #liveMode[hidden]{display:none!important}
+#liveStd .std-cfg{margin-left:8px;flex:none;text-transform:none;letter-spacing:0;font:500 13px/1 var(--f-body)}
 html:not(.ov) #v-live>#liveStd{order:2;display:flex;flex-direction:column;gap:12px}html:not(.ov) #v-live>#liveStd[hidden]{display:none}
 </style>

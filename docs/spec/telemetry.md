@@ -81,7 +81,9 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   after the braking markers, and in Full the traces come under the desk.
 - The Standings view (its panels moved from `#v-field` into `#liveStd`) is one panel: its title with To the leader /
   Interval at its right, the session's six cards in one row (session, laps left, SOF, position, iRating, incidents),
-  the table, then Positions lap by lap. The Tyres page (`#v-tyres`) is no longer reachable (2026-11-16).
+  the table, then Positions lap by lap. "Customize" beside To the leader / Interval opens the Standings overlay's
+  settings window (`ovtSettings("standings")`, the owner's ask 2026-11-16): the same columns, rows and look, kept in
+  the same settings (`ui("std")`), so the view and the overlay change together. The Tyres page (`#v-tyres`) is no longer reachable (2026-11-16).
 - Engineer (`"eng"`, between Basic and Full, the owner's ask 2026-11-15) shows what a race engineer watches: by default
   flags, the car strip, the lap times, the delta bar, mini-sectors, the relative, the standings, the gap graph, fuel, the
   pit stop calculator, tyres, engine & track, braking markers, the map, the track position bar, weather, the incident log

@@ -317,6 +317,69 @@
     const per = zb.map((z) => { const ts = laps.map((L) => { const s = serOf(L), i0 = Math.max(0, z.i - 10), i1 = Math.min(s.length - 1, z.imin + 30); return s[i0] && s[i1] ? s[i1][1] - s[i0][1] : null; }).filter((x) => x != null); if (ts.length < 3) return null; const mu = ts.reduce((a, b) => a + b, 0) / ts.length; return Math.sqrt(ts.reduce((a, b) => a + (b - mu) * (b - mu), 0) / ts.length); });
     return per.map((sd, i) => ({ n: zb[i].turn != null ? zb[i].turn + 1 : i + 1, sd })).filter((x) => x.sd != null).sort((a, b) => b.sd - a.sd);
   }
+  /* ---------- the whole session, corner by corner ---------- */
+  /* every clean lap of lap A's session against the same reference (coachCompare over each), so a tip says whether its
+     mistake repeats over the session or happened on one lap: the laps of A's session that are valid, have their points
+     and are within 5 % of the session's best (out laps, slow laps and a lap in the pits left out), lap A always among
+     them. Null with fewer than three laps */
+  function sessionLaps(A, LP, R) {
+    if (!A || !Array.isArray(A.bins)) return null;
+    // a lap is known by itself, or (the phones send copies) by its number, time and session
+    const is = (x, y) => x === y || !!(x && y && x.time === y.time && x.n === y.n && (x.sessionId || "") === (y.sessionId || ""));
+    const same = cleanLaps(LP).filter((l) => !is(l, A) && !is(l, R) && (!A.sessionId || !l.sessionId || l.sessionId === A.sessionId));
+    const all = [A, ...same], best = Math.min(...all.map((l) => l.time > 0 ? l.time : Infinity));
+    const out = isFinite(best) ? all.filter((l) => l === A || l.time <= best * 1.05) : all;
+    return out.length >= 3 ? out : null;
+  }
+  /* each corner of cs (lap A against R) gets rep: the session's laps (of), how many of them lose time there with the same
+     kind of tip as lap A (same, lap A counted), the median time lost there over the session (med), the spread of that loss
+     (sd), the kind of tip most laps get there (top, topN, and that lap's corner as typ: its numbers say what the usual lap
+     does). Corners stay as they are without three laps */
+  function sessionRepeat(cs, A, R, LP, ctx) {
+    const laps = sessionLaps(A, LP, R); if (!laps || !Array.isArray(cs) || !cs.length) return null;
+    const cx = { ...ctx, progress: null }, per = laps.map((l) => l === A ? cs : coachCompare(l, R, cx)), r3 = (v) => Math.round(v * 1000) / 1000;
+    const fam = (k) => familyOf(k) || k;
+    cs.forEach((c) => {
+      const hits = per.map((list, i) => { const x = list.filter((q) => Math.abs(q.apex - c.apex) <= 10)[0]; return x ? (x === c ? x : { ...x, lapN: laps[i].n }) : null; }).filter(Boolean);
+      if (hits.length < 3) return;
+      const ls = hits.map((x) => x.lost), med = medianOf(ls), mu = ls.reduce((p, v) => p + v, 0) / ls.length, sd = Math.sqrt(ls.reduce((p, v) => p + (v - mu) * (v - mu), 0) / ls.length);
+      const bad = hits.filter((x) => x.lost > .03 && x.kind), by = {};
+      bad.forEach((x) => { const f = fam(x.kind); (by[f] = by[f] || []).push(x); });
+      const topE = Object.entries(by).sort((p, q) => q[1].length - p[1].length || medianOf(q[1].map((x) => x.lost)) - medianOf(p[1].map((x) => x.lost)))[0];
+      const same = c.lost > .03 && c.kind ? bad.filter((x) => fam(x.kind) === fam(c.kind)).length : 0;
+      let typ = null; if (topE) { const g = topE[1].slice().sort((p, q) => p.lost - q.lost); typ = g[g.length >> 1]; }
+      c.rep = { of: hits.length, same, lose: bad.length, med: r3(med), sd: r3(sd), top: topE ? topE[1][0].kind : null, topN: topE ? topE[1].length : 0 };
+      if (typ && typ !== c) Object.defineProperty(c.rep, "typ", { value: typ, enumerable: false }); // never in the JSON the phones get
+    });
+    return laps.length;
+  }
+  /* how often lap A's mistake in a corner happens over the session, in a few words ("On 7 of 9 laps"), [en, es, pt] or null */
+  function repText(c) {
+    const r = c && c.rep; if (!r || !(r.of >= 3) || !(c.lost > .03) || !c.kind || c.kind === "cons") return null;
+    return r.same <= 1 ? [`Only on this lap of ${r.of}`, `Solo en esta vuelta de ${r.of}`, `Só nesta volta de ${r.of}`] : [`On ${r.same} of ${r.of} laps`, `En ${r.same} de ${r.of} vueltas`, `Em ${r.same} de ${r.of} voltas`];
+  }
+  /* how much a corner weighs in the plan for being the session's habit (0.6 when lap A's mistake there happened once, up
+     to 1.4 when every lap makes it) */
+  const repWeight = (c) => { const r = c && c.rep; return r && r.of >= 3 && c.lost > .03 ? 0.6 + 0.8 * Math.max(r.same, 1) / r.of : 1; };
+
+  /* ---------- turn by turn ---------- */
+  /* one row per turn in track order, everything the coach knows about it: lap A against lap B (where each brakes, Δ m, the
+     apex speeds, the gears, the time lost and what to do), the session (the typical lap's loss there, how many laps make
+     the same mistake, how much the corner changes lap to lap and what it costs a lap against your best there) and where
+     lap A stands among every driver known here (top, from ctx.model). cs are the corners of coachPlan (with rep) */
+  function turnByTurn(A, B, cs, LP, ctx) {
+    if (!Array.isArray(cs) || !cs.length) return [];
+    const near = (list, apex) => (list || []).filter((x) => Math.abs(x.apex - apex) <= 60).sort((x, y) => Math.abs(x.apex - apex) - Math.abs(y.apex - apex))[0] || null;
+    const sp = cornerSpread(sessionLaps(A, LP) || [], ctx), rk = ctx && ctx.model ? cornerRanks(A, ctx.model, ctx) : [], Tx = txOf(ctx), r3 = (v) => v == null ? null : Math.round(v * 1000) / 1000;
+    return cs.slice().sort((a, b) => a.d - b.d).map((c) => {
+      const s = sp ? near(sp.rows, c.apex) : null, k = near(rk, c.apex), rt = repText(c);
+      return { n: c.n, lab: turnLab(ctx, c.n), d: Math.round(c.d), apex: Math.round(c.apex), lift: !!c.lift, bA: c.dd != null && !c.flatB ? Math.round(c.d + c.dd) : null, bB: c.flatB ? null : Math.round(c.d), dd: c.lift ? null : c.dd != null ? Math.round(c.dd) : null,
+        vA: c.vmin != null ? Math.round(c.vmin) : null, vB: c.vminr != null ? Math.round(c.vminr) : null, gA: c.gA, gB: c.gB, lost: r3(c.lost), kind: c.kind || "", todo: tipTodo(c, ctx),
+        med: c.rep ? c.rep.med : null, same: c.rep ? c.rep.same : null, of: c.rep ? c.rep.of : null, rep: rt ? Tx(rt[0], rt[1], rt[2]) : "",
+        sd: s ? s.sd : null, cost: s ? s.cost : null, top: k ? k.top : null, drivers: k ? k.drivers : null };
+    });
+  }
+
   /* the sector times of two laps, the same in the analyzer and in the coach: the ones the game gave for each lap when both
      laps have them; otherwise thirds of the lap from the traces, counted from the start of the lap */
   function pairSecs(A, B, sa, sb, n) {
@@ -455,8 +518,10 @@
   const cornerSpan = (c) => [Math.max(0, c.d - 50), c.apex + 150];
   /* a corner's step of the plan: the tip, what happened, why it costs time and what to do instead, and its points on the map */
   function cornerStep(c, Tx, u, L, w, ctx) {
-    const f = familyOf(c.kind), what = whatOf(c, Tx, u), cf = c.oval && c.lift && COST[f + "_lift"] ? f + "_lift" : f, cost = Tx(...(COST[cf] || COST.speed)), how = howOf(f, c, Tx, u);
-    return { k: "corner", id: "corner:" + (c.kind || ""), kind: c.kind, turns: [c.n], gain: c.lost, w, t: `${turnLab(ctx, c.n)} · ${Tx(c.tip[0], c.tip[1], c.tip[2])}`, what, cost, why: what + " " + cost, how, marks: cornerMarks(c, L), spans: [cornerSpan(c)] };
+    const rt = repText(c), lapN = c.lapN != null ? c.lapN : "";
+    const what = [c.usual ? Tx(`Your usual lap here, lap ${lapN} shown.`, `Tu vuelta habitual aquí, se muestra la vuelta ${lapN}.`, `Sua volta habitual aqui, mostrada a volta ${lapN}.`) : "", whatOf(c, Tx, u), rt ? Tx(rt[0], rt[1], rt[2]) + "." : ""].filter(Boolean).join(" ");
+    const f = familyOf(c.kind), cf = c.oval && c.lift && COST[f + "_lift"] ? f + "_lift" : f, cost = Tx(...(COST[cf] || COST.speed)), how = howOf(f, c, Tx, u);
+    return { k: "corner", id: "corner:" + (c.kind || ""), kind: c.kind, turns: [c.n], gain: c.lost, w, ...(c.rep && c.rep.of >= 3 && rt ? { rep: [c.rep.same, c.rep.of] } : {}), ...(c.usual ? { usual: true } : {}), t: `${turnLab(ctx, c.n)} · ${Tx(c.tip[0], c.tip[1], c.tip[2])}`, what, cost, why: what + " " + cost, how, marks: cornerMarks(c, L), spans: [cornerSpan(c)] };
   }
   // the corners a step is about, as marks at their slowest points and their stretches
   const turnMarks = (list) => list.map((c) => ({ d: c.apex, k: "apex", n: c.n }));
@@ -550,6 +615,7 @@
     const Tx = txOf(ctx), { spdU } = unitsOf(ctx), C = coachOf(ctx), tipWeight = C.weight, turns = turnsOf(ctx), cornerHint = hintOf(ctx), pn = (k) => phaseName(k, ctx);
     const ov = ovalOf(A, R, ctx), est = estOf(R, ctx), cx = ov || est ? { ...ctx, ...(ov ? { oval: ov } : {}), ...(est ? { estB: true } : {}) } : ctx; // the oval is found once, from the laps and ctx.track
     const cs = coachCompare(A, R, cx), sa = lapSeries(A), sb = lapSeries(R), n = Math.min(sa.end, sb.end), lapD = A.time - R.time;
+    const sesN = sessionRepeat(cs, A, R, LP, cx); // every lap of the session in every corner: a mistake that repeats weighs more than one made once
     const lost = cs.reduce((s, c) => s + Math.max(0, c.lost), 0), gained = cs.reduce((s, c) => s + Math.min(0, c.lost), 0), inCorners = cs.reduce((s, c) => s + c.lost, 0), straight = lapD - inCorners;
     // a corner whose phases swing more than a second each way is not the same corner on both laps: its phases are not counted
     const ph = { brake: 0, entry: 0, apex: 0, exit: 0 }, phN = { brake: 0, entry: 0, apex: 0, exit: 0 }; cs.forEach((c) => { if (Object.values(c.ph).some((v) => Math.abs(v) > 1)) return; Object.keys(ph).forEach((k) => { const v = c.ph[k] || 0; if (v > 0) { ph[k] += v; if (v > .02) phN[k]++; } }); });
@@ -560,7 +626,12 @@
     const dif = (c) => { const h = cornerHint(c.apex); return h && h.spread > 0 && h.spreadMax > 0 ? 0.9 + 0.3 * Math.min(1, h.spread / h.spreadMax) : 1; };
     cs.forEach((c) => { const cz = cons.find((x) => x.n === c.n); if (cz && cz.sd > .08 && cz.sd > 2 * c.lost && /^brake/.test(c.kind || "")) { c.kind = "cons"; c.tip = ["Same braking point every lap, before anything else", "El mismo punto de frenada cada vuelta, antes que nada", "O mesmo ponto de frenagem em toda volta, antes de qualquer outra coisa"]; } });
     const P = [], r2 = (v) => Math.round(v * 100) / 100, L = n * BIN, T3 = (a) => Tx(a[0], a[1], a[2]);
-    cs.filter((c) => c.lost > .05).sort((a, b) => b.lost * tipWeight(b) * dif(b) - a.lost * tipWeight(a) * dif(a)).slice(0, 3).forEach((c) => P.push(cornerStep(c, Tx, spdU(), L, tipWeight(c) * dif(c), ctx)));
+    // the corners that cost the most, weighed by how often the mistake repeats over the session; a corner lap A drove well
+    // but most laps of the session lose time in the same way is a step too, with the numbers of the usual lap there
+    const usual = cs.filter((c) => !(c.lost > .05) && c.rep && c.rep.typ && c.rep.topN >= 3 && c.rep.topN / c.rep.of >= .5 && c.rep.med > .08)
+      .map((c) => ({ ...c.rep.typ, rep: { ...c.rep, same: c.rep.topN }, usual: true, lost: c.rep.med }));
+    const score = (c) => c.lost * tipWeight(c) * dif(c) * (c.usual ? 0.6 + 0.8 * c.rep.same / c.rep.of : repWeight(c));
+    cs.filter((c) => c.lost > .05).concat(usual).sort((a, b) => score(b) - score(a)).slice(0, 3).forEach((c) => P.push(cornerStep(c, Tx, spdU(), L, score(c) / Math.max(.001, c.lost), ctx)));
     const worst = Object.entries(ph).sort((a, b) => b[1] - a[1])[0];
     // the habit's advice follows the data: where you brake against the reference on average, how fast you reach the apex and when you pick up the throttle
     const avg = (a) => a.length ? a.reduce((q, v) => q + v, 0) / a.length : null, mdd = avg(cs.filter((c) => c.dd != null).map((c) => c.dd)), mdmin = avg(cs.filter((c) => c.vmin != null).map((c) => c.vmin - c.vminr)), mlate = avg(cs.filter((c) => c.late != null).map((c) => c.late));
@@ -732,6 +803,24 @@
         : Tx(`No faster in your last ${k} sessions`, `Sin mejorar en tus últimas ${k} sesiones`, `Sem melhorar nas suas últimas ${k} sessões`);
       return { n, apex: c.apex, trend: c.trend, gain: c.gain, sessions: k, t: `T${n}`, text, tone: c.trend === "better" ? "good" : "bad" };
     }).sort((a, b) => rank[a.trend] - rank[b.trend] || Math.abs(b.gain) - Math.abs(a.gain)).slice(0, 6);
+  }
+
+  /* ---------- this session against the last one ---------- */
+  /* the coach's first lines: the corners faster than the last session's best lap where its plan asked for something
+     (followUp), the ones slower, and the ones no faster over the driver's last sessions (progressLines), each as T numbers.
+     {better, worse, stuck, lines: [{tone, text}]} or null when there is no earlier session here */
+  function sinceLast(prev, prog, cs, ctx) {
+    const fu = followUp(prev, cs, ctx), pg = progressLines(prog, cs, ctx), Tx = txOf(ctx);
+    if (!fu.length && !pg.length) return null;
+    const names = (l) => l.map((x) => turnLab(ctx, x.n)).join(", "), seen = new Set();
+    const better = fu.filter((x) => x.ok > 0).concat(pg.filter((x) => x.trend === "better")).filter((x) => !seen.has(x.n) && seen.add(x.n));
+    const worse = fu.filter((x) => x.ok < 0).filter((x) => !seen.has(x.n) && seen.add(x.n));
+    const stuck = pg.filter((x) => x.trend === "stuck" || x.trend === "worse").filter((x) => !seen.has(x.n) && seen.add(x.n));
+    const lines = [];
+    if (better.length) lines.push({ tone: "good", text: Tx(`Faster than last time in ${names(better)}`, `Más rápido que la última vez en ${names(better)}`, `Mais rápido que da última vez em ${names(better)}`) });
+    if (worse.length) lines.push({ tone: "bad", text: Tx(`Slower than last time in ${names(worse)}`, `Más lento que la última vez en ${names(worse)}`, `Mais lento que da última vez em ${names(worse)}`) });
+    if (stuck.length) lines.push({ tone: "bad", text: Tx(`No faster for several sessions in ${names(stuck)}`, `Sin mejorar desde hace varias sesiones en ${names(stuck)}`, `Sem melhorar há várias sessões em ${names(stuck)}`) });
+    return lines.length ? { better: better.map((x) => x.n), worse: worse.map((x) => x.n), stuck: stuck.map((x) => x.n), lines } : null;
   }
 
   /* ---------- the track left unused ---------- */
@@ -926,15 +1015,17 @@
     ctx = ctx || {};
     // a lap missing (no reference yet, a lap not loaded) is compared with the other one: every answer keeps its shape, with nothing to say
     if (!A && !B) A = B = { bins: [], time: 0 }; else if (!B) B = A; else if (!A) A = B;
-    const Tx = txOf(ctx), withText = (c) => ({ ...c, text: c.tip[0] ? Tx(c.tip[0], c.tip[1], c.tip[2]) : "", todo: tipTodo(c, ctx) });
+    const Tx = txOf(ctx), withText = (c) => { const rt = repText(c), o = { ...c, text: c.tip[0] ? Tx(c.tip[0], c.tip[1], c.tip[2]) : "", todo: tipTodo(c, ctx), ...(rt ? { repText: Tx(rt[0], rt[1], rt[2]) } : {}) }; return o; };
     const facts = analyzerFacts(A, B, ctx), plan = coachPlan(A, B, Array.isArray(ctx.laps) ? ctx.laps : [], ctx);
     const out = { v: VERSION, gap: A.time - B.time, corners: facts.corners.map(withText), facts: { ad: facts.ad, items: facts.items }, coach: { ...plan, cs: plan.cs.map(withText) } };
+    { const tt = turnByTurn(A, B, plan.cs, Array.isArray(ctx.laps) ? ctx.laps : [], ctx); if (tt.length) out.turns = tt; } // turn by turn, the lap and the session
     if (Array.isArray(ctx.step)) out.step = stepText(ctx.step, A, ctx); // the next level's step, when lap B is the next level
     if (Array.isArray(ctx.prev)) out.followup = followUp(ctx.prev, plan.cs, ctx); // how this lap does where the last session's plan asked for something
     if (ctx.model) { const g = trackGuide(ctx.model, ctx), rk = cornerRanks(A, ctx.model, ctx); if (g) out.guide = g; if (rk.length) out.ranks = rk; } // the track guide and where lap A stands in every corner
     if (Array.isArray(ctx.byCls)) out.cls = clsLines(ctx.byCls, ctx); // the corner types across the driver's tracks
     if (ctx.like) { const lk = likeOf(A, ctx, plan.cs); if (lk) out.like = lk; } // what the fast drivers of this car do on other tracks, where this track has no corner card
     if (ctx.progress) { const pg = progressLines(ctx.progress, plan.cs, ctx); if (pg.length) out.progress = pg; } // the corners over the driver's last sessions
+    { const sl = sinceLast(ctx.prev, ctx.progress, plan.cs, ctx); if (sl) out.since = sl; } // this session against the last one, the coach's first lines
     if (ctx.map && ctx.map.edges) { const eu = edgeUse(A, ctx.map, ctx); if (eu.length) out.edges = eu; } // the track left unused on the exits
     out.notes = notesOf(out, ctx);
     return opts && opts.json ? JSON.stringify(out) : out;
@@ -1269,7 +1360,7 @@
   const api = { VERSION, BIN, lapSeries, serOf, lapShape, sameFrame, lineOffsets, cornerLine, lineTip, brakeZones, PHASES, phaseName, turnNo, COACH_GEN, cornerClass, cornerZones,
     OVAL_KINDS, ovalOf, liftZones, ovalZones, dirtLineTip, coachCompare, cornerConsistency, pairSecs, lapDriving, kindName, stepName, tipMain, tipShort, tipTodo, coachPlan, stepText, analyzerFacts, analyse,
     estOf, failedOf, progressLines, followUp, trackGuide, cornerRanks, clsLines, racePace, edgeUse, notesOf, guideItems, likeOf, likeSteps, catGroup,
-    turnLab, lapSpread, cornerSpread, offsExplained, ggOf, steerOf, understeer, tyreLaps, fuelUse, fuelPlan, insights, pedalCheck, slopeOf, sessionGoals, raceStory };
+    turnLab, sessionLaps, sessionRepeat, repText, turnByTurn, sinceLast, lapSpread, cornerSpread, offsExplained, ggOf, steerOf, understeer, tyreLaps, fuelUse, fuelPlan, insights, pedalCheck, slopeOf, sessionGoals, raceStory };
   root.PW_ANALYSIS = api;
   if (typeof module !== "undefined" && module.exports) module.exports = api;
 })(typeof window !== "undefined" ? window : typeof globalThis !== "undefined" ? globalThis : this);

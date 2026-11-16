@@ -309,7 +309,7 @@ for (const cs of cases()) for (const set of SETS) {
     weights: { w: cs.W.w, b: cs.W.b, off: [...cs.W.off] }, me: { w: cs.ME.w, habits: cs.ME.habits }, cards: cs.cards.map((c) => ({ apex: c.apex, spread: c.spread })),
     laps: [A, B, ...LP], step: [{ apex: 300 }, { apex: 1700 }] };
   const res = JSON.parse(PWA.analyse(JSON.parse(JSON.stringify(A)), JSON.parse(JSON.stringify(B)), JSON.parse(JSON.stringify(ctx)), { json: true }));
-  const bare = (c) => { const { text, todo, ...o } = c; return { ...o, tip: o.tip.slice(0, 2) }; };
+  const bare = (c) => { const { text, todo, repText, ...o } = c; return { ...o, tip: o.tip.slice(0, 2) }; }; // text, todo and repText are the phones' own, in their language
   assert.equal(hash(res.corners.map(bare)), want.corners, key + " corners as the phones get them");
   assert.equal(hash(res.corners.map((c) => c.tip)), want.tips, key + " tips as the phones get them");
   assert.equal(hash({ ...res.coach, cs: res.coach.cs.map(bare) }), want.plan, key + " plan as the phones get it");

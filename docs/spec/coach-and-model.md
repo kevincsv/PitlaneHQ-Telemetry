@@ -32,7 +32,7 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   charts go one by one under the shorter column (`lapMoreBalance`, `#lapMore` and `#lapMore2`; last on a phone), and the
   charts of a row are as tall as each other. The lap list has a column per sector (S1, S2, S3…: the game's official sectors that add
   up to the lap's time, `lapSecCols`; a session without them has no sector columns, on the phones neither), purple the
-  session's best of each among the valid laps, green a valid lap's one better than your best lap's. The braking points are a table of lap A against lap B per corner of
+  session's best of each among the valid laps, green a valid lap's one better than your best lap's. The braking points are a table ("Turn by turn", which also has the session's columns, see "The whole session, turn by turn") of lap A against lap B per corner of
   `coachCompare` in pitwall-analysis.js (`renderBrakeTable`): the turn ("T7"), where A and B brake, Δ m (+ A later; red when A brakes 3 m or more
   before B, muted otherwise), the speed at each apex, the gear at the apex ("3 / 4" when they differ), the time lost and what
   to do (the tip of the phase that loses the most in a few words, without the line tip added after it, `tipMain`/`tipShort` in pitwall-analysis.js, `todo` on the corners the phones get;
@@ -227,6 +227,31 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
 - **Another approach** (`failedOf` in the module, `ctx.progress.tried`): when the two latest times the driver saw a kind of
   tip in a corner (within 60 m) gained nothing, `coachCompare` gives the tip of the next phase that loses time there (0.02 s or
   more) instead, and the corner carries `alt` (the kind it replaced). Without `ctx.progress` nothing changes.
+
+## The whole session, turn by turn
+
+- **Every lap of the session** (`sessionLaps`, `sessionRepeat` in pitwall-analysis.js, run by `coachPlan`): the coach measures
+  every clean lap of lap A's session (valid, with its points, not in the pits, within 5 % of the session's best, the
+  reference left out; a lap is known by itself or by its number, time and session, so the phones' copies count once)
+  against the same reference, corner by corner. With three laps or more each corner carries `rep`: the laps measured
+  (`of`), how many lose time there with a tip of the same family as lap A's (`same`, lap A counted), the median loss over
+  the session (`med`), its spread (`sd`) and the family most laps get there (`top`, `topN`). A tip says how often its
+  mistake shows ("On 7 of 9 laps", "Only on this lap of 9", `repText`; the corner cards' pill on the web and the PC, the
+  plan's `what`, `repText` on the phones' corners) and the plan weighs a corner by it (0.6 when the mistake happened once,
+  up to 1.4 when every lap makes it, `repWeight`). A corner lap A drove well where most laps (3 or more, half or more) lose
+  over 0.08 s the same way is a plan step too, with the numbers of the session's usual lap there ("Your usual lap here, lap
+  7 shown.", `usual`). The plan's corner steps carry `rep` [same, of].
+- **Turn by turn** (`turnByTurn`, `turns` in `analyse`; the lap analyzer's table, once "Braking points", `renderBrakeTable`):
+  one row per turn in track order with lap A against lap B (where each brakes, Δ m, the apex speeds, the gears, the loss),
+  the typical lap's loss there, on how many laps the same mistake shows ("6/12"), how much the turn changes lap to lap
+  (± s, `cornerSpread`), where lap A stands among the drivers known here ("top 20 %", `cornerRanks` over the model) and
+  what to do. The session's columns show only when the session has three laps or more, the rank only with a model.
+- **This session against the last one** (`sinceLast`, `since` in `analyse`): the coach's first lines, the turns faster
+  than the last session's best lap where its plan asked for something (and the ones `progressLines` finds better), the
+  ones slower, and the ones no faster for several sessions, each as T numbers (`sinceHTML` under the gap on the web and the PC).
+- **Watch it**: every corner card of the coach opens the full-screen track map (pitwall-fullmap.js, `chase` in `open`) in
+  the chase view 120 m before the corner's braking point, lap A and lap B driving it (`coachWatchWire`); without a track
+  path the button is not shown.
 
 ## Beyond one lap against another
 

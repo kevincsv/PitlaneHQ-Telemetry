@@ -27,10 +27,11 @@ Status as of 2026-11-07.
 ## Microsoft Store
 
 - Live since 2026-11-01, Store ID 9P3642QCS9ZG, publisher "Pitlane HQ". Store on 0.9.15.
-- 0.9.23 submitted 2026-11-15 (Submission 5, "In certification", publishes by itself when it passes): steps and What's
-  new in project files `ms-store/store-update-0.9.23.md`. GitHub's artifact storage is full, so the MSIX comes from
-  `/dl/beta/PitlaneHQ-Store-<version>.msix` (a test build puts it there). A Remote Control session never clicks submit
-  unless the owner says so in that session.
+- 0.10.0 submitted 2026-11-16 00:13 UTC (Submission 5, "In certification", publishes by itself when it passes). The
+  0.9.23 certification was cancelled at the owner's word and the same submission reused: package
+  `PitlaneHQ-Store-0.10.0.msix` alone, What's new in English, Spanish and Portuguese (project files
+  `ms-store/store-update-0.10.0.md`). The MSIX comes from `/dl/beta/PitlaneHQ-Store-<version>.msix` (a test build
+  puts it there). The browser cannot upload the package, so the owner drops it in and submits, or says so.
 - IARC Global Rating ID de9e8fc9-f15c-8181-8fe0-3fb852eb6bc1 (reusable on other IARC stores).
 
 ## Website installer and Steam

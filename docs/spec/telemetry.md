@@ -28,8 +28,8 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   points come from the model (the next level for your best lap of the session; your own best lap while the model has
   none or you are its fastest), each marker moves with your speed against that lap and with a car close ahead or
   alongside, and they name their corners by the official turns (`turnNo`, `turnName`), like the coach: "T7", never "C7".
-- Telemetry's sub-tabs (the owner's choice 2026-11-16, design A, `renderSubtabs`): Dashboard, Lap compare, Standings,
-  Team (Beta), Tyres, then one "Car & tools" menu (`TOOLS_V`, `stMenuOpen`: Rev beep, Setups when it exists, Phone &
+- Telemetry's sub-tabs (the owner's choice 2026-11-16, design A, `renderSubtabs`): Dashboard, Live lap compare (the owner's
+  name, 2026-11-16), Standings, Team (Beta), Tyres, then one "Car & tools" menu (`TOOLS_V`, `stMenuOpen`: Rev beep, Setups when it exists, Phone &
   sharing on the PC) that names the tool open in it ("Car & tools · Rev beep"). Dashboard and Lap compare are both the
   Telemetry screen: Lap compare is `LIVE_MODE` "cmp", Dashboard brings back the view the driver had (`pw.liveDash`,
   `liveSetMode`). On the Dashboard the view switch is Essentials · Engineer · All panels (Basic, Engineer and Full in the

@@ -1970,6 +1970,24 @@ html .hl-sec{padding:0 0 12px;border-radius:var(--radius);display:flex;flex-dire
 nav.subtabs button[aria-selected="true"] .pill{color:inherit;border-color:currentColor;background:none}
 .tm-more summary{cursor:pointer;padding:6px 0;margin-bottom:8px}
 .tm-laps th:first-child{position:sticky;left:0;background:var(--surface);z-index:1}
+
+/* the coach report (openCoachReport) */
+#crp .pn.crp{width:min(560px,calc(100% - 32px));max-height:calc(100% - 32px);overflow:auto;display:flex;flex-direction:column;gap:12px}
+#crp .pn.crp h2{margin:0!important;font:700 26px/1.1 var(--f-display)!important;text-transform:uppercase!important;letter-spacing:.02em!important;color:var(--fg)}
+#crp .pn.crp>.uidlg-x{z-index:2}
+#crp .crp-flag{height:8px;border-radius:4px;background:repeating-conic-gradient(var(--fg) 0 25%,var(--surface) 0 50%) 0 0/16px 16px;opacity:.85;margin-right:12px}
+#crp .crp-res{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+#crp .crp-res div{background:var(--surface2);border-radius:8px;padding:8px 10px;min-width:0}
+#crp .crp-res small{display:block;color:var(--muted);font-size:12px}
+#crp .crp-res b{font-size:18px}
+#crp .crp-sec{display:flex;flex-direction:column;gap:6px}
+#crp .crp-vs>div{display:flex;justify-content:space-between;gap:10px;font-size:13px;border-bottom:1px dashed var(--line);padding:4px 0}
+#crp .crp-top{display:flex;flex-direction:column;gap:6px}
+#crp .crp-c{all:unset;box-sizing:border-box;cursor:pointer;display:grid;grid-template-columns:44px minmax(0,1fr) auto;gap:10px;align-items:start;padding:8px;border-radius:8px;border:1px solid var(--line)}
+#crp .crp-c:hover,#crp .crp-c:focus-visible{border-color:var(--accent)}
+#crp .crp-c>b{font:700 20px var(--f-display);color:var(--accent)}
+#crp .crp-acts{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
+@media (max-width:520px){#crp .crp-res{grid-template-columns:1fr 1fr}}
 </style>
 
 </head>
@@ -5560,13 +5578,51 @@ async function openRaceChoice(rid){const r=(RACES||[]).find(q=>q.id===rid);if(CL
 /* open a session of your account: in the lap analyzer or in the braking coach */
 function openAccountSession(id,rid){let m=$("#sesPick");if(!m){m=document.createElement("div");m.id="sesPick";m.className="uidlg";document.body.appendChild(m)}const x=(CLOUD.sessions||[]).find(s=>s.id===id)||{};
   m.innerHTML=`<div class="bg"></div><div class="pn" role="dialog" aria-modal="true"><div class="uidlg-t">${esc(x.track||"")}${sesPosTxt(x)?` <span class="mono" style="color:var(--accent)">${esc(sesPosTxt(x))}</span>`:""}${sessDrkPill(x)}${sessIsAI(x)?aiBadge({ai:1}):""}${gameBadge(x)}</div><p class="note" style="margin:4px 0 12px">${esc(Tx("What do you want to see?","¿Qué quieres ver?","Was möchtest du sehen?","O que você quer ver?"))}</p>
-    <div class="devlist">${rid||raceForSession(x)?`<button type="button" class="devrow linkrow" data-race="${esc(rid||raceForSession(x).id)}"><b>${esc(Tx("Race summary","Resumen de la carrera","Rennzusammenfassung","Resumo da corrida"))}</b><small class="muted">${esc(Tx("Result, lap times, incidents, braking and the coach's reading","Resultado, tiempos, incidentes, frenadas y la lectura del coach","Ergebnis, Rundenzeiten, Zwischenfälle, Bremsen und der Coach","Resultado, tempos, incidentes, freadas e a leitura do coach"))}</small><span class="pkgo">›</span></button>`:""}
+    <div class="devlist">${rid||raceForSession(x)?`<button type="button" class="devrow linkrow" data-race="${esc(rid||raceForSession(x).id)}"><b>${esc(Tx("Race report","Informe de la carrera","Rennbericht","Relatório da corrida"))}</b><small class="muted">${esc(Tx("Your result, what cost you time and what to change","Tu resultado, qué te costó tiempo y qué cambiar","Dein Ergebnis, was dich Zeit gekostet hat und was du ändern kannst","Seu resultado, o que te custou tempo e o que mudar"))}</small><span class="pkgo">›</span></button>`:""}
     <button type="button" class="devrow linkrow" data-go="laps"><b>${esc(Tx("Lap analyzer","Analizador de vueltas","Rundenanalyse","Analisador de voltas"))}</b><small class="muted">${esc(Tx("Speed, pedals, gears, steering and time, lap against lap","Velocidad, pedales, marchas, volante y tiempo, vuelta contra vuelta","Tempo, Pedale, Gänge, Lenkung und Zeit, Runde gegen Runde","Velocidade, pedais, marchas, volante e tempo, volta contra volta"))}</small><span class="pkgo">›</span></button>
     <button type="button" class="devrow linkrow" data-go="coach"><b>${esc(Tx("Coach","Coach","Coach","Coach"))}</b><small class="muted">${esc(Tx("Where you lose time in each corner and what to change","Dónde pierdes tiempo en cada curva y qué cambiar","Wo du in jeder Kurve Zeit verlierst und was du ändern kannst","Onde você perde tempo em cada curva e o que mudar"))}</small><span class="pkgo">›</span></button></div>
     <div class="uidlg-b" style="margin-top:12px"><button type="button" class="btn" id="spX">${esc(Tx("Close","Cerrar","Schließen","Fechar"))}</button></div></div>`;
   const close=()=>m.remove();m.querySelector(".bg").onclick=close;$("#spX").onclick=close;
-  m.querySelectorAll("[data-race]").forEach(b=>b.onclick=()=>{close();openRace(b.dataset.race)});
+  m.querySelectorAll("[data-race]").forEach(b=>b.onclick=()=>{close();openCoachReport(b.dataset.race)});
   m.querySelectorAll("[data-go]").forEach(b=>b.onclick=()=>{close();if(pcPick())setPcSrc("acct");CLOUD.bid="";CLOUD.lapsB=[];const same=CLOUD.sid===id&&CLOUD.laps.length;CLOUD.sid=id;SESS_SKIP=true;show(b.dataset.go);if(!same)cloudLoadSession(id)})}
+/* ---------- The coach report (Nov 2026): what opens after a race and from a race's window in place of the race summary.
+   The race (place, best lap, incidents), the session's best lap against your last session here, the next level and the
+   record of the drivers known on this car and track, and the three corners that cost the most with what to do and on how
+   many laps it happened. "Open the coach" opens that session's lap and reference in the Coach, a corner opens it in the
+   full-screen map from behind the car, "Full summary" the race summary as it was (openRace). ---------- */
+const CRP_T=(en,es,pt)=>Tx(en,es,null,pt);
+async function openCoachReport(rid){const r0=(RACES||[]).find(q=>q.id===rid);if(!r0)return openRace(rid);const r=fixRace(r0);
+  if(CLOUD.sessions===null)await cloudLoadSessions(true,true).catch(()=>{});const x=sessionForRace(r);if(!x)return openRace(rid);
+  let m=$("#crp");if(!m){m=document.createElement("div");m.id="crp";m.className="uidlg";document.body.appendChild(m)}
+  const key=e=>{if(e.key==="Escape"){e.preventDefault();close()}},close=()=>{document.removeEventListener("keydown",key,true);m.remove()};document.addEventListener("keydown",key,true);
+  const T=CRP_T,laps=(r.laps||[]).filter(l=>l.t>0&&l.n!==1&&!l.pit),rb=laps.length?Math.min(...laps.map(l=>l.t)):x.best||null,field=(r.results||[]).length||x.field||0;
+  const head=`<div class="crp-flag" aria-hidden="true"></div><div class="label">${esc(r.track||x.track||"")} · ${esc(r.car||x.car||"")}</div><h2 id="crpH">${esc(T("Race finished","Carrera terminada","Corrida terminada"))}</h2>
+    <div class="crp-res"><div><small>${esc(T("Position","Posición","Posição"))}</small><b class="mono">${r.finish?"P"+esc(r.finish)+(field?" / "+field:""):"–"}</b></div><div><small>${esc(T("Best lap","Mejor vuelta","Melhor volta"))}</small><b class="mono">${rb?fmtT(rb):"–"}</b></div><div><small>${esc(T("Incidents","Incidentes","Incidentes"))}</small><b class="mono">${r.inc!=null?r.inc+"x":"–"}</b></div></div>`;
+  const foot=`<div class="crp-acts"><button type="button" class="btn" id="crpFull">${esc(T("Full summary","Resumen completo","Resumo completo"))}</button><button type="button" class="btn primary" id="crpGo">${esc(T("Open the coach","Abrir el coach","Abrir o coach"))}</button></div>`;
+  const paint=body=>{m.innerHTML=`<div class="bg"></div><div class="pn crp" role="dialog" aria-modal="true" aria-labelledby="crpH"><button type="button" class="uidlg-x" id="crpX" aria-label="${esc(T("Close","Cerrar","Fechar"))}">×</button>${head}${body}${foot}</div>`;
+    m.querySelector(".bg").onclick=close;$("#crpX").onclick=close;$("#crpFull").onclick=()=>{close();openRace(rid)};$("#crpGo").onclick=()=>{close();go(null)};
+    m.querySelectorAll("[data-crpc]").forEach(b=>b.onclick=()=>{close();go(+b.dataset.crpc)})};
+  let A=null;
+  // the coach on this session's lap and reference; with a corner, the full-screen map from behind the car 120 m before it
+  const go=d=>{if(pcPick())setPcSrc("acct");CLOUD.bid="";CLOUD.lapsB=[];const same=CLOUD.sid===x.id&&CLOUD.laps.length;CLOUD.sid=x.id;if(A)ANASEL.a=lapKey(A);SESS_SKIP=true;show("coach");if(!same)cloudLoadSession(x.id);
+    if(d!=null){let n=0;const t=setInterval(()=>{const cm=$("#coachMap");if(cm&&cm._fsOpen){clearInterval(t);cm._fsOpen({start:Math.max(0,Math.round((d-120)/BIN)),chase:true})}else if(++n>40)clearInterval(t)},250)}};
+  paint(`<p class="note crp-wait">${esc(T("Reading your laps…","Leyendo tus vueltas…","Lendo suas voltas…"))}</p>`);
+  try{
+    if(!(CLOUD.sid===x.id&&CLOUD.laps.length&&!CLOUD.busy))await cloudLoadSession(x.id);if(!m.isConnected)return;
+    const LP=CLOUD.laps||[];A=analysisBest(LP);if(!A)throw 0;const PM=window.PW_MODEL;let md=null,MR={rec:null,level:null};
+    if(PM){try{md=await PM.modelFor(A)}catch(e){}if(md)MR=PM.refsFor(md,A)||MR}
+    if(!m.isConnected)return;
+    // compared with: your best of the last session on this car and track, the next level and the record
+    const k=comboKey(x),prev=(CLOUD.sessions||[]).filter(s=>s.id!==x.id&&comboKey(s)===k&&s.started<x.started&&s.best>0).sort((a,b)=>b.started-a.started)[0];
+    const row=(lbl,t)=>{const d=A.time-t;return`<div><span>${esc(lbl)} <span class="mono muted">${fmtT(t)}</span></span><b class="mono ${d<=0?"good":"bad"}">${sgn(d,3)}</b></div>`};
+    const vs=[prev?row(T("Your best last session","Tu mejor de la sesión anterior","Sua melhor da sessão anterior"),prev.best):"",MR.level?row(T("The next level in this car","El nivel siguiente en este coche","O próximo nível neste carro"),MR.level.time):"",md&&md.idealTime?row(T("The record of the drivers known here","El récord de los pilotos conocidos aquí","O recorde dos pilotos conhecidos aqui"),md.idealTime):""].join("");
+    // where the time went: the reference is the next level, else the record (the coach's own default)
+    const R=MR.level||MR.rec||LP.reduce((p,q)=>q!==A&&q.valid!==false&&(!p||q.time<p.time)?q:p,null);let top="";
+    if(R&&R!==A){const c=coachPlan(A,R,LP),cx=anaCtx(A,R);const cs=c.cs.filter(q=>q.lost>.03).sort((p,q)=>q.lost-p.lost).slice(0,3);
+      top=cs.map(q=>{const rt=PWA.repText?PWA.repText(q):null,todo=PWA.tipTodo(q,cx);return`<button type="button" class="crp-c" data-crpc="${Math.round(q.d)}"><b>T${q.n}</b><span>${esc(todo)}${rt?`<br><span class="co-rep">${esc(Tx(rt[0],rt[1],null,rt[2]))}</span>`:""}</span><span class="mono bad">+${q.lost.toFixed(2)} s</span></button>`}).join("")}
+    paint(`${vs?`<div class="crp-sec"><div class="label">${esc(T("Your best lap compared with","Tu mejor vuelta comparada con","Sua melhor volta comparada com"))} <span class="mono">${fmtT(A.time)}</span></div><div class="crp-vs">${vs}</div></div>`:""}
+      ${top?`<div class="crp-sec"><div class="label">${esc(T("Where the time went","Donde se fue el tiempo","Onde o tempo foi"))}</div><div class="crp-top">${top}</div></div>`:""}`);
+  }catch(e){if(m.isConnected)paint("")}}
 /* the PC window: the header works as the title bar (drag, double-click, buttons) */
 function ownFrame(){const H=document.documentElement,hd=$("header.top");H.classList.add("ownframe");$("#winCtl").hidden=false;$("#winEdge").hidden=false;
   const pad=()=>H.style.setProperty("--padx",getComputedStyle(document.body).paddingLeft);pad();addEventListener("resize",pad);
@@ -8501,7 +8557,7 @@ function onRaceReport(r){fixRace(r);if(gameMatch(r))RACES=[r,...(RACES||[]).filt
   if(CUR_VIEW==="races")renderRaces();TB=null;
   // on the PC the summary opens by itself a moment after the flag, so it is there when the driver looks at the app:
   // never over a window that is open, nor when the driver touched the app in the last minute (they are doing something)
-  if(!PHONE&&MODE==="bridge"&&!COMPANION&&!demoOn()&&gameMatch(r)&&!r.partial)setTimeout(()=>{if(document.querySelector(".uidlg")||Date.now()-UI_AT<60e3)return;usageCount("act:race_auto");openRace(r.id)},3000);
+  if(!PHONE&&MODE==="bridge"&&!COMPANION&&!demoOn()&&gameMatch(r)&&!r.partial)setTimeout(()=>{if(document.querySelector(".uidlg")||Date.now()-UI_AT<60e3)return;usageCount("act:race_auto");openCoachReport(r.id)},3000);
   if(PHONE)setTimeout(()=>toast(Tx("Race summary ready: Analysis → My races","Resumen de la carrera listo: Análisis → Mis carreras","Rennzusammenfassung fertig: Analyse → Rennen","Resumo da corrida pronto: Análise → Corridas")),3400)}
 
 /* ---------- braking points of the race on the track map: you and the others ---------- */

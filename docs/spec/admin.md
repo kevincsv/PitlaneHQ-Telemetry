@@ -103,7 +103,10 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   drove that day), signupsPerDay [{day, n}], installs {downloads, prevDownloads, downloadsBeta, uninstalls,
   prevUninstalls, answered, prevAnswered, perDay, byVersion, reasons [{k, n, name}], said [{at, v, text}]}, supporters
   {total, stripe, manual, patreon, patrons, donations, prevDonations, amounts [{currency, amount}], prevAmounts, waiting,
-  refunded, recent [{at, amount, currency, name, id}]} (`pcstats.js`), totals {active, newAccounts, accounts, drove, sessions, races, laps, secs,
+  refunded, recent [{at, amount, currency, name, id}]} (`pcstats.js`), tryouts {pcs, hit, signedUp, laps, limit, list [{pc (6
+  characters of its hash), used, first, last, hit, signedUp, laps, games, sessions [{at, game, track, car, laps}]}]} (the PCs
+  that drove without an account and last did in these days, `tryoutsOf` in tryout.js: tryout_pcs joined to the sessions
+  the PC uploaded with its own token, `dev_<install>:<session>`; signed up = anonAdopt moved them to an account), totals {active, newAccounts, accounts, drove, sessions, races, laps, secs,
   returning (2 days or more), multiDevice}, prev {active, newAccounts, sessions, drove, secs}, funnel of the period's new
   accounts {accounts, opened, drove, laps (Laps, Telemetry, My sessions, a race summary or compare), coach (the coach
   screen, a report, a lap sent to it, its plan)}, comeback {d1, d23, d4}, driven [{game, drivers, sessions, races, laps,
@@ -190,7 +193,9 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   the table of sources with kind, visits, change and sign-ups, countries, pages they landed on), Installs and uninstalls (installer
   downloads, uninstalls with their change in red when it grows, said why, the reasons, the version uninstalled and what
   they wrote), Supporters (Stripe donations and what they raised, supporters from Stripe and by hand, the latest
-  donations, Patreon apart as legacy with its badges and active patrons), Games (every game, one
+  donations, Patreon apart as legacy with its badges and active patrons), Tried without an account (PCs, used all the
+  sessions, signed up after, then each PC with its sessions out of the limit, every session's time, game, track, car and
+  laps, and Trying, Used them all or Signed up; `admTryoutsHTML`), Games (every game, one
   nobody drove greyed: drivers and sessions with their change, new to the game, races, laps, hours, sessions a driver;
   then a chooser of the game (`admGameHTML`, `ADM.game`, no new request) with its tiles (drivers and new to it, sessions
   and races, time driven and laps, counted by the apps), its drivers per day and the tracks and cars driven most), What drivers use (by area, the share of the active drivers and the

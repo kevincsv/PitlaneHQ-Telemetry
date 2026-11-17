@@ -31,3 +31,33 @@ export async function tryoutRoutes(env, p, m, body, url) {
 export async function tryReset(env, pc) {
   if (pcOk(pc)) await env.DB.prepare("DELETE FROM tryout_pcs WHERE pc=?1").bind(pc).run().catch(() => {});
 }
+
+// The admin Analytics' "Tried without an account": each PC that drove without an account in the days asked, its
+// sessions with the game, track and car (the sessions it uploaded with its own token, "dev_<install>:<session>"), whether
+// it used the TRY_LIMIT sessions and whether someone signed in there afterwards (anonAdopt moved its sessions to an
+// account). No name: a PC is the first characters of its hash.
+export const SQL_TRY_ROWS = "SELECT pc, session, at FROM tryout_pcs WHERE pc IN (SELECT pc FROM tryout_pcs WHERE at>=?1) LIMIT 3000";
+export const SQL_TRY_SESSIONS = "SELECT id, uploader, game, track, car, laps, started FROM sessions WHERE started>=?1 AND id LIKE 'dev\\_%' ESCAPE '\\' LIMIT 5000";
+
+export function tryoutsOf({ t0, rows = [], sessions = [] }) {
+  const bySess = new Map();
+  for (const s of sessions) {
+    const i = String(s.id).indexOf(":");
+    if (i > 0) bySess.set(s.id.slice(i + 1), s);
+  }
+  const pcs = new Map();
+  for (const r of rows) {
+    if (!pcs.has(r.pc)) pcs.set(r.pc, []);
+    pcs.get(r.pc).push(r);
+  }
+  const list = [...pcs.entries()].map(([pc, rs]) => {
+    rs.sort((a, b) => a.at - b.at);
+    const ses = rs.map((r) => {
+      const s = bySess.get(r.session);
+      return { at: r.at, game: (s && s.game) || "", track: (s && s.track) || "", car: (s && s.car) || "", laps: (s && s.laps) || 0, acct: !!(s && String(s.uploader).startsWith("acct:")) };
+    });
+    return { pc: pc.slice(0, 6), used: rs.length, first: rs[0].at, last: rs[rs.length - 1].at, hit: rs.length >= TRY_LIMIT, signedUp: ses.some((s) => s.acct),
+      laps: ses.reduce((n, s) => n + s.laps, 0), games: [...new Set(ses.map((s) => s.game).filter(Boolean))], sessions: ses.map(({ acct, ...s }) => s) };
+  }).filter((x) => x.last >= t0).sort((a, b) => b.last - a.last);
+  return { pcs: list.length, hit: list.filter((x) => x.hit).length, signedUp: list.filter((x) => x.signedUp).length, laps: list.reduce((n, x) => n + x.laps, 0), limit: TRY_LIMIT, list: list.slice(0, 100) };
+}

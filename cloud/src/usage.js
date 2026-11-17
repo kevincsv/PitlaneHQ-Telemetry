@@ -25,6 +25,7 @@
 // Every answer is also a driver's message of their support chat (support.js, migration 0075).
 import { sessionAccount, isAdmin } from "./accounts.js";
 import { installsOf, supportersOf } from "./pcstats.js";
+import { tryoutsOf, SQL_TRY_ROWS, SQL_TRY_SESSIONS } from "./tryout.js";
 import { srcName, KIND_NAMES, hiText, areasOf } from "./usagenames.js";
 import { visitOf, countryOf, isBot, sourcesOf, SQL_VISIT_ADD, DL_DAYS } from "./sourceslib.js";
 import { openEscrow } from "./escrow.js";
@@ -181,6 +182,10 @@ export async function usageRoute(req, env, url) {
       q("SELECT COUNT(*) AS n FROM patreon_patrons WHERE active=1").catch(() => []),
       q("SELECT o.at, o.status, o.amount, o.currency, o.account_id, a.display AS name FROM pro_orders o LEFT JOIN accounts a ON a.id=o.account_id WHERE o.kind='supporter' AND o.at>=?1 ORDER BY o.at DESC LIMIT 2000", p0).catch(() => []),
     ]);
+    // the PCs that drove without an account (tryout.js): their sessions there and what they drove
+    const tryRows = await q(SQL_TRY_ROWS, t0).catch(() => []);
+    const tryFrom = tryRows.length ? Math.min(...tryRows.map((x) => x.at)) - 6 * 3600e3 : now;
+    const trySes = tryRows.length ? await q(SQL_TRY_SESSIONS, tryFrom).catch(() => []) : [];
     const ids = [...new Set([...rows.map((x) => x.account_id), ...ses.map((x) => x.uploader.slice(5))])].slice(0, 300), accounts = new Map();
     // the nicknames of the accounts in the list, in pieces of 90 (D1's bound parameters)
     for (let i = 0; i < ids.length; i += 90) {
@@ -194,7 +199,7 @@ export async function usageRoute(req, env, url) {
     const installs = installsOf({ from, pcRows, answers: unAns.map((x) => ({ ...x, day: day(x.created) })) });
     const supporters = supportersOf({ t0, badges, patrons: (patrons[0] || {}).n || 0, orders });
     more.driven = gamesOf({ from, sessions: ses, prev: gPrev, firsts: gFirsts, tracks: gTracks, cars: gCars, appGames: out.games || [] });
-    const all = { ...out, ...more, installs, supporters, sources: sourcesOf(vNow, vPrev, accs.filter((a) => a.created >= t0), accs.filter((a) => a.created < t0)) };
+    const all = { ...out, ...more, installs, supporters, tryouts: tryoutsOf({ t0, rows: tryRows, sessions: trySes }), sources: sourcesOf(vNow, vPrev, accs.filter((a) => a.created >= t0), accs.filter((a) => a.created < t0)) };
     // the names and sentences in the three languages, so the phones show what the web shows (usagenames.js)
     all.sources.bySource = all.sources.bySource.map((x) => ({ ...x, name: srcName(x.src), kindName: KIND_NAMES[x.kind] || KIND_NAMES.other }));
     return { ...all, highlights: highlightsOf(all).map((h) => ({ ...h, text: hiText(h.k, h.a) })), areas: areasOf(all.top || []) };

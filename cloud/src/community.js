@@ -1225,13 +1225,18 @@ export async function community(req, env, url, ctx) {
     const d = await env.DB.prepare("SELECT id FROM community_users WHERE token_hash=?1").bind(await sha256(t)).first();
     if (!d || d.id === u.id || /^(o:|guest-)/.test(d.id) || (await env.DB.prepare("SELECT 1 FROM accounts WHERE id=?1").bind(d.id).first())) return json({ adopted: 0 });
     const laps = (await env.DB.prepare("SELECT id, car_id, track_id, time, game, trace IS NOT NULL AS traced FROM community_laps WHERE user_id=?1").bind(d.id).all()).results || [];
+    // the PC's laps were Anonymous while nobody was signed in: they take the account's public name, or stay Anonymous
+    // when the account chose so
+    const who = await env.DB.prepare("SELECT anon, name_kind FROM accounts WHERE id=?1").bind(u.id).first().catch(() => null);
+    const asAnon = who && who.anon ? 1 : 0, asShown = who && who.name_kind === "iracing" ? "iracing" : "nick";
+    const take = (id) => env.DB.prepare("UPDATE community_laps SET user_id=?2, anon=?3, shown=?4 WHERE id=?1").bind(id, u.id, asAnon, asShown);
     const q = [], combos = new Set();
     for (const l of laps) {
       const mine = await env.DB.prepare("SELECT id, time, trace IS NOT NULL AS traced FROM community_laps WHERE user_id=?1 AND car_id=?2 AND track_id=?3").bind(u.id, l.car_id, l.track_id).first();
       combos.add(l.game + "|" + l.track_id + "|" + l.car_id);
-      if (!mine) { q.push(env.DB.prepare("UPDATE community_laps SET user_id=?2 WHERE id=?1").bind(l.id, u.id)); continue; }
+      if (!mine) { q.push(take(l.id)); continue; }
       const better = mine.time > l.time || (!mine.traced && !!l.traced); // the same rule as keepBestLap
-      if (better) q.push(env.DB.prepare("DELETE FROM community_laps WHERE id=?1").bind(mine.id), env.DB.prepare("UPDATE community_laps SET user_id=?2 WHERE id=?1").bind(l.id, u.id));
+      if (better) q.push(env.DB.prepare("DELETE FROM community_laps WHERE id=?1").bind(mine.id), take(l.id));
       else q.push(env.DB.prepare("DELETE FROM community_laps WHERE id=?1").bind(l.id));
     }
     q.push(
@@ -1335,9 +1340,9 @@ export async function community(req, env, url, ctx) {
     const carId = int(body.carId), trackId = int(body.trackId), time = num(body.time);
     if (!carId || !trackId || !time || time <= 10 || time > 3600) return err("lap needs carId, trackId and time", 400);
     if (isTestDrive(body.kind)) return json({ kept: "laps of a test drive are not shared" });
-    // a PC nobody is signed in on: its laps teach the coach (anon.js) but never show on a leaderboard (the privacy
-    // policy says nobody sees them); the agent still offers its best lap, so the server refuses it here
-    if (!u.account && typeof body.other !== "string") return json({ kept: "sign in to share your laps" });
+    // a PC nobody is signed in on (the owner's choice, Nov 17 2026): its best lap goes on the leaderboard as Anonymous,
+    // whatever the agent asks, and takes the account's public name once someone signs in there (/adopt)
+    if (!u.account) body.anon = true;
     const sectors = Array.isArray(body.sectors) ? JSON.stringify(body.sectors.filter((x) => typeof x === "number").slice(0, 10)) : null;
     // the top 3 of a race you drove: their best lap times go up anonymously (no name, no telemetry), one
     // anonymous driver per real driver, so their faster lap of a later race replaces this one

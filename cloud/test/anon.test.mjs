@@ -83,10 +83,21 @@ assert.match(src("coachlearn.js"), /s\.uploader LIKE 'acct:%' OR s\.uploader LIK
 assert.match(src("worker.js"), /role === "device" && !\(p === "\/api\/upload" && m === "POST"\)/);
 console.log("anon ok");
 
-// a PC without an account never puts a lap on a leaderboard: POST /community/laps keeps it out (the privacy policy)
+// a PC without an account: its best lap goes on the leaderboards as Anonymous, and takes the account's name on /adopt
 {
   const src = readFileSync(new URL("../src/community.js", import.meta.url), "utf8");
   const at = src.indexOf('if (p === "/laps" && m === "POST")');
-  assert.ok(at > 0 && /if \(!u\.account && typeof body\.other !== "string"\) return json\(\{ kept:/.test(src.slice(at, at + 1200)), "no-account laps stay off the leaderboards");
+  assert.ok(at > 0 && src.slice(at, at + 1200).includes("if (!u.account) body.anon = true;"), "no-account laps are Anonymous");
+  const ad = src.indexOf('if (p === "/adopt" && m === "POST")'), part = src.slice(ad, ad + 3000);
+  assert.ok(/UPDATE community_laps SET user_id=\?2, anon=\?3, shown=\?4/.test(part) && !/SET user_id=\?2 WHERE id=\?1"\)\.bind\(l\.id/.test(part), "adopted laps take the account's name");
 }
-console.log("anon: no-account laps stay off the leaderboards");
+{
+  const sql = readFileSync(new URL("../migrations/0108_anon_device_laps.sql", import.meta.url), "utf8");
+  db.prepare("INSERT INTO community_users (id, token_hash, alias, created) VALUES (?,?,?,?)").run("acctone", "h-acct", "Jane", now);
+  db.prepare("INSERT INTO accounts (id, email_hash, auth_salt, auth_hash, wrapped_key, display, created) VALUES (?,?,?,?,?,?,?)").run("acctone", "e", "s", "a", "w", "Jane", now);
+  const lap = (id, uid) => db.prepare("INSERT INTO community_laps (id, user_id, car_id, track_id, time, created, anon, game) VALUES (?,?,?,?,?,?,?,?)").run(id, uid, 1, 2, 100, now, 0, "lmu");
+  lap("l1", "devone0001"); lap("l2", "acctone"); lap("l3", "o:rival");
+  db.exec(sql);
+  assert.deepEqual(db.prepare("SELECT id, anon FROM community_laps ORDER BY id").all().map((x) => [x.id, x.anon]), [["l1", 1], ["l2", 0], ["l3", 0]], "only a PC's own laps become Anonymous");
+}
+console.log("anon: no-account laps are Anonymous on the leaderboards");

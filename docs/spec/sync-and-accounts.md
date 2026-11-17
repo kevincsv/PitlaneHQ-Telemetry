@@ -70,8 +70,10 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
 - A PC without an account still teaches the coach (the owner's choice, Nov 15 2026; `cloud/src/anon.js`, `anonCloud()`
   in cloud.go): with nobody signed in and no own site set up, the agent uploads its laps to POST /api/upload with the
   PC's own token (the one POST /community/register gives it, asked for when missing), with no driver name and no
-  licence. The server keeps them as sessions of `dev:<the install's random id>`: they show nowhere (no leaderboard, no
-  profile, no list, and that token reads nothing from /api; the best lap the agent still offers to POST /community/laps is refused there), the model (`learnNewLaps`) and the server's coach
+  licence. The server keeps them as sessions of `dev:<the install's random id>`: they show nowhere (no profile, no list,
+  and that token reads nothing from /api) except the best lap of each car and track, which POST /community/laps keeps on
+  the leaderboards always as Anonymous (the owner's choice, Nov 17 2026; migration 0108 made the earlier "Driver" ones
+  Anonymous). On /adopt those laps move to the account and take its public name (or stay Anonymous if it chose so), the model (`learnNewLaps`) and the server's coach
   (`shadowRun`) learn from them like from an account's, and each install has the daily limit of 1500 laps. When
   someone creates an account or signs in on that PC (`plAdopt`, POST /community/adopt, `anonAdopt`) its sessions, laps
   and the coach's tips on them become the account's. Laps no account claimed are deleted after 180 days (`anonPrune`,

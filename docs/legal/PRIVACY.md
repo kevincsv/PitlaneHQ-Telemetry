@@ -13,8 +13,9 @@ Uninstalling Pitlane HQ removes them.
 - With an account, the laps you drive in iRacing and Le Mans Ultimate, with their times and telemetry, go to your
   Pitlane HQ account so you can see them on the web and the phone apps.
 - Without an account, the agent still uploads the laps you drive, with their times and telemetry, so the coach learns
-  from them. They are kept under a random id of this installation, with no name and no email, and nobody sees them.
-  If you create an account or sign in on this PC they become part of your account. Otherwise they are deleted after
+  from them. They are kept under a random id of this installation, with no name and no email. Your best lap of each
+  car and track shows on the leaderboards as Anonymous. If you create an account or sign in on this PC they become part
+  of your account and that lap shows your public name, unless you chose to stay Anonymous. Otherwise they are deleted after
   180 days. What the coach model learnt from them stays, without any name.
 - Without an account, the agent also counts the sessions this PC drove, by a code made from the PC's own Windows id,
   so the free sessions before an account are counted once even after reinstalling.

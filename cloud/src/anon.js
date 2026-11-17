@@ -1,7 +1,7 @@
 // The coach learns from drivers without an account too (the owner's choice, Nov 15 2026). A PC with no account
 // uploads its laps with its own token (community_users, POST /community/register, the token the PC always had for
 // sharing): they are kept as sessions of "dev:<that id>", a random id of the install, with no driver name, and nothing
-// of them shows anywhere (no leaderboard, no profile, no list). The model and the server's coach learn from them like
+// of them shows anywhere (no profile, no list) but the best lap of each car and track, always Anonymous on the leaderboards. The model and the server's coach learn from them like
 // from an account's (model.js learnNewLaps, coachlearn.js). When someone signs in on that PC its laps move to the
 // account (POST /community/adopt, anonAdopt). Laps nobody claimed are deleted after ANON_DAYS; what the model learnt
 // from them stays, as it does when an account is deleted. Said in the privacy policy (legal.js).

@@ -82,3 +82,11 @@ assert.equal((src("model.js").match(/s\.uploader LIKE 'acct:%' OR s\.uploader LI
 assert.match(src("coachlearn.js"), /s\.uploader LIKE 'acct:%' OR s\.uploader LIKE 'dev:%'/);
 assert.match(src("worker.js"), /role === "device" && !\(p === "\/api\/upload" && m === "POST"\)/);
 console.log("anon ok");
+
+// a PC without an account never puts a lap on a leaderboard: POST /community/laps keeps it out (the privacy policy)
+{
+  const src = readFileSync(new URL("../src/community.js", import.meta.url), "utf8");
+  const at = src.indexOf('if (p === "/laps" && m === "POST")');
+  assert.ok(at > 0 && /if \(!u\.account && typeof body\.other !== "string"\) return json\(\{ kept:/.test(src.slice(at, at + 1200)), "no-account laps stay off the leaderboards");
+}
+console.log("anon: no-account laps stay off the leaderboards");

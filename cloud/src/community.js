@@ -1335,6 +1335,9 @@ export async function community(req, env, url, ctx) {
     const carId = int(body.carId), trackId = int(body.trackId), time = num(body.time);
     if (!carId || !trackId || !time || time <= 10 || time > 3600) return err("lap needs carId, trackId and time", 400);
     if (isTestDrive(body.kind)) return json({ kept: "laps of a test drive are not shared" });
+    // a PC nobody is signed in on: its laps teach the coach (anon.js) but never show on a leaderboard (the privacy
+    // policy says nobody sees them); the agent still offers its best lap, so the server refuses it here
+    if (!u.account && typeof body.other !== "string") return json({ kept: "sign in to share your laps" });
     const sectors = Array.isArray(body.sectors) ? JSON.stringify(body.sectors.filter((x) => typeof x === "number").slice(0, 10)) : null;
     // the top 3 of a race you drove: their best lap times go up anonymously (no name, no telemetry), one
     // anonymous driver per real driver, so their faster lap of a later race replaces this one

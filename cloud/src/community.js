@@ -618,19 +618,29 @@ export async function community(req, env, url, ctx) {
   if (m === "GET" && (p === "/admin/uploads" || p === "/admin/users")) {
     const acc = await sessionAccount(req, env);
     if (!acc || !isAdmin(env, acc.id)) return err("only the admins of this server can do this", 403);
+    // every account with its counts (the phones' admin panel; the web's Drivers list reads /admin/activity): one grouped
+    // read per table, never a query per account (those read every lap once per account)
     if (p === "/admin/users") {
       const q = String(url.searchParams.get("q") || "").trim().slice(0, 60);
-      const r = await env.DB.prepare(`SELECT a.id, a.display, a.name_kind AS nameKind, a.anon, a.verified, a.created, a.member_since AS memberSince, a.totp_on AS twoFactor, a.supporter, a.supporter_src AS supporterSrc, a.supporter_hidden AS supporterHidden, a.tester,
-        (SELECT COUNT(*) FROM sessions s WHERE s.uploader='acct:'||a.id) AS sessions,
-        (SELECT MAX(started) FROM sessions s WHERE s.uploader='acct:'||a.id) AS lastSession,
-        (SELECT COUNT(*) FROM community_laps l WHERE l.user_id=a.id) AS laps,
-        (SELECT COUNT(*) FROM community_users g WHERE g.owner=a.id AND g.id LIKE 'guest-%') AS guests,
-        (SELECT group_concat(gl.gid || '|' || g.alias, ',') FROM guest_links gl JOIN community_users g ON g.id=gl.gid WHERE gl.account_id=a.id) AS guestLinked,
-        (SELECT COUNT(*) FROM leagues g WHERE g.owner=a.id) AS leagues,
-        EXISTS (SELECT 1 FROM driver_links d WHERE d.account_id=a.id) AS driverLinked,
-        (SELECT group_concat(d.game, ',') FROM driver_links d WHERE d.account_id=a.id) AS driverGames
+      const r = await env.DB.prepare(`SELECT a.id, a.display, a.name_kind AS nameKind, a.anon, a.verified, a.created, a.member_since AS memberSince, a.totp_on AS twoFactor, a.supporter, a.supporter_src AS supporterSrc, a.supporter_hidden AS supporterHidden, a.tester
         FROM accounts a ${q ? "WHERE a.display LIKE ?1 OR a.id LIKE ?1" : ""} ORDER BY a.created DESC LIMIT 500`).bind(...(q ? ["%" + q.replace(/[%_]/g, "") + "%"] : [])).all();
-      return json({ users: (r.results || []).map((x) => ({ ...x, admin: isAdmin(env, x.id), tester: isTester(env, x.id, x) })) });
+      const all = (sql) => env.DB.prepare(sql).all().then((x) => x.results || []).catch(() => []);
+      const [ses, laps, guests, linked, leagues, drivers] = await Promise.all([
+        all("SELECT uploader AS k, COUNT(*) AS n, MAX(started) AS last FROM sessions WHERE uploader LIKE 'acct:%' GROUP BY uploader"),
+        all("SELECT user_id AS k, COUNT(*) AS n FROM community_laps GROUP BY user_id"),
+        all("SELECT owner AS k, COUNT(*) AS n FROM community_users WHERE id LIKE 'guest-%' AND owner IS NOT NULL GROUP BY owner"),
+        all("SELECT gl.account_id AS k, group_concat(gl.gid || '|' || g.alias, ',') AS v FROM guest_links gl JOIN community_users g ON g.id=gl.gid GROUP BY gl.account_id"),
+        all("SELECT owner AS k, COUNT(*) AS n FROM leagues GROUP BY owner"),
+        all("SELECT account_id AS k, group_concat(game, ',') AS v FROM driver_links GROUP BY account_id"),
+      ]);
+      const by = (rows) => new Map(rows.map((x) => [String(x.k), x]));
+      const S = by(ses), L = by(laps), G = by(guests), GL = by(linked), LG = by(leagues), D = by(drivers);
+      const users = (r.results || []).map((x) => {
+        const s = S.get("acct:" + x.id), d = D.get(x.id);
+        return { ...x, sessions: (s && s.n) || 0, lastSession: (s && s.last) || null, laps: (L.get(x.id) || {}).n || 0, guests: (G.get(x.id) || {}).n || 0,
+          guestLinked: (GL.get(x.id) || {}).v || null, leagues: (LG.get(x.id) || {}).n || 0, driverLinked: d ? 1 : 0, driverGames: d ? d.v : null };
+      });
+      return json({ users: users.map((x) => ({ ...x, admin: isAdmin(env, x.id), tester: isTester(env, x.id, x) })) });
     }
     const q = (t, extra) => env.DB.prepare(`SELECT x.id, '${t}' AS kind, x.car, x.track, x.created, x.anon, COALESCE(x.shown,'nick') AS shown, ${extra}
       u.id AS userId, u.alias, u.iracing, u.owner, o.display AS ownerName, ac.display AS account
@@ -639,6 +649,8 @@ export async function community(req, env, url, ctx) {
     const [l, r] = await Promise.all([q("laps", "x.time,"), q("reports", "x.best AS time,")]);
     const items = [...(l.results || []), ...(r.results || [])].sort((a, b) => b.created - a.created).map((x) => ({
       ...x, shownAs: x.anon ? "Anonymous" : x.shown === "iracing" && x.iracing ? x.iracing : x.alias,
+      // the account behind it, whose profile the admin page opens: the uploader's own, or the PC owner's for a Drinks driver or rival
+      accountId: !x.owner ? (x.account ? x.userId : "") : x.owner,
       // a rival of a race ("o:…", shared by the PC that raced them) is not a Drinks driver ("guest-…", who drove that PC)
       via: !x.owner ? "account" : String(x.userId).startsWith("o:") ? "rival" : "drinks",
       realUploader: !x.owner ? x.account || x.alias : String(x.userId).startsWith("o:") ? `${x.alias} (race rival · shared by ${x.ownerName || x.owner})` : `${x.alias} (Drinks · ${x.ownerName || x.owner})`,
@@ -819,7 +831,7 @@ export async function community(req, env, url, ctx) {
     const acc = await sessionAccount(req, env);
     if (!acc || !isAdmin(env, acc.id)) return err("only the admins of this server can do this", 403);
     const r = await env.DB.prepare(`SELECT s.id, s.started, s.track, s.track_config AS trackConfig, s.car, s.kind, s.laps, s.game, s.official, s.cat, a.display AS who, a.id AS accountId
-      FROM sessions s LEFT JOIN accounts a ON 'acct:'||a.id=s.uploader ORDER BY s.started DESC LIMIT 100`).all();
+      FROM sessions s LEFT JOIN accounts a ON a.id=substr(s.uploader,6) AND s.uploader LIKE 'acct:%' ORDER BY s.started DESC LIMIT 100`).all();
     return json({ sessions: r.results || [] });
   }
   // a supporter hides (or shows again) their own badge

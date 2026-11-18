@@ -70,7 +70,7 @@ const err = (m, s) => json({ error: m }, s);
 // POST /community/crash  {app, v, os, where, msg, stack}  → {ok}  signed in or not (a crash before the sign-in counts too)
 // POST /community/support/logs (signed in)  {text, device, v}  → {ok, msg}  the agent's or the app's log, kept for Support
 //   and added to the chat as a message ("Logs sent, 120 KB"), 3 a day
-// GET  /community/admin/crashes?days=N (admins)  {items: [{sig, app, v, os, where, msg, stack, first, last, n, nick}]}
+// GET  /community/admin/crashes?days=N (admins)  {items: [{sig, app, v, os, where, msg, stack, first, last, n, nick, account}]}
 // DELETE /community/admin/crashes/:sig (admins)  a kind of error fixed: it goes, and comes back if it happens again
 // GET  /community/admin/support/logs/:id (admins)  {id, accountId, created, device, v, bytes, text}  one log
 // GET  /community/admin/d1?days=N (admins)  {routes: [{route, reqs, read, written, days}], days: [{day, reqs, read, written}]}
@@ -108,7 +108,7 @@ export async function handleReports(req, env, url, { sessionAccount, isAdmin }) 
   const days = Math.min(90, Math.max(1, parseInt(url.searchParams.get("days") || "7", 10) || 7));
   if (p === "/community/admin/crashes" && m === "GET") {
     const r = await env.DB.prepare(SQL_CRASHES).bind(now - days * 86400e3).all();
-    return json({ items: (r.results || []).map((x) => ({ sig: x.sig, app: x.app, v: x.v, os: x.os, where: x.at_where, msg: x.msg, stack: x.stack, first: x.first, last: x.last, n: x.n, nick: x.nick || "" })) });
+    return json({ items: (r.results || []).map((x) => ({ sig: x.sig, app: x.app, v: x.v, os: x.os, where: x.at_where, msg: x.msg, stack: x.stack, first: x.first, last: x.last, n: x.n, nick: x.nick || "", account: x.nick ? x.last_account : "" })) });
   }
   if (p.startsWith("/community/admin/crashes/") && m === "DELETE") {
     await env.DB.prepare(SQL_CRASH_DEL).bind(decodeURIComponent(p.slice(25))).run();

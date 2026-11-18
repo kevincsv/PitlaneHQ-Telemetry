@@ -1060,6 +1060,17 @@ html.pcapp nav.tabs button[data-g=season]{display:none!important}
 #v-admin .adm-st b{font:600 28px/1 var(--f-data)}
 #v-admin .adm-st span{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;order:-1}
 #v-admin .admr{background:var(--surface2);border-color:var(--line2);border-radius:12px;padding:12px 14px}
+/* the admin page's driver profile (admDriver in pitwall-admin.js): a wide window, the key numbers, then its sections */
+.adm-drv .pn.sp-pn{width:min(980px,96vw)}
+.adm-dhd{display:flex;flex-direction:column;gap:4px;min-width:0}.adm-dhd h2{margin:0;overflow-wrap:anywhere}
+.adm-dpl{display:flex;flex-wrap:wrap;gap:4px;align-items:center}
+.adm-drv .sp-body{padding-top:14px}.adm-drv .adm-sts{grid-template-columns:repeat(auto-fill,minmax(140px,1fr))}
+.adm-drv .adm-st b{font:600 20px/1.1 var(--f-data);overflow-wrap:anywhere}
+.adm-dsec{margin:22px 0 8px}.adm-drv .sp-pn .adm-dsec>h3{font:600 15px/1 var(--f-display);letter-spacing:.08em;text-transform:uppercase;color:var(--fg);margin:0 0 10px}
+.adm-dh{font:500 11px/1.3 var(--f-body);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:14px 0 6px}
+.adm-dtwo{margin-top:12px}.adm-drv .dtable td{vertical-align:top}.adm-drv .admr+.admr{margin-top:6px}
+.linkpill{cursor:pointer;font:inherit;background:none}
+@media (max-width:640px){.adm-drv .pn.sp-pn{width:100%;height:100vh;height:100dvh;max-height:none;border-radius:0}.adm-dtwo{grid-template-columns:1fr}.adm-drv .sp-body{padding:10px 14px}}
 #v-admin .admt{gap:8px}
 #v-admin .adm-kv{display:grid;grid-template-columns:minmax(120px,auto) 1fr;gap:8px 16px}
 #v-admin .rtable{border-collapse:collapse;width:100%}
@@ -2716,7 +2727,7 @@ function nameTakenMsg(m){const q=String(m||"").match(/^"([^"]+)"/);return q?Tx(`
    with the name it shows and who really uploaded it (anonymous items and Drinks drivers too) */
 /* the admin panel, on the PC and on the web: the server at a glance, every account (member since, the supporter
    badge, its profile, delete), what is shared, the leagues, and the server's emails and tools */
-const ADM={tab:"home",sec:"summary",q:"",f:"",days:30,fbKind:"all"};
+const ADM={tab:"overview",sec:"overview",q:"",f:"",days:30,fbKind:"all"};
 /* the kinds of the coach's tips (coachCompare's kind; the phones' tip keys), as the admin panel names them */
 function coachKindName(k){return PWA.kindName(k,anaCtx())}
 /* a new account confirms its email before signing in: the message, and a button to sign in once confirmed */
@@ -3706,12 +3717,12 @@ async function openProfile(q){let m=$("#profDlg");if(!m){m=document.createElemen
     <div class="prof-sec"><h3>${esc(Tx("Days driven","Días que ha corrido","Gefahrene Tage","Dias em que correu"))} <span class="muted" style="text-transform:none;letter-spacing:0">· ${cal.driven} ${esc(Tx("days in 6 months","días en 6 meses","Tage in 6 Monaten","dias em 6 meses"))}</span></h3>${cal.html}</div>
     <div class="prof-sec"><h3>${esc(Tx("Recent races","Carreras recientes","Letzte Rennen","Corridas recentes"))}</h3>${races?`<div class="prof-races">${races}</div>${nRaces>RACES_SHOWN?`<button type="button" class="btn small" id="profMore" style="margin-top:8px">${esc(Tx("Show more","Mostrar más","Mehr zeigen","Mostrar mais"))} (${nRaces-RACES_SHOWN})</button>`:""}`:`<p class="note">${esc(P.mine?Tx("Your races show here once your PC or this app has your race history.","Tus carreras aparecen aquí cuando tu PC o esta app tienen tu historial de carreras.","Deine Rennen erscheinen hier, sobald dein PC oder diese App deinen Rennverlauf hat.","Suas corridas aparecem aqui quando seu PC ou este app tem seu histórico."):Tx("No races yet.","Aún sin carreras.","Noch keine Rennen.","Ainda sem corridas."))}</p>`}</div>
     <div class="prof-sec"><h3>${esc(Tx("On the leaderboards","En las leaderboards","In den Ranglisten","Nas classificações"))}</h3>${laps?`<table class="prof-laps"><tbody>${laps}</tbody></table>`:`<p class="note">${esc(Tx("No laps yet.","Aún sin vueltas.","Noch keine Runden.","Ainda sem voltas."))}</p>`}</div>
-    ${isAdmin()&&Array.isArray(P.sessions)?`<div class="prof-sec"><h3>${esc(Tx("Sessions · Admin","Sesiones · Admin","Sitzungen · Admin","Sessões · Admin"))}</h3>${P.sessions.length?`<div class="admt">${P.sessions.map(x=>`<div class="admr"><b>${esc(unMojibake(x.track||""))}${x.trackConfig?` <small>${esc(unMojibake(x.trackConfig))}</small>`:""}</b><small>${esc(unMojibake(x.car||""))} · ${esc(sessKind(x.kind)||x.kind||"")} · ${x.laps||0} ${esc(Tx("laps","vueltas","Runden","voltas"))} · ${esc(fmtT(x.best))} · ${esc(new Date(x.started).toLocaleDateString(locale()))}</small><div class="frow adm-act"><button type="button" class="btn small" data-profses="${esc(x.id)}">${esc(Tx("See the laps","Ver las vueltas","Runden ansehen","Ver as voltas"))}</button></div></div>`).join("")}</div>`:`<p class="note">${esc(Tx("No sessions.","Sin sesiones.","Keine Sitzungen.","Sem sessões."))}</p>`}</div>`:""}
+    ${isAdmin()&&Array.isArray(P.sessions)&&P.id?`<div class="prof-sec"><button type="button" class="btn small" id="profAdm">${esc(Tx("Admin profile","Perfil de admin","Admin profile","Perfil de admin"))}</button></div>`:""}
     <div class="uidlg-b" style="margin-top:14px">${P.canFollow?`<button type="button" class="btn small${P.following?"":" primary"}" id="profFollow" aria-pressed="${!!P.following}">${esc(P.following?"✓ "+Tx("Following","Siguiendo",null,"Seguindo"):Tx("Follow","Seguir",null,"Seguir"))}</button>`:""}${badge}${P.canReport&&!P.mine&&P.id?`<button type="button" class="btn small" id="profRep">${esc(Tx("Report","Denunciar",null,"Denunciar"))}</button><button type="button" class="btn small" id="profBlk">${esc(Tx("Block","Bloquear",null,"Bloquear"))}</button>`:""}<button type="button" class="btn" id="profX">${esc(Tx("Close","Cerrar","Schließen","Fechar"))}</button></div>`;
   {const fb=m.querySelector("#profFollow");if(fb)fb.onclick=async()=>{fb.disabled=true;try{const on=!P.following,r=await frPost("/community/friends/"+(on?"follow":"unfollow"),q.lap?{lap:q.lap}:{id:q.id});P.following=!!r.following;FRIENDS=null;fb.classList.toggle("primary",!P.following);fb.setAttribute("aria-pressed",P.following);fb.textContent=P.following?"✓ "+Tx("Following","Siguiendo",null,"Seguindo"):Tx("Follow","Seguir",null,"Seguir");if(CMV==="friends")drawFriends()}catch(e){toast(e.message)}fb.disabled=false}}
   m.querySelectorAll("[data-plap]").forEach(tr=>{const go=()=>{const l=P.laps[+tr.dataset.plap];close();openBoard(l)};tr.onclick=go;tr.onkeydown=e=>{if(e.key==="Enter")go()}});
   {const mb=m.querySelector("#profMore");if(mb)mb.onclick=()=>{m.querySelectorAll("[data-pmore]").forEach(x=>x.hidden=false);mb.remove()}}
-  m.querySelectorAll("[data-profses]").forEach(b=>b.onclick=()=>{close();admSessionLaps(b.dataset.profses)});
+  {const ad=m.querySelector("#profAdm");if(ad)ad.onclick=()=>{close();admDriverOpen(P.id)}}
   {const rp=m.querySelector("#profRep");if(rp)rp.onclick=()=>modReport("driver",P.id,P.name);const bk=m.querySelector("#profBlk");if(bk)bk.onclick=async()=>{if(await modBlock({id:P.id},P.name,true)){LEAG.list=null;close();if(typeof renderCommunity==="function")try{renderCommunity()}catch(e){}}}}
   m.querySelector("#profX").onclick=close;const bb=m.querySelector("#profBadge");if(bb)bb.onclick=async()=>{bb.disabled=true;try{await cloudPost("/community/profile/badge",{hidden:!P.supporterHidden});openProfile(q)}catch(e){toast(e.message);bb.disabled=false}}}
 /* a lap of a profile, open in its leaderboard: its discipline, its car and track, the row of that driver marked */
@@ -7051,7 +7062,7 @@ async function supInbox(acc){SUP.open=true;const DV={web:"Web",pc:"PC",android:"
     const draw=()=>{L.innerHTML=cur.msgs.length?cur.msgs.map(m=>supBubble(m,m.support,m.support?supName():cur.nick||"–",m.support?"":[DV[m.device]||m.device,m.v].filter(Boolean).join(" "))+(m.kind==="logs"&&/^log:/.test(m.view||"")?`<button type="button" class="btn small sup-lgo" data-log="${esc(m.view.slice(4))}">${esc(Tx("Open the logs","Abrir los registros","Open the logs","Abrir os registros"))}</button>`:"")).join(""):`<p class="sup-empty">${esc(Tx("No messages yet.","Aún no hay mensajes.","No messages yet.","Ainda não há mensagens."))}</p>`;L.scrollTop=L.scrollHeight;L.querySelectorAll("[data-log]").forEach(b=>b.onclick=()=>supLogView(b.dataset.log))};
     const thread=async id=>{cur={id,msgs:[],nick:""};bk.hidden=false;C.hidden=false;L.classList.remove("sup-cs");L.innerHTML="";H.textContent="…";
       try{const r=await cloudGet("/community/admin/support/"+encodeURIComponent(id));if(!cur||cur.id!==id)return;cur.msgs=r.msgs||[];cur.nick=r.nick||"";H.textContent=cur.nick||"–";pf.hidden=!!r.gone;draw();d.querySelector("#supT").focus()}catch(x){L.innerHTML=`<p class="note err">${esc(x.message)}</p>`}};
-    bk.onclick=list;pf.onclick=()=>{if(cur)openProfile({id:cur.id})};
+    bk.onclick=list;pf.onclick=()=>{if(cur)admDriverOpen(cur.id)};
     supWire(d,async text=>{if(!cur)return;const r=await cloudPost("/community/admin/support/"+encodeURIComponent(cur.id),{text});cur.msgs.push(r&&r.msg||{support:true,text,created:Date.now()});draw();usageCount("act:support_reply");if(r&&r.mailed)toast(Tx("Sent. They also got it by email.","Enviado. También le llega por email.","Sent. They also got it by email.","Enviado. A pessoa também recebe por email."))});
     if(acc)thread(acc);else list();
     const tk=setInterval(()=>{if(!d.isConnected){clearInterval(tk);return}if(document.visibilityState==="visible"&&cur&&!d.querySelector("#supT").value)thread(cur.id)},45e3)});
@@ -7087,7 +7098,9 @@ GROUPS.account=GROUPS.account.filter(v=>v!=="account");GROUPS.admin=["admin"];
 /* the admin page: the admin panel on its own page (pitlanehq.app/admin); asked before the account had loaded, it opens once
    the account says you are an admin */
 var ADMIN_WANT=false;
-const admOpenUsers=()=>{ADM.sec="users";ADM.tab="users";show("admin")};
+const admOpenUsers=()=>{ADM.sec="drivers";ADM.tab="drivers";show("admin")};
+/* the admin page's driver profile (admDriver in pitwall-admin.js), from anywhere: the support inbox, a public profile */
+const admDriverOpen=id=>admJs().then(()=>admDriver(id)).catch(e=>toast(e.message));
 /* the admin page's code is its own file, loaded the first time an admin opens it (everyone else never downloads it) */
 let ADM_JS=null;
 function admJs(){if(typeof adminProfileHTML==="function")return Promise.resolve();return ADM_JS||(ADM_JS=new Promise((ok,no)=>{const s=document.createElement("script");s.src="pitwall-admin.js";s.onload=ok;s.onerror=()=>{ADM_JS=null;no(new Error("admin script"))};document.head.appendChild(s)}))}

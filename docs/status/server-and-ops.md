@@ -24,6 +24,10 @@ Status as of 2026-11-07. Server layout is in CLAUDE.md ("Where things are").
   and tip each 10 minutes, a model is rebuilt per uploaded lap, the coach's weights add up all of `coach_tips` per call,
   and `candidates` and `buildCarCard` load every lap of the memory before picking (fine until about 3,000 laps a pair).
   Never filter on `laps.trace` over the whole table by hand while laps keep telemetry in the row: it holds the database.
+- Admin panel rebuild (2026-11-18, branch `claude/project-thread-1zpqfk`, not pushed; the audit is the Claude Doc
+  "Admin panel audit"): 7 tabs instead of 10, one Drivers list (it no longer reads /admin/users, about 396k rows an
+  open), the driver profile (GET /community/admin/driver), sign-ins kept as `signin` events, Patreon gone from the page.
+  Migration 0109 (two indexes). After the cloud deploy it needs nothing else. The phones' admin panel is unchanged.
 - Both repositories are private. Pitwall-test is named kevincsv/PitlaneHQ-Telemetry on GitHub (the old name redirects).
 - `windows.yml` builds the agent in the desktop job and uploads artifacts with continue-on-error (GitHub artifact
   storage was full).

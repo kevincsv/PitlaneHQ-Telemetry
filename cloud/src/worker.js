@@ -34,6 +34,7 @@ import { steamReturn } from "./steam.js";
 import { googleOAuth } from "./google.js";
 import { scanLeagues } from "./leaguescan.js";
 import { onlineRoute, prunePresence } from "./presence.js";
+import { driverRoute } from "./driver.js";
 import { winbackRoute } from "./winback.js";
 import { usageRoute, pruneUsage } from "./usage.js";
 import { metricsRoute, weeklyMetrics } from "./metrics.js";
@@ -655,6 +656,8 @@ async function handle(req, env, ctx) {
     // the admin page's Online tab: who is on the web, the PC or the phones now (presence.js)
     // the admin page's Activity part: when each account last used Pitlane HQ, and the "we miss you" email (winback.js)
     if (url.pathname === "/community/admin/activity" || url.pathname.startsWith("/community/admin/winback")) return winbackRoute(req, env, url).catch((e) => new Response(JSON.stringify({ error: "server error: " + (e && e.message) }), { status: 500, headers: { "content-type": "application/json" } }));
+    // the admin page's driver profile, opened by every driver name in admin (driver.js)
+    if (url.pathname === "/community/admin/driver" || url.pathname === "/community/admin/driver/sessions") return driverRoute(req, env, url).catch((e) => new Response(JSON.stringify({ error: "server error: " + (e && e.message) }), { status: 500, headers: { "content-type": "application/json" } }));
     // the admin Analytics' weekly numbers, cohorts, counter health and tagged links (metrics.js)
     if (url.pathname.startsWith("/community/admin/metrics") || url.pathname.startsWith("/community/admin/links")) return metricsRoute(req, env, url).catch((e) => new Response(JSON.stringify({ error: "server error: " + (e && e.message) }), { status: 500, headers: { "content-type": "application/json" } }));
     if (url.pathname === "/community/admin/online" && req.method === "GET") return onlineRoute(req, env).catch((e) => new Response(JSON.stringify({ error: "server error: " + (e && e.message) }), { status: 500, headers: { "content-type": "application/json" } }));

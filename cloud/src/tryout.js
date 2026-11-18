@@ -54,9 +54,9 @@ export function tryoutsOf({ t0, rows = [], sessions = [] }) {
     rs.sort((a, b) => a.at - b.at);
     const ses = rs.map((r) => {
       const s = bySess.get(r.session);
-      return { at: r.at, game: (s && s.game) || "", track: (s && s.track) || "", car: (s && s.car) || "", laps: (s && s.laps) || 0, acct: !!(s && String(s.uploader).startsWith("acct:")) };
+      return { at: r.at, game: (s && s.game) || "", track: (s && s.track) || "", car: (s && s.car) || "", laps: (s && s.laps) || 0, acct: s && String(s.uploader).startsWith("acct:") ? String(s.uploader).slice(5) : "" };
     });
-    return { pc: pc.slice(0, 6), used: rs.length, first: rs[0].at, last: rs[rs.length - 1].at, hit: rs.length >= TRY_LIMIT, signedUp: ses.some((s) => s.acct),
+    return { pc: pc.slice(0, 6), used: rs.length, first: rs[0].at, last: rs[rs.length - 1].at, hit: rs.length >= TRY_LIMIT, signedUp: ses.some((s) => s.acct), account: (ses.find((s) => s.acct) || {}).acct || "",
       laps: ses.reduce((n, s) => n + s.laps, 0), games: [...new Set(ses.map((s) => s.game).filter(Boolean))], sessions: ses.map(({ acct, ...s }) => s) };
   }).filter((x) => x.last >= t0).sort((a, b) => b.last - a.last);
   return { pcs: list.length, hit: list.filter((x) => x.hit).length, signedUp: list.filter((x) => x.signedUp).length, laps: list.reduce((n, x) => n + x.laps, 0), limit: TRY_LIMIT, list: list.slice(0, 100) };

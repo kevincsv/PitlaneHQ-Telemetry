@@ -19,6 +19,7 @@ import { cleanCode } from "./referralslib.js";
 import { sealEscrow, escrowLogin, escrowReady } from "./escrow.js";
 import { visitOf, appSignupSrc, countryOf, dlKey, DL_DAYS, SQL_ACCOUNT_SRC, SQL_DL_FIND } from "./sourceslib.js";
 import { googleStart, googleReady, useGoogleGrant, googleAccountId, linkGoogle } from "./google.js";
+import { logEvent } from "./eventslib.js";
 // the phone app calls the server directly (bearer tokens, no cookies), so any origin may ask
 const JSONH = { "content-type": "application/json; charset=utf-8", "cache-control": "no-store", "access-control-allow-origin": "*" };
 const json = (v, status = 200) => new Response(JSON.stringify(v), { status, headers: JSONH });
@@ -59,10 +60,13 @@ async function tooMany(env, keys, limits) {
 }
 const fail = (env, keys) => env.DB.batch(keys.map((k) => env.DB.prepare("INSERT INTO auth_fails (k, t) VALUES (?1, ?2)").bind(k, Date.now())));
 
-async function newSession(env, accountId, device, gated) {
-  const token = rid(32);
+// every sign-in is also kept as an event (how: signup, password, steam, discord, google, 2fa, quick), so the admin page's
+// driver profile lists the account's sign-ins after a sign-out deleted their session (events, eventslib.js)
+async function newSession(env, accountId, device, gated, how) {
+  const token = rid(32), dev = cleanName(device) || "PC";
   await env.DB.prepare("INSERT INTO account_sessions (id, account_id, token_hash, device, created, last_seen, gated) VALUES (?1,?2,?3,?4,?5,?5,?6)")
-    .bind(rid(8), accountId, await sha256(token), cleanName(device) || "PC", Date.now(), gated ? 1 : 0).run();
+    .bind(rid(8), accountId, await sha256(token), dev, Date.now(), gated ? 1 : 0).run();
+  await logEvent(env, "signin", accountId, { device: dev, how: how || "", ...(gated ? { gated: 1 } : {}) });
   return token;
 }
 
@@ -365,11 +369,11 @@ export async function accounts(req, env, url) {
     // the new apps (gate) are signed in at once, on the screen that waits for the email (a gated session); the older ones
     // confirm first, then sign in
     if (mailed && body.gate) {
-      const token = await newSession(env, id, body.device, true);
+      const token = await newSession(env, id, body.device, true, "signup");
       return json({ id, token, display, nameKind: body.nameKind === "iracing" ? "iracing" : "nick", wrappedKey: body.wrappedKey, keyTag: await keyTag(body.wrappedKey), admin: isAdmin(env, id), tester: isTester(env, id), verified: false, mailed: true, gated: true, escrow: false, ...taken });
     }
     if (mailed) return json({ verifyFirst: true, mailed: true, error: "verify your email first: we sent you a link, open it and then sign in", code: "verify_first", ...taken }, 202);
-    const token = await newSession(env, id, body.device);
+    const token = await newSession(env, id, body.device, false, "signup");
     return json({ id, token, display, nameKind: body.nameKind === "iracing" ? "iracing" : "nick", wrappedKey: body.wrappedKey, keyTag: await keyTag(body.wrappedKey), admin: isAdmin(env, id), tester: isTester(env, id), verified: false, mailed, escrow: false, ...taken });
   }
   // a sign-in with Steam or Discord (social) gets the session without the wrapped key: the data key the server keeps
@@ -427,7 +431,7 @@ export async function accounts(req, env, url) {
       const recent = await env.DB.prepare("SELECT 1 FROM email_tokens WHERE account_id=?1 AND kind='verify' AND expires>?2").bind(a.id, Date.now() + 7 * 86400e3 - 120e3).first();
       if (!recent) await mailVerify(env, url, a.id, body.email.trim(), body.lang).catch(() => false);
       // the new apps sign in to the screen that waits for the email
-      if (body.gate) return json({ ...(await (await signedIn(a, await newSession(env, a.id, body.device, true))).json()), gated: true });
+      if (body.gate) return json({ ...(await (await signedIn(a, await newSession(env, a.id, body.device, true, "password"))).json()), gated: true });
       return json({ error: "verify your email first: we sent you a link, open it and then sign in", code: "verify_first" }, 403);
     }
     if (a.totp_on) {
@@ -439,7 +443,7 @@ export async function accounts(req, env, url) {
       ]);
       return json({ twoFactor: true, pending: t });
     }
-    return signedIn(a, await newSession(env, a.id, body.device));
+    return signedIn(a, await newSession(env, a.id, body.device, false, "password"));
   }
   // the sign-in with Steam: the one-use grant /steam/return handed the app, with the code of the app that started, says
   // who. The rest is the password sign-in's (the network's limit, the email to confirm, the authenticator), and the
@@ -469,7 +473,7 @@ export async function accounts(req, env, url) {
     // the email is not confirmed yet: the link already sent by email (or the password sign-in, which sends a new one)
     const device = cleanName(body.device) || g.device || "PC";
     if (mustVerify(env, a)) {
-      if (body.gate) return json({ ...(await (await signedIn(a, await newSession(env, a.id, device, true), true)).json()), gated: true });
+      if (body.gate) return json({ ...(await (await signedIn(a, await newSession(env, a.id, device, true, prov), true)).json()), gated: true });
       return json({ error: "verify your email first: we sent you a link, open it and then sign in", code: "verify_first" }, 403);
     }
     if (a.totp_on) {
@@ -481,7 +485,7 @@ export async function accounts(req, env, url) {
       ]);
       return json({ twoFactor: true, pending: t, needKey: !a.escrow });
     }
-    return signedIn(a, await newSession(env, a.id, device), true);
+    return signedIn(a, await newSession(env, a.id, device, false, prov), true);
   }
   // second step of a sign-in: the 6-digit code of the authenticator app, or one recovery code
   if (p === "/login/2fa" && m === "POST") {
@@ -505,7 +509,7 @@ export async function accounts(req, env, url) {
       return err("wrong code", 401);
     }
     await env.DB.prepare("DELETE FROM login_pending WHERE token_hash=?1").bind(ph).run();
-    return signedIn(a, await newSession(env, a.id, pend.device), !!pend.steam);
+    return signedIn(a, await newSession(env, a.id, pend.device, false, "2fa"), !!pend.steam);
   }
 
   const a = await sessionAccount(req, env, true);
@@ -762,7 +766,7 @@ async function quickRegister(env, body, ip, req) {
     await proOnRegister(env, id, eh).catch(() => {});
   }
   const a = await env.DB.prepare("SELECT * FROM accounts WHERE id=?1").bind(id).first();
-  const token = await newSession(env, id, cleanName(body.device) || g.device || "PC");
+  const token = await newSession(env, id, cleanName(body.device) || g.device || "PC", false, "signup:" + prov);
   return json({ id: a.id, token, display: a.display, nameKind: "nick", anon: false, keyTag: await keyTag(a.wrapped_key), admin: isAdmin(env, a.id), tester: isTester(env, a.id, a), verified: true, twoFactor: false, escrow: true, noPassword: true, created: true, dataKey: key, email: email || undefined });
 }
 

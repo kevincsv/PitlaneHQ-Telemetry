@@ -1,6 +1,6 @@
-// The admin page's Activity part (winback.js): every account with when it last used Pitlane HQ, how much it used it in
-// the last 30 days, whether it is online or driving now, and the "we miss you" email for the drivers who stopped
-// coming. Pure, so cloud/test/winback.test.mjs runs it without a database.
+// The admin page's Drivers list (winback.js): every account with when it last drove and last used Pitlane HQ, how much
+// it drove in the last 30 days, its sessions in all, whether it is online or driving now, and the "we miss you" email
+// for the drivers who stopped driving. Pure, so cloud/test/winback.test.mjs runs it without a database.
 
 export const DAY = 86400e3;
 export const AWAY_DAYS = 14; // away from this many days on: the list's default and who the email is for
@@ -18,8 +18,10 @@ export function activityOf({ now, accounts, signins, presence, usageDays, usageL
   for (const a of accounts) {
     A.set(a.id, {
       id: a.id, nick: a.display || "", created: a.created || 0, tester: !!a.tester, supporter: !!a.supporter, admin: !!(admins && admins.has(a.id)),
+      supporterSrc: a.supporter ? a.supporter_src || "manual" : "", anon: !!a.anon, testAsk: a.test_ask ? { at: a.test_ask, what: a.test_ask_what || "" } : null,
+      sessions: 0, lastDrove: 0,
       email: (emails && emails.get(a.id)) || "", lang: "en", winbackAt: a.winback_at || 0,
-      lastUsed: 0, days30: new Set(), laps30: 0, secs30: 0, sessions30: 0, devices: new Set(), online: false, driving: null,
+      lastUsed: 0, days30: new Set(), drove30: new Set(), laps30: 0, secs30: 0, sessions30: 0, devices: new Set(), online: false, driving: null,
     });
   }
   const last = (x, t) => { if (x && t > x.lastUsed) x.lastUsed = Math.min(t, now); };
@@ -38,11 +40,16 @@ export function activityOf({ now, accounts, signins, presence, usageDays, usageL
     x.days30.add(r.day);
     if (r.device) x.devices.add(r.device === "desktop" ? "pc" : r.device);
   }
-  for (const r of sessionsLast) last(A.get(String(r.uploader || "").slice(5)), r.t || 0);
+  for (const r of sessionsLast) {
+    const x = A.get(String(r.uploader || "").slice(5));
+    if (!x) continue;
+    last(x, r.t || 0);
+    x.lastDrove = Math.max(x.lastDrove, Math.min(r.t || 0, now)); x.sessions = r.n || 0;
+  }
   for (const s of sessions) {
     const x = A.get(String(s.uploader || "").slice(5));
     if (!x || (s.started || 0) < t30) continue;
-    x.days30.add(dayOf(s.started));
+    x.days30.add(dayOf(s.started)); x.drove30.add(dayOf(s.started));
     x.laps30 += s.laps || 0; x.secs30 += s.secs || 0; x.sessions30++;
     x.devices.add("pc");
   }
@@ -51,14 +58,17 @@ export function activityOf({ now, accounts, signins, presence, usageDays, usageL
     const at = s.up_at || (s.started || 0) + (s.secs || 0) * 1000;
     if (!x || now - at > DRIVING_MS || (x.driving && x.driving.at > at)) continue;
     x.driving = { at, game: s.game || "iracing", track: s.track || "", car: s.car || "", kind: s.kind || "" };
-    last(x, at);
+    last(x, at); x.lastDrove = Math.max(x.lastDrove, Math.min(at, now));
   }
   for (const r of langs) { const x = A.get(r.account_id); if (x && ["en", "es", "pt"].includes(r.lang)) x.lang = r.lang; }
   const out = [...A.values()].map((x) => {
     const lastUsed = x.lastUsed || x.created;
     return {
-      id: x.id, nick: x.nick, created: x.created, tester: x.tester, supporter: x.supporter, admin: x.admin, email: x.email, lang: x.lang,
-      winbackAt: x.winbackAt, lastUsed, awayDays: Math.max(0, Math.floor((now - lastUsed) / DAY)), days30: x.days30.size,
+      id: x.id, nick: x.nick, created: x.created, tester: x.tester, supporter: x.supporter, supporterSrc: x.supporterSrc, admin: x.admin, anon: x.anon,
+      testAsk: x.testAsk, email: x.email, lang: x.lang, winbackAt: x.winbackAt, lastUsed, awayDays: Math.max(0, Math.floor((now - lastUsed) / DAY)),
+      // not driving is what counts as gone (the owner's rule, 2026-11-15): an account that never drove counts from its creation
+      lastDrove: x.lastDrove, droveDays: Math.max(0, Math.floor((now - (x.lastDrove || x.created)) / DAY)), sessions: x.sessions,
+      drove30: x.drove30.size, days30: x.days30.size,
       laps30: x.laps30, hours30: Math.round(x.secs30 / 360) / 10, sessions30: x.sessions30, devices: [...x.devices].sort(),
       online: x.online || !!x.driving, driving: x.driving,
     };
@@ -66,11 +76,12 @@ export function activityOf({ now, accounts, signins, presence, usageDays, usageL
   return out.sort(byActive);
 }
 
-/** Most active first: days used in the last 30, then time on track, then the most recent. */
-export const byActive = (a, b) => b.days30 - a.days30 || b.hours30 - a.hours30 || b.laps30 - a.laps30 || b.lastUsed - a.lastUsed;
+/** Most active first: days driven in the last 30, then time on track, then days used, then the most recent. */
+export const byActive = (a, b) => (b.drove30 || 0) - (a.drove30 || 0) || b.hours30 - a.hours30 || b.days30 - a.days30 || b.laps30 - a.laps30 || b.lastUsed - a.lastUsed;
 
-/** Who the "we miss you" email can go to: away long enough, an email the server knows, never sent before, not an admin. */
-export const canWinback = (x, days = AWAY_DAYS) => !!x.email && !x.winbackAt && !x.admin && x.awayDays >= days && !x.online;
+/** Who the "we miss you" email can go to: not driven for long enough, an email the server knows, never sent before, not
+ * an admin, not online now. */
+export const canWinback = (x, days = AWAY_DAYS) => !!x.email && !x.winbackAt && !x.admin && x.droveDays >= days && !x.online;
 
 /** The counts above the list. */
 export function activitySummary(list, days = AWAY_DAYS) {
@@ -79,7 +90,8 @@ export function activitySummary(list, days = AWAY_DAYS) {
     driving: list.filter((x) => x.driving).length,
     online: list.filter((x) => x.online).length,
     week: list.filter((x) => x.awayDays < 7).length,
-    away: list.filter((x) => x.awayDays >= days).length,
+    droveWeek: list.filter((x) => x.lastDrove && x.droveDays < 7).length,
+    away: list.filter((x) => x.droveDays >= days).length,
     canEmail: list.filter((x) => canWinback(x, days)).length,
     emailed: list.filter((x) => x.winbackAt).length,
   };

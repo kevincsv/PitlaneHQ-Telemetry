@@ -30,11 +30,12 @@ import { srcName, KIND_NAMES, hiText, areasOf } from "./usagenames.js";
 import { visitOf, countryOf, isBot, sourcesOf, SQL_VISIT_ADD, DL_DAYS } from "./sourceslib.js";
 import { openEscrow } from "./escrow.js";
 import { adminCache } from "./metrics.js";
+import { adminIds } from "./testask.js";
 import { livePopular } from "./livepopular.js";
 import { sendFeedback } from "./email.js";
 import { discordFeedback } from "./discord.js";
 import { driverMessage, cleanLang } from "./supportlib.js";
-import { SQL_USAGE_ADD, SQL_ASK_USED, SQL_ASK_SEEN, SQL_RACES_SINCE, SQL_OV_RACE, SQL_OV_SEEN, SQL_OV_ANSWERED, OVRACE_KEY, day, cleanUsage, cleanFeedback, analyticsMore, highlightsOf, SQL_SESSIONS_DAYS, gamesOf, SQL_GAMES_PREV, SQL_GAMES_FIRSTS, SQL_GAMES_TRACKS, SQL_GAMES_CARS, cleanOvRace, shouldAsk, shouldAskOv, analyticsOf, ASK_USED, FEEDBACK_PER_DAY, MAX_DAYS } from "./usagelib.js";
+import { SQL_USAGE_ADD, SQL_ASK_USED, SQL_ASK_SEEN, SQL_RACES_SINCE, SQL_OV_RACE, SQL_OV_SEEN, SQL_OV_ANSWERED, OVRACE_KEY, day, cleanUsage, cleanFeedback, analyticsMore, highlightsOf, SQL_SESSIONS_DAYS, gamesOf, SQL_GAMES_PREV, SQL_GAMES_FIRSTS, SQL_GAMES_TRACKS, SQL_GAMES_CARS, cleanOvRace, shouldAsk, shouldAskOv, analyticsOf, withoutAdmins, ASK_USED, FEEDBACK_PER_DAY, MAX_DAYS } from "./usagelib.js";
 
 const json = (o, s = 200) => new Response(JSON.stringify(o), { status: s, headers: { "content-type": "application/json", "cache-control": "no-store" } });
 const err = (m, s) => json({ error: m }, s);
@@ -154,12 +155,14 @@ export async function usageRoute(req, env, url) {
   if (p === "/community/admin/analytics" && m === "GET") {
     const days = Math.max(1, Math.min(MAX_DAYS, Math.floor(Number(url.searchParams.get("days")) || 30)));
     // kept ten minutes: the page is opened often and its numbers move by the day (metrics.js adminCache)
-    return json(await adminCache(env, "analytics/" + days, 600, async () => {
+    return json(await adminCache(env, "analytics2/" + days, 600, async () => {
     // this period and the same number of days before it, for the changes
     const t0 = Date.parse(day(now - (days - 1) * 86400e3) + "T00:00:00Z"), p0 = t0 - days * 86400e3;
     const from = day(t0), pFrom = day(p0);
-    const q = (sql, ...a) => env.DB.prepare(sql).bind(...a).all().then((r) => r.results || []);
-    const [actDays, rows, pres, ses, pSes, pAct, accs, allAcc, vis] = await Promise.all([
+    // every number leaves out the admins (the testers count), like the Analytics tab
+    const admins = adminIds(env), staff = new Set(admins);
+    const q = (sql, ...a) => env.DB.prepare(withoutAdmins(sql, admins)).bind(...a).all().then((r) => r.results || []);
+    const [actDays, rows, presAll, ses, pSes, pAct, accs, allAcc, vis] = await Promise.all([
       q("SELECT DISTINCT account_id, day FROM usage_days WHERE day>=?1 AND key NOT LIKE 'run:%' AND key NOT LIKE 'set:%' LIMIT 20000", from),
       q("SELECT account_id, device, key, SUM(n) AS n, MAX(day) AS last FROM usage_days WHERE day>=?1 GROUP BY account_id, device, key LIMIT 20000", from),
       q("SELECT account_id, kind, app_version, last_seen FROM presence WHERE last_seen>?1 LIMIT 5000", now - 7 * 86400e3),
@@ -170,6 +173,7 @@ export async function usageRoute(req, env, url) {
       q("SELECT COUNT(*) AS n FROM accounts"),
       q("SELECT day, src, country, page, n FROM visits_days WHERE day>=?1 LIMIT 20000", pFrom).catch(() => []),
     ]);
+    const pres = presAll.filter((x) => !staff.has(x.account_id));
     // each game apart: the days before, the drivers new to it, its tracks and cars (gamesOf)
     const [gPrev, gFirsts, gTracks, gCars] = await Promise.all([
       q(SQL_GAMES_PREV, p0, t0), q(SQL_GAMES_FIRSTS, p0, t0), q(SQL_GAMES_TRACKS, t0), q(SQL_GAMES_CARS, t0),

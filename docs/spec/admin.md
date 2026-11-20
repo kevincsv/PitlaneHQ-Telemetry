@@ -131,7 +131,8 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   phones is android-app or ios-app, anything else unknown. Rows over 400 days go with the usage.
 - GET `/community/admin/analytics?days=N` (admins, 1 to 90 days, the same days before them for the changes) answers, from
   grouped reads of usage_days, sessions (accounts' uploads), accounts, visits_days and presence, never a query per
-  account: {days, top [{key, n, users}], byDevice [{device, users, n}], games, versions [{device, v, devices}], users [{id,
+  account, every number without the admins and with the testers (`withoutAdmins` in usagelib.js, the same rule as the
+  Analytics tab): {days, top [{key, n, users}], byDevice [{device, users, n}], games, versions [{device, v, devices}], users [{id,
   nick, lastSeen, devices, n, top}] (the phones' Users tab), active / activeApp / drove [{day, users}] (active = opened an app or
   drove that day), signupsPerDay [{day, n}], installs {downloads, prevDownloads, downloadsBeta, uninstalls,
   prevUninstalls, answered, prevAnswered, perDay, byVersion, reasons [{k, n, name}], said [{at, v, text}]}, supporters

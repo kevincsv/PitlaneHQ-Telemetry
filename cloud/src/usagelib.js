@@ -260,6 +260,19 @@ export const SQL_GAMES_TRACKS = "SELECT game, track AS name, COUNT(*) AS session
 export const SQL_GAMES_CARS = "SELECT game, car AS name, COUNT(*) AS sessions, COUNT(DISTINCT uploader) AS drivers FROM sessions WHERE started>=?1 AND uploader LIKE 'acct:%' GROUP BY game, car ORDER BY sessions DESC LIMIT 400";
 export const SQL_SESSIONS_DAYS = "SELECT date(started/1000,'unixepoch') AS day, game, uploader, COUNT(*) AS n, SUM(COALESCE(laps,0)) AS laps, SUM(COALESCE(secs,0)) AS secs, SUM(CASE WHEN lower(COALESCE(kind,'')) LIKE '%race%' THEN 1 ELSE 0 END) AS races FROM sessions WHERE started>=?1 AND uploader LIKE 'acct:%' GROUP BY 1, game, uploader LIMIT 20000";
 
+/** The admin Overview's statements without the admins' own use and driving (the testers are drivers and count, the
+ *  owner's choice 2026-11-20; the Analytics tab leaves out the same accounts, metrics.js). ids: the ADMINS account ids,
+ *  written into the statement only when they are plain ids. */
+export function withoutAdmins(sql, ids = []) {
+  const ok = ids.filter((i) => /^[A-Za-z0-9_-]{1,64}$/.test(i));
+  if (!ok.length) return sql;
+  const list = (pre) => ok.map((i) => `'${pre}${i}'`).join(",");
+  return sql.replaceAll("uploader LIKE 'acct:%'", `uploader LIKE 'acct:%' AND uploader NOT IN (${list("acct:")})`)
+    .replaceAll("FROM usage_days WHERE ", `FROM usage_days WHERE account_id NOT IN (${list("")}) AND `)
+    .replaceAll("FROM accounts WHERE ", `FROM accounts WHERE id NOT IN (${list("")}) AND `)
+    .replace(/FROM accounts$/, `FROM accounts WHERE id NOT IN (${list("")})`);
+}
+
 // the statements of usage.js the test runs on SQLite too
 export const SQL_USAGE_ADD = "INSERT INTO usage_days (day, account_id, device, key, n) VALUES (?1,?2,?3,?4,?5) ON CONFLICT(day, account_id, device, key) DO UPDATE SET n=MIN(usage_days.n+excluded.n, 100000)";
 export const SQL_ASK_USED = "INSERT INTO feedback_ask (account_id, shown, used) VALUES (?1,?2,?3) ON CONFLICT(account_id) DO UPDATE SET used=feedback_ask.used+excluded.used";

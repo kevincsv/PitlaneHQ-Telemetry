@@ -5,6 +5,7 @@ import assert from "node:assert/strict";
 import { cleanUsage, cleanFeedback, cleanOvRace, cleanStyle, shouldAsk, shouldAskOv, analyticsOf, MAX_KEYS, MAX_N, MAX_MS, ASK_USED } from "../src/usagelib.js";
 import { feedbackMail } from "../src/email.js";
 import { SQL_USAGE_ADD, SQL_ASK_USED, SQL_ASK_SEEN, SQL_RACES_SINCE, SQL_OV_RACE, SQL_OV_SEEN, SQL_OV_ANSWERED } from "../src/usagelib.js";
+import { withoutAdmins } from "../src/usagelib.js";
 import { SQL_SESSIONS_DAYS, gamesOf, SQL_GAMES_PREV, SQL_GAMES_FIRSTS, SQL_GAMES_TRACKS, SQL_GAMES_CARS } from "../src/usagelib.js";
 import { readFileSync } from "node:fs";
 import { DatabaseSync } from "node:sqlite";
@@ -182,5 +183,22 @@ assert.deepEqual({ ...db.prepare("SELECT ov_races AS n, ov_answered AS a FROM fe
   assert.deepEqual(lmu.perDay, [{ day: "1970-01-12", users: 2 }]);
   assert.equal(acc.newDrivers, 1); assert.equal(acc.appDrivers, 2); assert.equal(acc.laps, 5);
   assert.deepEqual({ d: ac.drivers, s: ac.sessions, t: ac.tracks, p: ac.perDay }, { d: 0, s: 0, t: [], p: [] });
+}
+// the admin Overview leaves the admins out and keeps the testers (withoutAdmins)
+{
+  const w = new DatabaseSync(":memory:");
+  w.exec("CREATE TABLE accounts (id TEXT, created INTEGER, tester INTEGER); CREATE TABLE usage_days (day TEXT, account_id TEXT, device TEXT, key TEXT, n INTEGER); CREATE TABLE sessions (id TEXT, uploader TEXT, started INTEGER, game TEXT, track TEXT, car TEXT, kind TEXT, laps INTEGER, secs INTEGER)");
+  for (const [id, t] of [["adm", 0], ["tst", 1], ["drv", 0]]) {
+    w.prepare("INSERT INTO accounts VALUES (?,?,?)").run(id, 5, t);
+    w.prepare("INSERT INTO usage_days VALUES ('2026-11-20',?,'pc','view:home',1)").run(id);
+    w.prepare("INSERT INTO sessions VALUES (?,?,10,'lmu','Spa','GT3','race',3,60)").run("s" + id, "acct:" + id);
+  }
+  const ids = ["adm", "bad'id"];
+  assert.equal(w.prepare(withoutAdmins("SELECT COUNT(*) AS n FROM accounts", ids)).get().n, 2, "the tester counts, the admin does not");
+  assert.equal(w.prepare(withoutAdmins("SELECT COUNT(*) AS n FROM accounts WHERE created>=?1", ids)).get(0).n, 2);
+  assert.equal(w.prepare(withoutAdmins("SELECT COUNT(DISTINCT account_id) AS n FROM usage_days WHERE day>=?1", ids)).get("2026-11-01").n, 2);
+  assert.deepEqual(w.prepare(withoutAdmins(SQL_SESSIONS_DAYS, ids)).all(0).map((x) => x.uploader).sort(), ["acct:drv", "acct:tst"]);
+  assert.equal(w.prepare(withoutAdmins(SQL_GAMES_PREV, ids)).get(0, 100).drivers, 2);
+  assert.equal(withoutAdmins(SQL_GAMES_CARS, []), SQL_GAMES_CARS, "no admins, the statement as it was");
 }
 console.log("ok");

@@ -1,6 +1,6 @@
 # Project status
 
-Short index, updated 2026-11-16. Open a detail file in `docs/status/` only when the task touches that area. When the
+Short index, updated 2026-11-20. Open a detail file in `docs/status/` only when the task touches that area. When the
 status changes, update the detail file and this index in the same commit. How features behave is in `docs/spec/`.
 
 ## Current goal
@@ -20,7 +20,7 @@ web (0.9.19); a full-app bug sweep follows.
 
 ## Live now
 
-Admin statistics count the testers since 2026-11-20 (only the admins are left out, Overview and Analytics alike). Admin panel rebuild on pitlanehq.app since 2026-11-18 (7 tabs, one Drivers list, a profile for every driver, migration 0109).
+Admin statistics count the testers since 2026-11-20 (only the admins are left out). The admin page is six tabs since 2026-11-20 (Today, Drivers, Sign-ups, Money, Problems, Tools) with one period chooser from a Monday. Admin panel rebuild on pitlanehq.app since 2026-11-18 (7 tabs, one Drivers list, a profile for every driver, migration 0109).
 PC and web 0.10.1 (2026-11-16: the simpler Telemetry menu with Standings in the Dashboard and its Customize, the race report, the coach judging the whole session, Setups for testers, official track turns, the Statistics fix). Before it 0.10.0 (2026-11-15, every PC must update to it: the full-screen track map with the chase view, Telemetry's Engineer view, the overlays' text size slider, trying the PC app without an account for 3 sessions, the fix for Telemetry's Full freezing, the Le Mans Ultimate lap times pages and the new landing), phones 0.9.14, Microsoft Store 0.9.15 (0.10.0 in certification). The phones have not had any of it (the owner said no phone work for now). Stay on 0.x until Steam is approved.
 
 ## Areas

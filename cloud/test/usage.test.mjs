@@ -202,3 +202,19 @@ assert.deepEqual({ ...db.prepare("SELECT ov_races AS n, ov_answered AS a FROM fe
   assert.equal(withoutAdmins(SQL_GAMES_CARS, []), SQL_GAMES_CARS, "no admins, the statement as it was");
 }
 console.log("ok");
+
+// the admin page's period chooser: each period starts on a Monday (UTC) and runs to today
+{
+  const { weekDays, WEEK_CHOICES, highlightsOf } = await import("../src/usagelib.js");
+  assert.deepEqual(WEEK_CHOICES, [1, 4, 12, 26]);
+  const mon = Date.parse("2026-11-16T10:00:00Z"), fri = Date.parse("2026-11-20T23:00:00Z"), sun = Date.parse("2026-11-22T12:00:00Z");
+  assert.equal(weekDays(mon, 1), 1);
+  assert.equal(weekDays(fri, 1), 5);
+  assert.equal(weekDays(sun, 1), 7);
+  assert.equal(weekDays(fri, 4), 26);
+  assert.equal(weekDays(sun, 26), 182);
+  // the first sentence counts the drivers who drove (uploaded a session), never who only opened an app
+  const h = highlightsOf({ days: 5, totals: { drove: 31, active: 40 }, prev: { drove: 27, active: 30 } })[0];
+  assert.equal(h.k, "active_more");
+  assert.deepEqual(h.a, [31, 5, 4]);
+}

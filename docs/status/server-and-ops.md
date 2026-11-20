@@ -6,7 +6,7 @@ Status as of 2026-11-07. Server layout is in CLAUDE.md ("Where things are").
 - Highest migration: 0097 (content reports). D1 is on the free plan; reads were cut in Oct (migration 0078). D1 MCP
   queries return `meta.rows_read`, useful to measure a query.
 - Analytics revamp (2026-11-15, branch `claude/project-thread-jy09k6`, not pushed): migration 0105 (`metrics_weeks`,
-  `cohort_weeks`, `links`, `events`), a daily job at 03:00 UTC (`weeklyMetrics`) and the admin page's Analytics section.
+  `cohort_weeks`, `links`, `events`), a daily job at 03:00 UTC (`weeklyMetrics`) and the admin page's Sign-ups and Money tabs (Problems → Counters has Add up everything).
   After the cloud deploy with the migration: admin → Analytics → Data → Add up everything, once, for the weeks since
   Oct 28. The counters for PRO badges, the donation bar shown and invites need the web and PC build. Not built yet: the
   Monday message to Discord, the agent's `run:agent` and `set:autostart.*` (the growth and sales thread sends them), the

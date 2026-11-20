@@ -35,7 +35,7 @@ import { livePopular } from "./livepopular.js";
 import { sendFeedback } from "./email.js";
 import { discordFeedback } from "./discord.js";
 import { driverMessage, cleanLang } from "./supportlib.js";
-import { SQL_USAGE_ADD, SQL_ASK_USED, SQL_ASK_SEEN, SQL_RACES_SINCE, SQL_OV_RACE, SQL_OV_SEEN, SQL_OV_ANSWERED, OVRACE_KEY, day, cleanUsage, cleanFeedback, analyticsMore, highlightsOf, SQL_SESSIONS_DAYS, gamesOf, SQL_GAMES_PREV, SQL_GAMES_FIRSTS, SQL_GAMES_TRACKS, SQL_GAMES_CARS, cleanOvRace, shouldAsk, shouldAskOv, analyticsOf, withoutAdmins, ASK_USED, FEEDBACK_PER_DAY, MAX_DAYS } from "./usagelib.js";
+import { SQL_USAGE_ADD, SQL_ASK_USED, SQL_ASK_SEEN, SQL_RACES_SINCE, SQL_OV_RACE, SQL_OV_SEEN, SQL_OV_ANSWERED, OVRACE_KEY, day, cleanUsage, cleanFeedback, analyticsMore, highlightsOf, SQL_SESSIONS_DAYS, gamesOf, SQL_GAMES_PREV, SQL_GAMES_FIRSTS, SQL_GAMES_TRACKS, SQL_GAMES_CARS, cleanOvRace, shouldAsk, shouldAskOv, analyticsOf, withoutAdmins, ASK_USED, FEEDBACK_PER_DAY, MAX_DAYS, WEEK_CHOICES, weekDays } from "./usagelib.js";
 
 const json = (o, s = 200) => new Response(JSON.stringify(o), { status: s, headers: { "content-type": "application/json", "cache-control": "no-store" } });
 const err = (m, s) => json({ error: m }, s);
@@ -153,9 +153,12 @@ export async function usageRoute(req, env, url) {
     return json({ ok: true, posted, left: (left && left.n) || 0 });
   }
   if (p === "/community/admin/analytics" && m === "GET") {
-    const days = Math.max(1, Math.min(MAX_DAYS, Math.floor(Number(url.searchParams.get("days")) || 30)));
+    // weeks=N (the admin page's period chooser): from the Monday N-1 weeks before this one (UTC) to now, against the
+    // same number of days just before it; days=N (the phones): the last N days
+    const weeks = WEEK_CHOICES.includes(Number(url.searchParams.get("weeks"))) ? Number(url.searchParams.get("weeks")) : 0;
+    const days = weeks ? weekDays(now, weeks) : Math.max(1, Math.min(MAX_DAYS, Math.floor(Number(url.searchParams.get("days")) || 30)));
     // kept ten minutes: the page is opened often and its numbers move by the day (metrics.js adminCache)
-    return json(await adminCache(env, "analytics2/" + days, 600, async () => {
+    return json(await adminCache(env, "analytics2/" + days + (weeks ? "w" : ""), 600, async () => {
     // this period and the same number of days before it, for the changes
     const t0 = Date.parse(day(now - (days - 1) * 86400e3) + "T00:00:00Z"), p0 = t0 - days * 86400e3;
     const from = day(t0), pFrom = day(p0);
@@ -206,7 +209,7 @@ export async function usageRoute(req, env, url) {
     const all = { ...out, ...more, installs, supporters, tryouts: tryoutsOf({ t0, rows: tryRows, sessions: trySes }), sources: sourcesOf(vNow, vPrev, accs.filter((a) => a.created >= t0), accs.filter((a) => a.created < t0)) };
     // the names and sentences in the three languages, so the phones show what the web shows (usagenames.js)
     all.sources.bySource = all.sources.bySource.map((x) => ({ ...x, name: srcName(x.src), kindName: KIND_NAMES[x.kind] || KIND_NAMES.other }));
-    return { ...all, highlights: highlightsOf(all).map((h) => ({ ...h, text: hiText(h.k, h.a) })), areas: areasOf(all.top || []) };
+    return { ...all, weeks, from, highlights: highlightsOf(all).map((h) => ({ ...h, text: hiText(h.k, h.a) })), areas: areasOf(all.top || []) };
     }));
   }
   return err("not found", 404);

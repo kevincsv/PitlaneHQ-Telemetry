@@ -111,7 +111,7 @@ assert.deepEqual(M.driven.map((g) => [g.game, g.drivers, g.sessions, g.races, g.
 assert.deepEqual(M.signupsPerDay, [{ day: "2026-10-03", n: 4 }]);
 
 // what stands out, as keys every device writes in its language
-const H = highlightsOf({ days: 30, totals: { active: 20, newAccounts: 29 }, prev: { active: 0 }, funnel: { accounts: 29, opened: 20, drove: 21 },
+const H = highlightsOf({ days: 30, totals: { active: 20, drove: 20, newAccounts: 29 }, prev: { active: 0 }, funnel: { accounts: 29, opened: 20, drove: 21 },
   top: [{ key: "view:telemetry", users: 18 }, { key: "act:coach_report", users: 8 }], sources: { visits: 10, bySource: [{ src: "reddit", visits: 4, signups: 3 }, { src: "unknown", signups: 9, visits: 0 }] },
   driven: [{ game: "iracing", drivers: 10, sessions: 251 }, { game: "lmu", drivers: 10, sessions: 34 }], byDevice: [{ device: "pc", users: 17 }, { device: "ios", users: 2 }],
   versions: [{ device: "pc", v: "0.9.6", devices: 3 }, { device: "desktop", v: "0.9.5", devices: 2 }, { device: "ios", v: "0.9.10", devices: 1 }, { device: "ios", v: "0.9.9", devices: 1 }] });

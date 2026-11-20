@@ -1049,6 +1049,18 @@ html.pcapp nav.tabs button[data-g=season]{display:none!important}
 #v-admin .adm-tabs button{border:0;border-radius:9px;padding:10px 14px;min-height:40px;white-space:nowrap;font:600 13px/1 var(--f-body);letter-spacing:.02em;text-transform:none}
 #v-admin .adm-tabs button[aria-selected="true"]{background:var(--surface);color:var(--fg);box-shadow:0 1px 0 var(--line2),0 2px 8px rgba(0,0,0,.25);border-bottom-color:transparent}
 #v-admin .adm-intro{color:var(--muted);margin:0 0 12px}
+#v-admin .adm-badge{display:inline-block;margin-left:6px;min-width:18px;padding:2px 6px;border-radius:9px;background:color-mix(in srgb,var(--bad) 22%,transparent);color:var(--bad);font:600 11px/1.2 var(--f-mono,ui-monospace);vertical-align:1px}
+#v-admin .adm-badge-b{background:color-mix(in srgb,var(--blue) 22%,transparent);color:var(--blue)}
+#v-admin .adm-badge[hidden]{display:none}
+#v-admin .adm-intro{font-weight:600;color:var(--fg)}
+#v-admin .adm-per{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;margin:0 0 12px}.adm-per[hidden],.adm-pline[hidden],.adm-words[hidden]{display:none}
+#v-admin .adm-pline{margin:0 0 12px;max-width:90ch}.adm-pline .adm-help-l{margin:0}.adm-how summary{cursor:pointer;color:var(--accent);font-size:12px;margin-top:4px}.adm-how p{margin:6px 0 0}
+#v-admin .adm-words{margin:0 0 12px}.adm-wordl{display:grid;grid-template-columns:minmax(120px,max-content) 1fr;gap:6px 16px}.adm-wordl dt{font-weight:600}.adm-wordl dd{margin:0;color:var(--muted)}
+#v-admin .adm-look p{margin:4px 0}.adm-look b{display:inline-block;min-width:48px}
+#v-admin .adm-qs{display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:12px;margin:12px 0}
+#v-admin .adm-q{display:flex;flex-direction:column;gap:6px;margin:0}.adm-qh{display:flex;justify-content:space-between;align-items:baseline;gap:8px}.adm-qh h4{margin:0}.adm-qh a{font-size:13px;color:var(--accent)}
+#v-admin .adm-q .an-kv b{font-size:34px}.adm-q .an-line{margin:0}.adm-qrows{display:grid;grid-template-columns:1fr auto;gap:5px 12px;font-size:13px;border-top:1px solid var(--line);padding-top:8px}.adm-qrows .mono{text-align:right}.adm-qf{margin:2px 0 0;font-size:13px}
+#v-admin .adm-qbad{border-color:color-mix(in srgb,var(--bad) 45%,var(--line))}
 #v-admin .adm-sub .chip[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
 #v-admin .adm-blk,#v-admin #admBody.note{background:var(--surface);border:1px solid var(--line2);border-radius:16px;padding:16px 18px;margin:0 0 14px;color:var(--fg)}
 #v-admin .adm-blk:has(.an){background:transparent;border:0;padding:0}
@@ -2727,7 +2739,7 @@ function nameTakenMsg(m){const q=String(m||"").match(/^"([^"]+)"/);return q?Tx(`
    with the name it shows and who really uploaded it (anonymous items and Drinks drivers too) */
 /* the admin panel, on the PC and on the web: the server at a glance, every account (member since, the supporter
    badge, its profile, delete), what is shared, the leagues, and the server's emails and tools */
-const ADM={tab:"overview",sec:"overview",q:"",f:"",days:30,fbKind:"all"};
+const ADM={tab:"today",sec:"today",q:"",f:"",days:30,wk:0,fbKind:"all"};
 /* the kinds of the coach's tips (coachCompare's kind; the phones' tip keys), as the admin panel names them */
 function coachKindName(k){return PWA.kindName(k,anaCtx())}
 /* a new account confirms its email before signing in: the message, and a button to sign in once confirmed */

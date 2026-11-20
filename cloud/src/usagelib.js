@@ -10,7 +10,14 @@ export const DEVICES = ["web", "pc", "android", "ios"];
 export const KEY_RE = /^(view|act|game|live|ov|run|set|pro_use):[a-z0-9_.-]{1,40}$/;
 const APART = /^(run|set|pro_use):/;
 export const OV_KEY = "ov:", OVRACE_KEY = "ovrace:";
-export const MAX_KEYS = 100, MAX_N = 1000, MAX_DAYS = 90;
+export const MAX_KEYS = 100, MAX_N = 1000, MAX_DAYS = 190;
+// the admin page's period chooser: this week, 4, 12 or 26 weeks, each starting on a Monday (UTC)
+export const WEEK_CHOICES = [1, 4, 12, 26];
+/** the days from the Monday weeks-1 weeks before this week's (UTC) to today, today included */
+export function weekDays(now, weeks) {
+  const d = new Date(now), dow = (d.getUTCDay() + 6) % 7; // Monday 0
+  return dow + 1 + (Math.max(1, weeks) - 1) * 7;
+}
 export const FEEDBACK_MAX = 4000, FEEDBACK_PER_DAY = 20;
 export const ASK_USED = 6 * 3600e3, ASK_RACES = 2, MAX_MS = 10 * 60e3;
 // the overlay window: after the first race with overlays, and once answered every six
@@ -197,8 +204,10 @@ export function analyticsMore({ from, t0, actDays, rows, sessions, prevSessions,
  *  own language (web: admHiText in index.html; phones: the strings admin_hi_<k>). Tones: good, bad, warn, blue. */
 export function highlightsOf(a) {
   const out = [], t = a.totals || {}, pv = a.prev || {}, F = a.funnel || {}, act = t.active || 0, top = a.top || [];
-  if (pv.active) out.push({ k: t.active >= pv.active ? "active_more" : "active_fewer", tone: t.active >= pv.active ? "good" : "bad", a: [act, a.days, Math.abs(act - pv.active)] });
-  else out.push({ k: "active_first", tone: "good", a: [act, a.days, t.newAccounts || 0] });
+  // drivers are the accounts that drove (uploaded a session), the one meaning the admin page uses (opening an app is apart)
+  const drove = t.drove || 0;
+  if (pv.drove) out.push({ k: drove >= pv.drove ? "active_more" : "active_fewer", tone: drove >= pv.drove ? "good" : "bad", a: [drove, a.days, Math.abs(drove - pv.drove)] });
+  else out.push({ k: "active_first", tone: "good", a: [drove, a.days, t.newAccounts || 0] });
   if (F.accounts >= 3) {
     const w = [["no_app", F.accounts - (F.opened || 0)], ["no_drive", F.accounts - (F.drove || 0)]].sort((x, y) => y[1] - x[1])[0];
     if (w[1] > 0) out.push({ k: w[0], tone: "bad", a: [w[1], F.accounts, Math.round((w[1] / F.accounts) * 100)] });

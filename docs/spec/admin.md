@@ -36,29 +36,50 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   and its "tester" alert) or "No" (closed for good: the driver is not asked again and still reads "Request sent"). The
   admins' inbox has "Drivers ask to test" while any wait (`pending` in GET /community/tester/ask). Making a tester from
   the list answers a request too. The PC agent passes POST /community/tester/ask to the server (placcount.go).
-- Admins: the admin page (PC and web; `admSecs`/`admParts`/`wireAdminProfile` in pitwall-admin.js) is seven sections as
-  tabs, each with its line of explanation and its parts as sub-tabs (the rebuild of 2026-11-18, from the admin panel
-  audit: each number lives in one place, Monday being the one scorecard of numbers shown elsewhere too, and every
-  driver's name opens their profile):
-  Overview (`overview`: the analytics below, without the funnel, come back, sources, installs and tryouts, which live in
-  Analytics and Drivers, plus On track now from GET /community/admin/activity?now=1),
-  Drivers (`drivers`: the Drivers list below; `sessions`: the latest sessions of any driver, "See the laps" opens them
-  one by one with their top speed and sectors and an admin marks a lap not valid or valid again, `admSessionLaps`,
-  `/api/laps/:id/valid`; `tryouts`: Tried without an account with its own 7, 30 or 90 days, Signed up opening the
-  account the PC made, `account` in `tryoutsOf`),
-  Analytics (Monday, Growth, Activation, Retention, Money, below),
-  Feedback (every answer of "Share your feedback", the newest first, the name opening the profile),
-  Content (`creports`: the reports of posts and names, the reported owner and the reporter opening their profiles;
-  `uploads`, Shared laps: every shared lap and race analysis with the name it shows and who really uploaded it, with
-  Profile for the account behind it (`accountId` in /admin/uploads: the uploader's, or the PC owner's for a DRINKS
-  driver or rival), and a Records chip that lists the newest records of every car and track, a record's lap deleted by
-  hand; `leagues`),
-  Coach (the coach's buckets) and
-  Server (`health`, below; `server`, Emails and tools: Set up (the data key and email pepper, the admins, who can post
-  leagues, wrong passwords in 15 minutes, this app's version), the server's emails and the domain's records, and the
-  tools: rebuild the coach models and the track maps, turns to check, the blocked sign-ins one by one, by email or all,
-  the .ibt import, demo data (admin mode is the button at the top of the page); `pro`, the beta switch and the store,
-  Pro by hand being in the profile; `discord`, see discord.md; `season`). Networks are only ever a hash of their address.
+- Admins: the admin page (PC and web; `admSecs`/`admParts`/`wireAdminProfile` in pitwall-admin.js) is six tabs, each
+  answering one question in one bold line under the tabs (the clearer layout of 2026-11-20, after the owner found the
+  rebuild of 2026-11-18 still confusing): every part keeps a line of its own, its first sentence shown and the rest folded
+  under "How this is counted" (`pline`). Each number lives in one place (Weekly numbers being the one scorecard of numbers
+  shown elsewhere too), and every driver's name opens their profile. The tabs and their parts (sub-tabs):
+  Today (`today`, the first tab: "In one look", the server's sentences with the good ones first, each marked Good, Note or
+  Look; four cards that each open their tab: Driving (drivers who drove with the change, on track right now with their
+  names, sessions, races, hours, opened an app without driving, not driven in 14 days or more), New sign-ups (new
+  accounts with the change, how many already drove, the three sources that brought most, PCs trying without an account,
+  accounts in total, the newest three by name), Money (raised in the period from the paid donations, the last 30 days,
+  since the start, supporters with the badge, people who paid, the latest payment) and Problems (the same count as the
+  Problems tab, then each kind); then the Overview's parts on the same period: drivers per day, On track now, Games,
+  What drivers use, Overlays, Telemetry panels, Devices and Up to date; `admTodayHTML`),
+  Drivers (`drivers`, `sessions`, `tryouts`, below, unchanged; the tab shows a blue count while drivers ask to test),
+  Sign-ups (`m_monday` Weekly numbers, `m_growth` Where they come from, `m_activation` First days, `m_retention` Do they
+  stay, below),
+  Money (`m_money` Payments and supporters, `pro` the beta switch and the store),
+  Problems (`problems` Everything waiting: one list, the newest first, of the errors of the last 7 days with Fixed, the
+  feedback of 1 or 2 stars of the last 7 days, the reports to answer, the drivers asking to test and the counters that
+  stopped, `admProblemsHTML`; `crashes` Errors; `feedback`; `uninstalls` the installer downloads and uninstalls of the
+  period with the reasons and what drivers wrote; `creports` Reports; `counters` the counters, the weekly job, the CSV
+  and the words; the tab shows a red count of everything Everything waiting lists, `admProbCount`/`admProbSet`) and
+  Tools (`uploads` Shared laps, `leagues`, `coach`, `server` Emails and tools, `discord`, `season`, `d1` Database).
+  The period chooser (`admPerHTML`, `ADM.wk`, kept in localStorage `pw.admWk`) sits under the sub-tabs of every part that
+  has a period (`ADM_PER`): This week, 4, 12 or 26 weeks, each from a Monday (UTC) to today, against the same number of
+  days just before, with the days written out and "Admins left out, testers counted". Today, Problems and Uninstalls ask
+  GET /community/admin/analytics?weeks=N; the Sign-ups and Money parts show the last max(4, N) weeks of the weekly
+  numbers (`admMW`). "What the words mean" at the top of the page (`admWordsHTML`) opens the words and their one meaning:
+  driver (uploaded a session; the page no longer says active), opened an app, new account, week, who is counted, still
+  driving a week later, supporter, on track. The parts of the Overview of 2026-11-18 not listed above (the funnel, come
+  back, sources, installs and tryouts) live in Sign-ups, Problems and Drivers.
+  Drivers → Sessions: the latest sessions of any driver, "See the laps" opens them one by one with their top speed and
+  sectors and an admin marks a lap not valid or valid again (`admSessionLaps`, `/api/laps/:id/valid`). Drivers → Without
+  an account: Tried without an account with its own 7, 30 or 90 days, Signed up opening the account the PC made
+  (`account` in `tryoutsOf`). Feedback: every answer of "Share your feedback", the newest first, the name opening the
+  profile. Reports: the reports of posts and names, the reported owner and the reporter opening their profiles. Shared
+  laps: every shared lap and race analysis with the name it shows and who really uploaded it, with Profile for the
+  account behind it (`accountId` in /admin/uploads: the uploader's, or the PC owner's for a DRINKS driver or rival), and a
+  Records chip that lists the newest records of every car and track, a record's lap deleted by hand. Coach: the coach's
+  buckets. Emails and tools: Set up (the data key and email pepper, the admins, who can post leagues, wrong passwords in 15
+  minutes, this app's version), the server's emails and the domain's records, and the tools: rebuild the coach models and
+  the track maps, turns to check, the blocked sign-ins one by one, by email or all, the .ibt import, demo data (admin mode
+  is the button at the top of the page). Pro: the beta switch and the store, Pro by hand being in the profile. Discord: see
+  discord.md. Networks are only ever a hash of their address.
 - The driver profile (`admDriver(id)` in pitwall-admin.js, `admDriverOpen(id)` in index.html for the support inbox's
   Profile and the public profile's "Admin profile" button; GET /community/admin/driver?id=, `driver.js` and the pure
   `driverlib.js`, admins only, 400 for a bad id and 404 for an unknown one): a window that opens over any part of the
@@ -129,7 +150,7 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   newest download's source and page; else an agent the Microsoft Store installed (it sends X-Pitlane-Install: store) is
   msstore ("Microsoft Store", kind store); else pc-app (`appSignupSrc`). An account made without a first visit in the
   phones is android-app or ios-app, anything else unknown. Rows over 400 days go with the usage.
-- GET `/community/admin/analytics?days=N` (admins, 1 to 90 days, the same days before them for the changes) answers, from
+- GET `/community/admin/analytics?days=N` (admins, 1 to 190 days, the same days before them for the changes; or `weeks=1|4|12|26`, from the Monday N-1 weeks before this one, UTC, to today, `weekDays` in usagelib.js, the answer then also carrying `weeks` and `from`) answers, from
   grouped reads of usage_days, sessions (accounts' uploads), accounts, visits_days and presence, never a query per
   account, every number without the admins and with the testers (`withoutAdmins` in usagelib.js, the same rule as the
   Analytics tab): {days, top [{key, n, users}], byDevice [{device, users, n}], games, versions [{device, v, devices}], users [{id,
@@ -192,7 +213,7 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   The server's own events (`eventslib.js`, `logEvent(env, name, accountId, info)`: trial_started, trial_ended, pro_paid,
   pro_renewed, pro_cancelled, pro_refunded, thanks_month, email_sent, email_click, signin) go to `events` and are counted
   per week; deleting an account deletes its events.
-  The Analytics section (`admMetrics` in pitwall-admin.js, parts `m_*`): Monday (the seven numbers as cards with the
+  The Sign-ups and Money tabs (`admMetrics` in pitwall-admin.js, parts `m_*`): Weekly numbers (the seven numbers as cards, every one on last week, Monday to Sunday, under its heading "Last week, Mon … to Sun …", only Still driving a week later on the newest week whose accounts are 14 days old, saying so, and Supporters as they stand now, with the
   week that just ended, the change, the line of the weeks, the week so far and the targets, green once reached; week by
   week; the targets' form), Growth (from the visit to staying per source and link, the tagged links' form, week by
   week), Activation (the steps the same day, within 2 and within 7 days, and by sign-up week), Retention (each sign-up
@@ -210,7 +231,7 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   analytics answer over the same days (at most 90), where visitors are (countries with their sign-ups, pages they
   landed on) and Installs and uninstalls, and its week by week has the PCs driving without an account and their
   sessions. Is every counter arriving, the job with Add up now and Add up everything, the weeks as CSV and what each
-  word means are in Server, Health. 4, 8, 12 or 26 weeks; Drivers or With
+  word means are in Problems, Counters. The period chooser's 4, 12 or 26 weeks (at least 4); Drivers or With
   admins. A share over fewer than 20 accounts is grey, and a week still running is lighter. The phones' admin panel
   does not have it yet.
   The page counts for it: a PRO badge pressed (`act:pro_badge.<feature>`, `proB("<feature>")`), the PRO window
@@ -221,8 +242,8 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   (lemon.js); a payment notice sent twice is kept once.
   `cloud/test/metrics.test.mjs` also checks that every action counted by wrapping a function (`USE_LAST` in index.html)
   is still a function of the page, so a renamed one cannot stop counting unseen.
-- The Overview (`admAnalyticsHTML`, the owner's approved design): 7, 30 or 90 days with "Changes are against
-  the N days before", What stands out (the server's sentences: active drivers against before, the biggest drop of the new
+- The Overview (`admAnalyticsHTML`, the owner's approved design; since 2026-11-20 its parts are the lower half of Today, `admAnalyticsHTML(r, true)` leaving out its own period buttons, What stands out and the three tiles): 7, 30 or 90 days with "Changes are against
+  the N days before", What stands out (the server's sentences: the drivers who drove against before (until 2026-11-20 it counted who opened an app or drove), the biggest drop of the new
   accounts, the coach used by few, where most accounts or visits came from, sessions a driver per game, a phone with no
   one, devices not on the newest version), three tiles with their change (drivers who drove, with how many opened an app
   or drove under it; new accounts; time driven with its sessions, races and laps), drivers per day (drove in amber from
@@ -243,7 +264,7 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   on hover).
 - The admin page's look (Nov 2026): the sections as a dark well with the chosen one raised, every part a card with its
   title in the display font, the key numbers as tiles, the rows as cards (`#v-admin` rules and `.an-*` in index.html).
-- Health (Server → Health, three blocks: Errors in the apps, Counters and the weekly numbers, Database reads;
+- Health (until 2026-11-20 Server → Health; now Problems → Errors, Problems → Counters and Tools → Database;
   `cloud/src/reports.js`, the pure part in `reportslib.js`, migration 0079): Errors in the apps lists every kind
   of error the agent, the web and the phones sent in the last 7 days (POST `/community/crash` {app pc|web|android|ios, v,
   os, where, msg, stack}, signed in or not; one row per kind, `crashSig`: the app, the part and the message with its
@@ -279,7 +300,7 @@ races the PCs report (`seasonseen.js`). The PC app passes that post through `/ap
   how many donations came in.
 - Supporters: the accounts with the badge by `supporter_src` (stripe, manual; the old patreon ones keep the badge), and
   the Stripe donations (`pro_orders` kind "supporter", with their amount, currency and payment since migration 0095; a
-  refunded donation is marked "refunded" and no longer counts, the badge stays). They are shown in Analytics → Money only.
+  refunded donation is marked "refunded" and no longer counts, the badge stays). They are shown in Money only (and summed on Today's Money card).
   Patreon is no longer offered (0.9.8) and the admin page no longer shows it.
 - Drivers → Drivers (`winback.js`, `winbacklib.js`, GET /community/admin/activity), one list instead of the old
   Accounts, Activity and Online now: the drivers asking to test first (Yes, make a tester or No), a search by name,

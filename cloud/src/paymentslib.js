@@ -26,7 +26,7 @@ const BUTTONS = [["act:donate_bar", "bar"], ["act:donate_menu", "menu"], ["act:d
 /** orders: {id, account_id, kind, status, at, amount, currency, ref, until} (every kind and status but 'test');
  *  accounts: {id, display, created, supporter, supporter_src, supporter_hidden, founder, pro, pro_src} of the accounts
  *  in the orders and of every supporter or founder; clicks: {account_id, day, key, n} of the donate buttons;
- *  seen: {account_id, last_seen} the last time each account's app was open; staff(id): an admin or a tester;
+ *  seen: {account_id, last_seen} the last time each account's app was open; staff(id): an admin;
  *  min: the founding offer's floor in dollars; now. */
 export function paymentsOf({ orders = [], accounts = [], clicks = [], seen = [], patrons = 0, staff = () => false, min = 3, now = Date.now() }) {
   const acc = new Map(accounts.map((a) => [a.id, a])), last = new Map();

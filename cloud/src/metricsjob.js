@@ -37,7 +37,7 @@ export async function weeklyMetrics(env, { all = false, now = Date.now(), staff 
     soft(q(env, "SELECT at, name FROM events WHERE at>=?1 LIMIT 50000", ms)),
     soft(q(env, "SELECT COUNT(*) AS n FROM accounts WHERE supporter=1")),
   ]);
-  // the admins and the testers are staff: the drivers' numbers leave them out
+  // the admins are staff: the drivers' numbers leave them out (the testers count)
   const built = buildMetrics({ accounts: accounts.map((a) => ({ id: a.id, created: a.created, src: a.src, staff: staff(a) })), usage, sessions, anon, visits, pc, orders, referrals, events, from, today, supporters: badge[0] ? badge[0].n : null });
   const [haveM, haveC] = await Promise.all([
     q(env, "SELECT week, aud, metric, split, value FROM metrics_weeks WHERE week>=?1 LIMIT 200000", from),

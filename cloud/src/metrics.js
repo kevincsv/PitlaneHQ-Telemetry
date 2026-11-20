@@ -6,14 +6,14 @@
 //
 // GET  /community/admin/metrics?weeks=N&aud=0|1 (admins)  the weeks (4 to 26, 12 by default), the seven Monday numbers
 //   with their targets, every weekly number, the cohorts, what goes with staying and each source's funnel; aud 0 leaves
-//   the admins and the testers out (the default), 1 counts everyone. Kept CACHE_S seconds.
+//   the admins out (the default; the testers are drivers and count), 1 counts everyone. Kept CACHE_S seconds.
 // POST /community/admin/metrics/run {all}  runs the job now; all: from the first day there is usage (the backfill)
 // POST /community/admin/metrics/targets {d1, d2, t}  the targets of the Monday numbers
 // GET  /community/admin/metrics/health  every counter family and device with the last day it sent something, the
 //   job's last run and the database rows the Analytics cost in the last 7 days
 // GET  /community/admin/metrics/account?id=  one account's steps with their days and where it came from
 // GET  /community/admin/links, POST {name, place, tag?}, DELETE /community/admin/links/<tag>  the tagged links
-import { sessionAccount, isAdmin, testersSet, emailHash } from "./accounts.js";
+import { sessionAccount, isAdmin, emailHash } from "./accounts.js";
 import { sendThanks, langOf } from "./email.js";
 import { metricsAnswer, healthOf, timelineOf, cleanTag, weekOf, addDays, weeksBetween, dayOf, TARGETS, DAY } from "./metricslib.js";
 import { weeklyMetrics as runWeekly } from "./metricsjob.js";
@@ -27,8 +27,9 @@ export const CACHE_S = 600;
 const q = (env, sql, ...a) => env.DB.prepare(sql).bind(...a).all().then((r) => r.results || []);
 const soft = (p) => p.catch(() => []);
 
-/** The daily job with this server's admins and testers as staff (metricsjob.js). */
-export const weeklyMetrics = (env, o = {}) => runWeekly(env, { ...o, staff: (a) => isAdmin({ ...env, LOCAL: "0" }, a.id) || (a.tester != null ? !!a.tester : testersSet(env, a.id)) });
+/** The daily job with this server's admins as staff (metricsjob.js). The testers are drivers like everyone (unpaid,
+ *  they race like everyone), so they count in every number. */
+export const weeklyMetrics = (env, o = {}) => runWeekly(env, { ...o, staff: (a) => isAdmin({ ...env, LOCAL: "0" }, a.id) });
 
 const state = async (env, k) => { const r = await env.DB.prepare("SELECT v FROM app_state WHERE k=?1").bind(k).first().catch(() => null); try { return r && r.v ? JSON.parse(r.v) : null; } catch { return null; } };
 const cacheOf = (env) => (env.LOCAL !== "1" && typeof caches !== "undefined" && caches.default ? caches.default : null);
@@ -79,7 +80,7 @@ export async function metricsRoute(req, env, url) {
       soft(q(env, `SELECT account_id, MAX(last_seen) AS last_seen FROM presence WHERE account_id IN (${who}) GROUP BY account_id LIMIT 5000`)),
       soft(q(env, "SELECT COUNT(*) AS n FROM patreon_patrons WHERE active=1")),
     ]);
-    const staff = (id) => isAdmin({ ...env, LOCAL: "0" }, id) || testersSet(env, id);
+    const staff = (id) => isAdmin({ ...env, LOCAL: "0" }, id); // a tester's payment is a real one
     return json(paymentsOf({ orders, accounts, clicks, seen, patrons: (patrons[0] || {}).n || 0, staff, min: FOUNDING.min, now }));
   }
   // the thank-you email by hand for one donation (a donation from before the email existed): the admin types the donor's

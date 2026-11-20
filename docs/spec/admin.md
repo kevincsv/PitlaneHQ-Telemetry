@@ -157,7 +157,7 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   race; active means drove (the owner's choice, 2026-11-15: what matters is that the app is used to drive, not that it
   was opened), so the weekly drivers (`users`) are the accounts that uploaded a session, and opening an app (`opened`,
   used it or drove) is a second, smaller number under it (the agent running in the background, `run:agent`, is
-  `users_bg` and `agent`, apart); the drivers are every account but the admins and the testers (`aud` 0, the default; 1 counts everyone); a new
+  `users_bg` and `agent`, apart); the drivers are every account but the admins (`aud` 0, the default; 1 counts everyone); the testers are unpaid drivers who race like everyone, so they count in every number (the owner's choice, 2026-11-20); a new
   account is kept ("still driving a week later") when it uploads a session on any of days 7 to 13 after the day it was
   created (`c:kept_open` counts opening an app too, shown beside it), and Retention opens on Drove, with Raced and
   Opened the app as the other two; kept is counted only once it is 14 days old; activated is a session uploaded on its day or the next.
@@ -209,8 +209,8 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   analytics answer over the same days (at most 90), where visitors are (countries with their sign-ups, pages they
   landed on) and Installs and uninstalls, and its week by week has the PCs driving without an account and their
   sessions. Is every counter arriving, the job with Add up now and Add up everything, the weeks as CSV and what each
-  word means are in Server, Health. 4, 8, 12 or 26 weeks; Drivers or With admins and
-  testers. A share over fewer than 20 accounts is grey, and a week still running is lighter. The phones' admin panel
+  word means are in Server, Health. 4, 8, 12 or 26 weeks; Drivers or With
+  admins. A share over fewer than 20 accounts is grey, and a week still running is lighter. The phones' admin panel
   does not have it yet.
   The page counts for it: a PRO badge pressed (`act:pro_badge.<feature>`, `proB("<feature>")`), the PRO window
   (`act:pro_info`), See pricing in it (`act:pricing_open`), Support in it (`act:donate_pro`), Support offered in it

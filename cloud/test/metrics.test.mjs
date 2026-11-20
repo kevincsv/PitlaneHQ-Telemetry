@@ -22,7 +22,7 @@ const s = (id, day, game = "lmu", races = 0, n = 1) => ({ day, game, uploader: "
 // a: signs up Mon Oct 26, drives and races that day, opens Community, comes back on day 8 (kept)
 // b: signs up Tue Oct 27, opens the app only, never comes back
 // c: signs up Mon Nov 2, drives iRacing on day 3 (not within two days), not yet 14 days old on Nov 15
-// t: a tester who does everything
+// t: an admin who does everything
 const accounts = [
   { id: "a", created: T("2026-10-26"), src: "chatgpt", staff: false }, { id: "b", created: T("2026-10-27"), src: "reddit-lmu", staff: false },
   { id: "c", created: T("2026-11-02"), src: "google", staff: false }, { id: "t", created: T("2026-10-26"), src: "direct", staff: true },
@@ -39,8 +39,8 @@ const built = buildMetrics({ accounts, usage, sessions, visits: [{ day: "2026-10
   referrals: [{ created: T("2026-10-28"), state: "given", done: T("2026-11-05") }], events: [{ at: T("2026-11-04"), name: "trial_started" }],
   anon: [{ day: "2026-11-12", uploader: "dev:1", n: 3 }, { day: "2026-11-13", uploader: "dev:1", n: 1 }], from: "2026-10-26", today: "2026-11-15", supporters: 2 });
 const val = (week, metric, split = "", aud = 0) => (built.metrics.find((x) => x.week === week && x.aud === aud && x.metric === metric && x.split === split) || { value: 0 }).value;
-assert.equal(val("2026-10-26", "users"), 1, "only who drove is a weekly driver, and the tester is not one of the drivers");
-assert.equal(val("2026-10-26", "users", "", 1), 2, "everyone counts the tester");
+assert.equal(val("2026-10-26", "users"), 1, "only who drove is a weekly driver, and the admin is not one of the drivers");
+assert.equal(val("2026-10-26", "users", "", 1), 2, "everyone counts the admin");
 assert.equal(val("2026-10-26", "opened"), 2, "opening the app is a second number");
 assert.equal(val("2026-10-26", "opened", "", 1), 3);
 assert.equal(val("2026-10-26", "drove"), 1);

@@ -6,7 +6,7 @@
 //   active    drove: what matters is that the app is used to drive, not that it was opened (the owner's choice,
 //             2026-11-15). "users" is the accounts that drove; "opened" (used it or drove) stays as a second number;
 //             the agent running in the background, "run:agent", is counted apart
-//   new       an account created in the week; the drivers leave the admins and the testers out
+//   new       an account created in the week; the drivers leave the admins out
 //   kept      a new account that drove on any of days 7 to 13 after the day it was created (c:kept_open: opened or drove)
 //   activated a new account that uploaded a session within 2 days (its day and the next)
 import { USAGE_GAMES } from "./usagelib.js";

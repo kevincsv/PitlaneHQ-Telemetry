@@ -14,7 +14,13 @@ Status as of 2026-11-14. Behaviour is in `docs/spec/lmu.md` and `docs/spec/asset
 
 ## Assetto Corsa Competizione and Assetto Corsa
 
-- In development (testers and admins only), labelled "Beta" where offered. Never tried with the real games.
+- In development (testers and admins only), labelled "Beta" where offered. One tester drives ACC daily since
+  2026-11-13 (38 sessions in 10 days); Assetto Corsa was never tried with the real game.
+- 2026-11-21, from that tester's laps: the out lap and the first timed lap were kept as one valid lap of twice the
+  time (Monza, 229 to 250 s), and 45 of 160 laps were the 0 seconds from the box or the grid to the line. Fixed in
+  0.10.2 (`earlyWaitS`, `minLapS` in cloud.go), in the test build for testers; production gets it with the next batch.
+  Still open: on the Nürburgring 24h layout no lap of his ever closed (one of 2,311 s), not explained yet (it needs
+  his log or a lap driven with the fix).
 - ACC uses the broadcasting UDP API (`accbcast.go`). AC has an in-game app (`acapp/`) that the agent installs.
 - Open: overlay-race feedback refuses ACC/AC (`ovfeedback.go`), and a leagues scan for ACC/AC (offered, not asked).
 

@@ -2,6 +2,12 @@
 
 How this part of Pitlane HQ behaves. Read it before changing this area; keep it up to date when the behaviour changes.
 
+- A lap ends where the car crosses the line, by the game's lap count or, a moment before it, by the place on the lap
+  going round (`lapStream.step` in cloud.go). A game that has not counted a crossing 15 seconds later never will
+  (`earlyWaitS`: Assetto Corsa Competizione does not count the line crossed on the way out of the pits, nor the end of
+  the out lap or of the formation lap): its count runs one behind from there (`lapOff`), so the next crossing ends a lap
+  too, instead of the out lap and the first timed lap being kept as one valid lap of twice the time. A lap of under
+  5 seconds (`minLapS`: the metres from a pit box or the grid to the line) is never kept, in any game.
 - A session started again without leaving it (an AI race restarted: same session number, its clock back at zero)
   numbers its laps after the ones already driven (`sessionrun.go`, `noteRun`): no lap takes another's place on the
   server or in the race summary, and an unfinished race goes on with every run's laps (a finished one starts a new

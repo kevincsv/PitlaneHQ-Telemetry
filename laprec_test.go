@@ -19,6 +19,7 @@ type lapSim struct {
 	lineAt float64                          // the session time the car last crossed the line (the game's lap clock counts from it)
 	last   float64                          // the game's last lap time
 	flag   func(lap int, d float64) float64 // LapCountFlag (nil: 2, the lap and its time count)
+	skip   int                              // crossings of the line the game does not count from here (ACC out of the pits)
 }
 
 const lapSimL, lapSimHz = 3000.0, 30.0
@@ -56,10 +57,14 @@ func (s *lapSim) move(dist, speed float64, pit, send bool) {
 		s.d += step
 		if s.d >= lapSimL {
 			s.d -= lapSimL
-			cross := s.st - s.d/speed
-			s.last = cross - s.lineAt
-			s.lap++
-			s.lineAt = cross
+			if s.skip > 0 { // the game goes on with the same lap and the same clock
+				s.skip--
+			} else {
+				cross := s.st - s.d/speed
+				s.last = cross - s.lineAt
+				s.lap++
+				s.lineAt = cross
+			}
 		}
 		if send {
 			s.sample(speed, pit, true)
@@ -293,4 +298,36 @@ func TestLapCountFlagOnlyADrop(t *testing.T) {
 	lapCheck(t, "the flag never said the time counts", laps[2], true)
 	lapCheck(t, "the flag dropped", laps[3], false)
 	lapCheck(t, "time counts again", laps[4], true)
+}
+
+// Assetto Corsa Competizione does not count the line crossed on the way out of the pits, nor the end of the out lap:
+// the out lap and the first timed lap are two laps (they were kept as one of twice the time, and a valid one), and the
+// few metres from the box to the line are no lap at all.
+func TestLapCrossingsTheGameNeverCounts(t *testing.T) {
+	s := newLapSim(t, 1, lapSimL-30)
+	s.skip = 2
+	s.wait(2, true, true)
+	s.lineAt = s.st                  // the game's lap clock stands still in the box
+	s.move(80, 15, true, true)       // out of the box and over the line in the pit lane
+	s.move(lapSimL, 50, false, true) // the out lap, to the line: not counted either
+	s.move(lapSimL, 50, false, true) // the first timed lap, counted at its end
+	s.move(lapSimL, 50, false, true) // and another
+	s.move(200, 50, false, true)
+	laps := s.ended()
+	if len(laps) != 4 {
+		t.Fatalf("%d laps ended, want the box to the line, the out lap and two timed laps", len(laps))
+	}
+	if _, ok := buildLap(laps[1], cloudSession{ID: "t"}, 40, laps[1].lastT); ok {
+		t.Errorf("the box to the line (%.1f s) was kept as a lap", laps[1].lastT)
+	}
+	if laps[2].lastT > 70 {
+		t.Errorf("the out lap took %.1f s: two laps kept as one", laps[2].lastT)
+	}
+	for n := 3; n <= 4; n++ {
+		if got, want := laps[n].lastT, lapSimL/50; math.Abs(got-want) > 1.5 {
+			t.Errorf("lap %d took %.1f s, want about %.0f s (one lap, not two)", n, got, want)
+		}
+	}
+	lapCheck(t, "the first timed lap", laps[3], true)
+	lapCheck(t, "the lap after it", laps[4], true)
 }

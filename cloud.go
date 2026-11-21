@@ -582,6 +582,7 @@ type lapRec struct {
 	lastPct            float64 // where on the lap the last sample was (0–1)
 	lastS              float64 // the session time of the last sample
 	early              bool    // started at the line, a moment before iRacing counted the lap
+	earlyAt            float64 // the session's clock when it started that way: the game's count is waited for from here
 	st0                float64 // a lap seen crossing the line: the session time it crossed it (its own clock, SessionTime - st0)
 	ownClock           bool
 	bestAt0            float64   // the game's own best lap as this lap ended, the lap before's included (iRacing counts only the laps it accepts)
@@ -784,7 +785,16 @@ type lapStream struct {
 	livePos, liveCls int
 	sessLaps         int
 	sentPlace        sessPlace
+	lapOff           int // crossings of the line the game never counted (earlyWaitS), added to its lap number
 }
+
+// earlyWaitS: how long a lap that started at the line waits for the game to count it. iRacing counts it a second or
+// two after the line; a game that still has not after this long never will (Assetto Corsa Competizione does not count
+// the line crossed on the way out of the pits or on the formation lap), and its lap numbers run one behind from there.
+const earlyWaitS = 15
+
+// minLapS: no lap is this short. The few metres from a pit box or the grid to the line are not a lap.
+const minLapS = 5
 
 // drivable: the car could have driven from the lap's last sample to here (pct, forward along the lap and over the
 // line, where LapDistPct wraps even when the distance runs on past it): at most the 40 m a hole may have beyond what its
@@ -873,7 +883,7 @@ func (ls *lapStream) step(v []float64) {
 		ls.sess = env.meta(y, sn)
 		ls.sess.AirTemp, ls.sess.TrackTemp = v[15], v[16]
 		ls.sessY, ls.livePos, ls.liveCls, ls.sentPlace = y, 0, 0, sessPlace{}
-		ls.placeOn, ls.trafAt = false, 0
+		ls.placeOn, ls.trafAt, ls.lapOff = false, 0, 0
 	}
 	// the game's live place, once a second by the session's clock (in the pits too), whatever rate the frames come at
 	if st := v[14]; !ls.placeOn || st-ls.placeAt >= 1 || st < ls.placeAt {
@@ -891,9 +901,16 @@ func (ls *lapStream) step(v []float64) {
 	// numbered after the ones already driven (lap is the session's own count from here on)
 	base, _ := env.noteRun(env.runKey(sn), v[14], lap)
 	if base != ls.lastBase {
-		ls.lastBase, cur = base, nil
+		ls.lastBase, cur, ls.lapOff = base, nil, 0
 	}
-	lap += base
+	lap += base + ls.lapOff
+	// the game never counted the crossing this lap started at: from here its count runs one behind, or the next
+	// crossing would be taken for the count catching up and two laps would be kept as one
+	if cur != nil && cur.early && lap == cur.n-1 && v[14]-cur.earlyAt > earlyWaitS {
+		ls.lapOff++
+		lap++
+		cur.early = false
+	}
 	// iRacing counts the new lap a moment after the line (a second or more): the samples from the line on already
 	// belong to it, or every lap would start with a hole of tens of metres and never be valid
 	if cur != nil && cur.early && lap == cur.n-1 {
@@ -914,7 +931,7 @@ func (ls *lapStream) step(v []float64) {
 			cur.markHoles() // a lap with a hole or not round the whole circuit is not valid in the race summary either
 			env.lapEnded(sn, cur, ls.sess, v[9], prevLL)
 		}
-		early := cur != nil && lap == cur.n+1 && lap-base != int(v[0])
+		early := cur != nil && lap == cur.n+1 && lap-base-ls.lapOff != int(v[0])
 		// a lap seen crossing the line keeps its own clock from the session's: iRacing restarts its lap clock a moment
 		// after the line (in a race even when it counts the lap at once), and the samples before would carry the lap
 		// before's time and be dropped, a hole at the start of every lap
@@ -927,7 +944,7 @@ func (ls *lapStream) step(v []float64) {
 				st0 = prevST + (v[14]-prevST)*(1-cur.lastPct)/f
 			}
 		}
-		cur = &lapRec{n: lap, fuel0: v[9], inc0: v[11], incPrev: v[11], lastPitB: -1, cold: cur == nil || cur.pit, early: early, st0: st0, ownClock: own, penPrev: v[31]}
+		cur = &lapRec{n: lap, fuel0: v[9], inc0: v[11], incPrev: v[11], lastPitB: -1, cold: cur == nil || cur.pit, early: early, earlyAt: v[14], st0: st0, ownClock: own, penPrev: v[31]}
 	}
 	ls.cur = cur
 	cur.noteDriver(now, env.driver)
@@ -1371,7 +1388,7 @@ func (r *lapRec) markHoles() int {
 // buildLap turns a finished lap into what goes to the account: the trace with its holes filled, the verdict (valid or
 // not), the path, the tags, the incidents and the sectors. false when there is no lap (no time, too few points).
 func buildLap(r *lapRec, s cloudSession, fuelNow, lt float64) (cloudLap, bool) {
-	if lt <= 0 || len(r.bins) < 40 {
+	if lt < minLapS || len(r.bins) < 40 {
 		return cloudLap{}, false
 	}
 	maxGap := r.markHoles()

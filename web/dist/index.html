@@ -679,7 +679,8 @@ label.btn{display:inline-flex;align-items:center;cursor:pointer}
 .lapcmp{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px;min-width:0}
 .lapcmp.a{border-color:color-mix(in srgb,var(--accent) 65%,var(--line))}.lapcmp.b{border-color:color-mix(in srgb,var(--pb) 65%,var(--line))}
 .lapcmp .role{font:700 11px var(--f-data);letter-spacing:.08em;text-transform:uppercase}.lapcmp.a .role{color:var(--accent)}.lapcmp.b .role{color:var(--pb)}
-.lapcmp .time{font:800 25px var(--f-data);margin-top:3px}.lapcmp .name{font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lapcmp .time{font:800 25px var(--f-data);margin-top:3px}
+.lapcmp .vtop{font-size:12px;color:var(--muted);margin-top:2px}.lapcmp .vtop b{color:var(--fg);font-size:13px}.lapcmp .name{font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .lapcmp .meta{font-size:12px;color:var(--muted);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.lapcmp-vs{display:grid;place-items:center;padding:0 2px;font:800 12px var(--f-data);color:var(--muted)}
 .lap-analyzer{margin-bottom:12px}.lap-analyzer-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
 .lap-metric{background:var(--surface2);border:1px solid var(--line);border-radius:9px;padding:10px;min-width:0}.lap-metric b{display:block;font:800 20px var(--f-data);margin-top:2px}.lap-metric small{display:block;color:var(--muted);font-size:11px;line-height:1.3}
@@ -3591,7 +3592,9 @@ async function pickCommLap(){if(coachCloudOn())return pickCommLapCloud();const w
       close();renderLaps();$("#lapB").value="c"+(CREF.length-1);drawCmp()}catch(e){toast(e.message);b.querySelector("b").textContent=l.alias||"–"}})}
 function lapSource(l){if(!l)return"";if(l.comm||l.cid||/^⟡ /.test(String(l.n||"")))return Tx("Community","Comunidad","Community","Comunidade");if(l.cloud)return Tx("My account","Mi cuenta","Mein Konto","Minha conta");return Tx("Your lap","Tu vuelta","Deine Runde","Sua volta")}
 function lapName(l){if(!l)return"";const n=String(l.n??"").replace(/^⟡ /,"");if(l.comm||l.cid)return l.alias||l.name||n;if(l.who!=null){const w=l.who?" · "+l.who:"";return (l._sessionBest?Tx("BEST · Lap","MEJOR VUELTA · Vuelta","BESTE · Runde","MELHOR · Volta"):Tx("Lap","Vuelta","Runde","Volta"))+" "+n+w}if(l.drv)return Tx("Lap","Vuelta","Runde","Volta")+" "+n+" · "+l.drv;if(l._sessionBest)return Tx("MY BEST · Lap","MI MEJOR VUELTA · Vuelta","MEINE BESTE · Runde","MINHA MELHOR · Volta")+" "+n;return Tx("Lap","Vuelta","Runde","Volta")+" "+n}
-function renderLapCompareHeads(A,B){const targets=["#lapCompareHeads","#coachCompareHeads"];const side=(role,l,cls)=>`<div class="lapcmp ${cls}${cls==="b"&&bMine(l)?" mine":""}"><div class="role">${esc(role)}</div><div class="name">${esc(lapName(l))}</div><div class="time mono">${fmtT(l.time)}</div><div class="meta">${esc(lapSource(l))}</div></div>`;targets.forEach(id=>{const box=$(id);if(box)box.innerHTML=A&&B?`${side(Tx("LAP A · COMPARING","VUELTA A · COMPARANDO","RUNDE A · VERGLEICH","VOLTA A · COMPARANDO"),A,"a")}<div class="lapcmp-vs">VS</div>${side(Tx("LAP B · REFERENCE","VUELTA B · REFERENCIA","RUNDE B · REFERENZ","VOLTA B · REFERÊNCIA"),B,"b")}`:""})}
+/* a lap's top speed (m/s): what was recorded with it, else the fastest point of its trace (community laps) */
+function lapTop(l){if(!l)return 0;if(l.vmax>0)return l.vmax;try{const s=lapSeries(l);let v=0;for(let i=0;i<s.end;i++)if(s.arr[i])v=Math.max(v,s.arr[i][0]);return v}catch(e){return 0}}
+function renderLapCompareHeads(A,B){const targets=["#lapCompareHeads","#coachCompareHeads"];const side=(role,l,cls)=>`<div class="lapcmp ${cls}${cls==="b"&&bMine(l)?" mine":""}"><div class="role">${esc(role)}</div><div class="name">${esc(lapName(l))}</div><div class="time mono">${fmtT(l.time)}</div>${(v=>v>0?`<div class="vtop"><span>${esc(Tx("Top speed","Velocidad punta","Höchstgeschwindigkeit","Velocidade máxima"))}</span> <b class="mono">${Math.round(spd(v))} ${esc(spdU())}</b></div>`:"")(lapTop(l))}<div class="meta">${esc(lapSource(l))}</div></div>`;targets.forEach(id=>{const box=$(id);if(box)box.innerHTML=A&&B?`${side(Tx("LAP A · COMPARING","VUELTA A · COMPARANDO","RUNDE A · VERGLEICH","VOLTA A · COMPARANDO"),A,"a")}<div class="lapcmp-vs">VS</div>${side(Tx("LAP B · REFERENCE","VUELTA B · REFERENCIA","RUNDE B · REFERENZ","VOLTA B · REFERÊNCIA"),B,"b")}`:""})}
 /* how each lap was driven, what A does differently from B, in plain words (pitwall-analysis.js) */
 function lapDriving(sa,sb,n){return PWA.lapDriving(sa,sb,n,anaCtx())}
 function renderLapAnalyzer(A,B){const box=$("#lapAnalyzer");if(!box)return;if(!A||!B){box.hidden=true;box.innerHTML="";return}box.hidden=false;
@@ -11032,6 +11035,7 @@ html:not(.ov) #v-laps #lapCompareHeads:empty{display:none!important}
 #v-laps #lapCompareHeads .lh small{font-size:12px;line-height:18px;color:var(--muted)}
 #v-laps #lapCompareHeads .lh b{font:700 15px/22.5px var(--f-body);color:var(--fg);overflow-wrap:anywhere}
 #v-laps #lapCompareHeads .lh .mono{font:400 20px/30px var(--f-data);color:var(--accent)}
+.lh small.lh-vt b{display:inline;font:600 13px var(--f-data);color:var(--fg)}
 #v-laps #lapCompareHeads .lh.b{text-align:right}#v-laps #lapCompareHeads .lh.b .mono{color:var(--blue)}#v-laps #lapCompareHeads .lh.b.mine .mono{color:var(--pb)}
 #v-laps #lapCompareHeads .lh.vs{color:var(--muted);font:700 14px var(--f-display)}
 /* the numbers */
@@ -11422,7 +11426,7 @@ const pw3Mine=l=>!!(l&&!(l.comm||l.cid)&&!l.drv&&l.who==null);
 const pw3Nm=l=>{if(!l)return"";const n=String(l.n??"").replace(/^⟡ /,"");return pw3Mine(l)?Tx("Lap","Vuelta",null,"Volta")+" "+n:lapName(l)};
 function pw3Heads(A,B){const box=$("#lapCompareHeads");if(!box)return;if(!A||!B){box.innerHTML="";return}
   const nm=l=>pw3Mine(l)&&l._sessionBest?Tx("My best · ","Mi mejor · ",null,"Minha melhor · ")+pw3Nm(l):pw3Nm(l),src=l=>pw3Mine(l)?"":lapSource(l);
-  const side=(cls,role,l)=>`<div class="lh ${cls}${cls==="b"&&bMine(l)?" mine":""}"><small>${esc(role)}${src(l)?" · "+esc(src(l)):""}</small><b>${esc(nm(l))}</b><span class="mono">${fmtT(l.time)}</span></div>`;
+  const side=(cls,role,l)=>`<div class="lh ${cls}${cls==="b"&&bMine(l)?" mine":""}"><small>${esc(role)}${src(l)?" · "+esc(src(l)):""}</small><b>${esc(nm(l))}</b><span class="mono">${fmtT(l.time)}</span>${(v=>v>0?`<small class="lh-vt">${esc(Tx("Top speed","Velocidad punta","Höchstgeschwindigkeit","Velocidade máxima"))} <b>${Math.round(spd(v))} ${esc(spdU())}</b></small>`:"")(lapTop(l))}</div>`;
   box.innerHTML=side("a",Tx("Lap A · comparing","Vuelta A · comparando",null,"Volta A · comparando"),A)+`<div class="lh vs">vs</div>`+side("b",Tx("Lap B · reference","Vuelta B · referencia",null,"Volta B · referência"),B)}
 function renderLapAnalyzer(A,B){const box=$("#lapAnalyzer"),cp=$("#lapCorP"),cb=$("#lapCorners");if(!box)return;
   if(!A||!B){box.hidden=true;box.innerHTML="";if(cp)cp.hidden=true;if(cb)cb.innerHTML="";pw3Ins(0);return}box.hidden=false;

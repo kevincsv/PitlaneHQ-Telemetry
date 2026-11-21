@@ -11,7 +11,9 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   no glows and no gradients. A chosen tab, segment or card is a raised surface; a chosen chart channel or map layer has
   a thin amber outline. On computers the main tabs are a 208 px sidebar with the logo and each tab's icon and word; on
   phones and narrow windows the bottom bar, and the header on one line (the version moves to Settings → About).
-  The lap analyzer (Pit Wall Workspace, `pw3-laps` in index.html): Lap A vs lap B across the top, then four numbers
+  The lap analyzer (Pit Wall Workspace, `pw3-laps` in index.html): Lap A vs lap B across the top (each with its time and
+  its top speed, the one recorded with the lap or else the fastest point of its trace, the same in the Coach's strip;
+  `lapTop`), then four numbers
   (A vs B, Costs the most, Furthest behind, Corners vs straights, and Gains most when A gains somewhere; on phones and
   narrow windows two per row, an odd last one across the whole width, so every value reads in full), then three
   columns. Left: Laps (My laps and Community with its PRO badge) and Sectors (a table, A, B and the gap). Middle: the

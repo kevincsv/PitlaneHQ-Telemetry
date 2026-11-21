@@ -16,7 +16,7 @@ Status as of 2026-11-16. Behaviour is in `docs/spec/coach-and-model.md` and `doc
   start in milliseconds is 1.8e12, so every tip, thumb and plan vote got a 400 (1,043 coach reports since Oct 28). It
   reaches the apps once the server fix is in production. About 2 in 3 answered tips gained time next session
   for every kind, so no threshold stands out to retune yet.
-- Ask the coach (AI chat with the driver's own Claude, OpenAI or Gemini key): testers and admins only (`wipOk`).
+- Ask the coach (AI chat with the driver's own Claude, OpenAI or Gemini key): open to everyone on PC and web since 0.10.3 (2026-11-21).
   The key is sealed on every device (DPAPI, WebCrypto non-extractable key, Keystore, Keychain).
 - Engine rework (recorder fixes, golden tests, brake zones) approved 2026-11-14, on master as 0.9.17 in both
   repos. `MODEL_VERSION` not bumped. Next ideas: the algorithms review (Claude Doc "Coach and analysis algorithms:

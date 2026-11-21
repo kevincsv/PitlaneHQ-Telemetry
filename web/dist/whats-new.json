@@ -1,6 +1,12 @@
 {
   "versions": [
     {
+      "v": "0.10.3",
+      "en": ["Telemetry's Live lap compare has the track map beside the traces. It shows where this lap gains and loses against the other lap and opens in full screen.", "Ask the coach is open to everyone. Add your own AI key in Settings and ask about the lap on screen.", "The thumbs under each step of the coach's plan are easier to see.", "Fixes and improvements."],
+      "es": ["Comparar vueltas en vivo de Telemetría tiene el mapa del circuito junto a las trazas. Muestra dónde ganas y pierdes en esta vuelta frente a la otra y se abre en pantalla completa.", "Pregunta al coach está abierto para todos. Añade tu propia clave de IA en Ajustes y pregunta por la vuelta en pantalla.", "Los pulgares bajo cada paso del plan del coach se ven mejor.", "Correcciones y mejoras."],
+      "pt": ["Comparar voltas ao vivo da Telemetria tem o mapa da pista ao lado dos traços. Mostra onde você ganha e perde nesta volta contra a outra e abre em tela cheia.", "Pergunte ao coach está aberto para todos. Adicione sua própria chave de IA em Configurações e pergunte sobre a volta na tela.", "Os polegares abaixo de cada passo do plano do coach estão mais fáceis de ver.", "Correções e melhorias."]
+    },
+    {
       "v": "0.10.1",
       "en": ["Telemetry's menu is simpler. Dashboard, Live lap compare and Team, with Rev beep and Phone & sharing under Car & tools.", "Standings is now a view of the Dashboard next to Engineer, and Customize changes its columns and rows like the Standings overlay.", "After a race the race report opens with your result and the three corners that cost you the most. Open the coach goes straight to that session.", "The coach judges every corner over the whole session, with Turn by turn in the lap analyzer, Watch it for the chase view of a corner and this session against the last one.", "Fixes and improvements."],
       "es": ["El menú de Telemetría es más simple. Panel, Comparar vueltas en vivo y Equipo, con Pitido de revoluciones y Teléfono y compartir en Coche y herramientas.", "Posiciones ahora es una vista del Panel junto a Ingeniero, y Personalizar cambia sus columnas y filas como el overlay de Posiciones.", "Después de una carrera se abre el informe de la carrera con tu resultado y las tres curvas que más te costaron. Abrir el coach va directo a esa sesión.", "El coach juzga cada curva en toda la sesión, con Curva a curva en el analizador de vueltas, Míralo para la vista de persecución de una curva y esta sesión frente a la anterior.", "Correcciones y mejoras."],

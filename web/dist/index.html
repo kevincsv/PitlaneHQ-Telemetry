@@ -20,7 +20,7 @@
 <meta name="twitter:title" content="Pitlane HQ · Free Le Mans Ultimate and iRacing telemetry">
 <meta name="twitter:description" content="Pitlane HQ (PitlaneHQ) is free Le Mans Ultimate and iRacing telemetry with a coach, lap comparison, LMU lap times, overlays and sync on PC, web and phone.">
 <meta name="twitter:image" content="https://pitlanehq.app/og.png">
-<script type="application/ld+json">{"@context":"https://schema.org","@type":"SoftwareApplication","@id":"https://pitlanehq.app/#app","name":"Pitlane HQ","alternateName":["PitlaneHQ","Pitlane HQ Agent"],"url":"https://pitlanehq.app/","applicationCategory":"SportsApplication","applicationSubCategory":"Sim racing telemetry","operatingSystem":"Windows, Android, Web","softwareVersion":"0.10.2","description":"Free sim racing telemetry for Le Mans Ultimate and iRacing, and everything is free during the beta. Pitlane HQ Agent records every lap on Windows and draws overlays over the game, also in VR, and it is on the Microsoft Store too. The web and the Android app show the laps with a lap analyzer, lap comparison, sectors and a coach that learns from real laps, shows corner by corner where you lose time and gives a plan on the track map. Every lap syncs with your whole history.","inLanguage":["en","es","pt-BR"],"image":"https://pitlanehq.app/og.png","screenshot":[{"@type":"ImageObject","url":"https://pitlanehq.app/landing/en/coach.jpg","width":2880,"height":1040},{"@type":"ImageObject","url":"https://pitlanehq.app/landing/en/compare.jpg","width":2880,"height":1000}],"featureList":["Lap telemetry for Le Mans Ultimate and iRacing, recorded by itself","A coach that learns from real laps and shows corner by corner where you lose time","A plan for the next session with each point marked on the track map","Lap comparison with the time gap, sectors, braking points, the racing line and a replay","Overlays on top of the game, in six looks and in VR, each set with a live preview, with class colours and a traffic warning for multiclass races","Braking markers on track","A fuel overlay that measures every lap, the virtual energy per lap in Le Mans Ultimate, and the fuel of each race stint","Race summaries with the race pace, incidents and the iRating","Sync with your whole lap history on the PC, the web and the phone","Days you drove, a calendar of your races and sessions","Leaderboards and records by car and track, and Le Mans Ultimate lap times by class","Friends to follow","Live telemetry on your phone","Leagues to join","A Discord bot for new best laps, records and leaderboards"],"downloadUrl":"https://pitlanehq.app/downloads","installUrl":"https://apps.microsoft.com/detail/9P3642QCS9ZG","sameAs":["https://apps.microsoft.com/detail/9P3642QCS9ZG"],"isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"publisher":{"@id":"https://pitlanehq.app/#org"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"SoftwareApplication","@id":"https://pitlanehq.app/#app","name":"Pitlane HQ","alternateName":["PitlaneHQ","Pitlane HQ Agent"],"url":"https://pitlanehq.app/","applicationCategory":"SportsApplication","applicationSubCategory":"Sim racing telemetry","operatingSystem":"Windows, Android, Web","softwareVersion":"0.10.3","description":"Free sim racing telemetry for Le Mans Ultimate and iRacing, and everything is free during the beta. Pitlane HQ Agent records every lap on Windows and draws overlays over the game, also in VR, and it is on the Microsoft Store too. The web and the Android app show the laps with a lap analyzer, lap comparison, sectors and a coach that learns from real laps, shows corner by corner where you lose time and gives a plan on the track map. Every lap syncs with your whole history.","inLanguage":["en","es","pt-BR"],"image":"https://pitlanehq.app/og.png","screenshot":[{"@type":"ImageObject","url":"https://pitlanehq.app/landing/en/coach.jpg","width":2880,"height":1040},{"@type":"ImageObject","url":"https://pitlanehq.app/landing/en/compare.jpg","width":2880,"height":1000}],"featureList":["Lap telemetry for Le Mans Ultimate and iRacing, recorded by itself","A coach that learns from real laps and shows corner by corner where you lose time","A plan for the next session with each point marked on the track map","Lap comparison with the time gap, sectors, braking points, the racing line and a replay","Overlays on top of the game, in six looks and in VR, each set with a live preview, with class colours and a traffic warning for multiclass races","Braking markers on track","A fuel overlay that measures every lap, the virtual energy per lap in Le Mans Ultimate, and the fuel of each race stint","Race summaries with the race pace, incidents and the iRating","Sync with your whole lap history on the PC, the web and the phone","Days you drove, a calendar of your races and sessions","Leaderboards and records by car and track, and Le Mans Ultimate lap times by class","Friends to follow","Live telemetry on your phone","Leagues to join","A Discord bot for new best laps, records and leaderboards"],"downloadUrl":"https://pitlanehq.app/downloads","installUrl":"https://apps.microsoft.com/detail/9P3642QCS9ZG","sameAs":["https://apps.microsoft.com/detail/9P3642QCS9ZG"],"isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"publisher":{"@id":"https://pitlanehq.app/#org"}}</script>
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebSite","@id":"https://pitlanehq.app/#website","name":"Pitlane HQ","alternateName":["PitlaneHQ","Pitlane"],"url":"https://pitlanehq.app/","inLanguage":["en","es","pt-BR"],"publisher":{"@id":"https://pitlanehq.app/#org"}}</script>
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"Organization","@id":"https://pitlanehq.app/#org","name":"Pitlane HQ","alternateName":"PitlaneHQ","url":"https://pitlanehq.app/","logo":"https://pitlanehq.app/icon-512.png","email":"support@pitlanehq.app"}</script>
 <meta name="theme-color" content="#11151b">
@@ -515,6 +515,7 @@ html.ov.ovwin #dbTrend{position:absolute;top:50%;left:calc(50% + 52px);transform
 .std-bar{gap:10px;margin:0 0 10px;flex-wrap:wrap}#stdPos{margin-top:12px}#stdPos canvas{width:100%;display:block;margin-top:8px}
 #liveTraces canvas,#liveCmp canvas{width:100%;display:block}.trc-head{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:6px;flex-wrap:wrap}.trc-leg{font-size:12px;display:flex;gap:12px;flex-wrap:wrap}.trc-leg .acc{color:var(--accent)}
 #liveCmp{display:grid;gap:12px}#liveCmp[hidden]{display:none}.lcmp-pick .frow{margin-top:6px;flex-wrap:wrap}.lcmp-pick .chip[aria-pressed=true]{background:var(--chipc,var(--accent));border-color:var(--chipc,var(--accent));color:#11151b}
+.lcmp-main{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:12px}.lcmp-map canvas{display:block;width:100%;cursor:pointer}@media (max-width:900px){.lcmp-main{grid-template-columns:minmax(0,1fr)}}
 .lcmp-keys{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px}.lcmp-k{display:flex;flex-direction:column;gap:2px;padding:10px 12px}.lcmp-k b{font-size:20px}@media (max-width:760px){.lcmp-keys{grid-template-columns:repeat(2,minmax(0,1fr))}}
 .lcmp-corners{display:flex;gap:6px;overflow-x:auto;margin-top:8px;padding-bottom:4px}.lc-c{flex:1 0 56px;display:flex;flex-direction:column;align-items:center;gap:3px;background:var(--surface2,#222b37);border:1px solid var(--line);border-radius:8px;padding:7px 4px;color:var(--fg);min-height:44px}.lc-c.off{opacity:.45}.lc-c.good .mono{color:var(--good)}.lc-c.bad .mono{color:var(--bad)}
 html.ov .wtable tr.me td{background:color-mix(in srgb,var(--accent) 22%,transparent)}
@@ -3222,7 +3223,7 @@ function devWords(r){if(typeof r!=="string")return r;try{if(WEBAPP)r=DEV_WORDS.r
 const Tx=(en,es,de,pt)=>devWords(TxRaw(en,es,de,pt));
 const localeTag=()=>({es:"es-ES",de:"de-DE",pt:"pt-BR"})[LANG]||"en-GB";
 // the same number as Pitlane HQ Agent (main.go appVersion): one release for the PC app and the web
-const WEB_VERSION="0.10.2",APP_STAGE="beta";
+const WEB_VERSION="0.10.3",APP_STAGE="beta";
 const verText=v=>v+" "+APP_STAGE;
 function renderVersion(){demoBanner();const el=$("#appVersion");if(!el)return;const v=(INFO&&INFO.version&&INFO.version!=="companion"&&INFO.version)||WEB_VERSION;el.textContent="v"+verText(v);el.title=Tx("Pitlane HQ version "+v,"Versión de Pitlane HQ "+v,"Pitlane HQ Version "+v,"Versão do Pitlane HQ "+v)}
 function applyI18n(){document.documentElement.lang=LANG==="both"?"en":LANG;try{if(MODE==="bridge"&&/^(localhost|127\.0\.0\.1)$/.test(location.hostname)&&!OV.on&&applyI18n.sent!==LANG+UNITS){applyI18n.sent=LANG+UNITS;fetch("/api/lang?l="+LANG+"&u="+UNITS,{method:"POST"}).catch(()=>{})}}catch(e){}document.querySelectorAll("[data-i18n]").forEach(el=>{el.innerHTML=L(el.dataset.i18n)});
@@ -6604,15 +6605,39 @@ function renderLiveCmp(){const box=$("#liveCmp");if(!box)return;lcmpModel();cons
   const others=ok.filter(l=>l!==best&&l!==last).slice(-6).map(l=>ch("n"+l.n,Tx("Lap","V")+" "+l.n+" · "+fmtT(l.time)));
   box.innerHTML=`<div class="panel lcmp-pick"><span class="label">${esc(Tx("Against","Contra"))}</span><div class="frow">${best?ch("best",Tx("My best","Mi mejor")+" · "+fmtT(best.time),"#c48cff"):""}${last&&last!==best?ch("last",Tx("Last","Última")+" · "+fmtT(last.time)):""}${others.join("")}${LCMP.mlevel?ch("level","▲ "+Tx("Next level","Siguiente nivel")+" · "+fmtT(LCMP.mlevel.time)):""}${LCMP.mrec?ch("rec","★ "+Tx("Record","Récord")+" · "+fmtT(LCMP.mrec.time)):""}</div>${ok.length?"":`<p class="note">${esc(Tx("The compare starts after your first full lap.","La comparación empieza tras tu primera vuelta completa."))}</p>`}</div>
     <div class="lcmp-keys" id="lcKeys"></div>
-    <div class="panel"><div class="trc-head"><span class="trc-leg" id="lcLeg"></span><span class="mono" id="lcAt"></span></div><canvas id="lcC" height="380" aria-label="Lap compare"></canvas>
+    <div class="lcmp-main"><div class="panel"><div class="trc-head"><span class="trc-leg" id="lcLeg"></span><span class="mono" id="lcAt"></span></div><canvas id="lcC" height="380" aria-label="Lap compare"></canvas>
       <div class="frow" style="margin-top:8px;flex-wrap:nowrap"><input type="range" id="lcRange" min="0" max="1000" value="0" aria-label="${esc(Tx("Point of the lap","Punto de la vuelta"))}" style="flex:1"><button type="button" class="btn small" id="lcLive"></button></div></div>
+      <div class="panel lcmp-map" id="lcMap"><div class="vhead" style="margin:0 0 4px"><div class="label">${L("w.map",true)}</div>${window.PW_FULLMAP?`<button type="button" class="chip" id="lcFs">⛶ ${esc(Tx("Full screen","Pantalla completa",null,"Tela cheia"))}</button>`:""}</div><canvas id="lcMapC" height="412" aria-label="${L("w.map",true)}"></canvas></div></div>
     <div class="panel"><div class="label">${esc(Tx("Corner by corner","Curva a curva"))}</div><div class="lcmp-corners" id="lcCorners"></div></div>`;
   box.querySelectorAll("[data-lb]").forEach(b=>b.onclick=()=>{LCMP.b=b.dataset.lb;renderLiveCmp()});
   $("#lcRange").oninput=e=>{LCMP.follow=false;LCMP.at=+e.target.value/1000;tickLiveCmp()};
-  $("#lcLive").onclick=()=>{LCMP.follow=true;tickLiveCmp()};tickLiveCmp()}
+  $("#lcLive").onclick=()=>{LCMP.follow=true;tickLiveCmp()};{const f=$("#lcFs"),c=$("#lcMapC");if(f)f.onclick=lcFull;if(c)c.onclick=lcFull}tickLiveCmp()}
+/* the Lap compare template's map: the track the same way up as the other maps, this lap's gain (green) and loss (red)
+   against lap B up to the car, the turns, the car and the cursor of the traces. Pressing it opens the full-screen map
+   with the last full lap against lap B. */
+const LCM={k:"",map:null,fit:null};
+function lcMapOf(){const tid=S.WeekendInfo&&S.WeekendInfo.TrackID,g=liveGame(),k=tid+":"+g;
+  if(LCM.k!==k){LCM.k=k;LCM.map=LCM.fit=null;if(tid)trackMapFor(tid,g).then(m=>{if(LCM.k===k&&m&&m.x&&m.x.length>10){LCM.map=m;LCM.fit=null}}).catch(()=>{})}
+  return LCM.map||(MAP.data&&MAP.data.x&&MAP.data.x.length>10?MAP.data:null)}
+function drawLcMap(r,live,cur,turns,L){const cv=$("#lcMapC");if(!cv)return;const hh=matchMedia("(max-width:900px)").matches?260:412;if(+cv.getAttribute("height")!==hh)cv.setAttribute("height",hh);
+  const[x,w,h]=fitCanvas(cv);if(!x)return;x.clearRect(0,0,w,h);const map=lcMapOf();
+  if(!map){x.fillStyle=css("--muted");x.font="13px "+css("--f-body");x.textAlign="center";x.fillText(Tx("Waiting for telemetry…","Esperando telemetría…"),w/2,h/2);return}
+  let F=LCM.fit;if(!F||F.m!==map||F.w!==w||F.h!==h){const[xs,ys]=fitTurn(map.x,map.y,600,400,26),pad=26,x0=Math.min(...xs),x1=Math.max(...xs),y0=Math.min(...ys),y1=Math.max(...ys),k=Math.min((w-2*pad)/(x1-x0||1),(h-2*pad)/(y1-y0||1));
+    F=LCM.fit={m:map,w,h,pts:xs.map((u,i)=>[(w-(x1-x0)*k)/2+(u-x0)*k,h-(h-(y1-y0)*k)/2-(ys[i]-y0)*k])}}
+  const N=F.pts.length,P=i=>F.pts[((Math.round(i)%N)+N)%N],at=bin=>P(bin*BIN/L*N),run=(i0,i1)=>{x.beginPath();const m0=Math.round(i0*BIN/L*N),m1=Math.max(m0+1,Math.round(i1*BIN/L*N));for(let m=m0;m<=m1;m++){const q=P(m);m===m0?x.moveTo(q[0],q[1]):x.lineTo(q[0],q[1])}x.stroke()};
+  x.lineCap=x.lineJoin="round";x.strokeStyle=css("--line");x.lineWidth=9;x.beginPath();F.pts.forEach((q,i)=>i?x.lineTo(q[0],q[1]):x.moveTo(q[0],q[1]));x.closePath();x.stroke();
+  x.strokeStyle=css("--fg");x.globalAlpha=.6;x.lineWidth=2.5;run(0,live);x.globalAlpha=1;
+  if(r){const st=3,sg=[];for(let i=0;i<live;i+=st){const d0=r.dAt(i),d1=r.dAt(Math.min(live,i+st));if(d0!=null&&d1!=null)sg.push([i,Math.min(live,i+st),d1-d0])}
+    const mx=Math.max(.01,...sg.map(g=>Math.abs(g[2])));x.lineWidth=4.5;sg.forEach(g=>{if(Math.abs(g[2])<.002)return;x.strokeStyle=css(g[2]>0?"--bad":"--good");x.globalAlpha=.35+.65*Math.min(1,Math.abs(g[2])/mx);run(g[0],g[1])});x.globalAlpha=1}
+  x.font="10px "+css("--f-data");x.fillStyle=css("--muted");x.textAlign="center";x.textBaseline="middle";(turns&&turns.length?turns:trackCorners(map,L).map(c=>c.d/L)).forEach((f,j)=>{const q=P(f*N),dx=q[0]-w/2,dy=q[1]-h/2,m=Math.hypot(dx,dy)||1;x.fillText("T"+(j+1),q[0]+dx/m*15,q[1]+dy/m*15)});
+  if(cur!==live){const q=at(cur);x.strokeStyle=css("--fg");x.lineWidth=2;x.beginPath();x.arc(q[0],q[1],6,0,7);x.stroke()}
+  const q=at(live);x.fillStyle=css("--accent");x.strokeStyle="#11151b";x.lineWidth=2;x.beginPath();x.arc(q[0],q[1],6.5,0,7);x.fill();x.stroke()}
+function lcFull(){const map=lcMapOf(),B=lcmpB();if(!map||!B||!window.PW_FULLMAP)return;const ok=LAPS.filter(l=>l.time>0),A=ok.filter(l=>l!==B).pop()||ok[ok.length-1]||B;
+  const sa=lapSeries(A),sb=lapSeries(B),n=Math.min(sa.end,sb.end);if(n<8)return;const tid=S.WeekendInfo&&S.WeekendInfo.TrackID,g=liveGame(),Lm=n*BIN;
+  openFullMap($("#lcMap"),A,B,map,sa,sb,n,officialCorners(tid,g,map.x.length,Lm)||trackCorners(map,Lm),3)}
 function tickLiveCmp(){const cv=$("#lcC");if(!cv)return;const B=lcmpB(),L=trackLenM(),nb=Math.max(2,Math.ceil(L/BIN)),live=Math.max(0,Math.floor((T.LapDist||0)/BIN));
   const cur=LCMP.follow?live:Math.min(live,Math.round(LCMP.at*(nb-1))),tid=S.WeekendInfo&&S.WeekendInfo.TrackID,turns=tid?(turnsFor(tid)||[]):[];
-  const r=drawLapRows(cv,B,live,cur,turns),A=rec&&rec.bins?rec.bins:[],a=A[cur],bs=B?serOf(B):null,b=bs?bs[cur]:null,best=liveBest(),ok=LAPS.filter(l=>l.time>0),last=ok[ok.length-1];
+  const r=drawLapRows(cv,B,live,cur,turns);drawLcMap(r,live,cur,turns,L);const A=rec&&rec.bins?rec.bins:[],a=A[cur],bs=B?serOf(B):null,b=bs?bs[cur]:null,best=liveBest(),ok=LAPS.filter(l=>l.time>0),last=ok[ok.length-1];
   const isBest=B&&B===best,bName=!B?"–":B===LCMP.mrec?"★ "+Tx("Record","Récord"):B===LCMP.mlevel?"▲ "+Tx("Next level","Siguiente nivel"):(isBest?Tx("My best","Mi mejor"):Tx("Lap","Vuelta")+" "+B.n);
   const dNow=r&&r.dAt(live),top=(arr,n)=>Math.round(spd(Math.max(0,...arr.slice(0,n).filter(Boolean).map(x=>x[0])))),full=(arr,n)=>{const z=arr.slice(0,n).filter(Boolean);return z.length?Math.round(z.filter(x=>x[2]>.98).length/z.length*100):0};
   const k=(l,v,s,c)=>`<div class="panel lcmp-k"><span class="label">${esc(l)}</span><b class="mono"${c?` style="color:${c}"`:""}>${esc(v)}</b><span class="note">${esc(s||"")}</span></div>`;
@@ -7933,7 +7958,7 @@ function openInCoach(){const a=$("#lapA").value,b=$("#lapB").value;if(!lapOf(a)|
   let v=String(b);if(/^c/.test(v)){const L=CREF[+v.slice(1)];if(L&&L.model)v="m:"+L.model;else if(L){G61REF=L;v="g61"}}
   show("coach");const cl=$("#coachLap"),cr=$("#coachRef");if(!cl||!cr)return;if(!/^c/.test(String(a)))cl.value=a;renderCoach();
   cr.value=v;if(cr.value===v)cr.dataset.user="1";else delete cr.dataset.user;renderCoach()}
-/* Ask the coach (in development: admins in admin mode and testers, wipOk): an AI chat about the lap pair on screen, with
+/* Ask the coach (everyone since 0.10.3): an AI chat about the lap pair on screen, with
    the driver's own API key (Anthropic, OpenAI or Google Gemini). pitwall-aicoach.js (PW_AICOACH, the same file the phones
    run) builds what is sent and reads the answers. The key never goes to the server nor into the account: on the PC app
    the agent keeps it (/api/aicoach, sealed with the Windows user's key) and makes the request; on the web it stays in this
@@ -7993,7 +8018,7 @@ function aiWho(L,A,best){if(!L)return"";const PM=window.PW_MODEL,m=PM&&A&&!A.com
 function aiInfo(A,R,best,LP){const t=anaTrack(A,R)||{},name=CP.acc&&!CP.acc.anon&&CP.acc.display?CP.acc.display:"";
   return{lang:LANG==="es"||LANG==="pt"?LANG:"en",units:UNITS,game:GAME_NAMES[A.game]||"iRacing",track:[t.track,t.track_config].filter(Boolean).join(" · ")||A.track||"",car:t.car||A.car||"",len:t.len||null,driver:name,
     a:aiWho(A,A,best)||"the driver's lap",b:aiWho(R,A,best),laps:(LP||[]).filter(l=>l&&l.valid!==false&&l.time>0).map(l=>l.time)}}
-function aiChatHTML(A,R,c){if(!wipOk()||!AIC)return"";const cfg=AI.cfg,ch=AI.chat,top=c.cs.slice().sort((a,b)=>b.lost-a.lost)[0];
+function aiChatHTML(A,R,c){if(!AIC)return"";const cfg=AI.cfg,ch=AI.chat,top=c.cs.slice().sort((a,b)=>b.lost-a.lost)[0];
   const chips=[Tx("Where am I losing the most time?","¿Dónde pierdo más tiempo?",null,"Onde estou perdendo mais tempo?"),top&&top.lost>.03?Tx(`How do I take T${top.n} faster?`,`¿Cómo hago la T${top.n} más rápido?`,null,`Como faço a T${top.n} mais rápido?`):null,Tx("Explain my braking","Explícame mi frenada",null,"Explique minha freada"),Tx("What should I practise next session?","¿Qué practico en la próxima sesión?",null,"O que devo treinar na próxima sessão?")].filter(Boolean);
   const turnB=s=>esc(s).replace(/\bT(\d{1,2})\b/g,"<b>T$1</b>").replace(/\n/g,"<br>");
   const body=!cfg?`<p class="note">…</p>`:!cfg.has?`<div class="ai-none"><button type="button" class="btn small primary" id="aiSetup">${esc(Tx("Add your API key","Añade tu clave de API",null,"Adicione sua chave de API"))}</button></div>`
@@ -8001,7 +8026,7 @@ function aiChatHTML(A,R,c){if(!wipOk()||!AIC)return"";const cfg=AI.cfg,ch=AI.cha
       ${ch.err?`<p class="err" role="alert">${esc(ch.err)}</p>`:""}
       ${ch.msgs.length?"":`<div class="ai-chips">${chips.map(q=>`<button type="button" class="chip" data-aiq="${esc(q)}">${esc(q)}</button>`).join("")}</div>`}
       <form class="ai-ask" id="aiAsk"><input type="text" id="aiQ" maxlength="600" autocomplete="off" value="${esc(AI.draft||"")}" placeholder="${esc(Tx("Ask about this lap…","Pregunta sobre esta vuelta…",null,"Pergunte sobre esta volta…"))}"${ch.busy?" disabled":""}><button type="submit" class="btn small primary"${ch.busy?" disabled":""}>${esc(Tx("Ask","Preguntar",null,"Perguntar"))}</button>${ch.msgs.length?`<button type="button" class="btn small" id="aiNew">${esc(Tx("New chat","Nueva conversación",null,"Nova conversa"))}</button>`:""}</form>`;
-  return`<section class="pnl co-ai"><div class="pnl-h">${esc(Tx("Ask the coach","Pregunta al coach",null,"Pergunte ao coach"))}${proB("ask_coach")}<span class="sp"></span><span class="pill acc">${esc(wipTitle())}</span></div><div class="pnl-b">${body}</div></section>`}
+  return`<section class="pnl co-ai"><div class="pnl-h">${esc(Tx("Ask the coach","Pregunta al coach",null,"Pergunte ao coach"))}${proB("ask_coach")}</div><div class="pnl-b">${body}</div></section>`}
 async function aiAsk(text,A,R,c,best,LP){const ch=AI.chat,cfg=await aiCfg();text=String(text||"").trim();if(!text||ch.busy||!cfg.has)return;
   const info=aiInfo(A,R,best,LP),first=!ch.msgs.length,content=AIC.question(text,A,R,c,info,first);
   ch.msgs.push({role:"user",content,shown:text});ch.busy=true;ch.err="";const key=ch.key;renderCoach();
@@ -8010,7 +8035,7 @@ async function aiAsk(text,A,R,c,best,LP){const ch=AI.chat,cfg=await aiCfg();text
     if(a.text)ch.msgs.push({role:"assistant",content:a.text});else{ch.msgs.pop();ch.err=aiErrText(a)}}
   catch(e){if(AI.chat.key===key){ch.msgs.pop();ch.err=e.message==="nokey"?aiErrText({kind:"key"}):aiErrText({error:String(e.message||e)})}}
   finally{if(AI.chat.key===key){ch.busy=false;if(CUR_VIEW==="coach")renderCoach()}}}
-function aiChatWire(A,R,c,best,LP){if(!wipOk()||!AIC)return;const k=(ANASEL.a||"")+"|"+(ANASEL.b||"")+"|"+(A.time||0)+"|"+(R.time||0);
+function aiChatWire(A,R,c,best,LP){if(!AIC)return;const k=(ANASEL.a||"")+"|"+(ANASEL.b||"")+"|"+(A.time||0)+"|"+(R.time||0);
   if(AI.chat.key!==k){AI.chat={key:k,msgs:[],busy:false,err:""};AI.draft=""}
   if(!AI.cfg){aiCfg().then(()=>{if(CUR_VIEW==="coach")renderCoach()});return}
   const su=$("#aiSetup");if(su)su.onclick=()=>{show("settings");setTimeout(()=>{const p=$("#aiPanel");if(p)p.scrollIntoView({behavior:"smooth",block:"center"})},120)};
@@ -8019,11 +8044,11 @@ function aiChatWire(A,R,c,best,LP){if(!wipOk()||!AIC)return;const k=(ANASEL.a||"
   const nw=$("#aiNew");if(nw)nw.onclick=()=>{AI.chat={key:k,msgs:[],busy:false,err:""};renderCoach()};
   const lg=$("#aiLog");if(lg)lg.scrollTop=lg.scrollHeight}
 /* Settings → AI coach: the provider, the key, the model (the ones the key can use, after Test) */
-function renderAiPanel(){const box=$("#aiPanel");if(!box)return;if(!wipOk()||!AIC){box.hidden=true;return}box.hidden=false;
+function renderAiPanel(){const box=$("#aiPanel");if(!box)return;if(!AIC){box.hidden=true;return}box.hidden=false;
   if(!AI.cfg){box.innerHTML=`<div class="label">${esc(Tx("AI coach","Coach con IA",null,"Coach com IA"))}</div>`;aiCfg().then(renderAiPanel);return}
   const c=AI.cfg,P=AIC.PROVIDERS,sel=box.dataset.p&&P[box.dataset.p]?box.dataset.p:c.p,pv=P[sel],list=(AI.models&&AI.models[sel])||pv.models,cur=sel===c.p&&c.model?c.model:pv.models[0],models=list.includes(cur)?list:[cur,...list];
   const saved=sel===c.p&&c.has;
-  box.innerHTML=`<div class="label">${esc(Tx("AI coach","Coach con IA",null,"Coach com IA"))} <span class="pill acc">${esc(wipTitle())}</span></div>
+  box.innerHTML=`<div class="label">${esc(Tx("AI coach","Coach con IA",null,"Coach com IA"))}</div>
     <div class="seg" id="aiProv" style="margin-top:8px">${Object.entries(P).map(([k,v])=>`<button type="button" data-aip="${k}" aria-pressed="${k===sel}">${esc(v.name)}</button>`).join("")}</div>
     <form class="form" id="aiForm" style="margin-top:12px;max-width:560px">
       <label><span class="label">${esc(Tx("API key","Clave de API",null,"Chave de API"))}</span><input type="password" id="aiKey" autocomplete="off" spellcheck="false" placeholder="${esc(saved?"•••• "+c.last4:pv.keyHint)}"></label>
@@ -8126,7 +8151,7 @@ function coachTurnsHere(c){const tid=+((S.WeekendInfo||{}).TrackID)||0,tt=+(c&&c
    why it costs time and what to do instead, and the driver's 👍/👎 on the step (planRate) */
 const PLAN_SHOW=5,PLANRATE=store.get("pw.planrate",{});
 const planKey=p=>p?(p.id||p.k)+"@"+(p.turns||[]).join(","):"plan";
-function planRateBtns(k,v){return`<span class="tiprate" data-planrate="${k}"><button type="button" data-up="1"${v===1?' class="on"':""} title="${esc(Tx("This helps","Esto ayuda",null,"Isto ajuda"))}">👍</button><button type="button" data-up="-1"${v===-1?' class="on"':""} title="${esc(Tx("This does not help","Esto no ayuda",null,"Isto não ajuda"))}">👎</button></span>`}
+function planRateBtns(k,v){return`<span class="tiprate" data-planrate="${k}">${k==="all"?"":`<span class="tr-q">${esc(Tx("Did this help?","¿Te ayudó?",null,"Isto ajudou?"))}</span>`}<button type="button" data-up="1"${v===1?' class="on"':""} title="${esc(Tx("This helps","Esto ayuda",null,"Isto ajuda"))}">👍</button><button type="button" data-up="-1"${v===-1?' class="on"':""} title="${esc(Tx("This does not help","Esto no ayuda",null,"Isto não ajuda"))}">👎</button></span>`}
 function planStepsHTML(plan,A){const w=coachWhere(A),r2=v=>Math.round(v*100)/100;
   return plan.slice(0,PLAN_SHOW).map((p,i)=>{const onMap=!!(p.marks&&p.marks.length),v=w?PLANRATE[w.sid+"|"+planKey(p)]||0:0,cost=p.cost||(!p.what?p.why:"");
     return`<li class="k-${p.k}${i===plan.slice(0,PLAN_SHOW).findIndex(x=>x.marks&&x.marks.length)?" sel":""}" data-ps="${i}"><div class="co-pt"><span class="co-pn${onMap?"":" off"}">${i+1}</span><b>${esc(p.t)}</b>${p.gain>0?`<span class="mono ${p.k==="cons"?"warn":"bad"}">${p.k==="cons"?"±":"+"}${r2(p.gain)} s</span>`:""}</div>${p.what?`<div class="co-what">${esc(p.what)}</div>`:""}${cost?`<div class="co-why">${esc(cost)}</div>`:""}${p.how?`<div class="co-how">→ ${esc(p.how)}</div>`:""}${onMap||w?`<div class="co-pf">${onMap?`<button type="button" class="chip" data-psmap="${i}">${esc(Tx("Show on the map","Ver en el mapa",null,"Ver no mapa"))}</button>`:""}${w?planRateBtns(i,v):""}</div>`:""}</li>`}).join("")}
@@ -11669,6 +11694,9 @@ document.addEventListener("pointerover",e=>{if(e.pointerType!=="mouse"||!e.targe
 #v-coach .tiprate{display:inline-flex;gap:4px}
 #v-coach .tiprate button{min-width:30px;min-height:30px;border-radius:5px;border:1px solid var(--line);background:var(--surface2);font-size:12px;padding:0}
 #v-coach .tiprate button.on{border-color:var(--good)}
+#v-coach .tiprate{align-items:center;gap:6px}#v-coach .tiprate .tr-q{font-size:12px;color:var(--muted);margin-right:2px;white-space:nowrap}
+#v-coach .tiprate button{min-width:38px;min-height:34px;font-size:16px;opacity:1;border-color:var(--line2);cursor:pointer}
+#v-coach .tiprate button:hover{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 14%,var(--surface2))}
 /* the corner cards (.ccards/.ccard) */
 #v-coach .pw3c .co-tips{display:grid!important;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px;padding:0;margin:0}
 #v-coach .pw3c .co-tips>.co-tip{display:block;background:var(--surface2);border:1px solid var(--line);border-radius:8px;padding:12px 14px;margin:0;min-width:0}

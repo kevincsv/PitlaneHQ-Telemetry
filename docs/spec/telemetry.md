@@ -38,6 +38,9 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
   status strip) and show as the Standings view; the old `field` view opens it. The Tyres sub-tab is gone (the owner's
   choice): the Dashboard's Tyres panel shows the tyres, and its Details button went with the tab; an old `tyres`
   link opens the Dashboard.
+- Live lap compare has the track map beside the traces since 0.10.3 (`#lcMap`, `drawLcMap`, under them on a narrow
+  screen): the lap so far coloured by its gain or loss against lap B, the car and the turns' numbers. Pressing it or
+  "Full screen" opens the full-screen map with both laps (`lcFull`, app-screens.md).
 - Telemetry has five modes (`LIVE_MODE`, `liveModeBar`): Standings ("std", above), Basic (Essentials, below), Engineer (below), Full (All panels: every basic widget, the
   experimental ones too (not on a PC without Pro), and the lap's traces of speed, throttle/brake, delta and gear, `drawLiveTraces`)
   and Compare laps, live (`renderLiveCmp`/`tickLiveCmp`: the lap now against B, "My best" in purple, the last lap, other

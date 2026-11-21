@@ -4,6 +4,13 @@ Pitlane HQ is in **beta**. Pitlane HQ Agent (the PC app), the web app and the ph
 number, `0.MINOR.PATCH`. A MINOR version brings a set of new features, and fixes go in as "Fixes and
 improvements". 1.0.0 comes when the beta ends. Newest first.
 
+## 0.10.3 beta
+
+- Telemetry's Live lap compare has the track map beside the traces. It shows where this lap gains and loses against the other lap and opens in full screen.
+- Ask the coach is open to everyone. Add your own AI key in Settings and ask about the lap on screen.
+- The thumbs under each step of the coach's plan are easier to see.
+- Fixes and improvements.
+
 ## 0.10.1 beta
 
 - Telemetry's menu is simpler. Dashboard, Live lap compare and Team, with Rev beep and Phone & sharing under Car & tools.

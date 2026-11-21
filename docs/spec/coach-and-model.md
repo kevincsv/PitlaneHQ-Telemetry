@@ -303,7 +303,7 @@ How this part of Pitlane HQ behaves. Read it before changing this area; keep it 
 - **The thresholds on real laps**: Admin → Coach → "The coach on real laps" (GET `/community/admin/coach/calibrate`,
   coachcalib.js) runs the coach over the busiest cars and tracks' model laps and shows how often each tip and step fires.
   On a superspeedway a race lap in traffic can be lap A by default.
-- **Ask the coach** (in development: testers, and admins with admin mode on, every device): an AI chat about the lap
+- **Ask the coach** (everyone on the PC app and the web since 0.10.3, the owner's word 2026-11-21): an AI chat about the lap
   pair on screen with the driver's own API key, Anthropic (Claude Haiku 5.5 by default, Sonnet 5.5, Opus 5.5), OpenAI or
   Google Gemini. `web/dist/pitwall-aicoach.js` (`PW_AICOACH`, pure like the analysis module; the phones carry a copy beside
   `pitwall-analysis.js`, `tools/sync-analysis.sh`) builds everything sent and reads the answers: `context` (the gap,

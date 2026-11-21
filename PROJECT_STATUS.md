@@ -12,7 +12,6 @@ web (0.9.19); a full-app bug sweep follows.
 
 - iOS App Store: answer Apple's 2.1 request (review video, resubmit). Waiting on the owner.
 - Google Play: closed test needs 12 testers for 14 days. Waiting on the owner's tester list.
-- PC agent 0.10.2 (the ACC lap fixes): in the test build for testers since 2026-11-21, production with the next batch.
 - Phone repo: merge the App Store and Report/Block work with master's Google Play commits before the next release.
 - The track map inside Telemetry's Lap compare template: built and shown, waits for the owner's word for the next version (`docs/status/releases.md`).
 - Team mode (beta, every tester and admin): in production code since 0.9.19 behind its beta gate (PC, web, Android beta). Not run on real hardware yet.
@@ -20,7 +19,7 @@ web (0.9.19); a full-app bug sweep follows.
 ## Live now
 
 Lap telemetry lives in the R2 bucket since 2026-11-21 (every old lap moved, the database went from 1.43 GB to about 0.23 GB). The uninstall count takes one a day from each network and only with a real version since 2026-11-21. Admin statistics count the testers since 2026-11-20 (only the admins are left out). The admin page is six tabs since 2026-11-20 (Today, Drivers, Sign-ups, Money, Problems, Tools) with one period chooser from a Monday. Admin panel rebuild on pitlanehq.app since 2026-11-18 (7 tabs, one Drivers list, a profile for every driver, migration 0109).
-PC and web 0.10.1 (2026-11-16: the simpler Telemetry menu with Standings in the Dashboard and its Customize, the race report, the coach judging the whole session, Setups for testers, official track turns, the Statistics fix). Before it 0.10.0 (2026-11-15, every PC must update to it: the full-screen track map with the chase view, Telemetry's Engineer view, the overlays' text size slider, trying the PC app without an account for 3 sessions, the fix for Telemetry's Full freezing, the Le Mans Ultimate lap times pages and the new landing), phones 0.9.14, Microsoft Store 0.10.0 (since 2026-11-16). The phones have not had any of it (the owner said no phone work for now). Stay on 0.x until Steam is approved.
+PC and web 0.10.2 since 2026-11-21 14:46 UTC (fixes only, build bb6ae4b: ACC's out lap and first timed lap no longer kept as one, no lap under 5 seconds, the uninstall count). Before it 0.10.1 (2026-11-16: the simpler Telemetry menu with Standings in the Dashboard and its Customize, the race report, the coach judging the whole session, Setups for testers, official track turns, the Statistics fix). Before it 0.10.0 (2026-11-15, every PC must update to it: the full-screen track map with the chase view, Telemetry's Engineer view, the overlays' text size slider, trying the PC app without an account for 3 sessions, the fix for Telemetry's Full freezing, the Le Mans Ultimate lap times pages and the new landing), phones 0.9.14, Microsoft Store 0.10.0 (since 2026-11-16). The phones have not had any of it (the owner said no phone work for now). Stay on 0.x until Steam is approved.
 
 ## Areas
 

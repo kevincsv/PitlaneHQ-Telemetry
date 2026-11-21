@@ -294,7 +294,8 @@ races the PCs report (`seasonseen.js`). The PC app passes that post through `/ap
   test builds; the updater takes the zip, so updates are not counted) and every time the page the uninstaller opens is
   shown (`uninstall.js`, by the version removed; a silent uninstall opens nothing). The page counts itself from its
   own script (POST `/community/feedback/uninstall/shown`, once per browser tab), so reloading it or a link checker
-  fetching it is not another uninstall (until 5 Nov 2026 every fetch of the page counted). Only a post with a real
+  fetching it is not another uninstall (until 5 Nov 2026 every fetch of the page counted). Only one post per network and day
+  counts (the day's hash of the network, never the address, kept in `pc_days` as kind "unseen"), and only with a real
   version ("0.10.1", `isVersion`) counts, and rows or answers with another text as the version (a scanner trying the
   address) are left out of the admin page. An uninstall is a page shown, or on a
   day with more answers than pages (before they were counted) the answers. The reasons and what drivers wrote come from

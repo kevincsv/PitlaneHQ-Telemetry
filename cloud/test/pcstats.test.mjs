@@ -27,14 +27,15 @@ const req = (path, h = {}) => { const r = new Request("https://pitlanehq.app" + 
 // the page is counted by its own script (POST …/shown), not by being fetched: a link checker that never runs it is not
 const shown = (h = {}) => { const r = new Request("https://pitlanehq.app/community/feedback/uninstall/shown", { method: "POST", headers: { "user-agent": "Mozilla/5.0", ...h }, body: JSON.stringify({ v: "0.9.11" }) }); return [r, env, new URL(r.url)]; };
 await uninstallRoute(...req("/uninstalled?v=0.9.11&lang=es"));
-await uninstallRoute(...shown());
-await uninstallRoute(...shown());
+await uninstallRoute(...shown({ "cf-connecting-ip": "203.0.113.7" }));
+await uninstallRoute(...shown({ "cf-connecting-ip": "203.0.113.7" })); // the same network again today: the same uninstall
+await uninstallRoute(...shown({ "cf-connecting-ip": "198.51.100.1" }));
 await uninstallRoute(...shown({ "user-agent": "Googlebot/2.1" }));
 await downloads(...req("/dl/PitlaneHQ-Setup.exe"));
 await downloads(...req("/dl/PitlaneHQ-Setup.exe", { range: "bytes=1000-" }));
 await downloads(...req("/dl/beta/PitlaneHQ-Setup.exe"));
 await downloads(...req("/dl/PitlaneHQ-windows.zip"));
-const rows = db.prepare("SELECT kind, v, n FROM pc_days ORDER BY kind, v").all().map((x) => ({ ...x }));
+const rows = db.prepare("SELECT kind, v, n FROM pc_days WHERE kind<>'unseen' ORDER BY kind, v").all().map((x) => ({ ...x }));
 assert.deepEqual(rows, [{ kind: "download", v: "", n: 1 }, { kind: "download", v: "beta", n: 1 }, { kind: "uninstall", v: "0.9.11", n: 2 }], "robots, resumed downloads and updates are not counted");
 
 // installs and uninstalls

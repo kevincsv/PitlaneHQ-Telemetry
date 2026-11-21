@@ -4,7 +4,8 @@
 // GET  /uninstalled            the page: why they uninstalled (any of the reasons), an optional text box and Send
 // POST /community/feedback/uninstall/shown {v}  sent once by the page's own script (not again when it is reloaded,
 //   never by a link checker that does not run it): one uninstall in the admin Analytics (pc_days, pcstats.js),
-//   only with a version as the uninstaller sends it (anything else is a scanner trying the address)
+//   only with a version as the uninstaller sends it (anything else is a scanner trying the address), and once per
+//   network and day
 // POST /community/feedback/uninstall (anyone, no sign-in)  {reasons: ["bugs", …], text, v}
 //   kept as a feedback answer of kind "uninstall" (`feedback`, the reason codes in `style`), emailed to support@ and
 //   posted in the Discord feedback forum like the others. With no account, it is counted per network and day (a hash
@@ -92,6 +93,16 @@ async function netKey(req, now) {
   return "uninstall:" + [...h.slice(0, 8)].map((b) => b.toString(16).padStart(2, "0")).join("");
 }
 
+// One uninstall per network and day: the page opened again in new tabs is the same uninstall. Kept in pc_days as kind
+// "unseen" with the day's hash of the network (never the address); when it cannot be kept, the uninstall counts.
+async function firstToday(req, env) {
+  try {
+    const now = Date.now(), k = (await netKey(req, now)).slice(10);
+    const r = await env.DB.prepare("INSERT INTO pc_days (day, kind, v, n) VALUES (?1, 'unseen', ?2, 1) ON CONFLICT(day, kind, v) DO UPDATE SET n = n + 1 RETURNING n").bind(new Date(now).toISOString().slice(0, 10), k).first();
+    return !r || r.n <= 1;
+  } catch { return true; }
+}
+
 /** GET /uninstalled, POST /community/feedback/uninstall and …/shown, or null for any other address. `send` emails the answer
  *  (email.js sendFeedback) and `discord` posts it (discord.js discordFeedback): the worker passes them, the test its own. */
 export async function uninstallRoute(req, env, url, { send = async () => false, discord = async () => 0 } = {}) {
@@ -104,7 +115,7 @@ export async function uninstallRoute(req, env, url, { send = async () => false, 
     let b = null;
     try { b = JSON.parse((await req.text()).slice(0, 500)); } catch { b = null; }
     const v = cleanV(b && b.v);
-    if (isVersion(v) && !isBot(req.headers.get("user-agent"))) await pcCount(env, "uninstall", v);
+    if (isVersion(v) && !isBot(req.headers.get("user-agent")) && (await firstToday(req, env))) await pcCount(env, "uninstall", v);
     return new Response(null, { status: 204, headers: { "cache-control": "no-store" } });
   }
   if (p !== "/community/feedback/uninstall" || req.method !== "POST") return null;

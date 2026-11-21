@@ -5,7 +5,7 @@
 // - the uninstall answers are feedback rows of kind 'uninstall' (uninstall.js), their reasons in `style`
 // - the supporters are the accounts with the badge, by where it came from (Stripe donations, by hand, Patreon from
 //   before the donations moved to Stripe in 0.9.8); the donations are pro_orders of kind 'supporter' (stripe.js)
-import { REASONS } from "./uninstall.js";
+import { REASONS, isVersion } from "./uninstall.js";
 
 export const SQL_PC_ADD = "INSERT INTO pc_days (day, kind, v, n) VALUES (?1, ?2, ?3, 1) ON CONFLICT(day, kind, v) DO UPDATE SET n = n + 1";
 
@@ -22,6 +22,9 @@ const L3 = (r) => [r.en, r.es, r.pt];
 /** The installs and uninstalls of the days from `from` (this period) and before it (the one before).
  *  pcRows: {day, kind, v, n}; answers: {created, day, v, style, text} of both periods. */
 export function installsOf({ from, pcRows = [], answers = [] }) {
+  // rows counted before the page asked for a real version (a scanner posting anything) are not uninstalls
+  pcRows = pcRows.filter((x) => x.kind !== "uninstall" || !x.v || isVersion(x.v));
+  answers = answers.filter((x) => !x.v || isVersion(x.v));
   const now = pcRows.filter((x) => x.day >= from), prev = pcRows.filter((x) => x.day < from);
   const aNow = answers.filter((x) => x.day >= from), aPrev = answers.filter((x) => x.day < from);
   // an uninstall is a page shown; on a day with more answers than pages (before the pages were counted) the answers

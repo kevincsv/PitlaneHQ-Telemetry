@@ -3,7 +3,8 @@
 //
 // GET  /uninstalled            the page: why they uninstalled (any of the reasons), an optional text box and Send
 // POST /community/feedback/uninstall/shown {v}  sent once by the page's own script (not again when it is reloaded,
-//   never by a link checker that does not run it): one uninstall in the admin Analytics (pc_days, pcstats.js)
+//   never by a link checker that does not run it): one uninstall in the admin Analytics (pc_days, pcstats.js),
+//   only with a version as the uninstaller sends it (anything else is a scanner trying the address)
 // POST /community/feedback/uninstall (anyone, no sign-in)  {reasons: ["bugs", …], text, v}
 //   kept as a feedback answer of kind "uninstall" (`feedback`, the reason codes in `style`), emailed to support@ and
 //   posted in the Discord feedback forum like the others. With no account, it is counted per network and day (a hash
@@ -45,6 +46,8 @@ export function uninstallLang(req, url) {
 }
 
 const cleanV = (v) => String(v == null ? "" : v).replace(/[^0-9a-z.+-]/gi, "").slice(0, 20);
+/** A version as the uninstaller sends it ("0.10.1"): anything else posted here is not an uninstall (a scanner trying the address). */
+export const isVersion = (v) => /^\d+\.\d+\.\d+/.test(String(v || ""));
 
 /** The answer as the page sends it, or {error}: the known reasons (each once, in the page's order), the text, the version. */
 export function cleanUninstall(b) {
@@ -100,7 +103,8 @@ export async function uninstallRoute(req, env, url, { send = async () => false, 
     // counted for the admin Analytics (pcstats.js): one uninstall, by the version removed
     let b = null;
     try { b = JSON.parse((await req.text()).slice(0, 500)); } catch { b = null; }
-    if (!isBot(req.headers.get("user-agent"))) await pcCount(env, "uninstall", cleanV(b && b.v));
+    const v = cleanV(b && b.v);
+    if (isVersion(v) && !isBot(req.headers.get("user-agent"))) await pcCount(env, "uninstall", v);
     return new Response(null, { status: 204, headers: { "cache-control": "no-store" } });
   }
   if (p !== "/community/feedback/uninstall" || req.method !== "POST") return null;

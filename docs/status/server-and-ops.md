@@ -3,7 +3,7 @@
 Status as of 2026-11-07. Server layout is in CLAUDE.md ("Where things are").
 
 - Builds run only by hand (Actions → Run workflow). The beta channel goes first, production promotes the tested build.
-- Highest migration: 0097 (content reports). D1 is on the free plan; reads were cut in Oct (migration 0078). D1 MCP
+- Highest migration: 0109 (the admin driver indexes). D1 is on the paid plan; reads were cut in Oct (migration 0078). D1 MCP
   queries return `meta.rows_read`, useful to measure a query.
 - Analytics revamp (2026-11-15, branch `claude/project-thread-jy09k6`, not pushed): migration 0105 (`metrics_weeks`,
   `cohort_weeks`, `links`, `events`), a daily job at 03:00 UTC (`weeklyMetrics`) and the admin page's Sign-ups and Money tabs (Problems → Counters has Add up everything).
@@ -11,6 +11,14 @@ Status as of 2026-11-07. Server layout is in CLAUDE.md ("Where things are").
   Oct 28. The counters for PRO badges, the donation bar shown and invites need the web and PC build. Not built yet: the
   Monday message to Discord, the agent's `run:agent` and `set:autostart.*` (the growth and sales thread sends them), the
   phones' admin tabs. Migrations 0103 and 0104 belong to the growth and sales thread.
+- Lap telemetry is in R2 (2026-11-21): `app_state` `trace_store` = `r2`, the 20,986 laps and 6,181 shared laps moved
+  with none refused, and the database is about 0.23 GB (2026-11-21). What follows is how it was before.
+- Audit of 2026-11-21 (the list is the Claude Doc "Pitlane HQ audit: what to do next"): the uninstall count took
+  anything posted to it (11 rows with the version "hkdf" from a scanner); it now needs a real version and the admin
+  page leaves the old junk out. Still open: Reddit answers 429 to the leagues scan since 2026-11-17 (it needs
+  `REDDIT_CLIENT_ID` and `REDDIT_CLIENT_SECRET`), IndexNow answered 429 on 2026-11-21, and Assetto Corsa
+  Competizione's laps from the one tester who drives it (a first lap of twice the time counted as valid, laps of
+  0 seconds, no lap ever closed on the Nürburgring 24h layout).
 - Database size (2026-11-15): 1.43 GB, 95% of it lap telemetry in `laps.trace` and `community_laps.trace`. D1 is on the
   paid plan (5 GB included, 10 GB the limit of one database). Built, not deployed: telemetry in the R2 bucket
   `pitlanehq-telemetry`, gzipped (`docs/spec/sync-and-accounts.md`). After it is live on the test version and on

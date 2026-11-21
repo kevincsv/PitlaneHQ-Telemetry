@@ -60,12 +60,14 @@ const page = await call("/uninstalled?v=0.9.9&lang=es");
 assert.equal(page.status, 200);
 assert.match(await page.text(), /¿Por qué has desinstalado Pitlane HQ\?/);
 assert.equal((await call("/community/feedback/uninstall/shown", "POST", { v: "0.9.9" })).status, 204, "the page counts itself once it runs");
-assert.deepEqual(db.prepare("SELECT kind, v, n FROM pc_days").all().map((r) => ({ ...r })), [{ kind: "uninstall", v: "0.9.9", n: 1 }], "the page itself is not counted, its script is");
+assert.equal((await call("/community/feedback/uninstall/shown", "POST", { v: "hkdf" })).status, 204);
+assert.equal((await call("/community/feedback/uninstall/shown", "POST", {})).status, 204);
+assert.deepEqual(db.prepare("SELECT kind, v, n FROM pc_days").all().map((r) => ({ ...r })), [{ kind: "uninstall", v: "0.9.9", n: 1 }], "the page itself is not counted, its script is, and only with a real version");
 assert.equal((await call("/community/feedback/uninstall", "POST", { reasons: [] })).status, 400);
 for (let i = 0; i < UNINSTALL_PER_DAY; i++) assert.equal((await call("/community/feedback/uninstall", "POST", { reasons: ["hard"], text: "t" + i, v: "0.9.9" })).status, 200);
 assert.equal((await call("/community/feedback/uninstall", "POST", { reasons: ["hard"] })).status, 429, "3 a day per network");
 assert.equal((await call("/community/feedback/uninstall", "POST", { reasons: ["game"] }, "198.51.100.1")).status, 200, "another network");
-const rows = db.prepare("SELECT * FROM feedback ORDER BY created").all();
+const rows = db.prepare("SELECT * FROM feedback ORDER BY created, rowid").all(); // rows of the same millisecond keep their order
 assert.equal(rows.length, UNINSTALL_PER_DAY + 1);
 assert.ok(rows.every((r) => r.kind === "uninstall" && r.device === "pc" && r.view === "uninstall" && /^uninstall:[0-9a-f]{16}$/.test(r.account_id)));
 assert.ok(!rows.some((r) => r.account_id.includes("203.0.113.7")), "never the address");
